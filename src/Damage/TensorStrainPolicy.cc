@@ -39,22 +39,14 @@ namespace Spheral {
 template<typename Dimension>
 TensorStrainPolicy<Dimension>::
 TensorStrainPolicy(const TensorStrainAlgorithm strainType):
-  UpdatePolicyBase<Dimension>({HydroFieldNames::position,
-                               HydroFieldNames::H,
-                               SolidFieldNames::YoungsModulus,
-                               SolidFieldNames::bulkModulus,
-                               SolidFieldNames::shearModulus,
-                               HydroFieldNames::pressure,
-                               SolidFieldNames::deviatoricStress}),
+  FieldUpdatePolicy<Dimension, SymTensor>({HydroFieldNames::position,
+                                           HydroFieldNames::H,
+                                           SolidFieldNames::YoungsModulus,
+                                           SolidFieldNames::bulkModulus,
+                                           SolidFieldNames::shearModulus,
+                                           HydroFieldNames::pressure,
+                                           SolidFieldNames::deviatoricStress}),
   mStrainType(strainType) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TensorStrainPolicy<Dimension>::
-~TensorStrainPolicy() {
 }
 
 //------------------------------------------------------------------------------

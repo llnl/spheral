@@ -21,10 +21,9 @@ IncrementBoundedState(std::initializer_list<std::string> depends,
                       const BoundValueType minValue,
                       const BoundValueType maxValue,
                       const bool wildCardDerivs):
-  FieldUpdatePolicy<Dimension>(depends),
+  IncrementState<Dimension, ValueType>(depends, wildCardDerivs),
   mMinValue(minValue),
-  mMaxValue(maxValue),
-  mWildCardDerivs(wildCardDerivs) {
+  mMaxValue(maxValue) {
 }
 
 template<typename Dimension, typename ValueType, typename BoundValueType>
@@ -33,10 +32,9 @@ IncrementBoundedState<Dimension, ValueType, BoundValueType>::
 IncrementBoundedState(const BoundValueType minValue,
                       const BoundValueType maxValue,
                       const bool wildCardDerivs):
-  FieldUpdatePolicy<Dimension>(),
+  IncrementState<Dimension, ValueType>({}, wildCardDerivs),
   mMinValue(minValue),
-  mMaxValue(maxValue),
-  mWildCardDerivs(wildCardDerivs) {
+  mMaxValue(maxValue) {
 }
 
 //------------------------------------------------------------------------------
@@ -61,7 +59,7 @@ update(const KeyType& key,
   auto& f = state.field(key, ValueType());
 
   // Find all the available matching derivative Field keys.
-  const auto incrementKey = prefix() + fieldKey;
+  const auto incrementKey = this->prefix() + fieldKey;
   const auto allkeys = derivs.keys();
   KeyType dfKey, dfNodeListKey;
   auto numDeltaFields = 0u;
@@ -82,7 +80,7 @@ update(const KeyType& key,
   }
 
   // If we're not allowing wildcard update, there should have only be one match.
-  VERIFY2(mWildCardDerivs or numDeltaFields == 1,
+  VERIFY2(this->wildCardDerivs() or numDeltaFields == 1,
           "IncrementBoundedState ERROR: unable to find unique match for derivative field key " << incrementKey << " on NodeList " << nodeListKey << " : " << numDeltaFields << " matches");
 }
 
@@ -101,47 +99,6 @@ operator==(const UpdatePolicyBase<Dimension>& rhs) const {
 
   // Ok, now do we agree on min & max?
   return (minValue() == rhsPtr->minValue()) && (maxValue() == rhsPtr->maxValue());
-}
-
-//------------------------------------------------------------------------------
-// Min value.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename ValueType, typename BoundValueType>
-inline
-BoundValueType
-IncrementBoundedState<Dimension, ValueType, BoundValueType>::
-minValue() const {
-  return mMinValue;
-}
-
-//------------------------------------------------------------------------------
-// Max value.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename ValueType, typename BoundValueType>
-inline
-BoundValueType
-IncrementBoundedState<Dimension, ValueType, BoundValueType>::
-maxValue() const {
-  return mMaxValue;
-}
-
-//------------------------------------------------------------------------------
-// Wildcard derivs attribute.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename ValueType, typename BoundValueType>
-inline
-bool
-IncrementBoundedState<Dimension, ValueType, BoundValueType>::
-wildCardDerivs() const {
-  return mWildCardDerivs;
-}
-
-template<typename Dimension, typename ValueType, typename BoundValueType>
-inline
-void
-IncrementBoundedState<Dimension, ValueType, BoundValueType>::
-wildCardDerivs(const bool val) {
-  mWildCardDerivs = val;
 }
 
 }

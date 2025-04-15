@@ -17,6 +17,7 @@ class PSPH(SPH):
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = PairwiseField<%(Dimension)s, Vector>;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",

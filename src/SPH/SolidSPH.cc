@@ -764,9 +764,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - (deformation.Trace()/3.0)*SymTensor::one;
+      const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one;
       const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
-      DSDti = spinCorrection + (2.0*mui)*deviatoricDeformation;
+      DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
       // Optionally use damage to ramp down stress on damaged material.
       // const auto Di = max(0.0, min(1.0, damage(nodeListi, i).Trace() - 1.0));

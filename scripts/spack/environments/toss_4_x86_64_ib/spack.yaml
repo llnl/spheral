@@ -1,0 +1,19 @@
+spack:
+  specs:
+    - "spheral+mpi%gcc"
+    - "spheral~mpi%gcc"
+    - "spheral+mpi%clang"
+  view: false
+  concretizer:
+    unify: false
+  develop:
+    spheral:
+      path: ../../../../
+      spec: spheral@=develop
+  include:
+    - ../../configs/toss_4_x86_64_ib/packages.yaml
+    - ../../configs/toss_4_x86_64_ib/compilers.yaml
+    - ../../configs/config.yaml
+    - ../../configs/upstreams.yaml
+  repos:
+    - ../../

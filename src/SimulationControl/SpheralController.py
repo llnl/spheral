@@ -256,7 +256,10 @@ class SpheralController:
         self.integrator.applyGhostBoundaries(state, derivs)
         for bc in uniquebcs:
             bc.initializeProblemStartup(True)
+        db.reinitializeNeighbors()
         self.integrator.setGhostNodes()
+        db.updateConnectivityMap(False)
+        self.integrator.applyGhostBoundaries(state, derivs)
 
         # Set up the default periodic work.
         self.appendPeriodicWork(self.printCycleStatus, printStep)
@@ -358,10 +361,10 @@ class SpheralController:
             db.fluidVelocity.assignFields(smoothedVelocity)
             db.fluidSpecificThermalEnergy.assignFields(smoothedSpecificThermalEnergy)
             db.fluidHfield.assignFields(smoothedHfield)
-            for nodeList in db.fluidNodeLists():
+            for nodeList in db.fluidNodeLists:
                 nodeList.neighbor().updateNodes()
             db.updateConnectivityMap()
-            for nodeList in db.fluidNodeLists():
+            for nodeList in db.fluidNodeLists:
                 nodeList.updateWeight(db.connectivityMap())
 
         return
@@ -929,7 +932,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
     def voronoiInitializeMass(self):
         from generateMesh import generateLineMesh, generatePolygonalMesh, generatePolyhedralMesh
         db = self.integrator.dataBase
-        nodeLists = db.fluidNodeLists()
+        nodeLists = db.fluidNodeLists
         boundaries = self.integrator.uniqueBoundaryConditions()
         method = eval("generate%sMesh" % {1 : "Line", 2 : "Polygonal", 3 : "Polyhedral"}[db.nDim])
         mesh, void = method(nodeLists,
@@ -957,7 +960,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
             rho = ConstantRho(rho)
 
         db = self.integrator.dataBase
-        nodeLists = db.fluidNodeLists()
+        nodeLists = db.fluidNodeLists
         boundaries = self.integrator.uniqueBoundaryConditions()
         allpackages = self.integrator.physicsPackages()
         packages = eval("vector_of_Physics%id()" % db.nDim)

@@ -35,19 +35,11 @@ namespace Spheral {
 template<typename Dimension>
 StrainPolicy<Dimension>::
 StrainPolicy():
-  UpdatePolicyBase<Dimension>({HydroFieldNames::position,
-                               HydroFieldNames::H,
-                               SolidFieldNames::YoungsModulus,
-                               HydroFieldNames::pressure,
-                               SolidFieldNames::deviatoricStress}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-StrainPolicy<Dimension>::
-~StrainPolicy() {
+  FieldUpdatePolicy<Dimension, SymTensor>({HydroFieldNames::position,
+                                           HydroFieldNames::H,
+                                           SolidFieldNames::YoungsModulus,
+                                           HydroFieldNames::pressure,
+                                           SolidFieldNames::deviatoricStress}) {
 }
 
 //------------------------------------------------------------------------------

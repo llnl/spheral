@@ -3,6 +3,7 @@ from FieldUpdatePolicy import *
 
 @PYB11module("SpheralHydro")
 @PYB11template("Dimension")
+@PYB11template_dict({"ValueType" : "typename %(Dimension)s::Scalar"})
 class PressurePolicy(FieldUpdatePolicy):
 
     PYB11typedefs = """

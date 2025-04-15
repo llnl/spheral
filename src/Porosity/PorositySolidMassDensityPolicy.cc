@@ -21,8 +21,8 @@ namespace Spheral {
 template<typename Dimension>
 PorositySolidMassDensityPolicy<Dimension>::
 PorositySolidMassDensityPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                SolidFieldNames::porosityAlpha}) {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        SolidFieldNames::porosityAlpha}) {
 }
 
 //------------------------------------------------------------------------------

@@ -32,7 +32,7 @@ public:
 
   // Constructors, destructor.
   MassFluxPolicy(std::initializer_list<std::string> depends = {});
-  virtual ~MassFluxPolicy();
+  virtual ~MassFluxPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -45,19 +45,11 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const  override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  MassFluxPolicy(const MassFluxPolicy& rhs);
-  MassFluxPolicy& operator=(const MassFluxPolicy& rhs);
+  // Forbidden methods
+  MassFluxPolicy(const MassFluxPolicy& rhs) = delete;
+  MassFluxPolicy& operator=(const MassFluxPolicy& rhs) = delete;
 };
 
-}
-
-#else
-
-// Forward declaration.
-namespace Spheral {
-  template<typename Dimension> class MassFluxPolicy;
 }
 
 #endif

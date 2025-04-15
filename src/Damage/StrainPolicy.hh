@@ -7,7 +7,7 @@
 #ifndef __Spheral_StrainPolicy_hh__
 #define __Spheral_StrainPolicy_hh__
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 
 #include <string>
 
@@ -21,21 +21,20 @@ template<typename Dimension, typename DataType> class Field;
 template<typename Dimension> class StrainModel;
 
 template<typename Dimension>
-class StrainPolicy: 
-    public UpdatePolicyBase<Dimension> {
+class StrainPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::SymTensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef          Field<Dimension, Scalar> FieldType;
-  typedef typename UpdatePolicyBase<Dimension>::KeyType KeyType;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using FieldType = Field<Dimension, Scalar>;
+  using KeyType = typename FieldUpdatePolicy<Dimension, SymTensor>::KeyType;
 
   // Constructors, destructor.
   StrainPolicy();
-  virtual ~StrainPolicy();
+  virtual ~StrainPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -48,10 +47,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  StrainPolicy(const StrainPolicy& rhs);
-  StrainPolicy& operator=(const StrainPolicy& rhs);
+  // Forbidden methods
+  StrainPolicy(const StrainPolicy& rhs) = delete;
+  StrainPolicy& operator=(const StrainPolicy& rhs) = delete;
 };
 
 }

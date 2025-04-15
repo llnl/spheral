@@ -9,6 +9,7 @@
 #define __Spheral_SolidFSISPH_hh__
 
 #include "Physics/GenericHydro.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <string>
 #include <vector>
@@ -78,7 +79,7 @@ public:
               const bool compatibleEnergyEvolution,
               const bool evolveTotalEnergy,
               const bool linearCorrectGradients,
-              const bool planeStrain,
+              const bool decoupleDamagedMaterial,
               const double interfacePmin,
               const double interfaceNeighborAngleThreshold,
               const FSIMassDensityMethod densityUpdate,
@@ -182,8 +183,11 @@ public:
   bool applySelectSumDensity() const;
   void applySelectSumDensity(bool x);
 
-  bool planeStrain() const;
-  void planeStrain(bool val);
+  bool planeStrain()                                const { DeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
+  void planeStrain(bool val)                              { DeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
+  
+  bool decoupleDamagedMaterial() const;
+  void decoupleDamagedMaterial(bool val);
 
   std::vector<int> sumDensityNodeLists() const;
   void sumDensityNodeLists(std::vector<int> x);
@@ -276,7 +280,7 @@ private:
   bool mCompatibleEnergyEvolution;
   bool mEvolveTotalEnergy; 
   bool mLinearCorrectGradients;
-  bool mPlaneStrain;
+  bool mDecoupleDamagedMaterial;
   bool mApplySelectDensitySum;                        // switch for density sum
   std::vector<int> mSumDensityNodeLists;              // turn on density sum subset of nodeLists
 

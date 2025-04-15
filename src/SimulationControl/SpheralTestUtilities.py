@@ -109,11 +109,11 @@ def findScatterNeighborNodes(pos1, radius, nodes,
 def findOverlapNeighbors(pos1, H1, radius, db):
     pos = db.globalPosition
     H = db.globalHfield
-    result = [findNeighborNodes(pos1, H1, radius, nodes) for nodes in db.nodeLists()]
-    for iNL, inodes in enumerate(db.nodeLists()):
+    result = [findNeighborNodes(pos1, H1, radius, nodes) for nodes in db.nodeLists]
+    for iNL, inodes in enumerate(db.nodeLists):
         mygather = findGatherNeighborNodes(pos1, H1, radius, inodes)
         for i in mygather:
-            for jNL, jnodes in enumerate(db.nodeLists()):
+            for jNL, jnodes in enumerate(db.nodeLists):
                 result[jNL] += findScatterNeighborNodes(pos(iNL, i), radius, jnodes)
     result = [list(set(x)) for x in result]
     return result

@@ -73,6 +73,10 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _python_packages SVPH)
 endif()
 
+if (ENABLE_SUNDIALS AND ENABLE_MPI)
+  list(PREPEND _python_packages Solvers)
+endif()
+
 foreach(_python_package ${_python_packages})
   add_subdirectory(${_python_package})
 endforeach()

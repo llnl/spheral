@@ -20,6 +20,7 @@ class SolidCRKSPH(CRKSPH):
     using FourthRankTensor = typename %(Dimension)s::FourthRankTensor;
     using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
     using PairAccelerationsType = typename SolidCRKSPH<%(Dimension)s>::PairAccelerationsType;
 """
 

@@ -100,6 +100,13 @@ commandLine(nx = 500,                          # Number of internal free points
             domainIndependent = True,
             dtverbose = False,
 
+            # Options for implicit integrators
+            ftol = None,
+            convergenceTolerance = None,
+            maxIterations = None,
+            maxAllowedDtMultiplier = None,
+            beta = None,
+
             # Problem control
             restoreCycle = -1,
             restartStep = 500,
@@ -469,9 +476,7 @@ if useDamage:
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for package in packages:
-    integrator.appendPhysicsPackage(package)
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 if dtMin:
     integrator.dtMin = dtMin
@@ -488,6 +493,25 @@ output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.dtGrowth")
 output("integrator.domainDecompositionIndependent")
+
+# Special stuff for implicit integrators
+if isinstance(integrator, ImplicitIntegrator):
+    if beta:
+        integrator.beta = beta
+    if convergenceTolerance:
+        integrator.convergenceTolerance = convergenceTolerance
+    if maxIterations:
+        integrator.maxIterations = maxIterations
+    if maxAllowedDtMultiplier:
+        integrator.maxAllowedDtMultiplier = maxAllowedDtMultiplier
+    output("integrator.beta")
+    output("integrator.convergenceTolerance")
+    output("integrator.maxIterations")
+    output("integrator.maxAllowedDtMultiplier")
+if isinstance(integrator, BackwardEulerIntegrator):
+    if ftol:
+        integrator.ftol = ftol
+    output("integrator.ftol")
 
 #-------------------------------------------------------------------------------
 # Add the boundary conditions.

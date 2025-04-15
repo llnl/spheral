@@ -184,7 +184,7 @@ packages = [dem]
 #-------------------------------------------------------------------------------
 
 numNodeLists = db.numNodeLists
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 for i in range(db.numNodeLists):
     nodeListi = nodeLists[i]
     numNodes = nodeListi.numInternalNodes

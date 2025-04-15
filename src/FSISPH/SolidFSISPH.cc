@@ -135,7 +135,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
             const bool compatibleEnergyEvolution,
             const bool evolveTotalEnergy,
             const bool linearCorrectGradients,
-            const bool planeStrain,
+            const bool decoupleDamagedMaterial,
             const double interfacePmin,
             const double interfaceNeighborAngleThreshold,
             const FSIMassDensityMethod densityUpdate,
@@ -152,7 +152,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
   mEvolveTotalEnergy(evolveTotalEnergy),
   mLinearCorrectGradients(linearCorrectGradients),
-  mPlaneStrain(planeStrain),
+  mDecoupleDamagedMaterial(decoupleDamagedMaterial),
   mApplySelectDensitySum(std::any_of(sumDensityNodeLists.begin(), sumDensityNodeLists.end(), [](int x) { return x == 1; })),
   mSumDensityNodeLists(sumDensityNodeLists),
   mSurfaceForceCoefficient(surfaceForceCoefficient),
@@ -328,13 +328,8 @@ registerState(DataBase<Dimension>& dataBase,
   auto interfaceNormalsPolicy = make_policy<PureReplaceState<Dimension,Vector>>();
   auto interfaceSmoothnessPolicy = make_policy<PureReplaceState<Dimension,Scalar>>();
   
-  if(this->planeStrain()){
-    auto deviatoricStressPolicy = make_policy<IncrementState<Dimension, SymTensor>>();
-    state.enroll(deviatoricStress, deviatoricStressPolicy);
-  }else{
-    auto deviatoricStressPolicy = make_policy<DeviatoricStressPolicy<Dimension>>();
-    state.enroll(deviatoricStress, deviatoricStressPolicy);
-  }
+  auto deviatoricStressPolicy = make_policy<DeviatoricStressPolicy<Dimension>>();
+  state.enroll(deviatoricStress, deviatoricStressPolicy);
 
   if(this->compatibleEnergyEvolution()){
     auto  thermalEnergyPolicy = make_policy<CompatibleDifferenceSpecificThermalEnergyPolicy<Dimension>>(dataBase);

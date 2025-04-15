@@ -17,6 +17,7 @@ class SubPointPressureHourglassControl(Physics):
     using SymTensor = typename %(Dimension)s::SymTensor;
     using FacetedVolume = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(self,

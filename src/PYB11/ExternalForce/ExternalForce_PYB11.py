@@ -17,6 +17,8 @@ PYB11includes += ['"Physics/GenericBodyForce.hh"',
                   '"ExternalForce/PointPotential.hh"',
                   '"ExternalForce/ConstantAcceleration.hh"',
                   '"ExternalForce/LinearAcceleration.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

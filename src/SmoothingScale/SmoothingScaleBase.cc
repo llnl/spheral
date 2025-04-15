@@ -5,6 +5,7 @@
 //----------------------------------------------------------------------------//
 #include "SmoothingScale/FixedSmoothingScale.hh"
 #include "Field/FieldList.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Hydro/HydroFieldNames.hh"

@@ -24,22 +24,14 @@ namespace Spheral {
 template<typename Dimension>
 SoundSpeedPolicy<Dimension>::
 SoundSpeedPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                HydroFieldNames::pressure,
-                                SolidFieldNames::tensorDamage,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha,
-                                SolidFieldNames::porosityAlpha0,
-                                SolidFieldNames::porosityc0}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SoundSpeedPolicy<Dimension>::
-~SoundSpeedPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        HydroFieldNames::pressure,
+                                        SolidFieldNames::tensorDamage,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha,
+                                        SolidFieldNames::porosityAlpha0,
+                                        SolidFieldNames::porosityc0}) {
 }
 
 //------------------------------------------------------------------------------

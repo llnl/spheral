@@ -182,6 +182,12 @@ public:
   AccessType access() const;
   bool fileOpen() const;
 
+  // Safe method to try and read from a path if it exists.
+  // Returns: 0 => successful
+  //          1 => path does not exist
+  //          2 => unable to read value
+  template<typename T> int readIfAvailable(T& value, const std::string path) const;
+
 #ifndef CXXONLY
   // PyObjects for Python
   SPHERAL_DLL_PUBLIC virtual void writeObject(pybind11::object thing, const std::string path);

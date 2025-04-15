@@ -812,6 +812,17 @@ packFieldValues(const Field<Dimension, DataType>& field,
   return result;
 }
 
+// Same thing for all internal values
+template<typename Dimension, typename DataType>
+inline
+std::vector<char>
+packFieldValues(const Field<Dimension, DataType>& field) {
+  std::vector<char> result;
+  const auto n = field.numInternalElements();
+  for (auto i = 0u; i < n; ++i) packElement(field[i], result);
+  return result;
+}
+
 //------------------------------------------------------------------------------
 // Unpack encoded values from the given vector to the Field at the indicated
 // indices.
@@ -835,6 +846,22 @@ unpackFieldValues(Field<Dimension, DataType>& field,
   }
 
   ENSURE(bufItr == packedValues.end());
+}
+
+// Same thing for all internal values
+template<typename Dimension, typename DataType>
+inline
+void
+unpackFieldValues(Field<Dimension, DataType>& field,
+                  const std::vector<char>& packedValues) {
+  auto bufItr = packedValues.begin();
+  auto endItr = packedValues.end();
+  const auto n = field.numInternalElements();
+  for (auto i = 0u; i < n; ++i) {
+    unpackElement(field[i], bufItr, endItr);
+    CHECK(bufItr <= endItr);
+  }
+  CHECK(bufItr == endItr);
 }
 
 //------------------------------------------------------------------------------

@@ -56,63 +56,99 @@ DataBase():
 }
 
 //------------------------------------------------------------------------------
+// Numbers of nodes in the DataBase.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numInternalNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mNodeListPtrs) result += xptr->numInternalNodes();
+  return result;
+}
+
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numGhostNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mNodeListPtrs) result += xptr->numGhostNodes();
+  return result;
+}
+
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mNodeListPtrs) result += xptr->numNodes();
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Numbers of fluid nodes in the DataBase.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numFluidInternalNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numInternalNodes();
+  return result;
+}
+
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numFluidGhostNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numGhostNodes();
+  return result;
+}
+
+template<typename Dimension>
+size_t
+DataBase<Dimension>::numFluidNodes() const {
+  size_t result = 0u;
+  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numNodes();
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Global numbers of nodes in the DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumInternalNodes() const {
-  int localResult = numInternalNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumGhostNodes() const {
-  int localResult = numGhostNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumNodes() const {
-  int localResult = numNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
 // Global numbers of fluid nodes in the DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumFluidInternalNodes() const {
-  int localResult = numFluidInternalNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numFluidInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumFluidGhostNodes() const {
-  int localResult = numFluidGhostNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numFluidGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-int
+size_t
 DataBase<Dimension>::globalNumFluidNodes() const {
-  int localResult = numFluidNodes();
-  int result = localResult;
-  result = allReduce(result, SPHERAL_OP_SUM);
-  return result;
+  return allReduce(numFluidNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
@@ -822,42 +858,6 @@ nodeListIndex(const NodeList<Dimension>& nodeList) const {
                                    &nodeList);
   VERIFY(itr != nodeListEnd());
   return std::distance(nodeListBegin(), itr);
-}
-
-//------------------------------------------------------------------------------
-// Return the const list of NodeList pointers.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const vector<NodeList<Dimension>*>&
-DataBase<Dimension>::nodeListPtrs() const {
-  return mNodeListPtrs;
-}
-
-//------------------------------------------------------------------------------
-// Return the const list of FluidNodeList pointers.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const vector<FluidNodeList<Dimension>*>&
-DataBase<Dimension>::fluidNodeListPtrs() const {
-  return mFluidNodeListPtrs;
-}
-
-//------------------------------------------------------------------------------
-// Return the const list of SolidNodeList pointers.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const vector<SolidNodeList<Dimension>*>&
-DataBase<Dimension>::solidNodeListPtrs() const {
-  return mSolidNodeListPtrs;
-}
-
-//------------------------------------------------------------------------------
-// Return the const list of DEMNodeList pointers.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const vector<DEMNodeList<Dimension>*>&
-DataBase<Dimension>::DEMNodeListPtrs() const {
-  return mDEMNodeListPtrs;
 }
 
 //------------------------------------------------------------------------------

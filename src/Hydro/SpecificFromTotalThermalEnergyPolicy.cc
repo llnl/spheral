@@ -36,14 +36,6 @@ SpecificFromTotalThermalEnergyPolicy():
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SpecificFromTotalThermalEnergyPolicy<Dimension>::
-~SpecificFromTotalThermalEnergyPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 template<typename Dimension>

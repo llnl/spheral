@@ -3,7 +3,7 @@
    ----------------------------------------
 
 [git_clone-section-start]
-If you use git to clone the Spheral source be aware Spheral includes git submodules: `BLT <https://github.com/LLNL/blt>`_ and `Uberenv <https://github.com/LLNL/uberenv>`_.  In order to ensure such submodules are properly downloaded when cloning Spheral be sure to use the ``--recursive`` git option:
+If you use git to clone the Spheral source be aware Spheral includes the `BLT <https://github.com/LLNL/blt>`_ git submodule.  In order to ensure such submodules are properly downloaded when cloning Spheral be sure to use the ``--recursive`` git option:
 
 ::
 

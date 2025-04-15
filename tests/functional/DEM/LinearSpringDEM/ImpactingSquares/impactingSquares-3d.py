@@ -184,7 +184,7 @@ packages = [dem]
 # Initial Conditions
 #-------------------------------------------------------------------------------
 numNodeLists = db.numNodeLists
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 omega = dem.omega
 for i in range(db.numNodeLists):
     nodeListi = nodeLists[i]

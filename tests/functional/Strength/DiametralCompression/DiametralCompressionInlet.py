@@ -422,7 +422,7 @@ for n in nodeListSet:
     db.appendNodeList(n)
     print(n.name)
 del n
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 
 output("db")
 output("db.nodeLists")
@@ -668,7 +668,7 @@ class loadCurveStorage:
 
     def maxY(self):
         maxy = 0.0
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
         for nodeList in nodeLists:
             positions = nodeList.positions()
             for position in positions:
@@ -678,7 +678,7 @@ class loadCurveStorage:
 
     def minY(self):
         miny = 0.0
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
         for nodeList in nodeLists:
             positions = nodeList.positions()
             for position in positions:

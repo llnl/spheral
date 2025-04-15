@@ -227,7 +227,7 @@ if iterateH:
 #-------------------------------------------------------------------------------
 f = db.newFluidScalarFieldList(name="test field")
 pos = db.fluidPosition
-for iNodeList, nodes in enumerate(db.nodeLists()):
+for iNodeList, nodes in enumerate(db.nodeLists):
     for i in range(nodes.numInternalNodes):
         x = pos(iNodeList, i).x
         if testCase == "linear":
@@ -289,7 +289,7 @@ computeCRKSPHCorrections(M0, M1, M2, M3, M4, gradM0, gradM1, gradM2, gradM3, gra
 # Measure the interpolated values and gradients.
 #-------------------------------------------------------------------------------
 if testSPH:
-    for iNodeList, nodes in enumerate(db.nodeLists()):
+    for iNodeList, nodes in enumerate(db.nodeLists):
         for i in range(nodes.numInternalNodes):
             ri = position(iNodeList, i)
             Hi = H(iNodeList, i)
@@ -476,7 +476,7 @@ if graphics:
     if outputFile and testDim == "2d":
         of = open(outputFile, "w")
         of.write(('#' + 7*' "%20s"' + '\n') % ("x", "interp answer", "grad answer", "interp SPH", "interp CRK", "grad SPH", "grad CRK"))
-        for iNodeList, nodes in enumerate(db.nodeLists()):
+        for iNodeList, nodes in enumerate(db.nodeLists):
             for i in range(nodes.numInternalNodes):
                 of.write((7*" %20g" + "\n") %
                          (position(iNodeList,i), yans(iNodeList,i), dyans(iNodeList,i), fSPH(iNodeList,i), fRK(iNodeList,i), dfSPH(iNodeList,i).x, dfRK(iNodeList,i).x))
@@ -494,7 +494,7 @@ if graphics:
 if plotKernels:
     import Gnuplot
     pk = generateNewGnuPlot()
-    for iNodeList, nodes in enumerate(db.nodeLists()):
+    for iNodeList, nodes in enumerate(db.nodeLists):
         for i in range(nodes.numInternalNodes):
             xi = positions(iNodeList,i).x
             Hi = H(iNodeList,i)

@@ -31,7 +31,7 @@ ARG HOST_CONFIG=docker-$SPEC
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y
 RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git gfortran mpich autotools-dev autoconf sqlite pkg-config uuid gettext cmake libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python python3 unzip libtool wget curl tk-dev
+RUN apt-get install -y build-essential git gfortran mpich autotools-dev autoconf sqlite pkg-config uuid gettext cmake libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python python3 unzip libtool wget curl libcurl4-openssl-dev tk-dev
 RUN apt-get install -y python3-dev python3-venv python3-pip
 RUN apt-get install -y iputils-ping
 
@@ -41,9 +41,9 @@ RUN locale-gen en_US.UTF-8
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
 COPY scripts scripts
-COPY .uberenv_config.json .
 
-RUN python3 scripts/devtools/tpl-manager.py --spec $SPEC --spheral-spack-dir /home
+
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
 
 COPY . .
 
@@ -78,7 +78,7 @@ WORKDIR /home/spheral/workspace/
 
 # Copy Spheral source and generate host config from tpl-manager (all dependencies should already be installed).
 COPY . .
-RUN python3 scripts/devtools/tpl-manager.py --spec $SPEC --upstream-dir /home/spack/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_placeholder_ --spack-url /home/spack
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
 
 # Configure Spheral with SPEC TPLs.
 RUN mv *.cmake $HOST_CONFIG.cmake

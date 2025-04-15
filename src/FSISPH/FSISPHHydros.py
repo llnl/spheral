@@ -19,7 +19,8 @@ def FSISPH(dataBase,
            compatibleEnergyEvolution = True,
            evolveTotalEnergy = False,
            linearCorrectGradients = True,
-           planeStrain = False,
+           planeStrain = None,
+           decoupleDamagedMaterial = True,
            interfacePmin = 0.0,
            interfaceNeighborAngleThreshold=0.707,
            HUpdate = IdealH,
@@ -41,8 +42,11 @@ def FSISPH(dataBase,
     if compatibleEnergyEvolution and evolveTotalEnergy:
         raise RuntimeError("compatibleEnergyEvolution and evolveTotalEnergy are incompatible")
 
+    if not planeStrain is None:
+        print("FSISPH Warning: planeStrain option is deprecated and has no effect")
+
     # create the map nodelist --> index
-    nodeLists = dataBase.nodeLists()
+    nodeLists = dataBase.nodeLists
     nodeListMap = {}
     for i in range(dataBase.numNodeLists):          
         nodeListMap[nodeLists[i]]=i
@@ -60,9 +64,9 @@ def FSISPH(dataBase,
     nfluid = dataBase.numFluidNodeLists
     nsolid = dataBase.numSolidNodeLists
     if nsolid > 0 and nsolid != nfluid:
-        print("SPH Error: you have provided both solid and fluid NodeLists, which is currently not supported.")
-        print("           If you want some fluids active, provide SolidNodeList without a strength option specfied,")
-        print("           which will result in fluid behaviour for those nodes.")
+        print("FSISPH Error: you have provided both solid and fluid NodeLists, which is currently not supported.")
+        print("              If you want some fluids active, provide SolidNodeList without a strength option specfied,")
+        print("              which will result in fluid behaviour for those nodes.")
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
     # Decide on the hydro object.
@@ -106,7 +110,7 @@ def FSISPH(dataBase,
               "compatibleEnergyEvolution" : compatibleEnergyEvolution,
               "evolveTotalEnergy" : evolveTotalEnergy,
               "linearCorrectGradients" : linearCorrectGradients,
-              "planeStrain" : planeStrain,
+              "decoupleDamagedMaterial" : decoupleDamagedMaterial,
               "interfacePmin" : interfacePmin,
               "interfaceNeighborAngleThreshold" : interfaceNeighborAngleThreshold,
               "densityUpdate" : densityUpdate,

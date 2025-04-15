@@ -176,7 +176,7 @@ def centroidalRelaxNodes(nodeListsAndBounds,
 
     # Update the masses using rho and volume.
     rho = db.fluidMassDensity
-    for k, nodes in enumerate(db.fluidNodeLists()):
+    for k, nodes in enumerate(db.fluidNodeLists):
         n = nodes.numInternalNodes
         mass = nodes.mass()
         for i in range(n):

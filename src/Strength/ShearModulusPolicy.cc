@@ -23,20 +23,12 @@ namespace Spheral {
 template<typename Dimension>
 ShearModulusPolicy<Dimension>::
 ShearModulusPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                HydroFieldNames::pressure,
-                                SolidFieldNames::tensorDamage,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ShearModulusPolicy<Dimension>::
-~ShearModulusPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        HydroFieldNames::pressure,
+                                        SolidFieldNames::tensorDamage,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha}) {
 }
 
 //------------------------------------------------------------------------------

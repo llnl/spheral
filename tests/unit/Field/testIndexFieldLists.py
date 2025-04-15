@@ -103,7 +103,7 @@ class TestIndexFieldLists(unittest.TestCase):
         bc = ReflectingBoundary2d(Plane2d(Vector2d(0.0, 0.0),
                                           Vector2d(0.0, 1.0)))
         bc.setGhostNodes(dataBase)
-        for nodes in dataBase.nodeLists():
+        for nodes in dataBase.nodeLists:
             assert nodes1.numGhostNodes > 0
         for fieldlist in self.scalarfieldlists:
             bc.applyFieldListGhostBoundary(fieldlist)
@@ -119,7 +119,7 @@ class TestIndexFieldLists(unittest.TestCase):
         bc = ReflectingBoundary2d(Plane2d(Vector2d(0.0, 0.0),
                                           Vector2d(0.0, 1.0)))
         bc.setGhostNodes(dataBase)
-        for nodes in dataBase.nodeLists():
+        for nodes in dataBase.nodeLists:
             assert nodes1.numGhostNodes > 0
         for fieldlist in self.vectorfieldlists:
             bc.applyFieldListGhostBoundary(fieldlist)

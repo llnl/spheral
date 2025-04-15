@@ -346,7 +346,7 @@ dt(const DataBase<Dimension>& dataBase,
     {
       auto minDt_local = minDt;
 #pragma omp for
-      for (auto k = 0; k < ni; ++k) {
+      for (auto k = 0u; k < ni; ++k) {
         const auto i = connectivityMap.ithNode(nodeListi, k);
 
         // If this node is masked, don't worry about it.

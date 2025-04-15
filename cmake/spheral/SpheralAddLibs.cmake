@@ -213,6 +213,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${SPHERAL_ROOT_DIR}/src/PYB11/Strength:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/ArtificialConduction:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/KernelIntegrator:"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Solvers:"
       "${CMAKE_BINARY_DIR}/src/SimulationControl"
       )
 

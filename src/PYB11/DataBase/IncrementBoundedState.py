@@ -1,10 +1,10 @@
 from PYB11Generator import *
-from FieldUpdatePolicy import *
+from IncrementState import *
 
 @PYB11module("SpheralDataBase")
 @PYB11holder("std::shared_ptr")
 @PYB11template("Dimension", "ValueType")
-class IncrementBoundedState(FieldUpdatePolicy):
+class IncrementBoundedState(IncrementState):
 
     PYB11typedefs = """
     using KeyType = typename IncrementBoundedState<%(Dimension)s, %(ValueType)s>::KeyType;
@@ -45,8 +45,35 @@ class IncrementBoundedState(FieldUpdatePolicy):
         "Prefix for key of derivatives"
         return "const std::string"
 
+    @PYB11virtual
+    @PYB11const
+    def serializeData(self,
+                      buf = "std::vector<double>&",
+                      key = "const KeyType&",
+                      state = "const State<%(Dimension)s>&"):
+        "Serialize the data in the Field to a buffer"
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
+    def deserializeData(self,
+                        buf = "const std::vector<double>&",
+                        key = "const KeyType&",
+                        state = "const State<%(Dimension)s>&",
+                        offset = "const size_t"):
+        "Deserialize the data in the Field from a buffer"
+        return "size_t"
+
+    @PYB11virtual
+    @PYB11const
+    def serializeDerivatives(self,
+                             buf = "std::vector<double>&",
+                             key = "const KeyType&",
+                             state = "const StateDerivatives<%(Dimension)s>&"):
+        "Serialize the data in the derivatives to a buffer"
+        return "void"
+
     #...........................................................................
     # Properties
     minValue = PYB11property(doc="Minimum bound for Field values")
     maxValue = PYB11property(doc="Maximum bound for Field values")
-    wildCardDerivs = PYB11property("bool", getter="wildCardDerivs", setter="wildCardDerivs")

@@ -65,7 +65,6 @@ commandLine(# materials properties
             fsiEpsDiffuseCoeff = 0.1,           # diffusion coeff for specific thermal energy
             fsiXSPHCoeff = 0.0,                 # ramps xsph up
             fsiInterfaceMethod = HLLCInterface, # (HLLCInterface, ModulusInterface, NoInterface)
-            fsiPlaneStrain = True,
             
             # CRK parameters
             correctionOrder = LinearOrder,
@@ -289,8 +288,7 @@ elif fsisph:
                    compatibleEnergyEvolution = compatibleEnergy,
                    evolveTotalEnergy = evolveTotalEnergy,
                    linearCorrectGradients = correctVelocityGradient,
-                   HUpdate = HUpdate,
-                   planeStrain=fsiPlaneStrain)
+                   HUpdate = HUpdate)
 else:
     hydro = SPH(dataBase = db,
                 W = WT,
@@ -451,7 +449,7 @@ Ss = db.solidDeviatoricStress
 Sxx = db.newSolidScalarFieldList(0.0, "deviatoricStress")
 Y = hydro.yieldStrength
 mu = hydro.shearModulus
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 numNodeLists = db.numNodeLists
 for nodeListi in range(numNodeLists):
     

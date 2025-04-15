@@ -78,7 +78,6 @@ commandLine(
     fsiEpsDiffuseCoeff = 0.0,                # explicit diiffusion of the thermal energy
     fsiXSPHCoeff = 0.00,                     # fsi uses multiplier for XSPH instead of binary switch
     fsiInterfaceMethod = ModulusInterface,   # (HLLCInterface, ModulusInterface)
-    planeStrain = True,                    
 
     # CRKSPH parameters
     correctionOrder = LinearOrder,   # for CRKSPH higher order field approximations
@@ -317,7 +316,7 @@ for n in nodeListSet:
     db.appendNodeList(n)
     print(n.name)
 del n
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 
 output("db")
 output("db.nodeLists")
@@ -352,8 +351,7 @@ elif fsisph:
                    linearCorrectGradients = correctVelocityGradient,
                    compatibleEnergyEvolution = compatibleEnergyEvolution,  
                    evolveTotalEnergy = totalEnergyEvolution,         
-                   HUpdate=HEvolution,
-                   planeStrain=planeStrain)
+                   HUpdate=HEvolution)
 
 else:
     hydro = SPH(dataBase = db,

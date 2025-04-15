@@ -6,7 +6,7 @@ packages:
     compiler: [gcc, clang]
     providers:
       blas: [openblas]
-      lapack: [netlib-lapack]
+      lapack: [openblas]
       mpi: [mvapich2]
       pkgconfig: [pkg-config]
       pil: [py-pillow]

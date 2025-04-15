@@ -20,6 +20,8 @@ PYB11includes += ['"SmoothingScale/SmoothingScaleBase.hh"',
                   '"SmoothingScale/ASPHSmoothingScaleUserFilter.hh"',
                   '"SmoothingScale/ASPHRadialFunctor.hh"',
                   '"SmoothingScale/polySecondMoment.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"Kernel/TableKernel.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
                   '"FileIO/FileIO.hh"']

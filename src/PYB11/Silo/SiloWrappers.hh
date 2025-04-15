@@ -469,7 +469,10 @@ DBCreate_wrap(std::string pathName,
               int target,
               std::string fileInfo,
               int fileType) {
-  return DBCreate(pathName.c_str(), mode, target, fileInfo.c_str(), fileType);
+  auto* result  = DBCreate(pathName.c_str(), mode, target, fileInfo.c_str(), fileType);
+  VERIFY2(result != nullptr, "Error creating file " << pathName);
+  return result;
+  // return DBCreate(pathName.c_str(), mode, target, fileInfo.c_str(), fileType);
 }
 
 //------------------------------------------------------------------------------

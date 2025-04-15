@@ -20,6 +20,7 @@ class CRKSPH(CRKSPHBase):
     using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
     using FacetedVolume = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
     using PairAccelerationsType = typename CRKSPH<%(Dimension)s>::PairAccelerationsType;
 """
 

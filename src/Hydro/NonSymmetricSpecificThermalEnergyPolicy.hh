@@ -37,7 +37,7 @@ public:
 
   // Constructors, destructor.
   NonSymmetricSpecificThermalEnergyPolicy(const DataBase<Dimension>& db);
-  virtual ~NonSymmetricSpecificThermalEnergyPolicy();
+  virtual ~NonSymmetricSpecificThermalEnergyPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -59,12 +59,16 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Don't advance this policy implicitly
+  virtual bool independent() const override { return false; }
+
+  // Forbidden methods
+  NonSymmetricSpecificThermalEnergyPolicy(const NonSymmetricSpecificThermalEnergyPolicy& rhs) = delete;
+  NonSymmetricSpecificThermalEnergyPolicy& operator=(const NonSymmetricSpecificThermalEnergyPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   const DataBase<Dimension>* mDataBasePtr;
-
-  NonSymmetricSpecificThermalEnergyPolicy(const NonSymmetricSpecificThermalEnergyPolicy& rhs);
-  NonSymmetricSpecificThermalEnergyPolicy& operator=(const NonSymmetricSpecificThermalEnergyPolicy& rhs);
 };
 
 }

@@ -1,3 +1,28 @@
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+    * The tpl-manager.py is completely overhauled to include the following:
+      * Utilize the Spheral Spack environments.
+      * Handle some build cache functionality.
+      * Do things Uberenv did like download and install Spack itself.
+
+  * Build changes / improvements:
+    * Native Spack environments are now being used.
+      * Uberenv is no longer used.
+      * Adds logic to simplify building on non-LC systems; tries to find existing installed compilers and packages.
+      * Adds spack.yaml environment files for current LC systems and a dev_pkg environment, which is used for creating the build cache.
+      * Local Spack packages for TPLs are removed or simplified when possible since the builtin Spack packages are no longer replaced.
+      * The upstream Spack instance is no longer used when creating the build cache.
+      * The package.yaml for Spheral is improved to allow full Spheral installation through Spack.
+      * Centralizes things like upstream location, compiler types and versions, and specs in the environments and configs.
+
+  * Bug Fixes / improvements:
+    * ATS submodule is updated to fix bug with latest Flux update on LC systems.
+
 Version v2025.01.0 -- Release date 2025-01-31
 ==============================================
   * Important Notes:

@@ -297,7 +297,7 @@ def dumpPhysicsState(stateThingy,
         # zerothMoment = eval("ScalarFieldList%id(CopyFields)" % dataBase.nDim)
         # firstMoment = eval("VectorFieldList%id(CopyFields)" % dataBase.nDim)
         # W = eval("TableKernel%id(BSplineKernel%id(), 1000)" % (dataBase.nDim, dataBase.nDim))
-        # zerothAndFirstNodalMoments(dataBase.nodeLists(), W, True, zerothMoment, firstMoment)
+        # zerothAndFirstNodalMoments(dataBase.nodeLists, W, True, zerothMoment, firstMoment)
         # fieldLists += [zerothMoment, firstMoment]
 
     # Add a domain decomposition tag (if we're parallel).

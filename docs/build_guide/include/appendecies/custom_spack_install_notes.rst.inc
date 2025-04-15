@@ -5,5 +5,3 @@ Building Spheral TPLs with your own Spack installation will require deeper knowl
 
  - Point your spack instances `repo <https://spack.readthedocs.io/en/latest/repositories.html?highlight=repo#spack-repo>`_ at the ``scripts/spack/packages/`` dir. This contains all of our changes to spack packages that have not yet made it to upstream Spack.
  - You will want to model your ``compiler.yaml`` and ``packages.yaml`` files off of those found in ``scripts/spack/configs/`` (`Spack Configuration Files <https://spack.readthedocs.io/en/latest/configuration.html#configuration>`_).
-   
-Further notes on setting up Spack and how it is used with the Spheral dev-tools scripts can be found in `Development Documentation: Spheral Spack / Uberenv <Development_Documentation.html#spheral-spack-uberenv>`_.

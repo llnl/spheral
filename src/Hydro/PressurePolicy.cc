@@ -25,19 +25,11 @@ namespace Spheral {
 template<typename Dimension>
 PressurePolicy<Dimension>::
 PressurePolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha,
-                                SolidFieldNames::tensorDamage}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PressurePolicy<Dimension>::
-~PressurePolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha,
+                                        SolidFieldNames::tensorDamage}) {
 }
 
 //------------------------------------------------------------------------------

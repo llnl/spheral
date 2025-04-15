@@ -34,17 +34,17 @@ public:
 
   // Constructors.
   SolidCRKSPHRZ(DataBase<Dimension>& dataBase,
-                         ArtificialViscosityHandle<Dimension>& Q,
-                         const RKOrder order,
-                         const double cfl,
-                         const bool useVelocityMagnitudeForDt,
-                         const bool compatibleEnergyEvolution,
-                         const bool evolveTotalEnergy,
-                         const bool XSPH,
-                         const MassDensityType densityUpdate,
-                         const double epsTensile,
-                         const double nTensile,
-                         const bool damageRelieveRubble);
+                ArtificialViscosityHandle<Dimension>& Q,
+                const RKOrder order,
+                const double cfl,
+                const bool useVelocityMagnitudeForDt,
+                const bool compatibleEnergyEvolution,
+                const bool evolveTotalEnergy,
+                const bool XSPH,
+                const MassDensityType densityUpdate,
+                const double epsTensile,
+                const double nTensile,
+                const bool damageRelieveRubble);
 
   // No default constructor, copying, or assignment.
   SolidCRKSPHRZ() = delete;

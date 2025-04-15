@@ -63,18 +63,10 @@ computeJ2(const Dim<1>::SymTensor& S) {
 template<typename Dimension>
 PlasticStrainPolicy<Dimension>::
 PlasticStrainPolicy():
-  FieldUpdatePolicy<Dimension>({SolidFieldNames::deviatoricStress,
-                                HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                HydroFieldNames::pressure}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PlasticStrainPolicy<Dimension>::
-~PlasticStrainPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({SolidFieldNames::deviatoricStress,
+                                        HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        HydroFieldNames::pressure}) {
 }
 
 //------------------------------------------------------------------------------

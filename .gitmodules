@@ -2,10 +2,6 @@
 [submodule "blt"]
 	path = cmake/blt
 	url = https://github.com/llnl/blt
-[submodule "scripts/devtools/uberenv"]
-	path = scripts/devtools/uberenv
-	url = https://github.com/llnl/uberenv
-	branch = origin/master
 [submodule "extern/PYB11Generator"]
 	path = extern/PYB11Generator
 	url = https://github.com/LLNL/PYB11Generator

@@ -122,7 +122,7 @@ output('ybc.applyScalarFieldListGhostBoundary(fluidWeight)')
 import Gnuplot
 xans = array([0.0]*n1)
 i = 0
-for nodeList in db.nodeLists():
+for nodeList in db.nodeLists:
     for r in nodeList.positions()[:nodeList.numInternalNodes]:
         xans[i] = r.magnitude()
         i = i + 1

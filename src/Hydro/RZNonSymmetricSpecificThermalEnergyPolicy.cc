@@ -60,13 +60,6 @@ RZNonSymmetricSpecificThermalEnergyPolicy(const DataBase<Dim<2>>& dataBase):
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-RZNonSymmetricSpecificThermalEnergyPolicy::
-~RZNonSymmetricSpecificThermalEnergyPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 void

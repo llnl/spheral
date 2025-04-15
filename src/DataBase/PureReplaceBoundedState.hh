@@ -21,11 +21,11 @@ namespace Spheral {
 template<typename Dimension> class StateDerivatives;
 
 template<typename Dimension, typename ValueType, typename BoundValueType=ValueType>
-class PureReplaceBoundedState: public FieldUpdatePolicy<Dimension> {
+class PureReplaceBoundedState: public FieldUpdatePolicy<Dimension, ValueType> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, ValueType>::KeyType;
 
   // Constructors, destructor.
   PureReplaceBoundedState(const BoundValueType minValue = BoundValueType(std::numeric_limits<double>::lowest()),
@@ -51,6 +51,9 @@ public:
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
   static const std::string prefix() { return "new "; }
+
+  // Don't use as evolved state for implicit integration
+  virtual bool independent() const override { return false; }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//

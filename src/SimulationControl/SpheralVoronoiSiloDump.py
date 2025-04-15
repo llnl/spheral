@@ -439,13 +439,13 @@ def dumpPhysicsState(stateThingy,
         boundaries = eval("vector_of_Boundary%id()" % dataBase.nDim)
 
     # Make sure the ghost nodes are set for the Voronoi tessellation work
-    for nodes in dataBase.nodeLists():
+    for nodes in dataBase.nodeLists:
         nodes.numGhostNodes = 0
         nodes.neighbor().updateNodes()
     for bc in boundaries:
         bc.setAllGhostNodes(dataBase)
         bc.finalizeGhostBoundary()
-        for nodes in dataBase.nodeLists():
+        for nodes in dataBase.nodeLists:
             nodes.neighbor().updateNodes()
     dataBase.updateConnectivityMap(False, False, False)
 
@@ -506,7 +506,7 @@ def dumpPhysicsState(stateThingy,
         zerothMoment = eval("ScalarFieldList%id(CopyFields)" % dataBase.nDim)
         firstMoment = eval("VectorFieldList%id(CopyFields)" % dataBase.nDim)
         W = eval("TableKernel%id(BSplineKernel%id(), 1000)" % (dataBase.nDim, dataBase.nDim))
-        zerothAndFirstNodalMoments(dataBase.nodeLists(), W, True, zerothMoment, firstMoment)
+        zerothAndFirstNodalMoments(dataBase.nodeLists, W, True, zerothMoment, firstMoment)
         fieldLists += [zerothMoment, firstMoment]
 
     # Add a domain decomposition tag (if we're parallel).

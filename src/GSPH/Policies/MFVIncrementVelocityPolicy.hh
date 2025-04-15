@@ -20,18 +20,18 @@
 namespace Spheral {
 
 template<typename Dimension>
-class MFVIncrementVelocityPolicy: public FieldUpdatePolicy<Dimension> {
+class MFVIncrementVelocityPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Vector> {
 public:
 
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Vector>::KeyType;
 
   // Constructors, destructor.
   MFVIncrementVelocityPolicy(std::initializer_list<std::string> depends={});
-   ~MFVIncrementVelocityPolicy();
+   ~MFVIncrementVelocityPolicy() = default;
   
   // Overload the methods describing how to update FieldLists.
   virtual void update(const KeyType& key,
@@ -46,20 +46,11 @@ public:
 
   static const std::string prefix() { return "delta "; }
   
-private:
-
-  //--------------------------- Private Interface ---------------------------//
-  MFVIncrementVelocityPolicy(const MFVIncrementVelocityPolicy& rhs);
-  MFVIncrementVelocityPolicy& operator=(const MFVIncrementVelocityPolicy& rhs);
+  // Forbidden methods
+  MFVIncrementVelocityPolicy(const MFVIncrementVelocityPolicy& rhs) = delete;
+  MFVIncrementVelocityPolicy& operator=(const MFVIncrementVelocityPolicy& rhs) = delete;
 };
 
-}
-
-#else
-
-// Forward declaration.
-namespace Spheral {
-  template<typename Dimension> class MFVIncrementVelocityPolicy;
 }
 
 #endif

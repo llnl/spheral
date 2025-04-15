@@ -174,4 +174,23 @@ template<> inline void FileIO::read<Dim<3>::Tensor>          (std::vector<Dim<3>
 template<> inline void FileIO::read<Dim<3>::SymTensor>       (std::vector<Dim<3>::SymTensor>& x,       const std::string path) const { this->readVector(x, path); }
 template<> inline void FileIO::read<Dim<3>::ThirdRankTensor> (std::vector<Dim<3>::ThirdRankTensor>& x, const std::string path) const { this->readVector(x, path); }
 
+//------------------------------------------------------------------------------
+// Safe method to try and read from a path if it exists.
+// Returns: 0 => successful
+//          1 => path does not exist
+//          2 => unable to read value
+//------------------------------------------------------------------------------
+template<typename T>
+inline
+int
+FileIO::readIfAvailable(T& value, const std::string path) const {
+  if (not this->pathExists(path)) return 1;
+  try {
+    this->read(value, path);
+  } catch(...) {
+    return 2;
+  }
+  return 0;
+}
+
 }

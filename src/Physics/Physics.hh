@@ -10,6 +10,7 @@
 #define Physics_HH
 
 #include "RK/RKCorrectionParams.hh"
+#include "Utilities/DBC.hh"
 
 #include <vector>
 #include <set>
@@ -34,6 +35,7 @@ public:
   using BoundaryIterator = typename std::vector<Boundary<Dimension>*>::iterator;
   using ConstBoundaryIterator = typename std::vector<Boundary<Dimension>*>::const_iterator;
   using TimeStepType = typename std::pair<double, std::string>;
+  using ResidualType = typename std::pair<double, std::string>;
 
   // Constructors.
   Physics();
@@ -71,6 +73,21 @@ public:
   virtual std::string label() const = 0;
 
   //******************************************************************************//
+  // Optionally override the dt choice when advancing implicitly in time
+  virtual TimeStepType dtImplicit(const DataBase<Dimension>& dataBase, 
+                                  const State<Dimension>& state,
+                                  const StateDerivatives<Dimension>& derivs,
+                                  const Scalar currentTime) const { return this->dt(dataBase, state, derivs, currentTime); }
+
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  // For now we default to raise an error so Physics packages that are not ready for implicit advancement don't
+  // accidentally go along for the ride.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const { VERIFY2(false, this->label() + " does not currently support implicit time advancement");
+                                                             return std::make_pair<double, std::string>(0.0, "Undefined"); }
+
   // Methods for handling boundary conditions.
   // Add a Boundary condition.
   void appendBoundary(Boundary<Dimension>& boundary);  // To end of boundary list
@@ -81,14 +98,14 @@ public:
   bool haveBoundary(const Boundary<Dimension>& boundary) const;
 
   // Provide standard iterator methods over the boundary conditions list.
-  BoundaryIterator boundaryBegin();
-  BoundaryIterator boundaryEnd();
+  BoundaryIterator boundaryBegin()                                        { return mBoundaryConditions.begin(); }
+  BoundaryIterator boundaryEnd()                                          { return mBoundaryConditions.end(); }
 
-  ConstBoundaryIterator boundaryBegin() const;
-  ConstBoundaryIterator boundaryEnd() const;
+  ConstBoundaryIterator boundaryBegin()                             const { return mBoundaryConditions.begin(); }
+  ConstBoundaryIterator boundaryEnd()                               const { return mBoundaryConditions.end(); }
 
   // Access the list of boundary conditions.
-  const std::vector<Boundary<Dimension>*>& boundaryConditions() const;
+  const std::vector<Boundary<Dimension>*>& boundaryConditions()     const { return mBoundaryConditions; }
 
   // Apply boundary conditions to the physics specific fields.
   virtual void applyGhostBoundaries(State<Dimension>& state,
@@ -217,7 +234,5 @@ private:
 };
 
 }
-
-#include "PhysicsInline.hh"
 
 #endif

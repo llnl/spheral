@@ -50,14 +50,6 @@ SumVoronoiMassDensityPolicy(const TableKernel<Dimension>& W,
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SumVoronoiMassDensityPolicy<Dimension>::
-~SumVoronoiMassDensityPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 template<typename Dimension>

@@ -10,8 +10,6 @@
 .on_toss_4_x86:
   variables:
     ARCH: 'toss_4_x86_64_ib'
-    GCC_VERSION: '10.3.1'
-    CLANG_VERSION: '14.0.6'
     SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
     RUN_CMD: 'srun'
   extends: [.sys_config]
@@ -19,7 +17,6 @@
 .on_toss_4_x86_cray:
   variables:
     ARCH: 'toss_4_x86_64_ib_cray'
-    ROCMCC_VERSION: '6.2.0'
     SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
     RUN_CMD: 'flux run'
   extends: [.sys_config]

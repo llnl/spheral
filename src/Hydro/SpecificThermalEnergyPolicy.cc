@@ -45,14 +45,6 @@ SpecificThermalEnergyPolicy(const DataBase<Dimension>& dataBase):
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SpecificThermalEnergyPolicy<Dimension>::
-~SpecificThermalEnergyPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 template<typename Dimension>

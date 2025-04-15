@@ -213,9 +213,9 @@ computeOverlapIndices(const DataBase<Dimension>& dataBase) {
   VERIFY(!requireGhostConnectivity || mGhostIndexingInitialized);
   
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Store the flattened overlap connectivity
   mNumOverlapNeighbors.resize(mNumConnectivityNodes);
@@ -321,9 +321,9 @@ computeGlobalIndices(const DataBase<Dimension>& dataBase,
   const auto numGlobalNodesDB = dataBase.globalNumFluidInternalNodes();
 
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Get global indices manually
   int globalScan = distScan(mNumInternalLocalNodes, SPHERAL_OP_SUM);
@@ -332,7 +332,7 @@ computeGlobalIndices(const DataBase<Dimension>& dataBase,
   mLastGlobalIndex = globalScan - 1;
   mNumGlobalNodes = allReduce(mNumInternalLocalNodes, SPHERAL_OP_SUM);
   VERIFY(mNumGlobalNodes >= mNumInternalLocalNodes);
-  VERIFY(mNumGlobalNodes == numGlobalNodesDB);
+  VERIFY(mNumGlobalNodes == int(numGlobalNodesDB));
   // std::cout << Process::getRank() << "\t" << mNumInternalLocalNodes << "\t" << mNumGlobalNodes << "\t" << mFirstGlobalIndex << "\t" << mLastGlobalIndex << std::endl;
   
   FieldList<Dimension, int> globalNodeIndices = dataBase.newFluidFieldList(0, "global node IDs");
@@ -413,9 +413,9 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
 #endif
   
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
 
   // Since we are doing a gather operation, we need to make sure to clear out old data first
   mSurfaceNormal.resize(mNumLocalNodes);
@@ -551,9 +551,9 @@ computeBoundaryInformation(const DataBase<Dimension>& dataBase,
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
 
   // Make sure the sizes haven't changed since the indexing was initialized
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Initialize the arrays
   mConstantBoundaryNodes.clear();

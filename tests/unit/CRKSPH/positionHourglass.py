@@ -6,7 +6,7 @@ def positionHourglass(db, WT, boundaries,
 
     position = db.fluidPosition
     
-    nodeLists = db.fluidNodeLists()
+    nodeLists = db.fluidNodeLists
     for nodes in nodeLists:
         nodes.numGhostNodes = 0
         nodes.neighbor().updateNodes()

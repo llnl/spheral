@@ -513,7 +513,7 @@ globalConnectivity(vector<Boundary<Dimension>*>& boundaries) const {
              ++jItr) result[gid].push_back(globalIDs(nodeListj, *jItr));
 
       }
-      ENSURE((int)result[gid].size() == numNeighborsForNode(nodeListPtr, i));
+      ENSURE(result[gid].size() == numNeighborsForNode(nodeListPtr, i));
     }
   }
 
@@ -547,16 +547,16 @@ valid() const {
                                   domainDecompIndependent);
 
   // Check the offsets.
-  const int numNodeLists = mNodeLists.size();
-  if ((int)mOffsets.size() != numNodeLists) {
+  const auto numNodeLists = mNodeLists.size();
+  if (mOffsets.size() != numNodeLists) {
     cerr << "ConnectivityMap::valid: Failed mOffsets.size() == numNodeLists" << endl;
     return false;
   }
   {
-    const int numNodes = (ghostConnectivity ? 
-                          mNodeLists.back()->numNodes() : 
-                          mNodeLists.back()->numInternalNodes());
-    if ((int)mConnectivity.size() != mOffsets.back() + numNodes) {
+    const auto numNodes = (ghostConnectivity ? 
+                           mNodeLists.back()->numNodes() : 
+                           mNodeLists.back()->numInternalNodes());
+    if (mConnectivity.size() != mOffsets.back() + numNodes) {
       cerr << "ConnectivityMap::valid: Failed offset bounding: " << mConnectivity.size() << " != " << mOffsets.back() << " + " << numNodes << endl;
     }
   }
@@ -581,16 +581,16 @@ valid() const {
   }
 
   // Iterate over each NodeList entered.
-  for (auto nodeListIDi = 0; nodeListIDi != numNodeLists; ++nodeListIDi) {
+  for (auto nodeListIDi = 0u; nodeListIDi < numNodeLists; ++nodeListIDi) {
 
     // Are all internal nodes represented?
     const NodeList<Dimension>* nodeListPtri = mNodeLists[nodeListIDi];
-    const int numNodes = (ghostConnectivity ?
-                          nodeListPtri->numNodes() : 
-                          nodeListPtri->numInternalNodes());
+    const auto numNodes = (ghostConnectivity ?
+                           nodeListPtri->numNodes() : 
+                           nodeListPtri->numInternalNodes());
     //const int firstGhostNodei = nodeListPtri->firstGhostNode();
-    if ((((int)nodeListIDi < numNodeLists - 1) and ((int)(mOffsets[nodeListIDi + 1] - mOffsets[nodeListIDi]) != numNodes)) or
-        (((int)nodeListIDi == numNodeLists - 1) and ((int)(mConnectivity.size() - mOffsets[nodeListIDi]) != numNodes))) {
+    if (((nodeListIDi < numNodeLists - 1u) and ((mOffsets[nodeListIDi + 1] - mOffsets[nodeListIDi]) != (int)numNodes)) or
+        ((nodeListIDi == numNodeLists - 1u) and ((mConnectivity.size() - (size_t)mOffsets[nodeListIDi]) != numNodes))) {
       cerr << "ConnectivityMap::valid: Failed test that all nodes set for NodeList "
            << mNodeLists[nodeListIDi]->name()
            << endl;
@@ -599,28 +599,28 @@ valid() const {
 
     // Iterate over the nodes for this NodeList.
     const int ioff = mOffsets[nodeListIDi];
-    for (int i = 0; i != numNodes; ++i) {
+    for (auto i = 0u; i < numNodes; ++i) {
 
       // The set of neighbors for this node.  This has to be sized as the number of
       // NodeLists.
       const vector< vector<int> >& allNeighborsForNode = mConnectivity[ioff + i];
-      if ((int)allNeighborsForNode.size() != numNodeLists) {
+      if (allNeighborsForNode.size() != numNodeLists) {
         cerr << "ConnectivityMap::valid: Failed allNeighborsForNode.size() == numNodeLists" << endl;
         return false;
       }
 
       // Iterate over the sets of NodeList neighbors for this node.
-      for (int nodeListIDj = 0; nodeListIDj != numNodeLists; ++nodeListIDj) {
+      for (auto nodeListIDj = 0u; nodeListIDj < numNodeLists; ++nodeListIDj) {
         const NodeList<Dimension>* nodeListPtrj = mNodeLists[nodeListIDj];
         //const int firstGhostNodej = nodeListPtrj->firstGhostNode();
         const vector<int>& neighbors = allNeighborsForNode[nodeListIDj];
 
         // We require that the node IDs be sorted, unique, and of course in a valid range.
         if (neighbors.size() > 0) {
-          const int minNeighbor = *min_element(neighbors.begin(), neighbors.end());
-          const int maxNeighbor = *max_element(neighbors.begin(), neighbors.end());
+          const auto minNeighbor = *min_element(neighbors.begin(), neighbors.end());
+          const auto maxNeighbor = *max_element(neighbors.begin(), neighbors.end());
 
-          if (minNeighbor < 0 or maxNeighbor >= (int)nodeListPtrj->numNodes()) {
+          if (minNeighbor < 0 or (size_t)maxNeighbor >= nodeListPtrj->numNodes()) {
             cerr << "ConnectivityMap::valid: Failed test that neighbors must be valid IDs: " << minNeighbor << " " << maxNeighbor << " " << nodeListPtrj->numNodes() << endl;
             return false;
           }
@@ -661,23 +661,21 @@ valid() const {
         }
 
         // Check that the connectivity is symmetric.
-        for (vector<int>::const_iterator jItr = neighbors.begin();
-             jItr != neighbors.end();
-             ++jItr) {
-          if (ghostConnectivity or (int)(*jItr < (int)nodeListPtrj->numInternalNodes())) {
-            const vector< vector<int> >& otherNeighbors = connectivityForNode(nodeListPtrj, *jItr);
+        for (auto j: neighbors) {
+          if (ghostConnectivity or ((size_t)j < nodeListPtrj->numInternalNodes())) {
+            const vector< vector<int> >& otherNeighbors = connectivityForNode(nodeListPtrj, j);
             if (find(otherNeighbors[nodeListIDi].begin(),
                      otherNeighbors[nodeListIDi].end(),
                      i) == otherNeighbors[nodeListIDi].end()) {
               cerr << "ConnectivityMap::valid: Failed test that neighbors must be symmetric: " 
-                   << i << " <> " << *jItr 
+                   << i << " <> " << j 
                    << "  numneigbors(i)=" << neighbors.size() 
                    << "  numneigbors(j)=" << otherNeighbors[nodeListIDi].size() 
                    << endl;
               cerr << "   " << i << " : ";
               std::copy(neighbors.begin(), neighbors.end(), std::ostream_iterator<int>(std::cerr, " "));
               cerr << endl
-                   << "   " << *jItr << " : ";
+                   << "   " << j << " : ";
               std::copy(otherNeighbors[nodeListIDi].begin(), otherNeighbors[nodeListIDi].end(), std::ostream_iterator<int>(std::cerr, " "));
               cerr << endl;
               return false;
@@ -707,10 +705,10 @@ valid() const {
     cerr << "ConnectivityMap::valid: mNodeTraversalIndices wrong size!" << endl;
     return false;
   }
-  for (int nodeList = 0; nodeList != numNodeLists; ++nodeList) {
-    const int numExpected = domainDecompIndependent ? mNodeLists[nodeList]->numNodes() : mNodeLists[nodeList]->numInternalNodes();
-    bool ok = (int)mNodeTraversalIndices[nodeList].size() == numExpected;
-    for (int i = 0; i != numExpected; ++i) {
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    const auto numExpected = domainDecompIndependent ? mNodeLists[nodeList]->numNodes() : mNodeLists[nodeList]->numInternalNodes();
+    bool ok = mNodeTraversalIndices[nodeList].size() == numExpected;
+    for (auto i = 0u; i < numExpected; ++i) {
       ok = ok and (count(mNodeTraversalIndices[nodeList].begin(),
                          mNodeTraversalIndices[nodeList].end(),
                          i) == 1);
@@ -1144,11 +1142,11 @@ computeConnectivity() {
   // Post conditions.
   BEGIN_CONTRACT_SCOPE
   // Make sure that the correct number of nodes have been completed.
-  for (auto iNodeList = 0; iNodeList != (int)numNodeLists; ++iNodeList) {
+  for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
     const auto n = (ghostConnectivity ? 
                     mNodeLists[iNodeList]->numNodes() :
                     mNodeLists[iNodeList]->numInternalNodes());
-    for (auto i = 0; i != (int)n; ++i) {
+    for (auto i = 0u; i < n; ++i) {
       ENSURE2(flagNodeDone(iNodeList, i) == 1,
               "Missed connnectivity for (" << iNodeList << " " << i << ")");
     }

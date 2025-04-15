@@ -46,6 +46,8 @@ PYB11includes += ['"SolidMaterial/SolidEquationOfState.hh"',
                   '"SolidMaterial/CollinsStrength.hh"',
                   '"SolidMaterial/iSALEROCKStrength.hh"',
                   '"SolidMaterial/PhysicsEvolvingMaterialLibrary.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

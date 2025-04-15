@@ -110,7 +110,7 @@ commandLine(nx1 = 400,
             steps = None,
             goalTime = 0.15,
             dt = 1e-6,
-            dtMin = 1.0e-6,
+            dtMin = 1.0e-8,
             dtMax = 0.1,
             dtGrowth = 2.0,
             rigorousBoundaries = False,
@@ -125,6 +125,12 @@ commandLine(nx1 = 400,
             correctVelocityGradient = True,
             gradhCorrection = True,
             linearConsistent = False,
+
+            ftol = None,
+            convergenceTolerance = None,
+            maxIterations = None,
+            maxAllowedDtMultiplier = None,
+            beta = None,
 
             useRefinement = False,
 
@@ -517,6 +523,25 @@ output("integrator.lastDt")
 output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.rigorousBoundaries")
+
+# Special stuff for implicit integrators
+if isinstance(integrator, ImplicitIntegrator):
+    if beta:
+        integrator.beta = beta
+    if convergenceTolerance:
+        integrator.convergenceTolerance = convergenceTolerance
+    if maxIterations:
+        integrator.maxIterations = maxIterations
+    if maxAllowedDtMultiplier:
+        integrator.maxAllowedDtMultiplier = maxAllowedDtMultiplier
+    output("integrator.beta")
+    output("integrator.convergenceTolerance")
+    output("integrator.maxIterations")
+    output("integrator.maxAllowedDtMultiplier")
+if isinstance(integrator, BackwardEulerIntegrator):
+    if ftol:
+        integrator.ftol = ftol
+    output("integrator.ftol")
 
 #-------------------------------------------------------------------------------
 # Make the problem controller.

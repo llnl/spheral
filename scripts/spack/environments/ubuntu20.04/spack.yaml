@@ -1,0 +1,14 @@
+spack:
+  include:
+    - ../../configs/ubuntu20.4/packages.yaml
+    - ../../configs/ubuntu20.4/compilers.yaml
+    - ../../configs/config.yaml
+  view: false
+  concretizer:
+    unify: false
+  repos:
+    - ../../
+  develop:
+    spheral:
+      path: ../../../../
+      spec: spheral@=develop

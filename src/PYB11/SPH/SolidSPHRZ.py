@@ -18,6 +18,7 @@ class SolidSPHRZ(SolidSPH):
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename SolidSPHRZ::PairAccelerationsType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",

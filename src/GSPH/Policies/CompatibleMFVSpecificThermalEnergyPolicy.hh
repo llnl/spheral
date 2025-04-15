@@ -23,8 +23,7 @@ template<typename Dimension, typename DataType> class FieldList;
 template<typename Dimension> class DataBase;
 
 template<typename Dimension>
-class CompatibleMFVSpecificThermalEnergyPolicy: 
-    public UpdatePolicyBase<Dimension> {
+class CompatibleMFVSpecificThermalEnergyPolicy: public UpdatePolicyBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -65,13 +64,6 @@ private:
   const DataBase<Dimension>* mDataBasePtr;
 };
 
-}
-
-#else
-
-// Forward declaration.
-namespace Spheral {
-  template<typename Dimension> class CompatibleMFVSpecificThermalEnergyPolicy;
 }
 
 #endif

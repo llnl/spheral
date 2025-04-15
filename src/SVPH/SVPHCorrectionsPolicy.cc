@@ -31,14 +31,6 @@ SVPHCorrectionsPolicy(const DataBase<Dimension>& dataBase,
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SVPHCorrectionsPolicy<Dimension>::
-~SVPHCorrectionsPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the SVPHCorrections.
 //------------------------------------------------------------------------------
 template<typename Dimension>

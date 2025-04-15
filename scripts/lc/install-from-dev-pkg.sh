@@ -1,13 +1,13 @@
+set -Eeuo pipefail
 trap 'echo "# $BASH_COMMAND"' DEBUG
 
-SPACK_PKG_NAME=${SPACK_PKG_NAME:-'spheral'}
 SPACK_URL=${SPACK_URL:-'https://github.com/spack/spack'}
 BUILD_ALLOC=${BUILD_ALLOC}
 SCRIPT_DIR=${SCRIPT_DIR:-'scripts'}
 SPHERAL_PIP_CACHE_DIR=${SPHERAL_PIP_CACHE_DIR:-~/.cache/spheral_pip}
 
-if [[ -z "${SPEC}" ]]; then
-  echo "SPEC var must be set."
+if [[ -z "${DEV_PKG_SPEC}" ]]; then
+  echo "DEV_PKG_SPEC var must be set."
   exit 1
 fi
 
@@ -16,32 +16,33 @@ if [[ -z "${INSTALL_DIR}" ]]; then
   exit 1
 fi
 
-echo $SPACK_PKG_NAME
-echo $SPEC
+echo $DEV_PKG_SPEC
 echo $SPACK_URL
 echo $INSTALL_DIR
 echo $SCRIPT_DIR
 echo $BUILD_ALLOC
+echo $PWD
 
-rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
-
 cp -a $PWD/resources/pip_cache/. $SPHERAL_PIP_CACHE_DIR
 
-./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --spec=none --no-upstream --spheral-spack-dir $INSTALL_DIR/spheral-spack-tpls
+./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls
 
 source $INSTALL_DIR/spheral-spack-tpls/spack/share/spack/setup-env.sh
-spack bootstrap add --trust local-sources $PWD/resources/metadata/sources
-spack bootstrap add --trust local-binaries $PWD/resources/metadata/binaries
-spack mirror rm spheral-mirror
-spack mirror rm spheral-cache
+spack env activate ./scripts/spack/environments/dev_pkg
+spack mirror remove spheral-mirror || true
+spack mirror remove spheral-cache || true
+spack bootstrap remove spheral-sources || true
+spack bootstrap remove spheral-binaries || true
+spack bootstrap add --trust spheral-sources $PWD/resources/metadata/sources
+spack bootstrap add --trust spheral-binaries $PWD/resources/metadata/binaries
 spack mirror add --unsigned spheral-mirror $PWD/resources/mirror
 spack mirror add --unsigned spheral-cache $PWD/resources
 spack buildcache update-index $PWD/resources/mirror
 
-$BUILD_ALLOC spack install --fresh --deprecated --no-check-signature --only dependencies $SPACK_PKG_NAME@develop%$SPEC
-
-$BUILD_ALLOC ./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --no-upstream --spheral-spack-dir $INSTALL_DIR/spheral-spack-tpls --spec $SPEC
+# With these inputs, tpl-manager will build with --use-buildcache package:never,dependencies:only -u initconfig
+# This ensures the TPLs are only built from cache and Spheral isn't built
+$BUILD_ALLOC ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls --spec $DEV_PKG_SPEC --skip-init --dev-pkg
 
 HOST_CONFIG_FILE=$(ls -t | grep -E "*\.cmake" | head -1)
 $BUILD_ALLOC ./$SCRIPT_DIR/devtools/host-config-build.py --host-config $HOST_CONFIG_FILE -i $INSTALL_DIR --build --no-clean -DSPHERAL_PIP_CACHE_DIR=$SPHERAL_PIP_CACHE_DIR -DSPHERAL_NETWORK_CONNECTED=Off

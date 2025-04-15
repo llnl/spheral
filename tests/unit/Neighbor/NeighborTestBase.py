@@ -136,7 +136,7 @@ class NeighborTestBase:
         import time
 
         # Iterate over the NodeLists.
-        for nodes in self.dataBase.nodeLists():
+        for nodes in self.dataBase.nodeLists:
             pos = nodes.positions()
             H = nodes.Hfield()
 
@@ -154,7 +154,7 @@ class NeighborTestBase:
                 self.dataBase.setRefineNodeLists(ri, Hi, coarseNeighbors, refineNeighbors)
                 neighborIDs = []
                 offset = 0
-                for inds, nds in enumerate(self.dataBase.nodeLists()):
+                for inds, nds in enumerate(self.dataBase.nodeLists):
                     neighborIDs.extend([i + offset for i in refineNeighbors[inds]])
                     offset += nds.numInternalNodes
                 t1 = time.time()
@@ -162,7 +162,7 @@ class NeighborTestBase:
                 # Now build the checks.
                 answerIDs = []
                 offset = 0
-                for nds in self.dataBase.nodeLists():
+                for nds in self.dataBase.nodeLists:
                     answerIDs.extend([i + offset for i in findNeighborNodes(ri, Hi, self.kernelExtent, nds)])
                     offset += nds.numInternalNodes
                 t2 = time.time()
@@ -194,7 +194,7 @@ class NeighborTestBase:
         cm = self.dataBase.connectivityMap(False, False, False)
 
         # Iterate over the NodeLists.
-        for iNL, inodes in enumerate(self.dataBase.nodeLists()):
+        for iNL, inodes in enumerate(self.dataBase.nodeLists):
             pos = inodes.positions()
             H = inodes.Hfield()
 
@@ -205,7 +205,7 @@ class NeighborTestBase:
                 cmneighbors = cm.connectivityForNode(inodes, i)
 
                 # Check ConnectivityMap vs. N^2 neighbor search.
-                for jNL, jnodes in enumerate(self.dataBase.nodeLists()):
+                for jNL, jnodes in enumerate(self.dataBase.nodeLists):
                     cmcheck = sorted(cmneighbors[jNL])
                     answer = sorted(findNeighborNodes(ri, Hi, self.kernelExtent, jnodes))
                     if iNL == jNL:
@@ -234,7 +234,7 @@ class NeighborTestBase:
 
         # Build the answer based on the node neighbors
         answer = []
-        for iNL, inodes in enumerate(self.dataBase.nodeLists()):
+        for iNL, inodes in enumerate(self.dataBase.nodeLists):
             for i in range(inodes.numInternalNodes):
                 cmneighbors = cm.connectivityForNode(inodes, i)
                 assert len(cmneighbors) == numNodeLists
@@ -288,12 +288,12 @@ class NeighborTestBase:
             Hi = H(iNL, i)
             rj = pos(jNL, j)
             Hj = H(jNL, j)
-            for nodes in self.dataBase.nodeLists():
+            for nodes in self.dataBase.nodeLists:
                 actual.append(findOverlapRegion(ri, Hi, rj, Hj, self.kernelExtent, nodes))
             return actual
 
         # Iterate over the NodeLists.
-        for iNL, inodes in enumerate(self.dataBase.nodeLists()):
+        for iNL, inodes in enumerate(self.dataBase.nodeLists):
 
             # Randomly select nodes from each NodeList to explicitly test.
             for i in random.sample(list(range(inodes.numInternalNodes - 1)), self.noverlapcheck):
@@ -304,7 +304,7 @@ class NeighborTestBase:
                 fullanswer = findOverlapNeighbors(ri, Hi, self.kernelExtent, self.dataBase)
 
                 # Check ConnectivityMap vs. N^2 neighbor search.
-                for jNL, jnodes in enumerate(self.dataBase.nodeLists()):
+                for jNL, jnodes in enumerate(self.dataBase.nodeLists):
                     cmcheck = sorted(cmneighbors[jNL])
                     answer = sorted(fullanswer[jNL])
                     if iNL == jNL:

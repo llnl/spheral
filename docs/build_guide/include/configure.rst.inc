@@ -8,7 +8,7 @@ Configuring Spheral
 
 After running ``tpl-manager`` you will see a file in your Spheral root directory following the format ``<sys_type>-<spec>.cmake``. 
 
-For example if you run ``tpl-manager`` with only a single ``--spec`` e.g. ``gcc~mpi``, you will only see:
+For example if you run ``tpl-manager`` with only a single ``--spec`` e.g. ``spheral~mpi%gcc``, you will only see:
 
 ::
 
@@ -22,19 +22,14 @@ Configuring Spheral
 
 After running ``tpl-manager`` you will see a file in your Spheral root directory following the format ``<sys_type>-<spec>.cmake``. 
 
-For example if you run ``tpl-manager`` with ``spec-list.json`` on a ``toss_3_x86_64_ib`` system you will see:
+For example if you run ``tpl-manager`` on a ``toss_4_x86_64_ib`` system with ``--spec spheral+mpi%clang``, you will see:
 
 ::
 
-  toss_3_x86_64_ib-clang@9.0.0.cmake
-  toss_3_x86_64_ib-gcc@8.1.0.cmake
-  toss_3_x86_64_ib-gcc@8.3.1.cmake
+  toss_4_x86_64_ib-clang@9.0.0.cmake
 
-However if you ran ``tpl-manager`` with only a single ``--spec`` e.g. ``gcc@8.1.0~mpi``, you will only see:
-
-::
-
-  toss_3_x86_64_ib-gcc@8.1.0~mpi.cmake
+If no ``--spec`` is provided to ``tpl-manager``, the TPLs for all specs in an environment will be built, but no host config file will be generated.
+A ``--spec`` must be provided to generate a host config file.
 
 [lc_intro-end]
 
@@ -200,5 +195,5 @@ In this example we create our build directory ``Spheral_release/BUILD``, and wil
 
 The CMake option ``-C ../../Spheral/<sys_type>-gcc.cmake`` is how we tell the CMake system to use the TPLs we installed with ``tpl-manager.py`` for ``gcc``.
 
-The somewhat obscure command ``-DCMAKE_INSTALL_PREFIX=`cd ..; pwd``` specifies the install directory as the full path to ``Spheral_release``. Alternatively you can specify this path explicitly, such as ``-DCMAKE_INSTALL_PREFIX=/usr/local/Spheral_release``.
+The somewhat obscure command ``-DCMAKE_INSTALL_PREFIX=`cd ..; pwd``` specifies the install directory as the full path to ``Spheral_release``. Alternatively, you can specify this path explicitly, such as ``-DCMAKE_INSTALL_PREFIX=/usr/local/Spheral_release``.
 [manual_cmake-end]

@@ -33,7 +33,7 @@ public:
   // Constructors, destructor.
   SVPHCorrectionsPolicy(const DataBase<Dimension>& dataBase,
                         const TableKernel<Dimension>& kernel);
-  virtual ~SVPHCorrectionsPolicy();
+  virtual ~SVPHCorrectionsPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -46,14 +46,15 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Forbidden methods
+  SVPHCorrectionsPolicy() = delete;
+  SVPHCorrectionsPolicy(const SVPHCorrectionsPolicy& rhs) = delete;
+  SVPHCorrectionsPolicy& operator=(const SVPHCorrectionsPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   const DataBase<Dimension>& mDataBase;
   const TableKernel<Dimension>& mKernel;
-
-  SVPHCorrectionsPolicy();
-  SVPHCorrectionsPolicy(const SVPHCorrectionsPolicy& rhs);
-  SVPHCorrectionsPolicy& operator=(const SVPHCorrectionsPolicy& rhs);
 };
 
 }

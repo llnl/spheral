@@ -23,7 +23,7 @@ template<typename Dimension, typename Value>
 ReplaceWithRatioPolicy<Dimension, Value>::
 ReplaceWithRatioPolicy(const KeyType& numerator,
                        const KeyType& denomenator):
-  FieldUpdatePolicy<Dimension>(),
+  FieldUpdatePolicy<Dimension, Value>({}),
   mNumerator(numerator),
   mDenomenator(denomenator) {
 }
@@ -33,17 +33,9 @@ ReplaceWithRatioPolicy<Dimension, Value>::
 ReplaceWithRatioPolicy(std::initializer_list<std::string> depends,
                        const KeyType& numerator,
                        const KeyType& denomenator):
-  FieldUpdatePolicy<Dimension>(depends),
+  FieldUpdatePolicy<Dimension, Value>(depends),
   mNumerator(numerator),
   mDenomenator(denomenator) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Value>
-ReplaceWithRatioPolicy<Dimension, Value>::
-~ReplaceWithRatioPolicy() {
 }
 
 //------------------------------------------------------------------------------

@@ -63,71 +63,77 @@ public:
   DataBase& operator=(const DataBase& rhs) = default;
 
   // Number of NodeLists we have in the DataBase.
-  unsigned int numNodeLists() const;
-  unsigned int numFluidNodeLists() const;
-  int numSolidNodeLists() const;
-  int numDEMNodeLists() const;
+  size_t numNodeLists()                                            const { return mNodeListPtrs.size(); }
+  size_t numFluidNodeLists()                                       const { return mFluidNodeListPtrs.size(); }
+  size_t numSolidNodeLists()                                       const { return mSolidNodeListPtrs.size(); }
+  size_t numDEMNodeLists()                                         const { return mDEMNodeListPtrs.size(); }
 
   // Numbers of nodes.
-  int numInternalNodes() const;
-  int numGhostNodes() const;
-  int numNodes() const;
+  size_t numInternalNodes() const;
+  size_t numGhostNodes() const;
+  size_t numNodes() const;
 
-  int globalNumInternalNodes() const;
-  int globalNumGhostNodes() const;
-  int globalNumNodes() const;
+  size_t globalNumInternalNodes() const;
+  size_t globalNumGhostNodes() const;
+  size_t globalNumNodes() const;
 
   // Numbers of fluid nodes.
-  int numFluidInternalNodes() const;
-  int numFluidGhostNodes() const;
-  int numFluidNodes() const;
+  size_t numFluidInternalNodes() const;
+  size_t numFluidGhostNodes() const;
+  size_t numFluidNodes() const;
 
-  int globalNumFluidInternalNodes() const;
-  int globalNumFluidGhostNodes() const;
-  int globalNumFluidNodes() const;
+  size_t globalNumFluidInternalNodes() const;
+  size_t globalNumFluidGhostNodes() const;
+  size_t globalNumFluidNodes() const;
    
+  // Access the various NodeLists
+  const std::vector<NodeList<Dimension>*>& nodeListPtrs()           const { return mNodeListPtrs; }
+  const std::vector<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const { return mFluidNodeListPtrs; }
+  const std::vector<SolidNodeList<Dimension>*>& solidNodeListPtrs() const { return mSolidNodeListPtrs; }
+  const std::vector<DEMNodeList<Dimension>*>& DEMNodeListPtrs()     const { return mDEMNodeListPtrs; }
+
   // Provide normal iterator methods over the DataBase NodeLists.
-  NodeListIterator nodeListBegin();
-  NodeListIterator nodeListEnd();
+  NodeListIterator nodeListBegin()                                        { return mNodeListPtrs.begin(); }
+  NodeListIterator nodeListEnd()                                          { return mNodeListPtrs.end(); }
 
-  ConstNodeListIterator nodeListBegin() const;
-  ConstNodeListIterator nodeListEnd() const;
+  ConstNodeListIterator nodeListBegin()                             const { return mNodeListPtrs.begin(); }
+  ConstNodeListIterator nodeListEnd()                               const { return mNodeListPtrs.end(); }
 
-  FluidNodeListIterator fluidNodeListBegin();
-  FluidNodeListIterator fluidNodeListEnd();
+  FluidNodeListIterator fluidNodeListBegin()                              { return mFluidNodeListPtrs.begin(); }
+  FluidNodeListIterator fluidNodeListEnd()                                { return mFluidNodeListPtrs.end(); }
 
-  ConstFluidNodeListIterator fluidNodeListBegin() const;
-  ConstFluidNodeListIterator fluidNodeListEnd() const;
+  ConstFluidNodeListIterator fluidNodeListBegin()                   const { return mFluidNodeListPtrs.begin(); }
+  ConstFluidNodeListIterator fluidNodeListEnd()                     const { return mFluidNodeListPtrs.end(); }
 
-  NodeListIterator fluidNodeListAsNodeListBegin();
-  NodeListIterator fluidNodeListAsNodeListEnd();
+  NodeListIterator fluidNodeListAsNodeListBegin()                         { return mFluidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator fluidNodeListAsNodeListEnd()                           { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator fluidNodeListAsNodeListBegin() const;
-  ConstNodeListIterator fluidNodeListAsNodeListEnd() const;
+  ConstNodeListIterator fluidNodeListAsNodeListBegin()              const { return mFluidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator fluidNodeListAsNodeListEnd()                const { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  SolidNodeListIterator solidNodeListBegin();
-  SolidNodeListIterator solidNodeListEnd();
+  SolidNodeListIterator solidNodeListBegin()                              { return mSolidNodeListPtrs.begin(); }
+  SolidNodeListIterator solidNodeListEnd()                                { return mSolidNodeListPtrs.end(); }
 
-  ConstSolidNodeListIterator solidNodeListBegin() const;
-  ConstSolidNodeListIterator solidNodeListEnd() const;
+  ConstSolidNodeListIterator solidNodeListBegin()                   const { return mSolidNodeListPtrs.begin(); }
+  ConstSolidNodeListIterator solidNodeListEnd()                     const { return mSolidNodeListPtrs.end(); }
 
-  NodeListIterator solidNodeListAsNodeListBegin();
-  NodeListIterator solidNodeListAsNodeListEnd();
+  NodeListIterator solidNodeListAsNodeListBegin()                         { return mSolidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator solidNodeListAsNodeListEnd()                           { return mSolidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator solidNodeListAsNodeListBegin() const;
-  ConstNodeListIterator solidNodeListAsNodeListEnd() const;
+  ConstNodeListIterator solidNodeListAsNodeListBegin()              const { return mSolidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator solidNodeListAsNodeListEnd()                const { return mSolidNodeListAsNodeListPtrs.end(); }
   
-  DEMNodeListIterator DEMNodeListBegin();
-  DEMNodeListIterator DEMNodeListEnd();
+  DEMNodeListIterator DEMNodeListBegin()                                  { return mDEMNodeListPtrs.begin(); }
+  DEMNodeListIterator DEMNodeListEnd()                                    { return mDEMNodeListPtrs.end(); }
 
-  ConstDEMNodeListIterator DEMNodeListBegin() const;
-  ConstDEMNodeListIterator DEMNodeListEnd() const;
+  ConstDEMNodeListIterator DEMNodeListBegin()                       const { return mDEMNodeListPtrs.begin(); }
+  ConstDEMNodeListIterator DEMNodeListEnd()                         const { return mDEMNodeListPtrs.end(); }
 
-  NodeListIterator DEMNodeListAsNodeListBegin();
-  NodeListIterator DEMNodeListAsNodeListEnd();
+  NodeListIterator DEMNodeListAsNodeListBegin()                           { return mDEMNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator DEMNodeListAsNodeListEnd()                             { return mDEMNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator DEMNodeListAsNodeListBegin() const;
-  ConstNodeListIterator DEMNodeListAsNodeListEnd() const;
+  ConstNodeListIterator DEMNodeListAsNodeListBegin()                const { return mDEMNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator DEMNodeListAsNodeListEnd()                  const { return mDEMNodeListAsNodeListPtrs.end(); }
 
   // Provide NodeIterators to go over the elements of NodeLists/FieldLists.
   AllNodeIterator<Dimension> nodeBegin() const;
@@ -200,12 +206,6 @@ public:
 
   bool haveNodeList(const NodeList<Dimension>& nodeList) const;
   size_t nodeListIndex(const NodeList<Dimension>& nodeList) const;
-
-  // Allow const access to the list of NodeList pointers.
-  const std::vector<NodeList<Dimension>*>& nodeListPtrs() const;
-  const std::vector<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const;
-  const std::vector<SolidNodeList<Dimension>*>& solidNodeListPtrs() const;
-  const std::vector<DEMNodeList<Dimension>*>& DEMNodeListPtrs() const;
 
   // Provide convenience functions for manipulating the neighbor information
   // of the NodeLists.

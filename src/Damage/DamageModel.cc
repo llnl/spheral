@@ -27,6 +27,8 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
+
 using std::vector;
 using std::string;
 using std::pair;
@@ -39,6 +41,16 @@ using std::max;
 using std::abs;
 
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Provide to_string for tensors
+//------------------------------------------------------------------------------
+template<int nDim>
+std::string to_string(const GeomSymmetricTensor<nDim>& x) {
+  std::stringstream ss;
+  ss << x;
+  return ss.str();
+}
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -57,15 +69,8 @@ DamageModel(SolidNodeList<Dimension>& nodeList,
   mExcludeNode("Nodes excluded from damage", nodeList, 0),
   mNodeCouplingPtr(new NodeCoupling()),
   mComputeIntersectConnectivity(false),
+  mFreezeDamage(false),
   mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-DamageModel<Dimension>::
-~DamageModel() {
 }
 
 //------------------------------------------------------------------------------
@@ -84,30 +89,37 @@ computeScalarDDDt(const DataBase<Dimension>& /*dataBase*/,
   // Pre-conditions.
   REQUIRE(DDDt.nodeListPtr() == &mNodeList);
 
-  // Get the state fields.
-  const auto  clKey = State<Dimension>::buildFieldKey(SolidFieldNames::longitudinalSoundSpeed, mNodeList.name());
-  const auto  HKey = State<Dimension>::buildFieldKey(HydroFieldNames::H, mNodeList.name());
-  const auto& cl = state.field(clKey, 0.0);
-  const auto& H = state.field(HKey, SymTensor::zero);
+  if (mFreezeDamage) {
 
-  // Constant multiplicative parameter for the crack growth.
-  const auto A = mCrackGrowthMultiplier / mW.kernelExtent();
+    DDDt = 0.0;
 
-  // Iterate over the internal nodes.
-  const auto ni = mNodeList.numInternalNodes();
+  } else {
+
+    // Get the state fields.
+    const auto  clKey = State<Dimension>::buildFieldKey(SolidFieldNames::longitudinalSoundSpeed, mNodeList.name());
+    const auto  HKey = State<Dimension>::buildFieldKey(HydroFieldNames::H, mNodeList.name());
+    const auto& cl = state.field(clKey, 0.0);
+    const auto& H = state.field(HKey, SymTensor::zero);
+
+    // Constant multiplicative parameter for the crack growth.
+    const auto A = mCrackGrowthMultiplier / mW.kernelExtent();
+
+    // Iterate over the internal nodes.
+    const auto ni = mNodeList.numInternalNodes();
 #pragma omp parallel for
-  for (auto i = 0u; i < ni; ++i) {
-    if (mExcludeNode(i) == 1) {
+    for (auto i = 0u; i < ni; ++i) {
+      if (mExcludeNode(i) == 1) {
 
-      DDDt(i) = 0.0;
+        DDDt(i) = 0.0;
 
-    } else {
+      } else {
 
-      const double hrInverse = Dimension::rootnu(H(i).Determinant());
-      DDDt(i) = A * cl(i) * hrInverse;
+        const double hrInverse = Dimension::rootnu(H(i).Determinant());
+        DDDt(i) = A * cl(i) * hrInverse;
 
+      }
+      CHECK(DDDt(i) >= 0.0);
     }
-    CHECK(DDDt(i) >= 0.0);
   }
 
   // Post-conditions.
@@ -198,12 +210,66 @@ finalize(const Scalar /*time*/,
       }
     }
     nD = allReduce(nD, SPHERAL_OP_SUM);
-    const auto ntot = std::max(1, dataBase.globalNumInternalNodes());
+    const auto ntot = std::max<size_t>(1u, dataBase.globalNumInternalNodes());
     const auto dfrac = double(nD)/double(ntot);
     mComputeIntersectConnectivity = (dfrac > 0.2);  // Should tune this number...
     // if (Process::getRank() == 0) std::cout << "DamageModel dfrac = " << nD << "/" << ntot << " = " << dfrac << " : " << mComputeIntersectConnectivity << std::endl;
   }
   TIME_END("DamageModel_finalize");
+}
+
+//------------------------------------------------------------------------------
+// Return the maximum state change we care about for checking for convergence
+// in the implicit integration methods.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename DamageModel<Dimension>::ResidualType
+DamageModel<Dimension>::
+maxResidual(const DataBase<Dimension>& dataBase, 
+            const State<Dimension>& state1,
+            const State<Dimension>& state0,
+            const Scalar tol) const {
+  REQUIRE(tol > 0.0);
+
+  // Define some functions to compute residuals
+  auto fresT = [](const SymTensor& x1, const SymTensor& x2, const Scalar tol) { auto dx = std::abs((x2 - x1).Trace()); return dx/std::max(std::abs(x1.Trace()) + std::abs(x2.Trace()), Dimension::nDim*tol); };
+
+  // Initialize the return value to some impossibly high value.
+  auto result = ResidualType(-1.0, "You should not see me!");
+
+  // Grab the state we're comparing
+  const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, mNodeList.name()); };
+  const auto& D0 = state0.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+  const auto& D1 = state1.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+  
+  // Walk the nodes
+  const auto n = mNodeList.numInternalNodes();
+  const auto rank = Process::getRank();
+#pragma omp parallel
+  {
+    auto maxResidual_local = result;
+#pragma omp for
+    for (auto i = 0u; i < n; ++i) {
+
+      // We limit by the change in damage
+      const auto Dres = fresT(D0(i), D1(i), tol);
+      if (Dres > maxResidual_local.first) {
+        maxResidual_local = ResidualType(Dres, ("Damage change: residual = " + std::to_string(Dres) + "\n" +
+                                                "                     D0 = " + to_string(D0(i)) + 
+                                                "                     D1 = " + to_string(D1(i)) + 
+                                                "      (nodeList, i, rank) = (" + mNodeList.name() + " " + std::to_string(i) + " " + std::to_string(rank) + ")\n"));
+      }
+    }
+
+#pragma omp critical
+    {
+      if (maxResidual_local.first > result.first) {
+        result = maxResidual_local;
+      }
+    }
+  }
+
+  return result;
 }
 
 //------------------------------------------------------------------------------

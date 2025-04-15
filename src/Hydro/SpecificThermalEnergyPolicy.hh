@@ -37,7 +37,7 @@ public:
 
   // Constructors, destructor.
   SpecificThermalEnergyPolicy(const DataBase<Dimension>& db);
-  virtual ~SpecificThermalEnergyPolicy();
+  virtual ~SpecificThermalEnergyPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -59,12 +59,16 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Don't advance this policy implicitly
+  virtual bool independent() const override { return false; }
+
+  // Forbidden methods
+  SpecificThermalEnergyPolicy(const SpecificThermalEnergyPolicy& rhs) = delete;
+  SpecificThermalEnergyPolicy& operator=(const SpecificThermalEnergyPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   const DataBase<Dimension>* mDataBasePtr;
-
-  SpecificThermalEnergyPolicy(const SpecificThermalEnergyPolicy& rhs);
-  SpecificThermalEnergyPolicy& operator=(const SpecificThermalEnergyPolicy& rhs);
 };
 
 }

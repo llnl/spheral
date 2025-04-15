@@ -1,5 +1,6 @@
 from Spheral1d import *
 from math import *
+import numpy as np
 
 #-------------------------------------------------------------------------------
 # The analytic answer for the acoustic wave problem.
@@ -29,17 +30,15 @@ class AcousticWaveSolution:
         return
 
     # Compute and return the solution on the given positions.
-    def solution(self, time, xvals):
+    def solution(self, t, xvals=None):
         if xvals is None:
-            xvals = [i*(self.x1-self.x0) for i in range(self.nPoints)]
+            xvals = np.linspace(self.x0, self.x1, self.nPoints)
 
-        omegat = self.k*self.cs*time
+        omegat = self.k*self.cs*t
         length = self.x1 - self.x0
-        v = [self.cs*self.A*sin(self.k*(x - self.x0)/length - omegat) for x in xvals]
-        u = [1.0]*len(xvals)
-        rho = [self.rho0*(1.0 + self.A*sin(self.k*(x - self.x0)/length - omegat)) for x in xvals]
-        h = [self.h0*self.rho0/rhoi for rhoi in rho]
-        P = [self.eos.pressure(rhoi,ui) for (rhoi,ui) in zip(rho,u)]
-        print((max(rho)))
-        print((max(xvals)))
+        v = self.cs * self.A * np.sin(self.k*(xvals - self.x0)/length - omegat)
+        u = np.full(len(xvals), 1.0)
+        rho = self.rho0 * (1.0 + self.A * np.sin(self.k*(xvals - self.x0)/length - omegat))
+        h = self.h0 * self.rho0/rho
+        P = np.array([self.eos.pressure(rhoi,ui) for (rhoi,ui) in zip(rho,u)])
         return xvals, v, u, rho, P, h

@@ -24,10 +24,9 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   // Constructors.
-  PredictorCorrector(DataBase<Dimension>& dataBase);
   PredictorCorrector(DataBase<Dimension>& dataBase,
                      const std::vector<Physics<Dimension>*>& physicsPackages);
-  ~PredictorCorrector() = default;
+  virtual ~PredictorCorrector() = default;
   PredictorCorrector& operator=(const PredictorCorrector& rhs) = default;
 
   // All Integrators are required to provide the single cycle method.
@@ -37,9 +36,6 @@ public:
 
   // We need to make the simpler form of step visible!
   using Integrator<Dimension>::step;
-
-  // Restart methods.
-  virtual std::string label() const override { return "PredictorCorrector"; }
 
   // Forbidden methods
   PredictorCorrector() = delete;

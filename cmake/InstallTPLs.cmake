@@ -110,6 +110,7 @@ if(adiak_FOUND)
   list(APPEND SPHERAL_FP_DIRS ${adiak_DIR})
   message("Found Adiak External Package")
 endif()
+
 message("-----------------------------------------------------------------------------")
 # Use find_package to get caliper
 if (ENABLE_TIMER)
@@ -126,20 +127,22 @@ if (ENABLE_TIMER)
     message("Found Caliper External Package")
   endif()
 endif()
+
 message("-----------------------------------------------------------------------------")
 find_package(RAJA REQUIRED NO_DEFAULT_PATH PATHS ${raja_DIR})
 if (RAJA_FOUND) 
   message("Found RAJA External Package.")
   blt_convert_to_system_includes(TARGET RAJA)
 endif()
+
 message("-----------------------------------------------------------------------------")
 find_package(umpire REQUIRED NO_DEFAULT_PATH PATHS ${umpire_DIR})
 if (umpire_FOUND) 
   message("Found umpire External Package.")
   blt_convert_to_system_includes(TARGET umpire)
 endif()
-message("-----------------------------------------------------------------------------")
 
+message("-----------------------------------------------------------------------------")
 # Chai
 if(chai_DIR AND USE_EXTERNAL_CHAI)
   find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
@@ -155,6 +158,26 @@ else()
   add_subdirectory(${chai_DIR})
 endif()
 
+message("-----------------------------------------------------------------------------")
+# Use find_package to get Sundials
+if (ENABLE_SUNDIALS)
+  # Save sundials_DIR because it gets overwritten by find_package
+  if(NOT CONFIG_SUNDIALS_DIR)
+    # Only save if it does not exists already
+    set(CONFIG_SUNDIALS_DIR "${sundials_DIR}" CACHE PATH "Configuration Sundials directory")
+  endif()
+  set(SUNDIALS_DIR "${sundials_DIR}")
+  find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
+    COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
+    PATHS ${sundials_DIR}/lib64/cmake/sundials)
+  if(SUNDIALS_FOUND)
+    list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
+    list(APPEND SPHERAL_FP_TPLS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
+    list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
+    message("Found SUNDIALS External Package")
+  endif()
+endif()
+
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
 list(APPEND SPHERAL_FP_TPLS RAJA umpire)
 list(APPEND SPHERAL_FP_DIRS ${raja_DIR} ${umpire_DIR})
@@ -162,7 +185,6 @@ set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
-
 # TPLs that must be imported
 list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5 polytope)
 

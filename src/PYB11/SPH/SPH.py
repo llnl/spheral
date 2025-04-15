@@ -15,6 +15,7 @@ class SPH(SPHBase):
   using Tensor = typename %(Dimension)s::Tensor;
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
   using PairAccelerationsType = PairwiseField<%(Dimension)s, Vector>;
 """
     

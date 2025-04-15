@@ -22,6 +22,7 @@ class SolidCRKSPHRZ(SolidCRKSPH):
     using FifthRankTensor = %(Dimension)s::FifthRankTensor;
     using TimeStepType = Physics<%(Dimension)s>::TimeStepType;
     using PairAccelerationsType = typename SolidCRKSPHRZ::PairAccelerationsType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     def pyinit(self,

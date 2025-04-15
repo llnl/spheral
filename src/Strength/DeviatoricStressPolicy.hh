@@ -16,7 +16,7 @@
 namespace Spheral {
 
 template<typename Dimension>
-class DeviatoricStressPolicy: public FieldUpdatePolicy<Dimension> {
+class DeviatoricStressPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::SymTensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -28,7 +28,7 @@ public:
 
   // Constructors, destructor.
   DeviatoricStressPolicy();
-  virtual ~DeviatoricStressPolicy();
+  virtual ~DeviatoricStressPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -41,10 +41,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  DeviatoricStressPolicy(const DeviatoricStressPolicy& rhs);
-  DeviatoricStressPolicy& operator=(const DeviatoricStressPolicy& rhs);
+  // Forbidden methods
+  DeviatoricStressPolicy(const DeviatoricStressPolicy& rhs) = delete;
+  DeviatoricStressPolicy& operator=(const DeviatoricStressPolicy& rhs) = delete;
 };
 
 }

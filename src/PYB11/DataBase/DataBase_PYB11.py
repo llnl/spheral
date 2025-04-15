@@ -163,7 +163,6 @@ State{ndim}d = PYB11TemplateClass(State, template_parameters="Dim<{ndim}>")
 StateDerivatives{ndim}d = PYB11TemplateClass(StateDerivatives, template_parameters="Dim<{ndim}>")
 DataBase{ndim}d = PYB11TemplateClass(DataBase, template_parameters="Dim<{ndim}>")
 UpdatePolicyBase{ndim}d = PYB11TemplateClass(UpdatePolicyBase, template_parameters="Dim<{ndim}>")
-FieldUpdatePolicy{ndim}d = PYB11TemplateClass(FieldUpdatePolicy, template_parameters="Dim<{ndim}>")
 ''')
 
     for (value, label) in (("Dim<%i>::Scalar" % ndim,          "Scalar"),
@@ -176,6 +175,7 @@ FieldUpdatePolicy{ndim}d = PYB11TemplateClass(FieldUpdatePolicy, template_parame
         Dimension = f"Dim<{ndim}>"
         suffix = f"{ndim}d"
         exec(f'''
+{label}FieldUpdatePolicy{suffix} = PYB11TemplateClass(FieldUpdatePolicy, template_parameters=("{Dimension}", "{value}"))
 {label}IncrementState{suffix} = PYB11TemplateClass(IncrementState, template_parameters = ("{Dimension}", "{value}"))
 {label}IncrementBoundedState{suffix} = PYB11TemplateClass(IncrementBoundedState, template_parameters = ("{Dimension}", "{value}"))
 {label}PureReplaceState{suffix} = PYB11TemplateClass(PureReplaceState, template_parameters = ("{Dimension}", "{value}"))

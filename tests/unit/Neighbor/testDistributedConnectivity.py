@@ -183,7 +183,7 @@ dataBase.updateConnectivityMap(testGhosts, testOverlap)
 #-------------------------------------------------------------------------------
 # Create the distributed boundary and compute the connectivity
 #-------------------------------------------------------------------------------
-for NN in dataBase.nodeLists():
+for NN in dataBase.nodeLists:
     NN.numGhostNodes = 0
     NN.neighbor().updateNodes()
 domainbc.setAllGhostNodes(dataBase)
@@ -191,7 +191,7 @@ domainbc.finalizeGhostBoundary()
 for fl in fieldLists:
     domainbc.applyFieldListGhostBoundary(fl)
 domainbc.finalizeGhostBoundary()
-for NN in dataBase.nodeLists():
+for NN in dataBase.nodeLists:
     NN.neighbor().updateNodes()
 dataBase.updateConnectivityMap(testGhosts, testOverlap)
 connectivity = dataBase.connectivityMap(testGhosts, testOverlap)
@@ -218,7 +218,7 @@ output("globalIndicesFL")
 #-------------------------------------------------------------------------------
 globalIndices = []
 globalConnectivity = []
-for ni, nodeList in enumerate(dataBase.nodeLists()):
+for ni, nodeList in enumerate(dataBase.nodeLists):
     for i in range(nodeList.numNodes if testGhosts else nodeList.numInternalNodes):
         globali = globalIndicesFL(ni, i)
         globalConnectivityi = []

@@ -3,7 +3,7 @@ packages:
     compiler: [rocmcc]
     providers:
       blas: [openblas]
-      lapack: [netlib-lapack]
+      lapack: [openblas]
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]

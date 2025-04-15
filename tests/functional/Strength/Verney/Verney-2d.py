@@ -1,7 +1,8 @@
 #ATS:for seed in ("constantDTheta", "lattice"):
 #ATS:    for (nr, np) in ((10, 1), (20, 4), (40, 10)): # , (80, 40)):
-#ATS:        test(SELF, "--nr %i --seed %s --crksph False --sph True" % (nr, seed), np=np, label="Verney_2d_%s_nr=%i_SPH" % (seed, nr))
-#ATS:        test(SELF, "--nr %i --seed %s --crksph True  --sph True" % (nr, seed), np=np, label="Verney_2d_%s_nr=%i_CRK" % (seed, nr))
+#ATS:        test(SELF, "--nr %i --seed %s --hydroType SPH"    % (nr, seed), np=np, label="Verney_2d_%s_nr=%i_SPH" % (seed, nr))
+#ATS:        test(SELF, "--nr %i --seed %s --hydroType CRKSPH" % (nr, seed), np=np, label="Verney_2d_%s_nr=%i_CRK" % (seed, nr))
+#ATS:        test(SELF, "--nr %i --seed %s --hydroType FSISPH" % (nr, seed), np=np, label="Verney_2d_%s_nr=%i_FSI" % (seed, nr))
 #-------------------------------------------------------------------------------
 # Cylindrical (2D XY) version.
 # An idealized strength test test where an imploding shell is ultimately stopped
@@ -67,7 +68,7 @@ commandLine(nr = 10,                 # Radial resolution of the shell in points
             nshells = 10,
 
             # Hydro parameters.
-            crksph = False,
+            hydroType = "SPH",  # (SPH, CRKSPH, FSISPH)
             sph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
             Cl = None,
             Cq = None,
@@ -119,6 +120,9 @@ commandLine(nr = 10,                 # Radial resolution of the shell in points
 assert seed in ("lattice", "constantDTheta")
 assert geometry in ("quadrant", "full")
 
+hydroType = hydroType.upper()
+assert hydroType in ("SPH", "CRKSPH", "FSISPH")
+
 # Material parameters for this test problem.
 rho0Be = 1.845
 R0, R1 = 8.0, 10.0        # Inner, outer initial radius
@@ -131,14 +135,9 @@ Fval = F(alpha, lamb, R0, R1, 1000)
 u0 = sqrt(2.0*Y0*Fval/(sqrt(3.0)*rho0Be*log(R1/R0)))
 print("  lambda = %s\n  alpha = %s\n  F = %s\n  u0 = %s\n" % (lamb, alpha, Fval, u0))
 
-if crksph:
-    hydroname = "CRKSPH"
-else:
-    hydroname = "SPH"
-
 # Directories.
 dataDir = os.path.join(dataDirBase,
-                       hydroname,
+                       hydroType,
                        "densityUpdate=%s" % densityUpdate,
                        "compatibleEnergy=%s_totalEnergy=%s" % (compatibleEnergy, evolveTotalEnergy),
                        seed,
@@ -255,36 +254,49 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
+if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
-                   filter = filter,
                    cfl = cfl,
                    compatibleEnergyEvolution = compatibleEnergy,
-                   evolveTotalEnergy = evolveTotalEnergy,
-                   XSPH = XSPH,
                    densityUpdate = densityUpdate,
-                   HUpdate = HUpdate)
+                   HUpdate = HUpdate,
+                   XSPH = XSPH,
+                   epsTensile = epsilonTensile,
+                   nTensile = nTensile)
+
+elif hydroType == "FSISPH":
+    hydro = FSISPH(dataBase = db,
+                   W = WT,
+                   cfl = cfl,
+                   interfaceMethod = HLLCInterface,
+                   densityStabilizationCoefficient = 0.00,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   HUpdate = HUpdate,
+                   epsTensile = epsilonTensile,
+                   nTensile = nTensile)
+
 else:
+    assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
-                filter = filter,
                 cfl = cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
+                evolveTotalEnergy = evolveTotalEnergy,
                 gradhCorrection = gradhCorrection,
                 densityUpdate = densityUpdate,
                 HUpdate = HUpdate,
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile)
+
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.kernel()")
-output("hydro.PiKernel()")
 
 #-------------------------------------------------------------------------------
 # Tweak the artificial viscosity.
@@ -322,8 +334,7 @@ if geometry == "quadrant":
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-integrator.appendPhysicsPackage(hydro)
+integrator = IntegratorConstructor(db, [hydro])
 integrator.lastDt = dt
 if dtMin:
     integrator.dtMin = dtMin
@@ -472,31 +483,31 @@ if outputFile:
 # Plot the state.
 #-------------------------------------------------------------------------------
 if graphics:
-    from SpheralGnuPlotUtilities import *
+    from SpheralMatplotlib import *
     state = State(db, integrator.physicsPackages())
     rhoPlot = plotFieldList(state.scalarFields("mass density"),
                             xFunction = "%s.magnitude()",
-                            plotStyle="points",
+                            plotStyle="ro",
                             winTitle="rho @ %g" % (control.time()))
     velPlot = plotFieldList(state.vectorFields("velocity"),
                             xFunction = "%s.magnitude()",
                             yFunction = "%s.magnitude()",
-                            plotStyle="points",
+                            plotStyle="ro",
                             winTitle="vel @ %g" % (control.time()))
     mPlot = plotFieldList(state.scalarFields("mass"),
                           xFunction = "%s.magnitude()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="mass @ %g" % (control.time()))
     PPlot = plotFieldList(state.scalarFields("pressure"),
                           xFunction = "%s.magnitude()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="pressure @ %g" % (control.time()))
     hPlot = plotFieldList(state.symTensorFields("H"),
                           xFunction = "%s.magnitude()",
                           yFunction = "2.0/%s.Trace()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="h @ %g" % (control.time()))
     psPlot = plotFieldList(state.scalarFields(SolidFieldNames.plasticStrain),
                            xFunction = "%s.magnitude()",
-                           plotStyle="points",
+                           plotStyle="ro",
                            winTitle="plastic strain @ %g" % (control.time()))

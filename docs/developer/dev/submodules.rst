@@ -1,7 +1,7 @@
 Submodules
 ##########
 
-Spheral uses submodules to rbing other codes/project directly into our source tree, such as BLT, and Uberenv. This guide explains some of the common practices one might want to perform with submodules during Spheral development.
+Spheral uses submodules to bring other codes/project directly into our source tree, such as BLT, and PYB11Generator. This guide explains some of the common practices one might want to perform with submodules during Spheral development.
 
 .. _update_local_submodules:
 

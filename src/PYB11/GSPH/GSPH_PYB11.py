@@ -38,6 +38,8 @@ PYB11includes += ['"GSPH/GenericRiemannHydro.hh"',
                   '"GSPH/RiemannSolvers/RiemannSolverBase.hh"',
                   '"GSPH/RiemannSolvers/HLLC.hh"',
                   '"GSPH/RiemannSolvers/SecondOrderArtificialViscosity.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"Neighbor/PairwiseField.hh"',
                   '"FileIO/FileIO.hh"']
 

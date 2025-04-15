@@ -69,6 +69,10 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _packages SVPH)
 endif()
 
+if (ENABLE_SUNDIALS AND ENABLE_MPI)
+  list(APPEND _packages Solvers)
+endif()
+
 if(NOT ENABLE_CXXONLY)
   list(APPEND _packages
     SimulationControl

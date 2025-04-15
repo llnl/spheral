@@ -20,7 +20,7 @@ inline
 IncrementState<Dimension, Value>::
 IncrementState(std::initializer_list<std::string> depends,
                const bool wildCardDerivs):
-  FieldUpdatePolicy<Dimension>(depends),
+  FieldUpdatePolicy<Dimension, Value>(depends),
   mWildCardDerivs(wildCardDerivs) {
 }
 
@@ -28,7 +28,7 @@ template<typename Dimension, typename Value>
 inline
 IncrementState<Dimension, Value>::
 IncrementState(const bool wildCardDerivs):
-  FieldUpdatePolicy<Dimension>(),
+  FieldUpdatePolicy<Dimension, Value>({}),
   mWildCardDerivs(wildCardDerivs) {
 }
 
@@ -94,22 +94,68 @@ operator==(const UpdatePolicyBase<Dimension>& rhs) const {
 }
 
 //------------------------------------------------------------------------------
-// Wildcard derivs attribute.
+// Serialize the derivative data.  The most common usage here will be for
+// descendant classes to override this and call this base method with a modified
+// key.
 //------------------------------------------------------------------------------
-template<typename Dimension, typename Value>
-inline
-bool
-IncrementState<Dimension, Value>::
-wildCardDerivs() const {
-  return mWildCardDerivs;
-}
-
 template<typename Dimension, typename Value>
 inline
 void
 IncrementState<Dimension, Value>::
-wildCardDerivs(const bool val) {
-  mWildCardDerivs = val;
+serializeDerivatives(std::vector<double>& buf,
+                     const KeyType& key,
+                     const StateDerivatives<Dimension>& derivs) const {
+
+  // Are we allowing multiple derivative contributions?  If not this is simpler.
+  if (not mWildCardDerivs) {
+    const auto incrementKey = prefix() + key;
+    const auto& f = derivs.template field<Value>(incrementKey);
+    CHECK(f.fixedSizeDataType());
+    const std::vector<char> rawbuf = packFieldValues(f);
+    const auto ndvals = f.numInternalElements() * f.numValsInDataType();
+    const auto nraw = rawbuf.size();
+    CHECK(nraw == ndvals*sizeof(double));
+    const auto istart = buf.size();
+    buf.resize(istart + ndvals);
+    CHECK((buf.size() - istart)*sizeof(double) == nraw);
+    std::memcpy(&buf[istart], &rawbuf[0], nraw);
+
+  } else {
+    // We potentially have multiple derivative fields accumulating,
+    // so we need a temporary buffer to accumulate the result.
+    KeyType fKey, nodeListKey, dfKey, dfNodeListKey;
+    StateBase<Dimension>::splitFieldKey(key, fKey, nodeListKey);
+    const auto incrementKey = prefix() + fKey;
+
+    std::vector<Value> vals;
+    const auto allkeys = derivs.keys();
+    auto numDeltaFields = 0u;
+    for (const auto& dkey: allkeys) {
+      StateBase<Dimension>::splitFieldKey(dkey, dfKey, dfNodeListKey);
+      if (dfNodeListKey == nodeListKey and
+          dfKey.compare(0, incrementKey.size(), incrementKey) == 0) {
+        // This delta field matches the base of increment key, so apply it.
+        ++numDeltaFields;
+        const auto& df = derivs.template field<Value>(dkey);
+        const auto n = df.numInternalElements();
+        vals.resize(n, DataTypeTraits<Value>::zero());
+        for (auto i = 0u; i < n; ++i) vals[i] += df[i];
+      }
+    }
+
+    const auto n = vals.size();
+    if (n > 0u) {
+      const auto ndvals = n * DataTypeTraits<Value>::numElements(vals[0]);
+      const auto nraw = ndvals * sizeof(double);
+      std::vector<char> rawbuf;
+      for (auto i = 0u; i < n; ++i) packElement(vals[i], rawbuf);
+      CHECK(rawbuf.size() == nraw);
+      const auto istart = buf.size();
+      buf.resize(istart + ndvals);
+      CHECK((buf.size() - istart)*sizeof(double) == nraw);
+      std::memcpy(&buf[istart], &rawbuf[0], nraw);
+    }
+  }      
 }
 
 }

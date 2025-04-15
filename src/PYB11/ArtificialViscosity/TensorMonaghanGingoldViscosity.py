@@ -20,6 +20,7 @@ Owen, J Michael (2004), 'A tensor artficial visocity for SPH', Journal of Comput
     using SymTensor = typename %(Dimension)s::SymTensor;
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
     using ReturnType = %(QPiType)s;
 """
 

@@ -23,18 +23,10 @@ template<typename Dimension>
 SVPHMassDensityPolicy<Dimension>::
 SVPHMassDensityPolicy(const Scalar& rhoMin,
                       const Scalar& rhoMax):
-  UpdatePolicyBase<Dimension>({HydroFieldNames::mass,
-                               SVPHFieldNames::A_SVPH}),
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::mass,
+                                        SVPHFieldNames::A_SVPH}),
   mRhoMin(rhoMin),
   mRhoMax(rhoMax) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SVPHMassDensityPolicy<Dimension>::
-~SVPHMassDensityPolicy() {
 }
 
 //------------------------------------------------------------------------------

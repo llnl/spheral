@@ -17,6 +17,7 @@ class SolidSPH(SPHBase):
   using Tensor = typename %(Dimension)s::Tensor;
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",

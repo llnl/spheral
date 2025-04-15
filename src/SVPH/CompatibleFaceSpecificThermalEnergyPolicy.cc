@@ -167,14 +167,6 @@ CompatibleFaceSpecificThermalEnergyPolicy(const TableKernel<Dimension>& W,
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CompatibleFaceSpecificThermalEnergyPolicy<Dimension>::
-~CompatibleFaceSpecificThermalEnergyPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 template<typename Dimension>

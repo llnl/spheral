@@ -105,7 +105,7 @@ class ConstantBoundaryWrapper2d(ConstantBoundary2d):
 
 class defaultExpansionTriggerWrapper:
     def __init__(self,db):
-        self.nodeLists = db.nodeLists()
+        self.nodeLists = db.nodeLists
         self.vel = db.globalVelocity
         if db.numSolidNodes>0: 
             self.rho = db.solidMassDensity
@@ -247,7 +247,7 @@ class ExpandingDomain:
 
             self.activeFields=[]
             self.inactiveFields=[]
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
             for i in range(len(activeNodeLists)):
                 nodeListi = activeNodeLists[i]
                 self.activeFields.append([])
@@ -352,7 +352,7 @@ class ExpandingDomain:
         #--------------------------------------------------------------- 
             result = 0
             pos = self.activeDatabase.globalPosition
-            nodeLists = self.activeDatabase.nodeLists()
+            nodeLists = self.activeDatabase.nodeLists
             for nodeListi in range(self.activeDatabase.numNodeLists):
                 for i in range(nodeLists[nodeListi].numInternalNodes):
                     posi = pos(nodeListi,i)
@@ -367,7 +367,7 @@ class ExpandingDomain:
         # stowe essential information for nodes outside the user defined
         # initial local ellipse
         #---------------------------------------------------------------
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
 
             for i in range(self.activeDatabase.numNodeLists):
                 
@@ -397,7 +397,7 @@ class ExpandingDomain:
         # takes nodes from the inactive list and adds them to the active
         # list.
         #---------------------------------------------------------------
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
 
             for i in range(self.activeDatabase.numNodeLists):
                 numInactiveNodesi = len(self.inactiveFields[i][0])
@@ -455,7 +455,7 @@ class ExpandingDomain:
         # dynamic const bc to be culled (less relevant with field based
         # movement)
         #---------------------------------------------------------------
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
             for j in range(self.activeDatabase.numNodeLists):
                 pos = activeNodeLists[j].positions()
                 indices = [i for i in range(activeNodeLists[j].numInternalNodes) if (self.constBCEllipse.isOutside(pos[i]) or self.permanentConstNodeFunc(pos[i]))]
@@ -471,7 +471,7 @@ class ExpandingDomain:
         # into physic packages' bc list
         #---------------------------------------------------------------
             self.constBC=[]
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
             for j in range(self.activeDatabase.numNodeLists):
                 pos = activeNodeLists[j].positions()
                 constNodes = [i for i in range(activeNodeLists[j].numInternalNodes) if (self.constBCEllipse.isOutside(pos[i]) or self.permanentConstNodeFunc(pos[i])) ]
@@ -550,7 +550,7 @@ class ExpandingDomain:
         # to prevent the drop off at the edge of the domain.
         #---------------------------------------------------------------
             if self.rho_func:
-                activeNodeLists = self.activeDatabase.nodeLists()
+                activeNodeLists = self.activeDatabase.nodeLists
                 for j in range(self.activeDatabase.numNodeLists):
                     rho_funcj = self.rho_func[j]
                     pos = activeNodeLists[j].positions()
@@ -573,7 +573,7 @@ class ExpandingDomain:
         #---------------------------------------------------------------
         # takes the const bc nodes and makes into internal nodes.
         #---------------------------------------------------------------
-            activeNodeLists = self.activeDatabase.nodeLists()
+            activeNodeLists = self.activeDatabase.nodeLists
             
             for i in range(self.activeDatabase.numNodeLists):
                 numFieldsi = len(self.activeFields[i])

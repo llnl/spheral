@@ -349,7 +349,7 @@ computeCorrections(const ConnectivityMap<Dimension>& connectivityMap,
   // Compute corrections for each point
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto numNodes = connectivityMap.numNodes(nodeListi);
-    for (auto nodei = 0; nodei < numNodes; ++nodei) {
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
       // Initialize polynomial matrices for point i
       M.setZero();
       for (auto& mat : dM) {
@@ -601,7 +601,7 @@ computeNormal(const ConnectivityMap<Dimension>& connectivityMap,
   // Sum up normal directions
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto numNodes = connectivityMap.numNodes(nodeListi);
-    for (auto nodei = 0; nodei < numNodes; ++nodei) {
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
       // Zero out normal
       normal(nodeListi, nodei) = Vector::zero;
       

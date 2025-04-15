@@ -192,8 +192,9 @@ updateAsIncrement(const KeyType& key,
 
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
-  REQUIRE(fieldKey == HydroFieldNames::specificThermalEnergy and 
-          nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
+  REQUIRE2(fieldKey == HydroFieldNames::specificThermalEnergy and 
+           nodeListKey == UpdatePolicyBase<Dimension>::wildcard(),
+           "Bad key choice: " << key << " " << fieldKey << " " << nodeListKey);
   auto eps = state.fields(fieldKey, Scalar());
 
   // Build an increment policy to use.

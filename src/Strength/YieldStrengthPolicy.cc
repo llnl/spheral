@@ -24,23 +24,15 @@ namespace Spheral {
 template<typename Dimension>
 YieldStrengthPolicy<Dimension>::
 YieldStrengthPolicy(const bool scaleWithPorosity):
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                HydroFieldNames::pressure,
-                                SolidFieldNames::plasticStrain,
-                                SolidFieldNames::tensorDamage,
-                                IncrementState<Dimension, Scalar>::prefix() + SolidFieldNames::plasticStrain,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha}),
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        HydroFieldNames::pressure,
+                                        SolidFieldNames::plasticStrain,
+                                        SolidFieldNames::tensorDamage,
+                                        IncrementState<Dimension, Scalar>::prefix() + SolidFieldNames::plasticStrain,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha}),
   mScaleWithPorosity(scaleWithPorosity) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-YieldStrengthPolicy<Dimension>::
-~YieldStrengthPolicy() {
 }
 
 //------------------------------------------------------------------------------

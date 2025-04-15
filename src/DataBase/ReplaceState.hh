@@ -22,7 +22,7 @@ class ReplaceState: public PureReplaceState<Dimension, ValueType> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, ValueType>::KeyType;
 
   // Constructors, destructor.
   ReplaceState(std::initializer_list<std::string> depends = {});
@@ -40,6 +40,9 @@ public:
 
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
+
+  // Don't use as evolved state for implicit integration
+  virtual bool independent() const override { return false; }
 
 private:
   //--------------------------- Private Interface ---------------------------//

@@ -11,22 +11,19 @@ class SynchronousRK2Integrator(Integrator):
     "Second-order in time explicit Runge-Kutta time integration scheme"
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
 """
 
     #...........................................................................
     # Constructors
-    def pyinit1(self, dataBase = "DataBase<%(Dimension)s>&"):
-        "Construct an integrator with a DataBase"
-
-    def pyinit2(self,
-                dataBase = "DataBase<%(Dimension)s>&",
-                physicsPackages = "const std::vector<Physics<%(Dimension)s>*>&"):
-        "Construct an integrator with a DataBase and physics packages"
+    def pyinit(self,
+               dataBase = "DataBase<%(Dimension)s>&",
+               physicsPackages = ("const std::vector<Physics<%(Dimension)s>*>&", "std::vector<Physics<%(Dimension)s>*>()")):
+        "Construct an integrator with a DataBase and optional physics packages"
 
     #...........................................................................
     # Virtual methods
@@ -35,11 +32,6 @@ class SynchronousRK2Integrator(Integrator):
     def step1(self, maxTime="Scalar"):
         "Take a step"
         return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def label(self):
-        return "std::string"
 
 #-------------------------------------------------------------------------------
 # Inject other interfaces

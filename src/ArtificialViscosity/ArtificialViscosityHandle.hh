@@ -12,7 +12,7 @@
 #include "Physics/Physics.hh"
 #include "Field/FieldList.hh"
 #include "DataOutput/registerWithRestart.hh"
-#include "Utilities/DeprecationWarning.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <utility>
 #include <typeindex>
@@ -37,6 +37,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ResidualType = typename Physics<Dimension>::ResidualType;
 
   // Constructors, destructor
   ArtificialViscosityHandle(const Scalar Clinear,
@@ -109,6 +110,13 @@ public:
                                const DataBase<Dimension>& dataBase, 
                                State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives) override;
+
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  // Artificial viscosities default to just relying on the hydro to handle this, so return no vote.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const override { return std::make_pair<double, std::string>(0.0, this->label() + " no vote"); }
 
   //...........................................................................
   // Methods

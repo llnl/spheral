@@ -20,7 +20,7 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class PlasticStrainPolicy: public FieldUpdatePolicy<Dimension> {
+class PlasticStrainPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -28,11 +28,11 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   PlasticStrainPolicy();
-  virtual ~PlasticStrainPolicy();
+  virtual ~PlasticStrainPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -45,10 +45,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  PlasticStrainPolicy(const PlasticStrainPolicy& rhs);
-  PlasticStrainPolicy& operator=(const PlasticStrainPolicy& rhs);
+  // Fobridden methjods
+  PlasticStrainPolicy(const PlasticStrainPolicy& rhs) = delete;
+  PlasticStrainPolicy& operator=(const PlasticStrainPolicy& rhs) = delete;
 };
 
 }

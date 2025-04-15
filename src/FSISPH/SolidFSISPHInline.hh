@@ -130,22 +130,22 @@ SolidFSISPH<Dimension>::linearCorrectGradients(bool val) {
 }
 
 //------------------------------------------------------------------------------
-// plane strain (instead of plane stress) mode for 1D and 2D problems
+// deactivate our decoupling algo for same material damaged nodes
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-bool
-SolidFSISPH<Dimension>::planeStrain() const {
-  return mPlaneStrain;
+void
+SolidFSISPH<Dimension>::
+decoupleDamagedMaterial(bool x) {
+  mDecoupleDamagedMaterial = x;
 }
-
 template<typename Dimension>
 inline
-void
-SolidFSISPH<Dimension>::planeStrain(bool val) {
-  mPlaneStrain = val;
+bool
+SolidFSISPH<Dimension>::
+decoupleDamagedMaterial() const {
+  return mDecoupleDamagedMaterial;
 }
-
 
 //------------------------------------------------------------------------------
 // switch to turn on density sum for different nodeLists

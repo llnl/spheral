@@ -47,14 +47,6 @@ NonSymmetricSpecificThermalEnergyPolicy(const DataBase<Dimension>& dataBase):
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-NonSymmetricSpecificThermalEnergyPolicy<Dimension>::
-~NonSymmetricSpecificThermalEnergyPolicy() {
-}
-
-//------------------------------------------------------------------------------
 // Update the field.
 //------------------------------------------------------------------------------
 template<typename Dimension>

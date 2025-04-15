@@ -9,9 +9,10 @@ from DEMBase import *
 class LinearSpringDEM(DEMBase):
 
     PYB11typedefs = """
-  typedef typename %(Dimension)s::Scalar Scalar;
-  typedef typename %(Dimension)s::Vector Vector;
-  typedef typename DEMBase<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using TimeStepType = typename DEMBase<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "const DataBase<%(Dimension)s>&",

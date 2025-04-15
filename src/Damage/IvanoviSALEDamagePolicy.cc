@@ -165,19 +165,11 @@ IvanoviSALEDamagePolicy(const double minPlasticFailure,             // minimum p
                         const double plasticFailurePressureSlope,   // slope for critical plastic strain
                         const double plasticFailurePressureOffset,  // intercept for critical plastic strain
                         const double tensileFailureStress):         // threshold for tensile failure
-  UpdatePolicyBase<Dimension>({SolidFieldNames::strain}),
+  FieldUpdatePolicy<Dimension, SymTensor>({SolidFieldNames::strain}),
   mEpsPfb(minPlasticFailure),
   mB(plasticFailurePressureSlope),
   mPc(plasticFailurePressureOffset),
   mTensileFailureStress(tensileFailureStress) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-IvanoviSALEDamagePolicy<Dimension>::
-~IvanoviSALEDamagePolicy() {
 }
 
 //------------------------------------------------------------------------------

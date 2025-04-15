@@ -19,6 +19,7 @@ class SolidFSISPH(GenericHydro):
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename SolidFSISPH<%(Dimension)s>::PairAccelerationsType;
   using PairWorkType = typename SolidFSISPH<%(Dimension)s>::PairWorkType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
@@ -37,7 +38,7 @@ class SolidFSISPH(GenericHydro):
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                linearCorrectGradients = "const bool",
-               planeStrain = "const bool",
+               decoupleDamagedMaterial = "const bool",
                interfacePmin = "const double",
                interfaceNeighborAngleThreshold = "const double ",
                densityUpdate = "const FSIMassDensityMethod",
@@ -95,6 +96,7 @@ temperature or pressure."""
     kernelAveragingMethod = PYB11property("KernelAveragingMethod", "kernelAveragingMethod", "kernelAveragingMethod",doc="Flag to select our kernel type")
 
     planeStrain = PYB11property("bool", "planeStrain", "planeStrain",doc="use plane strain approach for 1D or 2D problems.")
+    decoupleDamagedMaterial = PYB11property("bool", "decoupleDamagedMaterial", "decoupleDamagedMaterial",doc="turn off decoupling algo for same-material damaged interactions.")
     compatibleEnergyEvolution = PYB11property("bool", "compatibleEnergyEvolution", "compatibleEnergyEvolution",doc="Flag to determine if we're using the total energy conserving compatible energy evolution scheme.")
     evolveTotalEnergy = PYB11property("bool", "evolveTotalEnergy", "evolveTotalEnergy",doc="Flag controlling if we evolve total or specific energy.")
     linearCorrectGradients = PYB11property("bool", "linearCorrectGradients", "linearCorrectGradients",doc="Flag to determine if we're applying the linear correction for the velocity gradient.")

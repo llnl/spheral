@@ -19,17 +19,17 @@ template<typename Dimension> class StateDerivatives;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class ShearModulusPolicy: public FieldUpdatePolicy<Dimension> {
+class ShearModulusPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   ShearModulusPolicy();
-  virtual ~ShearModulusPolicy();
+  virtual ~ShearModulusPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -42,10 +42,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  ShearModulusPolicy(const ShearModulusPolicy& rhs);
-  ShearModulusPolicy& operator=(const ShearModulusPolicy& rhs);
+  // Forbidden methods
+  ShearModulusPolicy(const ShearModulusPolicy& rhs) = delete;
+  ShearModulusPolicy& operator=(const ShearModulusPolicy& rhs) = delete;
 };
 
 }

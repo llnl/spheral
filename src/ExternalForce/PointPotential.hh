@@ -15,7 +15,8 @@ template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
 template<typename Dimension> class NodeList;
 template<typename Dimension> class DataBase;
-
+class FileIO;
+  
 template<typename Dimension>
 class PointPotential: public GenericBodyForce<Dimension> {
 public:

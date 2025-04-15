@@ -1,12 +1,12 @@
-numpy
-numpy-stl
-matplotlib
-h5py
-scipy 
-mpi4py
-cffi
-pyyaml
-llnl-thicket
-ipython
+numpy >= 1.24.4, <= 1.26.4
+numpy-stl >= 3.1.2, <= 3.2.0
+matplotlib >= 3.7.5, <= 3.9.4
+h5py >= 3.11.0, <= 3.13.0
+scipy >= 1.10.1, <= 1.13.1
+mpi4py == 4.0.3
+cffi == 1.17.1
+pyyaml == 6.0.2
+llnl-thicket == 2024.2.1
+ipython >= 8.12.3, <= 8.18.1
 ats @ file://@SPHERAL_ROOT_DIR@/extern/ATS
 

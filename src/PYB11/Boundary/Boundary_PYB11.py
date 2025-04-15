@@ -35,6 +35,8 @@ PYB11includes += ['"Boundary/Boundary.hh"',
                   '"Field/Field.hh"',
                   '"Field/FieldList.hh"',
                   '"NodeList/NodeList.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

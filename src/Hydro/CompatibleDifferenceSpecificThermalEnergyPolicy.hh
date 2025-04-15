@@ -61,6 +61,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Don't advance this policy implicitly
+  virtual bool independent() const override { return false; }
+
   // Forbidden methods
   CompatibleDifferenceSpecificThermalEnergyPolicy(const CompatibleDifferenceSpecificThermalEnergyPolicy& rhs) = delete;
   CompatibleDifferenceSpecificThermalEnergyPolicy& operator=(const CompatibleDifferenceSpecificThermalEnergyPolicy& rhs) = delete;

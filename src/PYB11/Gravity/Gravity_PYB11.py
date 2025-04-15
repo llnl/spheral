@@ -24,6 +24,8 @@ PYB11includes += ['"Gravity/Tree.hh"',
                   '"Gravity/NBodyGravity.hh"',
                   '"Gravity/TreeGravity.hh"',
                   '"Gravity/PolyGravity.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

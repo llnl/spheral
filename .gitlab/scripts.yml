@@ -14,6 +14,7 @@
     paths:
       - ci-dir.txt
       - job-name.txt
+  interruptible: true
 
 .tpls:
   stage: tpls
@@ -24,11 +25,12 @@
     - cd $CI_BUILD_DIR && cat job-name.txt
     - echo $SPEC
 
-    - ./$SCRIPT_DIR/gitlab/build_and_install.py --spec="$SPEC" --tpls-only
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --spec="${SPACK_PKG_NAME}${SPEC}" --ci-run
   artifacts:
     paths:
       - ci-dir.txt
       - job-name.txt
+  interruptible: true
 
 .build:
   stage: build_and_install
@@ -42,6 +44,7 @@
     paths:
       - ci-dir.txt
       - job-name.txt
+  interruptible: true
 
 .build_and_test:
   extends: [.build]
@@ -54,6 +57,7 @@
     paths:
       - ci-dir.txt
       - job-name.txt
+  interruptible: true
 
 .run_ats:
   stage: run_ats
@@ -76,6 +80,7 @@
   allow_failure:
     exit_codes:
       - 80
+  interruptible: true
 
 # Run the performance suite and move the resulting Caliper files into the benchmark location
 .run_perf:
@@ -98,13 +103,14 @@
 .cleanup_dir:
   stage: cleanup
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: empty
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
 
     - ml load mpifileutils
     - cd $SPHERAL_BUILDS_DIR
     - $RUN_CMD -n 20 drm $CI_BUILD_DIR/..
+  interruptible: true
 
 # ------------------------------------------------------------------------------
 # Shared TPL scripts.
@@ -113,7 +119,7 @@
 .update_tpls:
   stage: update_tpls
   script:
-    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spec-list="$SCRIPT_DIR/devtools/spec-list.json" --spheral-spack-dir=$UPSTREAM_DIR
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
 
 .toss_update_permissions:
   stage: update_permissions
@@ -142,40 +148,47 @@
   stage: generate_buildcache
   extends: [.spheral_rev_str]
   script:
-    - INSTALL_DIR=/usr/gapps/Spheral/$SYS_TYPE/spheral-$SPHERAL_REV_STR
     - DEV_PKG_NAME=$SYS_TYPE-spheral-dev-pkg-$SPHERAL_REV_STR
-
-    - env SPHERAL_REV_STR=$SPHERAL_REV_STR STAGE_DIR=$INSTALL_DIR SPEC=$SPEC SPACK_PKG_NAME=$SPACK_PKG_NAME SCRIPT_DIR=$SCRIPT_DIR
-      bash ./$SCRIPT_DIR/lc/generate-buildcache.sh
-
-    - echo $INSTALL_DIR &> install-dir.txt
+    - INSTALL_DIR=/usr/gapps/Spheral/$SYS_TYPE/spheral-$SPHERAL_REV_STR
+    - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID
     - echo $DEV_PKG_NAME &> dev-pkg-name.txt
+    - echo $CI_BUILD_DIR &> ci-dir.txt
+    - echo $INSTALL_DIR &> install-dir.txt
+    - mkdir -p $CI_BUILD_DIR/$DEV_PKG_NAME && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR/$DEV_PKG_NAME
+    - cd $CI_BUILD_DIR/$DEV_PKG_NAME
+
+    - env SCRIPT_DIR=$SCRIPT_DIR DEV_PKG_NAME=$DEV_PKG_NAME CI_BULD_DIR=$CI_BUILD_DIR
+      bash ./$SCRIPT_DIR/lc/generate-buildcache.sh
 
   artifacts:
     paths:
-      - install-dir.txt
       - dev-pkg-name.txt
-
+      - ci-dir.txt
+      - install-dir.txt
 
 .install_dev_pkg:
   stage: install_production
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: empty
   script:
     - INSTALL_DIR=$(cat install-dir.txt)
+    - rm -rf $INSTALL_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
     - DEV_PKG_NAME=$(cat dev-pkg-name.txt)
 
-    - cp $INSTALL_DIR/$DEV_PKG_NAME.tar.gz .
+    - cp $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz .
     - tar -xzf $DEV_PKG_NAME.tar.gz
     - cd $DEV_PKG_NAME
 
-    - env INSTALL_DIR=$INSTALL_DIR SPEC=$SPEC SPACK_PKG_NAME=$SPACK_PKG_NAME BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
+    - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
+    - ml load mpifileutils
+    - dchmod --mode go+rx $INSTALL_DIR
 
   artifacts:
     paths:
+      - ci-dir.txt
       - install-dir.txt
-
 
 .prod_permissions:
   stage: update_permissions
@@ -187,8 +200,6 @@
     - sed 's/YYYY\.MM\.p/'"$ALIAS"'/g' $SCRIPT_DIR/lc/modulefile-template.lua > /usr/gapps/Spheral/modulefiles/Spheral/"$ALIAS".lua
     - chmod go+r /usr/gapps/Spheral/modulefiles/Spheral/"$ALIAS".lua
 
-    - ml load mpifileutils
-    - dchmod --mode go+rx $INSTALL_DIR
     - ln -sfn $INSTALL_DIR /usr/gapps/Spheral/$SYS_TYPE/$ALIAS
 
 
@@ -212,7 +223,6 @@
 
     - ml load mpifileutils
     - if [[ $DIR_LIST ]]; then $RUN_CMD -n 20 drm $DIR_LIST; else echo "No directories to remove at this time."; fi
-  when: always
 
 .merge_pr_rule:
   rules:
@@ -222,4 +232,9 @@
 .tag_release_rule:
   rules:
     - if: $CI_COMMIT_TAG
+      when: manual
+    - if: '$CI_COMMIT_MESSAGE =~ /test-prod/'
+      when: manual
+    - changes:
+        - $SCRIPT_DIR/lc/*
       when: manual

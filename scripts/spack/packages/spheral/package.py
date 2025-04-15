@@ -31,6 +31,10 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('docs', default=False, description='Enable building Docs.')
     variant('shared', default=True, description='Build C++ libs as shared.')
     variant('python', default=True, description='Build Python Dependencies.')
+    variant('caliper', default=True, description='Enable Caliper timers.')
+    variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
+    variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
+    variant('sundials', default=True, description='Build Sundials package.')
 
     # -------------------------------------------------------------------------
     # DEPENDS
@@ -59,16 +63,21 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('axom +shared', when='~cuda', type='build')
     depends_on('axom ~shared', when='+cuda', type='build')
 
-    depends_on('caliper@2.11 ~shared +adiak +gotcha ~libdw ~papi ~libunwind +pic', type='build')
+    with when("+caliper"):
+        depends_on("caliper@2.11 ~shared +adiak +gotcha ~libdw ~papi ~libunwind +pic", type="build")
+        depends_on("caliper+mpi", type="build", when="+mpi")
+        depends_on("caliper~mpi", type="build", when="~mpi")
 
     depends_on("raja@2024.02.0", type="build")
 
-    depends_on('opensubdiv@3.4.3', type='build')
+    depends_on('opensubdiv@3.4.3+pic', type='build', when="+opensubdiv")
 
-    depends_on('polytope +python', type='build', when='+python')
+    depends_on('polytope +python', type='build')
+
+    depends_on('sundials@7.0.0', type='build', when='+sundials')
 
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "caliper", "adiak~shared"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
@@ -97,29 +106,32 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     def _get_config_name(self, spec):
         sys_type = self._get_sys_type(spec)
         config_name = f"{sys_type}_{spec.compiler.name}_{spec.compiler.version}"
-        if ("+mpi" in spec):
+        if (spec.satisfies("+mpi")):
             config_name += "_" + spec.format("{^mpi.name}_{^mpi.version}")
-        if ("+cuda" in spec):
+        if (spec.satisfies("+cuda")):
             config_name += "_" + spec.format("{^cuda.name}{^cuda.version}")
+        if (spec.satisfies("+rocm")):
+            config_name += "_rocm"
         return config_name.replace(" ", "_")
 
     @property
     def cache_name(self):
-
         hostname = socket.gethostname()
         if "SYS_TYPE" in env:
             hostname = hostname.rstrip('1234567890')
-
         envspec = os.environ.get("SPEC")
         spec = self.spec
         if envspec:
-          cache_spec = envspec
+            cache_spec = envspec
         else:
-          cache_spec = str(spec.compiler.name) + "@" + str(spec.compiler.version)
-        return "{0}-{1}.cmake".format(
-            str(self._get_sys_type(spec)),
-            cache_spec.replace(" ", "_")
-        )
+            cache_spec = str(spec.compiler.name) + "@" + str(spec.compiler.version)
+            if spec.satisfies("~mpi"):
+                cache_spec += "~mpi"
+            if spec.satisfies("+cuda"):
+                cache_spec += "+cuda"
+            if spec.satisfies("+rocm"):
+                cache_spec += "+rocm"
+        return f"{self._get_sys_type(spec)}-{cache_spec.replace(' ', '_')}.cmake"
 
     def initconfig_compiler_entries(self):
         spec = self.spec
@@ -171,7 +183,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = []
 
-        entries.append(cmake_cache_option('ENABLE_CXXONLY', False))
+        entries.append(cmake_cache_option('ENABLE_CXXONLY', not spec.satisfies("+python")))
         entries.append(cmake_cache_option('TPL_VERBOSE', False))
         entries.append(cmake_cache_option('BUILD_TPL', True))
 
@@ -179,7 +191,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_string('SPHERAL_CONFIGURATION', self._get_config_name(spec)))
 
         # TPL locations
-        entries.append(cmake_cache_path('caliper_DIR', spec['caliper'].prefix))
+        if (spec.satisfies("+caliper")):
+            entries.append(cmake_cache_path('caliper_DIR', spec['caliper'].prefix))
+            #entries.append(cmake_cache_option('ENABLE_TIMER', True))
 
         entries.append(cmake_cache_path('adiak_DIR', spec['adiak'].prefix))
 
@@ -204,7 +218,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('eigen_DIR', spec['eigen'].prefix))
         entries.append(cmake_cache_path('eigen_INCLUDES',spec['eigen'].prefix.include.eigen3))
 
-        entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
+        if (spec.satisfies("+opensubdiv")):
+            entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
+            entries.append(cmake_cache_path('ENABLE_OPENSUBDIV', True))
+
+        if (spec.satisfies("~network")):
+            entries.append(cmake_cache_path('SPHERAL_NETWORK_CONNECTED', False))
 
         entries.append(cmake_cache_path('polytope_DIR', spec['polytope'].prefix))
 
@@ -221,6 +240,10 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         if "+python" in spec:
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
+
+        entries.append(cmake_cache_option('ENABLE_SUNDIALS', '+sundials' in spec))
+        if "+sundials" in spec:
+            entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
 
         return entries
 
@@ -242,7 +265,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         if spec.satisfies("@develop"):
             dev_build_dir = "spack-build-" + str(spec.compiler.name) + "-" + str(spec.compiler.version)
-            return os.path.join(self.pkg.stage.source_path, build_dirname)
+            return os.path.join(self.pkg.stage.source_path, dev_build_dirname)
         else:
             return os.path.join(self.pkg.stage.path, self.build_dirname)
 

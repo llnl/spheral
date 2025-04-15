@@ -19,12 +19,16 @@ PYB11includes += ['"DataBase/DataBase.hh"',
                   '"Boundary/Boundary.hh"',
                   '"FileIO/FileIO.hh"',
                   '"Integrator/Integrator.hh"',
+                  '"Integrator/ImplicitIntegrator.hh"',
                   '"Integrator/PredictorCorrector.hh"',
-                  '"Integrator/SynchronousRK1.hh"',
+                  '"Integrator/ForwardEuler.hh"',
                   '"Integrator/SynchronousRK2.hh"',
                   '"Integrator/SynchronousRK4.hh"',
                   '"Integrator/CheapSynchronousRK2.hh"',
-                  '"Integrator/Verlet.hh"']
+                  '"Integrator/Verlet.hh"',
+                  '"Integrator/BackwardEuler.hh"',
+                  '"Integrator/CrankNicolson.hh"',
+                  '"Integrator/ImplicitIntegrationVectorOperator.hh"']
 
 #-------------------------------------------------------------------------------
 # Namespaces
@@ -35,21 +39,29 @@ PYB11namespaces = ["Spheral"]
 # Instantiate our types
 #-------------------------------------------------------------------------------
 from Integrator import *
+from ImplicitIntegrator import *
 from PredictorCorrectorIntegrator import *
-from SynchronousRK1Integrator import *
+from ForwardEulerIntegrator import *
 from SynchronousRK2Integrator import *
 from SynchronousRK4Integrator import *
 from CheapSynchronousRK2Integrator import *
 from VerletIntegrator import *
+from ImplicitIntegrationVectorOperator import *
+from BackwardEulerIntegrator import *
+from CrankNicolsonIntegrator import *
 
 for ndim in dims:
-    exec('''
-Integrator%(ndim)id = PYB11TemplateClass(Integrator, template_parameters="%(Dimension)s")
-PredictorCorrectorIntegrator%(ndim)id = PYB11TemplateClass(PredictorCorrectorIntegrator, template_parameters="%(Dimension)s")
-SynchronousRK1Integrator%(ndim)id = PYB11TemplateClass(SynchronousRK1Integrator, template_parameters="%(Dimension)s")
-SynchronousRK2Integrator%(ndim)id = PYB11TemplateClass(SynchronousRK2Integrator, template_parameters="%(Dimension)s")
-SynchronousRK4Integrator%(ndim)id = PYB11TemplateClass(SynchronousRK4Integrator, template_parameters="%(Dimension)s")
-CheapSynchronousRK2Integrator%(ndim)id = PYB11TemplateClass(CheapSynchronousRK2Integrator, template_parameters="%(Dimension)s")
-VerletIntegrator%(ndim)id = PYB11TemplateClass(VerletIntegrator, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+Integrator{ndim}d = PYB11TemplateClass(Integrator, template_parameters="{Dimension}")
+ImplicitIntegrator{ndim}d = PYB11TemplateClass(ImplicitIntegrator, template_parameters="{Dimension}")
+PredictorCorrectorIntegrator{ndim}d = PYB11TemplateClass(PredictorCorrectorIntegrator, template_parameters="{Dimension}")
+ForwardEulerIntegrator{ndim}d = PYB11TemplateClass(ForwardEulerIntegrator, template_parameters="{Dimension}")
+SynchronousRK2Integrator{ndim}d = PYB11TemplateClass(SynchronousRK2Integrator, template_parameters="{Dimension}")
+SynchronousRK4Integrator{ndim}d = PYB11TemplateClass(SynchronousRK4Integrator, template_parameters="{Dimension}")
+CheapSynchronousRK2Integrator{ndim}d = PYB11TemplateClass(CheapSynchronousRK2Integrator, template_parameters="{Dimension}")
+VerletIntegrator{ndim}d = PYB11TemplateClass(VerletIntegrator, template_parameters="{Dimension}")
+ImplicitIntegrationVectorOperator{ndim}d = PYB11TemplateClass(ImplicitIntegrationVectorOperator, template_parameters="{Dimension}")
+BackwardEulerIntegrator{ndim}d = PYB11TemplateClass(BackwardEulerIntegrator, template_parameters="{Dimension}")
+CrankNicolsonIntegrator{ndim}d = PYB11TemplateClass(CrankNicolsonIntegrator, template_parameters="{Dimension}")
+''')

@@ -156,7 +156,7 @@ p1 = plotFieldList(divVelocity,
 # Plot the analytic solution, which in this case is 1/r.
 xans = []
 yans = []
-for nodeList in db.nodeLists():
+for nodeList in db.nodeLists:
     for r in nodeList.positions()[:nodeList.numInternalNodes]:
         xans.append(r.magnitude())
         yans.append(-1.0/xans[-1])

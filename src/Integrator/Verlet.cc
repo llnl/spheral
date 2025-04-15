@@ -34,15 +34,6 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-Verlet<Dimension>::
-Verlet(DataBase<Dimension>& dataBase):
-  Integrator<Dimension>(dataBase) {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
 //------------------------------------------------------------------------------
 template<typename Dimension>

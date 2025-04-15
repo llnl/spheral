@@ -2,6 +2,9 @@
 
 namespace Spheral {
 
+//------------------------------------------------------------------------------
+// Dispatch evaluateDerivatives based on type of Q
+//------------------------------------------------------------------------------
 template<typename Dimension>
 void
 SolidFSISPH<Dimension>::
@@ -68,7 +71,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   // constants
   const auto W0 = W(0.0, 1.0);
   const auto interfaceNeighborAngleThreshold = this->interfaceNeighborAngleThreshold();
-  const auto interfacePmin = this-> interfacePmin();
+  const auto interfacePmin = this->interfacePmin();
+  const auto decoupleDamagedMaterial = this->decoupleDamagedMaterial();
   const auto epsTensile = this->epsilonTensile();
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto totalEnergy = this->evolveTotalEnergy();
@@ -83,7 +87,6 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto averageInterfaceKernels = (mKernelAveragingMethod==KernelAveragingMethod::AverageInterfaceKernels);
   const auto constructHLLC = (mInterfaceMethod == InterfaceMethod::HLLCInterface);
   const auto activateConstruction = !(mInterfaceMethod == InterfaceMethod::NoInterface);
-  const auto oneOverDimension = (this->planeStrain() ? 1.0/3.0 : 1.0/Dimension::nDim);
 
   // The connectivity.
   const auto& connectivityMap = dataBase.connectivityMap();
@@ -365,19 +368,21 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto fDi =  (sameMatij ? (1.0-Di)*(1.0-Di) : 0.0 );
       const auto fDj =  (sameMatij ? (1.0-Dj)*(1.0-Dj) : 0.0 );
       const auto fDij = (sameMatij ? pow(1.0-std::abs(Di-Dj),2.0) : 0.0 );
-      //const auto maxfDij = (sameMatij ? (1.0-Di)*(1.0-Dj) : 0.0);
 
-      // is Pmin being activated (Pmin->zero for material interfaces)
+      // is Pmin being activated? (Pmin -> interface Pmin)
       const auto pLimiti = (sameMatij ? (Pdi-rhoi*ci*ci*tinyNonDimensional) : interfacePmin);
       const auto pLimitj = (sameMatij ? (Pdj-rhoj*cj*cj*tinyNonDimensional) : interfacePmin);
       const auto pminActivei = (Pi < pLimiti);
       const auto pminActivej = (Pj < pLimitj);
       
-      // decoupling criteria 
+      // decoupling criteria, we want material interface to be able to separate and if 
+      // decoupleDamagedMaterial is active we want damaged material to behave like gravel
       const auto isExpanding = (ri-rj).dot(vi-vj) > 0.0;
       const auto isFullyDamaged = (fDi<tinyScalarDamage) or (fDj<tinyScalarDamage);
       const auto isPastAdhesionThreshold = pminActivei or pminActivej;
-      const auto decouple = isExpanding and isFullyDamaged and isPastAdhesionThreshold;
+      const auto canDecouple = (isFullyDamaged and decoupleDamagedMaterial) or differentMatij;
+
+      const auto decouple = isExpanding  and isPastAdhesionThreshold and canDecouple;
 
       // do we need to construct our interface velocity?
       const auto constructInterface = (fDij < 1.0-tinyScalarDamage) and activateConstruction;
@@ -386,7 +391,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       // do we reduce our deviatoric stress
       const auto isTensile = (((Si+Sj)-(Pdi+Pdj)*SymTensor::one).dot(rhatij)).dot(rhatij) > 0;
       const auto damageReduceStress = isTensile or differentMatij;
-      //const auto decouple = isExpanding and isFullyDamaged and isTensile;
+    
       // Kernels
       //--------------------------------------
       const auto Hij = 0.5*(Hi+Hj);
@@ -496,6 +501,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         }
 
         // save our max pressure from the AV for each node
+        const auto conversionFactorQ = rhoi*rhoj/(max(rhoij,tiny)*max(rhoij,tiny));
+        Qi *= conversionFactorQ;
+        Qj *= conversionFactorQ;
         maxViscousPressurei = max(maxViscousPressurei, Qi);
         maxViscousPressurej = max(maxViscousPressurej, Qj);
         effViscousPressurei += volj * Qi * Wi;
@@ -731,7 +739,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - (deformation.Trace()*oneOverDimension)*SymTensor::one;
+      const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one;
       const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
       DSDti += spinCorrection + 2.0*mui*deviatoricDeformation;
       

@@ -21,16 +21,16 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class PorositySolidMassDensityPolicy: public FieldUpdatePolicy<Dimension> {
+class PorositySolidMassDensityPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   PorositySolidMassDensityPolicy();
-  virtual ~PorositySolidMassDensityPolicy() {}
+  virtual ~PorositySolidMassDensityPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -43,10 +43,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  PorositySolidMassDensityPolicy(const PorositySolidMassDensityPolicy& rhs);
-  PorositySolidMassDensityPolicy& operator=(const PorositySolidMassDensityPolicy& rhs);
+  // Forbidden methods
+  PorositySolidMassDensityPolicy(const PorositySolidMassDensityPolicy& rhs) = delete;
+  PorositySolidMassDensityPolicy& operator=(const PorositySolidMassDensityPolicy& rhs) = delete;
 };
 
 }

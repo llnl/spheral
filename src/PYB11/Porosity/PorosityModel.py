@@ -18,6 +18,7 @@ Base class for PorosityModels for common functionality.
     using Vector = typename %(Dimension)s::Vector;
     using ScalarField = Field<%(Dimension)s, Scalar>;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................

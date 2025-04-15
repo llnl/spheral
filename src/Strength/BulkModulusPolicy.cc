@@ -23,17 +23,9 @@ namespace Spheral {
 template<typename Dimension>
 BulkModulusPolicy<Dimension>::
 BulkModulusPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-BulkModulusPolicy<Dimension>::
-~BulkModulusPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity}) {
 }
 
 //------------------------------------------------------------------------------

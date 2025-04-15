@@ -12,6 +12,9 @@
 #include "FieldOperations/FieldListFunctions.hh"
 #include "RK/RKFieldNames.hh"
 #include "RK/gradientRK.hh"
+#include "DataBase/DataBase.hh"
+#include "DataBase/State.hh"
+#include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/safeInv.hh"
 

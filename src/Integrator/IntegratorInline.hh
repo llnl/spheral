@@ -1,5 +1,4 @@
 #include "Utilities/DBC.hh"
-#include "Utilities/DeprecationWarning.hh"
 
 namespace Spheral {
 

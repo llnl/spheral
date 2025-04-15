@@ -26,17 +26,9 @@ namespace Spheral {
 template<typename Dimension>
 EntropyPolicy<Dimension>::
 EntropyPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-EntropyPolicy<Dimension>::
-~EntropyPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity}) {
 }
 
 //------------------------------------------------------------------------------

@@ -15,6 +15,7 @@ class ArtificialViscosity(ArtificialViscosityHandle):
   using Tensor = typename %(Dimension)s::Tensor;
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
   using ReturnType = %(QPiType)s;
 """
 

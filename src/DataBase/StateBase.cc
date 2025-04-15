@@ -16,6 +16,8 @@
 #include "Utilities/AnyVisitor.hh"
 #include "Utilities/DBC.hh"
 
+#include "RK/ReproducingKernel.hh"
+
 #include <algorithm>
 #include <sstream>
 
@@ -29,6 +31,35 @@ using std::string;
 namespace Spheral {
 
 namespace {
+// //------------------------------------------------------------------------------
+// // Helper for copying a type, used in copyState
+// //------------------------------------------------------------------------------
+// template<typename T>
+// T*
+// extractType(boost::any& anyT) {
+//   try {
+//     T* result = boost::any_cast<T*>(anyT);
+//     return result;
+//   } catch (boost::any_cast_error) {
+//     return NULL;
+//   }
+// }
+
+// //------------------------------------------------------------------------------
+// // Check if a boost::any object contains a pointer to the given type
+// //------------------------------------------------------------------------------
+// template<typename T>
+// inline
+// bool
+// is_ptype(boost::any& anyT) {
+//   return anyT.type() == typeid(T*);
+// }
+
+// template<typename Dimension>
+// inline
+// bool
+// is_known_noncopy_type(boost::any& anyT) {
+//   return is_ptype<ReproducingKernel<Dimension>>(anyT);
 
 //------------------------------------------------------------------------------
 // Comparison
@@ -464,4 +495,3 @@ copyState() {
 }
 
 }
-

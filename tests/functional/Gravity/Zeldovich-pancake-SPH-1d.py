@@ -267,7 +267,7 @@ gravity.appendBoundary(xbc)
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-#integrator = SynchronousRK1Integrator1d(db)
+#integrator = ForwardEulerIntegrator1d(db)
 integrator = SynchronousRK2Integrator1d(db)
 integrator.appendPhysicsPackage(gravity)
 integrator.appendPhysicsPackage(hydro)

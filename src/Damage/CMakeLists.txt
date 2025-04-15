@@ -29,7 +29,6 @@ instantiate(Damage_inst Damage_sources)
 set(Damage_headers
     DamageGradientPolicy.hh
     DamageModel.hh
-    DamageModelInline.hh
     EffectiveTensorDamagePolicy.hh
     GradyKippScalarDamage.hh
     JohnsonCookDamage.hh

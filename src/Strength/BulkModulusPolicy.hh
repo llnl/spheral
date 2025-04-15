@@ -18,16 +18,16 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class BulkModulusPolicy: public FieldUpdatePolicy<Dimension> {
+class BulkModulusPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   BulkModulusPolicy();
-  virtual ~BulkModulusPolicy();
+  virtual ~BulkModulusPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -40,10 +40,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  BulkModulusPolicy(const BulkModulusPolicy& rhs);
-  BulkModulusPolicy& operator=(const BulkModulusPolicy& rhs);
+  // Forbidden methods
+  BulkModulusPolicy(const BulkModulusPolicy& rhs) = delete;
+  BulkModulusPolicy& operator=(const BulkModulusPolicy& rhs) = delete;
 };
 
 }

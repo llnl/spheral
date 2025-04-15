@@ -72,7 +72,7 @@ commandLine(nx1 = 100,
             restartStep = 10000,
             restartBaseName = "dumps-AcousticWave-1d",
 
-            graphics = "gnu",
+            graphics = True,
 
             checkReversibility = False,
             )
@@ -212,10 +212,7 @@ hydro.appendBoundary(xbc)
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-integrator.appendPhysicsPackage(hydro)
-#if CRKSPH:
-#   integrator.appendPhysicsPackage(CRKSPH_mod)
+integrator = IntegratorConstructor(db, [hydro])
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
@@ -287,8 +284,8 @@ answer = AcousticWaveSolutionMod.AcousticWaveSolutionMod(eos, cs, rho1, x0, x1, 
 #-------------------------------------------------------------------------------
 # Plot the final state.
 #-------------------------------------------------------------------------------
-if graphics == "gnu":
-    from SpheralGnuPlotUtilities import *
+if graphics:
+    from SpheralMatplotlib import *
     state = State(db, integrator.physicsPackages())
     rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(state)
     #if mpi.rank == 0:
@@ -311,41 +308,6 @@ if graphics == "gnu":
         volPlot = plotFieldList(hydro.volume(),
                                 winTitle = "volume",
                                 colorNodeLists = False)
-    elif CRKSPH:
-        A0=hydro.A0()
-	print("ARRAY LENGTH:")
-        print((A0[0].__len__()))
-        tmp=[]
-        for i in range(A0[0].__len__()):
-		tmp.append(A0[0][i])
-        A=np.array(tmp)
-        #ret=smooth(A,11,'hamming') 
-        CoeffBx = Gnuplot.Data(A,
-                               with_ = "points",
-                               #with_ = "lines",
-                               title = "Bx",
-                               inline = True)
-        p0 = generateNewGnuPlot()
-        p0.plot(CoeffBx)
-        p0.title("COEFF")
-        p0.refresh()
-        #print(A0.size())
-        #A=np.array(A0)
-        #ret=smooth(A,11,'hamming')
-        volPlot = plotFieldList(hydro.volume(),
-                                winTitle = "volume",
-                                colorNodeLists = False)
-        A0Plot = plotFieldList(hydro.A0(),
-                               winTitle = "A0",
-                               colorNodeLists = False)
-        APlot = plotFieldList(hydro.A(),
-                              winTitle = "A",
-                              colorNodeLists = False)
-        BPlot = plotFieldList(hydro.B(),
-                              yFunction = "%s.x",
-                              winTitle = "B",
-                              colorNodeLists = False)
-
     else:
         omegaPlot = plotFieldList(hydro.omegaGradh(),
                                   winTitle = "grad h correction",

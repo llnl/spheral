@@ -11,6 +11,7 @@
 #include "Kernel/TableKernel.hh"
 #include "Field/FieldList.hh"
 #include "Neighbor/ConnectivityMap.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Hydro/HydroFieldNames.hh"

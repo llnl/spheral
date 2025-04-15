@@ -7,7 +7,7 @@
 #ifndef __Spheral_YoungsModulusPolicy_hh__
 #define __Spheral_YoungsModulusPolicy_hh__
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 #include "NodeList/SolidNodeList.hh"
 
 #include <string>
@@ -21,8 +21,7 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class YoungsModulusPolicy: 
-    public UpdatePolicyBase<Dimension> {
+class YoungsModulusPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -35,7 +34,7 @@ public:
 
   // Constructors, destructor.
   YoungsModulusPolicy(const SolidNodeList<Dimension>& nodes);
-  virtual ~YoungsModulusPolicy();
+  virtual ~YoungsModulusPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -52,12 +51,13 @@ public:
   static double YoungsModulus(const double K,     // bulk modulus
                               const double mu);   // shear modulus
 
+  // Forbidden methods
+  YoungsModulusPolicy(const YoungsModulusPolicy& rhs) = delete;
+  YoungsModulusPolicy& operator=(const YoungsModulusPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   const SolidNodeList<Dimension>& mSolidNodeList;
-
-  YoungsModulusPolicy(const YoungsModulusPolicy& rhs);
-  YoungsModulusPolicy& operator=(const YoungsModulusPolicy& rhs);
 };
 
 }

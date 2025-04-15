@@ -10,6 +10,7 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Boundary/Boundary.hh"
 #include "NodeList/FluidNodeList.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"

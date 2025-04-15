@@ -34,8 +34,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ResidualType = typename Physics<Dimension>::ResidualType;
 
   // Constructors.
   GenericHydro(ArtificialViscosityHandle<Dimension>& Q,
@@ -45,47 +45,70 @@ public:
   // Destructor.
   virtual ~GenericHydro();
 
+  // Forbidden methods.
+  GenericHydro() = delete;
+  GenericHydro(const GenericHydro&) = delete;
+  GenericHydro& operator=(const GenericHydro&) = delete;
+
   // We require all Physics packages to provide a method returning their vote
   // for the next time step.
   virtual TimeStepType dt(const DataBase<Dimension>& dataBase,
                           const State<Dimension>& state,
                           const StateDerivatives<Dimension>& derivs,
-                          const Scalar currentTime) const;
+                          const Scalar currentTime) const override;
+
+  // Provide an appropriate vote for an implicit time step limit.
+  virtual TimeStepType dtImplicit(const DataBase<Dimension>& dataBase,
+                                  const State<Dimension>& state,
+                                  const StateDerivatives<Dimension>& derivs,
+                                  const Scalar currentTime) const override;
+
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const override;
 
   // Allow access to the artificial viscosity.
-  ArtificialViscosityHandle<Dimension>& artificialViscosity() const;
+  ArtificialViscosityHandle<Dimension>& artificialViscosity() const { return mArtificialViscosity; }
 
   // Also allow access to the CFL timestep safety criteria.
-  Scalar cfl() const;
-  void cfl(Scalar cfl);
+  Scalar cfl()                              const { return mCFL; }
+  void cfl(Scalar x)                              { mCFL = x; }
 
   // Attribute to determine if the absolute magnitude of the velocity should
   // be used in determining the timestep.
-  bool useVelocityMagnitudeForDt() const;
-  void useVelocityMagnitudeForDt(bool x);
+  bool useVelocityMagnitudeForDt()          const { return mUseVelocityMagnitudeForDt; }
+  void useVelocityMagnitudeForDt(bool x)          { mUseVelocityMagnitudeForDt = x; }
 
   // Return the cumulative neighboring statistics.
-  int minMasterNeighbor() const;
-  int maxMasterNeighbor() const;
-  double averageMasterNeighbor() const;
+  int minMasterNeighbor()                   const { return mMinMasterNeighbor; }
+  int maxMasterNeighbor()                   const { return mMaxMasterNeighbor; }
+  double averageMasterNeighbor()            const { return double(mSumMasterNeighbor)/(mNormMasterNeighbor + 1.0e-20); }
 
-  int minCoarseNeighbor() const;
-  int maxCoarseNeighbor() const;
-  double averageCoarseNeighbor() const;
+  int minCoarseNeighbor()                   const { return mMinCoarseNeighbor; }
+  int maxCoarseNeighbor()                   const { return mMaxCoarseNeighbor; }
+  double averageCoarseNeighbor()            const { return double(mSumCoarseNeighbor)/(mNormCoarseNeighbor + 1.0e-20); }
 
-  int minRefineNeighbor() const;
-  int maxRefineNeighbor() const;
-  double averageRefineNeighbor() const;
+  int minRefineNeighbor()                   const { return mMinRefineNeighbor; }
+  int maxRefineNeighbor()                   const { return mMaxRefineNeighbor; }
+  double averageRefineNeighbor()            const { return double(mSumRefineNeighbor)/(mNormRefineNeighbor + 1.0e-20); }
 
-  int minActualNeighbor() const;
-  int maxActualNeighbor() const;
-  double averageActualNeighbor() const;
+  int minActualNeighbor()                   const { return mMinActualNeighbor; }
+  int maxActualNeighbor()                   const { return mMaxActualNeighbor; }
+  double averageActualNeighbor()            const { return double(mSumActualNeighbor)/(mNormActualNeighbor + 1.0e-20); }
 
   // Stored attributes about the last timestep chosen
-  size_t DTrank() const;
-  size_t DTNodeList() const;
-  size_t DTnode() const;
-  std::string DTreason() const;
+  size_t DTrank()                           const { return mDTrank; }
+  size_t DTNodeList()                       const { return mDTNodeList; }
+  size_t DTnode()                           const { return mDTnode; }
+  std::string DTreason()                    const { return mDTreason; }
+
+  // Same things for residuals used in implicit time advancement
+  size_t maxResidualRank()                  const { return mMaxResidualRank; }
+  size_t maxResidualNodeList()              const { return mMaxResidualNodeList; }
+  size_t maxResidualNode()                  const { return mMaxResidualNode; }
+  std::string maxResidualReason()           const { return mMaxResidualReason; }
 
 protected:
   //-------------------------- Protected Interface --------------------------//
@@ -97,7 +120,7 @@ protected:
 private:
   //--------------------------- Private Interface ---------------------------//
   ArtificialViscosityHandle<Dimension>& mArtificialViscosity;
-  Scalar mCfl;
+  Scalar mCFL;
   bool mUseVelocityMagnitudeForDt;
 
   mutable int mMinMasterNeighbor, mMaxMasterNeighbor, mSumMasterNeighbor;
@@ -110,15 +133,10 @@ private:
   mutable int mNormActualNeighbor;
   mutable size_t mDTrank, mDTNodeList, mDTnode;
   mutable std::string mDTreason;
-
-  // Forbidden methods.
-  GenericHydro();
-  GenericHydro(const GenericHydro&);
-  GenericHydro& operator=(const GenericHydro&);
+  mutable size_t mMaxResidualRank, mMaxResidualNodeList, mMaxResidualNode;
+  mutable std::string mMaxResidualReason;
 };
 
 }
-
-#include "GenericHydroInline.hh"
 
 #endif

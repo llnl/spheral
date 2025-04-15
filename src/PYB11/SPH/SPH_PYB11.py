@@ -28,6 +28,8 @@ PYB11includes += ['"SPH/SPHBase.hh"',
                   '"SPH/SolidSPH.hh"',
                   '"SPH/SolidSPHRZ.hh"',
                   '"SPH/SolidSphericalSPH.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
                   '"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"Neighbor/PairwiseField.hh"']

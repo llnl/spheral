@@ -204,7 +204,7 @@ packages += [gravity]
 # Fields and Variables
 #-------------------------------------------------------------------------------
 numNodeLists = db.numNodeLists
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 
 position = db.DEMPosition
 mass = db.DEMMass

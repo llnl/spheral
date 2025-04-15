@@ -38,7 +38,7 @@ def hadesDump(integrator,
 
     # Get the set of material names we're going to write.
     if materials is None:
-        materials = list(db.fluidNodeLists())
+        materials = list(db.fluidNodeLists)
 
     # HACK!  We are currently restricting to writing single material output!
     assert len(materials) == 1

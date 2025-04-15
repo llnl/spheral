@@ -198,7 +198,8 @@ SiloFileIO::close() {
 //------------------------------------------------------------------------------
 bool
 SiloFileIO::pathExists(const std::string path) const {
-  return DBInqVarExists(mFilePtr, path.c_str()) != 0;
+  const auto varname = setdir(mFilePtr, path);
+  return DBInqVarExists(mFilePtr, varname.c_str()) == 1;
 }
 
 //------------------------------------------------------------------------------

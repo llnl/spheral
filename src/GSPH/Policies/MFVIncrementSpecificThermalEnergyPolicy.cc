@@ -24,21 +24,14 @@
 #include <limits.h>
 
 namespace Spheral {
+
 //------------------------------------------------------------------------------
 // Constructors.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 MFVIncrementSpecificThermalEnergyPolicy<Dimension>::
 MFVIncrementSpecificThermalEnergyPolicy(std::initializer_list<std::string> depends):
-  FieldUpdatePolicy<Dimension>(depends){
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MFVIncrementSpecificThermalEnergyPolicy<Dimension>::
-~MFVIncrementSpecificThermalEnergyPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>(depends){
 }
 
 //------------------------------------------------------------------------------

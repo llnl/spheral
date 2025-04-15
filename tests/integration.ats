@@ -86,6 +86,9 @@ source("unit/Mesh/testLineMesh.py")
 # source("unit/Mesh/testPolygonalMesh.py")   # Suspended until we fix the polytope with Spheral issues.
 # source("unit/Mesh/testPolyhedralMesh.py")  # Suspended until we fix the polytope with Spheral issues.
 
+# Solvers unit tests
+source("unit/Solvers/testKinsol.py")
+
 # MPI python interface unit tests
 source("unit/Distributed/testMPI4PYasPYMPI.py")
 

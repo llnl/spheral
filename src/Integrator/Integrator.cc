@@ -39,44 +39,17 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-Integrator<Dimension>::
-Integrator(DataBase<Dimension>& dataBase):
-  mDtMin(0.0),
-  mDtMax(FLT_MAX),
-  mDtGrowth(2.0),
-  mLastDt(1e-5),
-  mDtMultiplier(1.0),
-  mDtCheckFrac(0.5),
-  mCurrentTime(0.0),
-  mCurrentCycle(0),
-  mUpdateBoundaryFrequency(1),
-  mVerbose(false),
-  mAllowDtCheck(false),
-  mRequireConnectivity(true),
-  mRequireGhostConnectivity(false),
-  mRequireOverlapConnectivity(false),
-  mRequireIntersectionConnectivity(false),
-  mDataBase(dataBase),
-  mPhysicsPackages(0),
-  mCullGhostNodes(true),
-  mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 Integrator<Dimension>::
 Integrator(DataBase<Dimension>& dataBase,
            const vector<Physics<Dimension>*>& physicsPackages):
+  mDtMultiplier(1.0),
   mDtMin(0.0),
-  mDtMax(FLT_MAX),
+  mDtMax(std::numeric_limits<Scalar>::max()),
   mDtGrowth(2.0),
   mLastDt(1e-5),
-  mDtMultiplier(1.0),
   mDtCheckFrac(0.5),
   mCurrentTime(0.0),
   mCurrentCycle(0),
@@ -91,7 +64,7 @@ Integrator(DataBase<Dimension>& dataBase,
   mPhysicsPackages(),
   mCullGhostNodes(true),
   mRestart(registerWithRestart(*this)) {
-  for (auto& pkg: physicsPackages) this->appendPhysicsPackage(*pkg);
+  for (auto* pkg: physicsPackages) this->appendPhysicsPackage(*pkg);
 }
 
 //------------------------------------------------------------------------------
@@ -127,18 +100,16 @@ step(const typename Dimension::Scalar maxTime) {
 
   // Try to advance using the derived class step method
   auto success = false;
-  auto count = 0;
-  auto maxIterations = 10;
+  auto count = 0u;
+  auto maxIterations = 10u;
   while (not success and count < maxIterations) {
     ++count;
     if (count == maxIterations) mAllowDtCheck = false;
     success = this->step(maxTime, state, derivs);
     if (count == maxIterations) mAllowDtCheck = true;
     if (not success) {
-      if (Process::getRank() == 0) {
-        cerr << "Integrator::step reported unstable timestep -- cutting dt and trying again: " << count << "/10" << endl;
-        mDtMultiplier *= 0.5;
-      }
+      mDtMultiplier *= 0.5;
+      if (Process::getRank() == 0) cerr << "Integrator::step reported unstable timestep -- cutting dt and trying again: " << count << "/10" << endl;
     }
   }
   mDtMultiplier = 1.0;
@@ -159,16 +130,14 @@ selectDt(const typename Dimension::Scalar dtMin,
   REQUIRE(dtMin >= 0 and dtMax > 0);
   REQUIRE(dtMin <= dtMax);
 
-  typedef typename Physics<Dimension>::TimeStepType TimeStepType;
-
   // Get the current time and data base.
   auto        t = currentTime();
   const auto& db = dataBase();
 
   // Loop over each package, and pick their timesteps.
   TimeStepType dt(dtMax, "");
-  for (auto physicsItr = physicsPackagesBegin(); physicsItr < physicsPackagesEnd(); ++physicsItr) {
-    auto dtVote = (*physicsItr)->dt(db, state, derivs, t);
+  for (auto* pkg: mPhysicsPackages) {
+    auto dtVote = this->dt(pkg, db, state, derivs, t);
     if (dtVote.first > 0.0 and dtVote.first < dt.first) dt = dtVote;
   }
 
@@ -725,25 +694,6 @@ Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
 }
 
 //------------------------------------------------------------------------------
-// Flag for whether we should try to run in a domain decomposition independent/
-// reproducing mode.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Integrator<Dimension>::
-domainDecompositionIndependent() const {
-  return NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
-}
-
-template<typename Dimension>
-void
-Integrator<Dimension>::
-domainDecompositionIndependent(const bool x) {
-  NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent(x);
-  // if (x) mCullGhostNodes = false;
-}
-
-//------------------------------------------------------------------------------
 // Dump the current state of the Integrator to the given file.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -754,9 +704,10 @@ dumpState(FileIO& file, const string& pathName) const {
   // file.write(dtMin(), pathName + "/dtMin");
   // file.write(dtMax(), pathName + "/dtMax");
   // file.write(dtGrowth(), pathName + "/dtGrowth");
-  file.write(lastDt(), pathName + "/lastDt");
-  file.write(currentTime(), pathName + "/currentTime");
-  file.write(currentCycle(), pathName + "/currentCycle");
+  file.write(mLastDt, pathName + "/lastDt");
+  file.write(mCurrentTime, pathName + "/currentTime");
+  file.write(mCurrentCycle, pathName + "/currentCycle");
+  file.write(mDtMultiplier, pathName + "/dtMultiplier");
 }  
 
 //------------------------------------------------------------------------------
@@ -773,6 +724,21 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mLastDt, pathName + "/lastDt");
   file.read(mCurrentTime, pathName + "/currentTime");
   file.read(mCurrentCycle, pathName + "/currentCycle");
+  file.read(mDtMultiplier, pathName + "/dtMultiplier");
+}
+
+//------------------------------------------------------------------------------
+// How should we query a physics package for the time step?
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename Integrator<Dimension>::TimeStepType
+Integrator<Dimension>::
+dt(const Physics<Dimension>* pkg,
+   const DataBase<Dimension>& dataBase,
+   const State<Dimension>& state,
+   const StateDerivatives<Dimension>& derivs,
+   const Scalar currentTime) const {
+  return pkg->dt(dataBase, state, derivs, currentTime);
 }
 
 }

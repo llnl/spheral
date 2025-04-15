@@ -27,6 +27,7 @@ http://doi.org/10.1016/j.ijimpeng.2010.10.013
     using Vector = typename %(Dimension)s::Vector;
     using ScalarField = Field<%(Dimension)s, Scalar>;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................

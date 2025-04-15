@@ -644,69 +644,64 @@ will get the new value regardless of resetValues."""
     resizeDEMvector_of_VectorArray = PYB11TemplateMethod(resizeDEMArray, template_parameters="std::vector<Vector>")
 
     #...........................................................................
-    @PYB11cppname("nodeListPtrs")
-    @PYB11returnpolicy("reference_internal")
-    @PYB11const
-    def nodeLists(self):
-        return "const std::vector<NodeList<%(Dimension)s>*>&"
+    # @PYB11cppname("nodeListPtrs")
+    # @PYB11returnpolicy("reference_internal")
+    # @PYB11const
+    # def nodeLists(self):
+    #     return "const std::vector<NodeList<%(Dimension)s>*>&"
 
-    @PYB11cppname("fluidNodeListPtrs")
-    @PYB11returnpolicy("reference_internal")
-    @PYB11const
-    def fluidNodeLists(self):
-        return "const std::vector<FluidNodeList<%(Dimension)s>*>&"
+    # @PYB11cppname("fluidNodeListPtrs")
+    # @PYB11returnpolicy("reference_internal")
+    # @PYB11const
+    # def fluidNodeLists(self):
+    #     return "const std::vector<FluidNodeList<%(Dimension)s>*>&"
 
-    @PYB11cppname("solidNodeListPtrs")
-    @PYB11returnpolicy("reference_internal")
-    @PYB11const
-    def solidNodeLists(self):
-        return "const std::vector<SolidNodeList<%(Dimension)s>*>&"
+    # @PYB11cppname("solidNodeListPtrs")
+    # @PYB11returnpolicy("reference_internal")
+    # @PYB11const
+    # def solidNodeLists(self):
+    #     return "const std::vector<SolidNodeList<%(Dimension)s>*>&"
 
-    @PYB11cppname("DEMNodeListPtrs")
-    @PYB11returnpolicy("reference_internal")
-    @PYB11const
-    def DEMNodeLists(self):
-        return "const std::vector<DEMNodeList<%(Dimension)s>*>&"
+    # @PYB11cppname("DEMNodeListPtrs")
+    # @PYB11returnpolicy("reference_internal")
+    # @PYB11const
+    # def DEMNodeLists(self):
+    #     return "const std::vector<DEMNodeList<%(Dimension)s>*>&"
 
     def setDEMHfieldFromParticleRadius(self, startUniqueIndex = "const int"):
         return "void"
 
-    nodeListPtrs = PYB11property("const std::vector<NodeList<%(Dimension)s>*>&", "nodeListPtrs", doc="The set of NodeLists in the DataBase")
-    fluidNodeListPtrs = PYB11property("const std::vector<FluidNodeList<%(Dimension)s>*>&", "fluidNodeListPtrs", doc="The set of FluidNodeLists in the DataBase")
-    solidNodeListPtrs = PYB11property("const std::vector<SolidNodeList<%(Dimension)s>*>&", "solidNodeListPtrs", doc="The set of SolidNodeLists in the DataBase")
-    DEMNodeListPtrs = PYB11property("const std::vector<DEMNodeList<%(Dimension)s>*>&", "DEMNodeListPtrs", doc="The set of NodeLists in the DataBase")
-    
     #...........................................................................
     # Attributes
     nDim = PYB11readonly(static=True, returnpolicy="copy")
 
     #...........................................................................
     # Properties
-    numNodeLists = PYB11property("int", "numNodeLists", doc="Number of NodeLists in DataBase")
-    numFluidNodeLists = PYB11property("int", "numFluidNodeLists", doc="Number of FluidNodeLists in DataBase")
-    numSolidNodeLists = PYB11property("int", "numSolidNodeLists", doc="Number of SolidNodeLists in DataBase")
-    numDEMNodeLists = PYB11property("int", "numDEMNodeLists", doc="Number of DEMNodeLists in DataBase")
+    numNodeLists = PYB11property("size_t", "numNodeLists", doc="Number of NodeLists in DataBase")
+    numFluidNodeLists = PYB11property("size_t", "numFluidNodeLists", doc="Number of FluidNodeLists in DataBase")
+    numSolidNodeLists = PYB11property("size_t", "numSolidNodeLists", doc="Number of SolidNodeLists in DataBase")
+    numDEMNodeLists = PYB11property("size_t", "numDEMNodeLists", doc="Number of DEMNodeLists in DataBase")
 
-    numNodes = PYB11property("int", "numNodes", doc="Number of nodes in all NodeLists in DataBase")
-    numInternalNodes = PYB11property("int", "numInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase")
-    numGhostNodes = PYB11property("int", "numGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase")
+    numNodes = PYB11property("size_t", "numNodes", doc="Number of nodes in all NodeLists in DataBase")
+    numInternalNodes = PYB11property("size_t", "numInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase")
+    numGhostNodes = PYB11property("size_t", "numGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase")
 
-    globalNumNodes = PYB11property("int", "globalNumNodes", doc="Number of nodes in all NodeLists in DataBase across all processors")
-    globalNumInternalNodes = PYB11property("int", "globalNumInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase across all processors")
-    globalNumGhostNodes = PYB11property("int", "globalNumGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase across all processors")
+    globalNumNodes = PYB11property("size_t", "globalNumNodes", doc="Number of nodes in all NodeLists in DataBase across all processors")
+    globalNumInternalNodes = PYB11property("size_t", "globalNumInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase across all processors")
+    globalNumGhostNodes = PYB11property("size_t", "globalNumGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase across all processors")
 
-    numFluidNodes = PYB11property("int", "numFluidNodes", doc="Number of nodes in all NodeLists in DataBase")
-    numFluidInternalNodes = PYB11property("int", "numFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase")
-    numFluidGhostNodes = PYB11property("int", "numFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase")
+    numFluidNodes = PYB11property("size_t", "numFluidNodes", doc="Number of nodes in all NodeLists in DataBase")
+    numFluidInternalNodes = PYB11property("size_t", "numFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase")
+    numFluidGhostNodes = PYB11property("size_t", "numFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase")
 
-    globalNumFluidNodes = PYB11property("int", "globalNumFluidNodes", doc="Number of nodes in all NodeLists in DataBase across all processors")
-    globalNumFluidInternalNodes = PYB11property("int", "globalNumFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase across all processors")
-    globalNumFluidGhostNodes = PYB11property("int", "globalNumFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase across all processors")
+    globalNumFluidNodes = PYB11property("size_t", "globalNumFluidNodes", doc="Number of nodes in all NodeLists in DataBase across all processors")
+    globalNumFluidInternalNodes = PYB11property("size_t", "globalNumFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase across all processors")
+    globalNumFluidGhostNodes = PYB11property("size_t", "globalNumFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase across all processors")
     
-    nodeListPtrs = PYB11property("const std::vector<NodeList<%(Dimension)s>*>&", "nodeListPtrs", doc="The set of NodeLists in the DataBase")
-    fluidNodeListPtrs = PYB11property("const std::vector<FluidNodeList<%(Dimension)s>*>&", "fluidNodeListPtrs", doc="The set of FluidNodeLists in the DataBase")
-    solidNodeListPtrs = PYB11property("const std::vector<SolidNodeList<%(Dimension)s>*>&", "solidNodeListPtrs", doc="The set of SolidNodeLists in the DataBase")
-    DEMNodeListPtrs = PYB11property("const std::vector<DEMNodeList<%(Dimension)s>*>&", "DEMNodeListPtrs", doc="The set of NodeLists in the DataBase")
+    nodeLists = PYB11property("const std::vector<NodeList<%(Dimension)s>*>&", "nodeListPtrs", doc="The set of NodeLists in the DataBase")
+    fluidNodeLists = PYB11property("const std::vector<FluidNodeList<%(Dimension)s>*>&", "fluidNodeListPtrs", doc="The set of FluidNodeLists in the DataBase")
+    solidNodeLists = PYB11property("const std::vector<SolidNodeList<%(Dimension)s>*>&", "solidNodeListPtrs", doc="The set of SolidNodeLists in the DataBase")
+    DEMNodeLists = PYB11property("const std::vector<DEMNodeList<%(Dimension)s>*>&", "DEMNodeListPtrs", doc="The set of NodeLists in the DataBase")
     
     maxKernelExtent = PYB11property("Scalar")
     maxNeighborSearchBuffer = PYB11property("Scalar")

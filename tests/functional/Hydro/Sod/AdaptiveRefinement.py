@@ -47,7 +47,7 @@ class AdaptiveRefinement:
         self.refinementAlgorithm.prepareForRefinement(db)
 
         # Go over each NodeList.
-        for nodeList in db.nodeLists():
+        for nodeList in db.nodeLists:
 
             # Get the list of nodes that we want to refine on this NodeList.
             refineIDs = self.selectionAlgorithm.selectNodes(nodeList)

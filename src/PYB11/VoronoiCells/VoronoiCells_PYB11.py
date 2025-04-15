@@ -19,6 +19,8 @@ PYB11includes += ['"VoronoiCells/VoronoiCells.hh"',
                   '"VoronoiCells/SubPointPressureHourglassControl.hh"',
                   '"VoronoiCells/IncrementVoronoiCells.hh"',
                   '"VoronoiCells/computeVoronoiVolume.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
                   '"Boundary/Boundary.hh"',
                   '<sstream>']

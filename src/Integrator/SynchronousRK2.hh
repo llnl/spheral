@@ -24,10 +24,9 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   // Constructors.
-  SynchronousRK2(DataBase<Dimension>& dataBase);
   SynchronousRK2(DataBase<Dimension>& dataBase,
                  const std::vector<Physics<Dimension>*>& physicsPackages);
-  ~SynchronousRK2() = default;
+  virtual ~SynchronousRK2() = default;
   SynchronousRK2& operator=(const SynchronousRK2& rhs) = default;
 
   // All Integrators are required to provide the single cycle method.
@@ -37,9 +36,6 @@ public:
 
   // We need to make the simpler form of step visible!
   using Integrator<Dimension>::step;
-
-  // Restart methods.
-  virtual std::string label() const override { return "SynchronousRK2"; }
 
   // Fobidden methods
   SynchronousRK2() = delete;

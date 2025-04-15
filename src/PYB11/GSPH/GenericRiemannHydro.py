@@ -18,6 +18,7 @@ class GenericRiemannHydro(Physics):
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename GenericRiemannHydro<%(Dimension)s>::PairAccelerationsType;
   using PairWorkType = typename GenericRiemannHydro<%(Dimension)s>::PairWorkType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",

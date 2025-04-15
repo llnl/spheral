@@ -77,9 +77,6 @@ This simple script will install Spheral from an unzipped ``dev-pkg`` file to the
 given location. There are a few environment variables that can be used to 
 configure this script.
 
-``SPACK_PKG_NAME`` (default : spheral)
-The name of the target spack package you want built and its dependencies.
-
 ``SPACK_URL`` (default : https://github.com/spack/spack)
 Spack location. A local clone of the spack repository can be used as well (e.g.
 ``SPACK_URL=file:///usr/mydir/spack``).
@@ -90,8 +87,8 @@ Useful for schedule based systems ( e.g. ``BUILD_ALLOC="salloc -N 1 --exclusive"
 ``SCRIPT_DIR``
 If the Spheral scripts have been moved, override this option.
 
-``SPEC``
-The spack spec to target (e.g. on TOSS4 ``SPEC=gcc@10.3.1``).
+``DEV_PKG_SPEC``
+The spack spec to target (e.g. on TOSS4 ``DEV_PKG_SPEC=spheral%gcc@10.3.1+mpi~caliper~network``).
 
 ``INSTALL_DIR``
 The installation directory for Spheral to live.

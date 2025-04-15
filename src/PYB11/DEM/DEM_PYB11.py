@@ -27,6 +27,10 @@ PYB11includes += ['"DEM/DEMBase.hh"',
                   '"DEM/SolidBoundary/CylinderSolidBoundary.hh"',
                   '"DEM/SolidBoundary/SphereSolidBoundary.hh"',
                   '"DEM/SolidBoundary/ClippedSphereSolidBoundary.hh"',
+                  '"DataOutput/registerWithRestart.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
+                  '"Field/FieldList.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

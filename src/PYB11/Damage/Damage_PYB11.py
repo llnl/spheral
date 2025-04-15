@@ -34,6 +34,8 @@ PYB11includes += ['"NodeList/SolidNodeList.hh"',
                   '"Damage/PairMaxDamageNodeCoupling.hh"',
                   '"Damage/ThreePointDamagedNodeCoupling.hh"',
                   '"Damage/DamageGradientNodeCoupling.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

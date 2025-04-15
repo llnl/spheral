@@ -157,7 +157,6 @@ def main():
             launch_cmd = f"salloc --exclusive -N {numNodes} -t {timeLimit} "
             mac_args.append(f"--numNodes {numNodes}")
         elif any(x in hostname for x in toss_cray_machine_names):
-            os.environ['MACHINE_TYPE'] = 'flux00'
             numNodes = numNodes if numNodes else 2
             timeLimit = timeLimit if timeLimit else 120
             inAllocVars = ["FLUX_JOB_ID", "FLUX_CONNECTOR_PATH", "FLUX_TERMINUS_SESSION"]

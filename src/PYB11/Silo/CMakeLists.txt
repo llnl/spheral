@@ -5,4 +5,4 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 endif()
 
 spheral_add_pybind11_library(Silo SPHERAL_MODULE_LIST
-                             INCLUDES ${SPHERAL_ROOT_DIR}/src/Pybind11Wraps/Silo SPHERAL_MODULE_LIST)
+                             INCLUDES ${SPHERAL_ROOT_DIR}/src/PYB11/Silo SPHERAL_MODULE_LIST)

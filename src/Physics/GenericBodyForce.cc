@@ -4,9 +4,11 @@
 //
 // Created by JMO, Wed May 24 14:23:10 PDT 2000
 //----------------------------------------------------------------------------//
-#include "GenericBodyForce.hh"
+#include "Physics/GenericBodyForce.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/IncrementState.hh"
 #include "Field/Field.hh"
+#include "Field/FieldList.hh"
 #include "Hydro/HydroFieldNames.hh"
 
 #include <string>

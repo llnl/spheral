@@ -10,11 +10,15 @@
 
 #include "Geometry/Dimension.hh"
 #include "Physics/Physics.hh"
+#include "Field/FieldList.hh"
+#include "DataOutput/registerWithRestart.hh"
 
 #include <utility>
 #include <cmath>
 
 namespace Spheral {
+
+class FileIO;
 
 enum class HEvolutionType {
   IdealH = 0,
@@ -31,7 +35,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using TimeStepType = typename std::pair<double, std::string>;
+  using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ResidualType = typename Physics<Dimension>::ResidualType;
 
   // Constructors, destructor.
   explicit SmoothingScaleBase(const HEvolutionType HUpdate);
@@ -60,6 +65,13 @@ public:
   // Register the derivatives/change fields for updating state.
   virtual void registerDerivatives(DataBase<Dimension>& dataBase,
                                    StateDerivatives<Dimension>& derivs) override;
+
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  // We assume the default limting on position change is good enough for H, so don't add anything extra here.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const override { return ResidualType(0.0, "SmoothingScale -- no vote"); }
 
   // Given the volume and target nperh, compute an effective target hmax
   Scalar hmax(const Scalar Vi, const Scalar nPerh) const;

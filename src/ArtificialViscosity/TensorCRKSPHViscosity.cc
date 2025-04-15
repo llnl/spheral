@@ -9,6 +9,7 @@
 #include "Boundary/Boundary.hh"
 #include "Kernel/TableKernel.hh"
 #include "NodeList/FluidNodeList.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"
