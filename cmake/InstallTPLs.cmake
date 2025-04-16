@@ -169,7 +169,7 @@ if (ENABLE_SUNDIALS)
   set(SUNDIALS_DIR "${sundials_DIR}")
   find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
     COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
-    PATHS ${sundials_DIR}/lib64/cmake/sundials)
+    PATHS ${sundials_DIR}/lib64/cmake/sundials ${sundials_DIR}/lib/cmake/sundials)
   if(SUNDIALS_FOUND)
     list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
     list(APPEND SPHERAL_FP_TPLS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)

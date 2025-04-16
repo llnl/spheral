@@ -7,6 +7,7 @@
 #ifndef __Spheral_SolverFunction__
 #define __Spheral_SolverFunction__
 
+#include <cstddef>
 #include <vector>
 
 namespace Spheral {

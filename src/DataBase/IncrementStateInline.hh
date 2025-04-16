@@ -129,13 +129,11 @@ serializeDerivatives(std::vector<double>& buf,
 
     std::vector<Value> vals;
     const auto allkeys = derivs.keys();
-    auto numDeltaFields = 0u;
     for (const auto& dkey: allkeys) {
       StateBase<Dimension>::splitFieldKey(dkey, dfKey, dfNodeListKey);
       if (dfNodeListKey == nodeListKey and
           dfKey.compare(0, incrementKey.size(), incrementKey) == 0) {
         // This delta field matches the base of increment key, so apply it.
-        ++numDeltaFields;
         const auto& df = derivs.template field<Value>(dkey);
         const auto n = df.numInternalElements();
         vals.resize(n, DataTypeTraits<Value>::zero());

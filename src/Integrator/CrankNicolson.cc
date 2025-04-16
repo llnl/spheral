@@ -6,9 +6,6 @@
 // Created by JMO, Mon Oct 21 14:32:05 PDT 2024
 //----------------------------------------------------------------------------//
 #include "Integrator/CrankNicolson.hh"
-#include "Integrator/ImplicitIntegrationVectorOperator.hh"
-#include "Solvers/KINSOL.hh"
-
 #include "DataOutput/Restart.hh"
 #include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"

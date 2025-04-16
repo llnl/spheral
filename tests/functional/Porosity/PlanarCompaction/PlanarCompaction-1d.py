@@ -508,10 +508,12 @@ if isinstance(integrator, ImplicitIntegrator):
     output("integrator.convergenceTolerance")
     output("integrator.maxIterations")
     output("integrator.maxAllowedDtMultiplier")
-if isinstance(integrator, BackwardEulerIntegrator):
+try:   # This will only work for BackwardEuler currently
     if ftol:
         integrator.ftol = ftol
     output("integrator.ftol")
+except:
+    pass
 
 #-------------------------------------------------------------------------------
 # Add the boundary conditions.
