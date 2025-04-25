@@ -9,6 +9,18 @@ Notable changes include:
       * Utilize the Spheral Spack environments.
       * Handle some build cache functionality.
       * Do things Uberenv did like download and install Spack itself.
+    * Implicit time integration is now supported.
+      * CrankNicolsonIntegrator is the current implicit default
+      * The Physics package interface has been augmented to support implicit integration with two important
+        methods that must be provide:
+        * Physics::dtImplicit to provide a maximum bounding time step
+        * Physics::maxResidual should provide a maximum dimensionles residual change to check for convergence
+      * Sundials is now an optional (but default) third-party lib in Spheral, and provides a non-linear solver
+        we now wrap in a new Solver interface in Spheral (wrapping Sundials KINSOL solver).
+    * FSISPH has a new flag (decoupleDamagedMaterial, default True) which can be turned off to more tightly
+      couple damaged to undamaged material.
+      * planeStrain has been removed as an option in FSISPH as part of unifying deviatoric evolution with other
+        hydros.
 
   * Build changes / improvements:
     * Native Spack environments are now being used.
@@ -22,6 +34,7 @@ Notable changes include:
 
   * Bug Fixes / improvements:
     * ATS submodule is updated to fix bug with latest Flux update on LC systems.
+    * Deviatoric stress evolution in lower dimensions (1 and 2D) now consistent with other solid hydros
 
 Version v2025.01.0 -- Release date 2025-01-31
 ==============================================

@@ -23,6 +23,29 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Function to enforce zeroing the trace of the deviatoric stress in 3D only
+//------------------------------------------------------------------------------
+namespace {  // anonymous
+
+template<typename Dimension>
+inline
+void
+zeroTrace(typename Dimension::SymTensor& Si) {
+}
+
+template<>
+inline
+void
+zeroTrace<Dim<3>>(Dim<3>::SymTensor& Si) {
+  const auto dS = Si.Trace()/3.0;
+  Si[0] -= dS;
+  Si[3] -= dS;
+  Si[5] -= dS;
+}
+
+}            // anonymous
+
+//------------------------------------------------------------------------------
 // Constructors.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -67,11 +90,6 @@ update(const KeyType& key,
     DalphaDtPtr = &derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   }
 
-  // We only want to enforce zeroing the trace in Cartesian coordinates.   In RZ or R
-  // we assume the missing components on the diagonal sum to -Trace(S).
-  const auto zeroTrace = GeometryRegistrar::coords() == CoordinateType::Cartesian;
-  const auto oneThird = 1.0/3.0;
-
   // Iterate over the internal nodes.
   const auto n = S.numInternalElements();
 #pragma omp parallel for
@@ -90,7 +108,10 @@ update(const KeyType& key,
     // Update S
     // Note -- purely elastic flow.  The plastic yielding is accounted for when we update the plastic strain.
     S(i) += multiplier*DSDti;                                          // Elastic prediction for the new deviatoric stress
-    if (zeroTrace) S(i) -= oneThird * S(i).Trace() * SymTensor::one;   // Ensure the (full 3D) deviatoric stress is traceless
+
+    // We only want to enforce zeroing the trace in 3D Cartesian coordinates.  In lower
+    // dimensions we assume the missing components on the diagonal sum to -Trace(S).
+    zeroTrace<Dimension>(S(i));
   }
 
 //     // Finally apply the pressure limits to the allowed deviatoric stress.

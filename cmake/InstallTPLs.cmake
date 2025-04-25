@@ -161,11 +161,6 @@ endif()
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials
 if (ENABLE_SUNDIALS)
-  # Save sundials_DIR because it gets overwritten by find_package
-  if(NOT CONFIG_SUNDIALS_DIR)
-    # Only save if it does not exists already
-    set(CONFIG_SUNDIALS_DIR "${sundials_DIR}" CACHE PATH "Configuration Sundials directory")
-  endif()
   set(SUNDIALS_DIR "${sundials_DIR}")
   find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
     COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
