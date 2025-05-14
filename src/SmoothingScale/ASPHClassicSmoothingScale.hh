@@ -22,12 +22,16 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using HidealFilterType = typename SmoothingScaleBase<Dimension>::HidealFilterType;
+  using RadialFunctorType = typename SmoothingScaleBase<Dimension>::RadialFunctorType;
 
   // Constructors, destructor.
   ASPHClassicSmoothingScale(const HEvolutionType HUpdate,
-                            const TableKernel<Dimension>& W);
+                            const TableKernel<Dimension>& W,
+                            const bool fixShape = false,
+                            const bool radialOnly = false);
   ASPHClassicSmoothingScale() = delete;
-  virtual ~ASPHClassicSmoothingScale() {}
+  virtual ~ASPHClassicSmoothingScale() = default;
 
   // An optional hook to initialize once when the problem is starting up.
   // This is called after the materials and NodeLists are created. This method
@@ -68,6 +72,12 @@ private:
   FieldList<Dimension, Scalar> mZerothMoment;
   FieldList<Dimension, Vector> mFirstMoment;
   FieldList<Dimension, SymTensor> mSecondMoment;
+
+  using SmoothingScaleBase<Dimension>::mFixShape;
+  using SmoothingScaleBase<Dimension>::mRadialOnly;
+  using SmoothingScaleBase<Dimension>::mHidealFilterPtr;
+  using SmoothingScaleBase<Dimension>::mRadialFunctorPtr;
+  using SmoothingScaleBase<Dimension>::mRadius0;
 };
 
 }

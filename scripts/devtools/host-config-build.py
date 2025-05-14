@@ -19,7 +19,7 @@ def parse_args():
       help='Location of spheral source directory.')
 
   parser.add_argument('-i', '--install-dir', type=str, default="",
-      help='Location of spheral source directory.')
+      help='Where to install Spheral.')
 
   parser.add_argument('--build-dir', type=str, default="",
       help='Name of build directory.')
@@ -33,9 +33,6 @@ def parse_args():
 
   parser.add_argument('--nprocs', default=48,
       help="Set number of procs to use while building. This is not used if --build is not enabled.")
-
-  parser.add_argument('--lc-modules', type=str, default="",
-      help='LC Modules to use during build, install and smoke test. This is not used if --build is not enabled.')
 
   parser.add_argument('-D', action='append', default=[])
 
@@ -88,20 +85,9 @@ def main():
 
   # Move to the build directory.
   os.chdir(build_dir)
-  
-  # We need a module command to add to our environment on each python
-  # subprocess call otherwise we might get a bad build depending on 
-  # the default compiler setup for the system.
-  ml_cmd=""
-  ml_cmd_v=""
-  if not args.lc_modules:
-    print("Warning: No LC_MODULES set, ensure appropriate compilers are in path or you may experience incorrect builds!")
-  else:
-    ml_cmd_v = "module load {0} &&".format(args.lc_modules)
-    ml_cmd = "module load {0} 2>/dev/null &&".format(args.lc_modules)
 
   # Run our CMake config step.
-  sexe("{0} {1} -C {2} -DCMAKE_INSTALL_PREFIX={3} {4} {5}".format(ml_cmd_v, cmake_cmd, hostconfig_path, install_dir, cmake_extra_args, source_dir))
+  sexe(f"{cmake_cmd} -C {hostconfig_path} -DCMAKE_INSTALL_PREFIX={install_dir} {cmake_extra_args} {source_dir}")
 
   # Build and install Spheral
 
@@ -109,7 +95,7 @@ def main():
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("~~~~~ Building Spheral")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    build_cmd = f"{ml_cmd} {cmake_cmd} --build . --target install -j {args.nprocs}"
+    build_cmd = f"{cmake_cmd} --build . --target install -j {args.nprocs}"
 
     sexe(build_cmd, echo=True, ret_output=False)
 

@@ -6,7 +6,7 @@ if (NOT ENABLE_CXXONLY)
   # site-packages, we strip away site-packages and pack and
   # copy the full contents of the python library prefix to
   # our virtual env in spheral-setup-venv.sh
-  string(REGEX REPLACE "lib\/python3.9\/site-packages\/?[A-Za-z]*:" ";" VIRTUALENV_PYTHONPATH_COPY "${SPACK_PYTHONPATH}:")
+  string(REGEX REPLACE "lib\/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}\/site-packages\/?[A-Za-z]*:" ";" VIRTUALENV_PYTHONPATH_COPY "${SPACK_PYTHONPATH}:")
 
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/spheral-setup-venv.in"
@@ -43,9 +43,11 @@ if (NOT ENABLE_CXXONLY)
     PREFIX ${CMAKE_INSTALL_PREFIX}
   )
 
-  install(FILES ${polytope_DIR}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
-  )
+  if(NOT POLYTOPE_SITE_PACKAGES_PATH)
+    install(FILES ${polytope_DIR}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+    )
+  endif()
 
   install(CODE "execute_process( \
     COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/spheral-setup-venv.sh)"

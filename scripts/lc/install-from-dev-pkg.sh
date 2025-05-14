@@ -26,7 +26,7 @@ echo $PWD
 mkdir -p $INSTALL_DIR
 cp -a $PWD/resources/pip_cache/. $SPHERAL_PIP_CACHE_DIR
 
-./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls
+./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls --clean
 
 source $INSTALL_DIR/spheral-spack-tpls/spack/share/spack/setup-env.sh
 spack env activate ./scripts/spack/environments/dev_pkg

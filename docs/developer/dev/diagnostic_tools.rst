@@ -5,10 +5,10 @@ Valgrind
 ========
 
 We advise using Valgrind to check memory leaks when doing development on Spheral.
-When using Valgrind to check Spheral, be sure to use the provided suppression file
+When using Valgrind to check Spheral, be sure to use the provided suppression file and call the Spheral python executable directly:
 ::
 
-   valgrind --suppressions=./scripts/devtools/valgrind_python_suppression ./spheral
+   valgrind --suppressions=./scripts/devtools/valgrind_python_suppression .venv/bin/python
 
 
 Using Caliper
@@ -104,7 +104,7 @@ Adiak metadata can be added inside python code using the following function call
 
                 adiak_values("value_name", value)
 
-Below is a list of some of the metadata the is added to Adiak by default:
+Below is a list of some of the metadata that Spheral adds to Adiak by default:
 
 ======================== ==========================
 Adiak Key                Description

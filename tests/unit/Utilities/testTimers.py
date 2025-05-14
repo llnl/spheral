@@ -57,32 +57,33 @@ if (do_timers and TimerMgr.get_filename()):
         raise FileNotFoundError("Caliper file not found")
     sys.path.append(caliper_loc)
     import caliperreader as cr
-    r = cr.CaliperReader()
-    r.read(caliper_file)
-    records = r.records
+    if (mpi.rank == 0):
+        r = cr.CaliperReader()
+        r.read(caliper_file)
+        records = r.records
 
-    # Test for timer name
-    assert fake_timer_name in records[1]['region'], f"{fake_timer_name} timer not found"
+        # Test for timer name
+        assert fake_timer_name in records[1]['region'], f"{fake_timer_name} timer not found"
 
-    # Test for function count
-    count_val = int(eval(records[1]["avg#sum#rc.count"]))
-    assert count_val == run_count, "Caliper function count is off"
+        # Test for function count
+        count_val = int(eval(records[1]["avg#sum#rc.count"]))
+        assert count_val == run_count, "Caliper function count is off"
 
-    # Note: CaliperReader reads everything as strings for some terrible reason
-    # we must convert the Adiak values first
-    adiak_inp = {}
-    for key, val in r.globals.items():
-        try:
-            newval = eval(val)
-        except:
-            newval = val
-        adiak_inp.update({key: newval})
+        # Note: CaliperReader reads everything as strings for some terrible reason
+        # we must convert the Adiak values first
+        adiak_inp = {}
+        for key, val in r.globals.items():
+            try:
+                newval = eval(val)
+            except:
+                newval = val
+            adiak_inp.update({key: newval})
 
-    # Test Adiak output for explicitly set values
-    assert test_dict.items() <= adiak_inp.items(),\
-        "incorrect Adiak values found in Caliper file"
+        # Test Adiak output for explicitly set values
+        assert test_dict.items() <= adiak_inp.items(),\
+            "incorrect Adiak values found in Caliper file"
 
-    # Test --adiakData command line input
-    if ("adiakData" in adiak_inp):
-        assert adiak_data_dict.items() <= adiak_inp.items(),\
-            "incorrect adiakData inputs found in Caliper file Adiak values"
+        # Test --adiakData command line input
+        if ("adiakData" in adiak_inp):
+            assert adiak_data_dict.items() <= adiak_inp.items(),\
+                "incorrect adiakData inputs found in Caliper file Adiak values"

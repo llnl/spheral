@@ -9,11 +9,8 @@
 #define __Spheral_ASPHSmooothingScale__
 
 #include "SmoothingScale/SmoothingScaleBase.hh"
-#include "SmoothingScale/ASPHSmoothingScaleUserFilter.hh"
-#include "SmoothingScale/ASPHRadialFunctor.hh"
 #include "Utilities/Functors.hh"
 
-#include <memory>   // std::shared_ptr
 #include <utility>  // std::pair
 #include <tuple>
 
@@ -29,8 +26,8 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using FacetedVolume = typename Dimension::FacetedVolume;
-  using HidealFilterType = ASPHSmoothingScaleUserFilter<Dimension>;
-  using RadialFunctorType = ASPHRadialFunctor<Dimension>;
+  using HidealFilterType = typename SmoothingScaleBase<Dimension>::HidealFilterType;
+  using RadialFunctorType = typename SmoothingScaleBase<Dimension>::RadialFunctorType;
 
   // Constructors, destructor.
   ASPHSmoothingScale(const HEvolutionType HUpdate,
@@ -38,7 +35,7 @@ public:
                      const bool fixShape = false,
                      const bool radialOnly = false);
   ASPHSmoothingScale() = delete;
-  virtual ~ASPHSmoothingScale() {}
+  virtual ~ASPHSmoothingScale() = default;
 
   // An optional hook to initialize once when the problem is starting up.
   // This is called after the materials and NodeLists are created. This method
@@ -65,11 +62,6 @@ public:
                            const State<Dimension>& state,
                            StateDerivatives<Dimension>& derivatives) const override;
 
-  // Optional hook to be called at the beginning of a time step.
-  virtual void preStepInitialize(const DataBase<Dimension>& dataBase, 
-                                 State<Dimension>& state,
-                                 StateDerivatives<Dimension>& derivs) override;
-
  // Similarly packages might want a hook to do some post-step finalizations.
   // Really we should rename this post-step finalize.
   virtual void finalize(const Scalar time, 
@@ -91,21 +83,6 @@ public:
   const FieldList<Dimension, Scalar>&                    zerothMoment()  const    { return mZerothMoment; }
   const FieldList<Dimension, SymTensor>&                 secondMoment()  const    { return mSecondMoment; }
   const FieldList<Dimension, SymTensor>&                 cellSecondMoment() const { return mCellSecondMoment; }
-  const FieldList<Dimension, Scalar>&                    radius0() const          { return mRadius0; }
-
-  // Special evolution flags
-  bool fixShape() const                                                           { return mFixShape; }
-  bool radialOnly() const                                                         { return mRadialOnly; }
-  void fixShape(const bool x)                                                     { mFixShape = x; }
-  void radialOnly(const bool x)                                                   { mRadialOnly = x; }
-
-  // Optional user functor to manipulate the final ideal H vote
-  std::shared_ptr<HidealFilterType> HidealFilter() const                          { return mHidealFilterPtr; }
-  void HidealFilter(std::shared_ptr<HidealFilterType> functorPtr)                 { mHidealFilterPtr = functorPtr; }
-
-  // Optional user functor to override the radial unit normal and radius for radialOnly mode
-  std::shared_ptr<RadialFunctorType> RadialFunctor() const                        { return mRadialFunctorPtr; }
-  void RadialFunctor(std::shared_ptr<RadialFunctorType> functorPtr)               { mRadialFunctorPtr = functorPtr; }
 
   //****************************************************************************
   // Methods required for restarting.
@@ -114,13 +91,15 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  bool mFixShape, mRadialOnly;
-  std::shared_ptr<HidealFilterType> mHidealFilterPtr;
-  std::shared_ptr<RadialFunctorType> mRadialFunctorPtr;
   const TableKernel<Dimension>& mWT;
   FieldList<Dimension, Scalar> mZerothMoment;
   FieldList<Dimension, SymTensor> mSecondMoment, mCellSecondMoment;
-  FieldList<Dimension, Scalar> mRadius0;
+
+  using SmoothingScaleBase<Dimension>::mFixShape;
+  using SmoothingScaleBase<Dimension>::mRadialOnly;
+  using SmoothingScaleBase<Dimension>::mHidealFilterPtr;
+  using SmoothingScaleBase<Dimension>::mRadialFunctorPtr;
+  using SmoothingScaleBase<Dimension>::mRadius0;
 };
 
 }

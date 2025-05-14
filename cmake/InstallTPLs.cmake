@@ -49,7 +49,6 @@ if (NOT ENABLE_CXXONLY)
     REQUIREMENTS ${BUILD_REQ_LIST}
     PREFIX ${CMAKE_BINARY_DIR}
   )
-
 endif()
 
 # This is currently unfilled in spheral
@@ -71,9 +70,9 @@ if (NOT polyclipper_DIR)
     EXPORT spheral_cxx-targets
     DESTINATION lib/cmake)
   set_target_properties(PolyClipperAPI PROPERTIES EXPORT_NAME spheral::PolyClipperAPI)
+  message("Found PolyClipper External Package")
 else()
-  Spheral_Handle_TPL(polyclipper ${TPL_SPHERAL_CMAKE_DIR})
-  list(APPEND SPHERAL_BLT_DEPENDS polyclipper)
+  list(APPEND SPHERAL_EXTERN_LIBS polyclipper)
 endif()
 
 #-----------------------------------------------------------------------------------
@@ -109,6 +108,29 @@ if(adiak_FOUND)
   list(APPEND SPHERAL_FP_TPLS adiak)
   list(APPEND SPHERAL_FP_DIRS ${adiak_DIR})
   message("Found Adiak External Package")
+endif()
+
+message("-----------------------------------------------------------------------------")
+# Use find_package to get polytope
+find_package(polytope NO_DEFAULT_PATH PATHS ${polytope_DIR}/lib/cmake)
+if(POLYTOPE_FOUND)
+  list(APPEND SPHERAL_BLT_DEPENDS polytope)
+  list(APPEND SPHERAL_FP_TPLS polytope)
+  list(APPEND SPHERAL_FP_DIRS ${polytope_DIR})
+  blt_convert_to_system_includes(TARGET polytope)
+  # Install Polytope python library to our site-packages
+  if (NOT ENABLE_CXXONLY)
+    install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+    )
+    if (NOT EXISTS ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so)
+      message(FATAL_ERROR
+        "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
+    endif()
+  endif()
+  message("Found Polytope External Package")
+else()
+  list(APPEND SPHERAL_EXTERN_LIBS polytope)
 endif()
 
 message("-----------------------------------------------------------------------------")
@@ -158,6 +180,12 @@ else()
   add_subdirectory(${chai_DIR})
 endif()
 
+list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
+list(APPEND SPHERAL_FP_TPLS RAJA umpire)
+list(APPEND SPHERAL_FP_DIRS ${raja_DIR} ${umpire_DIR})
+set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
+set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
+
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials
 if (ENABLE_SUNDIALS)
@@ -173,16 +201,12 @@ if (ENABLE_SUNDIALS)
   endif()
 endif()
 
-list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
-list(APPEND SPHERAL_FP_TPLS RAJA umpire)
-list(APPEND SPHERAL_FP_DIRS ${raja_DIR} ${umpire_DIR})
-set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
-set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
-
 message("-----------------------------------------------------------------------------")
 # TPLs that must be imported
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5 polytope)
+list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
+list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
 
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF ENABLE_LEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF ENABLE_ANEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF ENABLE_OPENSUBDIV)
 

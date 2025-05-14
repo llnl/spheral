@@ -58,6 +58,10 @@ source("unit/SolidMaterial/testTillotsonEquationOfState.py")
 source("unit/SolidMaterial/testANEOS.py")
 source("functional/Material/UnitConversion.py")
 
+# LEOS tests
+source("functional/LEOS/testLEOSFieldvsSingle.py")
+source("functional/LEOS/testLEOSvsReference.py")
+
 # Test the sampling to lattice method.
 source("unit/FieldOperations/testSampleMultipleFields2Lattice1d.py")
 source("unit/FieldOperations/testSampleMultipleFields2Lattice2d.py")

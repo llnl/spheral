@@ -1,0 +1,27 @@
+diff -u -b -r a/interfaces/fortran/LEOS_types_F.F90 b/interfaces/fortran/LEOS_types_F.F90
+--- a/interfaces/fortran/LEOS_types_F.F90	2019-07-03 13:36:54.000000000 -0700
++++ b/interfaces/fortran/LEOS_types_F.F90	2019-10-03 14:29:04.386600979 -0700
+@@ -111,11 +111,6 @@
+     TYPE(C_ptr) :: vp = C_NULL_ptr
+   END TYPE LEOS_map_ss_C
+ 
+-  TYPE LEOS_map_sm
+-    CHARACTER, POINTER :: key(:)
+-    INTEGER(KIND(LEOS_metadataDatatype_t)) :: mtype
+-  END TYPE LEOS_map_sm
+-
+   TYPE LEOS_map_sm_C
+     TYPE(C_ptr) :: kp = C_NULL_ptr
+     INTEGER(C_int) :: mtype
+@@ -197,6 +192,11 @@
+   END ENUM
+   INTEGER(KIND(LEOS_METADATA_UNKNOWN_TYPE)) :: LEOS_metadataDatatype_t
+ 
++  TYPE LEOS_map_sm
++    CHARACTER, POINTER :: key(:)
++    INTEGER(KIND(LEOS_metadataDatatype_t)) :: mtype
++  END TYPE LEOS_map_sm
++
+   ENUM, BIND(C)
+     ENUMERATOR :: LEOS_QUIET, LEOS_BASIC, LEOS_MEDIUM, LEOS_VERBOSE
+   END ENUM

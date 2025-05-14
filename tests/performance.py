@@ -37,7 +37,7 @@ if "cirun" in opts and opts["cirun"]:
 #---------------------------------------------------------------------------
 # This should be {$SYS_TYPE}_{compiler name}_{compiler version}_{mpi or cuda info}
 spheral_install_config = SpheralConfigs.config()
-mpi_enabled = SpheralConfigs.spheral_enable_mpi()
+mpi_enabled = SpheralConfigs.enable_mpi()
 # Retrieve the host name and remove any numbers
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")

@@ -65,7 +65,7 @@ template<typename Dimension>
 SPHSmoothingScale<Dimension>::
 SPHSmoothingScale(const HEvolutionType HUpdate,
                   const TableKernel<Dimension>& W):
-  SmoothingScaleBase<Dimension>(HUpdate),
+  SmoothingScaleBase<Dimension>(HUpdate, false, false),
   mWT(W),
   mZerothMoment(FieldStorageType::CopyFields),
   mFirstMoment(FieldStorageType::CopyFields) {

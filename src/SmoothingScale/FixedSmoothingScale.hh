@@ -23,7 +23,7 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   // Constructors, destructor.
-  FixedSmoothingScale(): SmoothingScaleBase<Dimension>(HEvolutionType::FixedH) {};
+  FixedSmoothingScale(): SmoothingScaleBase<Dimension>(HEvolutionType::FixedH, false, false) {};
   virtual ~FixedSmoothingScale() {};
 
   // Increment the derivatives.

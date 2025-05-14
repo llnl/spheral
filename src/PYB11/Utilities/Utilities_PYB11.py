@@ -4,7 +4,7 @@ Spheral Utilities module.
 A bunch of utility methods used throughout Spheral.  Unfortunately this has become
 a bit of a grab bag of math, geometry, infrastructure, and assorted functions with
 no real relation.  Should probably revisit and categorize this stuff to other
-modules more effectively.a
+modules more effectively.
 """
 
 from PYB11Generator import *

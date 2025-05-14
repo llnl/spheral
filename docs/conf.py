@@ -41,6 +41,7 @@ release = '2025.01.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx_design',
     'sphinx.ext.autodoc',
     #'sphinx.ext.imgmath',
     'sphinx.ext.mathjax',

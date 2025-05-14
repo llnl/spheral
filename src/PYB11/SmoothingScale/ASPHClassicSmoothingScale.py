@@ -21,7 +21,9 @@ class ASPHClassicSmoothingScale(SmoothingScaleBase):
     # Constructors
     def pyinit(self,
                HUpdate = "HEvolutionType",
-               W = "const TableKernel<%(Dimension)s>&"):
+               W = "const TableKernel<%(Dimension)s>&",
+               fixShape = ("const bool", "false"),
+               radialOnly = ("const bool", "false")):
         "ASPHClassicSmoothingScale constructor"
 
     #...........................................................................

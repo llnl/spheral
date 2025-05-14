@@ -39,8 +39,10 @@ namespace {
 template<typename Dimension>
 ASPHClassicSmoothingScale<Dimension>::
 ASPHClassicSmoothingScale(const HEvolutionType HUpdate,
-                          const TableKernel<Dimension>& W):
-  SmoothingScaleBase<Dimension>(HUpdate),
+                          const TableKernel<Dimension>& W,
+                          const bool fixShape,
+                          const bool radialOnly):
+  SmoothingScaleBase<Dimension>(HUpdate, fixShape, radialOnly),
   mWT(W),
   mZerothMoment(FieldStorageType::CopyFields),
   mFirstMoment(FieldStorageType::CopyFields),
@@ -223,8 +225,8 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   }   // OpenMP parallel region
 
   // Finish up the derivatives now that we've walked all pairs
-  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-    const auto& nodeList = mass[nodeListi]->nodeList();
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto& nodeList = mass[k]->nodeList();
     const auto  hminInv = safeInvVar(nodeList.hmin());
     const auto  hmaxInv = safeInvVar(nodeList.hmax());
     const auto  hminratio = nodeList.hminratio();
@@ -235,12 +237,13 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     for (auto i = 0u; i < ni; ++i) {
 
       // Get the state for node i.
-      const auto& Hi = H(nodeListi, i);
-      const auto& DvDxi = DvDx(nodeListi, i);
-      auto&       zerothMomenti = massZerothMoment(nodeListi, i);
-      const auto& secondMomenti = massSecondMoment(nodeListi, i);
-      auto&       DHDti = DHDt(nodeListi, i);
-      auto&       Hideali = Hideal(nodeListi, i);
+      const auto& Hi = H(k, i);
+      const auto& posi = position(k, i);
+      const auto& DvDxi = DvDx(k, i);
+      auto&       zerothMomenti = massZerothMoment(k, i);
+      const auto& secondMomenti = massSecondMoment(k, i);
+      auto&       DHDti = DHDt(k, i);
+      auto&       Hideali = Hideal(k, i);
 
       // Time derivative of H
       DHDti = SmoothingScaleDetail::smoothingScaleDerivative(Hi, DvDxi);
@@ -322,7 +325,25 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 
       // Initial vote for Hideal before limiting
       CHECK(Hi.Determinant() > 0.0);
-      Hideali *= Dimension::rootnu(Hi.Determinant())/(1.0 - a + a*s);
+      if (mFixShape) {
+
+        // We're just scaling the fixed H tensor shape, so very close to the normal SPH IdealH algorithm
+        Hideali = Hi / (1.0 - a + a*s);
+
+      } else if (mRadialOnly) {
+
+        // We scale H in the radial direction only (also force H to be aligned radially).
+        CHECK(mRadialOnly);
+        const auto nhat = mRadialFunctorPtr->radialUnitVector(k, i, posi);
+        const auto r1 = mRadialFunctorPtr->radialCoordinate(k, i, posi);
+        Hideali = SmoothingScaleDetail::radialEvolution(Hi, nhat, 1.0 - a + a*s, mRadius0(k,i), r1);
+
+      } else {
+
+        // General case
+        Hideali *= Dimension::rootnu(Hi.Determinant())/(1.0 - a + a*s);
+
+      }
 
       // Apply limiting
       const auto hev = Hideali.eigenVectors();

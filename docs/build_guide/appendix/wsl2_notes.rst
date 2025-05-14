@@ -1,5 +1,6 @@
+##########
 WSL2 Notes
-==========
+##########
 
 The Windows Subsystem for Linux (WSL) is a useful method of development on Windows 10 based systems.  If going this route we recommend having at least WSL2 for best results -- the original version of WSL (WSL1) also functioned, but is `significantly` slower for jobs such as compilation.
 

@@ -17,6 +17,7 @@
   interruptible: true
 
 .tpls:
+  extends: [.retry_rule]
   stage: tpls
   variables:
     GIT_STRATEGY: none
@@ -30,9 +31,9 @@
     paths:
       - ci-dir.txt
       - job-name.txt
-  interruptible: true
 
 .build:
+  extends: [.retry_rule]
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
@@ -44,7 +45,6 @@
     paths:
       - ci-dir.txt
       - job-name.txt
-  interruptible: true
 
 .build_and_test:
   extends: [.build]
@@ -57,9 +57,9 @@
     paths:
       - ci-dir.txt
       - job-name.txt
-  interruptible: true
 
 .run_ats:
+  extends: [.retry_rule]
   stage: run_ats
   variables:
     GIT_STRATEGY: none
@@ -80,10 +80,10 @@
   allow_failure:
     exit_codes:
       - 80
-  interruptible: true
 
 # Run the performance suite and move the resulting Caliper files into the benchmark location
 .run_perf:
+  extends: [.retry_rule]
   stage: run_perf
   variables:
     GIT_STRATEGY: none
@@ -235,6 +235,9 @@
       when: manual
     - if: '$CI_COMMIT_MESSAGE =~ /test-prod/'
       when: manual
-    - changes:
-        - $SCRIPT_DIR/lc/*
-      when: manual
+
+.retry_rule:
+  retry:
+    max: 2
+    when: job_execution_timeout
+  interruptible: true

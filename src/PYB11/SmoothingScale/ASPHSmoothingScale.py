@@ -15,8 +15,6 @@ class ASPHSmoothingScale(SmoothingScaleBase):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-    using HidealFilterType = typename ASPHSmoothingScale<%(Dimension)s>::HidealFilterType;
-    using RadialFunctorType = typename ASPHSmoothingScale<%(Dimension)s>::RadialFunctorType;
 """
 
     #...........................................................................
@@ -65,14 +63,6 @@ call Physics::registerState for instance to create full populated State objects.
         return "void"
 
     @PYB11virtual
-    def preStepInitialize(self,
-                          dataBase = "const DataBase<%(Dimension)s>&", 
-                          state = "State<%(Dimension)s>&",
-                          derivs = "StateDerivatives<%(Dimension)s>&"):
-        "Optional hook to be called at the beginning of a time step."
-        return "void"
-
-    @PYB11virtual
     def finalize(self,
                  time = "const Scalar", 
                  dt = "const Scalar",
@@ -106,8 +96,3 @@ call Physics::registerState for instance to create full populated State objects.
     zerothMoment = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "zerothMoment", doc="The zeroth moment storage FieldList")
     secondMoment = PYB11property("const FieldList<%(Dimension)s, SymTensor>&", "secondMoment", doc="The second moment storage FieldList")
     cellSecondMoment = PYB11property("const FieldList<%(Dimension)s, SymTensor>&", "cellSecondMoment", doc="The second moment of the Voronoi cells")
-    radius0 = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "radius0", doc="The radius of a point at the beginning of a timestep (if using radialOnly=True)")
-    HidealFilter = PYB11property("std::shared_ptr<HidealFilterType>", "HidealFilter", "HidealFilter", doc="Optional functor to manipulate the Hideal calculation")
-    RadialFunctor = PYB11property("std::shared_ptr<RadialFunctorType>", "RadialFunctor", "RadialFunctor", doc="Optional functor to manipulate the radial normal and radius are computed when using radialOnly")
-    fixShape = PYB11property("bool", "fixShape", "fixShape", doc="Force the H tensor shape to be fixed -- only adjust volume")
-    radialOnly = PYB11property("bool", "radialOnly", "radialOnly", doc="Force the H tensor to evolve solely in the radial direction")

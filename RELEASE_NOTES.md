@@ -21,6 +21,12 @@ Notable changes include:
       couple damaged to undamaged material.
       * planeStrain has been removed as an option in FSISPH as part of unifying deviatoric evolution with other
         hydros.
+    * LEOS (Livermore Equation Of State) package now available in Spheral.  Requires access to the LEOS
+      package itself, which most folks outside LLNL will not necessarily have.
+    * Both ASPH and ASPHClassic now allow the user to override the final H evolution through optional functors added to the classes:
+      - HidealFilter
+      - RadialFunctor
+    * FacetedSurfaceASPHHydro has been removed in favor of providing user filters to the ASPH methods (i.e., the RadialFunctor method)
 
   * Build changes / improvements:
     * Native Spack environments are now being used.
@@ -34,6 +40,9 @@ Notable changes include:
 
   * Bug Fixes / improvements:
     * ATS submodule is updated to fix bug with latest Flux update on LC systems.
+    * Update Polytope version.
+    * TPL manager removes the symoblic links to the install directory.
+    * Consolidated CMake configured files into SpheralConfigs.py.in
     * Deviatoric stress evolution in lower dimensions (1 and 2D) now consistent with other solid hydros
 
 Version v2025.01.0 -- Release date 2025-01-31

@@ -15,12 +15,16 @@ class SmoothingScaleBase(Physics):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using HidealFilterType = typename ASPHSmoothingScale<%(Dimension)s>::HidealFilterType;
+    using RadialFunctorType = typename ASPHSmoothingScale<%(Dimension)s>::RadialFunctorType;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
-               HUpdate = "HEvolutionType"):
+               HUpdate = "HEvolutionType",
+               fixShape = "const bool",
+               radialOnly = "const bool"):
         "SmoothingScaleBase constructor"
 
     #...........................................................................
@@ -77,6 +81,14 @@ call Physics::registerState for instance to create full populated State objects.
         return "void"
 
     @PYB11virtual
+    def preStepInitialize(self,
+                          dataBase = "const DataBase<%(Dimension)s>&", 
+                          state = "State<%(Dimension)s>&",
+                          derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Optional hook to be called at the beginning of a time step."
+        return "void"
+
+    @PYB11virtual
     @PYB11const
     def maxResidual(self,
                     dataBase = "const DataBase<%(Dimension)s>&",
@@ -111,3 +123,8 @@ call Physics::registerState for instance to create full populated State objects.
     HEvolution = PYB11property("HEvolutionType", "HEvolution", "HEvolution", doc="The H evolution choice")
     Hideal = PYB11property("const FieldList<%(Dimension)s, SymTensor>&", "Hideal", doc="The ideal H storage FieldList")
     DHDt = PYB11property("const FieldList<%(Dimension)s, SymTensor>&", "DHDt", doc="The H time derivative storage FieldList")
+    radius0 = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "radius0", doc="The radius of a point at the beginning of a timestep (if using radialOnly=True)")
+    HidealFilter = PYB11property("std::shared_ptr<HidealFilterType>", "HidealFilter", "HidealFilter", doc="Optional functor to manipulate the Hideal calculation")
+    RadialFunctor = PYB11property("std::shared_ptr<RadialFunctorType>", "RadialFunctor", "RadialFunctor", doc="Optional functor to manipulate the radial normal and radius are computed when using radialOnly")
+    fixShape = PYB11property("bool", "fixShape", "fixShape", doc="Force the H tensor shape to be fixed -- only adjust volume")
+    radialOnly = PYB11property("bool", "radialOnly", "radialOnly", doc="Force the H tensor to evolve solely in the radial direction")

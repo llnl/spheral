@@ -3,15 +3,17 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack import *
+from spack.package import *
 import os
 
 
 class Polytope(CMakePackage):
     """Polytope is a C++ library for generating polygonal and polyhedral meshes."""
 
-    git = "https://github.com/pbtoast/polytope.git"
-    url = "https://github.com/pbtoast/polytope/archive/0.7.3.tar.gz"
+    git = "https://github.com/LLNL/polytope.git"
+    url = "https://github.com/LLNL/polytope/archive/0.7.3.tar.gz"
+    # DO NOT COMMIT, FOR TESTING ONLY
+    version('master', commit='2340f57683151e2fd862702f229792423e7bcf0b', submodules=True, preferred=True)
     version('0.7.3', tag='0.7.3', submodules=True)
 
     variant('python', default=True, description='Enable Python Support.')

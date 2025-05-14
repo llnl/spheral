@@ -27,6 +27,7 @@ src/BUILD
 src/build
 src/BUILD/**
 src/build/**
+*.cali
 dumps-*
 *cache*
 python

@@ -82,12 +82,12 @@ def install_ats_args():
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
-    if (not SpheralConfigs.spheral_enable_mpi()):
+    if (not SpheralConfigs.enable_mpi()):
         install_args.append("--filter='np<2'")
-    comp_configs = SpheralConfigs.component_configs()
+    comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
     for ts in test_comps:
-        if ts not in comp_configs:
+        if not any(ts in ext for ext in comp_configs):
             install_args.append(f"--filter='not {ts.lower()}'")
     return install_args
 
@@ -96,7 +96,7 @@ def install_ats_args():
 #---------------------------------------------------------------------------
 def main():
     test_log_name = "test-logs"
-    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "ruby"] # Machines using Slurm scheduler
+    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "ruby", "rztrona"] # Machines using Slurm scheduler
     toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
     np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
     ci_launch_flags = {"ruby": "--reservation=ci", "rzadams": "-q pdebug"}

@@ -30,41 +30,4 @@ SmoothingScaleBase<Dim<3>>::hmax(const Dim<3>::Scalar Vi,
   return nperh*pow(0.75*Vi/M_PI, 1.0/3.0);
 }
 
-//------------------------------------------------------------------------------
-// Choose how we want to update the H tensor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-HEvolutionType
-SmoothingScaleBase<Dimension>::HEvolution() const {
-  return mHEvolution;
-}
-
-template<typename Dimension>
-inline
-void
-SmoothingScaleBase<Dimension>::
-HEvolution(HEvolutionType type) {
-  mHEvolution = type;
-}
-
-//------------------------------------------------------------------------------
-// The internal state field lists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-const FieldList<Dimension, typename Dimension::SymTensor>&
-SmoothingScaleBase<Dimension>::
-Hideal() const {
-  return mHideal;
-}
-
-template<typename Dimension>
-inline
-const FieldList<Dimension, typename Dimension::SymTensor>&
-SmoothingScaleBase<Dimension>::
-DHDt() const {
-  return mDHDt;
-}
-
 }

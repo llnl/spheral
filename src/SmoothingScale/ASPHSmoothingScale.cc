@@ -43,16 +43,11 @@ ASPHSmoothingScale(const HEvolutionType HUpdate,
                    const TableKernel<Dimension>& W,
                    const bool fixShape,
                    const bool radialOnly):
-  SmoothingScaleBase<Dimension>(HUpdate),
-  mFixShape(fixShape),
-  mRadialOnly(radialOnly),
-  mHidealFilterPtr(std::make_shared<ASPHSmoothingScaleUserFilter<Dimension>>()),
-  mRadialFunctorPtr(std::make_shared<ASPHRadialFunctor<Dimension>>()),
+  SmoothingScaleBase<Dimension>(HUpdate, fixShape, radialOnly),
   mWT(W),
   mZerothMoment(FieldStorageType::CopyFields),
   mSecondMoment(FieldStorageType::CopyFields),
-  mCellSecondMoment(FieldStorageType::CopyFields),
-  mRadius0(FieldStorageType::CopyFields) {
+  mCellSecondMoment(FieldStorageType::CopyFields) {
 }
 
 //------------------------------------------------------------------------------
@@ -67,7 +62,6 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   dataBase.resizeFluidFieldList(mZerothMoment, 0.0, HydroFieldNames::massZerothMoment, false);
   dataBase.resizeFluidFieldList(mSecondMoment, SymTensor::zero, HydroFieldNames::massSecondMoment, false);
   dataBase.resizeFluidFieldList(mCellSecondMoment, SymTensor::zero, HydroFieldNames::massSecondMoment + " cells", false);
-  if (mRadialOnly) dataBase.resizeFluidFieldList(mRadius0, 0.0, "Start of step radius", false);
 }
 
 //------------------------------------------------------------------------------
@@ -153,30 +147,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     }
   }
   TIME_END("ASPHSmoothingScaleDerivs");
-}
-
-//------------------------------------------------------------------------------
-// Initialize at the beginning of a timestep.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-ASPHSmoothingScale<Dimension>::
-preStepInitialize(const DataBase<Dimension>& dataBase, 
-                  State<Dimension>& state,
-                  StateDerivatives<Dimension>& derivs) {
-  // If we're using the radial H scaling, take a snapshot of the initial radius of
-  // each point.
-  if (mRadialOnly) {
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-    const auto numFields = pos.numFields();
-    for (auto k = 0u; k < numFields; ++k) {
-      const auto n = pos[k]->numInternalElements();
-#pragma omp parallel for
-      for (auto i = 0u; i < n; ++i) {
-        mRadius0(k,i) = mRadialFunctorPtr->radialCoordinate(k, i, pos(k,i));
-      }
-    }
-  }
 }
 
 //------------------------------------------------------------------------------

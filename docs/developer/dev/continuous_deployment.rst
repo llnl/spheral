@@ -54,18 +54,18 @@ developer with the appropriate permissions.
 
 Spheral-dev-pkg
 ===============
-
 As an artifact of our CD pipeline we generate a tar file with the naming format:
+
 ::
 
   $SYS_TYPE-spheral-dev-pkg-$SPHERAL_REVISION_STRING.tar.gz
 
-This tar file contains everything to build and install Spheral on the given 
-``$SYS_TYPE`` (e.g. ``toss_4_x86_64_ib``). It contains:
-  * A ``spack`` build cache of all the pre-built binaries for Spheral TPLs.
-  * A ``spack`` mirror of all TPL tars to enable re-compilation at a later date.
-  * ``spack`` bootstrap dependencies for use of libraries such as ``clingo``.
-  * Spheral source code.
+This tar file contains everything to build and install Spheral on the given ``$SYS_TYPE`` (e.g. ``toss_4_x86_64_ib``). It contains:
+
+- A ``spack`` build cache of all the pre-built binaries for Spheral TPLs.
+- A ``spack`` mirror of all TPL tars to enable re-compilation at a later date.
+- ``spack`` bootstrap dependencies for use of libraries such as ``clingo``.
+- Spheral source code.
 
 After extracting the ``dev-pkg`` tar on the target system a user can install 
 spheral using ``scritps/lc/install-from-dev-pkg.sh``.

@@ -2,11 +2,11 @@
 #-------------------------------------------------------------------------------
 # Provide a method of getting the instantiated dimensions from python.
 #-------------------------------------------------------------------------------
+import SpheralConfigs
+
 def spheralDimensions():
     spheralDimensions.PYB11ignore = True     # Screen from PYB11
-    dims_string = "@DIMS@"
-    dims = [int(x) for x in dims_string.split()]
-    return dims
+    return SpheralConfigs.dimensions()
 
 #-------------------------------------------------------------------------------
 # Return a dictionary of useful Spheral Dimensional types.

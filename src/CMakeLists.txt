@@ -69,8 +69,12 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _packages SVPH)
 endif()
 
-if (ENABLE_SUNDIALS AND ENABLE_MPI)
+if (ENABLE_SUNDIALS)
   list(APPEND _packages Solvers)
+endif()
+
+if (ENABLE_LEOS)
+  list(APPEND _packages LEOS)
 endif()
 
 if(NOT ENABLE_CXXONLY)

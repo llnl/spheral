@@ -2,7 +2,7 @@
 
 import sys
 from math import *
-from collections import Iterable
+from collections.abc import Iterable
 
 #-------------------------------------------------------------------------------
 # Helper method, sort a set of lists by the first one.

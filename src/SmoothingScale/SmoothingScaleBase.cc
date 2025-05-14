@@ -4,6 +4,7 @@
 // Abstract base class for packages that advance the smoothing scale.
 //----------------------------------------------------------------------------//
 #include "SmoothingScale/FixedSmoothingScale.hh"
+#include "SmoothingScale/SmoothingScaleUtilities.hh"
 #include "Field/FieldList.hh"
 #include "DataBase/DataBase.hh"
 #include "DataBase/IncrementBoundedState.hh"
@@ -18,11 +19,18 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 SmoothingScaleBase<Dimension>::
-SmoothingScaleBase(const HEvolutionType HUpdate):
+SmoothingScaleBase(const HEvolutionType HUpdate,
+                   const bool fixShape,
+                   const bool radialOnly):
   Physics<Dimension>(),
+  mFixShape(fixShape),
+  mRadialOnly(radialOnly),
   mHEvolution(HUpdate),
   mHideal(FieldStorageType::CopyFields),
   mDHDt(FieldStorageType::CopyFields),
+  mRadius0(FieldStorageType::CopyFields),
+  mHidealFilterPtr(std::make_shared<ASPHSmoothingScaleUserFilter<Dimension>>()),
+  mRadialFunctorPtr(std::make_shared<ASPHRadialFunctor<Dimension>>()),
   mRestart(registerWithRestart(*this)) {
 }
 
@@ -36,6 +44,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   // Make sure our FieldLists are correctly sized.
   dataBase.resizeFluidFieldList(mHideal, SymTensor::zero, ReplaceBoundedState<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, false);
   dataBase.resizeFluidFieldList(mDHDt, SymTensor::zero, IncrementBoundedState<Dimension, Vector>::prefix() + HydroFieldNames::H, false);
+  if (mRadialOnly) dataBase.resizeFluidFieldList(mRadius0, 0.0, "Start of step radius", false);
 }
 
 //------------------------------------------------------------------------------
@@ -84,6 +93,30 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (mHEvolution != HEvolutionType::FixedH) {
     derivs.enroll(mHideal);
     derivs.enroll(mDHDt);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Initialize at the beginning of a timestep.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+SmoothingScaleBase<Dimension>::
+preStepInitialize(const DataBase<Dimension>& dataBase, 
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs) {
+  // If we're using the radial H scaling, take a snapshot of the initial radius of
+  // each point.
+  if (mRadialOnly) {
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto numFields = pos.numFields();
+    for (auto k = 0u; k < numFields; ++k) {
+      const auto n = pos[k]->numInternalElements();
+#pragma omp parallel for
+      for (auto i = 0u; i < n; ++i) {
+        mRadius0(k,i) = mRadialFunctorPtr->radialCoordinate(k, i, pos(k,i));
+      }
+    }
   }
 }
 

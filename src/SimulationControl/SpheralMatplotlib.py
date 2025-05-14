@@ -983,7 +983,7 @@ def plotTableKernel(WT, nPerh):
     plotASPH.plot(xvals, yvals, "r-", label=None)
     plotASPH.set_xlabel(r"$\eta$")
     plotASPH.set_ylabel(r"$W_{ASPH}(\eta)$")
-    plotASPH.set_title(f"$W(\eta)$ for ASPH h lookup with $n_h={nPerh}$")
+    plotASPH.set_title(r"$W(\eta)$ for ASPH h lookup with $n_h="+str(nPerh)+"$")
 
     plots += [plotSPH, plotASPH]
 
