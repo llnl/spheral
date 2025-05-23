@@ -29,10 +29,6 @@ if "spheral" in git_mod_out:
     package_dirs.update({"llnlspheral": base_dir})
 print(f"Managing {package_name} TPLs")
 
-dev_specs = {"gcc": "%gcc+mpi", "clang": "%clang+mpi", "gcc~mpi": "%gcc~mpi",
-             "rocmcc": "+mpi~rocm", "rocmcc+rocm": "+mpi+rocm amdgpu_target=gfx942",
-             "rocmcc+rocm~mpi": "~mpi+rocm amdgpu_target=gfx942"}
-
 class SpheralTPL:
     def parse_args(self):
         parser = argparse.ArgumentParser()
@@ -41,9 +37,6 @@ class SpheralTPL:
                            help="Install TPLs and create host config file for a given spec.\n"+\
                            "If no spec if given, TPLs for all env specs are installed and "+\
                            "no host config file is created.")
-        group.add_argument("--dev-spec", type=str, default=None,
-                           help="For use by developers to ease frequent TPL building.",
-                           choices=list(dev_specs.keys()))
         parser.add_argument("--show-specs", action="store_true",
                             help="Show the specs for the current environment and stop.")
         parser.add_argument("--show-info", action="store_true",
@@ -79,9 +72,6 @@ class SpheralTPL:
 
         if (not self.args.spec and self.args.ci_run):
             raise Exception("Must specify a --spec if doing --ci-run")
-
-        if (self.args.dev_spec):
-            self.args.spec = package_name + dev_specs[self.args.dev_spec]
 
         if (self.args.spec and not self.args.spec.startswith(package_name)):
             raise Exception(f"--spec must start with {package_name}")

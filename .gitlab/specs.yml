@@ -31,11 +31,11 @@
 
 .cuda_11_gcc_~mpi:
   variables:
-    SPEC: '%gcc~mpi+cuda cuda_arch=70'
+    SPEC: '%gcc~mpi+cuda'
 
 .cuda_11_gcc_spectrum:
   variables:
-    SPEC: '%gcc+mpi+cuda cuda_arch=70'
+    SPEC: '%gcc+mpi+cuda'
     EXTRA_CMAKE_ARGS: ''
 
 
@@ -55,8 +55,8 @@
 
 .hip_rocm_mpich:
   variables:
-    SPEC: '%rocmcc+mpi+rocm amdgpu_target=gfx942'
+    SPEC: '%rocmcc+mpi+rocm'
 
 .hip_rocm_~mpi:
   variables:
-    SPEC: '%rocmcc~mpi+rocm amdgpu_target=gfx942'
+    SPEC: '%rocmcc~mpi+rocm'

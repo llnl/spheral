@@ -95,31 +95,6 @@ class Field(FieldBase):
         return "void"
 
     @PYB11virtual
-    def resizeField(self, size="unsigned"):
-        "Set the number of elements"
-        return "void"
-
-    @PYB11virtual
-    def resizeFieldInternal(self, size="unsigned", oldFirstGhostNode="unsigned"):
-        "Set the number of internal elements"
-        return "void"
-
-    @PYB11virtual
-    def resizeFieldGhost(self, size="unsigned"):
-        "Set the number of ghost elements"
-        return "void"
-
-    @PYB11virtual
-    def deleteElement(self, nodeID="int"):
-        "Delete the element at the given index"
-        return "void"
-
-    @PYB11virtual
-    def deleteElements(self, nodeIDs="const std::vector<int>&"):
-        "Delete the elements at the given indices"
-        return "void"
-
-    @PYB11virtual
     @PYB11const
     def packValues(self, nodeIDs="const std::vector<int>&"):
         "Serialize the indicated elements into a vector<char>"

@@ -31,6 +31,9 @@ def parse_args():
   parser.add_argument('--build', action='store_true',
       help='Run make -j install after configuring build dirs.')
 
+  parser.add_argument('--ctest', action='store_true',
+      help='Run make test after build stage.')
+
   parser.add_argument('--nprocs', default=48,
       help="Set number of procs to use while building. This is not used if --build is not enabled.")
 
@@ -98,6 +101,15 @@ def main():
     build_cmd = f"{cmake_cmd} --build . --target install -j {args.nprocs}"
 
     sexe(build_cmd, echo=True, ret_output=False)
+
+    if args.ctest:
+      print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      print("~~~~~ Running Spheral gtest suite.")
+      print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+      ctest_cmd = f"ctest --test-dir {build_dir}/tests"
+
+      sexe(ctest_cmd, echo=True, ret_output=False)
+
 
 if __name__ == "__main__":
   main()

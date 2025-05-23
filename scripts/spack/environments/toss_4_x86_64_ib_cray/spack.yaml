@@ -3,7 +3,7 @@ spack:
   - matrix:
       - [spheral]
       - ["+mpi", "~mpi"]
-      - ["+rocm amdgpu_target=gfx942", "~rocm"]
+      - ["+rocm", "~rocm"]
   view: false
   concretizer:
     unify: false
@@ -18,3 +18,10 @@ spack:
     - ../../configs/upstreams.yaml
   repos:
     - ../../
+  packages:
+    spheral:
+      require:
+        - spec: "amdgpu_target=gfx90a"
+          when: "+rocm arch=linux-rhel8-zen3"
+        - spec: "amdgpu_target=gfx942"
+          when: "+rocm arch=linux-rhel8-zen4"

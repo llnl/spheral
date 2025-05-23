@@ -1,6 +1,31 @@
 #ifndef SPHERAL_config_HPP
 #define SPHERAL_config_HPP
 
+#include "RAJA/RAJA.hpp"
+
 #define SPHERAL_CXX_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@"
+
+#cmakedefine SPHERAL_ENABLE_OPENMP
+
+#cmakedefine SPHERAL_ENABLE_CUDA
+#cmakedefine SPHERAL_ENABLE_HIP
+#cmakedefine SPHERAL_ENABLE_VVI
+
+#if defined(SPHERAL_ENABLE_HIP) && defined(__HIPCC__)
+#define SPHERAL_GPU_ACTIVE
+#endif // SPHERAL_ENABLE_CUDA && __CUDACC__
+
+#if defined(SPHERAL_ENABLE_CUDA) && defined(__CUDA_ARCH__)
+#define SPHERAL_GPU_ACTIVE
+#endif // SPHERAL_ENABLE_CUDA && __CUDACC__
+
+#if defined(SPHERAL_ENABLE_VVI)
+#define VVI_ENABLED
+#endif
+
+#define SPHERAL_HOST_DEVICE RAJA_HOST_DEVICE
+#define SPHERAL_HOST RAJA_HOST
+#define SPHERAL_DEVICE RAJA_DEVICE
+
 
 #endif //  SPHERAL_config_HPP

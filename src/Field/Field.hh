@@ -211,11 +211,6 @@ public:
 
   // Required functions from FieldBase
   virtual void setNodeList(const NodeList<Dimension>& nodeList) override;
-  virtual void resizeField(unsigned size) override;
-  virtual void resizeFieldInternal(unsigned size, unsigned oldFirstGhostNode) override;
-  virtual void resizeFieldGhost(unsigned size) override;
-  virtual void deleteElement(int nodeID) override;
-  virtual void deleteElements(const std::vector<int>& nodeIDs) override;
   virtual std::vector<char> packValues(const std::vector<int>& nodeIDs) const override;
   virtual void unpackValues(const std::vector<int>& nodeIDs,
                             const std::vector<char>& buffer) override;
@@ -241,6 +236,13 @@ public:
   // Functions to help with storing the field in a Sidre datastore.
   axom::sidre::DataTypeId getAxomTypeID() const;
 
+
+protected:
+  virtual void resizeField(unsigned size) override;
+  virtual void resizeFieldInternal(unsigned size, unsigned oldFirstGhostNode) override;
+  virtual void resizeFieldGhost(unsigned size) override;
+  virtual void deleteElement(int nodeID) override;
+  virtual void deleteElements(const std::vector<int>& nodeIDs) override;
 
 private:
   //--------------------------- Private Interface ---------------------------//

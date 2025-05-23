@@ -23,10 +23,13 @@ Notable changes include:
         hydros.
     * LEOS (Livermore Equation Of State) package now available in Spheral.  Requires access to the LEOS
       package itself, which most folks outside LLNL will not necessarily have.
+    * gtest suite integration for writing minimal c++ unit tests on the host and device without needing to
+      compile large potions of the code.
     * Both ASPH and ASPHClassic now allow the user to override the final H evolution through optional functors added to the classes:
       - HidealFilter
       - RadialFunctor
-    * FacetedSurfaceASPHHydro has been removed in favor of providing user filters to the ASPH methods (i.e., the RadialFunctor method)
+    * FacetedSurfaceASPHHydro has been removed in favor of providing user filters to the ASPH methods (i.e., the RadialFunctor method).
+    * Field resizing operations have been removed from the public interface.
 
   * Build changes / improvements:
     * Native Spack environments are now being used.
