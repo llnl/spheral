@@ -150,10 +150,10 @@ dt(const DataBase<Dimension>& dataBase,
   if (haveDS) S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
 
   // Check if the longitudinal sound speed is registered.
-#ifdef CXXONLY
-  const auto haveLongCs = false; // ignore longitudinal sound speed for CInterface
-#else
+#ifdef LONGCSDT
   const auto haveLongCs = state.fieldNameRegistered(SolidFieldNames::longitudinalSoundSpeed);
+#else
+  const auto haveLongCs = false; // ignore longitudinal sound speed
 #endif
   FieldList<Dimension, Scalar> csl;
   if (haveLongCs) csl = state.fields(SolidFieldNames::longitudinalSoundSpeed, 0.0);

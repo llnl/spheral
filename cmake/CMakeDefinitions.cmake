@@ -46,6 +46,16 @@ if (ENABLE_CXXONLY)
   add_definitions(-DCXXONLY=1)
 endif()
 
+# SPHERAL_ENABLE_GLOBALDT_REDUCTION
+if (SPHERAL_ENABLE_GLOBALDT_REDUCTION)
+  add_definitions(-DGLOBALDT_REDUCTION)
+endif()
+
+# SPHERAL_ENABLE_LONGCSDT
+if (SPHERAL_ENABLE_LONGCSDT)
+  add_definitions(-DLONGCSDT)
+endif()
+
 # Default Polytope options
 add_definitions(-DUSE_TETGEN=0)
 add_definitions(-DUSE_TRIANGLE=0)

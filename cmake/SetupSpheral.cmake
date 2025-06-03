@@ -67,6 +67,8 @@ option(SPHERAL_ENABLE_FSISPH "Enable the FSISPH package" ON)
 option(SPHERAL_ENABLE_GRAVITY "Enable the gravity package" ON)
 option(SPHERAL_ENABLE_GSPH "Enable the GSPH package" ON)
 option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
+option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
+option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
 
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
