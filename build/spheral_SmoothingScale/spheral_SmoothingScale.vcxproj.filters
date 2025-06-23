@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0a7d1bf3-7e67-45bb-adbe-27c6dffbe550}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{996ac307-c3a7-4d95-9f6d-d7abe3f67a9d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\SmoothingScale\ASPHClassicSmoothingScaleInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </None>
+    <None Include="..\..\src\SmoothingScale\ASPHSmoothingScaleInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </None>
+    <None Include="..\..\src\SmoothingScale\IncrementASPHHtensorInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </None>
+    <None Include="..\..\src\SmoothingScale\SmoothingScaleBaseInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </None>
+    <None Include="..\..\src\SmoothingScale\SPHSmoothingScaleInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\SmoothingScale\SPHSmoothingScaleInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\SPHSmoothingScaleInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\SmoothingScaleBaseInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\SmoothingScaleBaseInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\ASPHSmoothingScaleInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\ASPHSmoothingScaleInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SmoothingScale\polySecondMoment.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

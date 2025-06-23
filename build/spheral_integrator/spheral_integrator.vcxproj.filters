@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{f6f167e8-8472-4abc-bf43-3ff3786d12a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4c93a08f-c1d9-4e46-b6b0-3c5217342d34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{c489a5bd-69be-4f51-b211-4a93167601ce}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Integrator\CheapSynchronousRK2Inst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Integrator\CheapSynchronousRK2Inst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Integrator\IntegratorInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Integrator\IntegratorInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\Integrator\CheapSynchronousRK2.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Integrator\Integrator.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Integrator\IntegratorInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\Integrator\CheapSynchronousRK2Inst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Integrator\IntegratorInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

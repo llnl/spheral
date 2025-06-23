@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{ec8f75d1-d8e1-47ea-b621-0ecd64a50614}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{052be9a7-b625-448d-9f58-c5797c834331}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{01c68d05-220e-4182-a20f-f2521d56aa72}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\TaylorSPH\computeTaylorSPHCorrectionsInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\TaylorSPH\computeTaylorSPHCorrectionsInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\TaylorSPH\TaylorSPHHydroBaseInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\TaylorSPH\TaylorSPHHydroBaseInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\TaylorSPH\computeTaylorSPHCorrections.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\TaylorSPH\TaylorSPHHydroBase.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\TaylorSPH\TaylorSPHHydroBaseInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\TaylorSPH\computeTaylorSPHCorrectionsInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\TaylorSPH\TaylorSPHHydroBaseInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

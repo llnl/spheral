@@ -1,0 +1,173 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{502d64fd-7b68-4041-ae9f-d8ece61438c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{3c023ffa-69e4-4a57-a91a-fb97752cc4e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{2d4a5a36-2fa9-48f0-a27c-b713418616ac}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\SVPH\CellPressurePolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\CellPressurePolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\CompatibleFaceSpecificThermalEnergyPolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\CompatibleFaceSpecificThermalEnergyPolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSumVoronoiCellMassDensityFromFacesInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSumVoronoiCellMassDensityFromFacesInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSVPHCorrectionsInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSVPHCorrectionsInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSVPHCorrectionsOnFacesInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\computeSVPHCorrectionsOnFacesInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\gradientFieldListSVPHInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\gradientFieldListSVPHInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\MeshIdealHPolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\MeshIdealHPolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\sampleFieldListSVPHInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\sampleFieldListSVPHInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SpecificThermalEnergyVolumePolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SpecificThermalEnergyVolumePolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHCorrectionsPolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHCorrectionsPolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHFacetedHydroBaseInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHFacetedHydroBaseInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHMassDensityPolicyInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\SVPH\SVPHMassDensityPolicyInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\SVPH\CellPressurePolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\CompatibleFaceSpecificThermalEnergyPolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\computeSumVoronoiCellMassDensityFromFaces.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\computeSVPHCorrections.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\computeSVPHCorrectionsOnFaces.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\gradientFieldListSVPH.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\MeshIdealHPolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\sampleFieldListSVPH.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SpecificThermalEnergyVolumePolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHCorrectionsPolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHFacetedHydroBase.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHFacetedHydroBaseInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHHydroBase.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHHydroBaseInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\SVPH\SVPHMassDensityPolicy.hh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\SVPH\CellPressurePolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\CompatibleFaceSpecificThermalEnergyPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\computeSumVoronoiCellMassDensityFromFacesInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\computeSVPHCorrectionsInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\computeSVPHCorrectionsOnFacesInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\gradientFieldListSVPHInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\MeshIdealHPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\sampleFieldListSVPHInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\SpecificThermalEnergyVolumePolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\SVPHCorrectionsPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\SVPHFacetedHydroBaseInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\SVPH\SVPHMassDensityPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

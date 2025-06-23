@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7809785d-8d4b-4e5d-bf56-93342a4a69c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{102fea92-f742-4e0d-bb6f-18d42cee6e4e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\FileIO\FileIO.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\FileIO\FileIO.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\FileIO\FileIOInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\FileIO\HDF5IO.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\FileIO\HDF5Traits.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\FileIO\HDF5Types.hh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

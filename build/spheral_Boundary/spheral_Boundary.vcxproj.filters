@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{41f0b839-f32f-40b0-9899-58105a1ca398}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{c644b29a-b59a-46ec-9d95-acabafe580aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files\Source Files">
+      <UniqueIdentifier>{3985b720-1b51-4f78-a4ae-c6cc1630dded}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{285373dd-9335-4a44-982d-33ad0e8bbe12}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Boundary\AxisBoundaryRZ.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\BoundaryInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\BoundaryInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\CRKSPHVoidBoundaryInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\CRKSPHVoidBoundaryInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\findNodesTouchingThroughPlanesInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\findNodesTouchingThroughPlanesInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\PlanarBoundaryInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\PlanarBoundaryInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\ReflectingBoundaryInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\ReflectingBoundaryInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\RigidBoundaryInst.cc.2.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\RigidBoundaryInst.cc.3.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\FacetedVolumeBoundary.cc">
+      <Filter>Inst Files\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\PeriodicBoundaryInst.cc.2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Boundary\PeriodicBoundaryInst.cc.3.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\Boundary\AxisBoundaryRZ.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\Boundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\BoundaryInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\CRKSPHVoidBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\mapPositionThroughPlanes.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\PeriodicBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\PeriodicPlanarBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\PlanarBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\PlanarBoundaryInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\PlanarSymmetryBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\ReflectingBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\ReflectingBoundaryInline.hh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\src\Boundary\RigidBoundary.hh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\Boundary\BoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\CRKSPHVoidBoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\findNodesTouchingThroughPlanesInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\PeriodicBoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\PlanarBoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\ReflectingBoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Boundary\RigidBoundaryInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\Boundary\InflowOutflowBoundary.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Boundary\InflowOutflowBoundaryInline.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Boundary\findNodesTouchingThroughPlanes.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Boundary\FacetedVolumeBoundary.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\Boundary\FacetedVolumeBoundaryInline.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

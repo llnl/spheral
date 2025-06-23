@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{ad6c7d00-0063-44bd-8def-b621df5a76e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{7c907e11-bda4-4d8f-8f1c-f7dbced1b39f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Strength">
+      <UniqueIdentifier>{898ef516-5821-476f-a225-fed39e42cb36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Strength">
+      <UniqueIdentifier>{450e6a44-1c47-4416-9ece-bdeaf1f35bb4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Inst Files">
+      <UniqueIdentifier>{6fcbb4f1-4923-4063-b139-38c746ca2d0e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\Strength\BulkModulusPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\DeviatoricStressPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\effectiveKernelVolume.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\PlasticStrainPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\RZDeviatoricStressPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\RZPlasticStrainPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\ShearModulusPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\SolidFieldNames.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\SolidNodeListInline.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+    <None Include="..\..\src\Strength\YieldStrengthPolicy.hh">
+      <Filter>Header Files\Strength</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\Strength\BulkModulusPolicyInst.cc.2.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\BulkModulusPolicyInst.cc.3.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\DeviatoricStressPolicyInst.cc.2.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\DeviatoricStressPolicyInst.cc.3.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\PlasticStrainPolicyInst.cc.2.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\PlasticStrainPolicyInst.cc.3.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\ShearModulusPolicyInst.cc.2.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\ShearModulusPolicyInst.cc.3.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\SolidFieldNames.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\YieldStrengthPolicyInst.cc.2.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\Strength\YieldStrengthPolicyInst.cc.3.cc">
+      <Filter>Source Files\Strength</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\src\Strength\BulkModulusPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Strength\DeviatoricStressPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Strength\PlasticStrainPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Strength\ShearModulusPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\src\Strength\YieldStrengthPolicyInst.cc.py">
+      <Filter>Inst Files</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>
