@@ -34,6 +34,7 @@ stages:
   - install_production
   - update_permissions
   - cleanup
+  - deploy
 
 include:
   - project: lc-templates/id_tokens
@@ -53,3 +54,4 @@ include:
         when: never
       - when: always
   - local: .gitlab/jobs-prod.yml
+  - local: .gitlab/pages.yml

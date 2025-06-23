@@ -18,7 +18,7 @@ def LinearSpringDEM(dataBase,
                     cohesiveTensileStrength = 0.0,
                     shapeFactor = 0.0,
                     stepsPerCollision = 25,
-                    enableFastTimeStepping = True,
+                    enableFastTimeStepping = False,
                     xmin = (-1e100, -1e100, -1e100),
                     xmax = ( 1e100,  1e100,  1e100)):
 

@@ -61,7 +61,31 @@ vec_to_string(const Vector& vec) {
   return oss.str();
 }
 
+// function to calculate the contact durations
+double
+computeContactDuration(double m, 
+                       double k, 
+                       double B){
+  CHECK(m >= 0);
+  CHECK(k > 0);
+  CHECK(B < 0);
+  return M_PI*std::sqrt(0.5*m/k * (1.0 + 1.0/(B*B)));
 }
+
+// our lumped damping term were going to force the restitution coefficient to be less than
+// 1 and more than zero with a small buffer to prevent singular behavior w/out resorting
+// to if statements.
+double
+computeBeta(double restitutionCoefficient){
+  CHECK(restitutionCoefficient >= 0);
+  CHECK(restitutionCoefficient <= 1);
+  const double tiny = 1.0e-8;
+  return M_PI/std::log(std::min(std::max(restitutionCoefficient,tiny),1.0-tiny));
+}
+
+}
+
+
 
 //------------------------------------------------------------------------------
 // Default constructor
@@ -95,19 +119,21 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
   mTorsionalFrictionCoefficient(torsionalFrictionCoefficient),
   mCohesiveTensileStrength(cohesiveTensileStrength),
   mShapeFactor(shapeFactor),
-  mNormalBeta(M_PI/std::log(std::max(normalRestitutionCoefficient,1.0e-3))),
-  mTangentialBeta(M_PI/std::log(std::max(tangentialRestitutionCoefficient,1.0e-3))),
+  mNormalBeta(computeBeta(normalRestitutionCoefficient)),
+  mTangentialBeta(computeBeta(tangentialRestitutionCoefficient)),
   mCollisionDuration(0.0),
   mMomentOfInertia(FieldStorageType::CopyFields),
   mMaximumOverlap(FieldStorageType::CopyFields),
   mNewMaximumOverlap(FieldStorageType::CopyFields) { 
+
     mMomentOfInertia = dataBase.newDEMFieldList(0.0, DEMFieldNames::momentOfInertia);
     mMaximumOverlap = dataBase.newDEMFieldList(0.0, DEMFieldNames::maximumOverlap);
     mNewMaximumOverlap = dataBase.newDEMFieldList(0.0,MaxReplaceState<Dimension, Scalar>::prefix() + DEMFieldNames::maximumOverlap);
 
     const auto mass = dataBase.DEMMass();
     const auto minMass = mass.min();
-    mCollisionDuration = M_PI*std::sqrt(0.5*minMass/mNormalSpringConstant * (1.0 + 1.0/(mNormalBeta*mNormalBeta)));
+    mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+
 }
 
 //------------------------------------------------------------------------------
@@ -157,6 +183,16 @@ fixedTimeStep() const {
 }
 
 template<typename Dimension>
+void
+LinearSpringDEM<Dimension>::
+recomputeContactDuration()  {
+  const auto& db = this->dataBase();
+  const auto mass = db.DEMMass();
+  const auto minMass = mass.min();
+  mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+}
+
+template<typename Dimension>
 typename LinearSpringDEM<Dimension>::TimeStepType
 LinearSpringDEM<Dimension>::
 variableTimeStep(const DataBase<Dimension>& dataBase,
@@ -164,11 +200,11 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
                  const StateDerivatives<Dimension>& /*derivs*/,
                  const typename Dimension::Scalar /*currentTime*/) const {
   
-  // Get some useful fluid variables from the DataBase.
-  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto  r = state.fields(DEMFieldNames::particleRadius, 0.0);
+  // FieldLists we'll need for the timestep calc.
+  const auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto r = state.fields(DEMFieldNames::particleRadius, 0.0);
 
   const auto& contacts = this->contactStorageIndices();
   const unsigned int numP2PContacts = this->numParticleParticleContacts();
@@ -182,7 +218,7 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
 
   // Compute the spring timestep constraint (except for the mass)
   const auto nsteps = this->stepsPerCollision();
-  const auto dtSpring0 = M_PI*std::sqrt(0.5/mNormalSpringConstant * (1.0 + 1.0/(mNormalBeta*mNormalBeta)))/nsteps;
+  const auto dtSpring0 = computeContactDuration(1.0,mNormalSpringConstant,mNormalBeta)/nsteps;
 
   CHECK(nsteps > 0);
 
@@ -209,8 +245,6 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
     const auto& rj = position(nodeListj, j);
     const auto& vj = velocity(nodeListj, j);
     const auto  Rj = r(nodeListj, j);
-    
-    // Spring constant timestep for this pair
 
     // Compare closing speed to separation
     const auto rji = rj - ri;
@@ -318,6 +352,21 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
   }
 
   return result;
+}
+
+//------------------------------------------------------------------------------
+// method that fires once on startup
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+LinearSpringDEM<Dimension>::
+preStepInitialize(const DataBase<Dimension>& dataBase,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs){
+  TIME_BEGIN("preStepInitialize");
+  DEMBase<Dimension>::preStepInitialize(dataBase,state,derivs);
+  this->recomputeContactDuration();
+  TIME_END("preStepInitialize");
 }
 
 //------------------------------------------------------------------------------
@@ -633,7 +682,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         // accelerations
         //------------------------------------------------------------
         // Rectilinear Acceleration 
-        const Vector fij = fn - fc + fs;
+        const auto fij = fn - fc + fs;
         DvDti += fij/mi;
         DvDtj -= fij/mj;
 
@@ -705,6 +754,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         // Get the derivs from node i
         auto& DvDti = DvDt_thread(nodeListi, i);
         auto& DomegaDti = DomegaDt_thread(nodeListi, i);
+        auto& maxOverlapi = newMaxOverlap_thread(nodeListi,i);
 
         // get pairwise variables
         const auto& deltaSlidib = shearDisplacement(nodeListi,i)[contacti];
@@ -774,6 +824,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto Mrolling = -DEMDimension<Dimension>::cross(rhatib,fr);
         const auto Mtorsion = MtorsionMag * this->torsionMoment(rhatib,omegai,0*omegai); // rename torsionDirection
         DomegaDti += (Msliding*li - (Mtorsion + Mrolling) * lib)/Ii;
+
+        // update max overlaps
+        maxOverlapi = max(maxOverlapi,delta);
 
         // for spring updates
         newShearDisplacement(nodeListi,i)[contacti] = newDeltaSlidib;

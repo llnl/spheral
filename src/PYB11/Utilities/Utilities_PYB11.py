@@ -98,13 +98,13 @@ control
 """
 
 PYB11modulepreamble = """
-TIME_BEGIN("main");
+TIME_PHASE_BEGIN("main");
 Spheral::spheral_adiak_init();
 
 // Call these routines when module is exited
 auto atexit = py::module_::import("atexit");
 atexit.attr("register")(py::cpp_function([]() {
-   TIME_END("main");
+   TIME_PHASE_END("main");
    adiak::fini();
    if (Spheral::TimerMgr::is_started()) {
       Spheral::TimerMgr::fini();

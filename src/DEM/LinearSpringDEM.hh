@@ -63,6 +63,10 @@ public:
 
   virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
 
+  virtual void preStepInitialize(const DataBase<Dimension>& dataBase, 
+                                       State<Dimension>& state,
+                                       StateDerivatives<Dimension>& derivs) override;
+
   virtual void registerState(DataBase<Dimension>& dataBase,
                              State<Dimension>& state) override;
 
@@ -88,6 +92,8 @@ public:
                                 const Scalar time) const;
 
   TimeStepType fixedTimeStep() const;
+
+  void recomputeContactDuration();
 
   // generalized spring damper functions (inlined)
   void slidingSpringDamper(const Scalar  k,

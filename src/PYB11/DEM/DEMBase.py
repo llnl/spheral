@@ -19,7 +19,8 @@ class DEMBase(Physics):
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
-    def pyinit(dataBase = "const DataBase<%(Dimension)s>&",
+    def pyinit(self,
+               dataBase = "const DataBase<%(Dimension)s>&",
                stepsPerCollision = "const Scalar",
                xmin = "const Vector&",
                xmax = "const Vector&"):
@@ -29,31 +30,36 @@ class DEMBase(Physics):
     # Virtual methods
 
     @PYB11virtual
-    def initializeProblemStartup(dataBase = "DataBase<%(Dimension)s>&"):
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
         "Tasks we do once on problem startup."
         return "void"
 
     @PYB11virtual 
-    def registerState(dataBase = "DataBase<%(Dimension)s>&",
+    def registerState(self,
+                      dataBase = "DataBase<%(Dimension)s>&",
                       state = "State<%(Dimension)s>&"):
         "Register the state Hydro expects to use and evolve."
         return "void"
 
     @PYB11virtual
-    def registerDerivatives(dataBase = "DataBase<%(Dimension)s>&",
+    def registerDerivatives(self,
+                            dataBase = "DataBase<%(Dimension)s>&",
                             derivs = "StateDerivatives<%(Dimension)s>&"):
         "Register the derivatives/change fields for updating state."
         return "void"
 
     @PYB11virtual
-    def preStepInitialize(dataBase = "const DataBase<%(Dimension)s>&", 
+    def preStepInitialize(self,
+                          dataBase = "const DataBase<%(Dimension)s>&", 
                           state = "State<%(Dimension)s>&",
                           derivs = "StateDerivatives<%(Dimension)s>&"):
         "Optional hook to be called at the beginning of a time step."
         return "void"
 
     @PYB11virtual
-    def initialize(time = "const Scalar",
+    def initialize(self,
+                   time = "const Scalar",
                    dt = "const Scalar",
                    dataBase = "const DataBase<%(Dimension)s>&",
                    state = "State<%(Dimension)s>&",
@@ -63,7 +69,8 @@ class DEMBase(Physics):
 
     @PYB11virtual
     @PYB11const
-    def finalizeDerivatives(time = "const Scalar",
+    def finalizeDerivatives(self,
+                            time = "const Scalar",
                             dt = "const Scalar",
                             dataBase = "const DataBase<%(Dimension)s>&",
                             state = "const State<%(Dimension)s>&",
@@ -72,31 +79,80 @@ class DEMBase(Physics):
         return "void"
 
     @PYB11virtual
-    def applyGhostBoundaries(state = "State<%(Dimension)s>&",
+    def applyGhostBoundaries(self,
+                             state = "State<%(Dimension)s>&",
                              derivs = "StateDerivatives<%(Dimension)s>&"):
         "Apply boundary conditions to the physics specific fields."
         return "void"
 
     @PYB11virtual
-    def enforceBoundaries(state = "State<%(Dimension)s>&",
+    def enforceBoundaries(self,
+                          state = "State<%(Dimension)s>&",
                           derivs = "StateDerivatives<%(Dimension)s>&"):
         "Enforce boundary conditions for the physics specific fields."
         return "void"
 
-    def initializeOverlap(dataBase = "const DataBase<%(Dimension)s>&",
-                          startCompositeParticleIndex = "const int"):
-        "set the equilibrium overlap pairwise fieldlist for comp. particle id's > specified value"
-        return "void"
-
-    def updateContactMap(dataBase = "const DataBase<%(Dimension)s>&"):
-        "update DEM contact/neighbor tracker"
-        return "void"
-
+    @PYB11virtual
     def resizePairFieldLists(self):
         "resize all pair fieldlists consistent w/ neighborIndices"
         return "void"
 
-    def appendSolidBoundary(boundary = "SolidBoundaryBase<%(Dimension)s>&"):
+    @PYB11virtual
+    @PYB11const
+    def resizeStatePairFieldLists(self,
+                                  state = "State<%(Dimension)s>&"):
+        "resize pair fieldlists belonging to the state consistent w/ neighborIndices"
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
+    def resizeDerivativePairFieldLists(self,
+                                       derivs = "StateDerivatives<%(Dimension)s>&"):
+        "resize pair fieldlists belonging to the derivatives consistent w/ neighborIndices"
+        return "void"
+
+    @PYB11virtual
+    def removeInactiveContactsFromPairFieldLists(self):
+        "remove old contacts from all pair fieldlists "
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
+    def removeInactiveContactsFromStatePairFieldLists(self,
+                                  state = "State<%(Dimension)s>&"):
+        "remove old contacts from pair fieldlists belonging to the state consistent w/ neighborIndices"
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
+    def removeInactiveContactsFromDerivativePairFieldLists(self,
+                                       derivs = "StateDerivatives<%(Dimension)s>&"):
+        "remove old contacts from pair fieldlists belonging to the derivatives consistent w/ neighborIndices"
+        return "void"
+
+    def initializeOverlap(self,
+                          dataBase = "const DataBase<%(Dimension)s>&",
+                          startCompositeParticleIndex = "const int"):
+        "set the equilibrium overlap pairwise fieldlist for comp. particle id's > specified value"
+        return "void"
+
+    def updateContactMap(self,
+                         dataBase = "const DataBase<%(Dimension)s>&"):
+        "update DEM contact/neighbor tracker"
+        return "void"
+    
+    def identifyInactiveContacts(self,
+                                 dataBase = "const DataBase<%(Dimension)s>&"):
+        "initializes the isActive pairfieldlist to flag outdated contacts"
+        return "void"
+
+    def updatePairwiseFieldLists(self,
+                                 purgeInactiveContacts = "const bool"):
+        "update DEM contact map and pair fieldlists consistent w/ the connectivityMap"
+        return "void"
+
+    def appendSolidBoundary(self,
+                            boundary = "SolidBoundaryBase<%(Dimension)s>&"):
         "add a solid boundary to the end of the list"
         return "void"
 
@@ -105,11 +161,13 @@ class DEMBase(Physics):
         return "void"
 
     @PYB11const
-    def haveSolidBoundary(boundary = "const SolidBoundaryBase<%(Dimension)s>&"):
+    def haveSolidBoundary(self,
+                          boundary = "const SolidBoundaryBase<%(Dimension)s>&"):
         "is this boundary being tracked?"
         return "bool"
     
-    def removeSolidBoundary(boundary = "const SolidBoundaryBase<%(Dimension)s>&"):
+    def removeSolidBoundary(self,
+                            boundary = "const SolidBoundaryBase<%(Dimension)s>&"):
         "remove the specified solid boundary"
         return "void"
 

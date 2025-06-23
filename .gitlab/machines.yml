@@ -6,11 +6,11 @@
     - tioga
     - flux
   variables:
-    SCHEDULER_ACTION: alloc
-    SCHEDULER_PARAMETERS: "--exclusive -N 2 -t 120"
-    NPROC: 128
+    JACAMAR_SCHEDULER_ACTION: default
+    SCHEDULER_PARAMETERS: "--exclusive -N 1 -t 60"
+    NPROC: 64
     HOSTNAME: 'tioga'
-  timeout: 120 minutes
+  timeout: 24 hours
   extends: [.on_toss_4_x86_cray]
 
 .tioga_shell:
@@ -19,6 +19,7 @@
     - shell
   variables:
     ENVIRONMENT: "INTERACTIVE"
+  timeout: 24 hours
   extends: [.on_toss_4_x86_cray]
 
 .on_ruby:
@@ -26,11 +27,11 @@
     - ruby
     - batch
   variables:
-    SCHEDULER_ACTION: allocate
-    SCHEDULER_PARAMETERS: "--reservation=ci --exclusive -N 2 -t 120"
-    NPROC: 112
+    JACAMAR_SCHEDULER_ACTION: default
+    SCHEDULER_PARAMETERS: "--reservation=ci --exclusive -N 1 -t 120"
+    NPROC: 56
     HOSTNAME: 'ruby'
-  timeout: 120 minutes
+  timeout: 24 hours
   extends: [.on_toss_4_x86]
 
 .ruby_shell:
@@ -39,6 +40,7 @@
     - shell
   variables:
     ENVIRONMENT: "INTERACTIVE"
+  timeout: 24 hours
   extends: [.on_toss_4_x86]
 
 # ------------------------------------------------------------------------------
@@ -54,7 +56,6 @@
 
 # Use for performance tests
 .toss_shell2:
-  resource_group: toss2
   extends: [.ruby_shell]
 
 .cray_shell1:
@@ -78,9 +79,9 @@
   extends: [.toss_resource_general]
 
 .cray_resource1:
-  #resource_group: cray1
+  resource_group: cray1
   extends: [.cray_resource_general]
 
 .cray_resource2:
-  #resource_group: cray2
+  resource_group: cray2
   extends: [.cray_resource_general]

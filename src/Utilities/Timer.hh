@@ -10,15 +10,22 @@
 #include "caliper/cali-manager.h"
 
 #define TIME_FUNCTION CALI_CXX_MARK_FUNCTION
+#define TIME_SCOPE(regionName) CALI_CXX_MARK_SCOPE(regionName)
 #define TIME_BEGIN(regionName) CALI_MARK_BEGIN(regionName)
 #define TIME_END(regionName) CALI_MARK_END(regionName)
+// For larger code regions, use phase
+#define TIME_PHASE_BEGIN(regionName) CALI_MARK_PHASE_BEGIN(regionName)
+#define TIME_PHASE_END(regionName) CALI_MARK_PHASE_END(regionName)
 
 #else // TIMER
 // Stub TIME macros, when TIMER is off
 
 #define TIME_FUNCTION
+#define TIME_SCOPE(regionName)
 #define TIME_BEGIN(regionName)
 #define TIME_END(regionName)
+#define TIME_PHASE_BEGIN(regionName)
+#define TIME_PHASE_END(regionName)
 
 #endif // TIMER
 // Note: This class is initialized in

@@ -93,7 +93,7 @@
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
 
-    - ./build_gitlab/install/spheral-ats --ciRun --numNodes 2 --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
+    - ./build_gitlab/install/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
     - exit $exit_code
   artifacts:
     when: always
@@ -235,6 +235,21 @@
       when: manual
     - if: '$CI_COMMIT_MESSAGE =~ /test-prod/'
       when: manual
+
+.perf_pr_rule:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+      when: always
+    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+      when: always
+
+# Must skip cleanup if running the performance stage
+.cleanup_rule:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "develop"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+      when: never
 
 .retry_rule:
   retry:

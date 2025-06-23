@@ -34,11 +34,11 @@ toss_gcc_mvapich2_test:
   needs: [toss_gcc_mvapich2_build]
 
 toss_gcc_mvapich2_perf:
-  extends: [.toss_shell2, .gcc_mvapich2, .run_perf, .merge_pr_rule]
+  extends: [.toss_shell1, .gcc_mvapich2, .run_perf, .perf_pr_rule]
   needs: [toss_gcc_mvapich2_build]
 
 toss_gcc_mvapich2_cleanup:
-  extends: [.toss_resource2, .gcc_mvapich2, .cleanup_dir]
+  extends: [.toss_resource2, .gcc_mvapich2, .cleanup_dir, .cleanup_rule]
 
 
 
@@ -58,11 +58,11 @@ toss_clang_mvapich2_test:
   needs: [toss_clang_mvapich2_build]
 
 toss_clang_mvapich2_perf:
-  extends: [.toss_shell2, .clang_mvapich2, .run_perf, .merge_pr_rule]
+  extends: [.toss_shell2, .clang_mvapich2, .run_perf, .perf_pr_rule]
   needs: [toss_clang_mvapich2_build]
 
 toss_clang_mvapich2_cleanup:
-  extends: [.toss_resource3, .clang_mvapich2, .cleanup_dir]
+  extends: [.toss_resource3, .clang_mvapich2, .cleanup_dir, .cleanup_rule]
 
 
 
@@ -86,11 +86,11 @@ cray_rocm_mpich_test:
   needs: [cray_rocm_mpich_build]
 
 cray_rocm_mpich_perf:
-  extends: [.cray_shell2, .rocm_mpich, .run_perf, .merge_pr_rule]
+  extends: [.cray_shell1, .rocm_mpich, .run_perf, .perf_pr_rule]
   needs: [cray_rocm_mpich_build]
 
 cray_rocm_mpich_cleanup:
-  extends: [.cray_resource1, .rocm_mpich, .cleanup_dir]
+  extends: [.cray_resource1, .rocm_mpich, .cleanup_dir, .cleanup_rule]
 
 
 
@@ -110,8 +110,8 @@ cray_hip_rocm_mpich_test:
   needs: [cray_hip_rocm_mpich_build]
 
 cray_hip_rocm_mpich_perf:
-  extends: [.cray_shell2, .hip_rocm_mpich, .run_perf, .merge_pr_rule]
+  extends: [.cray_shell2, .hip_rocm_mpich, .run_perf, .perf_pr_rule]
   needs: [cray_hip_rocm_mpich_build]
 
 cray_hip_rocm_mpich_cleanup:
-  extends: [.cray_resource2, .hip_rocm_mpich, .cleanup_dir]
+  extends: [.cray_resource2, .hip_rocm_mpich, .cleanup_dir, .cleanup_rule]

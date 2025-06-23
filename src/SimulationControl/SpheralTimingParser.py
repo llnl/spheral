@@ -96,6 +96,7 @@ def init_timer(args):
     # Add metadata about install
     adiak_value("install_config", SpheralConfigs.config())
     adiak_value("build_type", SpheralConfigs.build_type())
+    adiak_value("spec", SpheralConfigs.spec())
     if SpheralConfigs.git_hash():
         adiak_value("git_hash", SpheralConfigs.git_hash())
         adiak_value("git_branch", SpheralConfigs.git_branch())

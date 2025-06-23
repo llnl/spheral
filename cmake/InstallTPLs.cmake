@@ -204,7 +204,6 @@ endif()
 message("-----------------------------------------------------------------------------")
 # TPLs that must be imported
 list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
 
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF ENABLE_LEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF ENABLE_ANEOS)

@@ -128,6 +128,16 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             config_name += "_rocm"
         return config_name.replace(" ", "_")
 
+    def _get_short_spec(self, spec):
+        short_spec = spec.compiler.name
+        if (spec.satisfies("+mpi")):
+            short_spec += spec.format("+{^mpi.name}")
+        if (spec.satisfies("+cuda")):
+            short_spec += spec.format("{^cuda.name}")
+        if (spec.satisfies("+rocm")):
+            short_spec += "+rocm"
+        return short_spec
+
     @property
     def cache_name(self):
         hostname = socket.gethostname()
@@ -203,6 +213,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         entries.append(cmake_cache_string('SPHERAL_SYS_ARCH', self._get_sys_type(spec)))
         entries.append(cmake_cache_string('SPHERAL_CONFIGURATION', self._get_config_name(spec)))
+        entries.append(cmake_cache_string('SPHERAL_SPEC', self._get_short_spec(spec)))
 
         # TPL locations
         if (spec.satisfies("+caliper")):

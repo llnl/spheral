@@ -5,7 +5,7 @@ import sys, os, gc, warnings, mpi
 
 from SpheralCompiledPackages import *
 from SpheralTimer import SpheralTimer
-from SpheralUtilities import adiak_value
+from SpheralUtilities import adiak_value, TimerMgr
 from SpheralConservation import SpheralConservation
 from GzipFileIO import GzipFileIO
 from SpheralTestUtilities import globalFrame
@@ -381,6 +381,7 @@ class SpheralController:
     # specify a max number of steps to take.
     #--------------------------------------------------------------------------
     def advance(self, goalTime, maxSteps=None):
+        TimerMgr.timer_begin("advance")
         currentSteps = 0
         while (self.time() < goalTime and
                (maxSteps == None or currentSteps < maxSteps) and (self._break == False)):
@@ -414,6 +415,7 @@ class SpheralController:
         adiak_value("total_internal_nodes", numInternal)
         adiak_value("total_ghost_nodes", numGhost)
         adiak_value("total_steps", self.totalSteps)
+        TimerMgr.timer_end("advance")
 
         # Print how much time was spent per integration cycle.
         self.stepTimer.printStatus()

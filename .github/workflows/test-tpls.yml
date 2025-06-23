@@ -5,6 +5,8 @@ on:
     paths:
       - scripts/spack/**
       - scripts/devtools/**
+      - scripts/runtime-requirements.txt.in
+      - scripts/build-requirements.txt
 
 env:
   REGISTRY: ghcr.io

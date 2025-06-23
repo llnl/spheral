@@ -143,11 +143,15 @@ template<typename Dimension>
 void
 DEMBase<Dimension>::
 resizePairFieldLists() {
+
+  // state
   this->addContactsToPairFieldList(mEquilibriumOverlap,0.0);
   this->addContactsToPairFieldList(mShearDisplacement,Vector::zero);
   this->addContactsToPairFieldList(mRollingDisplacement,Vector::zero);
   this->addContactsToPairFieldList(mTorsionalDisplacement,0.0);
-  this->addContactsToPairFieldList(mIsActiveContact,0.0);
+  this->addContactsToPairFieldList(mIsActiveContact,int(0));
+
+  //derivatives
   this->addContactsToPairFieldList(mDDtShearDisplacement,Vector::zero);
   this->addContactsToPairFieldList(mNewShearDisplacement,Vector::zero);
   this->addContactsToPairFieldList(mDDtRollingDisplacement,Vector::zero);
@@ -191,11 +195,39 @@ resizeStatePairFieldLists(State<Dimension>& state) const{
   auto shearDisp = state.fields(DEMFieldNames::shearDisplacement, vector<Vector>());
   auto rollingDisplacement = state.fields(DEMFieldNames::rollingDisplacement, vector<Vector>());
   auto torsionalDisplacement = state.fields(DEMFieldNames::torsionalDisplacement, vector<Scalar>());
+  auto isActive = state.fields(DEMFieldNames::isActiveContact, vector<int>());
 
   this->addContactsToPairFieldList(eqOverlap,0.0);
   this->addContactsToPairFieldList(shearDisp,Vector::zero);
   this->addContactsToPairFieldList(rollingDisplacement,Vector::zero);
   this->addContactsToPairFieldList(torsionalDisplacement,0.0);
+  this->addContactsToPairFieldList(isActive,int(0));
+}
+
+//------------------------------------------------------------------------------
+// remove inactive from all when we don't have access to state/derivs. Note 
+// isActive is missing b/c that is what is driving the purge.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DEMBase<Dimension>::
+removeInactiveContactsFromPairFieldLists(){
+
+  // state 
+  this->removeInactiveContactsFromPairFieldList(mNeighborIndices);
+  this->removeInactiveContactsFromPairFieldList(mEquilibriumOverlap);
+  this->removeInactiveContactsFromPairFieldList(mShearDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mRollingDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mTorsionalDisplacement);
+
+  // derivatives
+  this->removeInactiveContactsFromPairFieldList(mDDtShearDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mNewShearDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mDDtRollingDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mNewRollingDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mDDtTorsionalDisplacement);
+  this->removeInactiveContactsFromPairFieldList(mNewTorsionalDisplacement);
+
 }
 
 //------------------------------------------------------------------------------
@@ -244,6 +276,28 @@ removeInactiveContactsFromDerivativePairFieldLists(StateDerivatives<Dimension>& 
 
 }
 
+//----------------------------------------------------------------------------------------
+// Gets all our pairwise fields fully consistent with the current pairwise interactions,
+// this is used in preStepInitialize method and before and after redistribution with the 
+// redistribution hooks.
+//----------------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DEMBase<Dimension>::
+updatePairwiseFieldLists(const bool purgeInactiveContacts){
+
+  // add new contacts
+  this->updateContactMap(mDataBase); // set our contactMap and neighborIndices pairFieldList
+  this->resizePairFieldLists();      // add new contacts to pairwise fieldlists
+
+  // remove old contacts
+  if (purgeInactiveContacts){ 
+    this->identifyInactiveContacts(mDataBase);        // create pairFieldList tracking active/inactive contacts
+    this->removeInactiveContactsFromPairFieldLists(); // use it to remove old contacts from state fields
+    this->updateContactMap(mDataBase);                // now we update the contact map to account for changes
+    mCycle = 0;                                       // reset counter (cycles since last purge)
+  }
+}
 
 //------------------------------------------------------------------------------
 // On problem start up, we need to initialize our internal data.
@@ -392,21 +446,15 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     setUniqueNodeIDs(uniqueIndex);
   }
 
-  // update our state pair fields for the current connectivity
-  this->updateContactMap(dataBase);                  // set our contactMap and neighborIndices pairFieldList
-  this->resizeStatePairFieldLists(state);            // add entries for new contacts
-  this->resizeDerivativePairFieldLists(derivatives); // do same for derivs in case we're storing from last cycle
+  // switch to purge contactMap of old contacts 
+  const bool purgeInactiveContacts = (mCycle % mContactRemovalFrequency == 0 ?
+                                      true :
+                                      false);
   
-  if (mCycle % mContactRemovalFrequency == 0){ 
-
-    // remove old contacts
-    this->identifyInactiveContacts(dataBase);                              // create pairFieldList tracking active/inactive contacts
-    this->removeInactiveContactsFromStatePairFieldLists(state);            // use it to remove old contacts from state fields
-    this->removeInactiveContactsFromDerivativePairFieldLists(derivatives); // use it to remove old contacts from the derivatives
-    this->updateContactMap(dataBase);                                      // now we update the contact map to account for changes
-
-  }
-
+  // get pairwise fieldLists current with the connectivityMap
+  this->updatePairwiseFieldLists(purgeInactiveContacts);
+  
+  // step counter (cycles since we last purged inactive contacts)
   mCycle++;
 
   TIME_END("DEMpreStepInitialize");
@@ -438,10 +486,10 @@ initialize(const Scalar  time,
            const DataBase<Dimension>& dataBase,
                  State<Dimension>& state,
                  StateDerivatives<Dimension>& derivs){
-TIME_BEGIN("DEMinitialize");
+  TIME_BEGIN("DEMinitialize");
 
-TIME_END("DEMinitialize");
- return false;
+  TIME_END("DEMinitialize");
+  return false;
 }
 
 
@@ -653,6 +701,10 @@ initializeBeforeRedistribution(){
 
   TIME_BEGIN("DEMinitializeBeforeRedistribution");
 
+  // make sure we have a complete clean set of pairwise field lists & contact map
+  this->updatePairwiseFieldLists(true);
+
+  // make sure we have a complete clean set of pairwise field lists & contact map
   this->prepNeighborIndicesForRedistribution();
 
   this->prepPairFieldListForRedistribution(mShearDisplacement);
@@ -809,7 +861,6 @@ updateContactMap(const DataBase<Dimension>& dataBase){
   //---------------------------------------------------------------
   mContactStorageIndices.resize(numPairs);
 
-#pragma omp parallel for
   for (auto kk = 0u; kk < numPairs; ++kk) {
 
     const auto i = pairs[kk].i_node;
@@ -852,10 +903,7 @@ updateContactMap(const DataBase<Dimension>& dataBase){
 
     // add the contact if it is new
     if (contactIndexPtr == neighborContacts.end()){
-      #pragma omp critical
-      {
-        mNeighborIndices(contactkk.storeNodeList,contactkk.storeNode).push_back(uniqueSearchIndex);
-      }
+      mNeighborIndices(contactkk.storeNodeList,contactkk.storeNode).push_back(uniqueSearchIndex);
     }
   }
 
@@ -872,7 +920,6 @@ updateContactMap(const DataBase<Dimension>& dataBase){
     const auto nodeList = nodeLists[nodeListi];
     const auto ni = nodeList->numInternalNodes();
 
-    #pragma omp parallel for
       for (auto i = 0u; i < ni; ++i) {
         const auto Ri = radius(nodeListi,i);
         const auto ri = position(nodeListi,i);
@@ -896,13 +943,10 @@ updateContactMap(const DataBase<Dimension>& dataBase){
           if (contactIndexPtr == neighborContacts.end()) mNeighborIndices(nodeListi,i).push_back(uId_bc);
 
           // now add our contact
-          #pragma omp critical
-          {
-            mContactStorageIndices.push_back(ContactIndex(nodeListi,          // storage nodelist index
+          mContactStorageIndices.push_back(ContactIndex(nodeListi,          // storage nodelist index
                                                         i,                    // storage node index
                                                         storageContactIndex,  // storage contact index
                                                         ibc));                // bc index
-          }
         } //if contacting
       }   // loop nodes
     }     // loop nodelists
@@ -968,7 +1012,7 @@ identifyInactiveContacts(const DataBase<Dimension>& dataBase){
     const auto& solidBoundary = solidBoundaries[ibc];
     const auto  rib = solidBoundary->distance(ri);
 
-    if (rib.magnitude() <Ri*(1+bufferDistance)) mIsActiveContact(nodeListi,i)[contacti] = 1;
+    if (rib.magnitude() < Ri*(1+bufferDistance)) mIsActiveContact(nodeListi,i)[contacti] = 1;
 
   } // loop particle bc contacts
 }   // omp parallel region

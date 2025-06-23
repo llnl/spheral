@@ -14,6 +14,9 @@ def sys_arch():
 def config():
     return "@SPHERAL_CONFIGURATION@"
 
+def spec():
+    return "@SPHERAL_SPEC@"
+
 def dimensions():
     dims_str = "@SPHERAL_DIMS@"
     return [int(x) for x in dims_str.split(";")]

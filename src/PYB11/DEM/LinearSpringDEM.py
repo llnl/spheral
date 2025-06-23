@@ -15,7 +15,8 @@ class LinearSpringDEM(DEMBase):
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
-    def pyinit(dataBase = "const DataBase<%(Dimension)s>&",
+    def pyinit(self,
+               dataBase = "const DataBase<%(Dimension)s>&",
                normalSpringConstant = "const Scalar",
                normalRestitutionCoefficient = "const Scalar",
                tangentialSpringConstant = "const Scalar",
@@ -34,21 +35,50 @@ class LinearSpringDEM(DEMBase):
 
     @PYB11virtual
     @PYB11const
-    def dt(dataBase = "const DataBase<%(Dimension)s>&", 
+    def dt(self,
+           dataBase = "const DataBase<%(Dimension)s>&", 
            state = "const State<%(Dimension)s>&",
            derivs = "const StateDerivatives<%(Dimension)s>&",
            currentTime = "const Scalar"):
         "Vote on a time step."
         return "TimeStepType"
 
+    @PYB11const
+    def variableTimeStep(self,
+                         dataBase = "const DataBase<%(Dimension)s>&", 
+                         state = "const State<%(Dimension)s>&",
+                         derivs = "const StateDerivatives<%(Dimension)s>&",
+                         currentTime = "const Scalar"):
+        "dt approach with fast time stepping enabled."
+        return "TimeStepType"
+
+    @PYB11const
+    def fixedTimeStep(self):
+        "simple dt based on contact time for when fast time stepping is off."
+        return "TimeStepType"
+
+    def recomputeContactDuration(self):
+        "recalculates the contact time for use in the time step."
+        return "void"
+
     @PYB11virtual
-    def initializeProblemStartup(dataBase = "DataBase<%(Dimension)s>&"):
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
         "Tasks we do once on problem startup."
         return "void"
 
     @PYB11virtual
+    def preStepInitialize(self,
+                          dataBase = "const DataBase<%(Dimension)s>&", 
+                          state = "State<%(Dimension)s>&",
+                          derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Optional hook to be called at the beginning of a time step."
+        return "void"
+
+    @PYB11virtual
     @PYB11const
-    def evaluateDerivatives(time = "const Scalar",
+    def evaluateDerivatives(self,
+                            time = "const Scalar",
                             dt = "const Scalar",
                             dataBase = "const DataBase<%(Dimension)s>&",
                             state = "const State<%(Dimension)s>&",
@@ -57,13 +87,36 @@ class LinearSpringDEM(DEMBase):
         return "void"
 
     @PYB11virtual 
-    def registerState(dataBase = "DataBase<%(Dimension)s>&",
+    def registerState(self,
+                      dataBase = "DataBase<%(Dimension)s>&",
                       state = "State<%(Dimension)s>&"):
         "Register the state Hydro expects to use and evolve."
         return "void"
+    
+    @PYB11virtual
+    def registerDerivatives(self,
+                            dataBase = "DataBase<%(Dimension)s>&",
+                            derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Register the derivatives/change fields for updating state."
+        return "void"
+
+    @PYB11virtual
+    def applyGhostBoundaries(self,
+                             state = "State<%(Dimension)s>&",
+                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Apply boundary conditions to the physics specific fields."
+        return "void"
+
+    @PYB11virtual
+    def enforceBoundaries(self,
+                          state = "State<%(Dimension)s>&",
+                          derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Enforce boundary conditions for the physics specific fields."
+        return "void"
 
     @PYB11const
-    def momentOfInertia(massi = "const Scalar",
+    def momentOfInertia(self,
+                        massi = "const Scalar",
                         partialRadiusi = "const Scalar"):
         return "Scalar"
 
