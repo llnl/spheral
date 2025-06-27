@@ -566,6 +566,7 @@
     <ClInclude Include="..\..\src\Utilities\QuadraticInterpolatorInline.hh" />
     <ClInclude Include="..\..\src\Utilities\range.hh" />
     <ClInclude Include="..\..\src\Utilities\size_t_bits.hh" />
+    <ClInclude Include="..\..\src\Utilities\SpheralMessage.hh" />
     <ClInclude Include="..\..\src\Utilities\StrideIterator.hh" />
     <ClInclude Include="..\..\src\Utilities\uniform_random.hh" />
     <ClInclude Include="..\..\src\Utilities\uniform_random_Inline.hh" />

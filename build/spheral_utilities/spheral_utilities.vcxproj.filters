@@ -333,5 +333,8 @@
     <ClInclude Include="..\..\src\Utilities\StrideIterator.hh">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\Utilities\SpheralMessage.hh">
+      <Filter>Header Files\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
