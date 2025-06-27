@@ -407,7 +407,6 @@
     <ClInclude Include="..\..\src\Damage\DamageGradientNodeCoupling.hh" />
     <ClInclude Include="..\..\src\Damage\DamageGradientPolicy.hh" />
     <ClInclude Include="..\..\src\Damage\DamageModel.hh" />
-    <ClInclude Include="..\..\src\Damage\DamageModelInline.hh" />
     <ClInclude Include="..\..\src\Damage\EffectiveTensorDamagePolicy.hh" />
     <ClInclude Include="..\..\src\Damage\LongitudinalSoundSpeedPolicy.hh" />
     <ClInclude Include="..\..\src\Damage\oneMinusDamage.hh" />

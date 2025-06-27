@@ -559,19 +559,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\Utilities\DamagedNodeCoupling.hh" />
-    <ClInclude Include="..\..\src\Utilities\DamageGradientNodeCoupling.hh" />
-    <ClInclude Include="..\..\src\Utilities\DeprecationWarning.hh" />
     <ClInclude Include="..\..\src\Utilities\DomainNode.hh" />
     <ClInclude Include="..\..\src\Utilities\DomainNodeInline.hh" />
-    <ClInclude Include="..\..\src\Utilities\MaxDamageNodeCoupling.hh" />
     <ClInclude Include="..\..\src\Utilities\OpenMP_wrapper.hh" />
     <ClInclude Include="..\..\src\Utilities\QuadraticInterpolator.hh" />
     <ClInclude Include="..\..\src\Utilities\QuadraticInterpolatorInline.hh" />
     <ClInclude Include="..\..\src\Utilities\range.hh" />
     <ClInclude Include="..\..\src\Utilities\size_t_bits.hh" />
     <ClInclude Include="..\..\src\Utilities\StrideIterator.hh" />
-    <ClInclude Include="..\..\src\Utilities\ThreePointDamagedNodeCoupling.hh" />
     <ClInclude Include="..\..\src\Utilities\uniform_random.hh" />
     <ClInclude Include="..\..\src\Utilities\uniform_random_Inline.hh" />
   </ItemGroup>

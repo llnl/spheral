@@ -312,19 +312,7 @@
     <ClInclude Include="..\..\src\Utilities\OpenMP_wrapper.hh">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Utilities\DamagedNodeCoupling.hh">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\Utilities\DamageGradientNodeCoupling.hh">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\Utilities\MaxDamageNodeCoupling.hh">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Utilities\size_t_bits.hh">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\Utilities\ThreePointDamagedNodeCoupling.hh">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Utilities\uniform_random.hh">
@@ -340,9 +328,6 @@
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Utilities\range.hh">
-      <Filter>Header Files\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\Utilities\DeprecationWarning.hh">
       <Filter>Header Files\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\Utilities\StrideIterator.hh">

@@ -126,9 +126,6 @@
     <ClInclude Include="..\..\src\Damage\DamageModel.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\Damage\DamageModelInline.hh">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\Damage\EffectiveTensorDamagePolicy.hh">
       <Filter>Header Files</Filter>
     </ClInclude>
