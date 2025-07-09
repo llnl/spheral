@@ -154,8 +154,7 @@ Integrator<Dimension>::
 selectDt(const typename Dimension::Scalar dtMin,
          const typename Dimension::Scalar dtMax,
          const State<Dimension>& state,
-         const StateDerivatives<Dimension>& derivs,
-         const bool localdt) const {
+         const StateDerivatives<Dimension>& derivs) const {
 
   REQUIRE(dtMin >= 0 and dtMax > 0);
   REQUIRE(dtMin <= dtMax);
@@ -187,10 +186,11 @@ selectDt(const typename Dimension::Scalar dtMin,
         dt.first >= dtMin and dt.first <= dtMax);
 
   // In the parallel case we need to find the minimum timestep across all processors.
-  auto globalDt = dt.first;
-  if (localdt == false) {
-    globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
-  }
+#ifdef CXXONLY
+  const auto globalDt = dt.first;
+#else
+  const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
+#endif
 
   // Are we verbose?
   if (dt.first == globalDt and 

@@ -64,8 +64,7 @@ public:
   virtual Scalar selectDt(const Scalar dtMin, 
                           const Scalar dtMax,
                           const State<Dimension>& state,
-                          const StateDerivatives<Dimension>& derivs,
-                          const bool localdt = false) const;
+                          const StateDerivatives<Dimension>& derivs) const;
 
   // Perform generic initializations at the beginning of a timestep.
   // To be called once per advance cycle.
