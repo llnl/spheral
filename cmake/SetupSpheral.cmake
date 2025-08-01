@@ -3,7 +3,6 @@ include(ExternalProject)
 #-------------------------------------------------------------------------------
 # Configure CMake
 #-------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
 if (NOT SPHERAL_CMAKE_MODULE_PATH)
@@ -32,6 +31,8 @@ set(Python3_EXECUTABLE ${python_DIR}/bin/python3)
 
 set(ENABLE_MPI ON CACHE BOOL "")
 set(ENABLE_OPENMP ON CACHE BOOL "")
+
+set(BLT_CXX_STD "c++17" CACHE STRING "")
 set(BLT_DOCS_TARGET_NAME "blt_docs" CACHE STRING "")
 
 if(NOT SPHERAL_BLT_DIR)
@@ -89,9 +90,17 @@ if(ENABLE_OPENMP)
 endif()
 
 if(ENABLE_CUDA)
-  set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} -arch=${CUDA_ARCH} --extended-lambda -Xcudafe --display_error_number")
-  #set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} -arch=${CUDA_ARCH} --expt-relaxed-constexpr --extended-lambda -Xcudafe --display_error_number")
-  set(CMAKE_CUDA_STANDARD 17)
+  # TODO: Determine if --expt-relaxed-constexpr is needed
+
+  # Can be --expt-extended-lambda or --extended-lambda (newer CUDA versions only)
+  if (NOT "${CMAKE_CUDA_FLAGS}" MATCHES "extended-lambda")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+  endif()
+
+  if (NOT "${CMAKE_CUDA_FLAGS}" MATCHES "-Xcudafe(=| +)--display_error_number")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe=--display_error_number")
+  endif()
+
   list(APPEND SPHERAL_CXX_DEPENDS cuda)
   set(SPHERAL_ENABLE_CUDA ON)
 endif()
