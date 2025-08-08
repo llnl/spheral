@@ -23,23 +23,22 @@ class ExpInvKernel: public Kernel<Dimension, ExpInvKernel<Dimension> > {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors, destructors.
-  ExpInvKernel();
-  ~ExpInvKernel();
+  SPHERAL_HOST_DEVICE ExpInvKernel();
 
   // Return the kernel weight for a given normalized distance or position.
-  double kernelValue(double etaij, const double Hdet) const;
+  SPHERAL_HOST_DEVICE double kernelValue(double etaij, const double Hdet) const;
 
   // Return the gradient value for a given normalized distance or position.
-  double gradValue(double etaij, const double Hdet) const;
+  SPHERAL_HOST_DEVICE double gradValue(double etaij, const double Hdet) const;
 
   // Return the second derivative for a given normalized distance or position.
-  double grad2Value(double etaij, const double Hdet) const;
+  SPHERAL_HOST_DEVICE double grad2Value(double etaij, const double Hdet) const;
 };
 
 }
