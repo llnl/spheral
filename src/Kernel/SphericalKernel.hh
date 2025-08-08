@@ -39,7 +39,7 @@ public:
   SphericalKernel(const SphericalKernel& rhs);
 
   // Destructor.
-  virtual ~SphericalKernel();
+  ~SphericalKernel();
 
   // Assignment.
   SphericalKernel& operator=(const SphericalKernel& rhs);

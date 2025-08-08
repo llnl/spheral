@@ -13,21 +13,13 @@ class Kernel {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Cast as the descendent type.
   Descendant& asDescendant() const;
-
-  // Constructors, destructors.
-  Kernel();
-  Kernel(const Kernel& rhs);
-  virtual ~Kernel();
-
-  // Assignment.
-  Kernel& operator=(const Kernel& rhs);
 
   //======================================================================
   // Return the kernel weight
@@ -75,9 +67,9 @@ protected:
 
 // private:
 //   //--------------------------- Private Interface ---------------------------//
-  double mVolumeNormalization;
-  double mKernelExtent;
-  double mInflectionPoint;
+  double mVolumeNormalization = 0.0;
+  double mKernelExtent = 0.0;
+  double mInflectionPoint = 0.0;
 
 };
 

@@ -36,7 +36,7 @@ public:
   TableKernel(const TableKernel<Dimension>& rhs);
 
   // Destructor.
-  virtual ~TableKernel();
+  ~TableKernel();
 
   // Assignment.
   TableKernel& operator=(const TableKernel& rhs);

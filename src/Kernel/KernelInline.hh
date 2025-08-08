@@ -15,51 +15,6 @@ Kernel<Dimension, Descendant>::asDescendant() const {
 }
 
 //------------------------------------------------------------------------------
-// Empty constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::Kernel():
-  mVolumeNormalization(0.0),
-  mKernelExtent(0.0),
-  mInflectionPoint(0.0) {
-}
-
-//------------------------------------------------------------------------------
-// Copy constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::Kernel(const Kernel& rhs):
-  mVolumeNormalization(rhs.mVolumeNormalization),
-  mKernelExtent(rhs.mKernelExtent),
-  mInflectionPoint(rhs.mInflectionPoint) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::~Kernel() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>&
-Kernel<Dimension, Descendant>::operator=(const Kernel<Dimension, Descendant>& rhs) {
-  if (this != &rhs) {
-    mVolumeNormalization = rhs.volumeNormalization();
-    mKernelExtent = rhs.kernelExtent();
-    mInflectionPoint = rhs.inflectionPoint();
-  }
-  return *this;
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance or position.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
