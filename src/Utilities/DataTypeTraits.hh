@@ -28,6 +28,23 @@
 #ifdef USE_MPI
 extern "C" {
 #include <mpi.h>
+#include <stdint.h>
+#include <limits.h>
+
+// Macro to help us figure out the best type for size_t
+#if SIZE_MAX == UCHAR_MAX
+   #define SPHERAL_MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+   #define SPHERAL_MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+   #define SPHERAL_MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+   #define SPHERAL_MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+   #define SPHERAL_MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#else
+   #error "Unable to figure out MPI type for size_t"
+#endif
 }
 #endif
 
@@ -88,21 +105,19 @@ struct DataTypeTraits<int> {
   using AxomType = int;
 };
 
-#if __APPLE__
 //------------------------------------------------------------------------------
-template<>
-struct DataTypeTraits<size_t> {
-  typedef size_t ElementType;
-  static bool fixedSize() { return true; }
-  static size_t numElements(const ElementType& x) { return 1; }
-  static size_t zero() { return 0U; }
-#ifdef USE_MPI
-  static MPI_Datatype MpiDataType() { return MPI_UNSIGNED; }
-#endif
-  static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
-  using AxomType = uint64_t;
-};
-#endif
+// template<>
+// struct DataTypeTraits<size_t> {
+//   typedef size_t ElementType;
+//   static bool fixedSize() { return true; }
+//   static size_t numElements(const ElementType& x) { return 1; }
+//   static size_t zero() { return 0U; }
+// #ifdef USE_MPI
+//   static MPI_Datatype MpiDataType() { return SPHERAL_MPI_SIZE_T; }
+// #endif
+//   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
+//   using AxomType = uint64_t;
+// };
 
 //------------------------------------------------------------------------------
 template<>

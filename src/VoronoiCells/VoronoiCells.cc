@@ -205,7 +205,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
   // const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   // const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero, true);
   auto& boundaries = this->boundaryConditions();
 
 //   // Use m/rho to estimate our weighting to roughly match cell volumes

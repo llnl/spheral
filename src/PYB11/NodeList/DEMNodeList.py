@@ -14,19 +14,20 @@ class DEMNodeList(NodeList):
     PYB11typedefs = """
     typedef typename %(Dimension)s::Scalar Scalar;
     typedef Field<%(Dimension)s, int> intField;
+    typedef Field<%(Dimension)s, size_t> sizetField;
     typedef Field<%(Dimension)s, Scalar> ScalarField;
 """
 
     def pyinit(self,
                name = "std::string",
-               numInternal = ("int", "0"),
-               numGhost = ("int", "0"),
+               numInternal = ("size_t", "0u"),
+               numGhost = ("size_t", "0u"),
                hmin = ("double", "1e-20"),
                hmax = ("double", "1e20"),
                hminratio = ("double", "0.1"),
                nPerh = ("double", "2.01"),
                neighborSearchBuffer = ("Scalar","0.1"),
-               maxNumNeighbors = ("int", "500")):
+               maxNumNeighbors = ("size_t", "500u")):
         "Constructor for a DEMNodeList class."
         return
 
@@ -57,14 +58,14 @@ class DEMNodeList(NodeList):
     @PYB11returnpolicy("reference_internal")
     def uniqueIndex(self):
         "the unique particle index field"
-        return "const intField&"
+        return "const sizetField&"
 
     @PYB11pycppname("uniqueIndex")
-    def setUniqueIndex(self, val="const intField&"):
+    def setUniqueIndex(self, val="const sizetField&"):
         "set the unique particle indices"
         return "void"
 
-    def setHfieldFromParticleRadius(uniqueIndex = "const int"):
+    def setHfieldFromParticleRadius(uniqueIndex = "const size_t"):
         "set a good H value for the neighbor search based on the particle radius"
         return "void"
 

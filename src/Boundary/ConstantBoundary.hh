@@ -43,9 +43,9 @@ public:
   // Constructors and destructors.
   ConstantBoundary(DataBase<Dimension>& dataBase,
                    NodeList<Dimension>& nodeList,
-                   const std::vector<int>& nodeIDs,
+                   const std::vector<size_t>& nodeIDs,
                    const GeomPlane<Dimension>& denialPlane);
-  virtual ~ConstantBoundary();
+  virtual ~ConstantBoundary() = default;
 
   //**********************************************************************
   // All Boundary conditions must provide the following methods:
@@ -73,8 +73,8 @@ public:
   virtual void initializeProblemStartup(const bool final) override;
 
   // Accessor methods.
-  std::vector<int> nodeIndices() const;
-  int numConstantNodes() const;
+  std::vector<size_t> nodeIndices() const;
+  size_t numConstantNodes() const;
   const NodeList<Dimension>& nodeList() const;
   Tensor reflectOperator() const;
 
@@ -98,8 +98,8 @@ private:
   DataBase<Dimension>& mDataBase;
   NodeList<Dimension>* mNodeListPtr;
   int mBoundaryCount;
-  Field<Dimension, int> mNodeFlags;
-  int mNumConstantNodes;
+  Field<Dimension, size_t> mNodeFlags;
+  size_t mNumConstantNodes;
   GeomPlane<Dimension> mDenialPlane;
   Tensor mReflectOperator;
   bool mActive;

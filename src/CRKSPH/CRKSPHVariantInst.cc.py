@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "CRKSPH/CRKSPHVariant.cc"
 #include "Geometry/Dimension.hh"

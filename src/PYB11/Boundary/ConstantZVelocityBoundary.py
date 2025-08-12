@@ -29,10 +29,10 @@ NodeList.
     # Constructors
     def pyinit(self,
                nodeList = "const NodeList<%(Dimension)s>&",
-               nodeIndices = "const std::vector<int>&"):
+               nodeIndices = "const std::vector<size_t>&"):
         "Construct a constant Z velocity for the given nodes"
 
-    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodeList, py::list nodeIndices) { return std::make_unique<ConstantZVelocityBoundary<%(Dimension)s>>(nodeList, Spheral::PYB11utils::from_list<int>(nodeIndices)); }")
+    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodeList, py::list nodeIndices) { return std::make_unique<ConstantZVelocityBoundary<%(Dimension)s>>(nodeList, Spheral::PYB11utils::from_list<size_t>(nodeIndices)); }")
     def pyinit1(self,
                 nodeList = "const NodeList<%(Dimension)s>&",
                 nodeIndices = "py::list"):

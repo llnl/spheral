@@ -35,43 +35,44 @@ PYB11namespaces = ["Spheral"]
 # Do our dimension dependent instantiations.
 #-------------------------------------------------------------------------------
 for ndim in dims:
+    Dimension = f"Dim<{ndim}>"
+    Vector = f"{Dimension}::Vector"
+    Tensor = f"{Dimension}::Tensor"
+    SymTensor = f"{Dimension}::SymTensor"
+    FacetedVolume = f"{Dimension}::FacetedVolume"
 
     #...........................................................................
     # FieldListBase, FieldListSet
-    exec('''
-FieldListBase%(ndim)id = PYB11TemplateClass(FieldListBase, template_parameters="Dim<%(ndim)i>")
-FieldListSet%(ndim)sd = PYB11TemplateClass(FieldListSet, template_parameters="Dim<%(ndim)i>")
-''' % {"ndim" : ndim})
-
+    exec(f'''
+FieldListBase{ndim}d = PYB11TemplateClass(FieldListBase, template_parameters="{Dimension}")
+FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dimension}")
+''')
     #...........................................................................
-    # non-numeric types
-    for (value, label) in (("Dim<%i>::FacetedVolume" % ndim,       "FacetedVolume"), 
-                           ("std::vector<int>",                    "VectorInt"),
-                           ("std::vector<double>",                 "VectorDouble"),
-                           ("std::vector<Dim<%i>::Vector>" % ndim, "VectorVector"),
-                           ("std::vector<Dim<%i>::Tensor>" % ndim, "VectorSymTensor"),
-                           ("std::vector<Dim<%i>::Tensor>" % ndim, "VectorSymTensor"),
-                           ("std::vector<CellFaceFlag>",           "vector_of_CellFaceFlag"),
-                           ("DomainNode<Dim<%i>>" % ndim,          "DomainNode"),
-                           ("RKCoefficients<Dim<%i>>" % ndim,      "RKCoefficients")):
-        exec('''
-%(label)sFieldList%(ndim)sd = PYB11TemplateClass(FieldList, template_parameters=("Dim<%(ndim)i>", "%(value)s"))
-''' % {"ndim" : ndim,
-       "value" : value,
-       "label" : label})
+    # FieldList -- non-numeric types
+    for (value, label) in (( FacetedVolume,                 "FacetedVolume"),
+                           ( "std::vector<int>",            "VectorInt"),
+                           ( "std::vector<unsigned>",       "VectorUnsigned"),
+                           ( "std::vector<uint64_t>",       "VectorULL"),
+                           ( "std::vector<double>",         "VectorDouble"),
+                           (f"std::vector<{Vector}>",       "VectorVector"),
+                           (f"std::vector<{Tensor}>",       "VectorTensor"),
+                           (f"std::vector<{SymTensor}>",    "VectorSymTensor"),
+                           ( "std::vector<CellFaceFlag>",   "vector_of_CellFaceFlag"),
+                           (f"DomainNode<{Dimension}>",     "DomainNode"),
+                           (f"RKCoefficients<{Dimension}>", "RKCoefficients")):
+        exec(f'''
+{label}FieldList{ndim}d = PYB11TemplateClass(FieldList, template_parameters=("{Dimension}", "{value}"))
+''')
 
     #...........................................................................
     # STL collections of Field types
-    for value, label in (("int", "Int"),
-                         ("double", "Scalar"),
-                         ("Dim<%i>::Vector" % ndim, "Vector"),
-                         ("Dim<%i>::Tensor" % ndim, "Tensor"),
-                         ("Dim<%i>::SymTensor" % ndim, "SymTensor")):
-        exec('''
-vector_of_%(label)sFieldList%(ndim)id = PYB11_bind_vector("FieldList<%(Dimension)s, %(value)s>", opaque=True, local=False)
-vector_of_%(label)sFieldListPtr%(ndim)id = PYB11_bind_vector("FieldList<%(Dimension)s, %(value)s>*", opaque=True, local=False)
-vector_of_vector_of_%(label)sFieldList%(ndim)id = PYB11_bind_vector("std::vector<FieldList<%(Dimension)s, %(value)s>>", opaque=True, local=False)
-''' % {"ndim" : ndim,
-       "value" : value,
-       "label" : label,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+    for value, label in (("int",     "Int"),
+                         ("double",  "Scalar"),
+                         (Vector,    "Vector"),
+                         (Tensor,    "Tensor"),
+                         (SymTensor, "SymTensor")):
+        exec(f'''
+vector_of_{label}FieldList{ndim}d = PYB11_bind_vector("FieldList<{Dimension}, {value}>", opaque=True, local=False)
+vector_of_{label}FieldListPtr{ndim}d = PYB11_bind_vector("FieldList<{Dimension}, {value}>*", opaque=True, local=False)
+vector_of_vector_of_{label}FieldList{ndim}d = PYB11_bind_vector("std::vector<FieldList<{Dimension}, {value}>>", opaque=True, local=False)
+''')

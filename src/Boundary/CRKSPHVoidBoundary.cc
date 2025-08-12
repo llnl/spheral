@@ -45,10 +45,10 @@ setGhostNodes(NodeList<Dimension>& nodeList) {
   this->addNodeList(nodeList);
 
   typename Boundary<Dimension>::BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& cNodes = boundaryNodes.controlNodes;
-  vector<int>& gNodes = boundaryNodes.ghostNodes;
-  cNodes = vector<int>();
-  gNodes = vector<int>();
+  auto& cNodes = boundaryNodes.controlNodes;
+  auto& gNodes = boundaryNodes.ghostNodes;
+  cNodes.clear();
+  gNodes.clear();
   const unsigned firstNewGhostNode = nodeList.numNodes();
     
   // Line up the surface points as controls for the void points.
@@ -89,8 +89,8 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 updateGhostNodes(NodeList<Dimension>& nodeList) {
-  const vector<int>& cNodes = this->controlNodes(nodeList);
-  const vector<int>& gNodes = this->ghostNodes(nodeList);
+  const auto& cNodes = this->controlNodes(nodeList);
+  const auto& gNodes = this->ghostNodes(nodeList);
   const unsigned nvoid = gNodes.size();
   CONTRACT_VAR(cNodes);
   CHECK(cNodes.size() == nvoid);
@@ -135,7 +135,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, int>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   if (field.name() == HydroFieldNames::voidPoint) {
     // voidPoint: flag only ghost void points
@@ -150,8 +150,8 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::Scalar>& field) const {
-  const vector<int>& cNodes = this->controlNodes(field.nodeList());
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& cNodes = this->controlNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nsurf = cNodes.size();
   CHECK(gNodes.size() == nsurf);
   if (field.name() == HydroFieldNames::volume) {
@@ -172,8 +172,8 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
-  const vector<int>& cNodes = this->controlNodes(field.nodeList());
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& cNodes = this->controlNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nsurf = cNodes.size();
   CHECK(gNodes.size() == nsurf);
   if (field.name() == HydroFieldNames::velocity) {
@@ -190,7 +190,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::Tensor>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = Tensor::zero;
 }
@@ -200,8 +200,8 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::SymTensor>& field) const {
-  const vector<int>& cNodes = this->controlNodes(field.nodeList());
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& cNodes = this->controlNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nsurf = cNodes.size();
   CHECK(gNodes.size() == nsurf);
   if (field.name() == SolidFieldNames::deviatoricStress) {
@@ -218,7 +218,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = ThirdRankTensor::zero;
 }
@@ -228,7 +228,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FourthRankTensor::zero;
 }
@@ -238,7 +238,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FifthRankTensor::zero;
 }
@@ -248,7 +248,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::FacetedVolume>& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FacetedVolume();
 }
@@ -258,7 +258,7 @@ template<typename Dimension>
 void
 CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, std::vector<typename Dimension::Scalar> >& field) const {
-  const vector<int>& gNodes = this->ghostNodes(field.nodeList());
+  const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
   for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = std::vector<Scalar>();
 }

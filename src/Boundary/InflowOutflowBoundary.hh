@@ -44,7 +44,7 @@ public:
   InflowOutflowBoundary(DataBase<Dimension>& dataBase,
                         const GeomPlane<Dimension>& plane,
                         const bool empty);
-  virtual ~InflowOutflowBoundary();
+  virtual ~InflowOutflowBoundary() = default;
 
   //**********************************************************************
   // Boundary condition methods:
@@ -65,9 +65,9 @@ public:
   virtual void updateViolationNodes(NodeList<Dimension>& nodeList) override;
 
   // This boundary does not cull ghosts, but others might have.
-  virtual void cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                              FieldList<Dimension, int>& old2newIndexMap,
-                              std::vector<int>& numNodesRemoved) override;
+  virtual void cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                              FieldList<Dimension, size_t>& old2newIndexMap,
+                              std::vector<size_t>& numNodesRemoved) override;
 
   // After physics have been initialized we take a snapshot of the node state.
   virtual void initializeProblemStartup(const bool final) override;
@@ -113,7 +113,7 @@ public:
   Scalar dtmin() const;
   const DataBase<Dimension>& dataBase() const;
   const GeomPlane<Dimension>& plane() const;
-  int numInflowNodes(const NodeList<Dimension>& nodeList) const;
+  size_t numInflowNodes(const NodeList<Dimension>& nodeList) const;
   
   void inflowRadius(const Scalar x);
   Scalar inflowRadius() const;
@@ -152,10 +152,10 @@ private:
 
   DataBase<Dimension>& mDataBase;
   GeomPlane<Dimension> mPlane;
-  int mBoundaryCount;
+  size_t mBoundaryCount;
   Scalar mDT;
   bool mActive, mEmpty;
-  std::map<std::string, int> mNumInflowNodes;
+  std::map<std::string, size_t> mNumInflowNodes;
   std::map<std::string, Scalar> mXmin;
 
   typedef std::map<KeyType, std::vector<char>> StorageType;

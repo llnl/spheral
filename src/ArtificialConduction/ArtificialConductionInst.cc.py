@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "ArtificialConduction/ArtificialConduction.cc"
 #include "Geometry/Dimension.hh"

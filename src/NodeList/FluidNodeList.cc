@@ -34,13 +34,13 @@ template<typename Dimension>
 FluidNodeList<Dimension>::
 FluidNodeList(string name,
               EquationOfState<Dimension>& eos,
-              const int numInternal,
-              const int numGhost,
+              const size_t numInternal,
+              const size_t numGhost,
               const Scalar hmin,
               const Scalar hmax,
               const Scalar hminratio,
               const Scalar nPerh,
-              const int maxNumNeighbors,
+              const size_t maxNumNeighbors,
               const Scalar rhoMin,
               const Scalar rhoMax):
   NodeList<Dimension>(name, numInternal, numGhost, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
@@ -49,14 +49,6 @@ FluidNodeList(string name,
   mMassDensity(HydroFieldNames::massDensity, *this),
   mSpecificThermalEnergy(HydroFieldNames::specificThermalEnergy, *this),
   mEosPtr(&eos) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-FluidNodeList<Dimension>::
-~FluidNodeList() {
 }
 
 //------------------------------------------------------------------------------

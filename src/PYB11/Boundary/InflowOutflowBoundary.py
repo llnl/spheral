@@ -46,9 +46,9 @@ as they cross the specified boundary plane."""
 
     @PYB11virtual
     def cullGhostNodes(self,
-                       flagSet = "const FieldList<%(Dimension)s, int>&",
-                       old2newIndexMap = "FieldList<%(Dimension)s, int>&",
-                       numNodesRemoved = "std::vector<int>&"):
+                       flagSet = "const FieldList<%(Dimension)s, size_t>&",
+                       old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
+                       numNodesRemoved = "std::vector<size_t>&"):
         return "void"
 
     @PYB11virtual
@@ -72,7 +72,7 @@ Really we should rename this post-step finalize."""
     def numInflowNodes(self,
                        nodeList = "const NodeList<%(Dimension)s>&"):
         "Number of nodes in inflow stencil for the given NodeList"
-        return "int"
+        return "size_t"
 
     def clearStoredValues(self):
         "Clear out the stored values and ghost nodes"

@@ -151,8 +151,8 @@ ConnectivityMap<Dimension>::
 template<typename Dimension>
 void
 ConnectivityMap<Dimension>::
-patchConnectivity(const FieldList<Dimension, int>& flags,
-                  const FieldList<Dimension, int>& old2new) {
+patchConnectivity(const FieldList<Dimension, size_t>& flags,
+                  const FieldList<Dimension, size_t>& old2new) {
   TIME_BEGIN("ConnectivityMap_patch");
 
   const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
@@ -482,7 +482,7 @@ ConnectivityMap<Dimension>::
 globalConnectivity(vector<Boundary<Dimension>*>& boundaries) const {
 
   // Get the set of global node IDs.
-  FieldList<Dimension, int> globalIDs = globalNodeIDs<Dimension, typename vector<const NodeList<Dimension>*>::const_iterator>
+  auto globalIDs = globalNodeIDs<Dimension, typename vector<const NodeList<Dimension>*>::const_iterator>
     (mNodeLists.begin(), mNodeLists.end());
 
   // Make sure all ghost nodes have the appropriate global IDs.

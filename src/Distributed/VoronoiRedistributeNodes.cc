@@ -346,7 +346,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   const int procID = this->domainID();
 
   // Get the global IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Compute the work and number density per node.
   const TableKernel<Dimension> W(BSplineKernel<Dimension>(), 100u);

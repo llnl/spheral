@@ -279,7 +279,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
   // using Plane = typename ClippingType<Dimension>::Plane;
   // using PolyVolume = typename ClippingType<Dimension>::PolyVolume;
 
-  const auto numGens = position.numNodes();
+  const auto numGens = position.numElements();
   const auto numNodeLists = position.size();
   const auto numGensGlobal = allReduce(numGens, SPHERAL_OP_SUM);
   const auto returnSurface = surfacePoint.size() == numNodeLists;
