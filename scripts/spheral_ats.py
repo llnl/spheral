@@ -105,7 +105,9 @@ def main():
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
     # Use ATS to for some machine specific functions
-    if "MACHINE_TYPE" not in os.environ:
+    if "dane" in hostname:
+        os.environ["MACHINE_TYPE"] = "slurm112"
+    elif "MACHINE_TYPE" not in os.environ:
         ats_utils.set_machine_type_based_on_sys_type()
 
     #---------------------------------------------------------------------------
@@ -155,7 +157,7 @@ def main():
         mac_args = [] # Machine specific arguments to give to ATS
         if any(x in hostname for x in toss_machine_names):
             numNodes = numNodes if numNodes else 1
-            timeLimit = timeLimit if timeLimit else 120
+            timeLimit = timeLimit if timeLimit else 60
             inAllocVars = ["SLURM_JOB_NUM_NODES", "SLURM_NNODES"]
             if (options.batch):
                 launch_cmd = "sbatch "
