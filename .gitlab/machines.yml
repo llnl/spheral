@@ -36,7 +36,7 @@
 
 .dane_shell:
   tags:
-    - ruby
+    - dane
     - shell
   variables:
     ENVIRONMENT: "INTERACTIVE"
