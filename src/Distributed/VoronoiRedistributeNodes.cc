@@ -47,8 +47,6 @@ using std::min;
 using std::max;
 using std::abs;
 
-#include <boost/assign.hpp>
-
 namespace Spheral {
 
 

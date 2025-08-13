@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <functional>
 #include "boost/bimap.hpp"
-using namespace boost;
-using ::std::unordered_map;
+
+using std::unordered_map;
 using std::min;
 using std::max;
 using std::abs;

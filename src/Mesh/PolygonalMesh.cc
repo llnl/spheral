@@ -13,8 +13,6 @@
 
 #include "Utilities/timingUtilities.hh"
 
-using namespace boost;
-
 #include <limits>
 #include <set>
 #include <sstream>

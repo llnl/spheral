@@ -36,30 +36,14 @@ namespace {
 // //------------------------------------------------------------------------------
 // template<typename T>
 // T*
-// extractType(boost::any& anyT) {
+// extractType(std::any& anyT) {
 //   try {
-//     T* result = boost::any_cast<T*>(anyT);
+//     T* result = std::any_cast<T*>(anyT);
 //     return result;
-//   } catch (boost::any_cast_error) {
+//   } catch (std::any_cast_error) {
 //     return NULL;
 //   }
 // }
-
-// //------------------------------------------------------------------------------
-// // Check if a boost::any object contains a pointer to the given type
-// //------------------------------------------------------------------------------
-// template<typename T>
-// inline
-// bool
-// is_ptype(boost::any& anyT) {
-//   return anyT.type() == typeid(T*);
-// }
-
-// template<typename Dimension>
-// inline
-// bool
-// is_known_noncopy_type(boost::any& anyT) {
-//   return is_ptype<ReproducingKernel<Dimension>>(anyT);
 
 //------------------------------------------------------------------------------
 // Comparison

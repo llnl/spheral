@@ -1,3 +1,49 @@
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+    * GPU Poring Effort:
+      * Spheral::FieldView allows for implicit data migration of Spheral::Field data.
+        * Implements FieldView datatypes as handles to be used for migrating data to and from the GPU.
+        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common pattens.
+        * Unit testing to ensure implicitly copyable Spheral data types can be copied to and from the device correctly.
+      * Spheral::FieldListView enables GPU access to field data while maintaining Field->FieldList associations across
+        execution spaces.
+        * Adds addition functionality to FieldView to expose chai api calls.
+        * Host/Device unit testing for a range of expected patterns and behaviours seen in Spheral.
+      * GeomVector and Geom3Vector have been converted for use on the GPU.
+        * CPU & GPU unit testing of the public interface.
+      * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
+      * Optimizations to RankTensor types:
+        * Stack allocation of tensor data; Static casting for CRTP implementation.
+      * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
+      * New Logging utility for runtime debug messages.
+
+  * Build changes / improvements:
+    * Changed `int` to `size_t` for Field and FieldList.
+    * A python virtual environment is installed in the spheral build dir, removing the
+      need to build the `install` target during regular development.
+    * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
+    * CMake directly handles all of the installation environment configuration and setup
+      during the install stage.
+    * The `ENABLE_TIMER` CMake option has been changed to `SPHERAL_ENABLE_TIMERS`.
+    * Updating boost function calls to std library implementations where possible.
+
+Version v2025.06.1 -- Release date 2025-07-21
+==============================================
+  * Important Notes:
+    * This is a patch release for v2025.06.0.
+
+Notable changes include:
+
+  * Bug Fixes / improvements:
+    * The porosity models now restart the full field of initial sound speeds, rather than assuming they are set during problem initialization every time.
+    * Set limits on porosity contributions to damage while crushing out porosity.
+    * Added better limits on ANEOS internal eps(rho, T) interpolation, which seems to have improved ANEOS stability.
+
 Version v2025.06.0 -- Release date 2025-06-18
 ==============================================
   * Important Notes:

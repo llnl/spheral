@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "SVPH/SVPHHydroBase.cc"
 #include "Geometry/Dimension.hh"

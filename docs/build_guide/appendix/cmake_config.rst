@@ -50,9 +50,13 @@ The following are CMake variables that can be set during configure time. In gene
 
    Install the Opensubdiv library along with the Spheral interface to it.  Opensubdiv is a `Pixar provided library <https://github.com/PixarAnimationStudios/OpenSubdiv>`_, which Spheral uses to implement refinement of polyhedra for some specialized problem generation capabilities.
 
-.. option:: -DENABLE_TIMER=<OFF, ON>
+.. option:: -DSPHERAL_ENABLE_TIMERS=<OFF, ON>
 
    Enable Caliper timer information for Spheral.
+
+.. option:: -SPHERAL_ENABLE_LOGGER=<OFF, ON>
+
+   Enable debug log output at runtime.
 
 .. option:: -DENABLE_WARNINGS=<OFF, ON>
 

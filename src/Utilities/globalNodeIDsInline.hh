@@ -95,9 +95,9 @@ globalNodeIDs(const NodeList<Dimension>& nodeList) {
   }
 
   // Reduce the list of node info to processor 0.
-#ifdef USE_MPI
   auto nglobal = numLocalNodes;
   CONTRACT_VAR(nglobal);
+#ifdef USE_MPI
   if (procID == 0u) {
 
     // Process 0 receives and builds the global info.
@@ -162,7 +162,7 @@ globalNodeIDs(const NodeList<Dimension>& nodeList) {
     }
     CHECK(iglobal == nglobal);
   }
-  MPI_Barrier(Communicator::communicator());
+  Barrier(Communicator::communicator());
 
   // Assign process 0's Ids.
   Field<Dimension, size_t> result("global IDs", nodeList);

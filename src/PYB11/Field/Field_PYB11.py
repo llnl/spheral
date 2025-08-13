@@ -56,7 +56,6 @@ for ndim in dims:
     exec(f'''
 FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension}")
 ''')
-
     #...........................................................................
     # non-numeric types
     for (value, label) in ((f"{Dimension}::FacetedVolume",       "FacetedVolume"),
@@ -65,7 +64,6 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
                            ( "std::vector<uint64_t>",            "VectorULL"),
                            ( "std::vector<double>",              "VectorDouble"),
                            (f"std::vector<{Vector}>",            "VectorVector"),
-                           (f"std::vector<{Tensor}>",            "VectorSymTensor"),
                            (f"std::vector<{Tensor}>",            "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",        "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",          "DomainNode"),
@@ -99,7 +97,7 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
     #...........................................................................
     # STL collections of Field types
     for value, label in (("int",     "Int"),
-                         (Scalar,    "Scalar"),
+                         ("double",  "Scalar"),
                          (Vector,    "Vector"),
                          (Tensor,    "Tensor"),
                          (SymTensor, "SymTensor")):

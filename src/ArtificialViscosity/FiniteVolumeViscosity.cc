@@ -89,7 +89,6 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto Cqij = 0.5*(fCqi + fCqj)*fshear * mCquadratic;
 
   // Compute the pair QPi
-  const auto vij = vi - vj;
   const auto xji = xj - xi;
   const auto xjihat = xji.unitVector();
   const auto hi = 1.0/(Hi*xjihat).magnitude();

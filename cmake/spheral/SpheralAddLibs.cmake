@@ -186,8 +186,6 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${SPHERAL_ROOT_DIR}/src/PYB11/Silo:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/DataOutput:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/NodeList:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldSpan:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldSpanList:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Field:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/FieldList:"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Kernel:"
@@ -242,6 +240,12 @@ function(spheral_add_pybind11_library package_name module_list_name)
                             VIRTUAL_ENV     python_build_env
                             )
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
+
+  add_custom_command(TARGET ${MODULE_NAME}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_BINARY_DIR}/lib/${MODULE_NAME}.so
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
 
   install(TARGETS     ${MODULE_NAME}
           DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral

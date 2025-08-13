@@ -93,7 +93,8 @@ function(Spheral_Python_Env target_name)
       DEPENDS Python3::Python ${${target_name}_REQUIREMENTS}
     )
   endif()
-  add_custom_target(${target_name} ALL
+
+  add_custom_target(${target_name}
     DEPENDS ${${target_name}_PREFIX}/.venv/${target_name}_stamp
   )
 

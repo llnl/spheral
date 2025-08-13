@@ -1,25 +1,22 @@
 import inspect
 from PYB11Generator import *
-from FieldBase import *
-from FieldSpan import FieldSpan
+from FieldBase import FieldBase
 
 #-------------------------------------------------------------------------------
 # Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11module("SpheralField")
-class Field(FieldBase,
-            FieldSpan):
+class Field(FieldBase):
 
     PYB11typedefs = """
-    using SelfType = Field<%(Dimension)s, %(Value)s>;
-    using ViewType = typename SelfType::ViewType;
+  using FieldType = Field<%(Dimension)s, %(Value)s>;
 """
 
     def pyinit(self, name="std::string"):
         "Construct with a name"
 
-    def pyinit1(self, name="std::string", field="const SelfType&"):
+    def pyinit1(self, name="std::string", field="const FieldType&"):
         "Construct as a copy of a Field with a new name"
 
     def pyinit2(self, name="std::string", nodeList="const NodeList<%(Dimension)s>&"):
@@ -42,44 +39,42 @@ class Field(FieldBase,
     def __ne__(self):
         return
 
-    @PYB11pycppname("__eq__")
-    def __eq___S__(self, rhs="%(Value)s()"):
+    def __eq__(self, rhs="%(Value)s()"):
         "Equivalence comparision with a %(Value)s"
         return "bool"
 
-    @PYB11pycppname("__ne__")
-    def __ne__S__(self, rhs="%(Value)s()"):
+    def __ne__(self, rhs="%(Value)s()"):
         "Not equal comparision with a %(Value)s"
         return "bool"
 
-    # #...........................................................................
-    # # Sequence methods
-    # @PYB11cppname("size")
-    # @PYB11const
-    # def __len__(self):
-    #     return "size_t"
+    #...........................................................................
+    # Sequence methods
+    @PYB11cppname("size")
+    @PYB11const
+    def __len__(self):
+        return "size_t"
 
-    # @PYB11cppname("operator[]")
-    # @PYB11returnpolicy("reference_internal")
-    # @PYB11implementation('[](SelfType& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
-    # def __getitem__(self):
-    #     #return "%(Value)s&"
-    #     return
+    @PYB11cppname("operator[]")
+    @PYB11returnpolicy("reference_internal")
+    @PYB11implementation('[](FieldType& self, int i) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
+    def __getitem__(self):
+        #return "%(Value)s&"
+        return
 
-    # @PYB11implementation("[](SelfType& self, int i, const %(Value)s v) { const int n = self.size(); if (i >= n) throw py::index_error(); self[(i %% n + n) %% n] = v; }")
-    # def __setitem__(self):
-    #     "Set a value"
+    @PYB11implementation("[](FieldType& self, int i, const %(Value)s v) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); self[(i %% n + n) %% n] = v; }")
+    def __setitem__(self):
+        "Set a value"
 
-    # @PYB11implementation("[](const SelfType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
-    # def __iter__(self):
-    #     "Python iteration through a Field."
+    @PYB11implementation("[](const FieldType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
+    def __iter__(self):
+        "Python iteration through a Field."
 
-    # @PYB11returnpolicy("reference_internal")
-    # @PYB11implementation("[](SelfType& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
-    # def __call__(self):
-    #     "Index into a Field"
-    #     #return "%(Value)s&"
-    #     return
+    @PYB11returnpolicy("reference_internal")
+    @PYB11implementation("[](FieldType& self, int i) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
+    def __call__(self):
+        "Index into a Field"
+        #return "%(Value)s&"
+        return
 
     #...........................................................................
     # FieldBase virtual methods
@@ -119,28 +114,6 @@ class Field(FieldBase,
         "Copy a range of values from/to elements of the Field"
         return "void"
 
-    @PYB11virtual
-    @PYB11const
-    def fixedSizeDataType(self):
-        return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def numValsInDataType(self):
-        return "size_t"
-
-    @PYB11virtual
-    @PYB11const
-    def sizeofDataType(self):
-        return "size_t"
-
-    @PYB11virtual
-    @PYB11const
-    def computeCommBufferSize(packIndices = "const std::vector<size_t>&",
-                              sendProc = "int",
-                              recvProc = "int"):
-        return "size_t"
-
     #...........................................................................
     # Methods
     @PYB11const
@@ -176,5 +149,8 @@ class Field(FieldBase,
         "Return a python list (as a copy) of all values in the Field"
         return "py::list"
 
-    def view(self):
-        return "ViewType&"
+    #...........................................................................
+    # Properties
+    numElements = PYB11property("size_t", doc="Number of elements in field")
+    numInternalElements = PYB11property("size_t", doc="Number of internal elements in field")
+    numGhostElements = PYB11property("size_t", doc="Number of ghost elements in field")

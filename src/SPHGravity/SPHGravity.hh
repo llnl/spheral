@@ -13,7 +13,6 @@
 #include "Physics/Physics.hh"
 #include "Field/FieldList.hh"
 #include "Kernel/TableKernel.hh"
-#include "boost/python/handle.hpp"
 
 #include "petsc.h"
 #include "petscksp.h"
@@ -89,12 +88,6 @@ public:
                           const DataBase<Dimension>& db, 
                           State<Dimension>& state,
                           StateDerivatives<Dimension>& derivs);
-
-  //! Return the Laplacian matrix for inspection.
-  boost::python::handle<PyObject> matrix() const;
-
-  //! Return the right-hand-side vector for inspection.
-  boost::python::handle<PyObject> RHS() const;
 
   //! Return the norm of the residual vector after the most recently converged
   //! linear solve.

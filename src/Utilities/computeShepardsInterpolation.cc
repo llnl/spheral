@@ -35,14 +35,11 @@ computeShepardsInterpolation(const FieldList<Dimension, DataType>& fieldList,
 
   typedef typename Dimension::Scalar Scalar;
   typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
 
   // Some scratch variables.
   size_t nodeListi, nodeListj;
   Scalar Wi, Wj;
   Vector rij, etai, etaj;
-  Vector Bi = Vector::zero, Bj = Vector::zero;
-  Tensor Ci = Tensor::zero, Cj = Tensor::zero;
 
   // Prepare the return value.
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);

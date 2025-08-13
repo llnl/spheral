@@ -269,7 +269,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field)
   auto controlItr = this->controlBegin(nodeList);
   auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   ThirdRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
@@ -308,7 +308,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field
   auto controlItr = this->controlBegin(nodeList);
   auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   FourthRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
@@ -351,7 +351,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field)
   auto controlItr = this->controlBegin(nodeList);
   auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   FifthRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
@@ -513,7 +513,7 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const auto& nodeList = field.nodeList();
   const auto& violationNodes = this->violationNodes(nodeList);
   ThirdRankTensor val;
@@ -545,7 +545,7 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const auto& nodeList = field.nodeList();
   const auto& violationNodes = this->violationNodes(nodeList);
   FourthRankTensor val;
@@ -581,7 +581,7 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const auto& nodeList = field.nodeList();
   const auto& violationNodes = this->violationNodes(nodeList);
   FifthRankTensor val;
@@ -769,7 +769,7 @@ enforceBoundary(vector<typename Dimension::ThirdRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   ThirdRankTensor val;
@@ -804,7 +804,7 @@ enforceBoundary(vector<typename Dimension::FourthRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   FourthRankTensor val;
@@ -843,7 +843,7 @@ enforceBoundary(vector<typename Dimension::FifthRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   FifthRankTensor val;

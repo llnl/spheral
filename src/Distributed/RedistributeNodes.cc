@@ -102,8 +102,14 @@ currentDomainDecomposition(const DataBase<Dimension>& dataBase,
   BEGIN_CONTRACT_SCOPE
   REQUIRE(dataBase.numNodeLists() == globalNodeIDs.numFields());
   REQUIRE(dataBase.numNodeLists() == workPerNode.numFields());
-  for (auto* fptr: globalNodeIDs) REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
-  for (auto* fptr: workPerNode) REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  for (auto* fptr: globalNodeIDs) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
+  for (auto* fptr: workPerNode) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
   END_CONTRACT_SCOPE
 
   // Prepare the result.

@@ -72,7 +72,7 @@ Really we should rename this post-step finalize."""
     def numInflowNodes(self,
                        nodeList = "const NodeList<%(Dimension)s>&"):
         "Number of nodes in inflow stencil for the given NodeList"
-        return "int"
+        return "size_t"
 
     def clearStoredValues(self):
         "Clear out the stored values and ghost nodes"

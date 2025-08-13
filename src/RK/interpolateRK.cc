@@ -9,10 +9,11 @@
 #include "Kernel/TableKernel.hh"
 #include "NodeList/NodeList.hh"
 #include "Utilities/Timer.hh"
+#include <variant>
 
 namespace Spheral {
 
-using boost::variant;
+using std::variant;
 using std::vector;
 using std::string;
 using std::pair;
@@ -28,7 +29,7 @@ namespace {
 //------------------------------------------------------------------------------
 // Verify FieldList sizes.
 //------------------------------------------------------------------------------
-struct FieldListSize: public boost::static_visitor<int> {
+struct FieldListSize {
   template<typename FieldListType>
   inline
   int operator()(const FieldListType& x) const {
@@ -45,7 +46,7 @@ bool checkSizes(const vector<variant<FieldList<Dimension, typename Dimension::Sc
                                      FieldList<Dimension, typename Dimension::ThirdRankTensor>>>& fieldLists,
                 const size_t numNodeLists) {
   for (const auto& f: fieldLists) {
-    if (boost::apply_visitor(FieldListSize(), f) != (int)numNodeLists) return false;
+    if (std::visit(FieldListSize(), f) != (int)numNodeLists) return false;
   }
   return true;
 }
@@ -53,7 +54,7 @@ bool checkSizes(const vector<variant<FieldList<Dimension, typename Dimension::Sc
 //------------------------------------------------------------------------------
 // copyFields
 //------------------------------------------------------------------------------
-struct CopyFields: public boost::static_visitor<> {
+struct CopyFields {
   template<typename FieldListType>
   inline
   void operator()(FieldListType& x) const { x.copyFields(); }
@@ -62,7 +63,7 @@ struct CopyFields: public boost::static_visitor<> {
 //------------------------------------------------------------------------------
 // Zero
 //------------------------------------------------------------------------------
-struct ZeroFields: public boost::static_visitor<> {
+struct ZeroFields {
   template<typename FieldListType>
   inline
   void operator()(FieldListType& x) const { x.Zero(); }
@@ -71,11 +72,10 @@ struct ZeroFields: public boost::static_visitor<> {
 //------------------------------------------------------------------------------
 // PrependNameFields
 //------------------------------------------------------------------------------
-struct PrependNameFields: public boost::static_visitor<> {
+struct PrependNameFields {
   std::string prefix;
   
   PrependNameFields(const std::string prefix_):
-    boost::static_visitor<>(),
     prefix(prefix_) {}
 
   template<typename FieldListType>
@@ -88,12 +88,11 @@ struct PrependNameFields: public boost::static_visitor<> {
 //------------------------------------------------------------------------------
 // IncrementElement
 //------------------------------------------------------------------------------
-struct IncrementElement: public boost::static_visitor<> {
+struct IncrementElement {
   int nodeListi, i, nodeListj, j;
   double mult;
 
   IncrementElement(int nodeListi_, int i_, int nodeListj_, int j_, double mult_):
-    boost::static_visitor<>(),
     nodeListi(nodeListi_),
     i(i_),
     nodeListj(nodeListj_),
@@ -130,7 +129,7 @@ struct IncrementElement: public boost::static_visitor<> {
 //------------------------------------------------------------------------------
 // IncrementFieldList
 //------------------------------------------------------------------------------
-struct IncrementFieldList: public boost::static_visitor<> {
+struct IncrementFieldList {
 
   template<typename A, typename B>
   inline
@@ -192,9 +191,9 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
   FieldListArray result;
   for (const auto& fieldList: fieldLists) {
     result.push_back(fieldList);
-    boost::apply_visitor(CopyFields(), result.back());
-    boost::apply_visitor(ZeroFields(), result.back());
-    boost::apply_visitor(PrependNameFields("interpolate "), result.back());
+    std::visit(CopyFields(), result.back());
+    std::visit(ZeroFields(), result.back());
+    std::visit(PrependNameFields("interpolate "), result.back());
   }
 
   // Walk all the interacting pairs.
@@ -209,9 +208,9 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
     #pragma omp critical
     for (const auto& fieldList: fieldLists) {
       localResult.push_back(fieldList);
-      boost::apply_visitor(CopyFields(), localResult.back());
-      boost::apply_visitor(ZeroFields(), localResult.back());
-      boost::apply_visitor(PrependNameFields("local interpolate "), localResult.back());
+      std::visit(CopyFields(), localResult.back());
+      std::visit(ZeroFields(), localResult.back());
+      std::visit(PrependNameFields("local interpolate "), localResult.back());
     }
 
     int i, j, nodeListi, nodeListj;
@@ -248,8 +247,8 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
 
         // Increment the pair-wise values.
         for (auto k = 0u; k < numFieldLists; ++k) {
-          boost::apply_visitor(IncrementElement(nodeListi, i, nodeListj, j, wj*Wj), localResult[k], fieldLists[k]);
-          boost::apply_visitor(IncrementElement(nodeListj, j, nodeListi, i, wi*Wi), localResult[k], fieldLists[k]);
+          std::visit(IncrementElement(nodeListi, i, nodeListj, j, wj*Wj), localResult[k], fieldLists[k]);
+          std::visit(IncrementElement(nodeListj, j, nodeListi, i, wi*Wi), localResult[k], fieldLists[k]);
         }
       }
     }
@@ -258,7 +257,7 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
 #pragma omp critical
     {
       for (auto k = 0u; k < numFieldLists; ++k) {
-        boost::apply_visitor(IncrementFieldList(), result[k], localResult[k]);
+        std::visit(IncrementFieldList(), result[k], localResult[k]);
       }
     }
   }
@@ -276,7 +275,7 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
 
       // Add the self-contribution to each FieldList.
       for (auto k = 0u; k < numFieldLists; ++k) {
-        boost::apply_visitor(IncrementElement(nodeListi, i, nodeListi, i, weight(nodeListi, i)*Wj), result[k], fieldLists[k]);
+        std::visit(IncrementElement(nodeListi, i, nodeListi, i, weight(nodeListi, i)*Wj), result[k], fieldLists[k]);
       }
     }
   }

@@ -520,15 +520,11 @@ computeVoronoiVolume(const FieldList<Dimension, typename Dimension::Vector>& pos
 
         // State of node i
         const auto& ri = position(nodeListi, i);
-        const auto& Hi = H(nodeListi, i);
-        const auto  Hinv = Hi.Inverse();
         const auto  weighti = haveWeights ? weight(nodeListi, i) : 1.0;
         auto&       pairPlanesi = pairPlanes_thread(nodeListi, i);
 
         // State of node j
         const auto& rj = position(nodeListj, j);
-        const auto& Hj = H(nodeListj, j);
-        const auto  Hjnv = Hj.Inverse();
         const auto  weightj = haveWeights ? weight(nodeListj, j) : 1.0;
         auto&       pairPlanesj = pairPlanes_thread(nodeListj, j);
 

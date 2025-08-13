@@ -117,9 +117,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
 
   //const auto yield = state.fields(SolidFieldNames::yieldStrength, 0.0);
   //const auto invJ2 = state.fields(FSIFieldNames::inverseEquivalentDeviatoricStress, 0.0);
@@ -479,7 +479,6 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         //---------------------------------------------------------------
         const auto rhoij = 0.5*(rhoi+rhoj); 
         const auto cij = 0.5*(ci+cj); 
-        const auto vij = vi - vj;
 
         // raw AV
         Q.QPiij(QPiij, QPiji, Qi, Qj,

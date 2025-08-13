@@ -94,6 +94,47 @@ class testField(unittest.TestCase):
             assert self.field[i] == answer[i]
         return
 
+    #---------------------------------------------------------------------------
+    # resizeGhost
+    #---------------------------------------------------------------------------
+    def testResizeGhost(self):
+        # Create ghost points and set the Field ghost values
+        nghost = 15
+        self.nodes.numGhostNodes = nghost
+        for i in range(nghost):
+            self.field[self.nodes.firstGhostNode + i] = ~i
+
+        assert self.field.numElements == n + nghost
+        for i in range(n):
+            assert self.field[i] == i
+        for i in range(nghost):
+            assert self.field[self.nodes.firstGhostNode + i] == ~i
+
+        return
+
+    #---------------------------------------------------------------------------
+    # resizeInternal
+    #---------------------------------------------------------------------------
+    def testResizeInternal(self):
+        # Create ghost points and set the Field ghost values
+        nghost = 15
+        self.nodes.numGhostNodes = nghost
+        for i in range(nghost):
+            self.field[self.nodes.firstGhostNode + i] = ~i
+
+        # Add 10 internal points
+        self.nodes.numInternalNodes = n + 10
+
+        assert self.field.numElements == n + 10 + nghost
+        for i in range(n):
+            assert self.field[i] == i
+        for i in range(n, n + 10):
+            assert self.field[i] == 0
+        for i in range(nghost):
+            assert self.field[self.nodes.firstGhostNode + i] == ~i
+
+        return
+
 #-------------------------------------------------------------------------------
 # Run the test
 #-------------------------------------------------------------------------------

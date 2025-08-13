@@ -20,7 +20,6 @@
 #include <vector>
 #include <set>
 #include <tuple>
-#include "boost/functional/hash.hpp"
 
 namespace Spheral {
 
@@ -235,7 +234,6 @@ collapseDegenerateVertices(const std::vector<Vector>& vertices,
                            const Vector& xmax,
                            const Vector& boxInv,
                            const Uint tol) {
-  using namespace boost;
   typedef std::tuple<Uint, Uint, Uint> Key;
   using std::vector;
   using std::set;
@@ -330,7 +328,6 @@ exchangeTuples(const std::vector<std::tuple<T, T, T> >& localKeys,
   CONTRACT_VAR(neighborDomains);
   CONTRACT_VAR(neighborKeys);
 #ifdef USE_MPI
-  using namespace boost;
   typedef std::tuple<T, T, T> Key;
   using std::vector;
 
@@ -395,7 +392,6 @@ exchangeTuples(const std::vector<std::tuple<T, T, T> >& localKeys,
   CONTRACT_VAR(sendIndices);
   CONTRACT_VAR(neighborKeys);
 #ifdef USE_MPI
-  using namespace boost;
   typedef std::tuple<T, T, T> Key;
 
   const unsigned numNeighborDomains = neighborDomains.size();
@@ -781,7 +777,6 @@ inline
 std::tuple<T, T, T, T, T, T>
 hashEdge(const std::tuple<T, T, T>& hashi,
          const std::tuple<T, T, T>& hashj) {
-  using namespace boost;
   return (hashi < hashj ? 
           std::make_tuple(std::get<0>(hashi), std::get<1>(hashi), std::get<2>(hashi),
                           std::get<0>(hashj), std::get<1>(hashj), std::get<2>(hashj)) :
@@ -789,36 +784,6 @@ hashEdge(const std::tuple<T, T, T>& hashi,
                           std::get<0>(hashi), std::get<1>(hashi), std::get<2>(hashi)));
 }
 
-}
-
-//------------------------------------------------------------------------------
-// Hash the Key.
-//------------------------------------------------------------------------------
-namespace std {
-  template<typename T>
-  inline
-  std::size_t
-  hash_value(const ::std::tuple<T, T, T>& x) {
-    size_t result = 0;
-    boost::hash_combine(result, ::std::get<0>(x));
-    boost::hash_combine(result, ::std::get<1>(x));
-    boost::hash_combine(result, ::std::get<2>(x));
-    return result;
-  }
-
-  template<typename T>
-  inline
-  std::size_t
-  hash_value(const ::std::tuple<T, T, T, T, T, T>& x) {
-    size_t result = 0;
-    boost::hash_combine(result, ::std::get<0>(x));
-    boost::hash_combine(result, ::std::get<1>(x));
-    boost::hash_combine(result, ::std::get<2>(x));
-    boost::hash_combine(result, ::std::get<3>(x));
-    boost::hash_combine(result, ::std::get<4>(x));
-    boost::hash_combine(result, ::std::get<5>(x));
-    return result;
-  }
 }
 
 //------------------------------------------------------------------------------

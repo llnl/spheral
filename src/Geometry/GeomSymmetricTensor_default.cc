@@ -187,6 +187,9 @@ GeomSymmetricTensor<3>::eigenVectors() const {
   const Vector v1 = result.eigenVectors.getColumn(0);
   const Vector v2 = result.eigenVectors.getColumn(1);
   const Vector v3 = result.eigenVectors.getColumn(2);
+  CONTRACT_VAR(v1);
+  CONTRACT_VAR(v2);
+  CONTRACT_VAR(v3);
   ENSURE2(fuzzyEqual(v1.dot(v2), 0.0, tolerance) and 
           fuzzyEqual(v1.dot(v3), 0.0, tolerance) and 
           fuzzyEqual(v2.dot(v3), 0.0, tolerance),
@@ -227,19 +230,16 @@ template class GeomSymmetricTensor<3>;
 // Set the static variables.
 //------------------------------------------------------------------------------
 template<> const unsigned GeomSymmetricTensor<1>::nDimensions = 1;
-template<> const unsigned GeomSymmetricTensor<1>::numElements = 1;
 template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::zero = GeomSymmetricTensor<1>(0.0);
 template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one = GeomSymmetricTensor<1>(1.0);
 
 template<> const unsigned GeomSymmetricTensor<2>::nDimensions = 2;
-template<> const unsigned GeomSymmetricTensor<2>::numElements = 3;
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::zero = GeomSymmetricTensor<2>(0.0, 0.0,
                                                                                               0.0, 0.0);
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one = GeomSymmetricTensor<2>(1.0, 0.0,
                                                                                              0.0, 1.0);
 
 template<> const unsigned GeomSymmetricTensor<3>::nDimensions = 3;
-template<> const unsigned GeomSymmetricTensor<3>::numElements = 6;
 template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::zero = GeomSymmetricTensor<3>(0.0, 0.0, 0.0,
                                                                                               0.0, 0.0, 0.0,
                                                                                               0.0, 0.0, 0.0);

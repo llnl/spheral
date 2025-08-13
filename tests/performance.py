@@ -11,7 +11,7 @@ from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
 
 if (not TimerMgr.timers_usable()):
-    log("WARNING: Timers not enabled, skipping performance tests", echo=True)
+    log("WARNING: Timers not enabled, skipping performance tests. Configure Spheral w/ -DSPHERAL_ENABLE_TIMERS=On", echo=True)
     sys.exit(0)
 
 # Get options from ats

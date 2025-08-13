@@ -277,6 +277,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
     BEGIN_CONTRACT_SCOPE
     {
       for (auto j: significantNeighbors) {
+        CONTRACT_VAR(j) ;
         CHECK(find(globalNodesRemaining.begin(),
                    globalNodesRemaining.end(),
                    gIDs[j]) == globalNodesRemaining.end());

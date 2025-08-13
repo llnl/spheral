@@ -11,8 +11,8 @@
 
 #include "Field/FieldList.hh"
 #include "Utilities/DataTypeTraits.hh"
+#include "Utilities/Hashes.hh"
 
-#include "boost/functional/hash.hpp"
 #include <unordered_map>
 
 namespace Spheral {
@@ -25,8 +25,8 @@ public:
                          const bool useFieldList):
     mFieldListPtr(&fieldList),
     mUseFieldList(useFieldList) {}
-  ~FieldListThreadWrapper() {}  
-  
+
+  FieldListThreadWrapper() = delete;
 
   // Non-const indexing
   DataType& operator()(const unsigned fieldIndex,
@@ -51,12 +51,8 @@ private:
   //--------------------------- Private Interface ---------------------------//
   FieldList<Dimension, DataType>* mFieldListPtr;
   bool mUseFieldList;
-  typedef std::unordered_map<std::pair<unsigned, unsigned>, DataType,
-                             boost::hash<std::pair<unsigned, unsigned>>> StorageType;
+  typedef std::unordered_map<std::pair<size_t, size_t>, DataType> StorageType;
   StorageType mValues;
-
-  // Forbidden operations
-  FieldListThreadWrapper();
 };
 
 }

@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "VoronoiCells/UpdateVoronoiCells.cc"
 #include "Geometry/Dimension.hh"

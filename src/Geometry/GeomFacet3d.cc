@@ -212,6 +212,8 @@ decompose(std::vector<std::array<Vector, 3>>& subfacets) const {
       CHECK(0 < subarea and subarea < originalArea);
       const auto subnormalUnit = subnormal.unitVector();
       const auto normalUnit = mNormal.unitVector();
+      CONTRACT_VAR(subnormalUnit);
+      CONTRACT_VAR(normalUnit);
       CHECK2(fuzzyEqual(subnormalUnit(0), normalUnit(0), 1.e-8) &&
              fuzzyEqual(subnormalUnit(1), normalUnit(1), 1.e-8) &&
              fuzzyEqual(subnormalUnit(2), normalUnit(2), 1.e-8), "Normal vector mismatch: " << subnormalUnit << " != " << normalUnit);

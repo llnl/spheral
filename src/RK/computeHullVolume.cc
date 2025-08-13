@@ -296,8 +296,6 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
 #pragma omp parallel for
       for (auto i = 0u; i < n; ++i) {
         const auto& ri = position(nodeListi, i);
-        const auto& Hi = H(nodeListi, i);
-        const auto  Hinv = Hi.Inverse();
 
         // Build the set of inverse positions in eta space about this point (including itself as the origin)
         vector<Vector> invPositions = {Vector::zero};

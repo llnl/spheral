@@ -15,8 +15,6 @@
 #include "Boundary/ConstantBoundary.hh"
 #include "Boundary/ConstantBoundaryUtilities.hh"
 
-#include "boost/algorithm/string.hpp"
-
 using std::vector;
 using std::map;
 using std::string;

@@ -13,8 +13,6 @@ class Axom(BuiltinAxom):
     """Axom provides a robust, flexible software infrastructure for the development
     of multi-physics applications and computational tools."""
 
-    patch('constexpr.patch')
-
     def initconfig_mpi_entries(self):
         spec = self.spec
         entries = []

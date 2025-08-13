@@ -89,6 +89,7 @@ performIntegration() {
   // Get some data out of database and state
   VERIFY(mState);
   const auto numNodeLists = mDataBase.numFluidNodeLists();
+  CONTRACT_VAR(numNodeLists);
   const auto position = mState->fields(HydroFieldNames::position, Vector::zero);
   const auto H = mState->fields(HydroFieldNames::H, SymTensor::zero);
   const auto volume = mState->fields(HydroFieldNames::volume, 0.0);
@@ -153,11 +154,11 @@ performIntegration() {
     const auto pairi = mFlatConnectivity.localToNode(i);
     const auto nodeListi = pairi.first;
     const auto nodei = pairi.second;
-#if REPLACEOVERLAP
-    const auto xi = position(nodeListi, nodei);
-    // const auto volumei = volume(nodeListi, nodei);
-    // const auto deltai = std::pow(volumei, 1. / Dimension::nDim); // An approximation of cell length
-#endif
+// #if REPLACEOVERLAP
+//     const auto xi = position(nodeListi, nodei);
+//     const auto volumei = volume(nodeListi, nodei);
+//     const auto deltai = std::pow(volumei, 1. / Dimension::nDim); // An approximation of cell length
+// #endif
     const auto& cell = cells(nodeListi, nodei);
     
     // Get the number of neighbors for the Voronoi integration region

@@ -14,10 +14,9 @@
 #define __Spheral_LEOS_bundle__
 
 #include "Utilities/DBC.hh"
+#include "Utilities/Hashes.hh"
 
 #include <LEOS.h>
-
-#include <boost/container_hash/hash.hpp>  // So we can use unordered_map with std::pair as a key
 
 #include <vector>
 #include <utility>
@@ -58,10 +57,8 @@ private:
   //------------------------===== Private Interface =====----------------------//
   std::vector<::LEOS::L8STRING>                                                               mFuncTemplate;
   std::unordered_map<name_t, ::LEOS::LEOS_DatabasePtr>                                        mDatabasePtrs;
-  std::unordered_map<std::pair<eosnum_t, name_t>, ::LEOS::LEOS_MaterialPtr,
-                     boost::hash<std::pair<eosnum_t, name_t>>>                                mMatPtrs;
-  std::unordered_map<std::pair<eosnum_t, name_t>, std::map<name_t, ::LEOS::LEOS_FunctionPtr>,
-                     boost::hash<std::pair<eosnum_t, name_t>>>                                mFuncPtrs;
+  std::unordered_map<std::pair<eosnum_t, name_t>, ::LEOS::LEOS_MaterialPtr>                   mMatPtrs;
+  std::unordered_map<std::pair<eosnum_t, name_t>, std::map<name_t, ::LEOS::LEOS_FunctionPtr>> mFuncPtrs;
 
   // Private constructor and destructor
   LEOS_bundle();

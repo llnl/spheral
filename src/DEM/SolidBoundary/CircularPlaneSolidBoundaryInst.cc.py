@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "DEM/SolidBoundary/CircularPlaneSolidBoundary.cc"
 #include "Geometry/Dimension.hh"

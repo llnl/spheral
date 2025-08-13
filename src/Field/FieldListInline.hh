@@ -6,8 +6,6 @@
 #include "NodeList/NodeListRegistrar.hh"
 #include "Neighbor/Neighbor.hh"
 #include "Field/Field.hh"
-#include "Field/FieldSpan.hh"
-#include "Field/FieldSpanList.hh"
 #include "Kernel/TableKernel.hh"
 #include "Distributed/allReduce.hh"
 
@@ -31,12 +29,11 @@ template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::FieldList():
   FieldListBase<Dimension>(),
-  FieldSpanList<Dimension, DataType>(),
-  mFieldPtrs(),
-  mFieldBasePtrs(),
-  mFieldCache(),
+  mFieldPtrs(0),
+  mFieldBasePtrs(0),
+  mFieldCache(0),
   mStorageType(FieldStorageType::ReferenceFields),
-  mNodeListPtrs(),
+  mNodeListPtrs(0),
   mNodeListIndexMap(),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(NULL) {
@@ -49,12 +46,11 @@ template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   FieldListBase<Dimension>(),
-  FieldSpanList<Dimension, DataType>(),
-  mFieldPtrs(),
-  mFieldBasePtrs(),
-  mFieldCache(),
+  mFieldPtrs(0),
+  mFieldBasePtrs(0),
+  mFieldCache(0),
   mStorageType(aStorageType),
-  mNodeListPtrs(),
+  mNodeListPtrs(0),
   mNodeListIndexMap(),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(NULL) {
@@ -69,7 +65,6 @@ inline
 FieldList<Dimension, DataType>::
 FieldList(const FieldList<Dimension, DataType>& rhs):
   FieldListBase<Dimension>(rhs),
-  FieldSpanList<Dimension, DataType>(),
   mFieldPtrs(rhs.mFieldPtrs),
   mFieldBasePtrs(rhs.mFieldBasePtrs),
   mFieldCache(),
@@ -83,15 +78,37 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
 #pragma omp critical (FieldList_copy)
   {
     if (storageType() == FieldStorageType::CopyFields) {
-      CHECK(mFieldCache.size() == 0u);
-      for (auto& fptr: rhs.mFieldCache) mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(*fptr));
-      CHECK(mFieldPtrs.size() == mFieldCache.size());
-      mFieldPtrs.clear();
-      for (auto& fcache: mFieldCache) mFieldPtrs.push_back(fcache.get());
-    }
-    buildDependentArrays();
-  } // OMP critical
+      CHECK(mFieldCache.size() == 0);
+      for (typename FieldCacheType::const_iterator itr = rhs.mFieldCache.begin();
+           itr != rhs.mFieldCache.end();
+           ++itr) {
+        auto newField = std::make_shared<Field<Dimension, DataType>>(**itr);
+        mFieldCache.push_back(newField);
+      }
 
+      CHECK(this->size() == mFieldCache.size());
+      auto fieldPtrItr = this->begin();
+      auto fieldBasePtrItr = this->begin_base();
+      auto fieldCacheItr = mFieldCache.begin();
+      for(; fieldPtrItr != this->end(); ++fieldPtrItr, ++fieldBasePtrItr, ++fieldCacheItr) {
+        CHECK(fieldCacheItr != mFieldCache.end());
+        (*fieldPtrItr) = fieldCacheItr->get();
+        (*fieldBasePtrItr) = fieldCacheItr->get();
+      }
+
+      CHECK(fieldPtrItr == this->end() &&
+            fieldBasePtrItr == this->end_base() &&
+            fieldCacheItr == mFieldCache.end());
+    }
+
+    NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
+    mFieldBasePtrs.clear();
+    mNodeListPtrs.clear();
+    for (auto fptr: mFieldPtrs) {
+      mFieldBasePtrs.push_back(fptr);
+      mNodeListPtrs.push_back(const_cast<NodeList<Dimension>*>(fptr->nodeListPtr()));
+    }
+  } // OMP critical
 
 //   // Register this FieldList with each Field we point to.
 //   for (iterator fieldPtrItr = begin(); fieldPtrItr != end(); ++fieldPtrItr) 
@@ -105,6 +122,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
 template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::~FieldList() {
+  mFieldViews.free();
 }
 
 //------------------------------------------------------------------------------
@@ -118,10 +136,12 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
 #pragma omp critical (FieldList_assign)
   {
     if (this != &rhs) {
-      mFieldPtrs = std::vector<ElementType>();
-      mFieldCache = FieldCacheType();
       mStorageType = rhs.storageType();
+      mNodeListPtrs = rhs.mNodeListPtrs;
+      mFieldCache = FieldCacheType();
       mNodeListIndexMap = rhs.mNodeListIndexMap;
+      mFieldPtrs = std::vector<ElementType>();
+      mFieldBasePtrs = std::vector<BaseElementType>();
       mFieldPtrs.reserve(rhs.size());
       mFieldBasePtrs.reserve(rhs.size());
       reductionType = rhs.reductionType;
@@ -134,15 +154,26 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
       switch(storageType()) {
 
       case FieldStorageType::ReferenceFields:
-        mFieldPtrs = rhs.mFieldPtrs;
+        for (auto fieldPtrItr = rhs.begin(); 
+             fieldPtrItr != rhs.end();
+             ++fieldPtrItr) {
+          mFieldPtrs.push_back(*fieldPtrItr);
+          mFieldBasePtrs.push_back(*fieldPtrItr);
+        }
         break;
 
       case FieldStorageType::CopyFields:
-        for (auto& fptr: rhs.mFieldCache) {
-          auto newField = std::make_shared<Field<Dimension, DataType>>(*fptr);
+        for (auto itr = rhs.mFieldCache.begin();
+             itr != rhs.mFieldCache.end();
+             ++itr) {
+          auto newField = std::make_shared<Field<Dimension, DataType>>(**itr);
           mFieldCache.push_back(newField);
           mFieldPtrs.push_back(newField.get());
         }
+        NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
+        for (auto fptr: mFieldPtrs) mFieldBasePtrs.push_back(fptr);
+        CHECK(this->size() == mFieldCache.size());
+        CHECK(mFieldBasePtrs.size() == mFieldCache.size());
         break;
       }
 
@@ -150,7 +181,6 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
       //     for (iterator fieldPtrItr = begin(); fieldPtrItr != end(); ++fieldPtrItr) 
       //       registerWithField(**fieldPtrItr);
 
-      buildDependentArrays();
     }
   } // OMP critical
   ENSURE(this->size() == rhs.size());
@@ -165,9 +195,20 @@ inline
 FieldList<Dimension, DataType>&
 FieldList<Dimension, DataType>::
 operator=(const DataType& rhs) {
-  for (auto* fptr: mFieldPtrs) *fptr = rhs;
-  buildDependentArrays();  // Probably not necessary
+  for (auto fieldPtrItr = begin(); fieldPtrItr < end(); ++fieldPtrItr) {
+    (*fieldPtrItr)->operator=(rhs);
+  }
   return *this;
+}
+
+//------------------------------------------------------------------------------
+// Return the storage type.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldStorageType
+FieldList<Dimension, DataType>::storageType() const {
+  return mStorageType;
 }
 
 //------------------------------------------------------------------------------
@@ -185,18 +226,29 @@ FieldList<Dimension, DataType>::copyFields() {
 //       unregisterFromField(**fieldPtrItr);
 
     // Store local copies of the fields we're pointing at.
-    mFieldCache.clear();
-    for (auto* fptr: mFieldPtrs) mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(*fptr));
-    mFieldPtrs.clear();
-    for (auto& fptr: mFieldCache) mFieldPtrs.push_back(fptr.get());
-    buildDependentArrays();
+    mFieldCache = FieldCacheType();
+    auto itr = begin();
+    auto baseItr = begin_base();
+    for (; itr != end(); ++itr, ++baseItr) {
+      auto newField = std::make_shared<Field<Dimension, DataType>>(**itr);
+      mFieldCache.push_back(newField);
+      *itr = mFieldCache.back().get();
+      *baseItr = mFieldCache.back().get();
+    }
+
+    // Make sure the FieldPtrs are in the correct order.
+    NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
+    mFieldBasePtrs.clear();
+    mNodeListPtrs.clear();
+    for (auto fptr: mFieldPtrs) {
+      mFieldBasePtrs.push_back(fptr);
+      mNodeListPtrs.push_back(const_cast<NodeList<Dimension>*>(fptr->nodeListPtr()));
+    }
 
 //     for (int i = 0; i < this->size(); ++i) {
 //       mFieldCache.push_back(*((*this)[i]));
 //       (*this)[i] = &(mFieldCache.back());
 //     }
-
-    buildDependentArrays();
   }
 }
 
@@ -208,18 +260,21 @@ inline
 void
 FieldList<Dimension, DataType>::copyFields(const FieldList<Dimension, DataType>& fieldList) {
   mFieldPtrs.clear();
+  mFieldBasePtrs.clear();
   mFieldCache.clear();
   mStorageType = FieldStorageType::CopyFields;
+  mNodeListPtrs = fieldList.mNodeListPtrs;
+  mNodeListIndexMap = fieldList.mNodeListIndexMap;
   reductionType = fieldList.reductionType;
   threadMasterPtr = fieldList.threadMasterPtr;
 
   // Store new copies of the Fields from the other FieldList
-  for (const auto* fptr: fieldList.mFieldPtrs) {
-    auto newFieldPtr = std::make_shared<Field<Dimension, DataType>>(*fptr);
+  for (const auto& fieldPtr: fieldList.mFieldPtrs) {
+    auto newFieldPtr = std::make_shared<Field<Dimension, DataType>>(*fieldPtr);
     mFieldCache.push_back(newFieldPtr);
     mFieldPtrs.push_back(newFieldPtr.get());
+    mFieldBasePtrs.push_back(newFieldPtr.get());
   }
-  buildDependentArrays();
 }
 
 //------------------------------------------------------------------------------
@@ -230,7 +285,8 @@ inline
 bool
 FieldList<Dimension, DataType>::
 haveField(const Field<Dimension, DataType>& field) const {
-  return std::find(this->begin(), this->end(), &field) != this->end();
+  auto fieldListItr = std::find(this->begin(), this->end(), &field);
+  return fieldListItr != this->end();
 }
 
 //------------------------------------------------------------------------------
@@ -254,14 +310,14 @@ FieldList<Dimension, DataType>::
 assignFields(const FieldList<Dimension, DataType>& fieldList) {
 #pragma omp critical (FieldList_assignFields)
   {
-    const auto n = this->size();
-    ENSURE(n == fieldList.size());
-    ENSURE(mNodeListPtrs == fieldList.mNodeListPtrs);
-    for (auto i = 0u; i < n; ++i) {
-      *mFieldPtrs[i] = *fieldList.mFieldPtrs[i];
+    auto otherFieldListItr = fieldList.begin();
+    for (auto fieldListItr = this->begin(); fieldListItr < this->end();
+         ++fieldListItr, ++otherFieldListItr) {
+      CHECK(otherFieldListItr < fieldList.end());
+      CHECK((*fieldListItr)->nodeListPtr() == (*otherFieldListItr)->nodeListPtr());
+      **fieldListItr = **otherFieldListItr;
     }
   } // OMP critical
-  buildDependentArrays();
 }
 
 //------------------------------------------------------------------------------
@@ -273,9 +329,11 @@ void
 FieldList<Dimension, DataType>::
 referenceFields(const FieldList<Dimension, DataType>& fieldList) {
   mFieldPtrs = fieldList.mFieldPtrs;
+  mFieldBasePtrs = fieldList.mFieldBasePtrs;
   mFieldCache.clear();
   mStorageType = FieldStorageType::ReferenceFields;
-  buildDependentArrays();
+  mNodeListPtrs = fieldList.mNodeListPtrs;
+  mNodeListIndexMap = fieldList.mNodeListIndexMap;
 }
 
 //------------------------------------------------------------------------------
@@ -292,20 +350,39 @@ FieldList<Dimension, DataType>::appendField(const Field<Dimension, DataType>& fi
     return;
   }
 
+  // Determine the order this Field should be in.
+  const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
+  auto orderItr = nlr.findInsertionPoint(&field,
+                                         begin(),
+                                         end());
+  const auto delta = std::distance(begin(), orderItr);
+
   // Insert the field.
   switch(storageType()) {
   case FieldStorageType::ReferenceFields:
-    mFieldPtrs.push_back(const_cast<Field<Dimension, DataType>*>(&field));
+    mFieldPtrs.insert(orderItr, const_cast<Field<Dimension, DataType>*>(&field));
+    mFieldBasePtrs.insert(mFieldBasePtrs.begin() + delta, const_cast<FieldBase<Dimension>*>(dynamic_cast<const FieldBase<Dimension>*>(&field)));
     break;
 
   case FieldStorageType::CopyFields:
-    mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(field));
-    mFieldPtrs.push_back(mFieldCache.back().get());
+    auto newField = std::make_shared<Field<Dimension, DataType>>(field);
+    mFieldCache.push_back(newField);
+    mFieldPtrs.insert(orderItr, newField.get());
+    mFieldBasePtrs.insert(mFieldBasePtrs.begin() + delta, newField.get());
   }
 
 //   registerWithField(*mFieldPtrs.back());
 
-  buildDependentArrays();
+  // We also update the set of NodeListPtrs in proper order.
+  NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
+  mFieldBasePtrs.clear();
+  mNodeListPtrs.clear();
+  for (auto fptr: mFieldPtrs) {
+    mFieldBasePtrs.push_back(fptr);
+    mNodeListPtrs.push_back(const_cast<NodeList<Dimension>*>(fptr->nodeListPtr()));
+  }
+  CHECK(mNodeListIndexMap.find(field.nodeListPtr()) == mNodeListIndexMap.end());
+  buildNodeListIndexMap();
 
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
@@ -331,6 +408,7 @@ FieldList<Dimension, DataType>::deleteField(const Field<Dimension, DataType>& fi
 
   const auto fieldPtrItr = std::find(this->begin(), this->end(), &field);
   CHECK(fieldPtrItr != this->end());
+  const size_t delta = std::distance(this->begin(), fieldPtrItr);
   auto fieldItr = mFieldCache.begin();
   switch(storageType()) {
   case FieldStorageType::CopyFields:
@@ -342,9 +420,15 @@ FieldList<Dimension, DataType>::deleteField(const Field<Dimension, DataType>& fi
     [[fallthrough]]; // C++17 for deliberate case fallthrough
   case FieldStorageType::ReferenceFields:
     mFieldPtrs.erase(fieldPtrItr);
+    mFieldBasePtrs.erase(mFieldBasePtrs.begin() + delta);
     break;
   }
-  buildDependentArrays();
+
+  // Remove the NodeList pointer.
+  auto nodeListItr = std::find(mNodeListPtrs.begin(), mNodeListPtrs.end(), field.nodeListPtr());
+  CHECK(nodeListItr != mNodeListPtrs.end());
+  mNodeListPtrs.erase(nodeListItr);
+  buildNodeListIndexMap();
 }
 
 //------------------------------------------------------------------------------
@@ -361,10 +445,32 @@ appendNewField(const typename Field<Dimension, DataType>::FieldName name,
 
   // Create the field in our cache.
   mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(name, nodeList, value));
-  auto* fieldPtr = mFieldCache.back().get();
-  mFieldPtrs.push_back(fieldPtr);
+  Field<Dimension, DataType>* fieldPtr = mFieldCache.back().get();
 
-  buildDependentArrays();
+  mFieldPtrs.push_back(fieldPtr);
+  NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
+  mFieldBasePtrs.clear();
+  mNodeListPtrs.clear();
+  for (auto fptr: mFieldPtrs) {
+    mFieldBasePtrs.push_back(fptr);
+    mNodeListPtrs.push_back(const_cast<NodeList<Dimension>*>(fptr->nodeListPtr()));
+  }
+
+  // // Determine the order this Field should be in.
+  // const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
+  // auto orderItr = nlr.findInsertionPoint(fieldPtr,
+  //                                            begin(),
+  //                                            end());
+  // const int delta = std::distance(begin(), orderItr);
+
+  // // Insert the field.
+  // mFieldPtrs.insert(orderItr, fieldPtr);
+  // mFieldBasePtrs.insert(mFieldBasePtrs.begin() + delta, fieldPtr);
+
+  // // We also update the set of NodeListPtrs in proper order.
+  // mNodeListPtrs.insert(mNodeListPtrs.begin() + delta, const_cast<NodeList<Dimension>*>(&nodeList));
+  CHECK(mNodeListIndexMap.find(fieldPtr->nodeListPtr()) == mNodeListIndexMap.end());
+  buildNodeListIndexMap();
 
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
@@ -376,14 +482,157 @@ appendNewField(const typename Field<Dimension, DataType>::FieldName name,
 }
 
 //------------------------------------------------------------------------------
+// Standard iterators.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::iterator
+FieldList<Dimension, DataType>::
+begin() {
+  return mFieldPtrs.begin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::iterator
+FieldList<Dimension, DataType>::
+end() {
+  return mFieldPtrs.end();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::reverse_iterator
+FieldList<Dimension, DataType>::
+rbegin() {
+  return mFieldPtrs.rbegin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::reverse_iterator
+FieldList<Dimension, DataType>::
+rend() {
+  return mFieldPtrs.rend();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::const_iterator
+FieldList<Dimension, DataType>::
+begin() const {
+  return mFieldPtrs.begin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::const_iterator
+FieldList<Dimension, DataType>::
+end() const {
+  return mFieldPtrs.end();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::const_reverse_iterator
+FieldList<Dimension, DataType>::
+rbegin() const {
+  return mFieldPtrs.rbegin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::const_reverse_iterator
+FieldList<Dimension, DataType>::
+rend() const {
+  return mFieldPtrs.rend();
+}
+
+//------------------------------------------------------------------------------
+// Standard iterators for FieldListBase.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::iterator
+FieldList<Dimension, DataType>::
+begin_base() {
+  return mFieldBasePtrs.begin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::iterator
+FieldList<Dimension, DataType>::
+end_base() {
+  return mFieldBasePtrs.end();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::reverse_iterator
+FieldList<Dimension, DataType>::
+rbegin_base() {
+  return mFieldBasePtrs.rbegin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::reverse_iterator
+FieldList<Dimension, DataType>::
+rend_base() {
+  return mFieldBasePtrs.rend();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::const_iterator
+FieldList<Dimension, DataType>::
+begin_base() const {
+  return mFieldBasePtrs.begin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::const_iterator
+FieldList<Dimension, DataType>::
+end_base() const {
+  return mFieldBasePtrs.end();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::const_reverse_iterator
+FieldList<Dimension, DataType>::
+rbegin_base() const {
+  return mFieldBasePtrs.rbegin();
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldListBase<Dimension>::const_reverse_iterator
+FieldList<Dimension, DataType>::
+rend_base() const {
+  return mFieldBasePtrs.rend();
+}
+
+//------------------------------------------------------------------------------
 // Index operator.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-typename FieldList<Dimension, DataType>::value_type
+typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
 operator[](const size_t index) const {
-  REQUIRE2(index < this->size(), "FieldList index ERROR: out of bounds " << index << " !< " << this->size());
+  REQUIRE2(index < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << index << " !< " << mFieldPtrs.size());
+  return mFieldPtrs[index];
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::ElementType
+FieldList<Dimension, DataType>::
+operator[](const size_t index) {
+  REQUIRE2(index < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << index << " !< " << mFieldPtrs.size());
   return mFieldPtrs[index];
 }
 
@@ -392,9 +641,17 @@ operator[](const size_t index) const {
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-typename FieldList<Dimension, DataType>::value_type
+typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
 at(const size_t index) const {
+  return (*this)[index];
+}
+
+template<typename Dimension, typename DataType>
+inline
+typename FieldList<Dimension, DataType>::ElementType
+FieldList<Dimension, DataType>::
+at(const size_t index) {
   return (*this)[index];
 }
 
@@ -443,6 +700,32 @@ const DataType&
 FieldList<Dimension, DataType>::
 operator()(const NodeIteratorBase<Dimension>& itr) const {
   return this->operator()(itr.fieldID(), itr.nodeID());
+}
+
+//------------------------------------------------------------------------------
+// Provide a more primitive access to Field elements, based on the index of the Field
+// and the node index within that field.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType&
+FieldList<Dimension, DataType>::
+operator()(const size_t fieldIndex,
+           const size_t nodeIndex) {
+  REQUIRE2(fieldIndex < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << fieldIndex << " !< " << mFieldPtrs.size());
+  REQUIRE2(nodeIndex < mFieldPtrs[fieldIndex]->size(), "FieldList node index ERROR: out of bounds " << nodeIndex << " !< " << mFieldPtrs[fieldIndex]->size());
+  return mFieldPtrs[fieldIndex]->operator()(nodeIndex);
+}
+
+template<typename Dimension, typename DataType>
+inline
+const DataType&
+FieldList<Dimension, DataType>::
+operator()(const size_t fieldIndex,
+           const size_t nodeIndex) const {
+  REQUIRE2(fieldIndex < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << fieldIndex << " !< " << mFieldPtrs.size());
+  REQUIRE2(nodeIndex < mFieldPtrs[fieldIndex]->size(), "FieldList node index ERROR: out of bounds " << nodeIndex << " !< " << mFieldPtrs[fieldIndex]->size());
+  return mFieldPtrs[fieldIndex]->operator()(nodeIndex);
 }
 
 //------------------------------------------------------------------------------
@@ -605,7 +888,7 @@ inline
 MasterNodeIterator<Dimension>
 FieldList<Dimension, DataType>::masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && masterLists[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -639,7 +922,7 @@ inline
 CoarseNodeIterator<Dimension>
 FieldList<Dimension, DataType>::coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && coarseNeighbors[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -673,7 +956,7 @@ inline
 RefineNodeIterator<Dimension>
 FieldList<Dimension, DataType>::refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && refineNeighbors[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -779,6 +1062,54 @@ FieldList<Dimension, DataType>::Zero() {
 }
 
 //------------------------------------------------------------------------------
+// Apply a minimum data value.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::applyMin(const DataType& dataMin) {
+  for (auto fieldItr = begin(); fieldItr < end(); ++fieldItr) {
+    (*fieldItr)->applyMin(dataMin);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Apply a maximum data value.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::applyMax(const DataType& dataMax) {
+  for (auto fieldItr = begin(); fieldItr < end(); ++fieldItr) {
+    (*fieldItr)->applyMax(dataMax);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Apply a (double) minimum data value.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::applyScalarMin(const double dataMin) {
+  for (auto fieldItr = begin(); fieldItr < end(); ++fieldItr) {
+    (*fieldItr)->applyScalarMin(dataMin);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Apply a (double) maximum data value.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::applyScalarMax(const double dataMax) {
+  for (auto fieldItr = begin(); fieldItr < end(); ++fieldItr) {
+    (*fieldItr)->applyScalarMax(dataMax);
+  }
+}
+
+//------------------------------------------------------------------------------
 // Add two FieldLists.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -788,13 +1119,9 @@ FieldList<Dimension, DataType>::operator+(const FieldList<Dimension, DataType>& 
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
-  {
-    const auto n = this->numFields();
-    REQUIRE(n == rhs.numFields());
-    for (auto i = 0u; i < n; ++i) {
-      REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
-    }
-  }
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != (int)numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
   END_CONTRACT_SCOPE
 
   FieldList<Dimension, DataType> result(*this);
@@ -813,19 +1140,59 @@ FieldList<Dimension, DataType>::operator-(const FieldList<Dimension, DataType>& 
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
-  {
-    const auto n = this->numFields();
-    REQUIRE(n == rhs.numFields());
-    for (auto i = 0u; i < n; ++i) {
-      REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
-    }
-  }
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != (int)numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
   END_CONTRACT_SCOPE
 
   FieldList<Dimension, DataType> result(*this);
   result.copyFields();
   result -= rhs;
   return result;
+}
+
+//------------------------------------------------------------------------------
+// Add two FieldLists in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator+=(const FieldList<Dimension, DataType>& rhs) {
+
+  // Pre-conditions.
+  BEGIN_CONTRACT_SCOPE
+  REQUIRE(numFields() == rhs.numFields());
+  for (auto i = 0u; i != numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
+  END_CONTRACT_SCOPE
+
+  for (auto i = 0u; i < numFields(); ++i) {
+    CHECK2((*this)[i]->nodeListPtr() == rhs[i]->nodeListPtr(), (*this)[i]->nodeListPtr()->name() << " != " << rhs[i]->nodeListPtr()->name());
+    *((*this)[i]) += *(rhs[i]);
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Subtract a FieldList from another in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator-=(const FieldList<Dimension, DataType>& rhs) {
+
+  // Pre-conditions.
+  BEGIN_CONTRACT_SCOPE
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != (int)numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
+  END_CONTRACT_SCOPE
+
+  for (auto i = 0u; i < numFields(); ++i) {
+    CHECK2((*this)[i]->nodeListPtr() == rhs[i]->nodeListPtr(), (*this)[i]->nodeListPtr()->name() << " != " << rhs[i]->nodeListPtr()->name());
+    *((*this)[i]) -= *(rhs[i]);
+  }
+  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -852,6 +1219,61 @@ FieldList<Dimension, DataType>::operator-(const DataType& rhs) const {
   result.copyFields();
   result -= rhs;
   return result;
+}
+
+//------------------------------------------------------------------------------
+// Add a single value to the Field in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator+=(const DataType& rhs) {
+  for (auto i = 0u; i < numFields(); ++i) {
+    *((*this)[i]) += rhs;
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Subtract a single value from the FieldList in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator-=(const DataType& rhs) {
+  for (auto i = 0u; i < numFields(); ++i) {
+    *((*this)[i]) -= rhs;
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Multiply this FieldList by a Scalar FieldList in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::
+operator*=(const FieldList<Dimension, typename Dimension::Scalar>& rhs) {
+  REQUIRE(this->numFields() == rhs.numFields());
+  for (auto i = 0u; i < numFields(); ++i) {
+    CHECK2((*this)[i]->nodeListPtr() == rhs[i]->nodeListPtr(), (*this)[i]->nodeListPtr()->name() << " != " << rhs[i]->nodeListPtr()->name());
+    *((*this)[i]) *= *(rhs[i]);
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Multiply this FieldList by a Scalar in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator*=(const Scalar& rhs) {
+  for (auto i = 0u; i < numFields(); ++i) {
+    *((*this)[i]) *= rhs;
+  }
+  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -884,6 +1306,374 @@ FieldList<Dimension, DataType>::operator/(const Scalar& rhs) const {
 }
 
 //------------------------------------------------------------------------------
+// Divide this FieldList by a Scalar FieldList in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::
+operator/=(const FieldList<Dimension, typename Dimension::Scalar>& rhs) {
+  REQUIRE(this->numFields() == rhs.numFields());
+  for (auto i = 0u; i < numFields(); ++i) {
+    CHECK2((*this)[i]->nodeListPtr() == rhs[i]->nodeListPtr(), (*this)[i]->nodeListPtr()->name() << " != " << rhs[i]->nodeListPtr()->name());
+    *((*this)[i]) /= *(rhs[i]);
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Divide this FieldList by a Scalar in place.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>&
+FieldList<Dimension, DataType>::operator/=(const typename Dimension::Scalar& rhs) {
+  REQUIRE(rhs != 0.0);
+  for (auto i = 0u; i < numFields(); ++i) {
+    *((*this)[i]) /= rhs;
+  }
+  return *this;
+}
+
+//------------------------------------------------------------------------------
+// Sum the field elements.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+sumElements() const {
+  return allReduce(this->localSumElements(), SPHERAL_OP_SUM);
+}
+
+//------------------------------------------------------------------------------
+// Find the minimum.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+min() const {
+  return allReduce(this->localMin(), SPHERAL_OP_MIN);
+}
+
+//------------------------------------------------------------------------------
+// Find the maximum.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+max() const {
+  return allReduce(this->localMax(), SPHERAL_OP_MAX);
+}
+
+//------------------------------------------------------------------------------
+// Sum the field elements.
+// LOCAL to processor!
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+localSumElements() const {
+  auto result = DataTypeTraits<DataType>::zero();
+  for (auto itr = begin(); itr < end(); ++itr) result += (*itr)->localSumElements();
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Find the minimum.
+// LOCAL to processor!
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+localMin() const {
+  auto result = std::numeric_limits<DataType>::max();
+  for (auto itr = begin(); itr != end(); ++itr) result = std::min(result, (*itr)->localMin());
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Find the maximum.
+// LOCAL to processor!
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+DataType
+FieldList<Dimension, DataType>::
+localMax() const {
+  auto result = std::numeric_limits<DataType>::lowest();
+  for (auto itr = begin(); itr < end(); ++itr) result = std::max(result, (*itr)->localMax());
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator==
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator==(const FieldList<Dimension, DataType>& rhs) const {
+
+  // Pre-conditions.
+  BEGIN_CONTRACT_SCOPE
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != (int)numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
+  END_CONTRACT_SCOPE
+
+  bool result = true;
+  int i = 0;
+  while (result && i != (int)numFields()) {
+    result = result && (*(mFieldPtrs[i]) == *(rhs[i]));
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator!=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator!=(const FieldList<Dimension, DataType>& rhs) const {
+  return !(operator==(rhs));
+}
+
+//------------------------------------------------------------------------------
+// operator>
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator>(const FieldList<Dimension, DataType>& rhs) const {
+
+  // Pre-conditions.
+  BEGIN_CONTRACT_SCOPE
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
+  END_CONTRACT_SCOPE
+
+  bool result = true;
+  int i = 0;
+  while (result && i != numFields()) {
+    result = result && (*(mFieldPtrs[i]) > *(rhs[i]));
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator<
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator<(const FieldList<Dimension, DataType>& rhs) const {
+
+  // Pre-conditions.
+  BEGIN_CONTRACT_SCOPE
+  REQUIRE(numFields() == rhs.numFields());
+  for (int i = 0; i != numFields(); ++i) 
+    REQUIRE(mFieldPtrs[i]->nodeListPtr() == rhs[i]->nodeListPtr());
+  END_CONTRACT_SCOPE
+
+  bool result = true;
+  int i = 0;
+  while (result && i != numFields()) {
+    result = result && (*(mFieldPtrs[i]) < *(rhs[i]));
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator>=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator>=(const FieldList<Dimension, DataType>& rhs) const {
+  return operator>(rhs) || operator==(rhs);
+}
+
+//------------------------------------------------------------------------------
+// operator<=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator<=(const FieldList<Dimension, DataType>& rhs) const {
+  return operator<(rhs) || operator==(rhs);
+}
+
+//------------------------------------------------------------------------------
+// operator==
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator==(const DataType& rhs) const {
+
+  bool result = true;
+  int i = 0;
+  while (result && i != (int)numFields()) {
+    result = result && (*(mFieldPtrs[i]) == rhs);
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator!=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator!=(const DataType& rhs) const {
+  return !(operator==(rhs));
+}
+
+//------------------------------------------------------------------------------
+// operator>
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator>(const DataType& rhs) const {
+
+  bool result = true;
+  int i = 0;
+  while (result && i != (int)numFields()) {
+    result = result && (*(mFieldPtrs[i]) > rhs);
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator<
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator<(const DataType& rhs) const {
+
+  bool result = true;
+  int i = 0;
+  while (result && i != (int)numFields()) {
+    result = result && (*(mFieldPtrs[i]) < rhs);
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// operator>=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator>=(const DataType& rhs) const {
+  return operator>(rhs) || operator==(rhs);
+}
+
+//------------------------------------------------------------------------------
+// operator<=
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::
+operator<=(const DataType& rhs) const {
+  return operator<(rhs) || operator==(rhs);
+}
+
+//------------------------------------------------------------------------------
+// Return the number of Fields stored in this Field List.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+size_t 
+FieldList<Dimension, DataType>::numFields() const {
+  return mFieldPtrs.size();
+}
+
+template<typename Dimension, typename DataType>
+inline
+size_t 
+FieldList<Dimension, DataType>::size() const {
+  return numFields();
+}
+
+template<typename Dimension, typename DataType>
+inline
+bool
+FieldList<Dimension, DataType>::empty() const {
+  return mFieldPtrs.empty();
+}
+
+template<typename Dimension, typename DataType>
+inline
+size_t 
+FieldList<Dimension, DataType>::numElements() const {
+  size_t numberOfNodes = 0;
+  for (auto iter = begin(); iter != end(); ++iter) {
+    numberOfNodes += (*iter)->nodeList().numNodes();
+  }
+  return numberOfNodes;
+}
+
+template<typename Dimension, typename DataType>
+inline
+size_t 
+FieldList<Dimension, DataType>::numInternalElements() const {
+  size_t numberOfNodes = 0;
+  for (auto iter = begin(); iter != end(); ++iter) {
+    numberOfNodes += (*iter)->nodeList().numInternalNodes();
+  }
+  return numberOfNodes;
+}
+
+template<typename Dimension, typename DataType>
+inline
+size_t 
+FieldList<Dimension, DataType>::numGhostElements() const {
+  size_t numberOfNodes = 0;
+  for (auto iter = begin(); iter != end(); ++iter) {
+    numberOfNodes += (*iter)->nodeList().numGhostNodes();
+  }
+  return numberOfNodes;
+}
+
+//------------------------------------------------------------------------------
+// Return the set of NodeList pointers.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+const std::vector<NodeList<Dimension>*>&
+FieldList<Dimension, DataType>::
+nodeListPtrs() const {
+  return mNodeListPtrs;
+}
+
+//------------------------------------------------------------------------------
 // All internal values.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -891,12 +1681,12 @@ inline
 std::vector<DataType>
 FieldList<Dimension, DataType>::
 internalValues() const {
-  const auto ntot = this->numInternalElements();
+  const size_t ntot = this->numInternalElements();
   std::vector<DataType> result(ntot);
-  size_t offset = 0u;
-  for (auto* fptr: mFieldPtrs) {
-    const auto n = fptr->numInternalElements();
-    std::copy(fptr->begin(), fptr->begin() + n, result.begin() + offset);
+  size_t offset = 0;
+  for (auto itr = this->begin(); itr != this->end(); ++itr) {
+    const auto n = (*itr)->numInternalElements();
+    std::copy((*itr)->begin(), (*itr)->begin() + n, result.begin() + offset);
     offset += n;
   }
   CHECK(offset == ntot);
@@ -914,9 +1704,9 @@ ghostValues() const {
   const size_t ntot = this->numGhostElements();
   std::vector<DataType> result(ntot);
   size_t offset = 0;
-  for (auto* fptr: mFieldPtrs) {
-    const auto n = fptr->numGhostElements();
-    std::copy(fptr->begin(), fptr->begin() + n, result.begin() + offset);
+  for (auto itr = this->begin(); itr != this->end(); ++itr) {
+    const auto n = (*itr)->numGhostElements();
+    std::copy((*itr)->begin(), (*itr)->begin() + n, result.begin() + offset);
     offset += n;
   }
   CHECK(offset == ntot);
@@ -934,9 +1724,9 @@ allValues() const {
   const size_t ntot = this->numElements();
   std::vector<DataType> result(ntot);
   size_t offset = 0;
-  for (auto* fptr: mFieldPtrs) {
-    const auto n = fptr->numElements();
-    std::copy(fptr->begin(), fptr->begin() + n, result.begin() + offset);
+  for (auto itr = this->begin(); itr != this->end(); ++itr) {
+    const auto n = (*itr)->numElements();
+    std::copy((*itr)->begin(), (*itr)->begin() + n, result.begin() + offset);
     offset += n;
   }
   CHECK(offset == ntot);
@@ -944,19 +1734,14 @@ allValues() const {
 }
 
 //------------------------------------------------------------------------------
-// Build all the dependent FieldList internal state assuming mFieldPtrs and
-// mFieldCache are provided.
+// Internal method to build the NodeListIndexMap from scratch.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
 void
 FieldList<Dimension, DataType>::
-buildDependentArrays() {
-  NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
-  mFieldBasePtrs.clear();
-  mFieldSpanPtrs.clear();
-  mNodeListPtrs.clear();
-  mNodeListIndexMap.clear();
+buildNodeListIndexMap() {
+  mNodeListIndexMap = HashMapType();
   int i = 0;
   for (auto* fptr: mFieldPtrs) {
     mFieldBasePtrs.push_back(fptr);
@@ -1062,17 +1847,6 @@ threadReduce() const {
   }
 }
 
-//------------------------------------------------------------------------------
-// Extract a view
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-typename FieldList<Dimension, DataType>::ViewType
-FieldList<Dimension, DataType>::
-view() {
-  return dynamic_cast<FieldSpanList<Dimension, DataType>&>(*this);
-}
-
 //****************************** Global Functions ******************************
 
 //------------------------------------------------------------------------------
@@ -1120,6 +1894,85 @@ operator*(const DataType& lhs,
     result.appendField(lhs * (*(rhs[i])));
   }
   return result;
+}
+
+//------------------------------------------------------------------------------
+// View functions.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView() {
+  auto func = [](
+      const chai::PointerRecord *,
+      chai::Action,
+      chai::ExecutionSpace) {};
+
+  return this->toView(func, func);
+}
+
+template<typename Dimension, typename DataType>
+template<typename FL>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView(FL&& extension) {
+  auto func = [](
+      const chai::PointerRecord *,
+      chai::Action,
+      chai::ExecutionSpace) {};
+
+  return this->toView(std::forward<FL>(extension), func);
+}
+
+template<typename Dimension, typename DataType>
+template<typename FL, typename F>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView(FL&& extension, F&& field_extension) {
+  auto callback = getFieldListCallback(std::forward<FL>(extension));
+
+  if (mFieldViews.size() == 0 && !mFieldViews.getPointer(chai::CPU, false)) {
+    mFieldViews.allocate(size(), chai::CPU, callback);
+  } else {
+    mFieldViews.setUserCallback(callback);
+    mFieldViews.reallocate(size());
+  }
+
+  for (size_t i = 0; i < size(); ++i) {
+    mFieldViews[i] = mFieldPtrs[i]->toView(std::forward<F>(field_extension));
+  }
+
+  mFieldViews.registerTouch(chai::CPU);
+
+  return ViewType(mFieldViews);
+}
+
+template<typename Dimension, typename DataType>
+template<typename F>
+inline
+auto FieldList<Dimension, DataType>::getFieldListCallback(F callback) {
+  return [callback](
+    const chai::PointerRecord * record,
+    chai::Action action,
+    chai::ExecutionSpace space) {
+      if (action == chai::ACTION_MOVE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : MOVED to the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : MOVED to the GPU";
+      } else if (action == chai::ACTION_ALLOC) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : ALLOC on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : ALLOC on the GPU";
+      } else if (action == chai::ACTION_FREE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : FREE on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : FREE on the GPU";
+      }
+      callback(record, action, space);
+    };
 }
 
 // //------------------------------------------------------------------------------

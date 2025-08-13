@@ -66,7 +66,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
-    depends_on('axom@0.9.0 +hdf5 -lua -examples -python -fortran cxxflags="-std=c++20"', type='build')
+    depends_on('axom@0.9.0 +hdf5 -lua -examples -python -fortran', type='build')
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 

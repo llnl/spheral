@@ -14,15 +14,6 @@
 #include "pointDistances.hh"
 #include "lineSegmentIntersections.hh"
 
-// #include "boost/geometry.hpp"
-// #include "boost/geometry/geometries/point_xy.hpp"
-// #include "boost/geometry/geometries/polygon.hpp"
-// #include <boost/geometry/geometries/adapted/boost_tuple.hpp>
-// BOOST_GEOMETRY_REGISTER_BOOST_TUPLE_CS(cs::cartesian)
-
-// #include <boost/geometry/geometries/adapted/c_array.hpp>
-// BOOST_GEOMETRY_REGISTER_C_ARRAY_CS(cs::cartesian)
-
 #include <limits>
 using std::vector;
 using std::string;
@@ -34,59 +25,6 @@ using std::endl;
 using std::min;
 using std::max;
 using std::abs;
-
-//------------------------------------------------------------------------------
-// GeomVector<2> -> Boost.Geometry
-//------------------------------------------------------------------------------
-// namespace boost
-// {
-//   namespace geometry
-//   {
-//     namespace traits
-//     {
-//       // Adapt Spheral::GeomVector<2> to Boost.Geometry
-
-//       template<> struct tag<Spheral::GeomVector<2>>
-//       { typedef point_tag type; };
-
-//       template<> struct coordinate_type<Spheral::GeomVector<2>>
-//       { typedef double type; };
-
-//       template<> struct coordinate_system<Spheral::GeomVector<2>>
-//       { typedef cs::cartesian type; };
-
-//       template<> struct dimension<Spheral::GeomVector<2>> : boost::mpl::int_<2> {};
-
-//       template<>
-//       struct access<Spheral::GeomVector<2>, 0>
-//       {
-//         static Spheral::GeomVector<2>::double get(Spheral::GeomVector<2> const& p)
-//         {
-//           return p.x();
-//         }
-
-//         static void set(Spheral::GeomVector<2>& p, Spheral::GeomVector<2>::double const& value)
-//         {
-//           p.x(value);
-//         }
-//       };
-
-//       template<>
-//       struct access<Spheral::GeomVector<2>, 1>
-//       {
-//         static Spheral::GeomVector<2>::double get(Spheral::GeomVector<2> const& p)
-//         {
-//           return p.y();
-//         }
-
-//         static void set(Spheral::GeomVector<2>& p, Spheral::GeomVector<2>::double const& value)
-//         {
-//           p.y(value);
-//         }
-//       };
-//     }
-//   }
-// } // namespace boost::geometry::traits
 
 namespace Spheral {
 
@@ -275,9 +213,6 @@ bool pointInPolygon(const Dim<3>::Vector& p,
                     const bool countBoundary,
                     const double tol) {
 
-  // typedef boost::tuple<double, double> BGPoint;
-  // typedef boost::geometry::model::polygon<BGPoint> BGPolygon;
-
   // Prerequisites.
   const auto npts = ipoints.size();
   unsigned i, j, ik, jk;
@@ -332,12 +267,6 @@ bool pointInPolygon(const Dim<3>::Vector& p,
 
     // x plane -- use (y,z) coordinates.
     if (std::abs(normal.x()) > 0.9*nmax) {
-      // vector<BGPoint> points;
-      // for (i = 0; i != npts; ++i) points.push_back(BGPoint(vertices[ipoints[i]].y(), vertices[ipoints[i]].z()));
-      // points.push_back(points[0]);
-      // BGPolygon poly;
-      // boost::geometry::append(poly, points);
-      // result = boost::geometry::within(BGPoint(py, pz), poly);
       for (ik = 0, jk = npts - 1; ik < npts; jk = ik++) {
         i = ipoints[ik];
         j = ipoints[jk];
@@ -348,12 +277,6 @@ bool pointInPolygon(const Dim<3>::Vector& p,
 
     // y plane -- use (z,x) coordinates.
     } else if (std::abs(normal.y()) > 0.9*nmax) {
-      // vector<BGPoint> points;
-      // for (i = 0; i != npts; ++i) points.push_back(BGPoint(vertices[ipoints[i]].z(), vertices[ipoints[i]].x()));
-      // points.push_back(points[0]);
-      // BGPolygon poly;
-      // boost::geometry::append(poly, points);
-      // result = boost::geometry::within(BGPoint(pz, px), poly);
       for (ik = 0, jk = npts - 1; ik < npts; jk = ik++) {
         i = ipoints[ik];
         j = ipoints[jk];
@@ -364,12 +287,6 @@ bool pointInPolygon(const Dim<3>::Vector& p,
 
     // z plane -- use (x,y) coordinate.
     } else {
-      // vector<BGPoint> points;
-      // for (i = 0; i != npts; ++i) points.push_back(BGPoint(vertices[ipoints[i]].x(), vertices[ipoints[i]].y()));
-      // points.push_back(points[0]);
-      // BGPolygon poly;
-      // boost::geometry::append(poly, points);
-      // result = boost::geometry::within(BGPoint(px, py), poly);
       for (ik = 0, jk = npts - 1; ik < npts; jk = ik++) {
         i = ipoints[ik];
         j = ipoints[jk];

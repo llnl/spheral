@@ -63,6 +63,7 @@ update(const KeyType& key,
   const auto allkeys = derivs.keys();
   KeyType dfKey, dfNodeListKey;
   auto numDeltaFields = 0u;
+  CONTRACT_VAR(numDeltaFields);
   for (const auto& dkey: allkeys) {
     StateBase<Dimension>::splitFieldKey(dkey, dfKey, dfNodeListKey);
     if (dfNodeListKey == nodeListKey and

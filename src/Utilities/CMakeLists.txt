@@ -65,6 +65,7 @@ set(Utilities_headers
     FieldDataTypeTraits.hh
     Functors.hh
     GeometricUtilities.hh
+    Hashes.hh
     KeyTraits.hh
     NodeCoupling.hh
     NodeListHashMap.hh
@@ -91,11 +92,9 @@ set(Utilities_headers
     computeConvexHull.hh
     computeShepardsInterpolation.hh
     erff.hh
-    fakestl.hh
     globalBoundingVolumes.hh
     globalNodeIDs.hh
     globalNodeIDsInline.hh
-    hashes.hh
     initializeTau.hh
     integrateThroughMeshAlongSegment.hh
     intpow2.hh

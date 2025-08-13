@@ -33,7 +33,7 @@ public:
   virtual ~PyFileIO();
 
   // Check if the specified path is in the file.
-  virtual bool pathExists(const std::string) const override { VERIFY2(false, "pathExists not overridden"); }
+  virtual bool pathExists(const std::string) const override { VERIFY2(false, "pathExists not overridden"); return false; }
 
   //**************************************************************************
   // Descendent python objects can optionally override these disambiguated methods

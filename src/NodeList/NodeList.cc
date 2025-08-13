@@ -478,6 +478,7 @@ deleteNodes(const vector<size_t>& nodeIDs) {
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
   for (auto* fieldPtr: mFieldBaseList) {
+    CONTRACT_VAR(fieldPtr) ;
     ENSURE(fieldPtr->size() == mNumNodes);
   }
   END_CONTRACT_SCOPE

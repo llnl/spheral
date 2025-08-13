@@ -1939,7 +1939,6 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
       }
       radiusNodes = allReduce(radiusNodes, SPHERAL_OP_MAX);
       radiusSample = allReduce(radiusSample, SPHERAL_OP_MAX);
-      const Vector delta = 0.001*(xmaxSample - xminSample);
       radiusNodes *= 1.001;
       radiusSample *= 1.001;
     }

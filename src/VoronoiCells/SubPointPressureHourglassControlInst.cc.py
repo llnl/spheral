@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "VoronoiCells/SubPointPressureHourglassControl.cc"
 #include "Geometry/Dimension.hh"

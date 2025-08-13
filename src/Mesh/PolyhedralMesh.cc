@@ -13,8 +13,6 @@
 #include "Utilities/timingUtilities.hh"
 #include "Distributed/Communicator.hh"
 
-using namespace boost;
-
 #include <limits>
 #include <set>
 #include <sstream>

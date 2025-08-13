@@ -1,24 +1,20 @@
 from PYB11Generator import *
 from FieldListBase import *
-from FieldSpanList import FieldSpanList
 
 #-------------------------------------------------------------------------------
 # FieldList
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralFieldList")
-class FieldList(FieldListBase,
-                FieldSpanList):
+@PYB11module("SpheralField")
+class FieldList(FieldListBase):
 
     PYB11typedefs = """
-    using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
+    using FieldListType =  FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
+    using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
-    using ViewType = typename FieldListType::ViewType;
 """
 
     def pyinit(self):
@@ -123,6 +119,11 @@ class FieldList(FieldListBase,
         return "void"
 
     @PYB11const
+    def size(self):
+        "Number of Fields"
+        return "size_t"
+
+    @PYB11const
     @PYB11returnpolicy("reference_internal")
     def nodeListPtrs(self):
         "The NodeLists for Fields in this FieldList"
@@ -146,9 +147,6 @@ class FieldList(FieldListBase,
         "Return a python list (as a copy) of all values in the FieldList"
         return "py::list"
 
-    def view(self):
-        return "ViewType"
-
     #...........................................................................
     # Comparators
     def __eq__(self):
@@ -167,10 +165,10 @@ class FieldList(FieldListBase,
 
     #...........................................................................
     # Sequence methods
-    # @PYB11cppname("size")
-    # @PYB11const
-    # def __len__(self):
-    #     return "size_t"
+    @PYB11cppname("size")
+    @PYB11const
+    def __len__(self):
+        return "size_t"
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference")
@@ -183,12 +181,16 @@ class FieldList(FieldListBase,
     def __iter__(self):
         "Python iteration through a FieldList."
 
-    # def __call__(self,
-    #              fieldIndex = "const size_t",
-    #              nodeIndex = "const size_t"):
-    #     "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
-    #     return "%(Value)s&"
+    def __call__(self,
+                 fieldIndex = "const size_t",
+                 nodeIndex = "const size_t"):
+        "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
+        return "%(Value)s&"
 
     #...........................................................................
     # Properties
     storageType = PYB11property("FieldStorageType", doc="The method whereby Fields are stored/referenced by this FieldList")
+    numFields = PYB11property("size_t", doc="Number of Fields")
+    numElements = PYB11property("size_t", doc="Number of elements in all the associated Fields")
+    numInternalElements = PYB11property("size_t", doc="Number of internal elements in all the associated Fields")
+    numGhostElements = PYB11property("size_t", doc="Number of ghost elements in all the associated Fields")

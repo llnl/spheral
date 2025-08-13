@@ -3,7 +3,7 @@
 
 class OffloadTest : public ::testing::Test {};
 
-// Setting up G Test for Fiedl
+// Setting up G Test for Field
 TYPED_TEST_SUITE_P(OffloadTypedTest);
 template <typename T> class OffloadTypedTest : public OffloadTest {};
 
@@ -34,7 +34,7 @@ public:
 /**
  * Testing execution of a RAJA kernel for Host & any compiled offload
  * platforms.
-*/
+ */
 GPU_TYPED_TEST_P(OffloadTypedTest, RajaLoop) {
   using WORK_EXEC_POLICY = typename camp::at<TypeParam, camp::num<0>>::type;
   using WORK_RESOURCE = typename camp::at<TypeParam, camp::num<1>>::type;
@@ -50,10 +50,9 @@ GPU_TYPED_TEST_P(OffloadTypedTest, RajaLoop) {
 
   resource.memcpy(o_data, h_data.data(), TEST_SIZE * sizeof(T));
 
-  RAJA::forall<WORK_EXEC_POLICY>(resource, TRS_UINT(0, TEST_SIZE),
-                                 [=] SPHERAL_HOST_DEVICE(int i) {
-                                   o_data[i] += T(i+1);
-                                 });
+  RAJA::forall<WORK_EXEC_POLICY>(
+      resource, TRS_UINT(0, TEST_SIZE),
+      [=] SPHERAL_HOST_DEVICE(int i) { o_data[i] += T(i + 1); });
 
   resource.memcpy(h_data.data(), o_data, TEST_SIZE * sizeof(T));
 
@@ -66,4 +65,5 @@ GPU_TYPED_TEST_P(OffloadTypedTest, RajaLoop) {
 
 REGISTER_TYPED_TEST_SUITE_P(OffloadTypedTest, RajaLoop);
 
-INSTANTIATE_TYPED_TEST_SUITE_P(Offload, OffloadTypedTest, EXEC_TYPES, );
+INSTANTIATE_TYPED_TEST_SUITE_P(Offload, OffloadTypedTest,
+                               EXEC_RESOURCE_TYPES, );

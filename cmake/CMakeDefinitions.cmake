@@ -78,8 +78,8 @@ if (ENABLE_3D)
   add_definitions(-DSPHERAL3D=1)
 endif()
 
-if (ENABLE_TIMER)
-  add_definitions(-DTIMER=1)
+if (SPHERAL_ENABLE_TIMERS)
+  add_definitions(-DSPHERAL_ENABLE_TIMERS=1)
 endif()
 
 if (ENABLE_MPI)

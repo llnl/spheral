@@ -594,7 +594,6 @@ FacetedVolumeBoundary<Dimension>::updateViolationNodes(NodeList<Dimension>& node
   vector<unsigned> potentialFacets;
   vector<Vector> intersections;
   Vector newPos, newVel;
-  SymTensor newH;
   bool inViolation;
   int iter = 0;
   int minFacet;

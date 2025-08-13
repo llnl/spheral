@@ -14,6 +14,8 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+
+#include "config.hh"
 #include "Geometry/Dimension.hh"
 #include "Geometry/PolyClipperUtilities.hh"
 #include "Distributed/RegisterMPIDataTypes.hh"
@@ -75,7 +77,7 @@ struct DataTypeTraits<char> {
   typedef char ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const ElementType&) { return 1; }
-  static int zero() { return '\0'; }
+  SPHERAL_HOST_DEVICE static int zero() { return '\0'; }
 #ifdef USE_MPI
   static MPI_Datatype MpiDataType() { return MPI_CHAR; }
 #endif
@@ -95,7 +97,7 @@ struct DataTypeTraits<int> {
   typedef int ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const ElementType&) { return 1; }
-  static int zero() { return 0; }
+  SPHERAL_HOST_DEVICE static int zero() { return 0; }
 #ifdef USE_MPI
   static MPI_Datatype MpiDataType() { return MPI_INT; }
 #endif
@@ -141,7 +143,7 @@ struct DataTypeTraits<uint64_t> {
   typedef uint64_t ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const ElementType&) { return 1; }
-  static uint64_t zero() { return 0ULL; }
+  SPHERAL_HOST_DEVICE static uint64_t zero() { return 0ULL; }
 #ifdef USE_MPI
 #ifdef MPI_UINT64_T
   static MPI_Datatype MpiDataType() { return MPI_UINT64_T; }
@@ -159,7 +161,7 @@ struct DataTypeTraits<float> {
   typedef float ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const ElementType&) { return 1; }
-  static float zero() { return 0.0; }
+  SPHERAL_HOST_DEVICE static float zero() { return 0.0; }
 #ifdef USE_MPI
   static MPI_Datatype MpiDataType() { return MPI_FLOAT; }
 #endif
@@ -173,7 +175,7 @@ struct DataTypeTraits<double> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const ElementType&) { return 1; }
-  static double zero() { return 0.0; }
+  SPHERAL_HOST_DEVICE static double zero() { return 0.0; }
 #ifdef USE_MPI
   static MPI_Datatype MpiDataType() { return MPI_DOUBLE; }
 #endif

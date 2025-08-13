@@ -14,9 +14,10 @@ cur_dir = os.path.dirname(__file__)
 # Set current directory to install prefix
 if (os.path.islink(__file__)):
     cur_dir = os.path.join(cur_dir, os.readlink(__file__))
-install_prefix = os.path.join(cur_dir, "..")
-ats_exe = os.path.join(install_prefix, ".venv/bin/ats")
-spheral_exe = os.path.join(install_prefix, "spheral")
+
+spheral_prefix = sys.executable.split(".venv")[0]
+ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
+spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 
 # Benchmark file directory
 # This is passed into both ATS and Caliper
