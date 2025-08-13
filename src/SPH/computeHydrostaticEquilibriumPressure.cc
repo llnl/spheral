@@ -55,7 +55,7 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
   CHECK(mass.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
-  CHECK(position.numGhostNodes() == 0);
+  CHECK(position.numGhostElements() == 0);
 
   // Zero out the result.
   pressure = 0.0;
@@ -64,17 +64,17 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
   const ConnectivityMap<Dim<3> >& connectivityMap = db.connectivityMap();
 
   // Get the global IDs for all nodes.
-  const FieldList<Dim<3>, int> globalIDs = globalNodeIDs<Dim<3>, DataBase<Dim<3> >::ConstFluidNodeListIterator>(db.fluidNodeListBegin(), db.fluidNodeListEnd());
+  const FieldList<Dim<3>, size_t> globalIDs = globalNodeIDs<Dim<3>, DataBase<Dim<3> >::ConstFluidNodeListIterator>(db.fluidNodeListBegin(), db.fluidNodeListEnd());
 
   // Build the sparse matrix that represents the full pressure gradient operator.
   // We have one of these matrix operators for each dimension, hence the 3 vector.
-  const unsigned n = pressure.numInternalNodes();
+  const unsigned n = pressure.numInternalElements();
   vector<Eigen::SparseMatrix<double, Eigen::RowMajor> > M(3, Eigen::SparseMatrix<double, Eigen::RowMajor>(n, n));
   vector<Eigen::VectorXd> s(3, Eigen::VectorXd(n));
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = pressure[nodeListi]->numInternalElements();
     for (unsigned i = 0; i != n; ++i) {
-      const unsigned iglobal = globalIDs(nodeListi, i);
+      const auto iglobal = globalIDs(nodeListi, i);
 
       // Get the state for node i.
       const Vector& ri = position(nodeListi, i);
@@ -96,7 +96,7 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
              jItr != connectivity[nodeListj].end();
              ++jItr) {
           const unsigned j = *jItr;
-          const unsigned jglobal = globalIDs(nodeListj, j);
+          const auto jglobal = globalIDs(nodeListj, j);
 
           // State for node j.
           const Vector& rj = position(nodeListj, j);

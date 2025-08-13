@@ -79,10 +79,10 @@ numGlobalNodes(const DataBase<Dimension>& dataBase) const {
 // DomainNode identifiers.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-vector<DomainNode<Dimension> >
+vector<DomainNode<Dimension>>
 RedistributeNodes<Dimension>::
 currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                           const FieldList<Dimension, int>& globalNodeIDs) const {
+                           const FieldList<Dimension, size_t>& globalNodeIDs) const {
   FieldList<Dimension, Scalar> dummyWork = dataBase.newGlobalFieldList(Scalar());
   return currentDomainDecomposition(dataBase, globalNodeIDs, dummyWork);
 }
@@ -95,34 +95,34 @@ template<typename Dimension>
 vector<DomainNode<Dimension> >
 RedistributeNodes<Dimension>::
 currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                           const FieldList<Dimension, int>& globalNodeIDs,
+                           const FieldList<Dimension, size_t>& globalNodeIDs,
                            const FieldList<Dimension, Scalar>& workPerNode) const {
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
   REQUIRE(dataBase.numNodeLists() == globalNodeIDs.numFields());
   REQUIRE(dataBase.numNodeLists() == workPerNode.numFields());
-  for (typename FieldList<Dimension, int>::const_iterator itr = globalNodeIDs.begin();
-       itr != globalNodeIDs.end();
-       ++itr) REQUIRE(dataBase.haveNodeList((*itr)->nodeList()));
-  for (typename FieldList<Dimension, Scalar>::const_iterator itr = workPerNode.begin();
-       itr != workPerNode.end();
-       ++itr) REQUIRE(dataBase.haveNodeList((*itr)->nodeList()));
+  for (auto* fptr: globalNodeIDs) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
+  for (auto* fptr: workPerNode) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
   END_CONTRACT_SCOPE
 
   // Prepare the result.
-  vector<DomainNode<Dimension> > result;
+  vector<DomainNode<Dimension>> result;
 
   // Loop over each NodeList in the DataBase.
   int nodeListID = 0;
   const int proc = domainID();
   int offset = 0;
-  for (typename DataBase<Dimension>::ConstNodeListIterator itr = dataBase.nodeListBegin();
-       itr != dataBase.nodeListEnd();
-       ++itr, ++nodeListID) {
-    const NodeList<Dimension>& nodeList = **itr;
-    const Field<Dimension, int>& globalNodeListIDs = **(globalNodeIDs.fieldForNodeList(nodeList));
-    const Field<Dimension, Scalar>& work = **(workPerNode.fieldForNodeList(nodeList));
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+    const auto& nodeList = *nodeListPtr;
+    const auto& globalNodeListIDs = **(globalNodeIDs.fieldForNodeList(nodeList));
+    const auto& work = **(workPerNode.fieldForNodeList(nodeList));
 
     // Loop over the nodes in the NodeList, and add their info to the 
     // result.
@@ -138,6 +138,7 @@ currentDomainDecomposition(const DataBase<Dimension>& dataBase,
       result.back().position = nodeList.positions()(localID);
     }
     offset += nodeList.numInternalNodes();
+    ++nodeListID;
   }
   CHECK(nodeListID == (int)dataBase.numNodeLists());
 
@@ -182,7 +183,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
   CHECK((int)numRecvNodeRequests.size() == numProcs - 1);
 
   // Find the nodes on this domain that have to be reassigned to new domains.
-  vector< vector< vector<int> > > sendNodes(numProcs); // [sendDomain][nodeList][node]
+  vector< vector< vector<size_t> > > sendNodes(numProcs); // [sendDomain][nodeList][node]
   for (int i = 0; i != numProcs; ++i) sendNodes[i].resize(numNodeLists);
   for (typename vector<DomainNode<Dimension> >::const_iterator distItr = nodeDistribution.begin();
        distItr != nodeDistribution.end();
@@ -328,18 +329,16 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
   CHECK(numSendBuffers >= numSendDomains);
       
   // Determine the maximum number of fields defined on a NodeList.
-  int maxNumFields = 0;
-  for (NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    maxNumFields = max(maxNumFields, (**nodeListItr).numFields());
+  size_t maxNumFields = 0u;
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+    maxNumFields = std::max(maxNumFields, nodeListPtr->numFields());
 
     // This is a somewhat expensive contract because of the all reduce,
     // but it is critical all processors agree about the fields defined
     // on each NodeList.
     BEGIN_CONTRACT_SCOPE
     {
-      int localNumFields = (**nodeListItr).numFields();
+      int localNumFields = nodeListPtr->numFields();
       int globalNumFields;
       MPI_Allreduce(&localNumFields, &globalNumFields, 1, MPI_INT, MPI_MAX, Communicator::communicator());
       CHECK(localNumFields == globalNumFields);
@@ -379,7 +378,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
             MPI_Irecv(&(*bufs.back().begin()), *itr, MPI_CHAR, recvProc, (2 + numNodeLists) + maxNumFields*nodeListID + i, Communicator::communicator(), &(recvBufferRequests.back()));
           }
           ++bufSizeItr;
-          CHECK((int)i <= maxNumFields);
+          CHECK(i <= maxNumFields);
         }
       }
       CHECK(bufSizeItr == outerBufSizeItr->end());
@@ -408,7 +407,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
             sendBufferRequests.push_back(MPI_Request());
             MPI_Isend(&(*buf.begin()), buf.size(), MPI_CHAR, sendProc, (2 + numNodeLists) + maxNumFields*nodeListID + i, Communicator::communicator(), &(sendBufferRequests.back()));
           }
-          CHECK((int)i <= maxNumFields);
+          CHECK(i <= maxNumFields);
         }
       }
     }
@@ -434,15 +433,13 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
       // Build the complete list of local IDs we're removing from this NodeList.
       // You have to do this, 'cause if you delete just some nodes from the 
       // NodeList, then the remaining sendNode localIDs are not valid.
-      vector<int> deleteNodes;
+      vector<size_t> deleteNodes;
       for (int sendProc = 0; sendProc != numProcs; ++sendProc) {
         CHECK(sendProc < (int)sendNodes.size());
         CHECK(nodeListID < (int)sendNodes[sendProc].size());
         deleteNodes.reserve(deleteNodes.size() + 
                             sendNodes[sendProc][nodeListID].size());
-        for (vector<int>::const_iterator itr = sendNodes[sendProc][nodeListID].begin();
-             itr < sendNodes[sendProc][nodeListID].end();
-             ++itr) deleteNodes.push_back(*itr);
+        for (auto i: sendNodes[sendProc][nodeListID]) deleteNodes.push_back(i);
       }
 
       // Delete these nodes from the NodeList.

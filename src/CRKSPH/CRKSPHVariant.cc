@@ -510,11 +510,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto A = state.fields(HydroFieldNames::A_CRKSPH, 0.0);
-  const auto B = state.fields(HydroFieldNames::B_CRKSPH, Vector::zero);
-  const auto C = state.fields(HydroFieldNames::C_CRKSPH, Tensor::zero);
+  const auto B = state.fields(HydroFieldNames::B_CRKSPH, Vector::zero, true);
+  const auto C = state.fields(HydroFieldNames::C_CRKSPH, Tensor::zero, true);
   const auto gradA = state.fields(HydroFieldNames::gradA_CRKSPH, Vector::zero);
-  const auto gradB = state.fields(HydroFieldNames::gradB_CRKSPH, Tensor::zero);
-  const auto gradC = state.fields(HydroFieldNames::gradC_CRKSPH, ThirdRankTensor::zero);
+  const auto gradB = state.fields(HydroFieldNames::gradB_CRKSPH, Tensor::zero, true);
+  const auto gradC = state.fields(HydroFieldNames::gradC_CRKSPH, ThirdRankTensor::zero, true);
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);

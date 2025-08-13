@@ -16,10 +16,10 @@ nodeList() const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-std::vector<int>
+std::vector<size_t>
 ConstantVelocityBoundary<Dimension>::
 nodeIndices() const {
-  std::vector<int> result;
+  std::vector<size_t> result;
   for (auto i = 0u; i != mNodeListPtr->numInternalNodes(); ++i) {
     if (mNodes(i) == 1) result.push_back(i);
   }

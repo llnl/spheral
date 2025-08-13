@@ -23,13 +23,13 @@ class NodeList:
 
     def pyinit(self,
                name = "std::string",
-               numInternal = ("unsigned", "0"),
-               numGhost = ("unsigned", "0"),
+               numInternal = ("size_t", "0u"),
+               numGhost = ("size_t", "0u"),
                hmin = ("double", "1e-20"),
                hmax = ("double", "1e20"),
                hminratio = ("double", "0.1"),
                nPerh = ("double", "2.01"),
-               maxNumNeighbors = ("unsigned", "500")):
+               maxNumNeighbors = ("size_t", "500u")):
         "Constructor for NodeList base class."
         return
 
@@ -120,12 +120,12 @@ class NodeList:
 
     # Virtual methods
     @PYB11virtual
-    def deleteNodes(self, nodeIDs="const std::vector<int>&"):
+    def deleteNodes(self, nodeIDs="const std::vector<size_t>&"):
         "Delete the indicated nodes from this NodeList"
         return "void"
 
     @PYB11virtual
-    def reorderNodes(self, newOrdering="const std::vector<int>&"):
+    def reorderNodes(self, newOrdering="const std::vector<size_t>&"):
         "Reorder the nodes to the given mapping"
         return "void"
 
@@ -145,14 +145,14 @@ class NodeList:
     #...........................................................................
     # Properties
     name = PYB11property("std::string", doc="Name of the NodeList")
-    numNodes = PYB11property("unsigned", doc="Total number of nodes in this NodeList")
-    numInternalNodes = PYB11property("unsigned", "numInternalNodes", "numInternalNodes", doc="Number of internal nodes in this NodeList")
-    numGhostNodes = PYB11property("unsigned", "numGhostNodes", "numGhostNodes", doc="Number of ghost nodes in this NodeList")
-    numFields = PYB11property("int", doc="Number of fields defined on this NodeList")
-    firstGhostNode = PYB11property("unsigned", doc="Index of the first ghost node on this NodeList")
+    numNodes = PYB11property("size_t", doc="Total number of nodes in this NodeList")
+    numInternalNodes = PYB11property("size_t", "numInternalNodes", "numInternalNodes", doc="Number of internal nodes in this NodeList")
+    numGhostNodes = PYB11property("size_t", "numGhostNodes", "numGhostNodes", doc="Number of ghost nodes in this NodeList")
+    numFields = PYB11property("size_t", doc="Number of fields defined on this NodeList")
+    firstGhostNode = PYB11property("size_t", doc="Index of the first ghost node on this NodeList")
     nodesPerSmoothingScale = PYB11property("Scalar", "nodesPerSmoothingScale", "nodesPerSmoothingScale", 
                                            doc="The target number of nodes per smoothing scale")
-    maxNumNeighbors = PYB11property("unsigned", "maxNumNeighbors", "maxNumNeighbors",
+    maxNumNeighbors = PYB11property("size_t", "maxNumNeighbors", "maxNumNeighbors",
                                     doc="The maximum number of neighbors per node allowed for this NodeList")
     hmin = PYB11property("Scalar", "hmin", "hmin", doc="Minimum allowed smoothing scale")
     hmax = PYB11property("Scalar", "hmax", "hmax", doc="Maximum allowed smoothing scale")

@@ -54,8 +54,8 @@ public:
   reference       operator()(const NodePairIdxType& x);
 
   // Comparators
-  bool operator==(const PairwiseField& rhs)                     { REQUIRE(!mPairsPtr.expired()); return mValues == rhs.mValues; }
-  bool operator!=(const PairwiseField& rhs)                     { REQUIRE(!mPairsPtr.expired()); return mValues != rhs.mValues; }
+  bool operator==(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mValues == rhs.mValues; }
+  bool operator!=(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mValues != rhs.mValues; }
 
   // Iterators
   const_iterator begin() const                                  { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mValues.begin())); }

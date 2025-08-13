@@ -290,8 +290,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto gamma = state.fields(HydroFieldNames::gamma, 0.0);
   const auto PSPHcorrection = state.fields(HydroFieldNames::PSPHcorrection, 0.0);
-  const auto reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto reducingViscosityMultiplierL = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
+  const auto reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto reducingViscosityMultiplierL = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
   const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
 
   CHECK(mass.size() == numNodeLists);

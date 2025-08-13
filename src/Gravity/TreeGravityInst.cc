@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// Explict instantiations.
+// Explicit instantiations.
 //------------------------------------------------------------------------------
 #include "TreeGravity.cc"
 #include "Geometry/Dimension.hh"

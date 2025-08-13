@@ -89,9 +89,11 @@ public:
 
   //............................................................................
   // Access FieldLists
-  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name) const;
+  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name,
+                                                              bool allowNone = false) const;
   template<typename Value> FieldList<Dimension, Value> fields(const std::string& name, 
-                                                              const Value& dummy) const;
+                                                              const Value& dummy,
+                                                              bool allowNone = false) const;
 
   //............................................................................
   // Access an arbitrary type

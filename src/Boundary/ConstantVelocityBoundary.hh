@@ -39,7 +39,7 @@ public:
 
   // Constructors and destructors.
   ConstantVelocityBoundary(const NodeList<Dimension>& nodeList,
-                           const std::vector<int>& nodeIndices);
+                           const std::vector<size_t>& nodeIndices);
   virtual ~ConstantVelocityBoundary();
 
   //**********************************************************************
@@ -66,7 +66,7 @@ public:
 
   // Allow read only access to the node indices and their forced velocities.
   const NodeList<Dimension>& nodeList() const;
-  std::vector<int> nodeIndices() const;
+  std::vector<size_t> nodeIndices() const;
   std::vector<Vector> velocityCondition() const;
 
   // Determine if the boundary is in a "valid", ready to use state.

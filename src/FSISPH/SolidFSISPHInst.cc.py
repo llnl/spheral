@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "FSISPH/SolidFSISPH.cc"
 #include "FSISPH/SolidFSISPHEvaluateDerivatives.cc"
