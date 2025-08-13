@@ -105,9 +105,7 @@ def main():
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
     # Use ATS to for some machine specific functions
-    if "dane" in hostname:
-        os.environ["MACHINE_TYPE"] = "slurm112"
-    elif "MACHINE_TYPE" not in os.environ:
+    if "MACHINE_TYPE" not in os.environ:
         ats_utils.set_machine_type_based_on_sys_type()
 
     #---------------------------------------------------------------------------
@@ -163,7 +161,7 @@ def main():
                 launch_cmd = "sbatch "
             else:
                 launch_cmd = "salloc "
-            launch_cmd += f"--exclusive -N {numNodes} -t {timeLimit} "
+            launch_cmd += f"--exclusive=user -N {numNodes} -t {timeLimit} "
             if (options.delay):
                 launch_cmd += "--begin=19:10:00 "
             mac_args.append(f"--numNodes {numNodes}")
