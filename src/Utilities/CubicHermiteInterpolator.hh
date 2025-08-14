@@ -15,14 +15,14 @@
 #include <vector>
 
 namespace Spheral {
-class CHIBase {
+class CHIView {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
-  SPHERAL_HOST_DEVICE CHIBase() = default;
+  SPHERAL_HOST_DEVICE CHIView() = default;
   // Comparisons
-  SPHERAL_HOST_DEVICE bool operator==(const CHIBase& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const CHIView& rhs) const;
 
   // Interpolate for the y value
   SPHERAL_HOST_DEVICE double operator()(const double x) const;
@@ -53,7 +53,7 @@ public:
   void move(chai::ExecutionSpace space) { mVals.move(space); }
   SPHERAL_HOST_DEVICE double* data() const { return mVals.data(); }
 
-  SPHERAL_HOST CHIBase(size_t N,
+  SPHERAL_HOST CHIView(size_t N,
                        double xmin,
                        double xmax,
                        double xstep,
@@ -73,7 +73,7 @@ protected:
   ContainerType mVals;
 };
 
-class CubicHermiteInterpolator : public CHIBase {
+class CubicHermiteInterpolator : public CHIView {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
@@ -115,8 +115,8 @@ public:
   // Force interpolation to be monotonic (may introduce structure between tabulated points)
   void makeMonotonic();
 
-  CHIBase view() {
-    return CHIBase(mN, mXmin, mXmax, mXstep, mVals);
+  CHIView view() {
+    return CHIView(mN, mXmin, mXmax, mXstep, mVals);
   }
 
 private:

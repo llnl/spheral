@@ -20,7 +20,7 @@ namespace Spheral {
 // Copy constructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs) :
-  CHIBase(rhs) {
+  CHIView(rhs) {
   mVec = rhs.mVec;
   initializeMA();
 }
@@ -31,7 +31,7 @@ CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolato
 CubicHermiteInterpolator&
 CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
   if (this != &rhs) {
-    CHIBase::operator=(rhs);
+    CHIView::operator=(rhs);
     mVec = rhs.mVec;
     initializeMA();
   }
@@ -41,10 +41,9 @@ CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
 //------------------------------------------------------------------------------
 // Construct from explicit table of values
 //------------------------------------------------------------------------------
-CubicHermiteInterpolator::
-CubicHermiteInterpolator(const double xmin,
-                         const double xmax,
-                         const std::vector<double>& yvals) {
+CubicHermiteInterpolator::CubicHermiteInterpolator(const double xmin,
+                                                   const double xmax,
+                                                   const std::vector<double>& yvals) {
   initialize(xmin, xmax, yvals);
 }
 
@@ -92,7 +91,7 @@ CubicHermiteInterpolator::initializeMA() {
 // Equivalence
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE bool
-CHIBase::operator==(const CHIBase& rhs) const {
+CHIView::operator==(const CHIView& rhs) const {
   return ((mN == rhs.mN) and
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and
@@ -106,8 +105,7 @@ CHIBase::operator==(const CHIBase& rhs) const {
 // https://en.wikipedia.org/wiki/Monotone_cubic_interpolation
 //------------------------------------------------------------------------------
 void
-CubicHermiteInterpolator::
-makeMonotonic() {
+CubicHermiteInterpolator::makeMonotonic() {
 
   // Compute the slope between tabulated values.
   std::vector<double> cgrad(mN - 1u);
@@ -164,8 +162,7 @@ makeMonotonic() {
 // Note: the function values must have already been set in mVals[0,n-1]!
 //------------------------------------------------------------------------------
 void
-CubicHermiteInterpolator::
-initializeGradientKnots() {
+CubicHermiteInterpolator::initializeGradientKnots() {
 
   // Set up to solve using Eigen's linear solvers (Ax=b)
   // We know the matrix A is tridiagonal: sparse with the only non-zero elements
