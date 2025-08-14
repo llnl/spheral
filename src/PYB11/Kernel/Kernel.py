@@ -239,8 +239,16 @@ class NBSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Table
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
-class TableKernel(Kernel):
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "TableKernelView<%(Dimension)s>"})
+class TableKernelView(Kernel):
+    PYB11typedefs=""
+
+    def pyinit(self):
+        "Default constructor"
+
+@PYB11template("Dimension")
+class TableKernel(TableKernelView):
     PYB11typedefs="""
     using Scalar = typename %(Dimension)s::Scalar;
     using Vector = typename %(Dimension)s::Vector;

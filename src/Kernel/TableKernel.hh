@@ -10,13 +10,75 @@
 #include "Kernel.hh"
 #include "Utilities/QuadraticInterpolator.hh"
 #include "Utilities/CubicHermiteInterpolator.hh"
+#include "config.hh"
 
 #include <vector>
 
 namespace Spheral {
 
 template<typename Dimension>
-class TableKernel: public Kernel<Dimension, TableKernel<Dimension> > {
+class TableKernelView : public Kernel<Dimension, TableKernelView<Dimension> > {
+
+public:
+  //--------------------------- Public Interface ---------------------------//
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using InterpolatorType = QuadraticInterpolator;
+  using NperhInterpolatorType = CubicHermiteInterpolator;
+  using IBase = QIBase;
+  using NperhIBase = CHIBase;
+
+  SPHERAL_HOST_DEVICE TableKernelView() = default;
+  // Equivalence
+  SPHERAL_HOST_DEVICE bool operator==(const TableKernelView& rhs) const;
+
+  // Return the kernel weight for a given normalized distance or position.
+  SPHERAL_HOST_DEVICE Scalar kernelValue(const Scalar etaij, const Scalar Hdet) const;
+
+  // Return the gradient value for a given normalized distance or position.
+  SPHERAL_HOST_DEVICE Scalar gradValue(const Scalar etaij, const Scalar Hdet) const;
+
+  // Return the second derivative value for a given normalized distance or position.
+  SPHERAL_HOST_DEVICE Scalar grad2Value(const Scalar etaij, const Scalar Hdet) const;
+
+  // Simultaneously return the kernel value and first derivative.
+  SPHERAL_HOST_DEVICE void kernelAndGrad(const Vector& etaj, const Vector& etai, const SymTensor& H,
+                                         Scalar& W,
+                                         Vector& gradW,
+                                         Scalar& deltaWsum) const;
+  SPHERAL_HOST_DEVICE void kernelAndGradValue(const Scalar etaij, const Scalar Hdet,
+                                              Scalar& W,
+                                              Scalar& gW) const;
+    // Special kernel values for use in finding smoothing scales (SPH and ASPH versions)
+  // ***These are only intended for use adapting smoothing scales***, and are used
+  // for the succeeding equivalentNodesPerSmoothingScale lookups!
+  SPHERAL_HOST_DEVICE Scalar kernelValueSPH(const Scalar etaij) const;
+  SPHERAL_HOST_DEVICE Scalar kernelValueASPH(const Scalar etaij, const Scalar nPerh) const;
+
+  // Return the equivalent number of nodes per smoothing scale implied by the given
+  // sum of kernel values, using the zeroth moment SPH algorithm
+  SPHERAL_HOST_DEVICE Scalar equivalentNodesPerSmoothingScale(const Scalar Wsum) const;
+  SPHERAL_HOST_DEVICE Scalar equivalentWsum(const Scalar nPerh) const;
+
+  // Access the internal data
+  SPHERAL_HOST_DEVICE size_t numPoints() const                                    { return mNumPoints; }
+  SPHERAL_HOST_DEVICE Scalar minNperhLookup() const                               { return mMinNperh; }
+  SPHERAL_HOST_DEVICE Scalar maxNperhLookup() const                               { return mMaxNperh; }
+protected:
+  //--------------------------- Private Interface ---------------------------//
+  // Data for the kernel tabulation.
+  size_t mNumPoints = 100u;
+  Scalar mMinNperh = 0.25;
+  Scalar mMaxNperh = 64.0;
+  IBase mInterp, mGradInterp, mGrad2Interp; // W, grad W, grad^2 W
+  NperhIBase mNperhLookup, mWsumLookup;     // SPH nperh lookups
+
+};
+
+template<typename Dimension>
+class TableKernel : public TableKernelView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -41,67 +103,29 @@ public:
   // Assignment.
   TableKernel& operator=(const TableKernel& rhs);
 
-  // Equivalence
-  bool operator==(const TableKernel& rhs) const;
-
-  // Return the kernel weight for a given normalized distance or position.
-  Scalar kernelValue(const Scalar etaij, const Scalar Hdet) const;
-
-  // Return the gradient value for a given normalized distance or position.
-  Scalar gradValue(const Scalar etaij, const Scalar Hdet) const;
-
-  // Return the second derivative value for a given normalized distance or position.
-  Scalar grad2Value(const Scalar etaij, const Scalar Hdet) const;
-
-  // Simultaneously return the kernel value and first derivative.
-  void kernelAndGrad(const Vector& etaj, const Vector& etai, const SymTensor& H,
-                     Scalar& W,
-                     Vector& gradW,
-                     Scalar& deltaWsum) const;
-  void kernelAndGradValue(const Scalar etaij, const Scalar Hdet,
-                          Scalar& W,
-                          Scalar& gW) const;
-
   // Look up the kernel and first derivative for a set.
   void kernelAndGradValues(const std::vector<Scalar>& etaijs,
                            const std::vector<Scalar>& Hdets,
                            std::vector<Scalar>& kernelValues,
                            std::vector<Scalar>& gradValues) const;
 
-  // Special kernel values for use in finding smoothing scales (SPH and ASPH versions)
-  // ***These are only intended for use adapting smoothing scales***, and are used
-  // for the succeeding equivalentNodesPerSmoothingScale lookups!
-  Scalar kernelValueSPH(const Scalar etaij) const;
-  Scalar kernelValueASPH(const Scalar etaij, const Scalar nPerh) const;
-
-  // Return the equivalent number of nodes per smoothing scale implied by the given
-  // sum of kernel values, using the zeroth moment SPH algorithm
-  Scalar equivalentNodesPerSmoothingScale(const Scalar Wsum) const;
-  Scalar equivalentWsum(const Scalar nPerh) const;
-
-  // Access the internal data
-  size_t numPoints() const                                    { return mNumPoints; }
-  Scalar minNperhLookup() const                               { return mMinNperh; }
-  Scalar maxNperhLookup() const                               { return mMaxNperh; }
-
   // Direct access to our interpolators
-  const InterpolatorType& Winterpolator() const               { return mInterp; }
-  const InterpolatorType& gradWinterpolator() const           { return mGradInterp; }
-  const InterpolatorType& grad2Winterpolator() const          { return mGrad2Interp; }
-  const NperhInterpolatorType& nPerhInterpolator() const      { return mNperhLookup; }
-  const NperhInterpolatorType& WsumInterpolator() const       { return mWsumLookup; }
+  const InterpolatorType& Winterpolator() const               { return mInterpVal; }
+  const InterpolatorType& gradWinterpolator() const           { return mGradInterpVal; }
+  const InterpolatorType& grad2Winterpolator() const          { return mGrad2InterpVal; }
+  const NperhInterpolatorType& nPerhInterpolator() const      { return mNperhLookupVal; }
+  const NperhInterpolatorType& WsumInterpolator() const       { return mWsumLookupVal; }
+
+  TableKernelView<Dimension> view() {
+    return static_cast<TableKernelView<Dimension>>(*this);
+  }
 
 private:
   //--------------------------- Private Interface ---------------------------//
   // Data for the kernel tabulation.
-  size_t mNumPoints;
-  Scalar mTargetNperh, mMinNperh, mMaxNperh;
-  InterpolatorType mInterp, mGradInterp, mGrad2Interp;       // W, grad W, grad^2 W
-  NperhInterpolatorType mNperhLookup, mWsumLookup;           // SPH nperh lookups
+  InterpolatorType mInterpVal, mGradInterpVal, mGrad2InterpVal; // W, grad W, grad^2 W
+  NperhInterpolatorType mNperhLookupVal, mWsumLookupVal;        // SPH nperh lookups
 
-  using Kernel<Dimension, TableKernel<Dimension>>::mVolumeNormalization;
-  using Kernel<Dimension, TableKernel<Dimension>>::mKernelExtent;
-  using Kernel<Dimension, TableKernel<Dimension>>::mInflectionPoint;
 };
 
 }

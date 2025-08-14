@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace Spheral {
-class CHIBase {
+class CHIBase : public chai::CHAICopyable {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
@@ -52,6 +52,9 @@ public:
   SPHERAL_HOST_DEVICE double xstep() const;                       // delta x between tabulated values
   void move(chai::ExecutionSpace space) { mVals.move(space); }
   SPHERAL_HOST_DEVICE double* data() const { return mVals.data(); }
+  SPHERAL_HOST_DEVICE void touch(chai::ExecutionSpace space) {
+    mVals.registerTouch(space);
+  }
 
   SPHERAL_HOST CHIBase(size_t N,
                        double xmin,

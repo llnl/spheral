@@ -17,7 +17,7 @@
 
 namespace Spheral {
 
-class QIBase {
+class QIBase : public chai::CHAICopyable {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
@@ -49,6 +49,9 @@ public:
   SPHERAL_HOST_DEVICE double xstep() const;                       // delta x between tabulated values
   void move(chai::ExecutionSpace space) { mcoeffs.move(space); }
   SPHERAL_HOST_DEVICE double* data() const { return mcoeffs.data(); }
+  SPHERAL_HOST_DEVICE void touch(chai::ExecutionSpace space) {
+    mcoeffs.registerTouch(space);
+  }
 
   SPHERAL_HOST QIBase(size_t N1,
                       double xmin,
@@ -60,6 +63,7 @@ public:
     mXmax(xmax),
     mXstep(xstep),
     mcoeffs(vals) { mcoeffs.registerTouch(chai::CPU); }
+
 protected:
   //--------------------------- Private Interface --------------------------//
   // Member data

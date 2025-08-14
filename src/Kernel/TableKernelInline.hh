@@ -8,9 +8,9 @@ namespace Spheral {
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 typename Dimension::Scalar
-TableKernel<Dimension>::kernelValue(const Scalar etaij, const Scalar Hdet) const {
+TableKernelView<Dimension>::kernelValue(const Scalar etaij, const Scalar Hdet) const {
   REQUIRE(etaij >= 0.0);
   REQUIRE(Hdet >= 0.0);
   if (etaij < this->mKernelExtent) {
@@ -24,9 +24,9 @@ TableKernel<Dimension>::kernelValue(const Scalar etaij, const Scalar Hdet) const
 // Return the gradient value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 typename Dimension::Scalar
-TableKernel<Dimension>::gradValue(const Scalar etaij, const Scalar Hdet) const {
+TableKernelView<Dimension>::gradValue(const Scalar etaij, const Scalar Hdet) const {
   REQUIRE(etaij >= 0.0);
   REQUIRE(Hdet >= 0.0);
   if (etaij < this->mKernelExtent) {
@@ -40,9 +40,9 @@ TableKernel<Dimension>::gradValue(const Scalar etaij, const Scalar Hdet) const {
 // Return the second derivative value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 typename Dimension::Scalar
-TableKernel<Dimension>::grad2Value(const Scalar etaij, const Scalar Hdet) const {
+TableKernelView<Dimension>::grad2Value(const Scalar etaij, const Scalar Hdet) const {
   REQUIRE(etaij >= 0.0);
   REQUIRE(Hdet >= 0.0);
   if (etaij < this->mKernelExtent) {
@@ -56,14 +56,14 @@ TableKernel<Dimension>::grad2Value(const Scalar etaij, const Scalar Hdet) const 
 // Return the kernel and gradient for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 void
-TableKernel<Dimension>::kernelAndGrad(const typename Dimension::Vector& etaj,
-                                      const typename Dimension::Vector& etai,
-                                      const typename Dimension::SymTensor& H,
-                                      typename Dimension::Scalar& W,
-                                      typename Dimension::Vector& gradW,
-                                      typename Dimension::Scalar& deltaWsum) const {
+TableKernelView<Dimension>::kernelAndGrad(const typename Dimension::Vector& etaj,
+                                          const typename Dimension::Vector& etai,
+                                          const typename Dimension::SymTensor& H,
+                                          typename Dimension::Scalar& W,
+                                          typename Dimension::Vector& gradW,
+                                          typename Dimension::Scalar& deltaWsum) const {
   const auto etaij = etai - etaj;
   const auto etaijMag = etaij.magnitude();
   const auto Hdet = H.Determinant();
@@ -83,10 +83,10 @@ TableKernel<Dimension>::kernelAndGrad(const typename Dimension::Vector& etaj,
 // Return the kernel and gradient value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 void
-TableKernel<Dimension>::kernelAndGradValue(const Scalar etaij, const Scalar Hdet,
-                                           Scalar& Wi, Scalar& gWi) const {
+TableKernelView<Dimension>::kernelAndGradValue(const Scalar etaij, const Scalar Hdet,
+                                               Scalar& Wi, Scalar& gWi) const {
   REQUIRE(etaij >= 0.0);
   REQUIRE(Hdet >= 0.0);
   if (etaij < this->mKernelExtent) {
@@ -127,9 +127,9 @@ TableKernel<Dimension>::kernelAndGradValues(const std::vector<Scalar>& etaijs,
 
   // Fill those suckers in.
   for (auto i = 0u; i < n; ++i) {
-    const auto i0 = mInterp.lowerBound(etaijs[i]);
-    kernelValues[i] = Hdets[i]*mInterp(etaijs[i], i0);
-    gradValues[i] = Hdets[i]*mGradInterp(etaijs[i], i0);
+    const auto i0 = this->mInterp.lowerBound(etaijs[i]);
+    kernelValues[i] = Hdets[i]*this->mInterp(etaijs[i], i0);
+    gradValues[i] = Hdets[i]*this->mGradInterp(etaijs[i], i0);
   }
 }
 

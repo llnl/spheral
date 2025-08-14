@@ -180,37 +180,40 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
                                     const unsigned numPoints,
                                     const typename Dimension::Scalar minNperh,
                                     const typename Dimension::Scalar maxNperh):
-  Kernel<Dimension, TableKernel<Dimension>>(),
-  mNumPoints(numPoints),
-  mMinNperh(std::max(minNperh, 1.1/kernel.kernelExtent())),
-  mMaxNperh(maxNperh),
-  mInterp(0.0, kernel.kernelExtent(), numPoints,      [&](const double x) { return kernel(x, 1.0); }),
-  mGradInterp(0.0, kernel.kernelExtent(), numPoints,  [&](const double x) { return kernel.grad(x, 1.0); }),
-  mGrad2Interp(0.0, kernel.kernelExtent(), numPoints, [&](const double x) { return kernel.grad2(x, 1.0); }),
-  mNperhLookup(),
-  mWsumLookup() {
+  TableKernelView<Dimension>(),
+  mInterpVal(0.0, kernel.kernelExtent(), numPoints,      [&](const double x) { return kernel(x, 1.0); }),
+  mGradInterpVal(0.0, kernel.kernelExtent(), numPoints,  [&](const double x) { return kernel.grad(x, 1.0); }),
+  mGrad2InterpVal(0.0, kernel.kernelExtent(), numPoints, [&](const double x) { return kernel.grad2(x, 1.0); }),
+  mNperhLookupVal(),
+  mWsumLookupVal() {
 
   // Gotta have a minimally reasonable nperh range
-  if (mMaxNperh <= mMinNperh) mMaxNperh = 4.0*mMinNperh;
+  this->mMaxNperh = maxNperh;
+  this->mMinNperh = std::max(minNperh, 1.1/kernel.kernelExtent());
+  this->mNumPoints = numPoints;
+  if (this->mMaxNperh <= this->mMinNperh) this->mMaxNperh = 4.0*this->mMinNperh;
 
   // Pre-conditions.
-  VERIFY2(mNumPoints > 0, "TableKernel ERROR: require numPoints > 0 : " << mNumPoints);
-  VERIFY2(mMinNperh > 0.0 and mMaxNperh > mMinNperh, "TableKernel ERROR: Bad (minNperh, maxNperh) range: (" << mMinNperh << ", " << mMaxNperh << ")");
-
+  VERIFY2(this->mNumPoints > 0, "TableKernel ERROR: require numPoints > 0 : " << this->mNumPoints);
+  VERIFY2(this->mMinNperh > 0.0 and this->mMaxNperh > this->mMinNperh, "TableKernel ERROR: Bad (minNperh, maxNperh) range: (" << this->mMinNperh << ", " << this->mMaxNperh << ")");
+  this->mInterp = mInterpVal.view();
+  this->mGradInterp = mGradInterpVal.view();
+  this->mGrad2Interp = mGrad2InterpVal.view();
   // Set the volume normalization and kernel extent.
   this->setVolumeNormalization(1.0); // (kernel.volumeNormalization() / Dimension::pownu(hmult));  // We now build this into the tabular kernel values.
   this->setKernelExtent(kernel.kernelExtent());
   this->setInflectionPoint(kernel.inflectionPoint());
 
   // Set the interpolation methods for looking up nperh (SPH methodology)
-  mWsumLookup.initialize(mMinNperh, mMaxNperh, numPoints,
-                         [&](const double x) -> double { return sumKernelValues(*this, x); });
-  mNperhLookup.initialize(mWsumLookup(mMinNperh), mWsumLookup(mMaxNperh), numPoints,
-                          [&](const double Wsum) -> double { return bisectRoot([&](const double nperh) { return mWsumLookup(nperh) - Wsum; }, mMinNperh, mMaxNperh); });
-
+  mWsumLookupVal.initialize(this->mMinNperh, this->mMaxNperh, numPoints,
+                            [&](const double x) -> double { return sumKernelValues(*this, x); });
+  mNperhLookupVal.initialize(mWsumLookupVal(this->mMinNperh), mWsumLookupVal(this->mMaxNperh), numPoints,
+                             [&](const double Wsum) -> double { return bisectRoot([&](const double nperh) { return mWsumLookupVal(nperh) - Wsum; }, this->mMinNperh, this->mMaxNperh); });
   // Make nperh lookups monotonic
-  mWsumLookup.makeMonotonic();
-  mNperhLookup.makeMonotonic();
+  mWsumLookupVal.makeMonotonic();
+  mNperhLookupVal.makeMonotonic();
+  this->mNperhLookup = mNperhLookupVal.view();
+  this->mWsumLookup = mWsumLookupVal.view();
 }
 
 //------------------------------------------------------------------------------
@@ -219,15 +222,12 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
 template<typename Dimension>
 TableKernel<Dimension>::
 TableKernel(const TableKernel<Dimension>& rhs):
-  Kernel<Dimension, TableKernel<Dimension>>(rhs),
-  mNumPoints(rhs.mNumPoints),
-  mMinNperh(rhs.mMinNperh),
-  mMaxNperh(rhs.mMaxNperh),
-  mInterp(rhs.mInterp),
-  mGradInterp(rhs.mGradInterp),
-  mGrad2Interp(rhs.mGrad2Interp),
-  mNperhLookup(rhs.mNperhLookup),
-  mWsumLookup(rhs.mWsumLookup) {
+  TableKernelView<Dimension>(rhs),
+  mInterpVal(rhs.mInterpVal),
+  mGradInterpVal(rhs.mGradInterpVal),
+  mGrad2InterpVal(rhs.mGrad2InterpVal),
+  mNperhLookupVal(rhs.mNperhLookupVal),
+  mWsumLookupVal(rhs.mWsumLookupVal) {
 }
 
 //------------------------------------------------------------------------------
@@ -246,15 +246,12 @@ TableKernel<Dimension>&
 TableKernel<Dimension>::
 operator=(const TableKernel<Dimension>& rhs) {
   if (this != &rhs) {
-    Kernel<Dimension, TableKernel<Dimension>>::operator=(rhs);
-    mNumPoints = rhs.mNumPoints;
-    mMinNperh = rhs.mMinNperh;
-    mMaxNperh = rhs.mMaxNperh;
-    mInterp = rhs.mInterp;
-    mGradInterp = rhs.mGradInterp;
-    mGrad2Interp = rhs.mGrad2Interp;
-    mNperhLookup = rhs.mNperhLookup;
-    mWsumLookup = rhs.mWsumLookup;
+    TableKernelView<Dimension>::operator=(rhs);
+    mInterpVal = rhs.mInterpVal;
+    mGradInterpVal = rhs.mGradInterpVal;
+    mGrad2InterpVal = rhs.mGrad2InterpVal;
+    mNperhLookupVal = rhs.mNperhLookupVal;
+    mWsumLookupVal = rhs.mWsumLookupVal;
   }
   return *this;
 }
@@ -263,9 +260,9 @@ operator=(const TableKernel<Dimension>& rhs) {
 // Equivalence
 //------------------------------------------------------------------------------
 template<typename Dimension>
-bool
-TableKernel<Dimension>::
-operator==(const TableKernel<Dimension>& rhs) const {
+SPHERAL_HOST_DEVICE bool
+TableKernelView<Dimension>::
+operator==(const TableKernelView<Dimension>& rhs) const {
   return ((mInterp == rhs.mInterp) and
           (mGradInterp == rhs.mGradInterp) and
           (mGrad2Interp == rhs.mGrad2Interp) and
@@ -277,8 +274,8 @@ operator==(const TableKernel<Dimension>& rhs) const {
 // Kernel value for SPH smoothing scale nperh lookups
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::kernelValueSPH(const Scalar etaij) const {
+SPHERAL_HOST_DEVICE typename Dimension::Scalar
+TableKernelView<Dimension>::kernelValueSPH(const Scalar etaij) const {
   REQUIRE(etaij >= 0.0);
   if (etaij < this->mKernelExtent) {
     return std::abs(mGradInterp(etaij));
@@ -291,14 +288,14 @@ TableKernel<Dimension>::kernelValueSPH(const Scalar etaij) const {
 // Kernel value for ASPH smoothing scale nperh lookups
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::kernelValueASPH(const Scalar etaij, const Scalar nPerh) const {
+SPHERAL_HOST_DEVICE typename Dimension::Scalar
+TableKernelView<Dimension>::kernelValueASPH(const Scalar etaij, const Scalar nPerh) const {
   REQUIRE(etaij >= 0.0);
   REQUIRE(nPerh > 0.0);
-  if (etaij < mKernelExtent) {
+  if (etaij < this->mKernelExtent) {
     const auto deta = 2.0/std::max(2.0, nPerh);
-    const auto eta0 = std::max(0.0, 0.5*(mKernelExtent - deta));
-    const auto eta1 = std::min(mKernelExtent, eta0 + deta);
+    const auto eta0 = std::max(0.0, 0.5*(this->mKernelExtent - deta));
+    const auto eta1 = std::min(this->mKernelExtent, eta0 + deta);
     return (etaij <= eta0 or etaij >= eta1 ?
             0.0 :
             kernelValueSPH((etaij - eta0)/deta));
@@ -314,8 +311,8 @@ TableKernel<Dimension>::kernelValueASPH(const Scalar etaij, const Scalar nPerh) 
 // sum of kernel values (SPH round tensor definition).
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::
+SPHERAL_HOST_DEVICE typename Dimension::Scalar
+TableKernelView<Dimension>::
 equivalentNodesPerSmoothingScale(const Scalar Wsum) const {
   return std::max(0.0, mNperhLookup(Wsum));
 }
@@ -325,8 +322,8 @@ equivalentNodesPerSmoothingScale(const Scalar Wsum) const {
 // (SPH round tensor definition).
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::
+SPHERAL_HOST_DEVICE typename Dimension::Scalar
+TableKernelView<Dimension>::
 equivalentWsum(const Scalar nPerh) const {
   return std::max(0.0, mWsumLookup(nPerh));
 }

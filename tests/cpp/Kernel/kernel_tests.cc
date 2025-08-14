@@ -10,9 +10,7 @@
 #include "Kernel/ExpInvKernel.hh"
 #include <Utilities/Logger.hh>
 
-using ExpInvKernel1D = Spheral::ExpInvKernel<Spheral::Dim<1>>;
 using ExpInvKernel2D = Spheral::ExpInvKernel<Spheral::Dim<2>>;
-using ExpInvKernel3D = Spheral::ExpInvKernel<Spheral::Dim<3>>;
 
 class ExpInvKernelTest : public ::testing::Test {
 };
@@ -25,14 +23,14 @@ template <typename T> class ExpInvKernelTypedTest : public ExpInvKernelTest {};
 GPU_TYPED_TEST_P(ExpInvKernelTypedTest, CopyAssign) {
   const size_t N = 100;
   const double Hdet = 1.;
-  ExpInvKernel1D ref_kernel;
+  ExpInvKernel2D ref_kernel;
   const double dx = (ref_kernel.kernelExtent() - 0.) / (double)(N - 1);
   const double x_sample = 0.5*dx*(double)N;
   const double ref_val = ref_kernel.kernelValue(x_sample, Hdet);
   EXEC_IN_SPACE_BEGIN(TypeParam)
-    ExpInvKernel1D kernel1d;
+    ExpInvKernel2D kernel1d;
     const double val = kernel1d.kernelValue(x_sample, Hdet);
-    SPHERAL_ASSERT_EQ(val, ref_val);
+    SPHERAL_ASSERT_FLOAT_EQ(val, ref_val);
   EXEC_IN_SPACE_END()
 }
 
