@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// Explict instantiations.
+// Explicit instantiations.
 //------------------------------------------------------------------------------
 #include "Tree.cc"
 #include "Geometry/Dimension.hh"

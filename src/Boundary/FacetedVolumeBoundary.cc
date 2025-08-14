@@ -143,8 +143,8 @@ nodesTouchingFacet(const NodeList<Dim<3>>&,
 template<typename Dimension, typename Value>
 void
 copyControlValues(Field<Dimension, Value>& field,
-                  const std::vector<int>& controls,
-                  const std::vector<int>& ghosts) {
+                  const std::vector<size_t>& controls,
+                  const std::vector<size_t>& ghosts) {
   REQUIRE(controls.size() == ghosts.size());
   auto controlItr = controls.begin();
   auto ghostItr = ghosts.begin();
@@ -295,7 +295,7 @@ mapControlValues(Field<Dimension, Value>& field,
 template<typename Dimension, typename Value>
 void
 enforceViolationValues(Field<Dimension, Value>& field,
-                       const std::vector<int>& violationNodes,
+                       const std::vector<size_t>& violationNodes,
                        const std::vector<typename Dimension::Tensor>& violationOps) {
   const auto n = violationNodes.size();
   REQUIRE(violationOps.size() == n);
@@ -725,9 +725,9 @@ FacetedVolumeBoundary<Dimension>::reset(const DataBase<Dimension>& dataBase) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-FacetedVolumeBoundary<Dimension>::cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                                                 FieldList<Dimension, int>& old2newIndexMap,
-                                                 vector<int>& numNodesRemoved) {
+FacetedVolumeBoundary<Dimension>::cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                                                 FieldList<Dimension, size_t>& old2newIndexMap,
+                                                 vector<size_t>& numNodesRemoved) {
   // Base class does some stuff
   Boundary<Dimension>::cullGhostNodes(flagSet, old2newIndexMap, numNodesRemoved);
 

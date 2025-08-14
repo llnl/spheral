@@ -181,7 +181,7 @@ public:
 
   // access for pair fieldLists
   const FieldList<Dimension, std::vector<int>>&    isActiveContact() const;
-  const FieldList<Dimension, std::vector<int>>&    neighborIndices() const;
+  const FieldList<Dimension, std::vector<size_t>>& neighborIndices() const;
   const FieldList<Dimension, std::vector<Vector>>& shearDisplacement() const;
   const FieldList<Dimension, std::vector<Vector>>& rollingDisplacement() const;
   const FieldList<Dimension, std::vector<Scalar>>& torsionalDisplacement() const;
@@ -251,7 +251,7 @@ protected:
   FieldList<Dimension, RotationType> mDomegaDt;       // angular acceleration
 
   // state fields attached to the pair interactions
-  FieldList<Dimension,std::vector<int>>    mNeighborIndices;           // tracks unique indices of contacts-we upate these (note treated specially compared to other state pair field lists)
+  FieldList<Dimension,std::vector<size_t>> mNeighborIndices;           // tracks unique indices of contacts-we upate these (note treated specially compared to other state pair field lists)
   FieldList<Dimension,std::vector<Scalar>> mEquilibriumOverlap;        // nonzero values for composite particles
   FieldList<Dimension,std::vector<Vector>> mShearDisplacement;         // displacement for sliding spring
   FieldList<Dimension,std::vector<Vector>> mRollingDisplacement;       // displacement for rolling spring

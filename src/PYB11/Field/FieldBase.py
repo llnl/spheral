@@ -22,7 +22,7 @@ class FieldBase:
     @PYB11const
     def size(self):
         "Number of elements"
-        return "unsigned"
+        return "size_t"
 
     @PYB11pure_virtual
     def Zero(self):
@@ -35,13 +35,13 @@ class FieldBase:
         return "void"
 
     @PYB11const
-    def packValues(self, nodeIDs="const std::vector<int>&"):
+    def packValues(self, nodeIDs="const std::vector<size_t>&"):
         "Serialize the indicated elements into a vector<char>"
         return "std::vector<char>"
 
     @PYB11pure_virtual
     def unpackValues(self,
-                     nodeIDs="const std::vector<int>&",
+                     nodeIDs="const std::vector<size_t>&",
                      buffer = "const std::vector<char>&"):
         "Deserialize values from the given buffer"
         return "void"

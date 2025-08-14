@@ -76,9 +76,9 @@ public:
   virtual void reset(const DataBase<Dimension>& dataBase) override;
 
   // Use a set of flags to cull out inactive ghost nodes.
-  virtual void cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                              FieldList<Dimension, int>& old2newIndexMap,
-                              std::vector<int>& numNodesRemoved) override;
+  virtual void cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                              FieldList<Dimension, size_t>& old2newIndexMap,
+                              std::vector<size_t>& numNodesRemoved) override;
 
   // Read access to internal data
   const FacetedVolume& polyVolume() const;

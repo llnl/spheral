@@ -13,7 +13,7 @@ Spheral::weibullFlawDistributionBenzAsphaug<Spheral::Dim< %(ndim)s > >(double,
                                                                        const double,
                                                                        const Spheral::FluidNodeList<Spheral::Dim< %(ndim)s > >&,
                                                                        const Spheral::State<Spheral::Dim< %(ndim)s > >&,
-                                                                       const int,
-                                                                       const int,
+                                                                       const size_t,
+                                                                       const size_t,
                                                                        const Spheral::Field<Spheral::Dim<%(ndim)s>, int>&);
 """

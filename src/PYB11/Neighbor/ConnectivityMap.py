@@ -23,8 +23,8 @@ class ConnectivityMap:
     #...........................................................................
     # Methods
     def patchConnectivity(self,
-                          flags = "const FieldList<%(Dimension)s, int>&",
-                          old2new = "const FieldList<%(Dimension)s, int>&"):
+                          flags = "const FieldList<%(Dimension)s, size_t>&",
+                          old2new = "const FieldList<%(Dimension)s, size_t>&"):
         "Patch the connectivity information"
         return "void"
 

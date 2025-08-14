@@ -11,12 +11,12 @@ from ArithmeticFieldList import *
 class MinMaxFieldList(FieldListBase.FieldListBase):
 
     PYB11typedefs = """
-    typedef FieldList<%(Dimension)s, %(Value)s> FieldListType;
-    typedef Field<%(Dimension)s, %(Value)s> FieldType;
-    typedef NodeList<%(Dimension)s> NodeListType;
-    typedef %(Dimension)s::Scalar Scalar;
-    typedef %(Dimension)s::Vector Vector;
-    typedef %(Dimension)s::SymTensor SymTensor;
+    using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
+    using FieldType = Field<%(Dimension)s, %(Value)s>;
+    using NodeListType = NodeList<%(Dimension)s>;
+    using Scalar = %(Dimension)s::Scalar;
+    using Vector = %(Dimension)s::Vector;
+    using SymTensor = %(Dimension)s::SymTensor;
 """
 
     def applyScalarMin(self):

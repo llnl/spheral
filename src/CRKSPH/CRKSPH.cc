@@ -219,9 +219,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);

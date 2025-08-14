@@ -36,13 +36,13 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 NodeList<Dimension>::NodeList(std::string name,
-                              const unsigned numInternal,
-                              const unsigned numGhost,
+                              const size_t numInternal,
+                              const size_t numGhost,
                               const Scalar hmin,
                               const Scalar hmax,
                               const Scalar hminratio,
                               const Scalar nPerh,
-                              const unsigned maxNumNeighbors):
+                              const size_t maxNumNeighbors):
   mNumNodes(numInternal + numGhost),
   mFirstGhostNode(numInternal),
   mName(name),
@@ -89,7 +89,7 @@ NodeList<Dimension>::~NodeList() {
 
   // After we're done, all the field should have unregistered themselves
   // from the Node List.
-  ENSURE(numFields() == 0);
+  ENSURE(numFields() == 0u);
 }
 
 //------------------------------------------------------------------------------
@@ -97,9 +97,9 @@ NodeList<Dimension>::~NodeList() {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-NodeList<Dimension>::numInternalNodes(unsigned size) {
-  unsigned numGhost = numGhostNodes();
-  unsigned oldFirstGhostNode = mFirstGhostNode;
+NodeList<Dimension>::numInternalNodes(size_t size) {
+  size_t numGhost = numGhostNodes();
+  size_t oldFirstGhostNode = mFirstGhostNode;
   mFirstGhostNode = size;
   mNumNodes = size + numGhost;
   for (FieldBaseIterator fieldPtrItr = mFieldBaseList.begin();
@@ -113,8 +113,8 @@ NodeList<Dimension>::numInternalNodes(unsigned size) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-NodeList<Dimension>::numGhostNodes(unsigned size) {
-  unsigned numInternal = numInternalNodes();
+NodeList<Dimension>::numGhostNodes(size_t size) {
+  size_t numInternal = numInternalNodes();
   mNumNodes = numInternal + size;
   for (FieldBaseIterator fieldPtrItr = mFieldBaseList.begin();
        fieldPtrItr < mFieldBaseList.end(); ++fieldPtrItr) {
@@ -335,7 +335,7 @@ Hinverse(Field<Dimension, typename Dimension::SymTensor>& field) const {
 // Return the number of fields registered on this nodelist.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-int
+size_t
 NodeList<Dimension>::numFields() const {
   return mFieldBaseList.size();
 }
@@ -407,7 +407,7 @@ NodeList<Dimension>::nodeType(int i) const {
 // The index of the first ghost node.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-unsigned 
+size_t 
 NodeList<Dimension>::firstGhostNode() const {
   CHECK(mFirstGhostNode <= numNodes());
   return mFirstGhostNode;
@@ -449,46 +449,39 @@ NodeList<Dimension>::unregisterNeighbor() {
 template<typename Dimension>
 void
 NodeList<Dimension>::
-deleteNodes(const vector<int>& nodeIDs) {
+deleteNodes(const vector<size_t>& nodeIDs) {
   if (nodeIDs.size() > 0) {
 
     // First sort and make sure all node IDs are valid.
-    vector<int> uniqueIDs(nodeIDs);
-    sort(uniqueIDs.begin(), uniqueIDs.end());
-    vector<int>::iterator uniqueEnd = unique(uniqueIDs.begin(), uniqueIDs.end());
-    uniqueIDs.erase(uniqueEnd, uniqueIDs.end());
+    vector<size_t> uniqueIDs(nodeIDs);
+    std::sort(uniqueIDs.begin(), uniqueIDs.end());
+    uniqueIDs.erase(std::unique(uniqueIDs.begin(), uniqueIDs.end()), uniqueIDs.end());
     CHECK(uniqueIDs.size() <= numNodes());
-    if (uniqueIDs.size() > 0) {
-      CHECK(uniqueIDs[0] >= 0 && uniqueIDs.back() < (int)this->numNodes());
-    }
+    CHECK(uniqueIDs.size() == 0 or uniqueIDs.back() < this->numNodes());
 
     // Determine how many internal, ghost, and total nodes we should end with.
-    vector<int>::iterator ghostDeleteItr = uniqueIDs.begin();
+    auto ghostDeleteItr = uniqueIDs.begin();
     while (ghostDeleteItr < uniqueIDs.end() &&
-           *ghostDeleteItr < (int)mFirstGhostNode) ++ghostDeleteItr;
+           *ghostDeleteItr < mFirstGhostNode) ++ghostDeleteItr;
     CHECK(ghostDeleteItr >= uniqueIDs.begin() && ghostDeleteItr <= uniqueIDs.end());
-    const int numInternalNodesRemoved = distance(uniqueIDs.begin(), ghostDeleteItr);
-    CHECK(numInternalNodesRemoved <= (int)numInternalNodes());
+    const size_t numInternalNodesRemoved = std::distance(uniqueIDs.begin(), ghostDeleteItr);
+    CHECK(numInternalNodesRemoved <= numInternalNodes());
     mNumNodes -= uniqueIDs.size();
     mFirstGhostNode -= numInternalNodesRemoved;
     CHECK(mFirstGhostNode <= mNumNodes);
 
     // Now iterate over the Fields defined on this NodeList, and remove the appropriate
     // elements from each.
-    for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBaseList.begin();
-         fieldItr != mFieldBaseList.end();
-         ++fieldItr) (*fieldItr)->deleteElements(uniqueIDs);
+    for (auto* fieldPtr: mFieldBaseList) fieldPtr->deleteElements(uniqueIDs);
   }
 
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
-  for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBaseList.begin();
-       fieldItr < mFieldBaseList.end();
-       ++fieldItr) {
-    ENSURE((*fieldItr)->size() == mNumNodes);
+  for (auto* fieldPtr: mFieldBaseList) {
+    CONTRACT_VAR(fieldPtr) ;
+    ENSURE(fieldPtr->size() == mNumNodes);
   }
   END_CONTRACT_SCOPE
-  
 }
 
 //------------------------------------------------------------------------------
@@ -498,27 +491,22 @@ deleteNodes(const vector<int>& nodeIDs) {
 template<typename Dimension>
 list< vector<char> >
 NodeList<Dimension>::
-packNodeFieldValues(const vector<int>& nodeIDs) const {
+packNodeFieldValues(const vector<size_t>& nodeIDs) const {
 
   // Prepare the result.
-  list< vector<char> > result;
+  list<vector<char>> result;
 
   // Sort and make sure all node IDs are valid.
-  vector<int> uniqueIDs(nodeIDs);
-  sort(uniqueIDs.begin(), uniqueIDs.end());
-  vector<int>::iterator uniqueEnd = unique(uniqueIDs.begin(), uniqueIDs.end());
-  uniqueIDs.erase(uniqueEnd, uniqueIDs.end());
+  vector<size_t> uniqueIDs(nodeIDs);
+  std::sort(uniqueIDs.begin(), uniqueIDs.end());
+  uniqueIDs.erase(unique(uniqueIDs.begin(), uniqueIDs.end()), uniqueIDs.end());
   CHECK(uniqueIDs.size() <= numNodes());
-  if (uniqueIDs.size() > 0) {
-    CHECK(uniqueIDs[0] >= 0 && uniqueIDs.back() <= (int)this->numNodes());
-  }
+  CHECK(uniqueIDs.size() == 0 or uniqueIDs.back() < this->numNodes());
 
   // Iterate over all the Fields defined on this NodeList, and append it's packed 
   // field values to the stack.
-  for (typename vector<FieldBase<Dimension>*>::const_iterator fieldItr = mFieldBaseList.begin();
-       fieldItr != mFieldBaseList.end();
-       ++fieldItr) {
-    result.push_back((*fieldItr)->packValues(uniqueIDs));
+  for (auto* fieldPtr: mFieldBaseList) {
+    result.push_back(fieldPtr->packValues(uniqueIDs));
   }
 
   ENSURE(result.size() == mFieldBaseList.size());
@@ -532,8 +520,8 @@ packNodeFieldValues(const vector<int>& nodeIDs) const {
 template<typename Dimension>
 void
 NodeList<Dimension>::
-appendInternalNodes(const int numNewNodes,
-                    const list< vector<char> >& packedFieldValues) {
+appendInternalNodes(const size_t numNewNodes,
+                    const list<vector<char>>& packedFieldValues) {
 
   REQUIRE(packedFieldValues.size() == mFieldBaseList.size());
 
@@ -541,16 +529,16 @@ appendInternalNodes(const int numNewNodes,
   if (numNewNodes > 0) {
 
     // Begin by resizing this NodeList appropriately.
-    const int beginInsertionIndex = numInternalNodes();
+    const auto beginInsertionIndex = numInternalNodes();
     numInternalNodes(beginInsertionIndex + numNewNodes);
-    CHECK((int)numInternalNodes() == beginInsertionIndex + numNewNodes);
+    CHECK(numInternalNodes() == beginInsertionIndex + numNewNodes);
 
     // Loop over each Field, and have them fill in the new values from the
     // packed char buffers.
-    vector<int> nodeIDs(numNewNodes);
-    for (auto i = 0; i < numNewNodes; ++i) nodeIDs[i] = beginInsertionIndex + i;
+    vector<size_t> nodeIDs(numNewNodes);
+    for (auto i = 0u; i < numNewNodes; ++i) nodeIDs[i] = beginInsertionIndex + i;
     auto bufItr = packedFieldValues.begin();
-    for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBaseList.begin();
+    for (auto fieldItr = mFieldBaseList.begin();
          fieldItr != mFieldBaseList.end();
          ++fieldItr, ++bufItr) {
       CHECK(bufItr != packedFieldValues.end());
@@ -568,18 +556,18 @@ appendInternalNodes(const int numNewNodes,
 template<typename Dimension>
 void
 NodeList<Dimension>::
-reorderNodes(const vector<int>& newOrdering) {
+reorderNodes(const vector<size_t>& newOrdering) {
 
   // The number of internal nodes.
-  const int n = this->numInternalNodes();
+  const auto n = this->numInternalNodes();
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
   {
-    REQUIRE((int)newOrdering.size() == n);
-    vector<int> tmp(newOrdering);
-    sort(tmp.begin(), tmp.end());
-    for (int i = 0; i != n; ++i) REQUIRE(tmp[i] == i);
+    REQUIRE(newOrdering.size() == n);
+    vector<size_t> tmp(newOrdering);
+    std::sort(tmp.begin(), tmp.end());
+    for (auto i = 0u; i < n; ++i) REQUIRE(tmp[i] == i);
   }
   END_CONTRACT_SCOPE
 
@@ -587,14 +575,12 @@ reorderNodes(const vector<int>& newOrdering) {
   this->numGhostNodes(0);
 
   // The original ordering.
-  vector<int> oldOrdering(n);
-  for (auto i = 0; i < n; ++i) oldOrdering[i] = i;
+  vector<size_t> oldOrdering(n);
+  for (auto i = 0u; i < n; ++i) oldOrdering[i] = i;
 
   // Pack up all the current nodal field values.
-  list<vector<char> > packedFieldValues;
-  for (typename vector<FieldBase<Dimension>*>::const_iterator fieldItr = mFieldBaseList.begin();
-       fieldItr != mFieldBaseList.end();
-       ++fieldItr) packedFieldValues.push_back((*fieldItr)->packValues(oldOrdering));
+  list<vector<char>> packedFieldValues;
+  for (auto* fieldPtr: mFieldBaseList) packedFieldValues.push_back(fieldPtr->packValues(oldOrdering));
   CHECK(packedFieldValues.size() == mFieldBaseList.size());
 
   // Now unpack in the desired order.
@@ -605,7 +591,7 @@ reorderNodes(const vector<int>& newOrdering) {
   CHECK(bufItr == packedFieldValues.end());
 
   // Post-conditions.
-  ENSURE((int)this->numInternalNodes() == n);
+  ENSURE(this->numInternalNodes() == n);
 }
 
 //------------------------------------------------------------------------------
@@ -643,7 +629,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mName, pathName + "/name");
 
   // Read and reset the number of internal nodes.
-  unsigned numNodes;
+  size_t numNodes;
   file.read(numNodes, pathName + "/numNodes");
   numInternalNodes(numNodes);
 
