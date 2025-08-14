@@ -18,7 +18,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
   :
-  QIBase(rhs) {
+  QIView(rhs) {
   mVec = rhs.mVec;
   initializeMA();
 }
@@ -29,7 +29,7 @@ QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
 QuadraticInterpolator&
 QuadraticInterpolator::operator=(const QuadraticInterpolator& rhs) {
   if (this != &rhs) {
-    QIBase::operator=(rhs);
+    QIView::operator=(rhs);
     mVec = rhs.mVec;
     initializeMA();
   }

@@ -39,14 +39,14 @@ QuadraticInterpolator::initialize(double xmin,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::operator()(const double x) const {
+QIView::operator()(const double x) const {
   const auto i0 = lowerBound(x);
   return mcoeffs[i0] + (mcoeffs[i0 + 1] + mcoeffs[i0 + 2]*x)*x;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::operator()(const double x,
+QIView::operator()(const double x,
                    const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return mcoeffs[i0] + (mcoeffs[i0 + 1] + mcoeffs[i0 + 2]*x)*x;
@@ -54,7 +54,7 @@ QIBase::operator()(const double x,
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::operator[](const size_t i) const {
+QIView::operator[](const size_t i) const {
   REQUIRE(size() > 0);
   REQUIRE(i < size());
   return mcoeffs[i];
@@ -65,14 +65,14 @@ QIBase::operator[](const size_t i) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::prime(const double x) const {
+QIView::prime(const double x) const {
   const auto i0 = lowerBound(x);
   return mcoeffs[i0 + 1] + 2.0*mcoeffs[i0 + 2]*x;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::prime(const double x,
+QIView::prime(const double x,
               const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return mcoeffs[i0 + 1] + 2.0*mcoeffs[i0 + 2]*x;
@@ -84,14 +84,14 @@ QIBase::prime(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::prime2(const double x) const {
+QIView::prime2(const double x) const {
   const auto i0 = lowerBound(x);
   return 2.0*mcoeffs[i0 + 2];
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::prime2(const double /*x*/,
+QIView::prime2(const double /*x*/,
                const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return 2.0*mcoeffs[i0 + 2];
@@ -102,7 +102,7 @@ QIBase::prime2(const double /*x*/,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-QIBase::lowerBound(const double x) const {
+QIView::lowerBound(const double x) const {
   const auto result = 3u*std::min(mN1, size_t(std::max(0.0, x - mXmin)/mXstep));
   ENSURE(result <= 3u*mN1);
   return result;
@@ -113,25 +113,25 @@ QIBase::lowerBound(const double x) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-QIBase::size() const {
+QIView::size() const {
   return 3*(mN1 + 1u);
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::xmin() const {
+QIView::xmin() const {
   return mXmin;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::xmax() const {
+QIView::xmax() const {
   return mXmax;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIBase::xstep() const {
+QIView::xstep() const {
   return mXstep;
 }
 
@@ -141,7 +141,7 @@ QIBase::xstep() const {
 SPHERAL_HOST_DEVICE
 inline
 bool
-QIBase::operator==(const QIBase& rhs) const {
+QIView::operator==(const QIView& rhs) const {
   return ((mN1 == rhs.mN1) and
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and

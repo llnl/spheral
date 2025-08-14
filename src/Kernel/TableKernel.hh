@@ -27,8 +27,8 @@ public:
   using SymTensor = typename Dimension::SymTensor;
   using InterpolatorType = QuadraticInterpolator;
   using NperhInterpolatorType = CubicHermiteInterpolator;
-  using IBase = QIBase;
-  using NperhIBase = CHIBase;
+  using IView = QIView;
+  using NperhIView = CHIView;
 
   SPHERAL_HOST_DEVICE TableKernelView() = default;
   // Equivalence
@@ -72,8 +72,8 @@ protected:
   size_t mNumPoints = 100u;
   Scalar mMinNperh = 0.25;
   Scalar mMaxNperh = 64.0;
-  IBase mInterp, mGradInterp, mGrad2Interp; // W, grad W, grad^2 W
-  NperhIBase mNperhLookup, mWsumLookup;     // SPH nperh lookups
+  IView mInterp, mGradInterp, mGrad2Interp; // W, grad W, grad^2 W
+  NperhIView mNperhLookup, mWsumLookup;     // SPH nperh lookups
 
 };
 

@@ -81,7 +81,7 @@ CubicHermiteInterpolator::initialize(const double xmin,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::operator()(const double x) const {
+CHIView::operator()(const double x) const {
   if (x < mXmin) {
     return mVals[0] + mVals[mN]*(x - mXmin);
   } else if (x > mXmax) {
@@ -94,7 +94,7 @@ CHIBase::operator()(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::operator()(const double x,
+CHIView::operator()(const double x,
                     const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
@@ -108,7 +108,7 @@ CHIBase::operator()(const double x,
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::operator[](const size_t i) const {
+CHIView::operator[](const size_t i) const {
   REQUIRE(size() > 0);
   REQUIRE(i < size());
   return mVals[i];
@@ -119,7 +119,7 @@ CHIBase::operator[](const size_t i) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::prime(const double x) const {
+CHIView::prime(const double x) const {
   if (x < mXmin) {
     return mVals[mN];
   } else if (x > mXmax) {
@@ -132,7 +132,7 @@ CHIBase::prime(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::prime(const double x,
+CHIView::prime(const double x,
                const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
@@ -147,7 +147,7 @@ CHIBase::prime(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::prime2(const double x) const {
+CHIView::prime2(const double x) const {
   if (x < mXmin or x > mXmax) {
     return 0.0;
   } else {
@@ -158,7 +158,7 @@ CHIBase::prime2(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::prime2(const double x,
+CHIView::prime2(const double x,
                 const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
@@ -172,7 +172,7 @@ CHIBase::prime2(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-CHIBase::lowerBound(const double x) const {
+CHIView::lowerBound(const double x) const {
   const auto result = std::min(mN - 2u, size_t(std::max(0.0, x - mXmin)/mXstep));
   ENSURE(result <= mN - 2u);
   return result;
@@ -183,25 +183,25 @@ CHIBase::lowerBound(const double x) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::h00(const double t) const {
+CHIView::h00(const double t) const {
   return (2.0*t - 3.0)*t*t + 1.0;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::h10(const double t) const {
+CHIView::h10(const double t) const {
   return (t - 2.0)*t*t + t;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::h01(const double t) const {
+CHIView::h01(const double t) const {
   return (3.0 - 2.0*t)*t*t;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::h11(const double t) const {
+CHIView::h11(const double t) const {
   return (t - 1.0)*t*t;
 }
 
@@ -210,25 +210,25 @@ CHIBase::h11(const double t) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-CHIBase::size() const {
+CHIView::size() const {
   return mN;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::xmin() const {
+CHIView::xmin() const {
   return mXmin;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::xmax() const {
+CHIView::xmax() const {
   return mXmax;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIBase::xstep() const {
+CHIView::xstep() const {
   return mXstep;
 }
 

@@ -17,15 +17,15 @@
 
 namespace Spheral {
 
-class QIBase : public chai::CHAICopyable {
+class QIView : public chai::CHAICopyable {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
-  SPHERAL_HOST_DEVICE QIBase() = default;
+  SPHERAL_HOST_DEVICE QIView() = default;
 
   // Comparisons
-  SPHERAL_HOST_DEVICE bool operator==(const QIBase& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const QIView& rhs) const;
 
   // Interpolate for the y value
   SPHERAL_HOST_DEVICE double operator()(const double x) const;
@@ -47,13 +47,13 @@ public:
   SPHERAL_HOST_DEVICE double xmin() const;                        // Minimum x coordinate for table
   SPHERAL_HOST_DEVICE double xmax() const;                        // Maximum x coordinate for table
   SPHERAL_HOST_DEVICE double xstep() const;                       // delta x between tabulated values
-  void move(chai::ExecutionSpace space) { mcoeffs.move(space); }
+  SPHERAL_HOST void move(chai::ExecutionSpace space) { mcoeffs.move(space); }
   SPHERAL_HOST_DEVICE double* data() const { return mcoeffs.data(); }
   SPHERAL_HOST_DEVICE void touch(chai::ExecutionSpace space) {
     mcoeffs.registerTouch(space);
   }
 
-  SPHERAL_HOST QIBase(size_t N1,
+  SPHERAL_HOST QIView(size_t N1,
                       double xmin,
                       double xmax,
                       double xstep,
@@ -74,7 +74,7 @@ protected:
   ContainerType mcoeffs;
 };
 
-class QuadraticInterpolator : public QIBase {
+class QuadraticInterpolator : public QIView {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   template<typename Func>
@@ -90,8 +90,8 @@ public:
   void initialize(double xmin, double xmax, size_t n, const Func& f);
   void initialize(double xmin, double xmax, const std::vector<double>& yvals);
 
-  QIBase view() {
-    return QIBase(mN1, mXmin, mXmax, mXstep, mcoeffs);
+  QIView view() {
+    return QIView(mN1, mXmin, mXmax, mXstep, mcoeffs);
   }
 private:
   std::vector<double> mVec;

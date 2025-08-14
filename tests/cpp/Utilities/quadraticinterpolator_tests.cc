@@ -45,9 +45,9 @@ GPU_TYPED_TEST_P(QuadraticInterpolatorTypedTest, CopyAssign) {
     SPHERAL_ASSERT_EQ(qi1.size(), qiref.size());
     QI qi2 = qiref;
     SPHERAL_ASSERT_EQ(qi2.size(), qiref.size());
-    Spheral::QIBase qi1_view = qi1.view();
-    Spheral::QIBase qi2_view = qi2.view();
-    Spheral::QIBase qiref_view = qiref;
+    Spheral::QIView qi1_view = qi1.view();
+    Spheral::QIView qi2_view = qi2.view();
+    Spheral::QIView qiref_view = qiref;
     // Ensure the underlying data pointer is different from the initial QI
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_NE(qi1_view.data(), qiref_view.data());
@@ -69,7 +69,7 @@ GPU_TYPED_TEST_P(QuadraticInterpolatorTypedTest, FuncCtorTest) {
   QI qih(xmin, xmax, NV, gpu_this->func);
   {
     size_t N = qih.size();
-    Spheral::QIBase qi = qih.view();
+    Spheral::QIView qi = qih.view();
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(qi.size(), N);
     EXEC_IN_SPACE_END()
@@ -92,7 +92,7 @@ GPU_TYPED_TEST_P(QuadraticInterpolatorTypedTest, VecCtorTest) {
   const double xmax = gpu_this->xmax;
   QI qih(xmin, xmax, yvals);
   size_t N = qih.size();
-  Spheral::QIBase qi = qih.view();
+  Spheral::QIView qi = qih.view();
   EXEC_IN_SPACE_BEGIN(TypeParam)
     SPHERAL_ASSERT_EQ(qi.size(), N);
   EXEC_IN_SPACE_END()
