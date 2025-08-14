@@ -104,7 +104,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   if (double(totalNumNodes)/double(Process::getTotalNumberOfProcesses()) >= 1.0) {
 
     // Get the global IDs.
-    const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+    const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
     // Compute the work per node.
     FieldList<Dimension, Scalar> workField(FieldStorageType::CopyFields);
@@ -283,7 +283,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       vector<pair<Key, int>> orderedkeys(n);
       for (auto i = 0u; i < n; ++i) orderedkeys[i] = make_pair(keys(i), i);
       sort(orderedkeys.begin(), orderedkeys.end(), SortNodesByHashedIndex<int>());  // [](const pair<Key, int>& lhs, const pair<Key, int>& rhs) { return lhs.first < rhs.first; });
-      vector<int> ordering(n);
+      vector<size_t> ordering(n);
       for (auto i = 0u; i < n; ++i) ordering[orderedkeys[i].second] = i;
       nodeListPtr->reorderNodes(ordering);
       nodeListPtr->neighbor().updateNodes();

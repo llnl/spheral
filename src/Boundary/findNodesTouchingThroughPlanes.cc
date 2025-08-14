@@ -9,12 +9,12 @@ namespace Spheral {
 using std::vector;
 
 template<typename Dimension>
-std::vector<int>
+std::vector<size_t>
 findNodesTouchingThroughPlanes(const NodeList<Dimension>& nodeList,
                                const GeomPlane<Dimension>& enterPlane,
                                const GeomPlane<Dimension>& exitPlane,
                                const double hmultiplier) {
-  vector<int> result;
+  vector<size_t> result;
 
   // Get the Neighbor object associated with the node list.
   auto& neighbor = nodeList.neighbor();

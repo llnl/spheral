@@ -118,7 +118,7 @@ MFV(DataBase<Dimension>& dataBase,
   mDvolumeDt(FieldStorageType::CopyFields),
   //mHStretchTensor(FieldStorageType::CopyFields),
   mPairMassFluxPtr() {
-    mNodalVelocity = dataBase.newFluidFieldList(Vector::zero, GSPHFieldNames::nodalVelocity);
+    // mNodalVelocity = dataBase.newFluidFieldList(Vector::zero, GSPHFieldNames::nodalVelocity);
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
     mDmomentumDt = dataBase.newFluidFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
@@ -147,7 +147,7 @@ registerState(DataBase<Dimension>& dataBase,
 
   GenericRiemannHydro<Dimension>::registerState(dataBase,state);
 
-  dataBase.resizeFluidFieldList(mNodalVelocity, Vector::zero, GSPHFieldNames::nodalVelocity,false);
+  // dataBase.resizeFluidFieldList(mNodalVelocity, Vector::zero, GSPHFieldNames::nodalVelocity,false);
 
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto position = state.fields(HydroFieldNames::position,Vector::zero);
@@ -311,13 +311,13 @@ applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   GenericRiemannHydro<Dimension>::applyGhostBoundaries(state,derivs);
 
-  auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
+  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
 
-  for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
-       boundaryItr != this->boundaryEnd();
-       ++boundaryItr) {
-    (*boundaryItr)->applyFieldListGhostBoundary(nodalVelocity);
-  }
+  // for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
+  //      boundaryItr != this->boundaryEnd();
+  //      ++boundaryItr) {
+  //   (*boundaryItr)->applyFieldListGhostBoundary(nodalVelocity);
+  // }
 }
 
 //------------------------------------------------------------------------------
@@ -330,13 +330,13 @@ enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
   GenericRiemannHydro<Dimension>::enforceBoundaries(state,derivs);
 
-  auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
+  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
 
-  for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
-       boundaryItr != this->boundaryEnd();
-       ++boundaryItr) {
-    (*boundaryItr)->enforceFieldListBoundary(nodalVelocity);
-  }
+  // for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
+  //      boundaryItr != this->boundaryEnd();
+  //      ++boundaryItr) {
+  //   (*boundaryItr)->enforceFieldListBoundary(nodalVelocity);
+  // }
 }
 
 
@@ -348,7 +348,7 @@ void
 MFV<Dimension>::
 dumpState(FileIO& file, const string& pathName) const {
   GenericRiemannHydro<Dimension>::dumpState(file,pathName);
-  file.write(mNodalVelocity, pathName + "/nodalVelocity");
+  // file.write(mNodalVelocity, pathName + "/nodalVelocity");
   file.write(mDmassDt, pathName + "/DmassDt");
   file.write(mDthermalEnergyDt, pathName + "/DthermalEnergyDt");
   file.write(mDmomentumDt, pathName + "/DmomentumDt");
@@ -363,7 +363,7 @@ void
 MFV<Dimension>::
 restoreState(const FileIO& file, const string& pathName) {
   GenericRiemannHydro<Dimension>::restoreState(file,pathName);
-  file.read(mNodalVelocity, pathName + "/nodalVelocity");
+  // file.read(mNodalVelocity, pathName + "/nodalVelocity");
   file.read(mDmassDt, pathName + "/DmassDt");
   file.read(mDthermalEnergyDt, pathName + "/DthermalEnergyDt");
   file.read(mDmomentumDt, pathName + "/DmomentumDt");

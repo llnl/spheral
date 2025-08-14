@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "FSISPH/SlideSurface.cc"
 #include "Geometry/Dimension.hh"

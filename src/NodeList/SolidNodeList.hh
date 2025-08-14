@@ -26,18 +26,18 @@ public:
   SolidNodeList(std::string name,
                 EquationOfState<Dimension>& eos,
                 StrengthModel<Dimension>& strength,
-                const int numInternal,
-                const int numGhost,
+                const size_t numInternal,
+                const size_t numGhost,
                 const Scalar hmin,
                 const Scalar hmax,
                 const Scalar hminratio,
                 const Scalar nPerh,
-                const int maxNumNeighbors,
+                const size_t maxNumNeighbors,
                 const Scalar rhoMin,
                 const Scalar rhoMax);
 
   // Destructor.
-  virtual ~SolidNodeList();
+  virtual ~SolidNodeList() = default;
 
   // Override the base method for calculating the sound speed.
   virtual void soundSpeed(Field<Dimension, Scalar>& field) const;
@@ -86,6 +86,10 @@ public:
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************
 
+  // No default constructor or copying.
+  SolidNodeList() = delete;
+  SolidNodeList(const SolidNodeList& solidNodeList) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   Field<Dimension, SymTensor> mDeviatoricStress;
@@ -97,10 +101,6 @@ private:
 
   // Pointer to the associated strength object.
   StrengthModel<Dimension>& mStrength;
-
-  // No default constructor or copying.
-  SolidNodeList();
-  SolidNodeList(const SolidNodeList& solidNodeList);
 };
 
 }

@@ -102,7 +102,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
   }
 
   // Build the set of global node IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Get the local description of the domain distribution.
   vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, work);

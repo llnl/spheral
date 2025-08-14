@@ -55,8 +55,8 @@ public:
   // Patch the connectivity information:
   // flags   -- (0,1): 0 => node deleted, 1 => node preserved
   // old2new -- maps old -> new node indices.
-  void patchConnectivity(const FieldList<Dimension, int>& flags,
-                         const FieldList<Dimension, int>& old2new);
+  void patchConnectivity(const FieldList<Dimension, size_t>& flags,
+                         const FieldList<Dimension, size_t>& old2new);
 
   // Remove connectivity between neighbors.
   // Note this method assumes neighbor info is symmetric, and removes the pair connectivity for each

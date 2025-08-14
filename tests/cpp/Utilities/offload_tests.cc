@@ -3,7 +3,7 @@
 
 class OffloadTest : public ::testing::Test {};
 
-// Setting up G Test for Fiedl
+// Setting up G Test for Field
 TYPED_TEST_SUITE_P(OffloadTypedTest);
 template <typename T> class OffloadTypedTest : public OffloadTest {};
 

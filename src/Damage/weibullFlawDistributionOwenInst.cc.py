@@ -11,7 +11,7 @@ Spheral::weibullFlawDistributionOwen<Spheral::Dim< %(ndim)s > >(const unsigned,
                                                                 const double,
                                                                 const Spheral::FluidNodeList<Spheral::Dim< %(ndim)s > >&,
                                                                 const Spheral::State<Spheral::Dim< %(ndim)s > >&,
-                                                                const int,
+                                                                const size_t,
                                                                 const double,
                                                                 const Spheral::Field<Spheral::Dim<%(ndim)s>, int>&);
 """

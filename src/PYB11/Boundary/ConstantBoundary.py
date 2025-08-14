@@ -32,7 +32,7 @@ NodeList.
     def pyinit(self,
                dataBase = "DataBase<%(Dimension)s>&",
                nodeList = "NodeList<%(Dimension)s>&",
-               nodeIndices = "const std::vector<int>&",
+               nodeIndices = "const std::vector<size_t>&",
                denialPlane = "const Plane&"):
         "Construct a constant boundary for the specified nodes, including plane nodes are not allowed through"
 
@@ -40,12 +40,12 @@ NodeList.
                                NodeList<%(Dimension)s>& nodes,
                                py::list nodeIndices,
                                const Plane& denialPlane) {
-                                   return std::make_unique<ConstantBoundary<%(Dimension)s>>(db, nodes, Spheral::PYB11utils::from_list<int>(nodeIndices), denialPlane);
+                                   return std::make_unique<ConstantBoundary<%(Dimension)s>>(db, nodes, Spheral::PYB11utils::from_list<size_t>(nodeIndices), denialPlane);
                                }""")
     def pyinit1(self,
                 dataBase = "DataBase<%(Dimension)s>&",
                 nodeList = "NodeList<%(Dimension)s>&",
-                nodeIndices = "const std::vector<int>&",
+                nodeIndices = "const std::vector<size_t>&",
                 denialPlane = "const Plane&"):
         "Construct a constant boundary for the specified nodes, including plane nodes are not allowed through"
 
@@ -71,8 +71,8 @@ NodeList.
     #...........................................................................
     # Properties
     nodeList = PYB11property("const NodeList<%(Dimension)s>&", "nodeList", doc="The NodeList this boundary applies to")
-    nodeIndices = PYB11property("std::vector<int>", "nodeIndices", doc="The nodes this boundary is in control of")
-    numConstantNodes = PYB11property("int", "numConstantNodes", doc="The number of nodes we are controlling")
+    nodeIndices = PYB11property("std::vector<size_t>", "nodeIndices", doc="The nodes this boundary is in control of")
+    numConstantNodes = PYB11property("size_t", "numConstantNodes", doc="The number of nodes we are controlling")
     reflectOperator = PYB11property("const Tensor", "reflectOperator", doc="The tensor reflection transformation")
 
 #-------------------------------------------------------------------------------

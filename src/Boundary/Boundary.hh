@@ -36,27 +36,27 @@ class Boundary {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   // An internal type to hold the paired control/ghost node indices.
   // Also maintains a list of any internal nodes that are in violation
   // of the boundary condition.
   struct BoundaryNodes {
-    std::vector<int> controlNodes;
-    std::vector<int> ghostNodes;
-    std::vector<int> violationNodes;
+    std::vector<size_t> controlNodes;
+    std::vector<size_t> ghostNodes;
+    std::vector<size_t> violationNodes;
   };
 
   // Constructors and destructors.
   Boundary();
-  virtual ~Boundary();
+  virtual ~Boundary() = default;
 
   //****************************************************************************
   // All Boundary conditions must provide the following methods:
@@ -80,6 +80,7 @@ public:
 
   // Specific Field ValueTypes -- default to just calling base method
   virtual void applyGhostBoundary(Field<Dimension, int>& field) const                       { this->applyGhostBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
+  virtual void applyGhostBoundary(Field<Dimension, size_t>& field) const                    { this->applyGhostBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void applyGhostBoundary(Field<Dimension, Scalar>& field) const                    { this->applyGhostBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void applyGhostBoundary(Field<Dimension, Vector>& field) const                    { this->applyGhostBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void applyGhostBoundary(Field<Dimension, Tensor>& field) const                    { this->applyGhostBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
@@ -99,6 +100,7 @@ public:
 
   // Specific Field ValueTypes -- default to just calling base method
   virtual void enforceBoundary(Field<Dimension, int>& field) const                       { this->enforceBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
+  virtual void enforceBoundary(Field<Dimension, size_t>& field) const                    { this->enforceBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void enforceBoundary(Field<Dimension, Scalar>& field) const                    { this->enforceBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void enforceBoundary(Field<Dimension, Vector>& field) const                    { this->enforceBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
   virtual void enforceBoundary(Field<Dimension, Tensor>& field) const                    { this->enforceBoundary(dynamic_cast<FieldBase<Dimension>&>(field)); }
@@ -128,6 +130,7 @@ public:
   //****************************************************************************
   // Apply the boundary condition to face centered fields on a tessellation.
   virtual void enforceBoundary(std::vector<int>&              /*faceField*/, const Mesh<Dimension>& /*mesh*/) const { VERIFY2(false, "Not implemented"); }
+  virtual void enforceBoundary(std::vector<size_t>&           /*faceField*/, const Mesh<Dimension>& /*mesh*/) const { VERIFY2(false, "Not implemented"); }
   virtual void enforceBoundary(std::vector<Scalar>&           /*faceField*/, const Mesh<Dimension>& /*mesh*/) const { VERIFY2(false, "Not implemented"); }
   virtual void enforceBoundary(std::vector<Vector>&           /*faceField*/, const Mesh<Dimension>& /*mesh*/) const { VERIFY2(false, "Not implemented"); }
   virtual void enforceBoundary(std::vector<Tensor>&           /*faceField*/, const Mesh<Dimension>& /*mesh*/) const { VERIFY2(false, "Not implemented"); }
@@ -144,9 +147,9 @@ public:
 
   //****************************************************************************
   // Use a set of flags to cull out inactive ghost nodes.
-  virtual void cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                              FieldList<Dimension, int>& old2newIndexMap,
-                              std::vector<int>& numNodesRemoved);
+  virtual void cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                              FieldList<Dimension, size_t>& old2newIndexMap,
+                              std::vector<size_t>& numNodesRemoved);
 
   // Some boundaries need to know when a problem is starting up and all the physics
   // packages have been initialized.
@@ -180,20 +183,20 @@ public:
   bool haveNodeList(const NodeList<Dimension>& nodeList) const;
 
   // Control, Ghost, and Violation nodes for a given NodeList.
-  const std::vector<int>& controlNodes(const NodeList<Dimension>& nodeList) const;
-  const std::vector<int>& ghostNodes(const NodeList<Dimension>& nodeList) const;
-  const std::vector<int>& violationNodes(const NodeList<Dimension>& nodeList) const;
+  const std::vector<size_t>& controlNodes(const NodeList<Dimension>& nodeList) const;
+  const std::vector<size_t>& ghostNodes(const NodeList<Dimension>& nodeList) const;
+  const std::vector<size_t>& violationNodes(const NodeList<Dimension>& nodeList) const;
 
   // Provide iterators over the control, ghost, and violation nodes for a
   // given NodeList.
-  std::vector<int>::const_iterator controlBegin(const NodeList<Dimension>& nodeList) const;
-  std::vector<int>::const_iterator controlEnd(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator controlBegin(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator controlEnd(const NodeList<Dimension>& nodeList) const;
 
-  std::vector<int>::const_iterator ghostBegin(const NodeList<Dimension>& nodeList) const;
-  std::vector<int>::const_iterator ghostEnd(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator ghostBegin(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator ghostEnd(const NodeList<Dimension>& nodeList) const;
 
-  std::vector<int>::const_iterator violationBegin(const NodeList<Dimension>& nodeList) const;
-  std::vector<int>::const_iterator violationEnd(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator violationBegin(const NodeList<Dimension>& nodeList) const;
+  std::vector<size_t>::const_iterator violationEnd(const NodeList<Dimension>& nodeList) const;
 
   // Descendent classes are allowed to access the BoundaryNodes for the
   // given NodeList.
