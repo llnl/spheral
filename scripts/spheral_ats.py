@@ -165,6 +165,7 @@ def main():
             if (options.delay):
                 launch_cmd += "--begin=19:10:00 "
             mac_args.append(f"--numNodes {numNodes}")
+            ats_args.append("--unbuffered")
         elif any(x in hostname for x in toss_cray_machine_names):
             numNodes = numNodes if numNodes else 1
             timeLimit = timeLimit if timeLimit else 120
