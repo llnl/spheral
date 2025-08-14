@@ -44,19 +44,10 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  static const double mKW;
-  static const double mKGW;
+  static constexpr double mKW = 0.5*(Dimension::nDim + 2.0);
+  static constexpr double mKGW = 0.5*Dimension::nDim;
 
 };
-
-template<> const double SuperGaussianKernel<Dim<1>>::mKW;
-template<> const double SuperGaussianKernel<Dim<1>>::mKGW;
-
-template<> const double SuperGaussianKernel<Dim<2>>::mKW;
-template<> const double SuperGaussianKernel<Dim<2>>::mKGW;
-
-template<> const double SuperGaussianKernel<Dim<3>>::mKW;
-template<> const double SuperGaussianKernel<Dim<3>>::mKGW;
 
 }
 

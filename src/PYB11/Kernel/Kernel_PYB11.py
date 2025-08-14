@@ -44,19 +44,17 @@ from Kernel import *
 from SphericalKernel import *
 from SphericalBiCubicSplineKernel import *
 
-# TODO: change template_parameters to match what is used for TableKernelView
 for ndim in dims:
     for KT in ("BSpline","W4Spline", "Gaussian", "SuperGaussian", "PiGaussian",
                "Hat", "Sinc", "NSincPolynomial", "NBSpline", "QuarticSpline",
                "QuinticSpline", "WendlandC2", "WendlandC4", "WendlandC6", "ExpInv"):
-        exec('''
-_Kernel%(ndim)id_%(KT)s = PYB11TemplateClass(Kernel,
-                                             template_parameters = ("Dim<%(ndim)i>", "%(KT)sKernel<Dim<%(ndim)i>>"))
-%(KT)sKernel%(ndim)id = PYB11TemplateClass(%(KT)sKernel,
-                                           template_parameters = ("Dim<%(ndim)i>", "%(KT)sKernel<Dim<%(ndim)i>>"),
-                                            cppname = "%(KT)sKernel<Dim<%(ndim)i>>")
-''' % {"ndim" : ndim,
-       "KT"   : KT})
+        exec(f'''
+_Kernel{ndim}d_{KT} = PYB11TemplateClass(Kernel,
+                                         template_parameters = ("Dim<{ndim}>", "{KT}Kernel<Dim<{ndim}>>"))
+{KT}Kernel{ndim}d = PYB11TemplateClass({KT}Kernel,
+                                       template_parameters = "Dim<{ndim}>",
+                                       cppname = "{KT}Kernel<Dim<{ndim}>>")
+''')
     exec(f'''
 _Kernel{ndim}d_TableKernelView = PYB11TemplateClass(Kernel,
                                                     template_parameters = ("Dim<{ndim}>", "TableKernelView<Dim<{ndim}>>"))
