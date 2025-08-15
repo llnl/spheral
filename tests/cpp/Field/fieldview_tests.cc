@@ -61,7 +61,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
     FieldDouble field("ExecSpaceCapture", gpu_this->nl, 4.0);
     SPHERAL_ASSERT_EQ(field.size(), N);
 
-    auto field_v = field.toView(gpu_this->callback());
+    auto field_v = field.view(gpu_this->callback());
     SPHERAL_ASSERT_EQ(field_v.size(), N);
 
     RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
@@ -95,7 +95,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
     std::iota(data.begin(), data.end(), 0.0);
     field = data;
 
-    auto field_v = field.toView(gpu_this->callback());
+    auto field_v = field.view(gpu_this->callback());
 
     // Execute in working execution space.
     RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
@@ -136,16 +136,16 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
     SPHERAL_ASSERT_EQ(field.size(), N);
 
     // Retreive multiple FieldViews from a Single Field.
-    auto field_v0 = field.toView(gpu_this->callback());
-    auto field_v1 = field.toView(gpu_this->callback());
-    auto field_v2 = field.toView(gpu_this->callback());
-    auto field_v3 = field.toView(gpu_this->callback());
-    auto field_v4 = field.toView(gpu_this->callback());
-    auto field_v5 = field.toView(gpu_this->callback());
-    auto field_v6 = field.toView(gpu_this->callback());
-    auto field_v7 = field.toView(gpu_this->callback());
-    auto field_v8 = field.toView(gpu_this->callback());
-    auto field_v9 = field.toView(gpu_this->callback());
+    auto field_v0 = field.view(gpu_this->callback());
+    auto field_v1 = field.view(gpu_this->callback());
+    auto field_v2 = field.view(gpu_this->callback());
+    auto field_v3 = field.view(gpu_this->callback());
+    auto field_v4 = field.view(gpu_this->callback());
+    auto field_v5 = field.view(gpu_this->callback());
+    auto field_v6 = field.view(gpu_this->callback());
+    auto field_v7 = field.view(gpu_this->callback());
+    auto field_v8 = field.view(gpu_this->callback());
+    auto field_v9 = field.view(gpu_this->callback());
 
     // Capture and execute on all FieldView objs in the working space.
     RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
@@ -175,7 +175,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
 }
 
 /**
- * Resize the field after a copy to the execution space. The Second toView
+ * Resize the field after a copy to the execution space. The Second view
  * Call should trigger a free of any GPU memory and reassign the FieldView
  * CPU pointer to the underlying vectors new address. This test should expect
  * two allocations, two copies to the device and two deallocations on the
@@ -188,7 +188,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
     FieldDouble field("ResizeField", gpu_this->nl, val);
     SPHERAL_ASSERT_EQ(field.size(), N);
 
-    auto field_v = field.toView(gpu_this->callback());
+    auto field_v = field.view(gpu_this->callback());
     SPHERAL_ASSERT_EQ(field_v.size(), N);
 
     // Capture the FieldView in the working execution space.
@@ -205,7 +205,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
 
     // Assign field_v again. This should trigger a deallocation of the original
     // GPU data.
-    field_v = field.toView(gpu_this->callback());
+    field_v = field.view(gpu_this->callback());
     SPHERAL_ASSERT_EQ(field_v.size(), N * 10);
 
     // Capture field_v in the working executino space again. This should trigger

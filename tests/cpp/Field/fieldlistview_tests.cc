@@ -78,7 +78,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     field_list.appendField(field2);
 
     const size_t numFields = field_list.size() ;
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -119,7 +119,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     const size_t numFields = field_list.size() ;
 
     { // Scope 1
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     DEBUG_LOG << "Start Kernel 1";
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
@@ -133,7 +133,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     DEBUG_LOG << "Start Kernel 2";
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
@@ -175,7 +175,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     const size_t numFields = field_list.size();
 
     { // Scope 1
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     DEBUG_LOG << "Start Kernel 1";
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
@@ -187,7 +187,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     DEBUG_LOG << "Start Kernel 2";
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
@@ -227,7 +227,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
     field_list.appendField(field);
     field_list.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
       RAJA::forall<TypeParam>(TRS_UINT(0, N),
         [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -270,7 +270,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
     field_list.appendField(field);
     field_list.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
       RAJA::forall<TypeParam>(TRS_UINT(0, N),
         [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -312,14 +312,14 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
 
     field_list.appendField(field);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
       EXEC_IN_SPACE_BEGIN(TypeParam)
         SPHERAL_ASSERT_EQ(fl_v.size(), 1);
       EXEC_IN_SPACE_END()
 
       field_list.appendField(field2);
-      fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
       EXEC_IN_SPACE_BEGIN(TypeParam)
         SPHERAL_ASSERT_EQ(fl_v.size(), 2);
@@ -355,8 +355,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
     field_list.appendField(field2);
     field_list2.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
-      auto fl_v2 = field_list2.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v2 = field_list2.view(gpu_this->fl_callback(), gpu_this->f_callback());
       RAJA::forall<RAJA::seq_exec>(TRS_UINT(0, N),
         [=] (size_t i) {
           fl_v(1, i) += (double)i;
