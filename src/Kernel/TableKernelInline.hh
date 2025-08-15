@@ -1,6 +1,5 @@
 #include "Geometry/Dimension.hh"
 #include "Utilities/DBC.hh"
-#include "VolumeIntegrationFunctions.hh"
 
 namespace Spheral {
 
