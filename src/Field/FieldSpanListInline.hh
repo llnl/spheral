@@ -10,19 +10,10 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct from a span of FieldSpan
-//------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// FieldSpanList<Dimension, DataType>::
-// FieldSpanList(SPHERAL_SPAN_TYPE<FieldSpan<Dimension, DataType>>& rhs):
-//   mSpanFieldSpans(rhs) {
-// }
-
-//------------------------------------------------------------------------------
 // Assignment with a constant.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::
@@ -32,9 +23,23 @@ operator=(const DataType& rhs) {
 }
 
 //------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+FieldSpanList<Dimension, DataType>::
+~FieldSpanList() {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mSpanFieldSpans.free();
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Index operator.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 typename FieldSpanList<Dimension, DataType>::value_type
 FieldSpanList<Dimension, DataType>::
@@ -47,6 +52,7 @@ operator[](const size_t index) const {
 // at version, for consistency with the STL.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 typename FieldSpanList<Dimension, DataType>::value_type
 FieldSpanList<Dimension, DataType>::
@@ -58,6 +64,7 @@ at(const size_t index) const {
 // Provide direct access to FieldSpan elements
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 DataType&
 FieldSpanList<Dimension, DataType>::
@@ -72,6 +79,7 @@ operator()(const size_t fieldIndex,
 // Apply a minimum data value.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 void
 FieldSpanList<Dimension, DataType>::applyMin(const DataType& dataMin) {
@@ -82,6 +90,7 @@ FieldSpanList<Dimension, DataType>::applyMin(const DataType& dataMin) {
 // Apply a maximum data value.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 void
 FieldSpanList<Dimension, DataType>::applyMax(const DataType& dataMax) {
@@ -92,6 +101,7 @@ FieldSpanList<Dimension, DataType>::applyMax(const DataType& dataMax) {
 // Apply a (scalar) minimum data value.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 void
 FieldSpanList<Dimension, DataType>::applyScalarMin(const Scalar dataMin) {
@@ -102,6 +112,7 @@ FieldSpanList<Dimension, DataType>::applyScalarMin(const Scalar dataMin) {
 // Apply a (scalar) maximum data value.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 void
 FieldSpanList<Dimension, DataType>::applyScalarMax(const Scalar dataMax) {
@@ -112,6 +123,7 @@ FieldSpanList<Dimension, DataType>::applyScalarMax(const Scalar dataMax) {
 // Add two FieldSpanLists in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator+=(const FieldSpanList<Dimension, DataType>& rhs) {
@@ -133,6 +145,7 @@ FieldSpanList<Dimension, DataType>::operator+=(const FieldSpanList<Dimension, Da
 // Subtract a FieldList from another in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator-=(const FieldSpanList<Dimension, DataType>& rhs) {
@@ -154,6 +167,7 @@ FieldSpanList<Dimension, DataType>::operator-=(const FieldSpanList<Dimension, Da
 // Add a single value to the FieldSpanList in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator+=(const DataType& rhs) {
@@ -166,6 +180,7 @@ FieldSpanList<Dimension, DataType>::operator+=(const DataType& rhs) {
 // Subtract a single value from the FieldSpanList in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator-=(const DataType& rhs) {
@@ -178,6 +193,7 @@ FieldSpanList<Dimension, DataType>::operator-=(const DataType& rhs) {
 // Multiply this FieldSpanList by a Scalar FieldSpanList in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::
@@ -200,6 +216,7 @@ operator*=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
 // Multiply this FieldSpanList by a Scalar in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator*=(const Scalar& rhs) {
@@ -212,6 +229,7 @@ FieldSpanList<Dimension, DataType>::operator*=(const Scalar& rhs) {
 // Divide this FieldSpanList by a Scalar FieldSpanList in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::
@@ -234,6 +252,7 @@ operator/=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
 // Divide this FieldSpanList by a Scalar in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 FieldSpanList<Dimension, DataType>&
 FieldSpanList<Dimension, DataType>::operator/=(const typename Dimension::Scalar& rhs) {
@@ -244,42 +263,10 @@ FieldSpanList<Dimension, DataType>::operator/=(const typename Dimension::Scalar&
 
 //------------------------------------------------------------------------------
 // Sum the field elements.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpanList<Dimension, DataType>::
-sumElements() const {
-  return allReduce(this->localSumElements(), SPHERAL_OP_SUM);
-}
-
-//------------------------------------------------------------------------------
-// Find the minimum.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpanList<Dimension, DataType>::
-min() const {
-  return allReduce(this->localMin(), SPHERAL_OP_MIN);
-}
-
-//------------------------------------------------------------------------------
-// Find the maximum.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpanList<Dimension, DataType>::
-max() const {
-  return allReduce(this->localMax(), SPHERAL_OP_MAX);
-}
-
-//------------------------------------------------------------------------------
-// Sum the field elements.
 // LOCAL to processor!
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldSpanList<Dimension, DataType>::
@@ -294,6 +281,7 @@ localSumElements() const {
 // LOCAL to processor!
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldSpanList<Dimension, DataType>::
@@ -308,6 +296,7 @@ localMin() const {
 // LOCAL to processor!
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldSpanList<Dimension, DataType>::
@@ -321,6 +310,7 @@ localMax() const {
 // operator==
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -347,6 +337,7 @@ operator==(const FieldSpanList<Dimension, DataType>& rhs) const {
 // operator!=
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -355,113 +346,10 @@ operator!=(const FieldSpanList<Dimension, DataType>& rhs) const {
 }
 
 //------------------------------------------------------------------------------
-// operator>
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-bool
-FieldSpanList<Dimension, DataType>::
-operator>(const FieldSpanList<Dimension, DataType>& rhs) const {
-  // Pre-conditions.
-  const auto n = this->size();
-  BEGIN_CONTRACT_SCOPE
-  {
-    REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
-  }
-  END_CONTRACT_SCOPE
-
-  auto result = true;
-  size_t i = 0u;
-  while (result and i < n) {
-    result = *mSpanFieldSpans[i] > *rhs[i];
-    ++i;
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// operator<
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-bool
-FieldSpanList<Dimension, DataType>::
-operator<(const FieldSpanList<Dimension, DataType>& rhs) const {
-  // Pre-conditions.
-  const auto n = this->size();
-  BEGIN_CONTRACT_SCOPE
-  {
-    REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
-  }
-  END_CONTRACT_SCOPE
-
-  auto result = true;
-  size_t i = 0u;
-  while (result and i < n) {
-    result = *mSpanFieldSpans[i] < *rhs[i];
-    ++i;
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// operator>=
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-bool
-FieldSpanList<Dimension, DataType>::
-operator>=(const FieldSpanList<Dimension, DataType>& rhs) const {
-  // Pre-conditions.
-  const auto n = this->size();
-  BEGIN_CONTRACT_SCOPE
-  {
-    REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
-  }
-  END_CONTRACT_SCOPE
-
-  auto result = true;
-  size_t i = 0u;
-  while (result and i < n) {
-    result = *mSpanFieldSpans[i] >= *rhs[i];
-    ++i;
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// operator<=
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-bool
-FieldSpanList<Dimension, DataType>::
-operator<=(const FieldSpanList<Dimension, DataType>& rhs) const {
-  // Pre-conditions.
-  const auto n = this->size();
-  BEGIN_CONTRACT_SCOPE
-  {
-    REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
-  }
-  END_CONTRACT_SCOPE
-
-  auto result = true;
-  size_t i = 0u;
-  while (result and i < n) {
-    result = *mSpanFieldSpans[i] <= *rhs[i];
-    ++i;
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
 // operator==
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -480,6 +368,7 @@ operator==(const DataType& rhs) const {
 // operator!=
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -491,6 +380,7 @@ operator!=(const DataType& rhs) const {
 // operator>
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -509,6 +399,7 @@ operator>(const DataType& rhs) const {
 // operator<
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -527,6 +418,7 @@ operator<(const DataType& rhs) const {
 // operator>=
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -545,6 +437,7 @@ operator>=(const DataType& rhs) const {
 // operator<=
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 bool
 FieldSpanList<Dimension, DataType>::
@@ -563,6 +456,7 @@ operator<=(const DataType& rhs) const {
 // numElements
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 size_t
 FieldSpanList<Dimension, DataType>::
@@ -576,6 +470,7 @@ numElements() const {
 // numInternalElements
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 size_t
 FieldSpanList<Dimension, DataType>::
@@ -589,6 +484,7 @@ numInternalElements() const {
 // numGhostElements
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
 inline
 size_t
 FieldSpanList<Dimension, DataType>::
@@ -597,5 +493,43 @@ numGhostElements() const {
   for (auto* x: mSpanFieldSpans) result += x->numGhostElements();
   return result;
 }
+
+#ifndef SPHERAL_UNIFIED_MEMORY
+
+//------------------------------------------------------------------------------
+// move
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
+inline
+void
+FieldSpanList<Dimension, DataType>::
+move(chai::ExecutionSpace space, bool recursive) {
+  mSpanFieldSpans.move(space);
+  if (recursive) {
+    for (auto& d: mSpanFieldSpans) {
+      d.move(space);
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// touch
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
+inline
+void
+FieldSpanList<Dimension, DataType>::
+touch(chai::ExecutionSpace space, bool recursive) {
+  mSpanFieldSpans.registerTouch(space);
+  if (recursive) {
+    for (auto& d : mSpanFieldSpans) {
+      d.touch(space);
+    }
+  }
+}
+
+#endif
 
 }

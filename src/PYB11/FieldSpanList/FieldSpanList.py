@@ -64,8 +64,8 @@ class FieldSpanList:
 
     @PYB11const
     def __call__(self,
-                 fieldIndex = "size_t",
-                 nodeIndex = "size_t"):
+                 fieldIndex = "const size_t",
+                 nodeIndex = "const size_t"):
         "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
         return "%(Value)s&"
 

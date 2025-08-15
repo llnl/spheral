@@ -181,11 +181,11 @@ class FieldList(FieldListBase):
     def __iter__(self):
         "Python iteration through a FieldList."
 
-    def __call__(self,
-                 fieldIndex = "const size_t",
-                 nodeIndex = "const size_t"):
-        "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
-        return "%(Value)s&"
+    # def __call__(self,
+    #              fieldIndex = "const size_t",
+    #              nodeIndex = "const size_t"):
+    #     "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
+    #     return "%(Value)s&"
 
     #...........................................................................
     # Properties

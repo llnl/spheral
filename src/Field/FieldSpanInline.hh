@@ -1,8 +1,7 @@
 #include "Field/Field.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/safeInv.hh"
-#include "Distributed/allReduce.hh"
-#include "Distributed/Communicator.hh"
+#include "Utilities/DataTypeTraits.hh"
 
 #include <cmath>
 #include <iostream>
@@ -11,12 +10,6 @@
 #include <sstream>
 #include <limits>
 
-#ifdef USE_MPI
-extern "C" {
-#include <mpi.h>
-}
-#endif
-
 // Inlined methods.
 namespace Spheral {
 
@@ -24,6 +17,7 @@ namespace Spheral {
 // Construct from a Field
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST
 inline
 FieldSpan<Dimension, DataType>::
 FieldSpan(Field<Dimension, DataType>& field):
@@ -33,9 +27,23 @@ FieldSpan(Field<Dimension, DataType>& field):
 }
 
 //------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+FieldSpan<Dimension, DataType>::
+~FieldSpan() {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.free();
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Assignment operator with a constant value of DataType
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -48,6 +56,7 @@ operator=(const DataType& rhs) {
 // Element access by integer index.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType&
 FieldSpan<Dimension, DataType>::operator()(size_t index) {
@@ -56,6 +65,7 @@ FieldSpan<Dimension, DataType>::operator()(size_t index) {
 }
 
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 const DataType&
 FieldSpan<Dimension, DataType>::operator()(size_t index) const {
@@ -68,6 +78,7 @@ FieldSpan<Dimension, DataType>::operator()(size_t index) const {
 // Since std::span doesn't support at() until C++26, we emulate it with VERIFY
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType&
 FieldSpan<Dimension, DataType>::at(size_t index) {
@@ -76,6 +87,7 @@ FieldSpan<Dimension, DataType>::at(size_t index) {
 }
 
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 const DataType&
 FieldSpan<Dimension, DataType>::at(size_t index) const {
@@ -87,6 +99,7 @@ FieldSpan<Dimension, DataType>::at(size_t index) const {
 // Index operators.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType&
 FieldSpan<Dimension, DataType>::
@@ -96,6 +109,7 @@ operator[](const size_t index) {
 }
 
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 const DataType&
 FieldSpan<Dimension, DataType>::
@@ -108,6 +122,7 @@ operator[](const size_t index) const {
 // Apply a minimum value to the elements.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 void
 FieldSpan<Dimension, DataType>::applyMin(const DataType& dataMin) {
@@ -118,6 +133,7 @@ FieldSpan<Dimension, DataType>::applyMin(const DataType& dataMin) {
 // Apply a maximum value to the elements.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 void
 FieldSpan<Dimension, DataType>::applyMax(const DataType& dataMax) {
@@ -128,6 +144,7 @@ FieldSpan<Dimension, DataType>::applyMax(const DataType& dataMax) {
 // Apply a scalar minimum value  to the elements.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 void
 FieldSpan<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
@@ -138,6 +155,7 @@ FieldSpan<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
 // Apply a scalar maximum value to the elements.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 void
 FieldSpan<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
@@ -148,6 +166,7 @@ FieldSpan<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
 // Addition with another FieldSpan in place
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -162,6 +181,7 @@ operator+=(const FieldSpan<Dimension, DataType>& rhs) {
 // Subtract another FieldSpan from this one in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -176,6 +196,7 @@ operator-=(const FieldSpan<Dimension, DataType>& rhs) {
 // Addition with a single value in place
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -188,6 +209,7 @@ operator+=(const DataType& rhs) {
 // Subtract a single value in place
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -200,6 +222,7 @@ operator-=(const DataType& rhs) {
 // Multiplication by a Scalar FieldSpan in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -214,6 +237,7 @@ operator*=(const FieldSpan<Dimension, Scalar>& rhs) {
 // Division by a Scalar FieldSpan in place.
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -228,6 +252,7 @@ operator/=(const FieldSpan<Dimension, typename Dimension::Scalar>& rhs) {
 // Multiplication by a Scalar in place
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -240,6 +265,7 @@ operator*=(const Scalar& rhs) {
 // Division by a Scalar value in place
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 FieldSpan<Dimension, DataType>&
 FieldSpan<Dimension, DataType>::
@@ -251,44 +277,11 @@ operator/=(const Scalar& rhs) {
 
 //------------------------------------------------------------------------------
 // Sum the elements of the FieldSpan (assumes the DataType::operator+= is 
-// available).
-//-------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpan<Dimension, DataType>::
-sumElements() const {
-  return allReduce(this->localSumElements(), SPHERAL_OP_SUM);
-}
-
-//------------------------------------------------------------------------------
-// Minimum.
-//-------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpan<Dimension, DataType>::
-min() const {
-  return allReduce(this->localMin(), SPHERAL_OP_MIN);
-}
-
-//------------------------------------------------------------------------------
-// Maximum.
-//-------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldSpan<Dimension, DataType>::
-max() const {
-  return allReduce(this->localMax(), SPHERAL_OP_MAX);
-}
-
-//------------------------------------------------------------------------------
-// Sum the elements of the FieldSpan (assumes the DataType::operator+= is 
 // available).  
 // LOCAL to processor!
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType
 FieldSpan<Dimension, DataType>::
@@ -302,6 +295,7 @@ localSumElements() const {
 // LOCAL to processor!
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType
 FieldSpan<Dimension, DataType>::
@@ -317,6 +311,7 @@ localMin() const {
 // LOCAL to processor!
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 DataType
 FieldSpan<Dimension, DataType>::
@@ -331,6 +326,7 @@ localMax() const {
 // operator==(FieldSpan)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -350,6 +346,7 @@ operator==(const FieldSpan<Dimension, DataType>& rhs) const {
 // operator!=(FieldSpan)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -436,6 +433,7 @@ operator!=(const FieldSpan<Dimension, DataType>& rhs) const {
 // operator==(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -454,6 +452,7 @@ operator==(const DataType& rhs) const {
 // operator!=(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -465,6 +464,7 @@ operator!=(const DataType& rhs) const {
 // operator>(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -483,6 +483,7 @@ operator>(const DataType& rhs) const {
 // operator<(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -501,6 +502,7 @@ operator<(const DataType& rhs) const {
 // operator>=(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -519,6 +521,7 @@ operator>=(const DataType& rhs) const {
 // operator<=(value)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 FieldSpan<Dimension, DataType>::
@@ -538,6 +541,7 @@ operator<=(const DataType& rhs) const {
 // Output (ostream) operator.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+SPHERAL_HOST 
 std::ostream&
 operator<<(std::ostream& os, const FieldSpan<Dimension, DataType>& fieldSpan) {
 

@@ -26,98 +26,102 @@ public:
   using FieldDataType = DataType;
 
   using value_type = FieldSpan<Dimension, DataType>*;    // STL compatibility
-  using StorageType = SPHERAL_SPAN_TYPE<value_type>;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using ContainerType = SPHERAL_SPAN_TYPE<value_type>;
+#else
+  using ContainerType = typename chai::ManagedArray<value_type>;
+#endif
 
-  using iterator = typename StorageType::iterator;
-  using reverse_iterator = typename StorageType::reverse_iterator;
+  using iterator = typename ContainerType::iterator;
+  using reverse_iterator = typename ContainerType::reverse_iterator;
 
   // Constructors, destructor
-  FieldSpanList() = default;
-  // FieldSpanList(SPHERAL_SPAN_TYPE<FieldSpan<Dimension, DataType>>& rhs);
-  FieldSpanList(FieldSpanList& rhs) = default;
-  FieldSpanList(FieldSpanList&& rhs) = default;
-  virtual ~FieldSpanList() = default;
+  SPHERAL_HOST_DEVICE FieldSpanList() = default;
+  SPHERAL_HOST_DEVICE FieldSpanList(FieldSpanList& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldSpanList(FieldSpanList&& rhs) = default;
+  SPHERAL_HOST        virtual ~FieldSpanList();
 
   // Assignment
-  FieldSpanList& operator=(FieldSpanList& rhs) = default;
-  FieldSpanList& operator=(const DataType& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator=(FieldSpanList& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldSpanList& operator=(const DataType& rhs);
 
   // Provide the standard iterators over the FieldSpans
-  iterator begin()                 { return mSpanFieldSpans.begin(); }
-  iterator end()                   { return mSpanFieldSpans.end(); }
-  reverse_iterator rbegin()        { return mSpanFieldSpans.rbegin(); }
-  reverse_iterator rend()          { return mSpanFieldSpans.rend(); }
+  SPHERAL_HOST_DEVICE iterator begin()                                                         { return mSpanFieldSpans.begin(); } 
+  SPHERAL_HOST_DEVICE iterator end()                                                           { return mSpanFieldSpans.end(); }   
+  SPHERAL_HOST_DEVICE reverse_iterator rbegin()                                                { return mSpanFieldSpans.rbegin(); }
+  SPHERAL_HOST_DEVICE reverse_iterator rend()                                                  { return mSpanFieldSpans.rend(); }  
 
   // Index operator.
-  value_type operator[](const size_t index) const;
-  value_type at(const size_t index) const;
+  SPHERAL_HOST_DEVICE value_type operator[](const size_t index) const;
+  SPHERAL_HOST_DEVICE value_type at(const size_t index) const;
 
   // Provide direct access to Field elements
-  DataType& operator()(const size_t fieldIndex,
-                       const size_t nodeIndex) const;
+  SPHERAL_HOST_DEVICE DataType& operator()(const size_t fieldIndex,
+                                           const size_t nodeIndex) const;
 
   // Reproduce the standard Field operators for FieldSpanLists.
-  void applyMin(const DataType& dataMin);
-  void applyMax(const DataType& dataMax);
+  SPHERAL_HOST_DEVICE void applyMin(const DataType& dataMin);
+  SPHERAL_HOST_DEVICE void applyMax(const DataType& dataMax);
 
-  void applyScalarMin(const Scalar dataMin);
-  void applyScalarMax(const Scalar dataMax);
+  SPHERAL_HOST_DEVICE void applyScalarMin(const Scalar dataMin);
+  SPHERAL_HOST_DEVICE void applyScalarMax(const Scalar dataMax);
 
-  FieldSpanList& operator+=(const FieldSpanList& rhs);
-  FieldSpanList& operator-=(const FieldSpanList& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator+=(const FieldSpanList& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator-=(const FieldSpanList& rhs);
 
-  FieldSpanList& operator+=(const DataType& rhs);
-  FieldSpanList& operator-=(const DataType& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator+=(const DataType& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator-=(const DataType& rhs);
 
-  FieldSpanList& operator*=(const FieldSpanList<Dimension, Scalar>& rhs);
-  FieldSpanList& operator*=(const Scalar& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator*=(const FieldSpanList<Dimension, Scalar>& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator*=(const Scalar& rhs);
 
-  FieldSpanList& operator/=(const FieldSpanList<Dimension, Scalar>& rhs);
-  FieldSpanList& operator/=(const Scalar& rhs);
-
-  // Some useful reduction operations.
-  DataType sumElements() const;
-  DataType min() const;
-  DataType max() const;
+  SPHERAL_HOST_DEVICE FieldSpanList& operator/=(const FieldSpanList<Dimension, Scalar>& rhs);
+  SPHERAL_HOST_DEVICE FieldSpanList& operator/=(const Scalar& rhs);
 
   // Some useful reduction operations (local versions -- no MPI reductions)
-  DataType localSumElements() const;
-  DataType localMin() const;
-  DataType localMax() const;
+  SPHERAL_HOST_DEVICE DataType localSumElements() const;
+  SPHERAL_HOST_DEVICE DataType localMin() const;
+  SPHERAL_HOST_DEVICE DataType localMax() const;
 
   // Comparison operators (Field-Field element wise).
-  bool operator==(const FieldSpanList& rhs) const;
-  bool operator!=(const FieldSpanList& rhs) const;
-  bool operator>(const FieldSpanList& rhs) const;
-  bool operator<(const FieldSpanList& rhs) const;
-  bool operator>=(const FieldSpanList& rhs) const;
-  bool operator<=(const FieldSpanList& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const FieldSpanList& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const FieldSpanList& rhs) const;
 
   // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const;
-  bool operator!=(const DataType& rhs) const;
-  bool operator>(const DataType& rhs) const;
-  bool operator<(const DataType& rhs) const;
-  bool operator>=(const DataType& rhs) const;
-  bool operator<=(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>=(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<=(const DataType& rhs) const;
 
   // The number of fields in the FieldSpanList.
-  size_t numFields() const      { return mSpanFieldSpans.size(); }
-  size_t size() const           { return mSpanFieldSpans.size(); }
-  bool empty() const            { return mSpanFieldSpans.empty(); }
+  SPHERAL_HOST_DEVICE size_t numFields() const                                                 { return mSpanFieldSpans.size(); } 
+  SPHERAL_HOST_DEVICE size_t size() const                                                      { return mSpanFieldSpans.size(); } 
+  SPHERAL_HOST_DEVICE bool empty() const                                                       { return mSpanFieldSpans.empty(); }
 
   // The number of nodes in the FieldSpanList.
-  size_t numElements() const;
+  SPHERAL_HOST_DEVICE size_t numElements() const;
   
   // The number of internal nodes in the FieldSpanList.
-  size_t numInternalElements() const;
+  SPHERAL_HOST_DEVICE size_t numInternalElements() const;
   
   // The number of ghost nodes in the FieldSpanList.
-  size_t numGhostElements() const;
+  SPHERAL_HOST_DEVICE size_t numGhostElements() const;
+
+#ifndef SPHERAL_UNIFIED_MEMORY
+  //..........................................................................
+  // These methods only make sense when we're using the ManagedArray
+  SPHERAL_HOST        void move(chai::ExecutionSpace space, bool recursive = true):
+  SPHERAL_HOST_DEVICE value_type* data() const                                                 { return mSpanFieldSpans.data(); }
+  SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const  { return mSpanFieldSpans.data(space, do_move); }
+  SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);
+  //..........................................................................
+#endif
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  StorageType mSpanFieldSpans;
+  ContainerType mSpanFieldSpans;
 };
 
 }
