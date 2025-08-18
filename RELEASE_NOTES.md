@@ -31,6 +31,8 @@ Notable changes include:
       during the install stage.
     * The `ENABLE_TIMER` CMake option has been changed to `SPHERAL_ENABLE_TIMERS`.
     * Updating boost function calls to std library implementations where possible.
+    * Switched the CZ CI to use Dane instead of Ruby.
+      * Increased the number of threads for certain memory intensive tests to prevent OOM error.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
