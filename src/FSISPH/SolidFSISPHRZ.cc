@@ -16,8 +16,10 @@
 #include "Hydro/CompatibleDifferenceSpecificThermalEnergyPolicy.hh"
 #include "Hydro/SpecificThermalEnergyPolicy.hh"
 #include "Hydro/SpecificFromTotalThermalEnergyPolicy.hh"
+#include "Hydro/RZNonSymmetricSpecificThermalEnergyPolicy.hh"
 #include "Hydro/PressurePolicy.hh"
 #include "Hydro/SoundSpeedPolicy.hh"
+#include "RK/ContinuityVolumePolicyRZ.hh"
 
 #include "Strength/SolidFieldNames.hh"
 #include "Strength/DeviatoricStressPolicy.hh"
@@ -143,15 +145,35 @@ SolidFSISPHRZ(DataBase<Dim<2>>& dataBase,
 
 //------------------------------------------------------------------------------
 // On problem start up, we need to initialize our internal data.
+// RZ area-weighting at startup for consistency.
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
 initializeProblemStartupDependencies(DataBase<Dim<2>>& dataBase,
                                      State<Dim<2>>& state,
                                      StateDerivatives<Dim<2>>& derivs) {
-  SolidFSISPH<Dim<2>>::initializeProblemStartupDependencies(dataBase,
-							    state,
-							    derivs);
+
+  auto mass = dataBase.fluidMass();
+  const auto pos = dataBase.fluidPosition();
+  const unsigned numNodeLists = mass.numFields();
+  // Divide mass by 2*pi*r
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      mass(nodeListi, i) /= circi;
+    }
+  }
+  // Call base method
+  SolidFSISPH<Dim<2>>::initializeProblemStartupDependencies(dataBase, state, derivs);
+  // Multiply mass back by 2*pi*r
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      mass(nodeListi, i) *= circi;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -161,7 +183,39 @@ void
 SolidFSISPHRZ::
 registerState(DataBase<Dim<2>>& dataBase,
               State<Dim<2>>& state) {
+  // The base class does most of it.
   SolidFSISPH<Dim<2>>::registerState(dataBase, state);
+
+  // XXX TODO: add the following in, but its currently causing errors
+  // RuntimeError: Verification failed: StateBase ERROR: failed to return type for key pair-wise accelerations
+
+//  // XXX TODO: do we need this? CRKSPHRZ.cc has it, SPHRZ.cc does not
+//  // Reregister the volume update
+//  auto vol = state.fields(HydroFieldNames::volume, 0.0);
+//  state.enroll(vol, make_policy<ContinuityVolumePolicyRZ>());
+//
+//  // We have to choose either compatible or total energy evolution.
+//  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+//  const auto evolveTotalEnergy = this->evolveTotalEnergy();
+//  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
+//          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
+//
+//  // Register the specific thermal energy.
+//  // Note in RZ we require the specific thermal energy go before the position so we can use the r position
+//  // during update.  This is why we make position update dependent on the thermal energy in SPHBase.
+//  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
+//  if (compatibleEnergy) {
+//    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
+//
+//  } else if (evolveTotalEnergy) {
+//    // If we're doing total energy, we register the specific energy to advance with the
+//    // total energy policy.
+//    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
+//
+//  } else {
+//    // Otherwise we're just time-evolving the specific energy.
+//    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
+//  }
 }
 
 //------------------------------------------------------------------------------
@@ -176,13 +230,40 @@ registerDerivatives(DataBase<Dim<2>>&  dataBase,
 
 //------------------------------------------------------------------------------
 // FSI specialized density summmation
+// RZ area-weighting: divide mass by 2*pi*r before, multiply back after base call.
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
 preStepInitialize(const DataBase<Dim<2>>& dataBase, 
                   State<Dim<2>>& state,
                   StateDerivatives<Dim<2>>& derivs) {
+
+  // Convert the mass to mass per unit length first.
+  // Map: x->z, y->r (r = cylindrical radius)
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+  const auto numNodeLists = mass.numFields();
+  // Divide mass by 2*pi*r
+  for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      mass(nodeListi, i) /= circi;
+    }
+  }
+
+  // Base class does most of the work.
   SolidFSISPH<Dim<2>>::preStepInitialize(dataBase, state, derivs);
+
+  // Now convert back to true masses. (multiply by 2*pi*r)
+  for (auto nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const auto& xi = pos(nodeListi, i);
+      const auto circi = 2.0*M_PI*abs(xi.y());
+      mass(nodeListi, i) *= circi;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -195,6 +276,7 @@ finalizeDerivatives(const Scalar time,
                     const DataBase<Dim<2>>&  dataBase, 
                     const State<Dim<2>>& state,
 		    StateDerivatives<Dim<2>>&  derivs) const {
+  // XXX TODO: do I need 2*pi*r factor conversions here too?
   SolidFSISPH<Dim<2>>::finalizeDerivatives(time, dt, dataBase, state, derivs);
 } // finalize
 
@@ -206,7 +288,33 @@ void
 SolidFSISPHRZ::
 applyGhostBoundaries(State<Dim<2>>& state,
                      StateDerivatives<Dim<2>>& derivs) {
+
+  // Convert the mass to mass/length before BCs are applied.
+  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
+  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero);
+  const unsigned numNodeLists = mass.numFields();
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      CHECK(circi > 0.0);
+      mass(nodeListi, i) /= circi;
+    }
+  }
+
+  // Apply ordinary SolidFSISPH BCs.
   SolidFSISPH<Dim<2>>::applyGhostBoundaries(state, derivs);
+  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
+
+  // Scale back to mass.
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      CHECK(circi > 0.0);
+      mass(nodeListi, i) *= circi;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -216,7 +324,35 @@ void
 SolidFSISPHRZ::
 enforceBoundaries(State<Dim<2>>& state,
                   StateDerivatives<Dim<2>>& derivs) {
+
+  // Convert the mass to mass/length before BCs are applied.
+  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
+  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero);
+  const unsigned numNodeLists = mass.numFields();
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numInternalElements();
+    for (unsigned i = 0; i != n; ++i) {
+      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+      CHECK(circi > 0.0);
+      mass(nodeListi, i) /= circi;
+    }
+  }
+
+  // Apply ordinary SolidFSISPH BCs.
   SolidFSISPH<Dim<2>>::enforceBoundaries(state, derivs);
+
+  // Scale back to mass.
+  // We also ensure no point approaches the z-axis too closely.
+  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    const unsigned n = mass[nodeListi]->numInternalElements();
+    //const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();
+    for (unsigned i = 0; i != n; ++i) {
+      Vector& posi = pos(nodeListi, i);
+      const Scalar circi = 2.0*M_PI*abs(posi.y());
+      mass(nodeListi, i) *= circi;
+    }
+  }
 }
 
 //------------------------------------------------------------------------------

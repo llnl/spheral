@@ -1,7 +1,10 @@
 //---------------------------------Spheral++----------------------------------//
 // SolidFSISPHRZ
 //
-// RZ version of SolidFSISPH
+// RZ version (2D cylindrical geometry) of SolidFSISPH
+//
+// This RZ version is a naive area-weighting implementation,
+// similar to RZ versions of SPH and CRKSPH.
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_SolidFSISPHRZ_hh__
 #define __Spheral_SolidFSISPHRZ_hh__
