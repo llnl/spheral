@@ -2,18 +2,22 @@ import inspect
 from PYB11Generator import *
 from FieldBase import FieldBase
 from Field import Field
+from ArithmeticFieldSpan import ArithmeticFieldSpan
 
 #-------------------------------------------------------------------------------
 # Add numeric operations to a Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("Field")
-class ArithmeticField(FieldBase):
+class ArithmeticField(FieldBase,
+                      ArithmeticFieldSpan):
 
     PYB11typedefs = """
-  using FieldType = Field<%(Dimension)s, %(Value)s>;
-  using Scalar = typename FieldType::Scalar;
-  using ScalarFieldType = Field<%(Dimension)s, Scalar>;
+    using SelfType = Field<%(Dimension)s, %(Value)s>;
+    using ViewType = typename SelfType::ViewType;
+    using Scalar = typename SelfType::Scalar;
+    using ScalarFieldType = Field<%(Dimension)s, Scalar>;
+    using ScalarFieldSpan = FieldSpan<%(Dimension)s, Scalar>;
 """
 
     def __add__(self):
@@ -44,22 +48,22 @@ class ArithmeticField(FieldBase):
     def __isub__V__(self, rhs="%(Value)s()"):
         return
 
-    @PYB11implementation("[](const FieldType& self, const ScalarFieldType& rhs) { return self * rhs; }")
+    @PYB11implementation("[](const SelfType& self, const ScalarFieldType& rhs) { return self * rhs; }")
     @PYB11operator
     def __mul__(self, rhs="const ScalarFieldType&"):
-        return "FieldType"
+        return "SelfType"
 
-    @PYB11implementation("[](const FieldType& self, const ScalarFieldType& rhs) { return self / rhs; }")
+    @PYB11implementation("[](const SelfType& self, const ScalarFieldType& rhs) { return self / rhs; }")
     @PYB11operator
     def __truediv__(self, rhs="const ScalarFieldType&"):
-        return "FieldType"
+        return "SelfType"
 
-    @PYB11implementation("[](FieldType& self, const ScalarFieldType& rhs) { return self *= rhs; }")
+    @PYB11implementation("[](SelfType& self, const ScalarFieldType& rhs) { return self *= rhs; }")
     @PYB11operator
     def __imul__(self, rhs="const ScalarFieldType&"):
         return
 
-    @PYB11implementation("[](FieldType& self, const ScalarFieldType& rhs) { return self /= rhs; }")
+    @PYB11implementation("[](SelfType& self, const ScalarFieldType& rhs) { return self /= rhs; }")
     @PYB11operator
     def __itruediv__(self, rhs="const ScalarFieldType&"):
         return
@@ -83,11 +87,6 @@ class ArithmeticField(FieldBase):
     @PYB11const
     def sumElements(self):
         "Return the sum of the elements in the Field."
-        return
-
-    @PYB11const
-    def localSumElements(self):
-        "Return the sum of the elements in the Field local to each processor."
         return
 
     #...........................................................................

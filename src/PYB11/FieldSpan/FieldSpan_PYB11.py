@@ -49,8 +49,8 @@ for ndim in dims:
                            ( "std::vector<uint64_t>",            "VectorULL"),
                            ( "std::vector<double>",              "VectorDouble"),
                            (f"std::vector<{Vector}>",            "VectorVector"),
-                           (f"std::vector<{Tensor}>",            "VectorSymTensor"),
-                           (f"std::vector<{Tensor}>",            "VectorSymTensor"),
+                           (f"std::vector<{Tensor}>",            "VectorTensor"),
+                           (f"std::vector<{SymTensor}>",         "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",        "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",          "DomainNode"),
                            (f"RKCoefficients<{Dimension}>",      "RKCoefficients")):

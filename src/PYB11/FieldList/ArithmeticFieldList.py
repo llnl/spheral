@@ -1,21 +1,26 @@
 from PYB11Generator import *
-import FieldList
-import FieldListBase
+from FieldList import FieldList
+from FieldListBase import FieldListBase
+from ArithmeticFieldSpanList import ArithmeticFieldSpanList
 
 #-------------------------------------------------------------------------------
 # FieldList with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
-class ArithmeticFieldList(FieldListBase.FieldListBase):
+class ArithmeticFieldList(FieldListBase,
+                          ArithmeticFieldSpanList):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
+    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
+    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
+    using ViewType = typename FieldListType::ViewType;
 """
 
     # @PYB11const
@@ -73,11 +78,6 @@ class ArithmeticFieldList(FieldListBase.FieldListBase):
         "Return the sum of the elements in the Field."
         return
 
-    @PYB11const
-    def localSumElements(self):
-        "Return the sum of the elements in the Field local to each processor."
-        return
-
     #...........................................................................
     # Comparators
     def __gt__(self):
@@ -126,17 +126,7 @@ class ArithmeticFieldList(FieldListBase.FieldListBase):
         "Return the maximum value in the Field."
         return
 
-    @PYB11const
-    def localMin(self):
-        "Return the mimimum value in the Field local to each processor."
-        return
-
-    @PYB11const
-    def localMax(self):
-        "Return the maximum value in the Field local to each processor."
-        return
-
 #-------------------------------------------------------------------------------
 # Inject FieldList
 #-------------------------------------------------------------------------------
-PYB11inject(FieldList.FieldList, ArithmeticFieldList)
+PYB11inject(FieldList, ArithmeticFieldList)

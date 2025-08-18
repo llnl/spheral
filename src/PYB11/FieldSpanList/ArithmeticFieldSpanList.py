@@ -47,11 +47,6 @@ class ArithmeticFieldSpanList:
     #     return
 
     @PYB11const
-    def sumElements(self):
-        "Return the sum of the elements in the FieldSpanList"
-        return
-
-    @PYB11const
     def localSumElements(self):
         "Return the sum of the elements in the FieldSpanList local to each processor."
         return
@@ -92,16 +87,6 @@ class ArithmeticFieldSpanList:
 
     def applyMax(self):
         "Enforce a ceiling on the values of each Field in the FieldSpanList"
-        return
-
-    @PYB11const
-    def min(self):
-        "Return the mimimum value across all Fields in the FieldSpanList"
-        return
-
-    @PYB11const
-    def max(self):
-        "Return the maximum value across all Fields in the FieldSpanList"
         return
 
     @PYB11const

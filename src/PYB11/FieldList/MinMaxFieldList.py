@@ -1,22 +1,27 @@
 from PYB11Generator import *
-import FieldList
-import FieldListBase
-from ArithmeticFieldList import *
+from FieldList import FieldList
+from FieldListBase import FieldListBase
+from MinMaxFieldSpanList import MinMaxFieldSpanList
+from ArithmeticFieldList import ArithmeticFieldList
 
 #-------------------------------------------------------------------------------
 # Add min/max operations to a Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
-class MinMaxFieldList(FieldListBase.FieldListBase):
+class MinMaxFieldList(FieldListBase,
+                      MinMaxFieldSpanList):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
+    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
+    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
+    using ViewType = typename FieldListType::ViewType;
 """
 
     def applyScalarMin(self):

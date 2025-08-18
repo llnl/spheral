@@ -1,8 +1,7 @@
-import inspect
 from PYB11Generator import *
 
 #-------------------------------------------------------------------------------
-# Field
+# FieldSpan
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11module("SpheralFieldSpan")
