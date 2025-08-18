@@ -684,9 +684,9 @@ updateVolume(State<Dimension>& state,
     for (i = 0; i != numInternal; ++i) {
       volume(nodeListi, i) = mesh.zone(i + offset).volume();
     }
-    fill(volume[nodeListi]->begin() + numInternal,
-         volume[nodeListi]->end(),
-         1.0e-10);
+    std::fill(volume[nodeListi]->begin() + numInternal,
+              volume[nodeListi]->end(),
+              1.0e-10);
   }
 
   // Optionally fill in the boundary values for the volume.

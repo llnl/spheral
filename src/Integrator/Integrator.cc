@@ -524,7 +524,7 @@ Integrator<Dimension>::setGhostNodes() const {
       {
         for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
           ENSURE(flags[nodeListi]->numElements() == 0 or
-                 *min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
+                 *std::min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
         }
       }
       END_CONTRACT_SCOPE
