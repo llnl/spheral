@@ -54,7 +54,27 @@ GPU_TYPED_TEST_P(TableKernelTypedTest, CopyAssign) {
   EXEC_IN_SPACE_END()
 }
 
-REGISTER_TYPED_TEST_SUITE_P(TableKernelTypedTest, CopyAssign);
+// Test copy and assignment constructors
+GPU_TYPED_TEST_P(TableKernelTypedTest, FillTest) {
+  const size_t N_table = 1000;
+  const size_t N = 100;
+  const double Hdet = 2.;
+  ExpInv3D ei_kernel;
+  TableKernel3D value_kernel(ei_kernel, N_table);
+  const double dx = (value_kernel.kernelExtent() - 0.) / (double)N;
+  {
+    TKV3D tkv = value_kernel.view();
+    RAJA::forall<TypeParam>(TRS_UINT(0, N),
+      [=] (size_t i) {
+        const double x = dx*(double)i;
+        const double ref_val = ei_kernel.kernelValue(x, Hdet);
+        const double val = tkv.kernelValue(x, Hdet);
+        SPHERAL_ASSERT_FLOAT_EQ(val, ref_val);
+      });
+  }
+}
+
+REGISTER_TYPED_TEST_SUITE_P(TableKernelTypedTest, CopyAssign, FillTest);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(TableKernel, TableKernelTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
