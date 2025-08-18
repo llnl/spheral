@@ -29,14 +29,14 @@ def FSISPH(dataBase,
            nTensile = 4.0,
            xmin = (-1e100, -1e100, -1e100),
            xmax = ( 1e100,  1e100,  1e100),
+           etaMinAxis = 0.1,
            ASPH = False,
-           RZ = False,
            smoothingScaleMethod = None):
 
     ######################################################################
     # some of these parameters are inactive and possible on there was out.
     # strengthInDamage and damageRelieveRubble are old switches and are not
-    # implemented in the code. RZ has not been implemented in FSISPH
+    # implemented in the code.
     ######################################################################
     
     if compatibleEnergyEvolution and evolveTotalEnergy:
@@ -70,8 +70,15 @@ def FSISPH(dataBase,
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
     # Decide on the hydro object.
-    if RZ:
-        raise RuntimeError("RZ is not implemented yet")
+    if GeometryRegistrar.coords() == CoordinateType.Spherical:
+        assert ndim == 1
+        raise RuntimeError("not implemented for spherical coordinates")
+    if GeometryRegistrar.coords() == CoordinateType.RZ:
+        assert ndim == 2
+        if nsolid > 0:
+            Constructor = SolidFSISPHRZ
+        else:
+            raise RuntimeError("currently only implemented for solid nodelists")
     else:
         # Cartesian ---------------------------------
         if nsolid > 0:
@@ -138,6 +145,10 @@ def FSISPH(dataBase,
             smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d({HUpdate}, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
     result.appendSubPackage(smoothingScaleMethod)
+
+    if GeometryRegistrar.coords() == CoordinateType.RZ:
+        result.zaxisBC = AxisBoundaryRZ(etaMinAxis)
+        result.appendBoundary(result.zaxisBC)
 
     return result
 

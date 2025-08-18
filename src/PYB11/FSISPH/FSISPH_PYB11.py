@@ -16,6 +16,7 @@ from SlideSurface import *
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"FSISPH/SolidFSISPH.hh"',
+                  '"FSISPH/SolidFSISPHRZ.hh"',
                   '"FSISPH/FSIFieldNames.hh"',
                   '"FSISPH/SlideSurface.hh"',
                   '"DataBase/State.hh"',
@@ -69,3 +70,6 @@ class FSIFieldNames:
     interfaceSmoothness = PYB11readonly(static=True, returnpolicy="copy")
     smoothedInterfaceNormals = PYB11readonly(static=True, returnpolicy="copy")
     interfaceSmoothnessNormalization = PYB11readonly(static=True, returnpolicy="copy")
+
+if 2 in dims:
+    from SolidFSISPHRZ import *

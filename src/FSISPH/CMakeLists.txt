@@ -10,6 +10,7 @@ set(FSISPH_inst
 
 
 set(FSISPH_sources
+    SolidFSISPHRZ.cc
     FSIFieldNames.cc )
 
 
@@ -18,6 +19,7 @@ instantiate(FSISPH_inst FSISPH_sources)
 set(FSISPH_headers
     SolidFSISPH.hh
     SolidFSISPHInline.hh
+    SolidFSISPHRZ.hh
     computeFSISPHSumMassDensity.hh
     computeHWeightedFSISPHSumMassDensity.hh
     computeInterfacePressureCorrectedSumMassDensity.hh
