@@ -226,6 +226,13 @@ SolidFSISPHRZ::
 registerDerivatives(DataBase<Dim<2>>&  dataBase,
                     StateDerivatives<Dim<2>>& derivs) {
   SolidFSISPH<Dim<2>>::registerDerivatives(dataBase, derivs);
+  // XXX TODO: CRKSPHRZ has the following
+//  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+//  if (compatibleEnergy) {
+//    const auto& connectivityMap = dataBase.connectivityMap();
+//    mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
+//    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+//  }
 }
 
 //------------------------------------------------------------------------------
@@ -387,6 +394,7 @@ linearReconstruction(const typename Dim<2>::Vector& ri,
                      const typename Dim<2>::Vector& DyDxj,
                            typename Dim<2>::Scalar& ytildei,
                            typename Dim<2>::Scalar& ytildej) const {
+  // XXX TODO: do I need 2*pi*r factor conversions here too?
   SolidFSISPH<Dim<2>>::linearReconstruction(ri, rj, yi, yj,
 					    DyDxi, DyDxj, ytildei, ytildej);
 }
@@ -431,6 +439,8 @@ secondDerivativesLoop(const Dim<2>::Scalar time,
                       const State<Dim<2>>& state,
                       StateDerivatives<Dim<2>>& derivs,
                       const QType& Q) const { 
+
+  // XXX TODO: add R factors
 
   using QPiType = typename QType::ReturnType;
 
@@ -1145,6 +1155,8 @@ firstDerivativesLoop(const Dim<2>::Scalar /*time*/,
                      const DataBase<Dim<2>>& dataBase,
                      const State<Dim<2>>& state,
                      StateDerivatives<Dim<2>>& derivs) const {
+
+  // XXX TODO: add R factors
 
   // The kernels and such.
   const auto& W = this->kernel();
