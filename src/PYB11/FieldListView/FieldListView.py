@@ -1,20 +1,20 @@
 from PYB11Generator import *
 
 #-------------------------------------------------------------------------------
-# FieldSpanList
+# FieldListView
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralFieldSpanList")
-class FieldSpanList:
+@PYB11module("SpheralFieldListView")
+class FieldListView:
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
+    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
+    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
     using Scalar = %(Dimension)s::Scalar;
 """
 
-    def pyinitCopy(self, rhs="FieldSpanListType&"):
+    def pyinitCopy(self, rhs="FieldListViewType&"):
         "Copy constructor"
 
     #...........................................................................
@@ -55,12 +55,12 @@ class FieldSpanList:
     @PYB11returnpolicy("reference")
     @PYB11keepalive(0,1)
     def __getitem__(self, index="size_t"):
-        return "FieldSpanType*"
+        return "FieldViewType*"
 
     @PYB11returnpolicy("reference")
-    @PYB11implementation("[](FieldSpanListType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
+    @PYB11implementation("[](FieldListViewType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
     def __iter__(self):
-        "Python iteration through a FieldSpanList."
+        "Python iteration through a FieldListView."
 
     @PYB11const
     def __call__(self,

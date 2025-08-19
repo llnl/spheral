@@ -6,8 +6,8 @@
 #include "NodeList/NodeListRegistrar.hh"
 #include "Neighbor/Neighbor.hh"
 #include "Field/Field.hh"
-#include "Field/FieldSpan.hh"
-#include "Field/FieldSpanList.hh"
+#include "Field/FieldView.hh"
+#include "Field/FieldListView.hh"
 #include "Kernel/TableKernel.hh"
 #include "Distributed/allReduce.hh"
 
@@ -31,7 +31,7 @@ template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::FieldList():
   FieldListBase<Dimension>(),
-  FieldSpanList<Dimension, DataType>(),
+  FieldListView<Dimension, DataType>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
   mFieldCache(),
@@ -49,7 +49,7 @@ template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   FieldListBase<Dimension>(),
-  FieldSpanList<Dimension, DataType>(),
+  FieldListView<Dimension, DataType>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
   mFieldCache(),
@@ -69,7 +69,7 @@ inline
 FieldList<Dimension, DataType>::
 FieldList(const FieldList<Dimension, DataType>& rhs):
   FieldListBase<Dimension>(rhs),
-  FieldSpanList<Dimension, DataType>(),
+  FieldListView<Dimension, DataType>(),
   mFieldPtrs(rhs.mFieldPtrs),
   mFieldBasePtrs(rhs.mFieldBasePtrs),
   mFieldCache(),
@@ -979,25 +979,25 @@ FieldList<Dimension, DataType>::
 buildDependentArrays() {
   NodeListRegistrar<Dimension>::sortInNodeListOrder(mFieldPtrs.begin(), mFieldPtrs.end());
   mFieldBasePtrs.clear();
-  mFieldSpanPtrs.clear();
+  mFieldViewPtrs.clear();
   mNodeListPtrs.clear();
   mNodeListIndexMap.clear();
   int i = 0;
   for (auto* fptr: mFieldPtrs) {
     mFieldBasePtrs.push_back(fptr);
-    mFieldSpanPtrs.push_back(fptr);
+    mFieldViewPtrs.push_back(fptr);
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
     mNodeListIndexMap[nptr] = i++;
   }
   CHECK(i == int(mFieldPtrs.size()));
-  mSpanFieldSpans = SPHERAL_SPAN_TYPE<typename FieldSpanList<Dimension, DataType>::value_type>(&mFieldSpanPtrs[0], mFieldSpanPtrs.size());
-  // mSpanFieldSpans = SPHERAL_SPAN_TYPE<typename FieldSpanList<Dimension, DataType>::value_type>(mFieldSpanPtrs.begin(), mFieldSpanPtrs.size());
+  mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(&mFieldViewPtrs[0], mFieldViewPtrs.size());
+  // mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(mFieldViewPtrs.begin(), mFieldViewPtrs.size());
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
-  ENSURE(mFieldSpanPtrs.size() == mFieldPtrs.size());
+  ENSURE(mFieldViewPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
-  ENSURE(mSpanFieldSpans.size() == mFieldPtrs.size());
+  ENSURE(mSpanFieldViews.size() == mFieldPtrs.size());
 }
 
 //------------------------------------------------------------------------------
@@ -1095,7 +1095,7 @@ inline
 typename FieldList<Dimension, DataType>::ViewType
 FieldList<Dimension, DataType>::
 view() {
-  return dynamic_cast<FieldSpanList<Dimension, DataType>&>(*this);
+  return dynamic_cast<FieldListView<Dimension, DataType>&>(*this);
 }
 
 #ifndef SPHERAL_UNIFIED_MEMORY

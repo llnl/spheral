@@ -1,14 +1,14 @@
 from PYB11Generator import *
 
 #-------------------------------------------------------------------------------
-# FieldSpan
+# FieldView
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralFieldSpan")
-class FieldSpan:
+@PYB11module("SpheralFieldView")
+class FieldView:
 
     PYB11typedefs = """
-  using SelfType = FieldSpan<%(Dimension)s, %(Value)s>;
+  using SelfType = FieldView<%(Dimension)s, %(Value)s>;
   using Scalar = typename %(Dimension)s::Scalar;
 """
 
@@ -53,12 +53,12 @@ class FieldSpan:
 
     @PYB11implementation("[](SelfType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")
     def __iter__(self):
-        "Python iteration through a FieldSpan."
+        "Python iteration through a FieldView."
 
     @PYB11returnpolicy("reference_internal")
     @PYB11implementation("[](SelfType& self, int i) { const auto n = self.numElements(); if (size_t(i) >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
     def __call__(self):
-        "Index into a FieldSpan"
+        "Index into a FieldView"
         return
 
     #...........................................................................

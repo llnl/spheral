@@ -12,7 +12,7 @@
 #define __Spheral_Field__
 
 #include "Field/FieldBase.hh"
-#include "Field/FieldSpan.hh"
+#include "Field/FieldView.hh"
 #include "Utilities/Logger.hh"
 
 #include "axom/sidre.hpp"
@@ -48,7 +48,7 @@ using DataAllocator = std::allocator<DataType>;
 template<typename Dimension, typename DataType>
 class Field:
     public FieldBase<Dimension>,
-    public FieldSpan<Dimension, DataType> {
+    public FieldView<Dimension, DataType> {
    
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -62,14 +62,14 @@ public:
   using FieldDataType = DataType;
   using value_type = DataType;      // STL compatibility.
 
-  using iterator = typename FieldSpan<Dimension, DataType>::iterator;
+  using iterator = typename FieldView<Dimension, DataType>::iterator;
   using const_iterator = typename std::vector<DataType,DataAllocator<DataType>>::const_iterator;
 
-  using ViewType = FieldSpan<Dimension, DataType>;
+  using ViewType = FieldView<Dimension, DataType>;
 
-  // Bring in various methods hidden in FieldSpan
-  using FieldSpan<Dimension, DataType>::operator();
-  using FieldSpan<Dimension, DataType>::operator[];
+  // Bring in various methods hidden in FieldView
+  using FieldView<Dimension, DataType>::operator();
+  using FieldView<Dimension, DataType>::operator[];
 
   // Constructors.
   explicit Field(FieldName name);
@@ -98,17 +98,17 @@ public:
   // Comparisons
   virtual bool operator==(const FieldBase<Dimension>& rhs) const override;
 
-  // Foward the FieldSpan Field-Field comparison operators
-  bool operator==(const Field& rhs) const { return FieldSpan<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const Field& rhs) const { return FieldSpan<Dimension, DataType>::operator!=(rhs); }
+  // Foward the FieldView Field-Field comparison operators
+  bool operator==(const Field& rhs) const { return FieldView<Dimension, DataType>::operator==(rhs); }
+  bool operator!=(const Field& rhs) const { return FieldView<Dimension, DataType>::operator!=(rhs); }
 
   // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator!=(rhs); }
-  bool operator> (const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator> (rhs); }
-  bool operator< (const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator< (rhs); }
-  bool operator>=(const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator>=(rhs); }
-  bool operator<=(const DataType& rhs) const { return FieldSpan<Dimension, DataType>::operator<=(rhs); }
+  bool operator==(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator==(rhs); }
+  bool operator!=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator!=(rhs); }
+  bool operator> (const DataType& rhs) const { return FieldView<Dimension, DataType>::operator> (rhs); }
+  bool operator< (const DataType& rhs) const { return FieldView<Dimension, DataType>::operator< (rhs); }
+  bool operator>=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator>=(rhs); }
+  bool operator<=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator<=(rhs); }
 
   // Element access by NodeIterator
   DataType& operator()(const NodeIteratorBase<Dimension>& itr);
@@ -148,12 +148,12 @@ public:
   const_iterator ghostEnd() const                                           { return mDataArray.end(); }
 
   // We have to explicitly redefine the non-const iterators
-  iterator begin()                                                          { return FieldSpan<Dimension, DataType>::begin(); }
-  iterator end()                                                            { return FieldSpan<Dimension, DataType>::end(); }
-  iterator internalBegin()                                                  { return FieldSpan<Dimension, DataType>::internalBegin(); }
-  iterator internalEnd()                                                    { return FieldSpan<Dimension, DataType>::internalEnd(); }
-  iterator ghostBegin()                                                     { return FieldSpan<Dimension, DataType>::ghostBegin(); }
-  iterator ghostEnd()                                                       { return FieldSpan<Dimension, DataType>::ghostEnd(); }
+  iterator begin()                                                          { return FieldView<Dimension, DataType>::begin(); }
+  iterator end()                                                            { return FieldView<Dimension, DataType>::end(); }
+  iterator internalBegin()                                                  { return FieldView<Dimension, DataType>::internalBegin(); }
+  iterator internalEnd()                                                    { return FieldView<Dimension, DataType>::internalEnd(); }
+  iterator ghostBegin()                                                     { return FieldView<Dimension, DataType>::ghostBegin(); }
+  iterator ghostEnd()                                                       { return FieldView<Dimension, DataType>::ghostEnd(); }
 
   // Required functions from FieldBase
   virtual void setNodeList(const NodeList<Dimension>& nodeList) override;
@@ -216,10 +216,10 @@ private:
   // Private Data
   std::vector<DataType, DataAllocator<DataType>> mDataArray;
 
-  friend FieldSpan<Dimension, DataType>;
-  using FieldSpan<Dimension, DataType>::mDataSpan;
-  using FieldSpan<Dimension, DataType>::mNumInternalElements;
-  using FieldSpan<Dimension, DataType>::mNumGhostElements;
+  friend FieldView<Dimension, DataType>;
+  using FieldView<Dimension, DataType>::mDataSpan;
+  using FieldView<Dimension, DataType>::mNumInternalElements;
+  using FieldView<Dimension, DataType>::mNumGhostElements;
 };
 
 } // namespace Spheral

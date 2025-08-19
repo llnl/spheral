@@ -2,7 +2,7 @@ import inspect
 from PYB11Generator import *
 from FieldBase import *
 from ArithmeticField import *
-from MinMaxFieldSpan import MinMaxFieldSpan
+from MinMaxFieldView import MinMaxFieldView
 
 #-------------------------------------------------------------------------------
 # Add min/max operations to a Field
@@ -10,14 +10,14 @@ from MinMaxFieldSpan import MinMaxFieldSpan
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("Field")
 class MinMaxField(FieldBase,
-                  MinMaxFieldSpan):
+                  MinMaxFieldView):
 
     PYB11typedefs = """
     using SelfType = Field<%(Dimension)s, %(Value)s>;
     using ViewType = typename SelfType::ViewType;
     using Scalar = typename SelfType::Scalar;
     using ScalarFieldType = Field<%(Dimension)s, Scalar>;
-    using ScalarFieldSpan = FieldSpan<%(Dimension)s, Scalar>;
+    using ScalarFieldView = FieldView<%(Dimension)s, Scalar>;
 """
 
     def applyScalarMin(self):
@@ -30,12 +30,12 @@ class MinMaxField(FieldBase,
 
     @PYB11const
     def min(self):
-        "Return the mimimum value in the FieldSpan."
+        "Return the mimimum value in the FieldView."
         return
 
     @PYB11const
     def max(self):
-        "Return the maximum value in the FieldSpan."
+        "Return the maximum value in the FieldView."
         return
 
 #-------------------------------------------------------------------------------

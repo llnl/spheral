@@ -19,8 +19,8 @@ namespace Spheral {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST
 inline
-FieldSpan<Dimension, DataType>::
-FieldSpan(Field<Dimension, DataType>& field):
+FieldView<Dimension, DataType>::
+FieldView(Field<Dimension, DataType>& field):
   mDataSpan(field.mDataArray),
   mNumInternalElements(field.numInternalElements()),
   mNumGhostElements(field.numGhostElements()) {
@@ -32,8 +32,8 @@ FieldSpan(Field<Dimension, DataType>& field):
 template<typename Dimension, typename DataType>
 SPHERAL_HOST
 inline
-FieldSpan<Dimension, DataType>::
-~FieldSpan() {
+FieldView<Dimension, DataType>::
+~FieldView() {
 #ifndef SPHERAL_UNIFIED_MEMORY
   mDataSpan.free();
 #endif
@@ -45,8 +45,8 @@ FieldSpan<Dimension, DataType>::
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
 operator=(const DataType& rhs) {
   for (auto& x: mDataSpan) x = rhs;
   return *this;
@@ -59,8 +59,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType&
-FieldSpan<Dimension, DataType>::operator()(size_t index) {
-  CHECK2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+FieldView<Dimension, DataType>::operator()(size_t index) {
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -68,8 +68,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 const DataType&
-FieldSpan<Dimension, DataType>::operator()(size_t index) const {
-  CHECK2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+FieldView<Dimension, DataType>::operator()(size_t index) const {
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -81,8 +81,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType&
-FieldSpan<Dimension, DataType>::at(size_t index) {
-  VERIFY2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+FieldView<Dimension, DataType>::at(size_t index) {
+  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -90,8 +90,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 const DataType&
-FieldSpan<Dimension, DataType>::at(size_t index) const {
-  VERIFY2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+FieldView<Dimension, DataType>::at(size_t index) const {
+  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -102,9 +102,9 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator[](const size_t index) {
-  CHECK2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -112,9 +112,9 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 const DataType&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator[](const size_t index) const {
-  CHECK2(index < mDataSpan.size(), "FieldSpan index out of range: " << index << " " << mDataSpan.size());
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -125,7 +125,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 void
-FieldSpan<Dimension, DataType>::applyMin(const DataType& dataMin) {
+FieldView<Dimension, DataType>::applyMin(const DataType& dataMin) {
   for (auto& x: mDataSpan) x = std::max(x, dataMin);
 }
 
@@ -136,7 +136,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 void
-FieldSpan<Dimension, DataType>::applyMax(const DataType& dataMax) {
+FieldView<Dimension, DataType>::applyMax(const DataType& dataMax) {
   for (auto& x: mDataSpan) x = std::min(x, dataMax);
 }
 
@@ -147,7 +147,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 void
-FieldSpan<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
+FieldView<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
   for (auto& x: mDataSpan) x = std::max(x, dataMin);
 }
 
@@ -158,19 +158,19 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 void
-FieldSpan<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
+FieldView<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
   for (auto& x: mDataSpan) x = std::min(x, dataMax);
 }
 
 //------------------------------------------------------------------------------
-// Addition with another FieldSpan in place
+// Addition with another FieldView in place
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
-operator+=(const FieldSpan<Dimension, DataType>& rhs) {
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
+operator+=(const FieldView<Dimension, DataType>& rhs) {
   const auto n = this->numElements();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) += rhs(i);
@@ -178,14 +178,14 @@ operator+=(const FieldSpan<Dimension, DataType>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Subtract another FieldSpan from this one in place.
+// Subtract another FieldView from this one in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
-operator-=(const FieldSpan<Dimension, DataType>& rhs) {
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
+operator-=(const FieldView<Dimension, DataType>& rhs) {
   const auto n = this->numElements();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) -= rhs(i);
@@ -198,8 +198,8 @@ operator-=(const FieldSpan<Dimension, DataType>& rhs) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
 operator+=(const DataType& rhs) {
   for (auto& x: mDataSpan) x += rhs;
   return *this;
@@ -211,22 +211,22 @@ operator+=(const DataType& rhs) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
 operator-=(const DataType& rhs) {
   for (auto& x: mDataSpan) x -= rhs;
   return *this;
 }
 
 //------------------------------------------------------------------------------
-// Multiplication by a Scalar FieldSpan in place.
+// Multiplication by a Scalar FieldView in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
-operator*=(const FieldSpan<Dimension, Scalar>& rhs) {
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
+operator*=(const FieldView<Dimension, Scalar>& rhs) {
   const auto n = this->numElements();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) *= rhs(i);
@@ -234,14 +234,14 @@ operator*=(const FieldSpan<Dimension, Scalar>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Division by a Scalar FieldSpan in place.
+// Division by a Scalar FieldView in place.
 //-------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
-operator/=(const FieldSpan<Dimension, typename Dimension::Scalar>& rhs) {
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
+operator/=(const FieldView<Dimension, typename Dimension::Scalar>& rhs) {
   const auto n = this->numElements();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) *= safeInvVar(rhs(i), 1.0e-60);
@@ -254,8 +254,8 @@ operator/=(const FieldSpan<Dimension, typename Dimension::Scalar>& rhs) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
 operator*=(const Scalar& rhs) {
   for (auto& x: mDataSpan) x *= rhs;
   return *this;
@@ -267,8 +267,8 @@ operator*=(const Scalar& rhs) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-FieldSpan<Dimension, DataType>&
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>&
+FieldView<Dimension, DataType>::
 operator/=(const Scalar& rhs) {
   const auto rhsInv = safeInvVar(rhs, 1.0e-60);
   for (auto& x: mDataSpan) x *= rhsInv;
@@ -276,7 +276,7 @@ operator/=(const Scalar& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Sum the elements of the FieldSpan (assumes the DataType::operator+= is 
+// Sum the elements of the FieldView (assumes the DataType::operator+= is 
 // available).  
 // LOCAL to processor!
 //-------------------------------------------------------------------------------
@@ -284,7 +284,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 localSumElements() const {
   const auto* start = &mDataSpan.front();
   return std::accumulate(start, start + numInternalElements(), DataTypeTraits<DataType>::zero());
@@ -298,7 +298,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 localMin() const {
   const auto* start = &mDataSpan.front();
   return (mDataSpan.empty() ?
@@ -314,7 +314,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 DataType
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 localMax() const {
   const auto* start = &mDataSpan.front();
   return (mDataSpan.empty() ?
@@ -323,14 +323,14 @@ localMax() const {
 }
 
 //------------------------------------------------------------------------------
-// operator==(FieldSpan)
+// operator==(FieldView)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
-operator==(const FieldSpan<Dimension, DataType>& rhs) const {
+FieldView<Dimension, DataType>::
+operator==(const FieldView<Dimension, DataType>& rhs) const {
   const auto n = this->numElements();
   if (rhs.numElements() != n) return false;
   auto result = true;
@@ -343,25 +343,25 @@ operator==(const FieldSpan<Dimension, DataType>& rhs) const {
 }
 
 //------------------------------------------------------------------------------
-// operator!=(FieldSpan)
+// operator!=(FieldView)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
-operator!=(const FieldSpan<Dimension, DataType>& rhs) const {
+FieldView<Dimension, DataType>::
+operator!=(const FieldView<Dimension, DataType>& rhs) const {
   return !((*this) == rhs);
 }
 
 // //------------------------------------------------------------------------------
-// // operator>(FieldSpan)
+// // operator>(FieldView)
 // //------------------------------------------------------------------------------
 // template<typename Dimension, typename DataType>
 // inline
 // bool
-// FieldSpan<Dimension, DataType>::
-// operator>(const FieldSpan<Dimension, DataType>& rhs) const {
+// FieldView<Dimension, DataType>::
+// operator>(const FieldView<Dimension, DataType>& rhs) const {
 //   const auto n = this->numElements();
 //   if (rhs.numElements() != n) return false;
 //   auto result = true;
@@ -374,13 +374,13 @@ operator!=(const FieldSpan<Dimension, DataType>& rhs) const {
 // }
 
 // //------------------------------------------------------------------------------
-// // operator<(FieldSpan)
+// // operator<(FieldView)
 // //------------------------------------------------------------------------------
 // template<typename Dimension, typename DataType>
 // inline
 // bool
-// FieldSpan<Dimension, DataType>::
-// operator<(const FieldSpan<Dimension, DataType>& rhs) const {
+// FieldView<Dimension, DataType>::
+// operator<(const FieldView<Dimension, DataType>& rhs) const {
 //   const auto n = this->numElements();
 //   if (rhs.numElements() != n) return false;
 //   auto result = true;
@@ -393,13 +393,13 @@ operator!=(const FieldSpan<Dimension, DataType>& rhs) const {
 // }
 
 // //------------------------------------------------------------------------------
-// // operator>=(FieldSpan)
+// // operator>=(FieldView)
 // //------------------------------------------------------------------------------
 // template<typename Dimension, typename DataType>
 // inline
 // bool
-// FieldSpan<Dimension, DataType>::
-// operator>=(const FieldSpan<Dimension, DataType>& rhs) const {
+// FieldView<Dimension, DataType>::
+// operator>=(const FieldView<Dimension, DataType>& rhs) const {
 //   const auto n = this->numElements();
 //   if (rhs.numElements() != n) return false;
 //   auto result = true;
@@ -416,8 +416,8 @@ operator!=(const FieldSpan<Dimension, DataType>& rhs) const {
 // template<typename Dimension, typename DataType>
 // inline
 // bool
-// FieldSpan<Dimension, DataType>::
-// operator<=(const FieldSpan<Dimension, DataType>& rhs) const {
+// FieldView<Dimension, DataType>::
+// operator<=(const FieldView<Dimension, DataType>& rhs) const {
 //   const auto n = this->numElements();
 //   if (rhs.numElements() != n) return false;
 //   auto result = true;
@@ -436,7 +436,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator==(const DataType& rhs) const {
   const auto n = this->numElements();
   auto result = true;
@@ -455,7 +455,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator!=(const DataType& rhs) const {
   return !((*this) == rhs);
 }
@@ -467,7 +467,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator>(const DataType& rhs) const {
   const auto n = this->numElements();
   auto result = true;
@@ -486,7 +486,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator<(const DataType& rhs) const {
   const auto n = this->numElements();
   auto result = true;
@@ -505,7 +505,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator>=(const DataType& rhs) const {
   const auto n = this->numElements();
   auto result = true;
@@ -524,7 +524,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
 bool
-FieldSpan<Dimension, DataType>::
+FieldView<Dimension, DataType>::
 operator<=(const DataType& rhs) const {
   const auto n = this->numElements();
   auto result = true;
@@ -543,7 +543,7 @@ operator<=(const DataType& rhs) const {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST 
 std::ostream&
-operator<<(std::ostream& os, const FieldSpan<Dimension, DataType>& fieldSpan) {
+operator<<(std::ostream& os, const FieldView<Dimension, DataType>& fieldSpan) {
 
   // Write the number of internal elements.
   os << fieldSpan.numInternalElements() << " ";

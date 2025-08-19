@@ -1,18 +1,18 @@
 import inspect
 from PYB11Generator import *
-from FieldSpan import FieldSpan
+from FieldView import FieldView
 
 #-------------------------------------------------------------------------------
-# Add numeric operations to a FieldSpan
+# Add numeric operations to a FieldView
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11pycppname("FieldSpan")
-class ArithmeticFieldSpan:
+@PYB11pycppname("FieldView")
+class ArithmeticFieldView:
 
     PYB11typedefs = """
-  using SelfType = FieldSpan<%(Dimension)s, %(Value)s>;
+  using SelfType = FieldView<%(Dimension)s, %(Value)s>;
   using Scalar = typename SelfType::Scalar;
-  using ScalarFieldSpan = FieldSpan<%(Dimension)s, Scalar>;
+  using ScalarFieldView = FieldView<%(Dimension)s, Scalar>;
 """
 
     def __iadd__(self):
@@ -29,14 +29,14 @@ class ArithmeticFieldSpan:
     def __isub__V__(self, rhs="%(Value)s()"):
         return
 
-    @PYB11implementation("[](SelfType& self, const ScalarFieldSpan& rhs) { return self *= rhs; }")
+    @PYB11implementation("[](SelfType& self, const ScalarFieldView& rhs) { return self *= rhs; }")
     @PYB11operator
-    def __imul__(self, rhs="const ScalarFieldSpan&"):
+    def __imul__(self, rhs="const ScalarFieldView&"):
         return
 
-    @PYB11implementation("[](SelfType& self, const ScalarFieldSpan& rhs) { return self /= rhs; }")
+    @PYB11implementation("[](SelfType& self, const ScalarFieldView& rhs) { return self /= rhs; }")
     @PYB11operator
-    def __itruediv__(self, rhs="const ScalarFieldSpan&"):
+    def __itruediv__(self, rhs="const ScalarFieldView&"):
         return
 
     @PYB11pyname("__imul__")
@@ -49,7 +49,7 @@ class ArithmeticFieldSpan:
 
     @PYB11const
     def localSumElements(self):
-        "Return the sum of the elements in the FieldSpan local to each processor."
+        "Return the sum of the elements in the FieldView local to each processor."
         return
 
     #...........................................................................
@@ -83,24 +83,24 @@ class ArithmeticFieldSpan:
         return "bool"
 
     def applyMin(self):
-        "Enforce a floor on the values of the FieldSpan."
+        "Enforce a floor on the values of the FieldView."
         return
 
     def applyMax(self):
-        "Enforce a ceiling on the values of the FieldSpan."
+        "Enforce a ceiling on the values of the FieldView."
         return
 
     @PYB11const
     def localMin(self):
-        "Return the mimimum value in the FieldSpan local to each processor."
+        "Return the mimimum value in the FieldView local to each processor."
         return
 
     @PYB11const
     def localMax(self):
-        "Return the maximum value in the FieldSpan local to each processor."
+        "Return the maximum value in the FieldView local to each processor."
         return
 
 #-------------------------------------------------------------------------------
-# Inject base FieldSpan methods
+# Inject base FieldView methods
 #-------------------------------------------------------------------------------
-PYB11inject(FieldSpan, ArithmeticFieldSpan)
+PYB11inject(FieldView, ArithmeticFieldView)

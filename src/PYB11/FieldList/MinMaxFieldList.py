@@ -1,7 +1,7 @@
 from PYB11Generator import *
 from FieldList import FieldList
 from FieldListBase import FieldListBase
-from MinMaxFieldSpanList import MinMaxFieldSpanList
+from MinMaxFieldListView import MinMaxFieldListView
 from ArithmeticFieldList import ArithmeticFieldList
 
 #-------------------------------------------------------------------------------
@@ -10,13 +10,13 @@ from ArithmeticFieldList import ArithmeticFieldList
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
 class MinMaxFieldList(FieldListBase,
-                      MinMaxFieldSpanList):
+                      MinMaxFieldListView):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
+    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
+    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;

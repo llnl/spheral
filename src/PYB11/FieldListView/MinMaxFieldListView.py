@@ -1,19 +1,19 @@
 from PYB11Generator import *
-import FieldSpanList
-from ArithmeticFieldSpanList import *
+import FieldListView
+from ArithmeticFieldListView import *
 
 #-------------------------------------------------------------------------------
 # Add min/max operations to a Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11pycppname("FieldSpanList")
-class MinMaxFieldSpanList:
+@PYB11pycppname("FieldListView")
+class MinMaxFieldListView:
 
     PYB11typedefs = """
     using FieldType = Field<%(Dimension)s, %(Value)s>;
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
+    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
+    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
@@ -36,6 +36,6 @@ class MinMaxFieldSpanList:
         return
 
 #-------------------------------------------------------------------------------
-# Inject FieldSpanList
+# Inject FieldListView
 #-------------------------------------------------------------------------------
-PYB11inject(ArithmeticFieldSpanList, MinMaxFieldSpanList)
+PYB11inject(ArithmeticFieldListView, MinMaxFieldListView)

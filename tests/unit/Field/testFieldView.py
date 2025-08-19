@@ -1,4 +1,4 @@
-#ATS:test(SELF, label="FieldSpan unit tests")
+#ATS:test(SELF, label="FieldView unit tests")
 
 from math import *
 import unittest
@@ -47,7 +47,7 @@ class TRTTraits:
 #-------------------------------------------------------------------------------
 # Test class
 #-------------------------------------------------------------------------------
-class testFieldSpan(unittest.TestCase):
+class testFieldView(unittest.TestCase):
 
     #---------------------------------------------------------------------------
     # Constructor

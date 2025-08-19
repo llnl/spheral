@@ -11,7 +11,7 @@
 #define __Spheral__FieldList__
 
 #include "Field/FieldListBase.hh"
-#include "Field/FieldSpanList.hh"
+#include "Field/FieldListView.hh"
 #include "Utilities/OpenMP_wrapper.hh"
 #include "Utilities/Logger.hh"
 
@@ -38,8 +38,8 @@ template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class NodeList;
 template<typename Dimension> class TableKernel;
 template<typename Dimension, typename DataType> class Field;
-template<typename Dimension, typename DataType> class FieldSpan;
-template<typename Dimension, typename DataType> class FieldSpanList;
+template<typename Dimension, typename DataType> class FieldView;
+template<typename Dimension, typename DataType> class FieldListView;
 
 // An enum for selecting how Fields are stored in FieldLists.
 enum class FieldStorageType {
@@ -50,7 +50,7 @@ enum class FieldStorageType {
 template<typename Dimension, typename DataType>
 class FieldList:
     public FieldListBase<Dimension>,
-    public FieldSpanList<Dimension, DataType> {
+    public FieldListView<Dimension, DataType> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -76,11 +76,11 @@ public:
   using cache_iterator = typename CacheElementsType::iterator;
   using const_cache_iterator = typename CacheElementsType::const_iterator;
 
-  using ViewType = FieldSpanList<Dimension, DataType>;
+  using ViewType = FieldListView<Dimension, DataType>;
 
-  // Bring in various methods hidden in FieldSpanList
-  using FieldSpanList<Dimension, DataType>::operator();
-  // using FieldSpanList<Dimension, DataType>::operator[];
+  // Bring in various methods hidden in FieldListView
+  using FieldListView<Dimension, DataType>::operator();
+  // using FieldListView<Dimension, DataType>::operator[];
 
   // Constructors.
   FieldList();
@@ -216,16 +216,16 @@ public:
   DataType max() const;
 
   // Comparison operators (Field-Field element wise).
-  bool operator==(const FieldList& rhs) const { return FieldSpanList<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const FieldList& rhs) const { return FieldSpanList<Dimension, DataType>::operator!=(rhs); }
+  bool operator==(const FieldList& rhs) const { return FieldListView<Dimension, DataType>::operator==(rhs); }
+  bool operator!=(const FieldList& rhs) const { return FieldListView<Dimension, DataType>::operator!=(rhs); }
 
   // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator!=(rhs); }
-  bool operator> (const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator> (rhs); }
-  bool operator< (const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator< (rhs); }
-  bool operator>=(const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator>=(rhs); }
-  bool operator<=(const DataType& rhs) const { return FieldSpanList<Dimension, DataType>::operator<=(rhs); }
+  bool operator==(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator==(rhs); }
+  bool operator!=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator!=(rhs); }
+  bool operator> (const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator> (rhs); }
+  bool operator< (const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator< (rhs); }
+  bool operator>=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator>=(rhs); }
+  bool operator<=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator<=(rhs); }
 
   // Get the NodeLists this FieldList is defined on.
   const std::vector<NodeList<Dimension>*>& nodeListPtrs() const { return mNodeListPtrs; }
@@ -277,8 +277,8 @@ private:
   FieldStorageType mStorageType;
 
   // For use when building a span view of the FieldList
-  std::vector<FieldSpan<Dimension, DataType>*> mFieldSpanPtrs;
-  using FieldSpanList<Dimension, DataType>::mSpanFieldSpans;
+  std::vector<FieldView<Dimension, DataType>*> mFieldViewPtrs;
+  using FieldListView<Dimension, DataType>::mSpanFieldViews;
 
   // Maintain a vector of the NodeLists this FieldList is defined in order to
   // construct NodeIterators.

@@ -1,1 +1,0 @@
-spheral_add_pybind11_library(FieldSpan SPHERAL_MODULE_LIST)

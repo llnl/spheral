@@ -1,7 +1,7 @@
 """
-Spheral FieldSpanList module.
+Spheral FieldListView module.
 
-Provides the FieldSpanList classes.
+Provides the FieldListView classes.
 """
 
 from PYB11Generator import *
@@ -9,14 +9,14 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
-from FieldSpanList import *
+from FieldListView import *
 
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"Geometry/Dimension.hh"',
-                  '"Field/FieldSpan.hh"',
-                  '"Field/FieldSpanList.hh"',
+                  '"Field/FieldView.hh"',
+                  '"Field/FieldListView.hh"',
                   '"Utilities/FieldDataTypeTraits.hh"',
                   '"Utilities/DomainNode.hh"',
                   '"Geometry/CellFaceFlag.hh"']
@@ -37,7 +37,7 @@ for ndim in dims:
     FacetedVolume = f"{Dimension}::FacetedVolume"
 
     #...........................................................................
-    # FieldSpanList -- non-numeric types 
+    # FieldListView -- non-numeric types 
     for (value, label) in (( FacetedVolume,                 "FacetedVolume"), 
                            ( "std::vector<int>",            "VectorInt"),
                            ( "std::vector<unsigned>",       "VectorUnsigned"),
@@ -50,5 +50,5 @@ for ndim in dims:
                            (f"DomainNode<{Dimension}>",     "DomainNode"),
                            (f"RKCoefficients<{Dimension}>", "RKCoefficients")):
         exec(f'''
-{label}FieldSpanList{ndim}d = PYB11TemplateClass(FieldSpanList, template_parameters=("{Dimension}", "{value}"))
+{label}FieldListView{ndim}d = PYB11TemplateClass(FieldListView, template_parameters=("{Dimension}", "{value}"))
 ''')

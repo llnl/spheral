@@ -1,6 +1,6 @@
 from PYB11Generator import *
 from FieldListBase import *
-from FieldSpanList import FieldSpanList
+from FieldListView import FieldListView
 
 #-------------------------------------------------------------------------------
 # FieldList
@@ -8,13 +8,13 @@ from FieldSpanList import FieldSpanList
 @PYB11template("Dimension", "Value")
 @PYB11module("SpheralFieldList")
 class FieldList(FieldListBase,
-                FieldSpanList):
+                FieldListView):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
+    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
+    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;

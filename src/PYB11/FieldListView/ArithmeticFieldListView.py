@@ -1,18 +1,18 @@
 from PYB11Generator import *
-import FieldSpanList
+import FieldListView
 
 #-------------------------------------------------------------------------------
-# FieldSpanList with numeric operations
+# FieldListView with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11pycppname("FieldSpanList")
-class ArithmeticFieldSpanList:
+@PYB11pycppname("FieldListView")
+class ArithmeticFieldListView:
 
     PYB11typedefs = """
     using FieldType = Field<%(Dimension)s, %(Value)s>;
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
-    using FieldSpanType = FieldSpan<%(Dimension)s, %(Value)s>;
-    using FieldSpanListType = FieldSpanList<%(Dimension)s, %(Value)s>;
+    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
+    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
@@ -39,16 +39,16 @@ class ArithmeticFieldSpanList:
         return
 
     # @PYB11pyname("__imul__")
-    # def __imul__SFL(self, rhs="const FieldSpanList<%(Dimension)s, Scalar>&"):
+    # def __imul__SFL(self, rhs="const FieldListView<%(Dimension)s, Scalar>&"):
     #     return
 
     # @PYB11pyname("__itruediv__")
-    # def __itruediv__SFL(self, rhs="const FieldSpanList<%(Dimension)s, Scalar>&"):
+    # def __itruediv__SFL(self, rhs="const FieldListView<%(Dimension)s, Scalar>&"):
     #     return
 
     @PYB11const
     def localSumElements(self):
-        "Return the sum of the elements in the FieldSpanList local to each processor."
+        "Return the sum of the elements in the FieldListView local to each processor."
         return
 
     #...........................................................................
@@ -82,24 +82,24 @@ class ArithmeticFieldSpanList:
         return "bool"
 
     def applyMin(self):
-        "Enforce a floor on the values of each Field in the FieldSpanList"
+        "Enforce a floor on the values of each Field in the FieldListView"
         return
 
     def applyMax(self):
-        "Enforce a ceiling on the values of each Field in the FieldSpanList"
+        "Enforce a ceiling on the values of each Field in the FieldListView"
         return
 
     @PYB11const
     def localMin(self):
-        "Return the mimimum value in the FieldSpanList local to each processor."
+        "Return the mimimum value in the FieldListView local to each processor."
         return
 
     @PYB11const
     def localMax(self):
-        "Return the maximum value in the FieldSpanList local to each processor."
+        "Return the maximum value in the FieldListView local to each processor."
         return
 
 #-------------------------------------------------------------------------------
-# Inject FieldSpanList
+# Inject FieldListView
 #-------------------------------------------------------------------------------
-PYB11inject(FieldSpanList.FieldSpanList, ArithmeticFieldSpanList)
+PYB11inject(FieldListView.FieldListView, ArithmeticFieldListView)

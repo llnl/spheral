@@ -1,7 +1,7 @@
 // Includes.
 #include "Geometry/MathTraits.hh"
 
-#include "Field/FieldSpan.hh"
+#include "Field/FieldView.hh"
 #include "Distributed/allReduce.hh"
 
 #include <algorithm>
@@ -15,10 +15,10 @@ namespace Spheral {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::
 operator=(const DataType& rhs) {
-  for (auto* fspan: mSpanFieldSpans) *fspan = rhs;
+  for (auto* fspan: mSpanFieldViews) *fspan = rhs;
   return *this;
 }
 
@@ -28,10 +28,10 @@ operator=(const DataType& rhs) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST
 inline
-FieldSpanList<Dimension, DataType>::
-~FieldSpanList() {
+FieldListView<Dimension, DataType>::
+~FieldListView() {
 #ifndef SPHERAL_UNIFIED_MEMORY
-  mSpanFieldSpans.free();
+  mSpanFieldViews.free();
 #endif
 }
 
@@ -41,11 +41,11 @@ FieldSpanList<Dimension, DataType>::
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-typename FieldSpanList<Dimension, DataType>::value_type
-FieldSpanList<Dimension, DataType>::
+typename FieldListView<Dimension, DataType>::value_type
+FieldListView<Dimension, DataType>::
 operator[](const size_t index) const {
-  REQUIRE2(index < this->size(), "FieldSpanList index ERROR: out of bounds " << index << " !< " << this->size());
-  return mSpanFieldSpans[index];
+  REQUIRE2(index < this->size(), "FieldListView index ERROR: out of bounds " << index << " !< " << this->size());
+  return mSpanFieldViews[index];
 }
 
 //------------------------------------------------------------------------------
@@ -54,25 +54,25 @@ operator[](const size_t index) const {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-typename FieldSpanList<Dimension, DataType>::value_type
-FieldSpanList<Dimension, DataType>::
+typename FieldListView<Dimension, DataType>::value_type
+FieldListView<Dimension, DataType>::
 at(const size_t index) const {
   return (*this)[index];
 }
 
 //------------------------------------------------------------------------------
-// Provide direct access to FieldSpan elements
+// Provide direct access to FieldView elements
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 DataType&
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator()(const size_t fieldIndex,
            const size_t nodeIndex) const {
-  REQUIRE2(fieldIndex < mSpanFieldSpans.size(), "FieldSpanList index ERROR: out of bounds " << fieldIndex << " !< " << mSpanFieldSpans.size());
-  REQUIRE2(nodeIndex < mSpanFieldSpans[fieldIndex]->numElements(), "FieldSpanList node index ERROR: out of bounds " << nodeIndex << " !< " << mSpanFieldSpans[fieldIndex]->numElements());
-  return (*mSpanFieldSpans[fieldIndex])[nodeIndex];
+  REQUIRE2(fieldIndex < mSpanFieldViews.size(), "FieldListView index ERROR: out of bounds " << fieldIndex << " !< " << mSpanFieldViews.size());
+  REQUIRE2(nodeIndex < mSpanFieldViews[fieldIndex]->numElements(), "FieldListView node index ERROR: out of bounds " << nodeIndex << " !< " << mSpanFieldViews[fieldIndex]->numElements());
+  return (*mSpanFieldViews[fieldIndex])[nodeIndex];
 }
 
 //------------------------------------------------------------------------------
@@ -82,8 +82,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::applyMin(const DataType& dataMin) {
-  for (auto* x: mSpanFieldSpans) x->applyMin(dataMin);
+FieldListView<Dimension, DataType>::applyMin(const DataType& dataMin) {
+  for (auto* x: mSpanFieldViews) x->applyMin(dataMin);
 }
 
 //------------------------------------------------------------------------------
@@ -93,8 +93,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::applyMax(const DataType& dataMax) {
-  for (auto* x: mSpanFieldSpans) x->applyMax(dataMax);
+FieldListView<Dimension, DataType>::applyMax(const DataType& dataMax) {
+  for (auto* x: mSpanFieldViews) x->applyMax(dataMax);
 }
 
 //------------------------------------------------------------------------------
@@ -104,8 +104,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::applyScalarMin(const Scalar dataMin) {
-  for (auto* x: mSpanFieldSpans) x->applyScalarMin(dataMin);
+FieldListView<Dimension, DataType>::applyScalarMin(const Scalar dataMin) {
+  for (auto* x: mSpanFieldViews) x->applyScalarMin(dataMin);
 }
 
 //------------------------------------------------------------------------------
@@ -115,25 +115,25 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::applyScalarMax(const Scalar dataMax) {
-  for (auto x: mSpanFieldSpans) x->applyScalarMax(dataMax);
+FieldListView<Dimension, DataType>::applyScalarMax(const Scalar dataMax) {
+  for (auto x: mSpanFieldViews) x->applyScalarMax(dataMax);
 }
 
 //------------------------------------------------------------------------------
-// Add two FieldSpanLists in place.
+// Add two FieldListViews in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator+=(const FieldSpanList<Dimension, DataType>& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator+=(const FieldListView<Dimension, DataType>& rhs) {
 
   // Pre-conditions.
   const auto n = this->size();
   BEGIN_CONTRACT_SCOPE
   {
     REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
+    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldViews[i]->numElements() == rhs[i]->numElements());
   }
   END_CONTRACT_SCOPE
 
@@ -147,15 +147,15 @@ FieldSpanList<Dimension, DataType>::operator+=(const FieldSpanList<Dimension, Da
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator-=(const FieldSpanList<Dimension, DataType>& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator-=(const FieldListView<Dimension, DataType>& rhs) {
 
   // Pre-conditions.
   const auto n = this->size();
   BEGIN_CONTRACT_SCOPE
   {
     REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
+    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldViews[i]->numElements() == rhs[i]->numElements());
   }
   END_CONTRACT_SCOPE
 
@@ -164,47 +164,47 @@ FieldSpanList<Dimension, DataType>::operator-=(const FieldSpanList<Dimension, Da
 }
 
 //------------------------------------------------------------------------------
-// Add a single value to the FieldSpanList in place.
+// Add a single value to the FieldListView in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator+=(const DataType& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator+=(const DataType& rhs) {
   const auto n = this->size();
   for (size_t i = 0u; i < n; ++i) *(*this)[i] += rhs;
   return *this;
 }
 
 //------------------------------------------------------------------------------
-// Subtract a single value from the FieldSpanList in place.
+// Subtract a single value from the FieldListView in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator-=(const DataType& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator-=(const DataType& rhs) {
   const auto n = this->size();
   for (size_t i = 0u; i < n; ++i) *(*this)[i] -= rhs;
   return *this;
 }
 
 //------------------------------------------------------------------------------
-// Multiply this FieldSpanList by a Scalar FieldSpanList in place.
+// Multiply this FieldListView by a Scalar FieldListView in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::
-operator*=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::
+operator*=(const FieldListView<Dimension, typename Dimension::Scalar>& rhs) {
 
   // Pre-conditions.
   const auto n = this->size();
   BEGIN_CONTRACT_SCOPE
   {
     REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
+    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldViews[i]->numElements() == rhs[i]->numElements());
   }
   END_CONTRACT_SCOPE
 
@@ -213,34 +213,34 @@ operator*=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Multiply this FieldSpanList by a Scalar in place.
+// Multiply this FieldListView by a Scalar in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator*=(const Scalar& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator*=(const Scalar& rhs) {
   const auto n = this->size();
   for (size_t i = 0u; i < n; ++i) *(*this)[i] *= rhs;
   return *this;
 }
 
 //------------------------------------------------------------------------------
-// Divide this FieldSpanList by a Scalar FieldSpanList in place.
+// Divide this FieldListView by a Scalar FieldListView in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::
-operator/=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::
+operator/=(const FieldListView<Dimension, typename Dimension::Scalar>& rhs) {
 
   // Pre-conditions.
   const auto n = this->size();
   BEGIN_CONTRACT_SCOPE
   {
     REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
+    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldViews[i]->numElements() == rhs[i]->numElements());
   }
   END_CONTRACT_SCOPE
 
@@ -249,13 +249,13 @@ operator/=(const FieldSpanList<Dimension, typename Dimension::Scalar>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Divide this FieldSpanList by a Scalar in place.
+// Divide this FieldListView by a Scalar in place.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
-FieldSpanList<Dimension, DataType>&
-FieldSpanList<Dimension, DataType>::operator/=(const typename Dimension::Scalar& rhs) {
+FieldListView<Dimension, DataType>&
+FieldListView<Dimension, DataType>::operator/=(const typename Dimension::Scalar& rhs) {
   const auto n = this->size();
   for (size_t i = 0u; i < n; ++i) *(*this)[i] /= rhs;
   return *this;
@@ -269,10 +269,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 DataType
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 localSumElements() const {
   auto result = DataTypeTraits<DataType>::zero();
-  for (auto* x: mSpanFieldSpans) result += x->localSumElements();
+  for (auto* x: mSpanFieldViews) result += x->localSumElements();
   return result;
 }
 
@@ -284,10 +284,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 DataType
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 localMin() const {
   auto result = std::numeric_limits<DataType>::max();
-  for (auto* x: mSpanFieldSpans) result = std::min(result, x->localMin());
+  for (auto* x: mSpanFieldViews) result = std::min(result, x->localMin());
   return result;
 }
 
@@ -299,10 +299,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 DataType
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 localMax() const {
   auto result = std::numeric_limits<DataType>::lowest();
-  for (auto* x: mSpanFieldSpans) result = std::max(result, x->localMax());
+  for (auto* x: mSpanFieldViews) result = std::max(result, x->localMax());
   return result;
 }
 
@@ -313,21 +313,21 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
-operator==(const FieldSpanList<Dimension, DataType>& rhs) const {
+FieldListView<Dimension, DataType>::
+operator==(const FieldListView<Dimension, DataType>& rhs) const {
   // Pre-conditions.
   const auto n = this->size();
   BEGIN_CONTRACT_SCOPE
   {
     REQUIRE(rhs.size() == n);
-    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldSpans[i]->numElements() == rhs[i]->numElements());
+    for (size_t i = 0u; i < n; ++i) REQUIRE(mSpanFieldViews[i]->numElements() == rhs[i]->numElements());
   }
   END_CONTRACT_SCOPE
 
   auto result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] == *rhs[i];
+    result = *mSpanFieldViews[i] == *rhs[i];
     ++i;
   }
   return result;
@@ -340,8 +340,8 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
-operator!=(const FieldSpanList<Dimension, DataType>& rhs) const {
+FieldListView<Dimension, DataType>::
+operator!=(const FieldListView<Dimension, DataType>& rhs) const {
   return !(operator==(rhs));
 }
 
@@ -352,13 +352,13 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator==(const DataType& rhs) const {
   const auto n = this->size();
   bool result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] == rhs;
+    result = *mSpanFieldViews[i] == rhs;
     ++i;
   }
   return result;
@@ -371,7 +371,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator!=(const DataType& rhs) const {
   return !(operator==(rhs));
 }
@@ -383,13 +383,13 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator>(const DataType& rhs) const {
   const auto n = this->size();
   bool result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] > rhs;
+    result = *mSpanFieldViews[i] > rhs;
     ++i;
   }
   return result;
@@ -402,13 +402,13 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator<(const DataType& rhs) const {
   const auto n = this->size();
   bool result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] < rhs;
+    result = *mSpanFieldViews[i] < rhs;
     ++i;
   }
   return result;
@@ -421,13 +421,13 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator>=(const DataType& rhs) const {
   const auto n = this->size();
   bool result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] >= rhs;
+    result = *mSpanFieldViews[i] >= rhs;
     ++i;
   }
   return result;
@@ -440,13 +440,13 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 bool
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 operator<=(const DataType& rhs) const {
   const auto n = this->size();
   bool result = true;
   size_t i = 0u;
   while (result and i < n) {
-    result = *mSpanFieldSpans[i] <= rhs;
+    result = *mSpanFieldViews[i] <= rhs;
     ++i;
   }
   return result;
@@ -459,10 +459,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 size_t
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 numElements() const {
   size_t result = 0u;
-  for (auto* x: mSpanFieldSpans) result += x->numElements();
+  for (auto* x: mSpanFieldViews) result += x->numElements();
   return result;
 }
 
@@ -473,10 +473,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 size_t
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 numInternalElements() const {
   size_t result = 0u;
-  for (auto* x: mSpanFieldSpans) result += x->numInternalElements();
+  for (auto* x: mSpanFieldViews) result += x->numInternalElements();
   return result;
 }
 
@@ -487,10 +487,10 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 size_t
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 numGhostElements() const {
   size_t result = 0u;
-  for (auto* x: mSpanFieldSpans) result += x->numGhostElements();
+  for (auto* x: mSpanFieldViews) result += x->numGhostElements();
   return result;
 }
 
@@ -503,11 +503,11 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 move(chai::ExecutionSpace space, bool recursive) {
-  mSpanFieldSpans.move(space);
+  mSpanFieldViews.move(space);
   if (recursive) {
-    for (auto& d: mSpanFieldSpans) {
+    for (auto& d: mSpanFieldViews) {
       d.move(space);
     }
   }
@@ -520,11 +520,11 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE
 inline
 void
-FieldSpanList<Dimension, DataType>::
+FieldListView<Dimension, DataType>::
 touch(chai::ExecutionSpace space, bool recursive) {
-  mSpanFieldSpans.registerTouch(space);
+  mSpanFieldViews.registerTouch(space);
   if (recursive) {
-    for (auto& d : mSpanFieldSpans) {
+    for (auto& d : mSpanFieldViews) {
       d.touch(space);
     }
   }

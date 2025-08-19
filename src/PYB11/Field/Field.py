@@ -1,6 +1,6 @@
 from PYB11Generator import *
 from FieldBase import FieldBase
-from FieldSpan import FieldSpan
+from FieldView import FieldView
 
 #-------------------------------------------------------------------------------
 # Field
@@ -8,7 +8,7 @@ from FieldSpan import FieldSpan
 @PYB11template("Dimension", "Value")
 @PYB11module("SpheralField")
 class Field(FieldBase,
-            FieldSpan):
+            FieldView):
 
     PYB11typedefs = """
     using SelfType = Field<%(Dimension)s, %(Value)s>;

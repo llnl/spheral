@@ -1,5 +1,5 @@
 #include "Field/NodeIterators.hh"
-#include "Field/FieldSpan.hh"
+#include "Field/FieldView.hh"
 
 #include "Geometry/Dimension.hh"
 #include "NodeList/NodeList.hh"
@@ -33,7 +33,7 @@ inline
 Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray() {
   mDataSpan = mDataArray;
   mNumInternalElements = 0u;
@@ -49,7 +49,7 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name,
       const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(name, *field.nodeListPtr()),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
   mDataSpan = mDataArray;
   mNumInternalElements = this->nodeList().numInternalNodes();
@@ -65,7 +65,7 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList):
   FieldBase<Dimension>(name, nodeList),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray((size_t) nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
   REQUIRE(this->size() == nodeList.numNodes());
   mDataSpan = mDataArray;
@@ -83,7 +83,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList,
       DataType value):
   FieldBase<Dimension>(name, nodeList),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray(nodeList.numNodes(), value) {
   REQUIRE(this->size() == nodeList.numNodes());
   mDataSpan = mDataArray;
@@ -101,7 +101,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList,
       const std::vector<DataType,DataAllocator<DataType>>& array):
   FieldBase<Dimension>(name, nodeList),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray(nodeList.numNodes()) {
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
@@ -120,7 +120,7 @@ inline
 Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
                                   const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(field.name(), nodeList),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
   ENSURE(size() == nodeList.numNodes());
   mDataSpan = mDataArray;
@@ -135,7 +135,7 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
-  FieldSpan<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
   mDataSpan = mDataArray;
   mNumInternalElements = this->nodeList().numInternalNodes();

@@ -1,2 +1,0 @@
-spheral_add_pybind11_library(FieldSpanList SPHERAL_MODULE_LIST)
-spheral_add_pybind11_library(ArithmeticFieldSpanList SPHERAL_MODULE_LIST)
