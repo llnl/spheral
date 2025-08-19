@@ -11,14 +11,6 @@
 #include <algorithm>
 using std::vector;
 using std::string;
-using std::pair;
-using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -166,8 +158,8 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   while (numGlobalNodesRemaining > 0) {
 
     // Find the minimum unassigned node ID.
-    const auto globalMinItr = min_element(globalNodesRemaining.begin(),
-                                          globalNodesRemaining.end());
+    const auto globalMinItr = std::min_element(globalNodesRemaining.begin(),
+                                               globalNodesRemaining.end());
     auto globalMinID = maxGlobalID;
     if (globalMinItr != globalNodesRemaining.end()) globalMinID = *globalMinItr;
     globalMinID = allReduce(globalMinID, SPHERAL_OP_MIN);
@@ -234,7 +226,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
     // Find the minimum fragment ID currently assigned to any of these nodes.
     // If there are no fragments assigned yet, then we'll make this a new fragment ID.
-    int fragID = *min_element(fragIDs.begin(), fragIDs.end());
+    int fragID = *std::min_element(fragIDs.begin(), fragIDs.end());
     if (fragID == int(maxGlobalID)) {
       fragID = numFragments;
       numFragments += 1;
@@ -289,7 +281,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
   // Make sure all nodes have been assigned to a valid fragment.
   CHECK(nodes.numInternalNodes() == 0 ||
-        *min_element(result.begin(), result.end()) >= 0);
+        *std::min_element(result.begin(), result.end()) >= 0);
 
 //   // Assign the dust nodes a fragment index of -1.
 //   for (int i = 0; i != nodes.numInternalNodes(); ++i) {
