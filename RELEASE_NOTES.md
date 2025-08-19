@@ -33,6 +33,7 @@ Notable changes include:
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
       * Increased the number of threads for certain memory intensive tests to prevent OOM error.
+    * Updated GitHub actions since GitLab mirror changed.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
