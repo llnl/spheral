@@ -63,6 +63,7 @@ set(Utilities_headers
     DomainNodeInline.hh
     FastMath.hh
     FieldDataTypeTraits.hh
+    FlexPointer.hh
     Functors.hh
     GeometricUtilities.hh
     Hashes.hh

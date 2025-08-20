@@ -17,3 +17,10 @@ spheral_add_test(
   DEPENDS_ON Spheral_Utilities
   #DEBUG_LINKER
 )
+
+spheral_add_test(
+  NAME flexpointer_tests
+  SOURCES flexpointer_tests.cc
+  DEPENDS_ON Spheral_Utilities Spheral_Geometry
+  #DEBUG_LINKER
+)
