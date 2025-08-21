@@ -127,13 +127,23 @@ public:
                             const typename Dimension::Vector& DyDxj,
                                   typename Dimension::Scalar& ytildei,
                                   typename Dimension::Scalar& ytildej) const;
-  
+
+  // Access our state.
+  const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
+  const FieldList<Dimension, Vector>& selfAccelerations() const { return mSelfAccelerations; }
+                                  
   //****************************************************************************
   // Methods required for restarting.
   virtual std::string label() const override { return "SolidFSISPHRZ"; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
  //****************************************************************************
+
+private:
+  //--------------------------- Private Interface ---------------------------//
+  std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
+  FieldList<Dimension, Vector> mSelfAccelerations;
+
 };
 
 }

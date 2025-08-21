@@ -2,6 +2,11 @@
 // SolidFSISPHRZ
 //
 // RZ version of SolidFSISPH
+// This RZ version is a naive area-weighting implementation.
+//
+// Note this version is currently abusing our ordinary 2D geometric types,
+// implicitly mapping x->z, y->r.
+//
 //----------------------------------------------------------------------------//
 
 #include "FileIO/FileIO.hh"
@@ -38,6 +43,8 @@
 #include "DataBase/PureReplaceState.hh"
 #include "DataBase/updateStateFields.hh"
 #include "DataBase/ReplaceWithRatioPolicy.hh"
+
+#include "Geometry/GeometryRegistrar.hh"
 
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "Field/FieldList.hh"
@@ -93,10 +100,10 @@ tensileStressCorrection(const Dim<2>::SymTensor& sigma) {
 // Construct with the given artificial viscosity and kernels.
 //------------------------------------------------------------------------------
 SolidFSISPHRZ::
-SolidFSISPHRZ(DataBase<Dim<2>>& dataBase,
-            ArtificialViscosityHandle<Dim<2>>& Q,
-            SlideSurface<Dim<2>>& slides,
-            const TableKernel<Dim<2>>& W,
+SolidFSISPHRZ(DataBase<Dimension>& dataBase,
+            ArtificialViscosityHandle<Dimension>& Q,
+            SlideSurface<Dimension>& slides,
+            const TableKernel<Dimension>& W,
             const double cfl,
             const double surfaceForceCoefficient,
             const double densityStabilizationCoefficient,
@@ -117,7 +124,7 @@ SolidFSISPHRZ(DataBase<Dim<2>>& dataBase,
             const double nTensile,
             const Vector& xmin,
             const Vector& xmax):
-  SolidFSISPH(dataBase,
+  SolidFSISPH<Dimension>(dataBase,
 	      Q,
 	      slides,
 	      W,
@@ -140,7 +147,9 @@ SolidFSISPHRZ(DataBase<Dim<2>>& dataBase,
 	      epsTensile,
 	      nTensile,
 	      xmin,
-	      xmax) {
+	      xmax),
+  mPairAccelerationsPtr(),
+  mSelfAccelerations(FieldStorageType::CopyFields) {
 }
 
 //------------------------------------------------------------------------------
@@ -149,9 +158,9 @@ SolidFSISPHRZ(DataBase<Dim<2>>& dataBase,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-initializeProblemStartupDependencies(DataBase<Dim<2>>& dataBase,
-                                     State<Dim<2>>& state,
-                                     StateDerivatives<Dim<2>>& derivs) {
+initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                     State<Dimension>& state,
+                                     StateDerivatives<Dimension>& derivs) {
 
   auto mass = dataBase.fluidMass();
   const auto pos = dataBase.fluidPosition();
@@ -165,7 +174,7 @@ initializeProblemStartupDependencies(DataBase<Dim<2>>& dataBase,
     }
   }
   // Call base method
-  SolidFSISPH<Dim<2>>::initializeProblemStartupDependencies(dataBase, state, derivs);
+  SolidFSISPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
   // Multiply mass back by 2*pi*r
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = mass[nodeListi]->numElements();
@@ -181,58 +190,52 @@ initializeProblemStartupDependencies(DataBase<Dim<2>>& dataBase,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-registerState(DataBase<Dim<2>>& dataBase,
-              State<Dim<2>>& state) {
+registerState(DataBase<Dimension>& dataBase,
+              State<Dimension>& state) {
   // The base class does most of it.
-  SolidFSISPH<Dim<2>>::registerState(dataBase, state);
+  SolidFSISPH<Dimension>::registerState(dataBase, state);
 
-  // XXX TODO: add the following in, but its currently causing errors
+  // XXX TODO: add the following in, but its currently causing errors when run in (compatibleEnergy) mode
   // RuntimeError: Verification failed: StateBase ERROR: failed to return type for key pair-wise accelerations
 
-//  // XXX TODO: do we need this? CRKSPHRZ.cc has it, SPHRZ.cc does not
-//  // Reregister the volume update
-//  auto vol = state.fields(HydroFieldNames::volume, 0.0);
-//  state.enroll(vol, make_policy<ContinuityVolumePolicyRZ>());
-//
-//  // We have to choose either compatible or total energy evolution.
-//  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-//  const auto evolveTotalEnergy = this->evolveTotalEnergy();
-//  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
-//          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
-//
-//  // Register the specific thermal energy.
-//  // Note in RZ we require the specific thermal energy go before the position so we can use the r position
-//  // during update.  This is why we make position update dependent on the thermal energy in SPHBase.
-//  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
-//  if (compatibleEnergy) {
-//    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
-//
-//  } else if (evolveTotalEnergy) {
-//    // If we're doing total energy, we register the specific energy to advance with the
-//    // total energy policy.
-//    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
-//
-//  } else {
-//    // Otherwise we're just time-evolving the specific energy.
-//    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
-//  }
+  // We have to choose either compatible or total energy evolution.
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  const auto evolveTotalEnergy = this->evolveTotalEnergy();
+  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
+          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
+
+  // Register the specific thermal energy.
+  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
+  if (compatibleEnergy) {
+    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
+
+  } else if (evolveTotalEnergy) {
+    // If we're doing total energy, we register the specific energy to advance with the
+    // total energy policy.
+    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
+
+  } else {
+    // Otherwise we're just time-evolving the specific energy.
+    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
+  }
 }
 
 //------------------------------------------------------------------------------
-// Register Derivs
+// Register the state derivative fields.
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-registerDerivatives(DataBase<Dim<2>>&  dataBase,
-                    StateDerivatives<Dim<2>>& derivs) {
-  SolidFSISPH<Dim<2>>::registerDerivatives(dataBase, derivs);
-  // XXX TODO: CRKSPHRZ has the following
-//  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-//  if (compatibleEnergy) {
-//    const auto& connectivityMap = dataBase.connectivityMap();
-//    mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-//    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-//  }
+registerDerivatives(DataBase<Dimension>&  dataBase,
+                    StateDerivatives<Dimension>& derivs) {
+  SolidFSISPH<Dimension>::registerDerivatives(dataBase, derivs);
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  if (compatibleEnergy) {
+    const auto& connectivityMap = dataBase.connectivityMap();
+    mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
+    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero, HydroFieldNames::selfAccelerations, false);
+    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+    derivs.enroll(mSelfAccelerations);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -241,34 +244,43 @@ registerDerivatives(DataBase<Dim<2>>&  dataBase,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-preStepInitialize(const DataBase<Dim<2>>& dataBase, 
-                  State<Dim<2>>& state,
-                  StateDerivatives<Dim<2>>& derivs) {
+preStepInitialize(const DataBase<Dimension>& dataBase,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs) {
 
   // Convert the mass to mass per unit length first.
   // Map: x->z, y->r (r = cylindrical radius)
-  auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto numNodeLists = mass.numFields();
-  // Divide mass by 2*pi*r
-  for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
-    const auto n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) /= circi;
+  if (mApplySelectDensitySum){
+    auto mass = state.fields(HydroFieldNames::mass, 0.0);
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto numNodeLists = mass.numFields();
+    // Divide mass by 2*pi*r
+    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
+      const auto n = mass[nodeListi]->numElements();
+      for (unsigned i = 0; i != n; ++i) {
+        const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+        mass(nodeListi, i) /= circi;
+      }
     }
   }
 
   // Base class does most of the work.
-  SolidFSISPH<Dim<2>>::preStepInitialize(dataBase, state, derivs);
+  SolidFSISPH<Dimension>::preStepInitialize(dataBase, state, derivs);
 
   // Now convert back to true masses. (multiply by 2*pi*r)
-  for (auto nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const auto n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto& xi = pos(nodeListi, i);
-      const auto circi = 2.0*M_PI*abs(xi.y());
-      mass(nodeListi, i) *= circi;
+  if (mApplySelectDensitySum){
+    const auto position = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
+    auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+    const auto numNodeLists = massDensity.numFields();
+    for (auto nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+      const auto n = mass[nodeListi]->numElements();
+      for (unsigned i = 0; i != n; ++i) {
+        const auto& xi = position(nodeListi, i);
+        const auto  circi = 2.0*M_PI*abs(xi.y());
+        mass(nodeListi, i) *= circi;
+      }
     }
   }
 }
@@ -280,11 +292,10 @@ void
 SolidFSISPHRZ::
 finalizeDerivatives(const Scalar time, 
                     const Scalar  dt,
-                    const DataBase<Dim<2>>&  dataBase, 
-                    const State<Dim<2>>& state,
-		    StateDerivatives<Dim<2>>&  derivs) const {
-  // XXX TODO: do I need 2*pi*r factor conversions here too?
-  SolidFSISPH<Dim<2>>::finalizeDerivatives(time, dt, dataBase, state, derivs);
+                    const DataBase<Dimension>&  dataBase, 
+                    const State<Dimension>& state,
+		    StateDerivatives<Dimension>&  derivs) const {
+  SolidFSISPH<Dimension>::finalizeDerivatives(time, dt, dataBase, state, derivs);
 } // finalize
 
 
@@ -293,8 +304,8 @@ finalizeDerivatives(const Scalar time,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-applyGhostBoundaries(State<Dim<2>>& state,
-                     StateDerivatives<Dim<2>>& derivs) {
+applyGhostBoundaries(State<Dimension>& state,
+                     StateDerivatives<Dimension>& derivs) {
 
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
@@ -310,7 +321,7 @@ applyGhostBoundaries(State<Dim<2>>& state,
   }
 
   // Apply ordinary SolidFSISPH BCs.
-  SolidFSISPH<Dim<2>>::applyGhostBoundaries(state, derivs);
+  SolidFSISPH<Dimension>::applyGhostBoundaries(state, derivs);
   for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
 
   // Scale back to mass.
@@ -329,8 +340,8 @@ applyGhostBoundaries(State<Dim<2>>& state,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-enforceBoundaries(State<Dim<2>>& state,
-                  StateDerivatives<Dim<2>>& derivs) {
+enforceBoundaries(State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs) {
 
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
@@ -346,7 +357,7 @@ enforceBoundaries(State<Dim<2>>& state,
   }
 
   // Apply ordinary SolidFSISPH BCs.
-  SolidFSISPH<Dim<2>>::enforceBoundaries(state, derivs);
+  SolidFSISPH<Dimension>::enforceBoundaries(state, derivs);
 
   // Scale back to mass.
   // We also ensure no point approaches the z-axis too closely.
@@ -368,7 +379,7 @@ enforceBoundaries(State<Dim<2>>& state,
 void
 SolidFSISPHRZ::
 dumpState(FileIO& file, const string& pathName) const {
-  SolidFSISPH<Dim<2>>::dumpState(file, pathName);
+  SolidFSISPH<Dimension>::dumpState(file, pathName);
 }
 
 
@@ -378,7 +389,7 @@ dumpState(FileIO& file, const string& pathName) const {
 void
 SolidFSISPHRZ::
 restoreState(const FileIO& file, const string& pathName) {
-  SolidFSISPH<Dim<2>>::restoreState(file, pathName);
+  SolidFSISPH<Dimension>::restoreState(file, pathName);
 }
 
 //------------------------------------------------------------------------------
@@ -386,16 +397,16 @@ restoreState(const FileIO& file, const string& pathName) {
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-linearReconstruction(const typename Dim<2>::Vector& ri,
-                     const typename Dim<2>::Vector& rj,
-                     const typename Dim<2>::Scalar& yi,
-                     const typename Dim<2>::Scalar& yj,
-                     const typename Dim<2>::Vector& DyDxi,
-                     const typename Dim<2>::Vector& DyDxj,
-                           typename Dim<2>::Scalar& ytildei,
-                           typename Dim<2>::Scalar& ytildej) const {
+linearReconstruction(const typename Dimension::Vector& ri,
+                     const typename Dimension::Vector& rj,
+                     const typename Dimension::Scalar& yi,
+                     const typename Dimension::Scalar& yj,
+                     const typename Dimension::Vector& DyDxi,
+                     const typename Dimension::Vector& DyDxj,
+                           typename Dimension::Scalar& ytildei,
+                           typename Dimension::Scalar& ytildej) const {
   // XXX TODO: do I need 2*pi*r factor conversions here too?
-  SolidFSISPH<Dim<2>>::linearReconstruction(ri, rj, yi, yj,
+  SolidFSISPH<Dimension>::linearReconstruction(ri, rj, yi, yj,
 					    DyDxi, DyDxj, ytildei, ytildej);
 }
 
@@ -404,11 +415,11 @@ linearReconstruction(const typename Dim<2>::Vector& ri,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-evaluateDerivatives(const Dim<2>::Scalar time,
-                    const Dim<2>::Scalar dt,
-                    const DataBase<Dim<2>>& dataBase,
-                    const State<Dim<2>>& state,
-                    StateDerivatives<Dim<2>>& derivatives) const {
+evaluateDerivatives(const Dimension::Scalar time,
+                    const Dimension::Scalar dt,
+                    const DataBase<Dimension>& dataBase,
+                    const State<Dimension>& state,
+                    StateDerivatives<Dimension>& derivatives) const {
 
   this->firstDerivativesLoop(time,dt,dataBase,state,derivatives);
 
@@ -416,11 +427,11 @@ evaluateDerivatives(const Dim<2>::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dim<2>, Scalar>&>(Qhandle);
+      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
       this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dim<2>, Tensor>&>(Qhandle);
+    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
     this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   }
 
@@ -433,11 +444,11 @@ evaluateDerivatives(const Dim<2>::Scalar time,
 template<typename QType>
 void
 SolidFSISPHRZ::
-secondDerivativesLoop(const Dim<2>::Scalar time,
-                      const Dim<2>::Scalar dt,
-                      const DataBase<Dim<2>>& dataBase,
-                      const State<Dim<2>>& state,
-                      StateDerivatives<Dim<2>>& derivs,
+secondDerivativesLoop(const Dimension::Scalar time,
+                      const Dimension::Scalar dt,
+                      const DataBase<Dimension>& dataBase,
+                      const State<Dimension>& state,
+                      StateDerivatives<Dimension>& derivs,
                       const QType& Q) const { 
 
   // XXX TODO: add R factors
@@ -551,25 +562,25 @@ secondDerivativesLoop(const Dim<2>::Scalar time,
   const auto  localM = derivs.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero);
   const auto  DepsDx = derivs.fields(FSIFieldNames::specificThermalEnergyGradient, Vector::zero);
   const auto  DPDx = derivs.fields(FSIFieldNames::pressureGradient, Vector::zero);
-  auto  newInterfaceNormals = derivs.fields(PureReplaceState<Dim<2>, Vector>::prefix() + FSIFieldNames::interfaceNormals, Vector::zero);
-  auto  newInterfaceFlags = derivs.fields(PureReplaceState<Dim<2>, int>::prefix() + FSIFieldNames::interfaceFlags, int(0));
-  auto  newInterfaceAreaVectors = derivs.fields(PureReplaceState<Dim<2>, Vector>::prefix() + FSIFieldNames::interfaceAreaVectors, Vector::zero);
+  auto  newInterfaceNormals = derivs.fields(PureReplaceState<Dimension, Vector>::prefix() + FSIFieldNames::interfaceNormals, Vector::zero);
+  auto  newInterfaceFlags = derivs.fields(PureReplaceState<Dimension, int>::prefix() + FSIFieldNames::interfaceFlags, int(0));
+  auto  newInterfaceAreaVectors = derivs.fields(PureReplaceState<Dimension, Vector>::prefix() + FSIFieldNames::interfaceAreaVectors, Vector::zero);
   auto  interfaceSmoothnessNormalization = derivs.fields(FSIFieldNames::interfaceSmoothnessNormalization, 0.0);
   auto  interfaceFraction = derivs.fields(FSIFieldNames::interfaceFraction, 0.0);
-  auto  newInterfaceSmoothness = derivs.fields(PureReplaceState<Dim<2>, Scalar>::prefix() + FSIFieldNames::interfaceSmoothness, 0.0);
+  auto  newInterfaceSmoothness = derivs.fields(PureReplaceState<Dimension, Scalar>::prefix() + FSIFieldNames::interfaceSmoothness, 0.0);
   auto  interfaceAngles = derivs.fields(FSIFieldNames::interfaceAngles, 0.0);
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
-  auto  DxDt = derivs.fields(IncrementState<Dim<2>, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto  DrhoDt = derivs.fields(IncrementState<Dim<2>, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
+  auto  DrhoDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
   auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-  auto  DepsDt = derivs.fields(IncrementState<Dim<2>, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
+  auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
   auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
-  auto  DSDt = derivs.fields(IncrementState<Dim<2>, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero);
   auto* pairAccelerationsPtr = (compatibleEnergy ?
                                 &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
                                 nullptr);
@@ -617,7 +628,7 @@ secondDerivativesLoop(const Dim<2>::Scalar time,
     SymTensor sigmai, sigmaj;
     Vector sigmarhoi, sigmarhoj;
 
-    typename SpheralThreads<Dim<2>>::FieldListStack threadStack;
+    typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto newInterfaceFlags_thread = newInterfaceFlags.threadCopy(threadStack, ThreadReduction::MAX);
     auto newInterfaceAreaVectors_thread = newInterfaceAreaVectors.threadCopy(threadStack);
     auto newInterfaceNormals_thread = newInterfaceNormals.threadCopy(threadStack);
@@ -1058,7 +1069,7 @@ secondDerivativesLoop(const Dim<2>::Scalar time,
 
       } // if damageDecouple 
     } // loop over pairs
-    threadReduceFieldLists<Dim<2>>(threadStack);
+    threadReduceFieldLists<Dimension>(threadStack);
   } // OpenMP parallel region
 
 
@@ -1150,11 +1161,11 @@ secondDerivativesLoop(const Dim<2>::Scalar time,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-firstDerivativesLoop(const Dim<2>::Scalar /*time*/,
-                     const Dim<2>::Scalar /*dt*/,
-                     const DataBase<Dim<2>>& dataBase,
-                     const State<Dim<2>>& state,
-                     StateDerivatives<Dim<2>>& derivs) const {
+firstDerivativesLoop(const Dimension::Scalar /*time*/,
+                     const Dimension::Scalar /*dt*/,
+                     const DataBase<Dimension>& dataBase,
+                     const State<Dimension>& state,
+                     StateDerivatives<Dimension>& derivs) const {
 
   // XXX TODO: add R factors
 
@@ -1204,7 +1215,7 @@ firstDerivativesLoop(const Dim<2>::Scalar /*time*/,
     // Thread private  scratch variables.
     int i, j, nodeListi, nodeListj;
 
-    typename SpheralThreads<Dim<2>>::FieldListStack threadStack;
+    typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto M_thread = M.threadCopy(threadStack);
     auto localM_thread = localM.threadCopy(threadStack);
     auto DPDx_thread = DPDx.threadCopy(threadStack);
@@ -1311,7 +1322,7 @@ firstDerivativesLoop(const Dim<2>::Scalar /*time*/,
       }
     } // loop over pairs
       // Reduce the thread values to the master.
-    threadReduceFieldLists<Dim<2>>(threadStack);
+    threadReduceFieldLists<Dimension>(threadStack);
   }   // OpenMP parallel region
 
    
@@ -1327,11 +1338,11 @@ firstDerivativesLoop(const Dim<2>::Scalar /*time*/,
         auto& DPDxi = DPDx(nodeListi, i);
 
         const auto Mdeti = Mi.Determinant();
-        const auto goodM = ( Mdeti > 1.0e-2 and numNeighborsi > Dim<2>::pownu(2));
+        const auto goodM = ( Mdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2));
         Mi =  (goodM and this->linearCorrectGradients() ? Mi.Inverse() : Tensor::one);
         
         const auto localMdeti = localMi.Determinant();
-        const auto goodLocalM = ( localMdeti > 1.0e-2 and numNeighborsi > Dim<2>::pownu(2));
+        const auto goodLocalM = ( localMdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2));
         localMi =  (goodLocalM and this->linearCorrectGradients() ? localMi.Inverse() : Tensor::one);
 
         DPDxi = Mi.Transpose()*DPDxi;
