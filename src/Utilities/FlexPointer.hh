@@ -15,6 +15,7 @@
 namespace Spheral {
 
 #ifdef SPHERAL_GPU_ENABLED
+// Launch a RAJA kernel and instantiate an instance on the device
 template<typename Derived, typename Base, typename... Args>
 SPHERAL_HOST_DEVICE void newGPU(Base** d_ptr, void* mem_loc, Args&&... args) {
   RAJA::forall<RAJA::hip_exec<1>>(RAJA::TypedRangeSegment<unsigned>(0,1),
@@ -23,14 +24,6 @@ SPHERAL_HOST_DEVICE void newGPU(Base** d_ptr, void* mem_loc, Args&&... args) {
     });
 }
 
-template<typename Base>
-SPHERAL_HOST_DEVICE void deleteGPU(Base** d_ptr) {
-  RAJA::forall<RAJA::hip_exec<1>>(RAJA::TypedRangeSegment<unsigned>(0,1),
-    [=] SPHERAL_HOST_DEVICE (int) {
-      delete *d_ptr;
-      delete d_ptr;
-    });
-}
 #endif
 
 template<typename Base>
