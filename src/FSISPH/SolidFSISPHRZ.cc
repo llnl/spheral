@@ -195,9 +195,6 @@ registerState(DataBase<Dimension>& dataBase,
   // The base class does most of it.
   SolidFSISPH<Dimension>::registerState(dataBase, state);
 
-  // XXX TODO: add the following in, but its currently causing errors when run in (compatibleEnergy) mode
-  // RuntimeError: Verification failed: StateBase ERROR: failed to return type for key pair-wise accelerations
-
   // We have to choose either compatible or total energy evolution.
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -274,7 +271,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     auto       mass = state.fields(HydroFieldNames::mass, 0.0);
     auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
     const auto numNodeLists = massDensity.numFields();
-    for (auto nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
       const auto n = mass[nodeListi]->numElements();
       for (unsigned i = 0; i != n; ++i) {
         const auto& xi = position(nodeListi, i);
@@ -663,7 +660,9 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto& interfaceSmoothnessi = interfaceSmoothness(nodeListi,i);
       const auto& ri = position(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
+      const auto  circi = 2.0*M_PI*abs(ri.y());
       const auto& mi = mass(nodeListi, i);
+      const auto  mRZi = mi/circi;
       const auto& Hi = H(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
       const auto& epsi = specificThermalEnergy(nodeListi,i);
@@ -675,7 +674,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto  fragIDi = fragIDs(nodeListi, i);
       //const auto  Yi = yield(nodeListi, i);
       //const auto  invJ2i = invJ2(nodeListi, i);
-      const auto  voli = mi/rhoi;
+      const auto  voli = mRZi/rhoi;
       const auto  mui = max(mu(nodeListi,i),tiny);
       const auto  Ki = max(tiny,K(nodeListi,i))+4.0/3.0*mui;
       const auto  Hdeti = Hi.Determinant();
@@ -713,7 +712,9 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto& interfaceSmoothnessj = interfaceSmoothness(nodeListj,j);
       const auto& rj = position(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
+      const auto  circj = 2.0*M_PI*abs(rj.y());
       const auto& mj = mass(nodeListj, j);
+      const auto  mRZj = mj/circj;
       const auto& Hj = H(nodeListj, j);
       const auto& rhoj = massDensity(nodeListj, j);
       const auto& epsj = specificThermalEnergy(nodeListj,j);
@@ -725,7 +726,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto  fragIDj = fragIDs(nodeListj, j);
       //const auto  Yj = yield(nodeListj, j);
       //const auto  invJ2j = invJ2(nodeListj, j);
-      const auto  volj = mj/rhoj;
+      const auto  volj = mRZj/rhoj;
       const auto  muj = max(mu(nodeListj,j),tiny);
       const auto  Kj = max(tiny,K(nodeListj,j))+4.0/3.0*muj;
       const auto  Hdetj = Hj.Determinant();
@@ -966,8 +967,8 @@ secondDerivativesLoop(const Dimension::Scalar time,
         const auto deltaDvDt = sigmarhoi + sigmarhoj;
 
         if (freeParticle) {
-          DvDti += mj*deltaDvDt;
-          DvDtj -= mi*deltaDvDt;
+          DvDti += mRZj*deltaDvDt;
+          DvDtj -= mRZi*deltaDvDt;
         } 
       
         // Velocity Gradient
@@ -1031,11 +1032,12 @@ secondDerivativesLoop(const Dimension::Scalar time,
         const auto deltaDepsDti = 2.0*sigmarhoi.dot(vi-vstar);
         const auto deltaDepsDtj = 2.0*sigmarhoj.dot(vstar-vj);
 
-        DepsDti -= mj*deltaDepsDti;
-        DepsDtj -= mi*deltaDepsDtj;
+        DepsDti -= mRZj*deltaDepsDti;
+        DepsDtj -= mRZi*deltaDepsDtj;
 
         if(compatibleEnergy){
-          (*pairAccelerationsPtr)[kk] = - deltaDvDt;
+          (*pairAccelerationsPtr)[kk][0] =  mRZj*deltaDvDt;
+          (*pairAccelerationsPtr)[kk][1] = -mRZi*deltaDvDt;
           (*pairDepsDtPtr)[kk][0] = - deltaDepsDti; 
           (*pairDepsDtPtr)[kk][1] = - deltaDepsDtj;
         }
@@ -1081,7 +1083,10 @@ secondDerivativesLoop(const Dimension::Scalar time,
     for (auto i = 0u; i < ni; ++i) {
 
       // Get the state for node i.
+      const auto& ri = position(nodeListi, i);
+      const auto  circi = 2.0*M_PI*abs(ri.y());
       const auto& mi = mass(nodeListi, i);
+      const auto  mRZi = mi/circi;
       const auto& vi = velocity(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
@@ -1090,7 +1095,10 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto& interfaceFlagsi = interfaceFlags(nodeListi,i);
       const auto& interfaceAreaVectorsi = interfaceAreaVectors(nodeListi,i);
       const auto  Hdeti = Hi.Determinant();
-      const auto psi = Hdeti*mi/rhoi*W0;
+      const auto psi = Hdeti*mRZi/rhoi*W0; // XXX TODO: is this mRZi?
+      const auto  zetai = abs((Hi*ri).y());
+      const auto  hri = abs(ri.y())*safeInv(zetai);
+      const auto  riInv = safeInv(abs(ri.y()), 0.25*hri);
       CHECK(mi > 0.0);
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
@@ -1146,8 +1154,9 @@ secondDerivativesLoop(const Dimension::Scalar time,
 
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
+      const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one;
+      const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one;
       const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
       DSDti += spinCorrection + 2.0*mui*deviatoricDeformation;
       
@@ -1232,7 +1241,9 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
       // Get the state for node i.
       const auto& fragIDi = fragIDs(nodeListi,i);
       const auto& ri = position(nodeListi, i);
+      const auto  circi = 2.0*M_PI*abs(ri.y());
       const auto& mi = mass(nodeListi, i);
+      const auto  mRZi = mi/circi;
       const auto& epsi = specificThermalEnergy(nodeListi, i);
       const auto& Pi = damagedPressure(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
@@ -1245,7 +1256,9 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
       // Get the state for node j
       const auto& fragIDj = fragIDs(nodeListj,j);
       const auto& rj = position(nodeListj, j);
+      const auto  circj = 2.0*M_PI*abs(rj.y());
       const auto& mj = mass(nodeListj, j);
+      const auto  mRZj = mj/circj;
       const auto& epsj = specificThermalEnergy(nodeListj, j);
       const auto& Pj = damagedPressure(nodeListj, j);
       const auto& rhoj = massDensity(nodeListj, j);
@@ -1300,8 +1313,8 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
         gradWj = gradWij;
       }
 
-      gradWi *= mj/rhoj;
-      gradWj *= mi/rhoi;
+      gradWi *= mRZj/rhoj; // XXX TODO: mRZj ?
+      gradWj *= mRZi/rhoi; // XXX TODO: mRZi ?
 
       // spatial gradients and correction
       //---------------------------------------------------------------
