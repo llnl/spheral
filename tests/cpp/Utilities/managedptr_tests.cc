@@ -6,8 +6,8 @@
 #include "chai/Types.hpp"
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
+#include "chai/managed_ptr.hpp"
 
-#include "Utilities/FlexPointer.hh"
 #include <Utilities/Logger.hh>
 #include "Geometry/Geom3Vector.hh"
 
@@ -17,12 +17,13 @@ public:
   SPHERAL_HOST_DEVICE virtual double operate(double a_val) const = 0;
   SPHERAL_HOST_DEVICE virtual ~Base() = default;
   SPHERAL_HOST_DEVICE Base() = default;
-  SPHERAL_HOST_DEVICE Base(const double a_val1, const double a_val2) :
+  SPHERAL_HOST_DEVICE Base(double a_val1, double a_val2) :
     m_val1(a_val1),
     m_val2(a_val2)
   {}
   SPHERAL_HOST_DEVICE double getVal1() { return m_val1; }
   SPHERAL_HOST_DEVICE double getVal2() { return m_val2; }
+  SPHERAL_HOST_DEVICE void setVal1(const double a_val) { m_val1 = a_val; }
 protected:
   double m_val1 = 0.;
   double m_val2 = 0.;
@@ -31,7 +32,7 @@ protected:
 // Derived class 1
 class DerivedA final : public Base {
 public:
-  SPHERAL_HOST_DEVICE DerivedA(const double a_val1, const double a_val2, const double a_val3) :
+  SPHERAL_HOST_DEVICE DerivedA(double a_val1, double a_val2, double a_val3) :
     Base(a_val1, a_val2), m_val3(a_val3) {}
   SPHERAL_HOST_DEVICE double operate(double a_val) const override {
     return a_val*(m_val1 + m_val2 + m_val3);
@@ -43,7 +44,7 @@ protected:
 // Derived class 2
 class DerivedB final : public Base {
 public:
-  SPHERAL_HOST_DEVICE DerivedB(const double a_val1, const double a_val2) :
+  SPHERAL_HOST_DEVICE DerivedB(double a_val1, double a_val2) :
     Base(a_val1, a_val2) {}
   SPHERAL_HOST_DEVICE double operate(double a_val) const override {
     return -a_val*(m_val1 + m_val2);
@@ -64,34 +65,82 @@ GPU_TYPED_TEST_P(FlexPointerTypedTest, Start) {
 }
 
 GPU_TYPED_TEST_P(FlexPointerTypedTest, BasicCapture) {
-  const double val0 = 2.;
-  const double val1 = 1.;
-  const double val2 = 3.;
-  const double val3 = 4.;
-  const double ref_valA = val0*(val1 + val2 + val3);
-  const double ref_valB = -val0*(val1 + val2);
+  double val0 = 2.;
+  double val1 = 1.;
+  double val2 = 3.;
+  double val3 = 4.;
+  double ref_valA = val0*(val1 + val2 + val3);
+  double ref_valB = -val0*(val1 + val2);
   chai::ExecutionSpace space = chai::GPU;
   if (typeid(RAJA::seq_exec) == typeid(TypeParam)) {
     space = chai::CPU;
   }
   for (int i = 0; i < 10; ++i) {
-    Spheral::FlexPointer<Base> base_ptr;
+    Base* base_ptr;
     double ref_val = ref_valA;
     if (i%2 == 0) {
-      base_ptr.initialize<DerivedA>(space, val1, val2, val3);
+      if (space == chai::GPU) {
+        base_ptr = chai::make_on_device<DerivedA>(val1, val2, val3);
+      } else {
+        base_ptr = new DerivedA(val1, val2, val3);
+      }
     } else {
-      base_ptr.initialize<DerivedB>(space, val1, val2);
+      if (space == chai::GPU) {
+        base_ptr = chai::make_on_device<DerivedB>(val1, val2);
+      } else {
+        base_ptr = new DerivedB(val1, val2);
+      }
       ref_val = ref_valB;
     }
-    Base* d_ptr = base_ptr.getPointer();
+    chai::managed_ptr<Base> d_ptr({space}, {base_ptr});
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      double val = d_ptr->operate(val0);
+      SPHERAL_ASSERT_FLOAT_EQ(val, ref_val);
+    EXEC_IN_SPACE_END()
+    d_ptr.free();
+  }
+}
+
+GPU_TYPED_TEST_P(FlexPointerTypedTest, ModifyClass) {
+  double val0 = 2.;
+  double val1 = 1.;
+  double val2 = 3.;
+  double val3 = 4.;
+  double val12 = 10.;
+  double ref_valA = val0*(val1 + val2 + val3);
+  double ref_valA2 = val0*(val12 + val2 + val3);
+  chai::ExecutionSpace space = chai::GPU;
+  if (typeid(RAJA::seq_exec) == typeid(TypeParam)) {
+    space = chai::CPU;
+  }
+  Base* base_ptr;
+  if (space == chai::GPU) {
+    base_ptr = chai::make_on_device<DerivedA>(val1, val2, val3);
+  } else {
+    base_ptr = new DerivedA(val1, val2, val3);
+  }
+  chai::managed_ptr<Base> d_ptr({space}, {base_ptr});
+  for (int i = 0; i < 10; ++i) {
+    double ref_val = ref_valA;
+    if (i%2 == 0) {
+      EXEC_IN_SPACE_BEGIN(TypeParam)
+        d_ptr->setVal1(val1);
+      EXEC_IN_SPACE_END()
+    } else {
+      EXEC_IN_SPACE_BEGIN(TypeParam)
+        d_ptr->setVal1(val12);
+      EXEC_IN_SPACE_END()
+      ref_val = ref_valA2;
+    }
     EXEC_IN_SPACE_BEGIN(TypeParam)
       double val = d_ptr->operate(val0);
       SPHERAL_ASSERT_FLOAT_EQ(val, ref_val);
     EXEC_IN_SPACE_END()
   }
+  d_ptr.free();
 }
 
-REGISTER_TYPED_TEST_SUITE_P(FlexPointerTypedTest, Start, BasicCapture);
+REGISTER_TYPED_TEST_SUITE_P(FlexPointerTypedTest, Start, BasicCapture, ModifyClass);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FlexPointer, FlexPointerTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

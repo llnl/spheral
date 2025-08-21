@@ -19,8 +19,8 @@ spheral_add_test(
 )
 
 spheral_add_test(
-  NAME flexpointer_tests
-  SOURCES flexpointer_tests.cc
+  NAME managedptr_tests
+  SOURCES managedptr_tests.cc
   DEPENDS_ON Spheral_Utilities Spheral_Geometry
   #DEBUG_LINKER
 )
