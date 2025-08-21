@@ -9,11 +9,18 @@ class FieldView:
 
     PYB11typedefs = """
   using SelfType = FieldView<%(Dimension)s, %(Value)s>;
+  using SelfFieldType = Field<%(Dimension)s, %(Value)s>;
   using Scalar = typename %(Dimension)s::Scalar;
 """
 
-    def pyinit(self, field="Field<%(Dimension)s, %(Value)s>&"):
+    def pyinit(self):
+        "Default constructor"
+
+    def pyinit1(self, rhs="const SelfFieldType&"):
         "Construct from a Field"
+
+    def pyinit2(self, rhs="const SelfType&"):
+        "Copy constructor"
 
     #...........................................................................
     # Comparators

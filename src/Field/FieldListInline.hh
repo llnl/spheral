@@ -991,8 +991,20 @@ buildDependentArrays() {
     mNodeListIndexMap[nptr] = i++;
   }
   CHECK(i == int(mFieldPtrs.size()));
+#ifdef SPHERAL_UNIFIED_MEMORY
   mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(&mFieldViewPtrs[0], mFieldViewPtrs.size());
-  // mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(mFieldViewPtrs.begin(), mFieldViewPtrs.size());
+#else
+  const auto n = this->size();
+  if (mSpanFieldViews.size() == 0u and !mSpanFieldViews.getPointer(chai::CPU, false)) {
+    mSpanFieldViews.allocate(n, chai::CPU);
+  } else {
+    mSpanFieldViews.reallocate(n);
+  }
+  for (size_t i = 0; i < n; ++i) {
+    mSpanFieldViews[i] = static_cast<FieldView<Dimension, DataType>*>(mFieldPtrs[i]);
+  }
+  mSpanFieldViews.registerTouch(chai::CPU);
+#endif
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
   ENSURE(mFieldViewPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
@@ -1092,29 +1104,24 @@ threadReduce() const {
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-typename FieldList<Dimension, DataType>::ViewType
-FieldList<Dimension, DataType>::
-view() {
-  return dynamic_cast<FieldListView<Dimension, DataType>&>(*this);
-}
-
-#ifndef SPHERAL_UNIFIED_MEMORY
-template<typename Dimension, typename DataType>
-inline
-FieldListView<Dimension, DataType>
+FieldListView<Dimension, DataType>&
 FieldList<Dimension, DataType>::view() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return static_cast<FieldListView<Dimension, DataType>&>(*this);
+#else
   auto func = [](
       const chai::PointerRecord *,
       chai::Action,
       chai::ExecutionSpace) {};
 
   return this->view(func, func);
+#endif
 }
 
 template<typename Dimension, typename DataType>
 template<typename FL>
 inline
-FieldListView<Dimension, DataType>
+FieldListView<Dimension, DataType>&
 FieldList<Dimension, DataType>::view(FL&& extension) {
   auto func = [](
       const chai::PointerRecord *,
@@ -1127,24 +1134,27 @@ FieldList<Dimension, DataType>::view(FL&& extension) {
 template<typename Dimension, typename DataType>
 template<typename FL, typename F>
 inline
-FieldListView<Dimension, DataType>
+FieldListView<Dimension, DataType>&
 FieldList<Dimension, DataType>::view(FL&& extension, F&& field_extension) {
+#ifndef SPHERAL_UNIFIED_MEMORY
   auto callback = getFieldListCallback(std::forward<FL>(extension));
 
-  if (mFieldViews.size() == 0 && !mFieldViews.getPointer(chai::CPU, false)) {
-    mFieldViews.allocate(size(), chai::CPU, callback);
+  const auto n = this->size();
+  if (mSpanFieldViews.size() == 0 && !mSpanFieldViews.getPointer(chai::CPU, false)) {
+    mSpanFieldViews.allocate(n, chai::CPU, callback);
   } else {
-    mFieldViews.setUserCallback(callback);
-    mFieldViews.reallocate(size());
+    mSpanFieldViews.setUserCallback(callback);
+    mSpanFieldViews.reallocate(n);
   }
 
-  for (size_t i = 0; i < size(); ++i) {
-    mFieldViews[i] = mFieldPtrs[i]->view(std::forward<F>(field_extension));
+  for (size_t i = 0; i < n; ++i) {
+    mSpanFieldViews[i] = &(mFieldPtrs[i]->view(std::forward<F>(field_extension)));
   }
 
-  mFieldViews.registerTouch(chai::CPU);
+  mSpanFieldViews.registerTouch(chai::CPU);
+#endif
 
-  return ViewType(mFieldViews);
+  return static_cast<FieldListView<Dimension, DataType>&>(*this);
 }
 
 template<typename Dimension, typename DataType>
@@ -1174,8 +1184,6 @@ auto FieldList<Dimension, DataType>::getFieldListCallback(F callback) {
       callback(record, action, space);
     };
 }
-
-#endif
   
 //****************************** Global Functions ******************************
 

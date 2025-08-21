@@ -59,13 +59,13 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
   using WORK_EXEC_POLICY = TypeParam;
   {
     FieldDouble field("ExecSpaceCapture", gpu_this->nl, 4.0);
-    SPHERAL_ASSERT_EQ(field.size(), N);
+    SPHERAL_ASSERT_EQ(field.numElements(), N);
 
     auto field_v = field.view(gpu_this->callback());
-    SPHERAL_ASSERT_EQ(field_v.size(), N);
+    SPHERAL_ASSERT_EQ(field_v.numElements(), N);
 
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
-       [=] SPHERAL_HOST_DEVICE (int i) {
+    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+       [=] SPHERAL_HOST_DEVICE (size_t i) {
          SPHERAL_ASSERT_EQ(field_v[i], 4.0);
        });
 
@@ -98,13 +98,13 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
     auto field_v = field.view(gpu_this->callback());
 
     // Execute in working execution space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
+    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          field_v[i] *= 2;
        });
 
     // Execute in a CPU execution space.
-    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, field.size()),
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=, &field](int i) {
          SPHERAL_ASSERT_EQ(field_v[i], i * 2);
          SPHERAL_ASSERT_EQ(field[i], i * 2);
@@ -133,7 +133,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
   using WORK_EXEC_POLICY = TypeParam;
   {
     FieldDouble field("MultiViewSemantics", gpu_this->nl, val);
-    SPHERAL_ASSERT_EQ(field.size(), N);
+    SPHERAL_ASSERT_EQ(field.numElements(), N);
 
     // Retreive multiple FieldViews from a Single Field.
     auto field_v0 = field.view(gpu_this->callback());
@@ -148,7 +148,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
     auto field_v9 = field.view(gpu_this->callback());
 
     // Capture and execute on all FieldView objs in the working space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
+    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          SPHERAL_ASSERT_EQ(field_v0[i], val);
          SPHERAL_ASSERT_EQ(field_v1[i], val);
@@ -186,13 +186,13 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
   {
     const double val = 4.0;
     FieldDouble field("ResizeField", gpu_this->nl, val);
-    SPHERAL_ASSERT_EQ(field.size(), N);
+    SPHERAL_ASSERT_EQ(field.numElements(), N);
 
     auto field_v = field.view(gpu_this->callback());
-    SPHERAL_ASSERT_EQ(field_v.size(), N);
+    SPHERAL_ASSERT_EQ(field_v.numElements(), N);
 
     // Capture the FieldView in the working execution space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
+    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          SPHERAL_ASSERT_EQ(field_v[i], val);
        });
@@ -206,17 +206,17 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
     // Assign field_v again. This should trigger a deallocation of the original
     // GPU data.
     field_v = field.view(gpu_this->callback());
-    SPHERAL_ASSERT_EQ(field_v.size(), N * 10);
+    SPHERAL_ASSERT_EQ(field_v.numElements(), N * 10);
 
     // Capture field_v in the working executino space again. This should trigger
     // a new copy to the Device if executing on the GPU.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.size()),
+    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE(int i) {
          if (i < N) {SPHERAL_ASSERT_EQ(field_v[i], val);}
          else { SPHERAL_ASSERT_EQ(field_v[i], 0); }
        });
 
-    SPHERAL_ASSERT_EQ(field.size(), N * 10);
+    SPHERAL_ASSERT_EQ(field.numElements(), N * 10);
 
   } // field and any GPU allocation should be released here.
 
@@ -235,3 +235,4 @@ REGISTER_TYPED_TEST_SUITE_P(FieldViewTypedTest, ExecutionSpaceCapture, MultiSpac
 
 INSTANTIATE_TYPED_TEST_SUITE_P(Field, FieldViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
+

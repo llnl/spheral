@@ -9,7 +9,11 @@
 #ifndef __Spheral__FieldListView__
 #define __Spheral__FieldListView__
 
+#ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
+#else
+#include "chai/ManagedArray.hpp"
+#endif
 
 namespace Spheral {
 
@@ -28,12 +32,11 @@ public:
   using value_type = FieldView<Dimension, DataType>*;    // STL compatibility
 #ifdef SPHERAL_UNIFIED_MEMORY
   using ContainerType = SPHERAL_SPAN_TYPE<value_type>;
+  using iterator = typename ContainerType::iterator;
 #else
   using ContainerType = typename chai::ManagedArray<value_type>;
+  using iterator = value_type*;
 #endif
-
-  using iterator = typename ContainerType::iterator;
-  using reverse_iterator = typename ContainerType::reverse_iterator;
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE FieldListView() = default;
@@ -46,10 +49,15 @@ public:
   SPHERAL_HOST_DEVICE FieldListView& operator=(const DataType& rhs);
 
   // Provide the standard iterators over the FieldViews
+#ifdef SPHERAL_UNIFIED_MEMORY
   SPHERAL_HOST_DEVICE iterator begin()                                                         { return mSpanFieldViews.begin(); } 
   SPHERAL_HOST_DEVICE iterator end()                                                           { return mSpanFieldViews.end(); }   
-  SPHERAL_HOST_DEVICE reverse_iterator rbegin()                                                { return mSpanFieldViews.rbegin(); }
-  SPHERAL_HOST_DEVICE reverse_iterator rend()                                                  { return mSpanFieldViews.rend(); }  
+  SPHERAL_HOST_DEVICE empty()                                                                  { return mSpanFieldViews.empty(); }
+#else
+  SPHERAL_HOST_DEVICE iterator begin()                                                         { return &mSpanFieldViews[0]; }
+  SPHERAL_HOST_DEVICE iterator end()                                                           { return &mSpanFieldViews[0] + mSpanFieldViews.size(); }
+  SPHERAL_HOST_DEVICE bool empty()                                                             { return mSpanFieldViews.size() == 0u; }
+#endif
 
   // Index operator.
   SPHERAL_HOST_DEVICE value_type operator[](const size_t index) const;
@@ -98,7 +106,6 @@ public:
   // The number of fields in the FieldListView.
   SPHERAL_HOST_DEVICE size_t numFields() const                                                 { return mSpanFieldViews.size(); } 
   SPHERAL_HOST_DEVICE size_t size() const                                                      { return mSpanFieldViews.size(); } 
-  SPHERAL_HOST_DEVICE bool empty() const                                                       { return mSpanFieldViews.empty(); }
 
   // The number of nodes in the FieldListView.
   SPHERAL_HOST_DEVICE size_t numElements() const;
@@ -112,7 +119,7 @@ public:
 #ifndef SPHERAL_UNIFIED_MEMORY
   //..........................................................................
   // These methods only make sense when we're using the ManagedArray
-  SPHERAL_HOST        void move(chai::ExecutionSpace space, bool recursive = true):
+  SPHERAL_HOST        void move(chai::ExecutionSpace space, bool recursive = true);
   SPHERAL_HOST_DEVICE value_type* data() const                                                 { return mSpanFieldViews.data(); }
   SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const  { return mSpanFieldViews.data(space, do_move); }
   SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);

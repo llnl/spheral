@@ -35,7 +35,6 @@ Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
   FieldView<Dimension, DataType>(*this),
   mDataArray() {
-  mDataSpan = mDataArray;
   mNumInternalElements = 0u;
   mNumGhostElements = 0u;
 }
@@ -51,9 +50,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldBase<Dimension>(name, *field.nodeListPtr()),
   FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -66,11 +63,9 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(*this),
-  mDataArray((size_t) nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
+  mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
+  this->assignDataSpan();
   REQUIRE(this->size() == nodeList.numNodes());
-  mDataSpan = mDataArray;
-  mNumInternalElements = nodeList.numInternalNodes();
-  mNumGhostElements = nodeList.numGhostNodes();
 }
 
 //------------------------------------------------------------------------------
@@ -86,9 +81,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldView<Dimension, DataType>(*this),
   mDataArray(nodeList.numNodes(), value) {
   REQUIRE(this->size() == nodeList.numNodes());
-  mDataSpan = mDataArray;
-  mNumInternalElements = nodeList.numInternalNodes();
-  mNumGhostElements = nodeList.numGhostNodes();
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -106,9 +99,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
   mDataArray = array;
-  mDataSpan = mDataArray;
-  mNumInternalElements = nodeList.numInternalNodes();
-  mNumGhostElements = nodeList.numGhostNodes();
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -122,10 +113,8 @@ Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
   FieldBase<Dimension>(field.name(), nodeList),
   FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
+  this->assignDataSpan();
   ENSURE(size() == nodeList.numNodes());
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
 }
 
 //------------------------------------------------------------------------------
@@ -137,9 +126,19 @@ Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
   FieldView<Dimension, DataType>(*this),
   mDataArray(field.mDataArray) {
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
+}
+
+//------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+Field<Dimension, DataType>::
+~Field() {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.free();
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -166,9 +165,7 @@ Field<Dimension, DataType>::operator=(const FieldBase<Dimension>& rhs) {
       CHECK2(rhsPtr != 0, "Passed incorrect Field to operator=!");
       FieldBase<Dimension>::operator=(rhs);
       mDataArray = rhsPtr->mDataArray;
-      mDataSpan = mDataArray;
-      mNumInternalElements = this->nodeList().numInternalNodes();
-      mNumGhostElements = this->nodeList().numGhostNodes();
+      this->assignDataSpan();
     } catch (const std::bad_cast &) {
       VERIFY2(false, "Attempt to assign a field to an incompatible field type.");
     }
@@ -186,9 +183,7 @@ Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
   if (this != &rhs) {
     FieldBase<Dimension>::operator=(rhs);
     mDataArray = rhs.mDataArray;
-    mDataSpan = mDataArray;
-    mNumInternalElements = this->nodeList().numInternalNodes();
-    mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
   }
   return *this;
 }
@@ -202,7 +197,7 @@ Field<Dimension, DataType>&
 Field<Dimension, DataType>::operator=(const std::vector<DataType,DataAllocator<DataType>>& rhs) {
   REQUIRE(this->nodeList().numNodes() == rhs.size());
   mDataArray = rhs;
-  mDataSpan = mDataArray;
+  this->assignDataSpan();
   return *this;
 }
 
@@ -214,7 +209,7 @@ inline
 Field<Dimension, DataType>&
 Field<Dimension, DataType>::operator=(const DataType& rhs) {
   std::fill(mDataArray.begin(), mDataArray.end(), rhs);
-  mDataSpan = mDataArray;
+  this->assignDataSpan();
   return *this;
 }
 
@@ -329,7 +324,7 @@ inline
 void
 Field<Dimension, DataType>::Zero() {
   std::fill(mDataArray.begin(), mDataArray.end(), DataTypeTraits<DataType>::zero());
-  mDataSpan = mDataArray;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -488,9 +483,7 @@ Field<Dimension, DataType>::setNodeList(const NodeList<Dimension>& nodeList) {
   if (this->size() > oldSize) {
     std::fill(mDataArray.begin() + oldSize, mDataArray.end(), DataTypeTraits<DataType>::zero());
   }
-  mDataSpan = mDataArray;
-  mNumInternalElements = nodeList.numInternalNodes();
-  mNumGhostElements = nodeList.numGhostNodes();
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -514,7 +507,7 @@ Field<Dimension, DataType>::
 unpackValues(const std::vector<size_t>& nodeIDs,
              const std::vector<char>& buffer) {
   unpackFieldValues(*this, nodeIDs, buffer);
-  if (not DataTypeTraits<DataType>::fixedSize()) mDataSpan = mDataArray;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -533,7 +526,7 @@ copyElements(const std::vector<size_t>& fromIndices,
                       [&](const int i) { return i < (int)this->size(); }));
   const auto ni = fromIndices.size();
   for (auto k = 0u; k < ni; ++k) (*this)(toIndices[k]) = (*this)(fromIndices[k]);
-  mDataSpan = mDataArray;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -615,7 +608,7 @@ deserialize(const std::vector<char>& buf) {
   VERIFY2(n == this->numInternalElements(),
           "Field ERROR: attempt to deserialize wrong number of elements: " << n << " != " << this->numInternalElements());
   for (auto i = 0u; i < n; ++i) unpackElement((*this)[i], itr, buf.end());
-  if (not DataTypeTraits<DataType>::fixedSize()) mDataSpan = mDataArray;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -673,9 +666,7 @@ Field<Dimension, DataType>::resizeField(size_t size) {
               mDataArray.end(),
               DataTypeTraits<DataType>::zero());
   }
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -716,8 +707,7 @@ Field<Dimension, DataType>::resizeFieldInternal(const size_t newInternalSize,
     std::copy(oldGhostValues.begin(), oldGhostValues.end(), mDataArray.begin() + newInternalSize);
   }
 
-  mDataSpan = mDataArray;
-  mNumInternalElements = newInternalSize;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -744,8 +734,7 @@ Field<Dimension, DataType>::resizeFieldGhost(const size_t size) {
               mDataArray.end(),
               DataTypeTraits<DataType>::zero());
   }
-  mDataSpan = mDataArray;
-  mNumGhostElements = size;
+  this->assignDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -759,9 +748,7 @@ Field<Dimension, DataType>::deleteElement(size_t nodeID) {
   CONTRACT_VAR(oldSize);
   REQUIRE(nodeID < oldSize);
   mDataArray.erase(mDataArray.begin() + nodeID);
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
   ENSURE(mDataArray.size() == oldSize - 1u);
 }
 
@@ -774,9 +761,7 @@ void
 Field<Dimension, DataType>::deleteElements(const std::vector<size_t>& nodeIDs) {
   // The standalone method does the actual work.
   removeElements(mDataArray, nodeIDs);
-  mDataSpan = mDataArray;
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
+  this->assignDataSpan();
 }
 
 //****************************** Global Functions ******************************
@@ -1293,11 +1278,11 @@ getAxomTypeID() const {
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-typename Field<Dimension, DataType>::ViewType
+typename Field<Dimension, DataType>::ViewType&
 Field<Dimension, DataType>::
 view() {
 #ifdef SPHERAL_UNIFIED_MEMORY
-  return dynamic_cast<ViewType&>(*this);
+  return static_cast<ViewType&>(*this);
 #else
   auto func = [](
       const chai::PointerRecord *,
@@ -1307,7 +1292,6 @@ view() {
 #endif
 }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
 // The Primary view() implementation. DataType MUST be implicitly copyable
 // to call view on a Field. Field::view() passes the location of the
 // std::vector allocation to a chai::ManagedArray. the MA does NOT own the
@@ -1318,33 +1302,37 @@ view() {
 // then created with the std::vector pointer.
 template<typename Dimension, typename DataType>
 template<typename T, typename F>
-std::enable_if_t<std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType>
+std::enable_if_t<std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType&>
 Field<Dimension, DataType>::
 view(F&& extension) {
-  if (mManagedData.size() != mDataArray.size() ||
-      mManagedData.data(chai::CPU, false) != mDataArray.data()) {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return static_cast<ViewType&>(*this);
+#else  
+  if (mDataSpan.size() != mDataArray.size() ||
+      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
 
-    mManagedData.free();
+    mDataSpan.free();
 
-    mManagedData = chai::makeManagedArray(
+    mDataSpan = chai::makeManagedArray(
         mDataArray.data(), mDataArray.size(), chai::CPU, false);
 
-    mManagedData.setUserCallback(
+    mDataSpan.setUserCallback(
       getFieldCallback(std::forward<F>(extension)));
   }
-  return ViewType(mManagedData);
+  return static_cast<ViewType&>(*this);
+#endif
 }
 
 // The inverse SFINAE of the above implementation. This should throw an error
 // if it is ever called with a type that is not implicitly copyable.
 template<typename Dimension, typename DataType>
 template<typename T, typename F>
-std::enable_if_t<!std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType>
+std::enable_if_t<!std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType&>
 Field<Dimension, DataType>::
-view(F&&)
-{
+view(F&&) {
   ASSERT2(false, "Spheral::Field::view() Is invalid when Field::DataType is not trivially copyable.");
-  return ViewType(mManagedData);
+  return static_cast<ViewType&>(*this);
+  // return ViewType(mDataSpan);
 }
 
 // Default callback action to be used with chai Managed containers. An
@@ -1354,8 +1342,7 @@ template<typename Dimension, typename DataType>
 template<typename F>
 auto
 Field<Dimension, DataType>::
-getFieldCallback(F callback)
-{
+getFieldCallback(F callback) {
   return [n = this->name(), callback](
     const chai::PointerRecord * record,
     chai::Action action,
@@ -1381,6 +1368,26 @@ getFieldCallback(F callback)
       callback(record, action, space);
     };
 }
+
+//------------------------------------------------------------------------------
+// Keep mDataSpan and mDataArray consistent
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+void
+Field<Dimension, DataType>::
+assignDataSpan() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mDataSpan = mDataArray;
+#else
+  if (mDataSpan.size() != mDataArray.size() or
+      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
+    mDataSpan.free();
+    mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
+    // mDataSpan.setUserCallback(getFieldCallback(std::forward<F>(extension)));
+  }
 #endif
+  mNumInternalElements = this->nodeList().numInternalNodes();
+  mNumGhostElements = this->nodeList().numGhostNodes();
+}
 
 } // namespace Spheral

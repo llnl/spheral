@@ -15,10 +15,8 @@
 #include "Utilities/OpenMP_wrapper.hh"
 #include "Utilities/Logger.hh"
 
-#ifndef SPHERAL_UNIFIED_MEMORY
 #include "chai/ExecutionSpaces.hpp"
 #include "chai/Types.hpp"
-#endif
 
 #include <vector>
 #include <list>
@@ -251,20 +249,18 @@ public:
 
   //----------------------------------------------------------------------------
   // Return a view of the Field (appropriate for on accelerator devices)
-  ViewType view();
+  ViewType& view();
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   template<typename FL>
-  ViewType view(FL&& extension);
+  ViewType& view(FL&& extension);
 
   template<typename FL, typename F>
-  ViewType view(FL&& extension, F&& field_extension);
+  ViewType& view(FL&& extension, F&& field_extension);
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
   template<typename F>
   auto getFieldListCallback(F callback);
-#endif
 
 private:
   //--------------------------- Private Interface ---------------------------//

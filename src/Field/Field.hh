@@ -16,12 +16,10 @@
 #include "Utilities/Logger.hh"
 
 #include "axom/sidre.hpp"
-#ifndef SPHERAL_UNIFIED_MEMORY
 #include "chai/ExecutionSpaces.hpp"
 #include "chai/ManagedArray.hpp"
 #include "chai/PointerRecord.hpp"
 #include "chai/Types.hpp"
-#endif
 
 #ifdef USE_UVM
 #include "uvm_allocator.hh"
@@ -87,7 +85,7 @@ public:
   virtual std::shared_ptr<FieldBase<Dimension> > clone() const override;
 
   // Destructor.
-  virtual ~Field() = default;
+  virtual ~Field();
 
   // Assignment operator.
   virtual FieldBase<Dimension>& operator=(const FieldBase<Dimension>& rhs) override;
@@ -183,17 +181,15 @@ public:
   axom::sidre::DataTypeId getAxomTypeID() const;
 
   // ViewType controls.
-  ViewType view();
+  ViewType& view();
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   template<typename T=DataType, typename F>
-  std::enable_if_t<std::is_trivially_copyable<T>::value, ViewType>
+  std::enable_if_t<std::is_trivially_copyable<T>::value, ViewType&>
   view(F&& extension);
 
   template<typename T=DataType, typename F>
-  std::enable_if_t<!std::is_trivially_copyable<T>::value, ViewType>
+  std::enable_if_t<!std::is_trivially_copyable<T>::value, ViewType&>
   view(F&&);
-#endif
 
   // No default constructor.
   Field() = delete;
@@ -206,10 +202,8 @@ protected:
   virtual void deleteElement(size_t nodeID) override;
   virtual void deleteElements(const std::vector<size_t>& nodeIDs) override;
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   template<typename F>
   auto getFieldCallback(F callback);
-#endif
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -220,6 +214,9 @@ private:
   using FieldView<Dimension, DataType>::mDataSpan;
   using FieldView<Dimension, DataType>::mNumInternalElements;
   using FieldView<Dimension, DataType>::mNumGhostElements;
+
+  // Helper method to keep mDataSpan and mDataArray consistent
+  void assignDataSpan();
 };
 
 } // namespace Spheral

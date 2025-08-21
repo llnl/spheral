@@ -20,23 +20,7 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST
 inline
 FieldView<Dimension, DataType>::
-FieldView(Field<Dimension, DataType>& field):
-  mDataSpan(field.mDataArray),
-  mNumInternalElements(field.numInternalElements()),
-  mNumGhostElements(field.numGhostElements()) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST
-inline
-FieldView<Dimension, DataType>::
-~FieldView() {
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mDataSpan.free();
-#endif
+FieldView(const Field<Dimension, DataType>& field) {  // Our data set in Field copy
 }
 
 //------------------------------------------------------------------------------
@@ -286,7 +270,7 @@ inline
 DataType
 FieldView<Dimension, DataType>::
 localSumElements() const {
-  const auto* start = &mDataSpan.front();
+  const auto* start = &this->front();
   return std::accumulate(start, start + numInternalElements(), DataTypeTraits<DataType>::zero());
 }
 
@@ -300,8 +284,8 @@ inline
 DataType
 FieldView<Dimension, DataType>::
 localMin() const {
-  const auto* start = &mDataSpan.front();
-  return (mDataSpan.empty() ?
+  const auto* start = &this->front();
+  return (this->empty() ?
           std::numeric_limits<DataType>::max() :
           *std::min_element(start, start + numInternalElements()));
 }
@@ -316,8 +300,8 @@ inline
 DataType
 FieldView<Dimension, DataType>::
 localMax() const {
-  const auto* start = &mDataSpan.front();
-  return (mDataSpan.empty() ?
+  const auto* start = &this->front();
+  return (this->empty() ?
           std::numeric_limits<DataType>::lowest() :
           *std::max_element(start, start + numInternalElements()));
 }

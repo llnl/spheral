@@ -8,7 +8,6 @@
 #ifndef __Spheral_FieldView__
 #define __Spheral_FieldView__
 
-
 #ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
 #else
@@ -26,8 +25,11 @@ public:
   //--------------------------- Public Interface ---------------------------//
 #ifdef SPHERAL_UNIFIED_MEMORY
   using ContainerType = SPHERAL_SPAN_TYPE<DataType>;
+  using iterator = typename ContainerType::iterator;
+  // using const_iterator = typename SPHERAL_SPAN_TYPE<DataType>::const_iterator;  // Not until C++23
 #else
   using ContainerType = typename chai::ManagedArray<DataType>;
+  using iterator = DataType*;
 #endif
 
   using Scalar = typename Dimension::Scalar;
@@ -36,14 +38,12 @@ public:
   using FieldDataType = DataType;
   using value_type = DataType;      // STL compatibility.
 
-  using iterator = typename ContainerType::iterator;
-  // using const_iterator = typename SPHERAL_SPAN_TYPE<DataType>::const_iterator;  // Not until C++23
-
   // Constructors, destructor
-  SPHERAL_HOST        FieldView(Field<Dimension, DataType>& field);
-  SPHERAL_HOST_DEVICE FieldView(FieldView& rhs) = default;
+  SPHERAL_HOST        FieldView(const Field<Dimension, DataType>& field);
+  SPHERAL_HOST_DEVICE FieldView() = default;
+  SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;
-  SPHERAL_HOST        virtual ~FieldView();
+  SPHERAL_HOST_DEVICE ~FieldView() = default;
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldView& operator=(FieldView& rhs) = default;
@@ -107,15 +107,31 @@ public:
   SPHERAL_HOST_DEVICE bool operator<=(const DataType& rhs) const;
 
   // Provide the standard iterator methods over the field.
+#ifdef SPHERAL_UNIFIED_MEMORY
   SPHERAL_HOST        iterator begin() const                                              { return mDataSpan.begin(); }
   SPHERAL_HOST        iterator end() const                                                { return mDataSpan.end(); }
   SPHERAL_HOST        iterator internalBegin() const                                      { return mDataSpan.begin(); }
   SPHERAL_HOST        iterator internalEnd() const                                        { return mDataSpan.begin() + mNumInternalElements; }
   SPHERAL_HOST        iterator ghostBegin() const                                         { return mDataSpan.begin() + mNumInternalElements; }
   SPHERAL_HOST        iterator ghostEnd() const                                           { return mDataSpan.end(); }
-
-  // No default constructor.
-  SPHERAL_HOST_DEVICE FieldView() = delete;
+  SPHERAL_HOST        value_type& front()                                                 { return mDataSpan.front(); }
+  SPHERAL_HOST        value_type& back()                                                  { return mDataSpan.back(); }
+  SPHERAL_HOST        const value_type& front() const                                     { return mDataSpan.front(); }
+  SPHERAL_HOST        const value_type& back()  const                                     { return mDataSpan.back(); }
+  SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.empty(); }
+#else
+  SPHERAL_HOST        iterator begin() const                                              { return &mDataSpan[0]; }
+  SPHERAL_HOST        iterator end() const                                                { return &mDataSpan[0] + mDataSpan.size(); }
+  SPHERAL_HOST        iterator internalBegin() const                                      { return this->begin(); }
+  SPHERAL_HOST        iterator internalEnd() const                                        { return this->begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostBegin() const                                         { return this->begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostEnd() const                                           { return this->end(); }
+  SPHERAL_HOST        value_type& front()                                                 { return mDataSpan[0]; }
+  SPHERAL_HOST        value_type& back()                                                  { return this->empty() ? mDataSpan[0] : mDataSpan[mDataSpan.size() - 1u]; }
+  SPHERAL_HOST        const value_type& front() const                                     { return mDataSpan[0]; }
+  SPHERAL_HOST        const value_type& back()  const                                     { return this->empty() ? mDataSpan[0] : mDataSpan[mDataSpan.size() - 1u]; }
+  SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.size() == 0u; }
+#endif
 
 #ifndef SPHERAL_UNIFIED_MEMORY
   //..........................................................................

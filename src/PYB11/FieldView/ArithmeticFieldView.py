@@ -11,6 +11,7 @@ class ArithmeticFieldView:
 
     PYB11typedefs = """
   using SelfType = FieldView<%(Dimension)s, %(Value)s>;
+  using SelfFieldType = Field<%(Dimension)s, %(Value)s>;
   using Scalar = typename SelfType::Scalar;
   using ScalarFieldView = FieldView<%(Dimension)s, Scalar>;
 """

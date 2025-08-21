@@ -500,7 +500,7 @@ numGhostElements() const {
 // move
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
-SPHERAL_HOST_DEVICE
+SPHERAL_HOST
 inline
 void
 FieldListView<Dimension, DataType>::
@@ -517,7 +517,7 @@ move(chai::ExecutionSpace space, bool recursive) {
 // touch
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
-SPHERAL_HOST_DEVICE
+SPHERAL_HOST
 inline
 void
 FieldListView<Dimension, DataType>::
