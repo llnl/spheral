@@ -994,7 +994,7 @@ buildDependentArrays() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(&mFieldViewPtrs[0], mFieldViewPtrs.size());
 #else
-  const auto n = this->size();
+  const auto n = mFieldPtrs.size();
   if (mSpanFieldViews.size() == 0u and !mSpanFieldViews.getPointer(chai::CPU, false)) {
     mSpanFieldViews.allocate(n, chai::CPU);
   } else {
