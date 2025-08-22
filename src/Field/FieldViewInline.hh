@@ -14,16 +14,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct from a Field
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST
-inline
-FieldView<Dimension, DataType>::
-FieldView(const Field<Dimension, DataType>& field) {  // Our data set in Field copy
-}
-
-//------------------------------------------------------------------------------
 // Assignment operator with a constant value of DataType
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>

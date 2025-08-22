@@ -23,19 +23,6 @@ operator=(const DataType& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST
-inline
-FieldListView<Dimension, DataType>::
-~FieldListView() {
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mSpanFieldViews.free();
-#endif
-}
-
-//------------------------------------------------------------------------------
 // Index operator.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>

@@ -100,6 +100,21 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
 }
 
 //------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+FieldList<Dimension, DataType>::
+~FieldList() {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  std::cerr << "FIELDLIST::~FieldList()" << std::endl;
+  mSpanFieldViews.free();
+  std::cerr << " --> SUCCESS" << std::endl;
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Assignment with another FieldList.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -996,14 +1011,24 @@ buildDependentArrays() {
 #else
   const auto n = mFieldPtrs.size();
   if (mSpanFieldViews.size() == 0u and !mSpanFieldViews.getPointer(chai::CPU, false)) {
+    std::cerr << "FIELDLIST::BDA : allocate" << std::endl;
+    mSpanFieldViews.free();
     mSpanFieldViews.allocate(n, chai::CPU);
+    std::cerr << " --> SUCCESS" << std::endl;
   } else {
+    std::cerr << "FIELDLIST::BDA : reallocate" << std::endl;
+    mSpanFieldViews.free();
     mSpanFieldViews.reallocate(n);
+    std::cerr << " --> SUCCESS" << std::endl;
   }
   for (size_t i = 0; i < n; ++i) {
-    mSpanFieldViews[i] = static_cast<FieldView<Dimension, DataType>*>(mFieldPtrs[i]);
+    std::cerr << "FIELDLIST::BDA : Getting FieldView " << i << " of " << n << std::endl;
+    mSpanFieldViews[i] = &mFieldPtrs[i]->view(); // static_cast<FieldView<Dimension, DataType>*>(mFieldPtrs[i]);
+    std::cerr << " --> SUCCESS" << std::endl;
   }
+  std::cerr << "FIELDLIST:BDA : registerTouch" << std::endl;
   mSpanFieldViews.registerTouch(chai::CPU);
+  std::cerr << " --> SUCCESS" << std::endl;
 #endif
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
   ENSURE(mFieldViewPtrs.size() == mFieldPtrs.size());
@@ -1141,17 +1166,25 @@ FieldList<Dimension, DataType>::view(FL&& extension, F&& field_extension) {
 
   const auto n = this->size();
   if (mSpanFieldViews.size() == 0 && !mSpanFieldViews.getPointer(chai::CPU, false)) {
+    std::cerr << "FIELDLIST::view(e, e) : allocate" << std::endl;
     mSpanFieldViews.allocate(n, chai::CPU, callback);
+    std::cerr << " --> SUCCESS" << std::endl;
   } else {
+    std::cerr << "FIELDLIST::view(e, e) : setcallback" << std::endl;
     mSpanFieldViews.setUserCallback(callback);
     mSpanFieldViews.reallocate(n);
+    std::cerr << " --> SUCCESS" << std::endl;
   }
 
+  std::cerr << "FIELDLIST::view(e, e) : set field views" << std::endl;
   for (size_t i = 0; i < n; ++i) {
     mSpanFieldViews[i] = &(mFieldPtrs[i]->view(std::forward<F>(field_extension)));
   }
+  std::cerr << " --> SUCCESS" << std::endl;
 
+  std::cerr << "FIELDLIST::view(e, e) : register touch" << std::endl;
   mSpanFieldViews.registerTouch(chai::CPU);
+  std::cerr << " --> SUCCESS" << std::endl;
 #endif
 
   return static_cast<FieldListView<Dimension, DataType>&>(*this);

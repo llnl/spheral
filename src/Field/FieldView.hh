@@ -39,7 +39,6 @@ public:
   using value_type = DataType;      // STL compatibility.
 
   // Constructors, destructor
-  SPHERAL_HOST        FieldView(const Field<Dimension, DataType>& field);
   SPHERAL_HOST_DEVICE FieldView() = default;
   SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;

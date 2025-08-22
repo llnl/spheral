@@ -42,7 +42,7 @@ public:
   SPHERAL_HOST_DEVICE FieldListView() = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
-  SPHERAL_HOST        virtual ~FieldListView();
+  SPHERAL_HOST        virtual ~FieldListView() = default;
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldListView& operator=(FieldListView& rhs) = default;
@@ -52,7 +52,7 @@ public:
 #ifdef SPHERAL_UNIFIED_MEMORY
   SPHERAL_HOST_DEVICE iterator begin()                                                         { return mSpanFieldViews.begin(); } 
   SPHERAL_HOST_DEVICE iterator end()                                                           { return mSpanFieldViews.end(); }   
-  SPHERAL_HOST_DEVICE empty()                                                                  { return mSpanFieldViews.empty(); }
+  SPHERAL_HOST_DEVICE bool empty()                                                             { return mSpanFieldViews.empty(); }
 #else
   SPHERAL_HOST_DEVICE iterator begin()                                                         { return &mSpanFieldViews[0]; }
   SPHERAL_HOST_DEVICE iterator end()                                                           { return &mSpanFieldViews[0] + mSpanFieldViews.size(); }

@@ -86,7 +86,7 @@ public:
   FieldList(const FieldList& rhs);
 
   // Destructor.
-  virtual ~FieldList() = default;
+  virtual ~FieldList();
 
   // Assignment.
   FieldList& operator=(const FieldList& rhs);
@@ -259,6 +259,8 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
+  using FieldListView<Dimension, DataType>::mSpanFieldViews;
+
   template<typename F>
   auto getFieldListCallback(F callback);
 
@@ -274,7 +276,6 @@ private:
 
   // For use when building a span view of the FieldList
   std::vector<FieldView<Dimension, DataType>*> mFieldViewPtrs;
-  using FieldListView<Dimension, DataType>::mSpanFieldViews;
 
   // Maintain a vector of the NodeLists this FieldList is defined in order to
   // construct NodeIterators.

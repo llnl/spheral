@@ -33,7 +33,7 @@ inline
 Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray() {
   mNumInternalElements = 0u;
   mNumGhostElements = 0u;
@@ -48,7 +48,7 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name,
       const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(name, *field.nodeListPtr()),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
   this->assignDataSpan();
 }
@@ -62,7 +62,7 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList):
   FieldBase<Dimension>(name, nodeList),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
   this->assignDataSpan();
   REQUIRE(this->size() == nodeList.numNodes());
@@ -78,7 +78,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList,
       DataType value):
   FieldBase<Dimension>(name, nodeList),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes(), value) {
   REQUIRE(this->size() == nodeList.numNodes());
   this->assignDataSpan();
@@ -94,7 +94,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList,
       const std::vector<DataType,DataAllocator<DataType>>& array):
   FieldBase<Dimension>(name, nodeList),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes()) {
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
@@ -111,7 +111,7 @@ inline
 Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
                                   const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(field.name(), nodeList),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
   this->assignDataSpan();
   ENSURE(size() == nodeList.numNodes());
@@ -124,7 +124,7 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
-  FieldView<Dimension, DataType>(*this),
+  FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
   this->assignDataSpan();
 }
@@ -137,7 +137,9 @@ inline
 Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
+  std::cerr << " --> FIELD::~Field()" << std::endl;
   mDataSpan.free();
+  std::cerr << " --> SUCCESS" << std::endl;
 #endif
 }
 
@@ -1311,13 +1313,16 @@ view(F&& extension) {
   if (mDataSpan.size() != mDataArray.size() ||
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
 
+    std::cerr << "FIELD: reallocate" << std::endl;
     mDataSpan.free();
-
     mDataSpan = chai::makeManagedArray(
         mDataArray.data(), mDataArray.size(), chai::CPU, false);
+    std::cerr << " --> SUCCESS" << std::endl;
 
+    std::cerr << "FIELD: set callback" << std::endl;
     mDataSpan.setUserCallback(
       getFieldCallback(std::forward<F>(extension)));
+    std::cerr << " --> SUCCESS" << std::endl;
   }
   return static_cast<ViewType&>(*this);
 #endif
@@ -1332,7 +1337,6 @@ Field<Dimension, DataType>::
 view(F&&) {
   ASSERT2(false, "Spheral::Field::view() Is invalid when Field::DataType is not trivially copyable.");
   return static_cast<ViewType&>(*this);
-  // return ViewType(mDataSpan);
 }
 
 // Default callback action to be used with chai Managed containers. An
@@ -1381,9 +1385,11 @@ assignDataSpan() {
 #else
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
+    std::cerr << "FIELD::assignDataSpan" << std::endl;
     mDataSpan.free();
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
     // mDataSpan.setUserCallback(getFieldCallback(std::forward<F>(extension)));
+    std::cerr << " --> SUCCESS" << std::endl;
   }
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();

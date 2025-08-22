@@ -16,10 +16,7 @@ class FieldView:
     def pyinit(self):
         "Default constructor"
 
-    def pyinit1(self, rhs="const SelfFieldType&"):
-        "Construct from a Field"
-
-    def pyinit2(self, rhs="const SelfType&"):
+    def pyinit1(self, rhs="const SelfType&"):
         "Copy constructor"
 
     #...........................................................................
