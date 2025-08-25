@@ -106,6 +106,7 @@ public:
 
   // Access the list of boundary conditions.
   const std::vector<Boundary<Dimension>*>& boundaryConditions()     const { return mBoundaryConditions; }
+  std::vector<Boundary<Dimension>*>& boundaryConditionsNonConst()         { return mBoundaryConditions; }
 
   // Apply boundary conditions to the physics specific fields.
   virtual void applyGhostBoundaries(State<Dimension>& state,

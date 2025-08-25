@@ -78,6 +78,9 @@ class DataBase:
         "Add a NodeList"
         return "void"
 
+    # Bug: if you change this to a unique name, then when adding a DEM NodeList,
+    # it will call the base NodeList function instead of this one. Voodoo?
+    # It is probably overwriting the above function for standard NodeList.
     @PYB11pycppname("appendNodeList")
     def appendNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Add a DEMNodeList"
@@ -97,6 +100,7 @@ class DataBase:
         "Remove a NodeList"
         return "void"
 
+    # See the comment above for appendNodeList2
     @PYB11pycppname("deleteNodeList")
     def deleteNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Remove a DEMNodeList"
