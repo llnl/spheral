@@ -49,42 +49,44 @@ public:
   using reverse_iterator = typename ContainerType::reverse_iterator;
   using const_reverse_iterator = typename ContainerType::const_reverse_iterator;
 
-  NodePairList()                                                               = default;
+  NodePairList()                                             = default;
   NodePairList(const NodePairList& rhs);
-  ~NodePairList()                                                              { mData.free(); }
+  ~NodePairList()                                            { mData.free(); }
   NodePairList& operator=(const NodePairList& rhs);
   void push_back(NodePairIdxType nodePair);
   void clear();
   void reserve(const size_t n);
 
   // Iterators
-  iterator begin()                                                             { return mNodePairList.begin(); }
-  iterator end()                                                               { return mNodePairList.end(); }
-  const_iterator begin() const                                                 { return mNodePairList.begin(); }
-  const_iterator end() const                                                   { return mNodePairList.end(); }
+  iterator begin()                                           { return mNodePairList.begin(); }
+  iterator end()                                             { return mNodePairList.end(); }
+  const_iterator begin() const                               { return mNodePairList.begin(); }
+  const_iterator end() const                                 { return mNodePairList.end(); }
 
   // Reverse iterators
-  reverse_iterator rbegin()                                                    { return mNodePairList.rbegin(); }
-  reverse_iterator rend()                                                      { return mNodePairList.rend(); }
-  const_reverse_iterator rbegin() const                                        { return mNodePairList.rbegin(); }
-  const_reverse_iterator rend() const                                          { return mNodePairList.rend(); }
+  reverse_iterator rbegin()                                  { return mNodePairList.rbegin(); }
+  reverse_iterator rend()                                    { return mNodePairList.rend(); }
+  const_reverse_iterator rbegin() const                      { return mNodePairList.rbegin(); }
+  const_reverse_iterator rend() const                        { return mNodePairList.rend(); }
 
   // Indexing
-  reference operator()(const NodePairIdxType& x)                               { return mNodePairList[index(x)]; }
+  reference operator()(const NodePairIdxType& x)             { return mNodePairList[index(x)]; }
   reference operator()(const size_t i_node,
                        const size_t i_list,
                        const size_t j_node,
-                       const size_t j_list)                                    { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
+                       const size_t j_list)                  { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
 
-  const_reference operator()(const NodePairIdxType& x) const                   { return mNodePairList[index(x)]; }
+  const_reference operator()(const NodePairIdxType& x) const { return mNodePairList[index(x)]; }
   const_reference operator()(const size_t i_node,
                              const size_t i_list,
                              const size_t j_node,
-                             const size_t j_list) const                        { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
+                             const size_t j_list) const      { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
 
   // Inserting
   template<typename InputIterator>
-  iterator insert(const_iterator pos, InputIterator first, InputIterator last) { return mNodePairList.insert(pos, first, last); }
+  iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
+    return mNodePairList.insert(pos, first, last);
+  }
 
   // Find the index corresponding to the given pair
   size_t index(const NodePairIdxType& x) const;
@@ -93,9 +95,11 @@ public:
   void computeLookup() const;
 
   NodePairListView view();
-
   template<typename F>
   NodePairListView view(F callback);
+  void initializeMA();
+  template<typename F>
+  void initializeMA(F callback);
 
 private:
   ContainerType mNodePairList;

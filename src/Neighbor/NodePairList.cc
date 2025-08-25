@@ -81,7 +81,7 @@ NodePairListView NodePairList::view(F callback) {
 
 NodePairListview NodePairList::view() {
   initializeMA();
-  return NodePairListView(mData):
+  return NodePairListView(mData);
 }
 
 //------------------------------------------------------------------------------
