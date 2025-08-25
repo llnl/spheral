@@ -170,7 +170,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase) {
     for (typename DomainBoundaryNodeMap::iterator itr1 = domBoundaryNodeMap.begin();
          itr1 != domBoundaryNodeMap.end();
          ++itr1) {
-      vector<int>& sendNodes = itr1->second.sendNodes;
+      vector<size_t>& sendNodes = itr1->second.sendNodes;
       sort(sendNodes.begin(), sendNodes.end());
       sendNodes.erase(unique(sendNodes.begin(), sendNodes.end()), sendNodes.end());
     }

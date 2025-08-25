@@ -52,6 +52,7 @@ public:
 
   // Override the base equivalence operator
   virtual bool operator==(const StateBase<Dimension>& rhs) const override;
+  bool operator==(const State<Dimension>& rhs) const { return this->operator==(dynamic_cast<const StateBase<Dimension>&>(rhs)); }
 
   //...........................................................................
   // Enroll state with update policies

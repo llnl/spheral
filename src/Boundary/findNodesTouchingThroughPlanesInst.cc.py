@@ -7,7 +7,7 @@ text = """
 
 namespace Spheral {
   template
-  std::vector<int> 
+  std::vector<size_t> 
   findNodesTouchingThroughPlanes(const NodeList<Dim<%(ndim)s>>& nodeList,
                                  const GeomPlane<Dim<%(ndim)s>>& enterPlane,
                                  const GeomPlane<Dim<%(ndim)s>>& exitPlane,

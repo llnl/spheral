@@ -35,13 +35,6 @@ Boundary<Dimension>::Boundary():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-Boundary<Dimension>::~Boundary() {
-}
-
-//------------------------------------------------------------------------------
 // Default method for handing ghost nodes for Fields -- copy control->ghost values
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -92,13 +85,13 @@ Boundary<Dimension>::setAllViolationNodes(DataBase<Dimension>& dataBase) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-Boundary<Dimension>::cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                                    FieldList<Dimension, int>& old2newIndexMap,
-                                    vector<int>& numNodesRemoved) {
+Boundary<Dimension>::cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                                    FieldList<Dimension, size_t>& old2newIndexMap,
+                                    vector<size_t>& numNodesRemoved) {
   const auto& nodeListPtrs = flagSet.nodeListPtrs();
   REQUIRE(numNodesRemoved.size() == nodeListPtrs.size());
   // auto& registrar = NodeListRegistrar<Dimension>::instance();
-  // REQUIRE((int)numNodesRemoved.size() == registrar.numNodeLists());
+  // REQUIRE(numNodesRemoved.size() == registrar.numNodeLists());
 
   // Walk the NodeLists.
   auto nodeListi = 0;
@@ -116,10 +109,10 @@ Boundary<Dimension>::cullGhostNodes(const FieldList<Dimension, int>& flagSet,
         const auto& flags = *(flagSet[nodeListi]);
 
         // Patch up the ghost and control node indices.
-        vector<int> newGhostNodes, newControlNodes;
+        vector<size_t> newGhostNodes, newControlNodes;
         auto newGhostIndex = myNewFirstGhostNode;
         for (size_t k = 0; k < boundaryNodes.ghostNodes.size(); ++k) {
-          if (flags(boundaryNodes.ghostNodes[k]) == 1) {
+          if (flags(boundaryNodes.ghostNodes[k]) == 1u) {
             newGhostNodes.push_back(newGhostIndex);
             old2newIndexMap(nodeListi, boundaryNodes.ghostNodes[k]) = newGhostIndex;
             ++newGhostIndex;
@@ -178,7 +171,7 @@ Boundary<Dimension>::boundaryNodeMap() const {
 // Return the list of control nodes for the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-const vector<int>&
+const vector<size_t>&
 Boundary<Dimension>::controlNodes(const NodeList<Dimension>& nodeList) const {
   auto itr = mBoundaryNodes.find(const_cast<NodeList<Dimension>*>(&nodeList));
   if (itr == mBoundaryNodes.end()) {
@@ -191,7 +184,7 @@ Boundary<Dimension>::controlNodes(const NodeList<Dimension>& nodeList) const {
 // Return the list of ghost nodes for the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-const vector<int>&
+const vector<size_t>&
 Boundary<Dimension>::ghostNodes(const NodeList<Dimension>& nodeList) const {
   auto itr = mBoundaryNodes.find(const_cast<NodeList<Dimension>*>(&nodeList));
   if (itr == mBoundaryNodes.end()) {
@@ -205,7 +198,7 @@ Boundary<Dimension>::ghostNodes(const NodeList<Dimension>& nodeList) const {
 // Return the list of violation nodes for the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-const vector<int>&
+const vector<size_t>&
 Boundary<Dimension>::violationNodes(const NodeList<Dimension>& nodeList) const {
   auto itr = mBoundaryNodes.find(const_cast<NodeList<Dimension>*>(&nodeList));
   if (itr == mBoundaryNodes.end()) {
@@ -218,13 +211,13 @@ Boundary<Dimension>::violationNodes(const NodeList<Dimension>& nodeList) const {
 // Return begin/end iterators for the control nodes of the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::controlBegin(const NodeList<Dimension>& nodeList) const {
   return controlNodes(nodeList).begin();
 }
 
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::controlEnd(const NodeList<Dimension>& nodeList) const {
   return controlNodes(nodeList).end();
 }
@@ -233,13 +226,13 @@ Boundary<Dimension>::controlEnd(const NodeList<Dimension>& nodeList) const {
 // Return begin/end iterators for the ghost nodes of the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::ghostBegin(const NodeList<Dimension>& nodeList) const {
   return ghostNodes(nodeList).begin();
 }
 
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::ghostEnd(const NodeList<Dimension>& nodeList) const {
   return ghostNodes(nodeList).end();
 }
@@ -248,13 +241,13 @@ Boundary<Dimension>::ghostEnd(const NodeList<Dimension>& nodeList) const {
 // Return begin/end iterators for the violation nodes of the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::violationBegin(const NodeList<Dimension>& nodeList) const {
   return violationNodes(nodeList).begin();
 }
 
 template<typename Dimension>
-typename vector<int>::const_iterator
+typename vector<size_t>::const_iterator
 Boundary<Dimension>::violationEnd(const NodeList<Dimension>& nodeList) const {
   return violationNodes(nodeList).end();
 }

@@ -1,3 +1,6 @@
+default:
+  artifacts:
+    expire_in: 6 mos
 workflow:
   auto_cancel:
     on_new_commit: interruptible

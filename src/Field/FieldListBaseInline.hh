@@ -25,15 +25,6 @@ FieldListBase(const FieldListBase<Dimension>& /*fieldListBase*/):
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-FieldListBase<Dimension>::
-~FieldListBase() {
-}
-
-//------------------------------------------------------------------------------
 // Assignment operator.
 //------------------------------------------------------------------------------
 template<typename Dimension>

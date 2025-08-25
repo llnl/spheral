@@ -43,8 +43,8 @@ public:
   typedef typename Dimension::FacetedVolume FacetedVolume;
 
   struct DomainBoundaryNodes {
-    std::vector<int> sendNodes;
-    std::vector<int> receiveNodes;
+    std::vector<size_t> sendNodes;
+    std::vector<size_t> receiveNodes;
   };
 
   typedef std::map<int, DomainBoundaryNodes> DomainBoundaryNodeMap;
@@ -94,9 +94,9 @@ public:
   virtual void setAllGhostNodes(DataBase<Dimension>& dataBase) override = 0;
 
   // Override the Boundary method for culling ghost nodes.
-  virtual void cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                              FieldList<Dimension, int>& old2newIndexMap,
-                              std::vector<int>& numNodesRemoved) override;
+  virtual void cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                              FieldList<Dimension, size_t>& old2newIndexMap,
+                              std::vector<size_t>& numNodesRemoved) override;
 
   // Override the base method to finalize ghost boundaries.
   virtual void finalizeGhostBoundary() const override;

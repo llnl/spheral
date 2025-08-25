@@ -203,27 +203,27 @@ Based on stuff from "Computational Geometry in C", Joseph O'Rourke"""
 @PYB11cppname("numGlobalNodes")
 def numGlobalNodesNL(nodes = "const NodeList<%(Dimension)s>&"):
     "Total number of nodes in the NodeList across all domains"
-    return "int"
+    return "size_t"
 
 @PYB11template("Dimension")
 @PYB11cppname("numGlobalNodes")
 def numGlobalNodesDB(dataBase = "const DataBase<%(Dimension)s>&"):
     "Total number of nodes in the DataBase across all domains"
-    return "int"
+    return "size_t"
 
 @PYB11template("Dimension")
 @PYB11cppname("globalNodeIDs")
 def globalNodeIDsNL(dataBase = "const NodeList<%(Dimension)s>&"):
     """Compute a unique set of global node IDs for the given NodeList, and return
 the set of them on this process."""
-    return "Field<%(Dimension)s, int>"
+    return "Field<%(Dimension)s, size_t>"
 
 @PYB11template("Dimension")
 @PYB11cppname("globalNodeIDs")
 def globalNodeIDsDB(dataBase = "const DataBase<%(Dimension)s>&"):
     """Compute a unique set of global node IDs for all nodes across all NodeLists in
 a DataBase, returning the result as a FieldList<int>."""
-    return "FieldList<%(Dimension)s, int>"
+    return "FieldList<%(Dimension)s, size_t>"
 
 @PYB11template("Dimension")
 def iterateIdealH(dataBase = "DataBase<%(Dimension)s>&",

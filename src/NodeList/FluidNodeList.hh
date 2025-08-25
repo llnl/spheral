@@ -45,18 +45,18 @@ public:
   // Constructors.
   FluidNodeList(std::string name,
                 EquationOfState<Dimension>& eos,
-                const int numInternal,
-                const int numGhost,
+                const size_t numInternal,
+                const size_t numGhost,
                 const Scalar hmin,
                 const Scalar hmax,
                 const Scalar hminratio,
                 const Scalar nPerh,
-                const int maxNumNeighbors,
+                const size_t maxNumNeighbors,
                 const Scalar rhoMin,
                 const Scalar rhoMax);
 
   // Destructor
-  virtual ~FluidNodeList();
+  virtual ~FluidNodeList() = default;
 
   // Access the fluid state variables.
   Field<Dimension, Scalar>& massDensity();
@@ -96,24 +96,22 @@ public:
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************
 
+  // No default constructor or copying.
+  FluidNodeList() = delete;
+  FluidNodeList(const FluidNodeList& nodes) = delete;
+  FluidNodeList& operator=(const FluidNodeList& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   // Min/max mass densities.
   Scalar mRhoMin, mRhoMax;
 
-#ifndef __GCCXML__
   // Fields that define the fluid's current state.
   Field<Dimension, Scalar> mMassDensity;
   Field<Dimension, Scalar> mSpecificThermalEnergy;
 
   // Equation of state.
   const EquationOfState<Dimension>* mEosPtr;
-#endif
-
-  // No default constructor or copying.
-  FluidNodeList();
-  FluidNodeList(const FluidNodeList& nodes);
-  FluidNodeList& operator=(const FluidNodeList& rhs);
 };
 
 }

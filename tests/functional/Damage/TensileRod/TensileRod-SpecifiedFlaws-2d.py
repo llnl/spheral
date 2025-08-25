@@ -332,8 +332,8 @@ output("damageModel")
 #-------------------------------------------------------------------------------
 # Construct constant velocity boundary conditions to be applied to the rod ends.
 #-------------------------------------------------------------------------------
-xNodes = vector_of_int()
-yNodes = vector_of_int()
+xNodes = vector_of_ULL()
+yNodes = vector_of_ULL()
 for i in range(nodes.numInternalNodes):
     if (nodes.positions()[i].x < -0.5*xlength + 4*dx or
         nodes.positions()[i].x >  0.5*xlength - 4*dx):

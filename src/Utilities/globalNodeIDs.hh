@@ -25,15 +25,15 @@ template<typename Dimension> class NodeList;
 // Return the total global number of nodes in the NodeList (or DataBase).
 //------------------------------------------------------------------------------
 template<typename Dimension>
-int
+size_t
 numGlobalNodes(const NodeList<Dimension>& nodeList);
   
 template<typename Dimension>
-int
+size_t
 numGlobalNodes(const DataBase<Dimension>& dataBase);
   
 template<typename Dimension, typename NodeListIterator>
-int
+size_t
 numGlobalNodes(const NodeListIterator& begin,
                const NodeListIterator& end);
   
@@ -42,7 +42,7 @@ numGlobalNodes(const NodeListIterator& begin,
 // the set of them on this process.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-Field<Dimension, int>
+Field<Dimension, size_t>
 globalNodeIDs(const NodeList<Dimension>& nodeList);
 
 //------------------------------------------------------------------------------
@@ -50,11 +50,11 @@ globalNodeIDs(const NodeList<Dimension>& nodeList);
 // a DataBase, returning the result as a FieldList<int>.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-FieldList<Dimension, int>
+FieldList<Dimension, size_t>
 globalNodeIDs(const DataBase<Dimension>& dataBase);
 
 template<typename Dimension, typename NodeListIterator>
-FieldList<Dimension, int>
+FieldList<Dimension, size_t>
 globalNodeIDs(const NodeListIterator& begin,
               const NodeListIterator& end);
 

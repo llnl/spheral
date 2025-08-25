@@ -25,7 +25,7 @@ namespace Spheral {
 template<typename Dimension>
 ConstantXVelocityBoundary<Dimension>::
 ConstantXVelocityBoundary(const NodeList<Dimension>& nodeList,
-                          const vector<int>& nodeIndices):
+                          const vector<size_t>& nodeIndices):
   ConstantVelocityBoundary<Dimension>(nodeList, nodeIndices) {
 }
 
@@ -51,15 +51,15 @@ enforceBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
       field.name() == HydroFieldNames::velocity) {
 
     // This is the velocity field, so enforce the boundary.
-    int i = 0;
-    const vector<int> nodeIDs = this->nodeIndices();
-    for (vector<int>::const_iterator itr = nodeIDs.begin();
-         itr < nodeIDs.end();
-         ++itr, ++i) {
-      CHECK(*itr < (int)field.numElements());
-      CHECK(i < (int)this->velocityCondition().size());
-      field[*itr].x(this->velocityCondition()[i].x());
+    size_t k = 0;
+    const auto nodeIDs = this->nodeIndices();
+    for (auto i: nodeIDs) {
+      CHECK(i < field.numElements());
+      CHECK(k < this->velocityCondition().size());
+      field[i].x(this->velocityCondition()[k].x());
+      ++k;
     }
+    CHECK(k == nodeIDs.size());
   }
 }
 

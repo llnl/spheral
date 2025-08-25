@@ -7,8 +7,8 @@
 //
 // Created by JMO, Sat Feb  5 12:57:58 PST 2000
 //----------------------------------------------------------------------------//
-#ifndef __Spheral__FieldSpace__FieldList_hh__
-#define __Spheral__FieldSpace__FieldList_hh__
+#ifndef __Spheral__FieldList__
+#define __Spheral__FieldList__
 
 #include "FieldListBase.hh"
 #include "Utilities/OpenMP_wrapper.hh"
@@ -134,11 +134,11 @@ public:
   virtual typename FieldListBase<Dimension>::const_reverse_iterator rend_base() const;
 
   // Index operator.
-  ElementType operator[](const unsigned index);
-  ElementType operator[](const unsigned index) const;
+  ElementType operator[](const size_t index);
+  ElementType operator[](const size_t index) const;
 
-  ElementType at(const unsigned index);
-  ElementType at(const unsigned index) const;
+  ElementType at(const size_t index);
+  ElementType at(const size_t index) const;
 
   // Return an iterator to the Field associated with the given NodeList.
   iterator fieldForNodeList(const NodeList<Dimension>& nodeList);
@@ -150,10 +150,10 @@ public:
 
   // Provide a more primitive access to Field elements, based on the index of the Field
   // and the node index within that field.
-  DataType& operator()(const unsigned int fieldIndex,
-                       const unsigned int nodeIndex);
-  const DataType& operator()(const unsigned int fieldIndex,
-                             const unsigned int nodeIndex) const;
+  DataType& operator()(const size_t fieldIndex,
+                       const size_t nodeIndex);
+  const DataType& operator()(const size_t fieldIndex,
+                             const size_t nodeIndex) const;
 
   // Return the interpolated value of the FieldList at a position.
   DataType operator()(const Vector& position,
@@ -250,18 +250,18 @@ public:
   bool operator<=(const DataType& rhs) const;
 
   // The number of fields in the FieldList.
-  unsigned numFields() const;
-  unsigned size() const;
+  size_t numFields() const;
+  size_t size() const;
   bool empty() const;
 
   // The number of nodes in the FieldList.
-  unsigned numNodes() const;
+  size_t numElements() const;
   
   // The number of internal nodes in the FieldList.
-  unsigned numInternalNodes() const;
+  size_t numInternalElements() const;
   
   // The number of ghost nodes in the FieldList.
-  unsigned numGhostNodes() const;
+  size_t numGhostElements() const;
 
   // Get the NodeLists this FieldList is defined on.
   const std::vector<NodeList<Dimension>*>& nodeListPtrs() const;
