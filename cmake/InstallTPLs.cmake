@@ -194,7 +194,7 @@ set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials
-if (ENABLE_SUNDIALS)
+if (ENABLE_SOLVERS)
   set(SUNDIALS_DIR "${sundials_DIR}")
   find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
     COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
@@ -205,6 +205,7 @@ if (ENABLE_SUNDIALS)
     list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
     message("Found SUNDIALS External Package")
   endif()
+  list(APPEND SPHERAL_EXTERN_LIBS hypre)
 endif()
 
 message("-----------------------------------------------------------------------------")

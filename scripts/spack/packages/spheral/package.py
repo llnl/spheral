@@ -40,7 +40,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
-    variant('sundials', default=True, when="+mpi", description='Build Sundials package.')
+    variant('solvers', default=True, when="+mpi", description='Build Sundials and Hypre packages.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
 
     # -------------------------------------------------------------------------
@@ -85,7 +85,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('polytope +python', type='build', when="+python")
     depends_on('polytope ~python', type='build', when="~python")
 
-    depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
+    with when("+solvers"):
+        depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build')
+        depends_on('hypre@2.26.0 ~shared cppflags="-fPIC" cflags="-fPIC"', type='build')
 
     depends_on('leos@8.4.2', type='build', when='+leos')
 
@@ -265,9 +267,13 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if "+python" in spec:
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
 
-        if spec.satisfies("+sundials"):
+        if spec.satisfies("+solvers"):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
-            entries.append(cmake_cache_option('ENABLE_SUNDIALS', True))
+            entries.append(cmake_cache_path('hypre_DIR', spec['hypre'].prefix))
+            entries.append(cmake_cache_path('hypre_INCLUDES', spec['hypre'].prefix.include))
+            hypre_libs = spec["blas"].libs + spec["lapack"].libs
+            entries.append(cmake_cache_path('hypre_EXT_LIBRARIES', hypre_libs.joined(";")))
+            entries.append(cmake_cache_option('ENABLE_SOLVERS', True))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
