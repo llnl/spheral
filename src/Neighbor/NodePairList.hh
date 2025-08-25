@@ -33,7 +33,7 @@ public:
   SPHERAL_HOST
   void touch(chai::ExecutionSpace space) { mData.registerTouch(space); }
 
-private:
+protected:
   ContainerType mData;
 };
 
