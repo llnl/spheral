@@ -5,14 +5,38 @@
 
 #include <vector>
 #include <unordered_map>
-#include "NodePairListView.hh"
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
 
 namespace Spheral {
 
+class NodePairListView {
+  using ContainerType = typename chai::ManagedArray<NodePairIdxType>;
+
+public:
+  SPHERAL_HOST_DEVICE NodePairListView() = default;
+  SPHERAL_HOST NodePairListView(ContainerType const &d) : mData(d) {}
+
+  SPHERAL_HOST_DEVICE
+  NodePairIdxType& operator[](const size_t i) { return mData[i]; }
+
+  SPHERAL_HOST_DEVICE
+  NodePairIdxType& operator[](const size_t i) const { return mData[i]; }
+
+  SPHERAL_HOST_DEVICE
+  size_t size() const { return mData.size(); }
+
+  void move(chai::ExecutionSpace space) { mData.move(space); }
+
+  SPHERAL_HOST
+  void touch(chai::ExecutionSpace space) { mData.registerTouch(space); }
+
+private:
+  ContainerType mData;
+};
+
 //------------------------------------------------------------------------------
-class NodePairList {
+class NodePairList : public NodePairListView {
 public:
   using ContainerType = std::vector<NodePairIdxType>;
   using value_type = typename ContainerType::value_type;
@@ -25,12 +49,11 @@ public:
 
   NodePairList()                                                               = default;
   NodePairList(const NodePairList& rhs)                                        = default;
-  ~NodePairList()                                                              { mManagedNPL.free(); }
+  ~NodePairList()                                                              { mData.free(); }
   NodePairList& operator=(const NodePairList& rhs)                             = default;
   void push_back(NodePairIdxType nodePair)                                     { mNodePairList.push_back(nodePair); }
-  void clear()                                                                 { mNodePairList.clear(); mPair2Index.clear(); }
+  void clear()                                                                 { mNodePairList.clear(); mPair2Index.clear(); mData.free(); }
   void reserve(const size_t n)                                                 { mNodePairList.reserve(n); }
-  size_t size() const                                                          { return mNodePairList.size(); }
 
   // Iterators
   iterator begin()                                                             { return mNodePairList.begin(); }
@@ -45,14 +68,12 @@ public:
   const_reverse_iterator rend() const                                          { return mNodePairList.rend(); }
 
   // Indexing
-  reference operator[](const size_t i)                                         { return mNodePairList[i]; }
   reference operator()(const NodePairIdxType& x)                               { return mNodePairList[index(x)]; }
   reference operator()(const size_t i_node,
                        const size_t i_list,
                        const size_t j_node,
                        const size_t j_list)                                    { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
 
-  const_reference operator[](const size_t i) const                             { return mNodePairList[i]; }
   const_reference operator()(const NodePairIdxType& x) const                   { return mNodePairList[index(x)]; }
   const_reference operator()(const size_t i_node,
                              const size_t i_list,
@@ -69,33 +90,27 @@ public:
   // Compute the lookup table for Pair->index
   void computeLookup() const;
 
-  // TODO: Good for debugging but not necessary
   NodePairListView toView()
   {
     return this->toView([](const chai::PointerRecord*,
                            chai::Action action,
-                           chai::ExecutionSpace) {
-                          if (action == chai::ACTION_MOVE)
-                            std::cout << "NodePairList Moved.\n";
-                        }
-                        );
+                           chai::ExecutionSpace) { });
   }
 
   template<typename F>
   NodePairListView toView(F callback)
   {
-    if (!(mNodePairList.data() == mManagedNPL.data(chai::CPU, false)
-          && mNodePairList.size() == mManagedNPL.size())) {
-        mManagedNPL.free();
-        mManagedNPL = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
-        mManagedNPL.setUserCallback(callback);
+    if (!(mNodePairList.data() == mData.data(chai::CPU, false)
+          && mNodePairList.size() == mData.size())) {
+        mData.free();
+        mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
+        mData.setUserCallback(callback);
     }
-    return NodePairListView(mManagedNPL);
+    return NodePairListView(mData);
   }
 
 private:
   ContainerType mNodePairList;
-  chai::ManagedArray<NodePairIdxType> mManagedNPL;
   mutable std::unordered_map<NodePairIdxType, size_t> mPair2Index;  // mutable for lazy evaluation in index
 };
 
