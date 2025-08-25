@@ -57,7 +57,7 @@ TensorMonaghanGingoldViscosity<Dimension>::
 TensorMonaghanGingoldViscosity(const Scalar Clinear,
                                const Scalar Cquadratic,
                                const TableKernel<Dimension>& kernel):
-  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, kernel) {
+  ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic, kernel) {
 }
 
 //------------------------------------------------------------------------------

@@ -82,10 +82,10 @@ protected:
 
   using MonaghanGingoldViscosity<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosity<Dimension>::mQuadraticInExpansion;
-  using ArtificialViscosity<Dimension, Scalar>::mClinear;
-  using ArtificialViscosity<Dimension, Scalar>::mCquadratic;
-  using ArtificialViscosity<Dimension, Scalar>::mEpsilon2;
-  using ArtificialViscosity<Dimension, Scalar>::mBalsaraShearCorrection;
+  using ArtificialViscosityView<Dimension, Scalar>::mClinear;
+  using ArtificialViscosityView<Dimension, Scalar>::mCquadratic;
+  using ArtificialViscosityView<Dimension, Scalar>::mEpsilon2;
+  using ArtificialViscosityView<Dimension, Scalar>::mBalsaraShearCorrection;
 };
 
 }

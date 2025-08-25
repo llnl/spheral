@@ -30,7 +30,7 @@ public:
 
   // Constructors.
   SolidCRKSPH(DataBase<Dimension>& dataBase,
-              ArtificialViscosityHandle<Dimension>& Q,
+              ArtificialViscosity<Dimension>& Q,
               const RKOrder order,
               const double cfl,
               const bool useVelocityMagnitudeForDt,

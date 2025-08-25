@@ -38,7 +38,7 @@ public:
 
   // Constructors.
   SolidSphericalSPH(DataBase<Dimension>& dataBase,
-                    ArtificialViscosityHandle<Dimension>& Q,
+                    ArtificialViscosity<Dimension>& Q,
                     const SphericalKernel& W,
                     const SphericalKernel& WPi,
                     const SphericalKernel& WGrad,

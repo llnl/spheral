@@ -42,7 +42,7 @@
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "Hydro/EntropyPolicy.hh"
 #include "ContinuityVolumePolicy.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -83,7 +83,7 @@ namespace Spheral {
 template<typename Dimension>
 CRKSPHVariant<Dimension>::
 CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
-              ArtificialViscosity<Dimension>& Q,
+              ArtificialViscosityView<Dimension>& Q,
               const TableKernel<Dimension>& W,
               const TableKernel<Dimension>& WPi,
               const double filter,
@@ -458,7 +458,7 @@ initialize(const typename Dimension::Scalar time,
   }
 
   // Get the artificial viscosity and initialize it.
-  ArtificialViscosity<Dimension>& Q = this->artificialViscosity();
+  ArtificialViscosityView<Dimension>& Q = this->artificialViscosity();
   Q.initialize(dataBase, 
                state,
                derivs,
@@ -481,7 +481,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Get the ArtificialViscosity.
+  // Get the ArtificialViscosityView.
   auto& Q = this->artificialViscosity();
   cout << "VARIENT EVALUATE" << endl;
 

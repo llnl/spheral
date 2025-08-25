@@ -15,7 +15,7 @@
 #include "DataBase/IncrementState.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Strength/SolidFieldNames.hh"
@@ -79,7 +79,7 @@ vec_to_string(const Vector& vec) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 GenericHydro<Dimension>::
-GenericHydro(ArtificialViscosityHandle<Dimension>& Q,
+GenericHydro(ArtificialViscosity<Dimension>& Q,
              const double cfl,
              const bool useVelocityMagnitudeForDt):
   Physics<Dimension>(),

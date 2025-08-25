@@ -21,7 +21,7 @@
 #include "DataBase/ReplaceState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "DataBase/updateStateFields.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -126,7 +126,7 @@ inline Dim<3>::SymTensor oneMinusEigenvalues(const Dim<3>::SymTensor& x) {
 template<typename Dimension>
 SolidSPH<Dimension>::
 SolidSPH(DataBase<Dimension>& dataBase,
-         ArtificialViscosityHandle<Dimension>& Q,
+         ArtificialViscosity<Dimension>& Q,
          const TableKernel<Dimension>& W,
          const TableKernel<Dimension>& WPi,
          const TableKernel<Dimension>& WGrad,
@@ -290,15 +290,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosity, dispatch the call to
+  // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
+      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
       this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
+    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }

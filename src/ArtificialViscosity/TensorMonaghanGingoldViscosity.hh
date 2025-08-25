@@ -7,12 +7,12 @@
 #ifndef __Spheral_TensorMonaghanGingoldViscosity__
 #define __Spheral_TensorMonaghanGingoldViscosity__
 
-#include "ArtificialViscosity.hh"
+#include "ArtificialViscosityView.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorMonaghanGingoldViscosity: public ArtificialViscosity<Dimension, typename Dimension::Tensor> {
+class TensorMonaghanGingoldViscosity: public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -63,10 +63,10 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  using ArtificialViscosity<Dimension, Tensor>::mClinear;
-  using ArtificialViscosity<Dimension, Tensor>::mCquadratic;
-  using ArtificialViscosity<Dimension, Tensor>::mEpsilon2;
-  using ArtificialViscosity<Dimension, Tensor>::mBalsaraShearCorrection;
+  using ArtificialViscosityView<Dimension, Tensor>::mClinear;
+  using ArtificialViscosityView<Dimension, Tensor>::mCquadratic;
+  using ArtificialViscosityView<Dimension, Tensor>::mEpsilon2;
+  using ArtificialViscosityView<Dimension, Tensor>::mBalsaraShearCorrection;
 };
 
 }

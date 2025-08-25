@@ -1,5 +1,5 @@
 """
-Spheral ArtificialViscosity module.
+Spheral ArtificialViscosityView module.
 
 Provides the artificial viscosity algorithms for use with the hydrodynamics methods.
 """
@@ -12,8 +12,8 @@ dims = spheralDimensions()
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
-PYB11includes += ['"ArtificialViscosity/ArtificialViscosityHandle.hh"',
-                  '"ArtificialViscosity/ArtificialViscosity.hh"',
+PYB11includes += ['"ArtificialViscosity/ArtificialViscosity.hh"',
+                  '"ArtificialViscosity/ArtificialViscosityView.hh"',
                   '"ArtificialViscosity/MonaghanGingoldViscosity.hh"',
                   '"ArtificialViscosity/LimitedMonaghanGingoldViscosity.hh"',
                   '"ArtificialViscosity/MorrisMonaghanReducingViscosity.hh"',
@@ -34,8 +34,8 @@ PYB11namespaces = ["Spheral"]
 #-------------------------------------------------------------------------------
 # Do our dimension dependent instantiations.
 #-------------------------------------------------------------------------------
-from ArtificialViscosityHandle import *
 from ArtificialViscosity import *
+from ArtificialViscosityView import *
 from MonaghanGingoldViscosity import *
 from TensorMonaghanGingoldViscosity import *
 from LimitedMonaghanGingoldViscosity import *
@@ -48,9 +48,9 @@ from TensorCRKSPHViscosity import *
 for ndim in dims:
     Dimension = f"Dim<{ndim}>"
     exec(f'''
-ArtificialViscosityHandle{ndim}d = PYB11TemplateClass(ArtificialViscosityHandle, template_parameters="{Dimension}")
-ScalarArtificialViscosity{ndim}d = PYB11TemplateClass(ArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
-TensorArtificialViscosity{ndim}d = PYB11TemplateClass(ArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
+ArtificialViscosity{ndim}d = PYB11TemplateClass(ArtificialViscosity, template_parameters="{Dimension}")
+ScalarArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
+TensorArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
 MonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(MonaghanGingoldViscosity, template_parameters="{Dimension}")
 TensorMonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(TensorMonaghanGingoldViscosity, template_parameters="{Dimension}")
 LimitedMonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(LimitedMonaghanGingoldViscosity, template_parameters="{Dimension}")

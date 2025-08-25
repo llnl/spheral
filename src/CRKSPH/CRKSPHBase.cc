@@ -26,7 +26,7 @@
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "Hydro/EntropyPolicy.hh"
 #include "RK/ContinuityVolumePolicy.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -65,7 +65,7 @@ namespace Spheral {
 template<typename Dimension>
 CRKSPHBase<Dimension>::
 CRKSPHBase(DataBase<Dimension>& dataBase,
-           ArtificialViscosityHandle<Dimension>& Q,
+           ArtificialViscosity<Dimension>& Q,
            const RKOrder order,
            const double cfl,
            const bool useVelocityMagnitudeForDt,

@@ -23,7 +23,7 @@ PYB11includes += ['"SVPH/SVPHFieldNames.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
                   '"FileIO/FileIO.hh"',
-                  '"ArtificialViscosity/ArtificialViscosity.hh"']
+                  '"ArtificialViscosity/ArtificialViscosityView.hh"']
 
 #-------------------------------------------------------------------------------
 # Namespaces

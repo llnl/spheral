@@ -40,7 +40,7 @@ FiniteVolumeViscosity<Dimension>::
 FiniteVolumeViscosity(const Scalar Clinear,
                       const Scalar Cquadratic,
                       const TableKernel<Dimension>& WT):
-  ArtificialViscosity<Dimension, Scalar>(Clinear, Cquadratic, WT) {
+  ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic, WT) {
 }
 
 //------------------------------------------------------------------------------

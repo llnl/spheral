@@ -7,12 +7,12 @@
 #ifndef __Spheral_TensorSVPHViscosity__
 #define __Spheral_TensorSVPHViscosity__
 
-#include "ArtificialViscosity.hh"
+#include "ArtificialViscosityView.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorSVPHViscosity: public ArtificialViscosity<Dimension, typename Dimension::Tensor> {
+class TensorSVPHViscosity: public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;

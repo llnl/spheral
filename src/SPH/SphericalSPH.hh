@@ -39,7 +39,7 @@ public:
 
   // Constructors.
   SphericalSPH(DataBase<Dimension>& dataBase,
-               ArtificialViscosityHandle<Dimension>& Q,
+               ArtificialViscosity<Dimension>& Q,
                const SphericalKernel& W,
                const SphericalKernel& WPi,
                const double cfl,

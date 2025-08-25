@@ -22,7 +22,7 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Hydro/SphericalPositionPolicy.hh"
 #include "Hydro/NonSymmetricSpecificThermalEnergyPolicy.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
@@ -68,7 +68,7 @@ Dim<1>::Scalar scalarSum(const Dim<1>::Tensor& x, const Dim<1>::Tensor& y) { ret
 //------------------------------------------------------------------------------
 SphericalSPH::
 SphericalSPH(DataBase<Dimension>& dataBase,
-             ArtificialViscosityHandle<Dim<1>>& Q,
+             ArtificialViscosity<Dim<1>>& Q,
              const SphericalKernel& W,
              const SphericalKernel& WPi,
              const double cfl,
@@ -225,15 +225,15 @@ evaluateDerivatives(const Dim<1>::Scalar time,
                     const State<Dim<1>>& state,
                     StateDerivatives<Dim<1>>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosity, dispatch the call to
+  // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
+      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
       this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
+    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }

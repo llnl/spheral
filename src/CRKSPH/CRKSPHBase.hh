@@ -15,7 +15,7 @@
 namespace Spheral {
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename DataType> class Field;
@@ -43,7 +43,7 @@ public:
 
   // Constructors.
   CRKSPHBase(DataBase<Dimension>& dataBase,
-             ArtificialViscosityHandle<Dimension>& Q,
+             ArtificialViscosity<Dimension>& Q,
              const RKOrder order,
              const double cfl,
              const bool useVelocityMagnitudeForDt,

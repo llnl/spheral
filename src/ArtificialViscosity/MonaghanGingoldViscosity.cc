@@ -36,7 +36,7 @@ MonaghanGingoldViscosity(const Scalar Clinear,
                          const TableKernel<Dimension>& kernel,
                          const bool linearInExpansion,
                          const bool quadraticInExpansion):
-  ArtificialViscosity<Dimension, Scalar>(Clinear, Cquadratic, kernel),
+  ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic, kernel),
   mLinearInExpansion(linearInExpansion),
   mQuadraticInExpansion(quadraticInExpansion) {
 }

@@ -37,7 +37,7 @@ enum class FSIMassDensityMethod {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class SlideSurface;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
@@ -64,7 +64,7 @@ public:
 
   // Constructors.
   SolidFSISPH(DataBase<Dimension>& dataBase,
-              ArtificialViscosityHandle<Dimension>& Q,
+              ArtificialViscosity<Dimension>& Q,
               SlideSurface<Dimension>& slide,
               const TableKernel<Dimension>& W,
               const double cfl,

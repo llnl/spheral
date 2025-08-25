@@ -2,12 +2,12 @@
 # TensorMonaghanGingoldViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosity import *
+from ArtificialViscosityView import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
 @PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
-class TensorMonaghanGingoldViscosity(ArtificialViscosity):
+class TensorMonaghanGingoldViscosity(ArtificialViscosityView):
     """A modified form of the Monaghan & Gingold viscosity, extended to tensor formalism.
 This method is described in
 Owen, J Michael (2004), 'A tensor artficial visocity for SPH', Journal of Computational Physics, 201(2), 601-629

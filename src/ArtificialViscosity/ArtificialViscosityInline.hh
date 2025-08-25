@@ -36,7 +36,7 @@ curlVelocityMagnitude(const Dim<3>::Tensor& DvDx) {
 template<typename Dimension>
 inline
 typename Dimension::Scalar
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 curlVelocityMagnitude(const Tensor& DvDx) const {
   return ArtificialViscosityDetail::curlVelocityMagnitude(DvDx);
 }
@@ -47,7 +47,7 @@ curlVelocityMagnitude(const Tensor& DvDx) const {
 template<typename Dimension>
 inline
 typename Dimension::Scalar
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 calcBalsaraShearCorrection(const Tensor& DvDx,
                            const SymTensor& H,
                            const Scalar& cs) const {
@@ -68,7 +68,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<typename Dimension>
 // inline
 // typename Dimension::Tensor
-// ArtificialViscosityHandle<Dimension>::
+// ArtificialViscosity<Dimension>::
 // calculateLimiter(const Vector& /*vi*/,
 //                  const Vector& /*vj*/,
 //                  const Scalar  ci,
@@ -188,7 +188,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<typename Dimension>
 // inline
 // typename Dimension::Vector
-// ArtificialViscosityHandle<Dimension>::
+// ArtificialViscosity<Dimension>::
 // shockDirection(const Scalar ci,
 //                const Scalar hi,
 //                const int nodeListID,
@@ -226,7 +226,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<1>::Scalar
-// ArtificialViscosityHandle< Dim<1> >::
+// ArtificialViscosity< Dim<1> >::
 // computeDelCrossVMagnitude(const Dim<1>::Tensor& /*sigma*/) const {
 //   return 0.0;
 // }
@@ -234,7 +234,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<2>::Scalar
-// ArtificialViscosityHandle< Dim<2> >::
+// ArtificialViscosity< Dim<2> >::
 // computeDelCrossVMagnitude(const Dim<2>::Tensor& sigma) const {
 //   return std::abs(sigma(1,0) - sigma(0,1));
 // }
@@ -242,7 +242,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<3>::Scalar
-// ArtificialViscosityHandle< Dim<3> >::
+// ArtificialViscosity< Dim<3> >::
 // computeDelCrossVMagnitude(const Dim<3>::Tensor& sigma) const {
 //   return sqrt(FastMath::square(sigma(2,1) - sigma(1,2)) +
 //               FastMath::square(sigma(2,0) - sigma(0,2)) +
@@ -255,7 +255,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<1>::Vector
-// ArtificialViscosityHandle<Dim<1> >::
+// ArtificialViscosity<Dim<1> >::
 // sigmaWeighting(const Dim<1>::Vector&) const {
 //   return Dim<1>::Vector(1.0);
 // }
@@ -263,7 +263,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<2>::Vector
-// ArtificialViscosityHandle<Dim<2> >::
+// ArtificialViscosity<Dim<2> >::
 // sigmaWeighting(const Dim<2>::Vector& r) const {
 //   return Dim<2>::Vector(FastMath::square(r.x()),
 //                         FastMath::square(r.y()))/(r.magnitude2() + 1.0e-10);
@@ -272,7 +272,7 @@ calcBalsaraShearCorrection(const Tensor& DvDx,
 // template<>
 // inline
 // Dim<3>::Vector
-// ArtificialViscosityHandle<Dim<3> >::
+// ArtificialViscosity<Dim<3> >::
 // sigmaWeighting(const Dim<3>::Vector& r) const {
 //   return Dim<3>::Vector(FastMath::square(r.x()),
 //                         FastMath::square(r.y()),

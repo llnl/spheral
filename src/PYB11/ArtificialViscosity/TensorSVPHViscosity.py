@@ -2,12 +2,12 @@
 # TensorSVPHViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosity import *
+from ArtificialViscosityView import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
 @PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
-class TensorSVPHViscosity(ArtificialViscosity):
+class TensorSVPHViscosity(ArtificialViscosityView):
 
     PYB11typedefs = """
     using Scalar = typename %(Dimension)s::Scalar;

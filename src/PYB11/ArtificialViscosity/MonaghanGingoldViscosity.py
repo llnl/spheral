@@ -2,12 +2,12 @@
 # MonaghanGingoldViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosity import *
+from ArtificialViscosityView import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
 @PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
-class MonaghanGingoldViscosity(ArtificialViscosity):
+class MonaghanGingoldViscosity(ArtificialViscosityView):
 
     PYB11typedefs = """
     using Scalar = typename %(Dimension)s::Scalar;

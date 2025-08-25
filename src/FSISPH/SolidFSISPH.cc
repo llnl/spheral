@@ -38,7 +38,7 @@
 #include "DataBase/updateStateFields.hh"
 #include "DataBase/ReplaceWithRatioPolicy.hh"
 
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
@@ -120,7 +120,7 @@ tensileStressCorrection(const Dim<3>::SymTensor& sigma) {
 template<typename Dimension>
 SolidFSISPH<Dimension>::
 SolidFSISPH(DataBase<Dimension>& dataBase,
-            ArtificialViscosityHandle<Dimension>& Q,
+            ArtificialViscosity<Dimension>& Q,
             SlideSurface<Dimension>& slides,
             const TableKernel<Dimension>& W,
             const double cfl,

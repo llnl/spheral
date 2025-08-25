@@ -7,12 +7,12 @@
 #ifndef __Spheral_FiniteVolumeViscosity__
 #define __Spheral_FiniteVolumeViscosity__
 
-#include "ArtificialViscosity.hh"
+#include "ArtificialViscosityView.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class FiniteVolumeViscosity: public ArtificialViscosity<Dimension, typename Dimension::Scalar> {
+class FiniteVolumeViscosity: public ArtificialViscosityView<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -68,10 +68,10 @@ public:
 
 private:
   //--------------------------- Public Interface ---------------------------//
-  using ArtificialViscosity<Dimension, Scalar>::mClinear;
-  using ArtificialViscosity<Dimension, Scalar>::mCquadratic;
-  using ArtificialViscosity<Dimension, Scalar>::mEpsilon2;
-  using ArtificialViscosity<Dimension, Scalar>::mBalsaraShearCorrection;
+  using ArtificialViscosityView<Dimension, Scalar>::mClinear;
+  using ArtificialViscosityView<Dimension, Scalar>::mCquadratic;
+  using ArtificialViscosityView<Dimension, Scalar>::mEpsilon2;
+  using ArtificialViscosityView<Dimension, Scalar>::mBalsaraShearCorrection;
 };
 
 }

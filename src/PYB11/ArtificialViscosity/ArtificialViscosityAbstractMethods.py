@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# ArtificialViscosity pure virtual interface
+# ArtificialViscosityView pure virtual interface
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 

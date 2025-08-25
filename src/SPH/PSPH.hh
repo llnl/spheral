@@ -14,7 +14,7 @@ namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
@@ -36,7 +36,7 @@ public:
 
   // Constructors.
   PSPH(DataBase<Dimension>& dataBase,
-       ArtificialViscosityHandle<Dimension>& Q,
+       ArtificialViscosity<Dimension>& Q,
        const TableKernel<Dimension>& W,
        const TableKernel<Dimension>& WPi,
        const double cfl,

@@ -1,6 +1,6 @@
 //---------------------------------Spheral++----------------------------------//
-// ArtificialViscosityHandle -- A base class for ArtficialViscosity that strips
-// off the QPiType template parameter.  This makes a convenient handle to break
+// ArtificialViscosity -- A base class for ArtficialViscosity that strips
+// off the QPiType template parameter.  This makes a convenient way to prevent
 // that template parameter from spreading into classes that need to consume an
 // ArtificialViscosity.
 //
@@ -18,7 +18,7 @@
 #include "Utilities/rotationMatrix.hh"
 #include "Utilities/GeometricUtilities.hh"
 
-#include "ArtificialViscosityHandle.hh"
+#include "ArtificialViscosity.hh"
 
 #include <algorithm>
 
@@ -40,8 +40,8 @@ using std::vector;
 // Construct with the given value for the linear and quadratic coefficients.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-ArtificialViscosityHandle<Dimension>::
-ArtificialViscosityHandle(const Scalar Clinear,
+ArtificialViscosity<Dimension>::
+ArtificialViscosity(const Scalar Clinear,
                           const Scalar Cquadratic,
                           const TableKernel<Dimension>& kernel):
   Physics<Dimension>(),
@@ -65,7 +65,7 @@ ArtificialViscosityHandle(const Scalar Clinear,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 typename Physics<Dimension>::TimeStepType
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 dt(const DataBase<Dimension>& dataBase,
    const State<Dimension>& state,
    const StateDerivatives<Dimension>& derivs,
@@ -78,7 +78,7 @@ dt(const DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   if (this->requireVelocityGradient() or
@@ -90,7 +90,7 @@ registerState(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   derivs.enroll(mMaxViscousPressure);
@@ -102,7 +102,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   if (this->requireVelocityGradient() or
@@ -119,7 +119,7 @@ applyGhostBoundaries(State<Dimension>& state,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
   dataBase.resizeFluidFieldList(mMaxViscousPressure, 0.0, HydroFieldNames::maxViscousPressure, false);
   dataBase.resizeFluidFieldList(mEffViscousPressure, 0.0, HydroFieldNames::effectiveViscousPressure, false);
@@ -133,7 +133,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
@@ -151,7 +151,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 bool
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 initialize(const Scalar t,
            const Scalar dt,
            const DataBase<Dimension>& dataBase,
@@ -171,7 +171,7 @@ initialize(const Scalar t,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 bool
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 postStateUpdate(const Scalar t,
                 const Scalar dt,
                 const DataBase<Dimension>& dataBase,
@@ -193,7 +193,7 @@ postStateUpdate(const Scalar t,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 updateVelocityGradient(const DataBase<Dimension>& dataBase,
                        const State<Dimension>& state,
                        const StateDerivatives<Dimension>& derivs) {
@@ -323,7 +323,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 dumpState(FileIO& file, const string& pathName) const {
   file.write(mMaxViscousPressure, pathName + "/maxViscousPressure");
   file.write(mEffViscousPressure, pathName + "/effViscousPressure");
@@ -337,7 +337,7 @@ dumpState(FileIO& file, const string& pathName) const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-ArtificialViscosityHandle<Dimension>::
+ArtificialViscosity<Dimension>::
 restoreState(const FileIO& file, const string& pathName) {
   file.read(mMaxViscousPressure, pathName + "/maxViscousPressure");
   file.read(mEffViscousPressure, pathName + "/effViscousPressure");

@@ -42,7 +42,7 @@ TensorSVPHViscosity(const Scalar Clinear,
                     const Scalar Cquadratic,
                     const TableKernel<Dimension>& WT,
                     const Scalar fslice):
-  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, WT),
+  ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic, WT),
   mfslice(fslice),
   mDvDx(),
   mShearCorrection(),
