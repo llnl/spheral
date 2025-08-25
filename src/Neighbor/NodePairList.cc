@@ -2,7 +2,7 @@
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
-  
+
 //------------------------------------------------------------------------------
 // index
 //------------------------------------------------------------------------------
@@ -104,4 +104,5 @@ NodePairList& NodePairList::operator=(const NodePairList& rhs) {
     initializeMA();
   }
   return *this;
+}
 }
