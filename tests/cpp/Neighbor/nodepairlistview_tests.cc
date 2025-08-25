@@ -52,11 +52,34 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, DefaultConstructor) {
   EXEC_IN_SPACE_END()
 }
 
+// Test default constructor
+GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
+  NPL npl = gpu_this->createContainer();
+  {
+    NPL npl_2(npl);
+    NPL npl_3 = npl;
+    SPHERAL_ASSERT_EQ(npl_2.size(), npl.size());
+    SPHERAL_ASSERT_EQ(npl_3.size(), npl.size());
+    NPLV npl2_view = npl_2.view();
+    NPLV npl3_view = npl_3.view();
+    NPLV npl_v = npl.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_NE(npl_2.data(), npl_v.data());
+      SPHERAL_ASSERT_NE(npl_2.data(), npl_v.data());
+    EXEC_IN_SPACE_END()
+    RAJA::forall<TypeParam>(TRS_UINT(0, N),
+      [=] SPHERAL_HOST_DEVICE(size_t i) {
+        SPHERAL_ASSERT_EQ(npl2_view[i], npl_v[i]);
+        SPHERAL_ASSERT_EQ(npl3_view[i], npl_v[i]);
+      });
+  }
+}
+
 // Test constructor from ContainerType, movement to and from device
 // and modification on the device
 GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
   NPL npl = gpu_this->createContainer();
-  NPLV npl_v = npl.toView(gpu_this->callback());
+  NPLV npl_v = npl.view(gpu_this->callback());
   SPHERAL_ASSERT_EQ(npl_v.size(), N);
   SPHERAL_ASSERT_EQ(&(npl_v[0]), &(npl[0]));
 
@@ -87,7 +110,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
 GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
   {
     NPL npl = gpu_this->createContainer();
-    NPLV npl_v = npl.toView(gpu_this->callback());
+    NPLV npl_v = npl.view(gpu_this->callback());
 
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(npl_v.size(), N);
@@ -95,7 +118,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
 
     npl[0].i_list = 4; // Modify the data on the host
     npl_v.touch(chai::CPU); // Change the execution space for the MA
-    npl_v = npl.toView(gpu_this->callback()); // Create a new view
+    npl_v = npl.view(gpu_this->callback()); // Create a new view
 
     RAJA::forall<TypeParam>(TRS_UINT(0, N),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
@@ -118,7 +141,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
 GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   {
     NPL npl = gpu_this->createContainer();
-    NPLV npl_v = npl.toView(gpu_this->callback());
+    NPLV npl_v = npl.view(gpu_this->callback());
 
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(npl_v.size(), N);
@@ -126,7 +149,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
 
     NPIT nit(4, 4, 4, 4, 4.);
     npl.push_back(nit);
-    npl_v = npl.toView(gpu_this->callback());
+    npl_v = npl.view(gpu_this->callback());
 
     RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
@@ -147,7 +170,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   COMP_COUNTERS(gpu_this->n_count, ref_count);
 }
 
-REGISTER_TYPED_TEST_SUITE_P(NPLViewTypedTest, DefaultConstructor,
+REGISTER_TYPED_TEST_SUITE_P(NPLViewTypedTest, DefaultConstructor, CopyAssign,
                             ConstructorFromContainer, Touch, Resize);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodePairListView, NPLViewTypedTest,

@@ -26,4 +26,82 @@ NodePairList::computeLookup() const {
   }
 }
 
+//------------------------------------------------------------------------------
+// Data operations
+//------------------------------------------------------------------------------
+
+// Warning: Not performant if called frequently
+void
+NodePairList::push_back(NodePairIdxType nodePair) {
+  mNodePairList.push_back(nodePair);
+  initializeMA();
+}
+
+void
+NodePairList::clear() {
+  mNodePairList.clear();
+  mPair2Index.clear();
+  mData.free();
+}
+
+void
+NodePairList::reserve(const size_t n) {
+  mNodePairList.reserve(n);
+}
+
+//------------------------------------------------------------------------------
+// Initialize ManagedArray
+//------------------------------------------------------------------------------
+template<typename F>
+void
+NodePairList::initializeMA(F callback) {
+  if (!(mNodePairList.data() == mData.data(chai::CPU, false)
+        && mNodePairList.size() == mData.size())) {
+    mData.free();
+    mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
+    mData.setUserCallback(callback);
+  }
+}
+
+void
+NodePairList::initializeMA() {
+  this->initializeMA([](const chai::PointerRecord*,
+                        chai::Action action,
+                        chai::ExecutionSpace) { });
+}
+
+//------------------------------------------------------------------------------
+// Initialize ManagedArray
+//------------------------------------------------------------------------------
+template<typename F>
+NodePairListView NodePairList::view(F callback) {
+  initializeMA(callback);
+  return NodePairListView(mData);
+}
+
+NodePairListview NodePairList::view() {
+  initializeMA();
+  return NodePairListView(mData):
+}
+
+//------------------------------------------------------------------------------
+// Copy constructor
+//------------------------------------------------------------------------------
+NodePairList::NodePairList(const NodePairList& rhs)
+  :
+  NodePairListView(rhs) {
+  mNodePairList = rhs.mNodePairList;
+  initializeMA();
+}
+
+//------------------------------------------------------------------------------
+// Assignment constructor
+//------------------------------------------------------------------------------
+NodePairList& NodePairList::operator=(const NodePairList& rhs) {
+  if (this !=&rhs) {
+    NodePairListView::operator=(rhs);
+    mNodePairList = rhs.mNodePairList;
+    initializeMA();
+  }
+  return *this;
 }

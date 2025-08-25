@@ -25,6 +25,8 @@ public:
 
   SPHERAL_HOST_DEVICE
   size_t size() const { return mData.size(); }
+  SPHERAL_HOST_DEVICE
+  NodePairIdxType* data() const { return mData.data(); }
 
   void move(chai::ExecutionSpace space) { mData.move(space); }
 
@@ -48,12 +50,12 @@ public:
   using const_reverse_iterator = typename ContainerType::const_reverse_iterator;
 
   NodePairList()                                                               = default;
-  NodePairList(const NodePairList& rhs)                                        = default;
+  NodePairList(const NodePairList& rhs);
   ~NodePairList()                                                              { mData.free(); }
-  NodePairList& operator=(const NodePairList& rhs)                             = default;
-  void push_back(NodePairIdxType nodePair)                                     { mNodePairList.push_back(nodePair); }
-  void clear()                                                                 { mNodePairList.clear(); mPair2Index.clear(); mData.free(); }
-  void reserve(const size_t n)                                                 { mNodePairList.reserve(n); }
+  NodePairList& operator=(const NodePairList& rhs);
+  void push_back(NodePairIdxType nodePair);
+  void clear();
+  void reserve(const size_t n);
 
   // Iterators
   iterator begin()                                                             { return mNodePairList.begin(); }
@@ -90,24 +92,10 @@ public:
   // Compute the lookup table for Pair->index
   void computeLookup() const;
 
-  NodePairListView toView()
-  {
-    return this->toView([](const chai::PointerRecord*,
-                           chai::Action action,
-                           chai::ExecutionSpace) { });
-  }
+  NodePairListView view();
 
   template<typename F>
-  NodePairListView toView(F callback)
-  {
-    if (!(mNodePairList.data() == mData.data(chai::CPU, false)
-          && mNodePairList.size() == mData.size())) {
-        mData.free();
-        mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
-        mData.setUserCallback(callback);
-    }
-    return NodePairListView(mData);
-  }
+  NodePairListView view(F callback);
 
 private:
   ContainerType mNodePairList;
