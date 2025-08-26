@@ -273,7 +273,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_path('hypre_INCLUDES', spec['hypre'].prefix.include))
             hypre_libs = spec["blas"].libs + spec["lapack"].libs
             entries.append(cmake_cache_path('hypre_EXT_LIBRARIES', hypre_libs.joined(";")))
-            entries.append(cmake_cache_option('ENABLE_SOLVERS', True))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_SOLVERS', True))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
