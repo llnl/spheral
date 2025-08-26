@@ -17,8 +17,8 @@ class SolidFSISPHRZ(SolidFSISPH):
   using Tensor = typename %(Dimension)s::Tensor;
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
-  using PairAccelerationsType = typename SolidFSISPH<%(Dimension)s>::PairAccelerationsType;
-  using PairWorkType = typename SolidFSISPH<%(Dimension)s>::PairWorkType;
+  using PairAccelerationsType = typename SolidFSISPHRZ::PairAccelerationsType;
+  using PairWorkType = typename SolidFSISPHRZ::PairWorkType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     

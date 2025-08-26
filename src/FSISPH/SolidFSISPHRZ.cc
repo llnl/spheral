@@ -1148,7 +1148,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
 
       // RZ continuity: include hoop term v_r / r
       const auto vri = vi.y(); // + XSPHDeltaVi.y();
-      DrhoDti -= rhoi*(DvDxi.Trace() + vri*riInv); // XXX TODO -= (like in SolidFSISPH.cc) or =?
+      DrhoDti -= rhoi*(DvDxi.Trace() + vri*riInv); // XXX TODO -= (like in SolidFSISPHEvaluateDerivatives.cc) or = - (like in SolidFSISPH.cc)?
 
       // Finish the specific thermal energy evolution.
       DepsDti += (STTi - pressure(nodeListi, i))/rhoi*vri*riInv;
