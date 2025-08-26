@@ -37,7 +37,7 @@
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/IncrementState.hh"
-#include "DataBase/ReplaceBoundedState.hh"
+#include "DataBase/ReplaceState.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "DataBase/PureReplaceState.hh"
@@ -578,6 +578,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
   auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero, true);
   auto* pairAccelerationsPtr = (compatibleEnergy ?
                                 &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
                                 nullptr);
@@ -888,7 +889,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
         //---------------------------------------------------------------
         const auto rhoij = 0.5*(rhoi+rhoj); 
         const auto cij = 0.5*(ci+cj); 
-        const auto vij = vi - vj;
+        //const auto vij = vi - vj;
 
         // raw AV
         Q.QPiij(QPiij, QPiji, Qi, Qj,
@@ -1091,11 +1092,12 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto& rhoi = massDensity(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& Si = S(nodeListi, i);
+      const auto STTi = -Si.Trace();
       const auto& mui = mu(nodeListi, i);
       const auto& interfaceFlagsi = interfaceFlags(nodeListi,i);
       const auto& interfaceAreaVectorsi = interfaceAreaVectors(nodeListi,i);
       const auto  Hdeti = Hi.Determinant();
-      const auto psi = Hdeti*mRZi/rhoi*W0; // XXX TODO: is this mRZi?
+      const auto psi = Hdeti*mRZi/rhoi*W0; // XXX TODO: is this mRZi or mi?
       const auto  zetai = abs((Hi*ri).y());
       const auto  hri = abs(ri.y())*safeInv(zetai);
       const auto  riInv = safeInv(abs(ri.y()), 0.25*hri);
@@ -1103,7 +1105,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
 
-      const auto& DvDti = DvDt(nodeListi,i);
+      auto& DvDti = DvDt(nodeListi,i); // XXX TODO: no longer a const?
       const auto& localMi = localM(nodeListi, i);
       auto& normi = normalization(nodeListi,i);
       auto& DepsDti = DepsDt(nodeListi,i);
@@ -1138,8 +1140,20 @@ secondDerivativesLoop(const Dimension::Scalar time,
         newInterfaceNormalsi = Vector::zero;
       }
 
-      DrhoDti -=  rhoi*DvDxi.Trace();
+      // Finish the acceleration -- self hoop strain.
+      const Vector deltaDvDti(Si(1,0)/rhoi*riInv,
+                              (Si(1,1) - STTi)/rhoi*riInv);
+      DvDti += deltaDvDti;
+      if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
+      // RZ continuity: include hoop term v_r / r
+      const auto vri = vi.y(); // + XSPHDeltaVi.y();
+      DrhoDti -= rhoi*(DvDxi.Trace() + vri*riInv); // XXX TODO -= (like in SolidFSISPH.cc) or =?
+
+      // Finish the specific thermal energy evolution.
+      DepsDti += (STTi - pressure(nodeListi, i))/rhoi*vri*riInv;
+
+      // If needed finish the total energy derivative.
       if (totalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
 
       DxDti = vi;
@@ -1313,8 +1327,8 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
         gradWj = gradWij;
       }
 
-      gradWi *= mRZj/rhoj; // XXX TODO: mRZj ?
-      gradWj *= mRZi/rhoi; // XXX TODO: mRZi ?
+      gradWi *= mRZj/rhoj; // XXX TODO: mRZj or mj?
+      gradWj *= mRZi/rhoi; // XXX TODO: mRZi or mi?
 
       // spatial gradients and correction
       //---------------------------------------------------------------
