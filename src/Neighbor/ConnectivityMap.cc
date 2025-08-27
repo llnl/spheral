@@ -267,7 +267,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   culledPairs.reserve(currentPairs.size());
 #pragma omp parallel
   {
-    NodePairList culledPairs_thread;
+    std::vector<NodePairIdxType> culledPairs_thread;
     const auto npairs = currentPairs.size();
     culledPairs_thread.reserve(npairs);
 #pragma omp for
@@ -889,7 +889,7 @@ computeConnectivity() {
           const auto nmaster = masterLists[iNodeList].size();
 #pragma omp parallel 
           {
-            NodePairList nodePairs_private;
+            std::vector<NodePairIdxType> nodePairs_private;
 #pragma omp for schedule(dynamic)
             for (auto k = 0u; k < nmaster; ++k) {
               const auto i = masterLists[iNodeList][k];

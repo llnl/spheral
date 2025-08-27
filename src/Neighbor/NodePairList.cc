@@ -30,13 +30,6 @@ NodePairList::computeLookup() const {
 // Data operations
 //------------------------------------------------------------------------------
 
-// Warning: Not performant if called frequently
-void
-NodePairList::push_back(NodePairIdxType nodePair) {
-  mNodePairList.push_back(nodePair);
-  initMA();
-}
-
 void
 NodePairList::clear() {
   mNodePairList.clear();
@@ -47,6 +40,25 @@ NodePairList::clear() {
 void
 NodePairList::reserve(const size_t n) {
   mNodePairList.reserve(n);
+}
+
+//------------------------------------------------------------------------------
+// Constructor
+//------------------------------------------------------------------------------
+
+NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
+  :
+  mNodePairList(vals) {
+  initMA();
+}
+
+//------------------------------------------------------------------------------
+// Fill function
+//------------------------------------------------------------------------------
+
+void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
+  mNodePairList = vals;
+  initMA();
 }
 
 //------------------------------------------------------------------------------

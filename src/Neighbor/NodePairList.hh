@@ -53,9 +53,10 @@ public:
 
   NodePairList()                                             = default;
   NodePairList(const NodePairList& rhs);
+  NodePairList(const ContainerType& aVals);
   ~NodePairList()                                            { mData.free(); }
   NodePairList& operator=(const NodePairList& rhs);
-  void push_back(NodePairIdxType nodePair);
+  void fill(const ContainerType& vals);
   void clear();
   void reserve(const size_t n);
 

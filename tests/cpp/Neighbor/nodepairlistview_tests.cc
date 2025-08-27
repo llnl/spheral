@@ -10,6 +10,7 @@
 using NPIT = Spheral::NodePairIdxType;
 using NPLV = Spheral::NodePairListView;
 using NPL = Spheral::NodePairList;
+using NPLVec = std::vector<Spheral::NodePairIdxType>;
 
 static constexpr size_t N = 5;
 
@@ -17,12 +18,16 @@ class NPLVTest : public ::testing::Test {
 public:
   GPUCounters n_count;
   // Helper to create a ContainerType with values [start, start+count)
-  NPL createContainer(size_t count = N) {
-    NPL npl ;
+  NPLVec createVec(size_t count = N) {
+    NPLVec vals;
     for (size_t i = 0; i < count; ++i) {
       NPIT nit(i, i+1, 2*i, 2*i+1, (double)i);
-      npl.push_back(nit);
+      vals.push_back(nit);
     }
+    return vals;
+  }
+  NPL createContainer(size_t count = N) {
+    NPL npl(createVec(N));
     return npl;
   }
 
@@ -150,7 +155,8 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
 // and modification on the device
 GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   {
-    NPL npl = gpu_this->createContainer();
+    NPLVec npl_vec = gpu_this->createVec();
+    NPL npl(npl_vec);
     NPLV npl_v = npl.view(gpu_this->callback());
 
     EXEC_IN_SPACE_BEGIN(TypeParam)
@@ -158,7 +164,8 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
     EXEC_IN_SPACE_END()
 
     NPIT nit(4, 4, 4, 4, 4.);
-    npl.push_back(nit);
+    npl_vec.push_back(nit);
+    npl.fill(npl_vec);
     npl_v = npl.view(gpu_this->callback());
 
     RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),

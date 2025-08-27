@@ -7,17 +7,17 @@ class NodePairList:
   def pyinit(self):
     "Default Constructor"
 
-  def push_back(self,
-                nodePair = "NodePairIdxType"):
-    "Push new Node Idx Data onto vector"
-    return "void"
+  def pyinit_vals(self,
+                  vals = "const std::vector<NodePairIdxType>&"):
+    "Constructs a NodePairList using a vector of NodePairIdxTypes"
+    return
 
   def clear(self):
     "Clears all data from Node pair List."
     return "void"
 
   def size(self):
-    "Returns the number of Node Pairs in the lsit"
+    "Returns the number of Node Pairs in the list"
     return "size_t"
 
   @PYB11implementation("[](const NodePairList& self) { return self.size(); }")
