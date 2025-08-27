@@ -23,7 +23,7 @@ struct NodePairIdxType {
   double f_couple = 0.0; // An arbitrary fraction in [0,1] to hold the effective coupling of the pair
 
   SPHERAL_HOST_DEVICE NodePairIdxType() = default;
-
+  SPHERAL_HOST_DEVICE ~NodePairIdxType() = default;
   SPHERAL_HOST_DEVICE NodePairIdxType(size_t i_n,
                                       size_t i_l,
                                       size_t j_n,
@@ -54,6 +54,7 @@ struct NodePairIdxType {
 
   // Comparisons
   SPHERAL_HOST_DEVICE bool operator==(const NodePairIdxType& val) const { return (hash() == val.hash()); }
+  SPHERAL_HOST_DEVICE bool operator!=(const NodePairIdxType& val) const { return (hash() != val.hash()); }
   SPHERAL_HOST_DEVICE bool operator< (const NodePairIdxType& val) const { return (hash() <  val.hash()); }
 };
 

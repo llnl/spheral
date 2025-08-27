@@ -13,7 +13,7 @@ using NPL = Spheral::NodePairList;
 
 static constexpr size_t N = 5;
 
-class NodePairListViewTest : public ::testing::Test {
+class NPLVTest : public ::testing::Test {
 public:
   GPUCounters n_count;
   // Helper to create a ContainerType with values [start, start+count)
@@ -40,9 +40,9 @@ public:
   }
 };
 
-// Setting up Typed Test Suite for GeomVector
+// Setting up Typed Test Suite for NodePairListView
 TYPED_TEST_SUITE_P(NPLViewTypedTest);
-template <typename T> class NPLViewTypedTest : public NodePairListViewTest {};
+template <typename T> class NPLViewTypedTest : public NPLVTest {};
 
 // Test default constructor
 GPU_TYPED_TEST_P(NPLViewTypedTest, DefaultConstructor) {
@@ -52,20 +52,21 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, DefaultConstructor) {
   EXEC_IN_SPACE_END()
 }
 
-// Test default constructor
+// Test copy and assignment
 GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
   NPL npl = gpu_this->createContainer();
   {
     NPL npl_2(npl);
     NPL npl_3 = npl;
+    SPHERAL_ASSERT_NE(npl.data(), npl_2.data());
     SPHERAL_ASSERT_EQ(npl_2.size(), npl.size());
     SPHERAL_ASSERT_EQ(npl_3.size(), npl.size());
-    NPLV npl2_view = npl_2.view();
-    NPLV npl3_view = npl_3.view();
-    NPLV npl_v = npl.view();
+    NPLV npl2_view = npl_2.view(gpu_this->callback());
+    NPLV npl3_view = npl_3.view(gpu_this->callback());
+    NPLV npl_v = npl.view(gpu_this->callback());
     EXEC_IN_SPACE_BEGIN(TypeParam)
-      SPHERAL_ASSERT_NE(npl_2.data(), npl_v.data());
-      SPHERAL_ASSERT_NE(npl_2.data(), npl_v.data());
+      SPHERAL_ASSERT_NE(npl2_view.data(), npl_v.data());
+      SPHERAL_ASSERT_NE(npl3_view.data(), npl_v.data());
     EXEC_IN_SPACE_END()
     RAJA::forall<TypeParam>(TRS_UINT(0, N),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
@@ -73,36 +74,46 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
         SPHERAL_ASSERT_EQ(npl3_view[i], npl_v[i]);
       });
   }
+  // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
+  GPUCounters ref_count;
+  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+    // npl is not destroyed yet so only 2 frees on device
+    ref_count = {3, 0, 0, 3, 0, 2};
+  }
+  COMP_COUNTERS(gpu_this->n_count, ref_count);
 }
 
 // Test constructor from ContainerType, movement to and from device
 // and modification on the device
 GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
-  NPL npl = gpu_this->createContainer();
-  NPLV npl_v = npl.view(gpu_this->callback());
-  SPHERAL_ASSERT_EQ(npl_v.size(), N);
-  SPHERAL_ASSERT_EQ(&(npl_v[0]), &(npl[0]));
+  {
+    NPL npl = gpu_this->createContainer();
+    NPLV npl_v = npl.view(gpu_this->callback());
+    SPHERAL_ASSERT_EQ(npl_v.size(), N);
+    SPHERAL_ASSERT_EQ(npl_v.data(), npl.data());
 
-  RAJA::forall<TypeParam>(TRS_UINT(0, N),
-    [=] SPHERAL_HOST_DEVICE(size_t i) {
-      NPIT nit = npl_v[i];
-      SPHERAL_ASSERT_EQ(nit.i_node, i);
-      SPHERAL_ASSERT_EQ(nit.i_list, i+1);
-      SPHERAL_ASSERT_EQ(nit.j_node, 2*i);
-      SPHERAL_ASSERT_EQ(nit.j_list, 2*i+1);
-      SPHERAL_ASSERT_EQ(nit.f_couple, (double)i);
-      npl_v[i].i_node *= 2;
-      npl_v[i].i_list -= 1;
-      npl_v[i].f_couple *= 2.;
-    });
+    RAJA::forall<TypeParam>(TRS_UINT(0, N),
+      [=] SPHERAL_HOST_DEVICE(size_t i) {
+        NPIT nit_ref(i, i+1, 2*i, 2*i+1, (double)i);
+        SPHERAL_ASSERT_EQ(npl_v[i], nit_ref);
+        npl_v[i].i_node *= 2;
+        npl_v[i].i_list -= 1;
+        npl_v[i].f_couple *= 2.;
+      });
 
-  npl_v.move(chai::CPU);
+    npl_v.move(chai::CPU);
 
-  for (size_t i = 0; i < N; ++i) {
-    SPHERAL_ASSERT_EQ(npl[i].i_node, 2*i);
-    SPHERAL_ASSERT_EQ(npl[i].i_list, i);
-    SPHERAL_ASSERT_EQ(npl[i].f_couple, 2.*(double)i);
+    for (size_t i = 0; i < N; ++i) {
+      NPIT nit_ref(2*i, i, 2*i, 2*i+1, 2*(double)i);
+      SPHERAL_ASSERT_EQ(npl[i], nit_ref);
+    }
   }
+  // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
+  GPUCounters ref_count;
+  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+    ref_count = {1, 1, 0, 1, 0, 1};
+  }
+  COMP_COUNTERS(gpu_this->n_count, ref_count);
 }
 
 // Test constructor from ContainerType, movement to and from device
@@ -115,7 +126,6 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(npl_v.size(), N);
     EXEC_IN_SPACE_END()
-
     npl[0].i_list = 4; // Modify the data on the host
     npl_v.touch(chai::CPU); // Change the execution space for the MA
     npl_v = npl.view(gpu_this->callback()); // Create a new view

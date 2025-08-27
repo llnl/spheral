@@ -7,15 +7,17 @@
 #include <unordered_map>
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
 
 namespace Spheral {
 
-class NodePairListView {
-  using ContainerType = typename chai::ManagedArray<NodePairIdxType>;
+class NodePairListView : public chai::CHAICopyable {
+  using MAContainer = typename chai::ManagedArray<NodePairIdxType>;
 
 public:
   SPHERAL_HOST_DEVICE NodePairListView() = default;
-  SPHERAL_HOST NodePairListView(ContainerType const &d) : mData(d) {}
+  SPHERAL_HOST_DEVICE ~NodePairListView() = default;
+  SPHERAL_HOST NodePairListView(MAContainer const &d) : mData(d) {}
 
   SPHERAL_HOST_DEVICE
   NodePairIdxType& operator[](const size_t i) { return mData[i]; }
@@ -26,7 +28,7 @@ public:
   SPHERAL_HOST_DEVICE
   size_t size() const { return mData.size(); }
   SPHERAL_HOST_DEVICE
-  NodePairIdxType* data() const { return mData.data(); }
+  const NodePairIdxType* data() const { return mData.data(); }
 
   void move(chai::ExecutionSpace space) { mData.move(space); }
 
@@ -34,7 +36,7 @@ public:
   void touch(chai::ExecutionSpace space) { mData.registerTouch(space); }
 
 protected:
-  ContainerType mData;
+  MAContainer mData;
 };
 
 //------------------------------------------------------------------------------
@@ -85,7 +87,9 @@ public:
   // Inserting
   template<typename InputIterator>
   iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
-    return mNodePairList.insert(pos, first, last);
+    iterator n = mNodePairList.insert(pos, first, last);
+    initMA();
+    return n;
   }
 
   // Find the index corresponding to the given pair
@@ -94,13 +98,40 @@ public:
   // Compute the lookup table for Pair->index
   void computeLookup() const;
 
-  NodePairListView view();
-  template<typename F>
-  NodePairListView view(F callback);
-  void initializeMA();
-  template<typename F>
-  void initializeMA(F callback);
+  template<typename F> inline
+  NodePairListView view(F&& extension) {
+    initMA(extension);
+    return NodePairListView(mData);
+  }
+  inline NodePairListView view() {
+    initMA();
+    return NodePairListView(mData);
+  }
 
+  template<typename F> inline
+  void initMA(F&& extension) {
+    if (!(mNodePairList.data() == mData.data(chai::CPU, false)
+          && mNodePairList.size() == mData.size())) {
+      mData.free();
+      mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
+    }
+    mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
+  }
+  inline void initMA() {
+    auto func = [](const chai::PointerRecord *, chai::Action,
+                   chai::ExecutionSpace) {};
+    return this->initMA(func);
+  }
+protected:
+  template<typename F>
+  auto getNPLCallback(F callback) {
+    return [callback](
+      const chai::PointerRecord * record,
+      chai::Action action,
+      chai::ExecutionSpace space) {
+             callback(record, action, space);
+           };
+  }
 private:
   ContainerType mNodePairList;
   mutable std::unordered_map<NodePairIdxType, size_t> mPair2Index;  // mutable for lazy evaluation in index
@@ -108,4 +139,4 @@ private:
 
 }
 
-#endif // Spheral_NeighbourSpace_NodePairList_hh
+#endif // Spheral_NodePairList_hh
