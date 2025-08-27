@@ -20,13 +20,13 @@ class MinMaxField(FieldBase,
     using ScalarFieldView = FieldView<%(Dimension)s, Scalar>;
 """
 
-    def applyScalarMin(self):
-        "Enforce a double floor on the values of the Field."
-        return
+    # def applyScalarMin(self):
+    #     "Enforce a double floor on the values of the Field."
+    #     return
 
-    def applyScalarMax(self):
-        "Enforce a double ceiling on the values of the Field."
-        return
+    # def applyScalarMax(self):
+    #     "Enforce a double ceiling on the values of the Field."
+    #     return
 
     @PYB11const
     def min(self):

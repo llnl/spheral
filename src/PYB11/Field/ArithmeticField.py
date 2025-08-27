@@ -26,26 +26,12 @@ class ArithmeticField(FieldBase,
     def __sub__(self):
         return
 
-    def __iadd__(self):
-        return
-
-    def __isub__(self):
-        return
-
     @PYB11pyname("__add__")
     def __add__V__(self, rhs="%(Value)s()"):
         return
 
     @PYB11pyname("__sub__")
     def __sub__V__(self, rhs="%(Value)s()"):
-        return
-
-    @PYB11pyname("__iadd__")
-    def __iadd__V__(self, rhs="%(Value)s()"):
-        return
-
-    @PYB11pyname("__isub__")
-    def __isub__V__(self, rhs="%(Value)s()"):
         return
 
     @PYB11implementation("[](const SelfType& self, const ScalarFieldType& rhs) { return self * rhs; }")
@@ -58,30 +44,12 @@ class ArithmeticField(FieldBase,
     def __truediv__(self, rhs="const ScalarFieldType&"):
         return "SelfType"
 
-    @PYB11implementation("[](SelfType& self, const ScalarFieldType& rhs) { return self *= rhs; }")
-    @PYB11operator
-    def __imul__(self, rhs="const ScalarFieldType&"):
-        return
-
-    @PYB11implementation("[](SelfType& self, const ScalarFieldType& rhs) { return self /= rhs; }")
-    @PYB11operator
-    def __itruediv__(self, rhs="const ScalarFieldType&"):
-        return
-
     @PYB11pyname("__mul__")
     def __mul__S__(self, rhs="Scalar()"):
         return
 
     @PYB11pyname("__truediv__")
     def __truediv__S__(self, rhs="Scalar()"):
-        return
-
-    @PYB11pyname("__imul__")
-    def __imul__S__(self, rhs="Scalar()"):
-        return
-
-    @PYB11pyname("__itruediv__")
-    def __itruediv__S__(self, rhs="Scalar()"):
         return
 
     @PYB11const
@@ -91,41 +59,41 @@ class ArithmeticField(FieldBase,
 
     #...........................................................................
     # Comparators
-    def __gt__(self):
-        return
+    # def __gt__(self):
+    #     return
 
-    def __lt__(self):
-        return
+    # def __lt__(self):
+    #     return
 
-    def __ge__(self):
-        return "bool"
+    # def __ge__(self):
+    #     return "bool"
 
-    def __le__(self):
-        return "bool"
+    # def __le__(self):
+    #     return "bool"
 
-    def __gt__(self, rhs="%(Value)s()"):
-        "Greater than comparision with a %(Value)s"
-        return "bool"
+    # def __gt__(self, rhs="%(Value)s()"):
+    #     "Greater than comparision with a %(Value)s"
+    #     return "bool"
 
-    def __lt__(self, rhs="%(Value)s()"):
-        "Less than comparision with a %(Value)s"
-        return "bool"
+    # def __lt__(self, rhs="%(Value)s()"):
+    #     "Less than comparision with a %(Value)s"
+    #     return "bool"
 
-    def __ge__(self, rhs="%(Value)s()"):
-        "Greater than or equal comparision with a %(Value)s"
-        return "bool"
+    # def __ge__(self, rhs="%(Value)s()"):
+    #     "Greater than or equal comparision with a %(Value)s"
+    #     return "bool"
 
-    def __le__(self, rhs="%(Value)s()"):
-        "Less than or equal comparision with a %(Value)s"
-        return "bool"
+    # def __le__(self, rhs="%(Value)s()"):
+    #     "Less than or equal comparision with a %(Value)s"
+    #     return "bool"
 
-    def applyMin(self):
-        "Enforce a floor on the values of the Field."
-        return
+    # def applyMin(self):
+    #     "Enforce a floor on the values of the Field."
+    #     return
 
-    def applyMax(self):
-        "Enforce a ceiling on the values of the Field."
-        return
+    # def applyMax(self):
+    #     "Enforce a ceiling on the values of the Field."
+    #     return
 
     @PYB11const
     def min(self):
@@ -137,15 +105,15 @@ class ArithmeticField(FieldBase,
         "Return the maximum value in the Field."
         return
 
-    @PYB11const
-    def localMin(self):
-        "Return the mimimum value in the Field local to each processor."
-        return
+    # @PYB11const
+    # def localMin(self):
+    #     "Return the mimimum value in the Field local to each processor."
+    #     return
 
-    @PYB11const
-    def localMax(self):
-        "Return the maximum value in the Field local to each processor."
-        return
+    # @PYB11const
+    # def localMax(self):
+    #     "Return the maximum value in the Field local to each processor."
+    #     return
 
 #-------------------------------------------------------------------------------
 # Inject base field methods
