@@ -72,7 +72,6 @@ protected:
 
 class QuadraticInterpolator : public QIView {
 public:
-  using ContainerType = typename chai::ManagedArray<double>;
   template<typename Func>
   QuadraticInterpolator(double xmin, double xmax, size_t n, const Func& F);
   QuadraticInterpolator(double xmin, double xmax, const std::vector<double>& yvals);
