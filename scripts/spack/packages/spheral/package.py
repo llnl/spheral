@@ -64,6 +64,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('silo +hdf5', type='build')
 
+    depends_on('chai@develop+raja', type='build')
+
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
     depends_on('axom@0.9.0 +hdf5 -lua -examples -python -fortran', type='build')
@@ -77,8 +79,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('caliper@2.11 ~shared +adiak +gotcha ~libdw ~papi ~libunwind cppflags="-fPIC"', type='build')
         depends_on('caliper+mpi', type='build', when='+mpi')
         depends_on('caliper~mpi', type='build', when='~mpi')
-
-    depends_on('raja@2024.02.0', type='build')
 
     depends_on('opensubdiv@3.4.3+pic', type='build', when="+opensubdiv")
 
@@ -96,7 +96,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
 
     # Forward CUDA/ROCM Variants
-    gpu_tpl_list = ["raja", "umpire", "axom"]
+    gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val}")
@@ -234,6 +234,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('raja_DIR', spec['raja'].prefix))
 
         entries.append(cmake_cache_path('umpire_DIR', spec['umpire'].prefix))
+
+        entries.append(cmake_cache_path('chai_DIR', spec['chai'].prefix))
 
         entries.append(cmake_cache_path('axom_DIR', spec['axom'].prefix))
 
