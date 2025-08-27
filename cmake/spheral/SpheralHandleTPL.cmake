@@ -86,6 +86,9 @@ function(Spheral_Handle_TPL lib_name TPL_CMAKE_DIR)
     INCLUDES ${${lib_name}_INCLUDE_DIR}
     LIBRARIES ${${lib_name}_LIBRARIES}
     EXPORTABLE ON)
+  if(${lib_name}_EXT_LIBRARIES)
+    target_link_libraries(${lib_name} INTERFACE ${${lib_name}_EXT_LIBRARIES})
+  endif()
   get_target_property(_is_imported ${lib_name} IMPORTED)
   if(NOT ${_is_imported})
     install(TARGETS ${lib_name}

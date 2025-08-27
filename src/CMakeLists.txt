@@ -69,7 +69,7 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _packages SVPH)
 endif()
 
-if (ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SOLVERS)
   list(APPEND _packages Solvers)
 endif()
 

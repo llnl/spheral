@@ -93,6 +93,7 @@ source("unit/Mesh/testLineMesh.py")
 
 # Solvers unit tests
 source("unit/Solvers/testKinsol.py")
+source("unit/Solvers/testLinearSolver.py")
 
 # MPI python interface unit tests
 source("unit/Distributed/testMPI4PYasPYMPI.py")

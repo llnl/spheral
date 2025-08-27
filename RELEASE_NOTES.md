@@ -77,6 +77,7 @@ Notable changes include:
     * Both ASPH and ASPHClassic now allow the user to override the final H evolution through optional functors added to the classes:
       - HidealFilter
       - RadialFunctor
+    * Added linear solvers from Eigen and Hypre.
     * FacetedSurfaceASPHHydro has been removed in favor of providing user filters to the ASPH methods (i.e., the RadialFunctor method).
     * Field resizing operations have been removed from the public interface.
     * Performance analysis tools are improved.
