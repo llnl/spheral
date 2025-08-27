@@ -14,6 +14,19 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Copy constructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
+inline
+FieldView<Dimension, DataType>::
+FieldView(const FieldView<Dimension, DataType>& rhs):
+  mDataSpan(),  // this is handled in the Field
+  mNumInternalElements(rhs.mNumInternalElements),
+  mNumGhostElements(rhs.mNumGhostElements) {
+}
+
+//------------------------------------------------------------------------------
 // Assignment operator with a constant value of DataType
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -79,6 +92,7 @@ DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) {
   CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
+  // std::cerr << "FieldView::operator[] : " << mDataSpan.data() << " " << index << " " << dynamic_cast<Field<Dimension, DataType>*>(this)->mDataArray.data() << std::endl;
   return mDataSpan[index];
 }
 
@@ -89,6 +103,7 @@ const DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) const {
   CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
+  // std::cerr << "FieldView::operator[] : " << mDataSpan.data() << " " << index << " " << dynamic_cast<const Field<Dimension, DataType>*>(this)->mDataArray.data() << std::endl;
   return mDataSpan[index];
 }
 

@@ -124,9 +124,10 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
-  FieldView<Dimension, DataType>(),
+  FieldView<Dimension, DataType>(field),
   mDataArray(field.mDataArray) {
   this->assignDataSpan();
+  // std::cerr << "Field::copy : " << field.mDataArray.data() << " " << mDataArray.data() << " : " << field.mDataSpan.data() << " " << mDataSpan.data() << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -137,9 +138,9 @@ inline
 Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
-  std::cerr << " --> FIELD::~Field()" << std::endl;
+  // std::cerr << " --> FIELD::~Field()" << std::endl;
   mDataSpan.free();
-  std::cerr << " --> SUCCESS" << std::endl;
+  // std::cerr << " --> SUCCESS" << std::endl;
 #endif
 }
 
@@ -187,6 +188,7 @@ Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
     mDataArray = rhs.mDataArray;
   this->assignDataSpan();
   }
+  // std::cerr << "Field::copy : " << rhs.mDataArray.data() << " " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " " << mDataSpan.data() << std::endl;
   return *this;
 }
 
@@ -1313,16 +1315,16 @@ view(F&& extension) {
   if (mDataSpan.size() != mDataArray.size() ||
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
 
-    std::cerr << "FIELD: reallocate" << std::endl;
+    // std::cerr << "FIELD: reallocate" << std::endl;
     mDataSpan.free();
     mDataSpan = chai::makeManagedArray(
         mDataArray.data(), mDataArray.size(), chai::CPU, false);
-    std::cerr << " --> SUCCESS" << std::endl;
+    // std::cerr << " --> SUCCESS" << std::endl;
 
-    std::cerr << "FIELD: set callback" << std::endl;
+    // std::cerr << "FIELD: set callback" << std::endl;
     mDataSpan.setUserCallback(
       getFieldCallback(std::forward<F>(extension)));
-    std::cerr << " --> SUCCESS" << std::endl;
+    // std::cerr << " --> SUCCESS" << std::endl;
   }
   return static_cast<ViewType&>(*this);
 #endif
@@ -1382,14 +1384,15 @@ Field<Dimension, DataType>::
 assignDataSpan() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mDataSpan = mDataArray;
+  // std::cerr << "Field::assignDataSpan : " << mDataArray.data() << " : " << mDataSpan.data() << std::endl;
 #else
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
-    std::cerr << "FIELD::assignDataSpan" << std::endl;
+    // std::cerr << "FIELD::assignDataSpan" << std::endl;
     mDataSpan.free();
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
     // mDataSpan.setUserCallback(getFieldCallback(std::forward<F>(extension)));
-    std::cerr << " --> SUCCESS" << std::endl;
+    // std::cerr << " --> SUCCESS" << std::endl;
   }
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
