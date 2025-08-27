@@ -413,10 +413,8 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct constant velocity boundary conditions to be applied to the rod ends.
 #-------------------------------------------------------------------------------
-x0Nodes = vector_of_ULL()
-x1Nodes = vector_of_ULL()
-dummy = [x0Nodes.append(i) for i in range(nodes.numInternalNodes) if pos[i].x < -0.5*length + 5*dx]
-dummy = [x1Nodes.append(i) for i in range(nodes.numInternalNodes) if pos[i].x >  0.5*length - 5*dx]
+x0Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x < -0.5*length + 5*dx]
+x1Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x >  0.5*length - 5*dx]
 print("Selected %i constant velocity nodes." % (mpi.allreduce(len(x0Nodes) + len(x1Nodes), mpi.SUM)))
 
 # Set the nodes we're going to control to one single velocity at each end.
