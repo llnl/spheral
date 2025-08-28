@@ -512,6 +512,83 @@ operator<=(const DataType& rhs) const {
   return result;
 }
 
+//------------------------------------------------------------------------------
+// data pointer
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
+inline
+DataType*
+FieldView<Dimension, DataType>::
+data() const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return mDataSpan.data();
+#else
+  return mDataSpan.getActivePointer();
+#endif
+}
+  
+//------------------------------------------------------------------------------
+// data pointer
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+DataType*
+FieldView<Dimension, DataType>::
+data(chai::ExecutionSpace space,
+     bool do_move) const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return mDataSpan.data();
+#else
+  return mDataSpan.data(space, do_move);
+#endif
+}
+  
+//------------------------------------------------------------------------------
+// move
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+void
+FieldView<Dimension, DataType>::
+move(chai::ExecutionSpace space) {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.move(space);
+#endif
+}
+  
+//------------------------------------------------------------------------------
+// shallowCopy
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE 
+inline
+void
+FieldView<Dimension, DataType>::
+shallowCopy(FieldView const& other) const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mDataSpan = other.mDataSpan;
+#else
+  mDataSpan.shallowCopy(other.mDataSpan);
+#endif
+}
+  
+//------------------------------------------------------------------------------
+// touch
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+void
+FieldView<Dimension, DataType>::
+touch(chai::ExecutionSpace space) {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.registerTouch(space);
+#endif
+}
+
 //****************************** Global Functions ******************************
 //------------------------------------------------------------------------------
 // Output (ostream) operator.

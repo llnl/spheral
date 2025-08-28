@@ -133,18 +133,15 @@ public:
   SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.size() == 0u; }
 #endif
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   //..........................................................................
   // These methods only make sense when we're using the ManagedArray
-  SPHERAL_HOST_DEVICE DataType* data() const                                             { return mDataSpan.getActivePointer(); }
+  SPHERAL_HOST_DEVICE DataType* data() const;
   SPHERAL_HOST        DataType* data(chai::ExecutionSpace space,
-                                     bool do_move = true) const                          { return mDataSpan.data(space, do_move); }
-  void move(chai::ExecutionSpace space)                                                  { mDataSpan.move(space); }
-  SPHERAL_HOST_DEVICE void shallowCopy(FieldView const& other) const                     { mDataSpan.shallowCopy(other.mDataSpan); }
-
-  SPHERAL_HOST        void touch(chai::ExecutionSpace space)                             { mDataSpan.registerTouch(space); }
+                                     bool do_move = true) const;
+  SPHERAL_HOST        void move(chai::ExecutionSpace space);
+  SPHERAL_HOST_DEVICE void shallowCopy(FieldView const& other) const;
+  SPHERAL_HOST        void touch(chai::ExecutionSpace space);
   //..........................................................................
-#endif
 
 protected:
   //--------------------------- Protected Interface ---------------------------//

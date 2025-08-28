@@ -83,7 +83,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
       });
   }
 
@@ -97,8 +97,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 // TODO: Add test for having multiple FL contain the same field
@@ -125,7 +127,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
       });
     DEBUG_LOG << "Stop Kernel 1";
 
@@ -139,7 +141,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
       });
     DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
@@ -155,8 +157,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
@@ -181,7 +185,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
       });
     DEBUG_LOG << "Stop Kernel 1";
     } // Scope 1
@@ -193,7 +197,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
       });
     DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
@@ -209,8 +213,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 // Test calling FieldListView move function
@@ -252,8 +258,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 // Test implicit move of Field and FieldList from host RAJA launch
@@ -295,8 +303,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 // Test implicit copying after host side modification
@@ -336,8 +346,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 // Test multiple FieldLists holding the same Field
@@ -363,7 +375,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
         });
 
       EXEC_IN_SPACE_BEGIN(TypeParam)
-        SPHERAL_ASSERT_EQ(fl_v[1].data(), fl_v2[0].data());
+        SPHERAL_ASSERT_EQ(fl_v[1]->data(), fl_v2[0]->data());
       EXEC_IN_SPACE_END()
 
       RAJA::forall<TypeParam>(TRS_UINT(0, N),
@@ -389,8 +401,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
+#endif
 }
 
 REGISTER_TYPED_TEST_SUITE_P(FieldListViewTypedTest, BasicCapture, MultiScopeAndTouch,

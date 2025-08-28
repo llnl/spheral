@@ -481,8 +481,6 @@ numGhostElements() const {
   return result;
 }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
-
 //------------------------------------------------------------------------------
 // move
 //------------------------------------------------------------------------------
@@ -492,12 +490,42 @@ inline
 void
 FieldListView<Dimension, DataType>::
 move(chai::ExecutionSpace space, bool recursive) {
+#ifndef SPHERAL_UNIFIED_MEMORY
   mSpanFieldViews.move(space);
   if (recursive) {
     for (auto& d: mSpanFieldViews) {
       d.move(space);
     }
   }
+#endif
+}
+
+//------------------------------------------------------------------------------
+// data
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST_DEVICE
+inline
+typename FieldListView<Dimension, DataType>::value_type*
+FieldListView<Dimension, DataType>::
+data() const {
+  return mSpanFieldViews.data();
+}
+
+//------------------------------------------------------------------------------
+// data
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+typename FieldListView<Dimension, DataType>::value_type*
+FieldListView<Dimension, DataType>::
+data(chai::ExecutionSpace space, bool do_move) const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return mSpanFieldViews.data();
+#else
+  return mSpanFieldViews.data(space, do_move);
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -509,14 +537,14 @@ inline
 void
 FieldListView<Dimension, DataType>::
 touch(chai::ExecutionSpace space, bool recursive) {
+#ifndef SPHERAL_UNIFIED_MEMORY
   mSpanFieldViews.registerTouch(space);
   if (recursive) {
     for (auto& d : mSpanFieldViews) {
       d.touch(space);
     }
   }
-}
-
 #endif
+}
 
 }

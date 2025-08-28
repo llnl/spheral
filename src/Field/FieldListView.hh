@@ -41,7 +41,7 @@ public:
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE FieldListView() = default;
-  SPHERAL_HOST_DEVICE FieldListView(FieldListView& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldListView(const FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
   SPHERAL_HOST_DEVICE virtual ~FieldListView() = default;
 
@@ -117,15 +117,13 @@ public:
   // The number of ghost nodes in the FieldListView.
   SPHERAL_HOST_DEVICE size_t numGhostElements() const;
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   //..........................................................................
   // These methods only make sense when we're using the ManagedArray
   SPHERAL_HOST        void move(chai::ExecutionSpace space, bool recursive = true);
-  SPHERAL_HOST_DEVICE value_type* data() const                                                 { return mSpanFieldViews.data(); }
-  SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const  { return mSpanFieldViews.data(space, do_move); }
+  SPHERAL_HOST_DEVICE value_type* data() const;
+  SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const;
   SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);
   //..........................................................................
-#endif
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
