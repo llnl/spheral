@@ -8,10 +8,11 @@
 #ifndef __Spheral_FieldView__
 #define __Spheral_FieldView__
 
+#include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
+
 #ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
-#else
-#include "chai/ManagedArray.hpp"
 #endif
 
 namespace Spheral {
@@ -19,7 +20,7 @@ namespace Spheral {
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension, typename DataType>
-class FieldView {
+class FieldView: public chai::CHAICopyable {
    
 public:
   //--------------------------- Public Interface ---------------------------//

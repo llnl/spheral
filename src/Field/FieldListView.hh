@@ -9,10 +9,11 @@
 #ifndef __Spheral__FieldListView__
 #define __Spheral__FieldListView__
 
+#include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
+
 #ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
-#else
-#include "chai/ManagedArray.hpp"
 #endif
 
 namespace Spheral {
@@ -21,7 +22,7 @@ namespace Spheral {
 template<typename Dimension, typename DataType> class FieldView;
 
 template<typename Dimension, typename DataType>
-class FieldListView {
+class FieldListView: public chai::CHAICopyable {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -42,7 +43,7 @@ public:
   SPHERAL_HOST_DEVICE FieldListView() = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
-  SPHERAL_HOST        virtual ~FieldListView() = default;
+  SPHERAL_HOST_DEVICE virtual ~FieldListView() = default;
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldListView& operator=(FieldListView& rhs) = default;
