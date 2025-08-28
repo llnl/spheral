@@ -40,8 +40,8 @@ public:
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE FieldView() = default;
-  SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs);
-  // SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;
   SPHERAL_HOST_DEVICE virtual ~FieldView() = default;
 
   // Assignment
@@ -50,13 +50,13 @@ public:
 
   // Element access.
   SPHERAL_HOST_DEVICE DataType& operator()(size_t index);
-  SPHERAL_HOST_DEVICE const DataType& operator()(size_t index) const;
+  SPHERAL_HOST_DEVICE DataType& operator()(size_t index) const;
 
   SPHERAL_HOST_DEVICE DataType& at(size_t index);
-  SPHERAL_HOST_DEVICE const DataType& at(size_t index) const;
+  SPHERAL_HOST_DEVICE DataType& at(size_t index) const;
 
   SPHERAL_HOST_DEVICE DataType& operator[](const size_t index);
-  SPHERAL_HOST_DEVICE const DataType& operator[](const size_t index) const;
+  SPHERAL_HOST_DEVICE DataType& operator[](const size_t index) const;
 
   // The number of elements in the field.
   SPHERAL_HOST_DEVICE size_t numElements()         const { return mDataSpan.size(); }

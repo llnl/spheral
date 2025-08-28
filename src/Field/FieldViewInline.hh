@@ -14,19 +14,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Copy constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST_DEVICE 
-inline
-FieldView<Dimension, DataType>::
-FieldView(const FieldView<Dimension, DataType>& rhs):
-  mDataSpan(),  // this is handled in the Field
-  mNumInternalElements(rhs.mNumInternalElements),
-  mNumGhostElements(rhs.mNumGhostElements) {
-}
-
-//------------------------------------------------------------------------------
 // Assignment operator with a constant value of DataType
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -54,7 +41,7 @@ FieldView<Dimension, DataType>::operator()(size_t index) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-const DataType&
+DataType&
 FieldView<Dimension, DataType>::operator()(size_t index) const {
   CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
@@ -76,7 +63,7 @@ FieldView<Dimension, DataType>::at(size_t index) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-const DataType&
+DataType&
 FieldView<Dimension, DataType>::at(size_t index) const {
   VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
@@ -99,7 +86,7 @@ operator[](const size_t index) {
 template<typename Dimension, typename DataType>
 SPHERAL_HOST_DEVICE 
 inline
-const DataType&
+DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) const {
   CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());

@@ -78,7 +78,9 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
     ref_count.DNumFree = 1;
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
+#endif
 }
 
 /**
@@ -120,7 +122,9 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
     ref_count.DNumFree = 1;
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
+#endif
 }
 
 /**
@@ -171,7 +175,9 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
     ref_count.DNumFree = 1;
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
+#endif
 }
 
 /**
@@ -227,7 +233,9 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
     ref_count.DNumFree = 2;
   }
 
+#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
+#endif
 }
 
 REGISTER_TYPED_TEST_SUITE_P(FieldViewTypedTest, ExecutionSpaceCapture, MultiSpaceCapture,

@@ -119,12 +119,14 @@ Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
 
 //------------------------------------------------------------------------------
 // Copy Constructor.
+// Note we deliberately do not use the FieldView copy constructor here, but
+// instead reassign it's span view in our own assignDataSpan call.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
-  FieldView<Dimension, DataType>(field),
+  FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
   this->assignDataSpan();
   // std::cerr << "Field::copy : " << field.mDataArray.data() << " " << mDataArray.data() << " : " << field.mDataSpan.data() << " " << mDataSpan.data() << std::endl;
