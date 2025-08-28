@@ -64,7 +64,8 @@ void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
 //------------------------------------------------------------------------------
 // Copy constructor
 //------------------------------------------------------------------------------
-NodePairList::NodePairList(const NodePairList& rhs) {
+NodePairList::NodePairList(const NodePairList& rhs) :
+  NodePairListView() {
   mNodePairList = rhs.mNodePairList;
   initMA();
 }
