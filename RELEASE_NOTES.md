@@ -34,6 +34,8 @@ Notable changes include:
     * Switched the CZ CI to use Dane instead of Ruby.
       * Increased the number of threads for certain memory intensive tests to prevent OOM error.
     * Updated GitHub actions since GitLab mirror changed.
+    * CHAI is no longer a submodule.
+      * CHAI, RAJA, Umpire, and Camp are all brought in through Spack as external TPLs now.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
