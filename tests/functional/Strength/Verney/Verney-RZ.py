@@ -66,7 +66,7 @@ commandLine(nr = 10,                     # Radial resolution of the shell in poi
             nshells = 10,
 
             # Hydro parameters.
-            crksph = False,
+            hydroType = "SPH",  # (SPH, CRKSPH, FSISPH)
             sph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
             Cl = None,
             Cq = None,
@@ -118,6 +118,9 @@ commandLine(nr = 10,                     # Radial resolution of the shell in poi
 assert seed in ("lattice", "constantDTheta")
 assert geometry in ("quadrant", "full")
 
+hydroType = hydroType.upper()
+assert hydroType in ("SPH", "CRKSPH", "FSISPH")
+
 # Material parameters for this test problem.
 rho0Be = 1.845
 R0, R1 = 8.0, 10.0        # Inner, outer initial radius
@@ -130,14 +133,11 @@ Fval = F(alpha, lamb, R0, R1, 1000)
 u0 = sqrt(4.0*Y0*R1*Fval/(3.0*rho0Be*delta))
 print("  lambda = %s\n  alpha = %s\n  F = %s\n  u0 = %s\n" % (lamb, alpha, Fval, u0))
 
-if crksph:
-    hydroname = "CRKSPH"
-else:
-    hydroname = "SPH"
+hydroPath = "Solid" + hydroType
 
 # Directories.
 dataDir = os.path.join(dataDirBase,
-                       hydroname,
+                       hydroPath,
                        "densityUpdate=%s" % densityUpdate,
                        "compatibleEnergy=%s_totalEnergy=%s" % (compatibleEnergy, evolveTotalEnergy),
                        seed,
@@ -255,7 +255,7 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
+if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
                    filter = filter,
@@ -265,7 +265,19 @@ if crksph:
                    XSPH = XSPH,
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate)
+elif hydroType == "FSISPH":
+    hydro = FSISPH(dataBase = db,
+                   W = WT,
+                   # filter = filter, # TODO: add filter to FSISPH too
+                   cfl = cfl,
+                   interfaceMethod = HLLCInterface,
+                   densityStabilizationCoefficient = 0.00,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   HUpdate = HUpdate,
+                   epsTensile = epsilonTensile,
+                   nTensile = nTensile)
 else:
+    assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
                 filter = filter,
@@ -281,11 +293,13 @@ else:
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.kernel")
-output("hydro.PiKernel")
+if hydroType != "FSISPH":
+    output("hydro.PiKernel")
+    # TODO: add this output to FSISPH too
 
 #-------------------------------------------------------------------------------
 # Tweak the artificial viscosity.
