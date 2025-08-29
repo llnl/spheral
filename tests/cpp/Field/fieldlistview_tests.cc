@@ -97,10 +97,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 // TODO: Add test for having multiple FL contain the same field
@@ -157,10 +155,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
@@ -213,10 +209,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 // Test calling FieldListView move function
@@ -258,10 +252,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 // Test implicit move of Field and FieldList from host RAJA launch
@@ -303,10 +295,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 // Test implicit copying after host side modification
@@ -346,10 +336,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 // Test multiple FieldLists holding the same Field
@@ -401,10 +389,8 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
   COMP_COUNTERS(gpu_this->fl_count, fl_ref_count);
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
-#endif
 }
 
 REGISTER_TYPED_TEST_SUITE_P(FieldListViewTypedTest, BasicCapture, MultiScopeAndTouch,

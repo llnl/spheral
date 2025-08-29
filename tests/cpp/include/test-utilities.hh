@@ -80,6 +80,9 @@ using LOOP_EXEC_POLICY = RAJA::seq_exec;
   template <typename TypeParam, typename TestFixture>                          \
   static void gpu_test_##X##Y(TestFixture *gpu_this)
 
+#ifdef SPHERAL_UNIFIED_MEMORY
+#define COMP_COUNTERS(LHS, RHS)
+#else
 #define COMP_COUNTERS(LHS, RHS) \
     SPHERAL_ASSERT_EQ_MSG(LHS.HToDCopies, RHS.HToDCopies, "Failed HToDCopies\n");\
     SPHERAL_ASSERT_EQ_MSG(LHS.DToHCopies, RHS.DToHCopies, "Failed DToHCopies\n");\
@@ -87,6 +90,7 @@ using LOOP_EXEC_POLICY = RAJA::seq_exec;
     SPHERAL_ASSERT_EQ_MSG(LHS.DNumAlloc,  RHS.DNumAlloc, "Failed DNumAlloc\n");\
     SPHERAL_ASSERT_EQ_MSG(LHS.HNumFree,   RHS.HNumFree, "Failed HNumFree\n");\
     SPHERAL_ASSERT_EQ_MSG(LHS.DNumFree,   RHS.DNumFree, "Failed DNumFree\n")
+#endif
 
 // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
 struct GPUCounters {
