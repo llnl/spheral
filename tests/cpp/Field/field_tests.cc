@@ -182,3 +182,58 @@ TEST_F(FieldTest, AssignmentDataType) {
   }
   SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
 }
+
+/**
+ * comparisons
+ */
+TEST_F(FieldTest, FieldComparisons) {
+  SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
+  {
+    const double A = 5.0, B = 7.0;
+    FieldDouble a("a", this->test_node_list, A);
+    FieldDouble b("b", this->test_node_list, B);
+    FieldDouble c("c", this->test_node_list, A);
+
+
+    SPHERAL_ASSERT_TRUE(a == c);
+    SPHERAL_ASSERT_TRUE(a != b);
+    SPHERAL_ASSERT_TRUE(a == A);
+    SPHERAL_ASSERT_TRUE(a != B);
+    SPHERAL_ASSERT_TRUE(a > A/2.0);
+    SPHERAL_ASSERT_TRUE(a < B);
+    SPHERAL_ASSERT_TRUE(a >= A and a >= A/2.0);
+    SPHERAL_ASSERT_TRUE(a <= A and a <= B);
+  }
+  SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
+}
+
+/**
+ * operators
+ */
+TEST_F(FieldTest, FieldOperators) {
+  SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
+  {
+    const double A = 2.0, B = 5.0;
+    FieldDouble a("a", this->test_node_list, A);
+    FieldDouble b("b", this->test_node_list, B);
+
+    auto c = a + b;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(c(i), A + B); });
+
+    auto d = a - b;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(d(i), A - B) });
+
+    auto e = a + 10.0;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(e(i), A + 10.0); });
+
+    auto f = a - 10.0;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(f(i), A - 10.0); });
+
+    auto g = a * b;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(g(i), A * B); });
+
+    auto h = a / b;
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(h(i), A / B); });
+  }
+  SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
+}
