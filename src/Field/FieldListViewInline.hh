@@ -494,7 +494,7 @@ move(chai::ExecutionSpace space, bool recursive) {
   mSpanFieldViews.move(space);
   if (recursive) {
     for (auto& d: mSpanFieldViews) {
-      d.move(space);
+      d->move(space);
     }
   }
 #endif
@@ -541,7 +541,7 @@ touch(chai::ExecutionSpace space, bool recursive) {
   mSpanFieldViews.registerTouch(space);
   if (recursive) {
     for (auto& d : mSpanFieldViews) {
-      d.touch(space);
+      d->touch(space);
     }
   }
 #endif
