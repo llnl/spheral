@@ -58,8 +58,8 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("raja+rocm", when="+rocm")
     depends_on("umpire+cuda", when="+cuda")
     depends_on("umpire+rocm", when="+rocm")
-    depends_on("camp", when="+umpire ^umpire@2022:")
-    depends_on("camp+cuda", when="+cuda ^umpire@2022:")
+    depends_on("camp+cuda", when="+cuda")
+    depends_on("camp+rocm", when="+rocm")
 
     patch("patches/leos-8.5-umpire-import.patch", when="@8.5+rocm")
 
