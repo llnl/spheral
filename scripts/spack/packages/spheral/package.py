@@ -87,7 +87,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
 
-    depends_on('leos@8.4.2', type='build', when='+leos')
+    depends_on('leos@8.5.0', type='build', when='+leos')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared"]
@@ -97,6 +97,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     # Forward CUDA/ROCM Variants
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
+    if (LEOSpresent):
+        gpu_tpl_list.append("leos")
     for ctpl in gpu_tpl_list:
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val}")
@@ -165,7 +167,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     def initconfig_mpi_entries(self):
         spec = self.spec
         entries = []
-        if "+mpi" in spec:
+        if spec.satisfied("+mpi"):
           entries = super(Spheral, self).initconfig_mpi_entries()
           # When on cray / flux systems we need to tell CMAKE the mpi flag explicitly
           if "cray-mpich" in spec:
@@ -179,11 +181,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = super(Spheral, self).initconfig_hardware_entries()
 
-        if '+rocm' in spec:
-            entries.append(cmake_cache_option("ENABLE_HIP", True))
+        if spec.satisfies('+rocm'):
+            entries.append(cmake_cache_option("SPHERAL_ENABLE_HIP", True))
             entries.append(cmake_cache_string("ROCM_PATH", spec["hip"].prefix))
 
-        if '+cuda' in spec:
+        if spec.satisfies('+cuda'):
             entries.append(cmake_cache_option("ENABLE_CUDA", True))
 
             if not spec.satisfies('cuda_arch=none'):
@@ -216,7 +218,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_string('SPHERAL_SPEC', self._get_short_spec(spec)))
 
         # TPL locations
-        if (spec.satisfies("+caliper")):
+        if spec.satisfies("+caliper"):
             entries.append(cmake_cache_path('caliper_DIR', spec['caliper'].prefix))
 
         entries.append(cmake_cache_path('adiak_DIR', spec['adiak'].prefix))
@@ -244,27 +246,27 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('eigen_DIR', spec['eigen'].prefix))
         entries.append(cmake_cache_path('eigen_INCLUDES',spec['eigen'].prefix.include.eigen3))
 
-        if (spec.satisfies("+opensubdiv")):
+        if spec.satisfies("+opensubdiv"):
             entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
             entries.append(cmake_cache_option('ENABLE_OPENSUBDIV', True))
 
-        if (spec.satisfies("~network")):
+        if spec.satisfies("~network"):
             entries.append(cmake_cache_option('SPHERAL_NETWORK_CONNECTED', False))
 
         entries.append(cmake_cache_path('polytope_DIR', spec['polytope'].prefix))
 
-        entries.append(cmake_cache_option('ENABLE_MPI', '+mpi' in spec))
-        if "+mpi" in spec:
+        if spec.satisfies("+mpi"):
+            entries.append(cmake_cache_option('ENABLE_MPI', True))
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
 
-        if "~shared" in spec and "~cuda" in spec:
+        if spec.satisfies("~shared") and spec.satisfies("~cuda"):
             entries.append(cmake_cache_option('ENABLE_SHARED', False))
 
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))
         entries.append(cmake_cache_option('ENABLE_DOCS', '+docs' in spec))
 
-        if "+python" in spec:
+        if spec.satisfies("+python"):
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
 
         if spec.satisfies("+sundials"):

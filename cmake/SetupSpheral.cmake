@@ -69,6 +69,7 @@ option(SPHERAL_ENABLE_GSPH "Enable the GSPH package" ON)
 option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
 option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
 option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
+option(SPHERAL_ENABLE_HIP "Enable HIP" OFF)
 
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
@@ -97,10 +98,10 @@ if(ENABLE_CUDA)
   set(SPHERAL_ENABLE_CUDA ON)
 endif()
 
-if(ENABLE_HIP)
+if(SPHERAL_ENABLE_HIP)
+  set(ENABLE_HIP ON)
   list(APPEND SPHERAL_CXX_DEPENDS blt::hip)
   list(APPEND SPHERAL_CXX_DEPENDS blt::hip_runtime)
-  set(SPHERAL_ENABLE_HIP ON)
 endif()
 
 #-------------------------------------------------------------------------------#
