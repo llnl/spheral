@@ -185,7 +185,7 @@ public:
   ViewType& view();
 
   // Set an optional callback method for diagnosing CHAI data usage
-  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; }
+  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; assignDataSpan(); }
 
   // No default constructor.
   Field() = delete;

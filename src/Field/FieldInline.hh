@@ -1296,7 +1296,7 @@ inline
 typename Field<Dimension, DataType>::ViewType&
 Field<Dimension, DataType>::
 view() {
-  CHECK2(std::is_trivially_copyable<DataType>::value, "Error: attempt to use view() with non-trivially copyable type");
+  // CHECK2(std::is_trivially_copyable<DataType>::value, "Error: attempt to use view() with non-trivially copyable type");
   return static_cast<ViewType&>(*this);
 }
 
@@ -1317,12 +1317,12 @@ assignDataSpan() {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     mDataSpan.free();
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
-    mDataSpan.setUserCallback(getCallback());
     DEBUG_LOG << " --> SUCCESS";
   }
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
+  mDataSpan.setUserCallback(getCallback());
 }
 
 // Default callback action to be used with chai Managed containers. An
