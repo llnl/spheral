@@ -11,14 +11,9 @@
     SPEC: '%gcc+mpi'
     EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
 
-.gcc_~mpi:
+.gcc_Debug:
   variables:
-    SPEC: '%gcc~mpi'
-    EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
-
-.gcc_~mpi_Debug:
-  variables:
-    SPEC: '%gcc~mpi'
+    SPEC: '%gcc'
     EXTRA_CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DENABLE_WARNINGS_AS_ERRORS=On'
 
 
@@ -44,19 +39,11 @@
   variables:
     SPEC: '%rocmcc+mpi~rocm'
 
-.rocm_~mpi:
+.rocm_Debug:
   variables:
-    SPEC: '%rocmcc~mpi~rocm'
-
-.rocm_~mpi_Debug:
-  variables:
-    SPEC: '%rocmcc~mpi~rocm'
+    SPEC: '%rocmcc~rocm'
     EXTRA_CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .hip_rocm_mpich:
   variables:
     SPEC: '%rocmcc+mpi+rocm'
-
-.hip_rocm_~mpi:
-  variables:
-    SPEC: '%rocmcc~mpi+rocm'
