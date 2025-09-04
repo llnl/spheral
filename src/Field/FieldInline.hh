@@ -34,7 +34,8 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
   FieldView<Dimension, DataType>(),
-  mDataArray() {
+  mDataArray(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   mNumInternalElements = 0u;
   mNumGhostElements = 0u;
 }
@@ -49,7 +50,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(name, *field.nodeListPtr()),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray) {
+  mDataArray(field.mDataArray),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
 }
 
@@ -63,7 +65,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
+  mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
   REQUIRE(this->size() == nodeList.numNodes());
 }
@@ -79,7 +82,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       DataType value):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes(), value) {
+  mDataArray(nodeList.numNodes(), value),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(this->size() == nodeList.numNodes());
   this->assignDataSpan();
 }
@@ -95,7 +99,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const std::vector<DataType,DataAllocator<DataType>>& array):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes()) {
+  mDataArray(nodeList.numNodes()),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
   mDataArray = array;
@@ -112,7 +117,8 @@ Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
                                   const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(field.name(), nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray) {
+  mDataArray(field.mDataArray),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
   ENSURE(size() == nodeList.numNodes());
 }
@@ -127,9 +133,10 @@ inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray) {
+  mDataArray(field.mDataArray),
+  mChaiCallback(field.mChaiCallback) {
   this->assignDataSpan();
-  // std::cerr << "Field::copy : " << field.mDataArray.data() << " " << mDataArray.data() << " : " << field.mDataSpan.data() << " " << mDataSpan.data() << std::endl;
+  DEBUG_LOG << "Field::copy : " << field.name() << " -> " << this->name() << " : " << field.mDataArray.data() << " -> " << mDataArray.data() << " : " << field.mDataSpan.data() << " -> " << mDataSpan.data();
 }
 
 //------------------------------------------------------------------------------
@@ -140,9 +147,9 @@ inline
 Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
-  // std::cerr << " --> FIELD::~Field()" << std::endl;
+  DEBUG_LOG << " --> FIELD::~Field() " << this->name();
   mDataSpan.free();
-  // std::cerr << " --> SUCCESS" << std::endl;
+  DEBUG_LOG << " --> SUCCESS";
 #endif
 }
 
@@ -170,6 +177,7 @@ Field<Dimension, DataType>::operator=(const FieldBase<Dimension>& rhs) {
       CHECK2(rhsPtr != 0, "Passed incorrect Field to operator=!");
       FieldBase<Dimension>::operator=(rhs);
       mDataArray = rhsPtr->mDataArray;
+      mChaiCallback = rhsPtr->mChaiCallback;
       this->assignDataSpan();
     } catch (const std::bad_cast &) {
       VERIFY2(false, "Attempt to assign a field to an incompatible field type.");
@@ -188,9 +196,10 @@ Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
   if (this != &rhs) {
     FieldBase<Dimension>::operator=(rhs);
     mDataArray = rhs.mDataArray;
-  this->assignDataSpan();
+    mChaiCallback = rhs.mChaiCallback;
+    this->assignDataSpan();
   }
-  // std::cerr << "Field::copy : " << rhs.mDataArray.data() << " " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " " << mDataSpan.data() << std::endl;
+  DEBUG_LOG << "Field::assign : " << rhs.name() << " -> " << this->name() << " : " << rhs.mDataArray.data() << " -> " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " -> " <<  mDataSpan.data();
   return *this;
 }
 
@@ -1287,71 +1296,44 @@ inline
 typename Field<Dimension, DataType>::ViewType&
 Field<Dimension, DataType>::
 view() {
-#ifdef SPHERAL_UNIFIED_MEMORY
+  CHECK2(std::is_trivially_copyable<DataType>::value, "Error: attempt to use view() with non-trivially copyable type");
   return static_cast<ViewType&>(*this);
+}
+
+//------------------------------------------------------------------------------
+// Keep mDataSpan and mDataArray consistent
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+Field<Dimension, DataType>::
+assignDataSpan() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mDataSpan = mDataArray;
+  DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data();
 #else
-  auto func = [](
-      const chai::PointerRecord *,
-      chai::Action,
-      chai::ExecutionSpace) {};
-  return this->view(func);
-#endif
-}
-
-// The Primary view() implementation. DataType MUST be implicitly copyable
-// to call view on a Field. Field::view() passes the location of the
-// std::vector allocation to a chai::ManagedArray. the MA does NOT own the
-// host data. Field is still resposible for deallocation on destruction. On
-// subsequent calls of view() a check is made to see if the std::vector has
-// been resized OR reallocated. If so the current MA object calls free -
-// releasing any possible device memory that has been allocated. A new MA is
-// then created with the std::vector pointer.
-template<typename Dimension, typename DataType>
-template<typename T, typename F>
-std::enable_if_t<std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType&>
-Field<Dimension, DataType>::
-view(F&& extension) {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  return static_cast<ViewType&>(*this);
-#else  
-  if (mDataSpan.size() != mDataArray.size() ||
+  if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
-
-    // std::cerr << "FIELD: reallocate" << std::endl;
+    DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     mDataSpan.free();
-    mDataSpan = chai::makeManagedArray(
-        mDataArray.data(), mDataArray.size(), chai::CPU, false);
-    // std::cerr << " --> SUCCESS" << std::endl;
-
-    // std::cerr << "FIELD: set callback" << std::endl;
-    mDataSpan.setUserCallback(
-      getFieldCallback(std::forward<F>(extension)));
-    // std::cerr << " --> SUCCESS" << std::endl;
+    mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
+    mDataSpan.setUserCallback(getCallback());
+    DEBUG_LOG << " --> SUCCESS";
   }
-  return static_cast<ViewType&>(*this);
 #endif
-}
-
-// The inverse SFINAE of the above implementation. This should throw an error
-// if it is ever called with a type that is not implicitly copyable.
-template<typename Dimension, typename DataType>
-template<typename T, typename F>
-std::enable_if_t<!std::is_trivially_copyable<T>::value, typename Field<Dimension, DataType>::ViewType&>
-Field<Dimension, DataType>::
-view(F&&) {
-  ASSERT2(false, "Spheral::Field::view() Is invalid when Field::DataType is not trivially copyable.");
-  return static_cast<ViewType&>(*this);
+  mNumInternalElements = this->nodeList().numInternalNodes();
+  mNumGhostElements = this->nodeList().numGhostNodes();
 }
 
 // Default callback action to be used with chai Managed containers. An
 // additional calback can be passed to extend this functionality. Useful for
 // debuggin, testing and probing for performance counters / metrics.
 template<typename Dimension, typename DataType>
-template<typename F>
+inline
 auto
 Field<Dimension, DataType>::
-getFieldCallback(F callback) {
-  return [n = this->name(), callback](
+getCallback() {
+  return [n = this->name(), callback = mChaiCallback](
     const chai::PointerRecord * record,
     chai::Action action,
     chai::ExecutionSpace space) {
@@ -1375,30 +1357,6 @@ getFieldCallback(F callback) {
       }
       callback(record, action, space);
     };
-}
-
-//------------------------------------------------------------------------------
-// Keep mDataSpan and mDataArray consistent
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-void
-Field<Dimension, DataType>::
-assignDataSpan() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mDataSpan = mDataArray;
-  // std::cerr << "Field::assignDataSpan : " << mDataArray.data() << " : " << mDataSpan.data() << std::endl;
-#else
-  if (mDataSpan.size() != mDataArray.size() or
-      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
-    // std::cerr << "FIELD::assignDataSpan" << std::endl;
-    mDataSpan.free();
-    mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
-    // mDataSpan.setUserCallback(getFieldCallback(std::forward<F>(extension)));
-    // std::cerr << " --> SUCCESS" << std::endl;
-  }
-#endif
-  mNumInternalElements = this->nodeList().numInternalNodes();
-  mNumGhostElements = this->nodeList().numGhostNodes();
 }
 
 } // namespace Spheral

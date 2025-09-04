@@ -22,6 +22,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <functional>
 
 namespace Spheral {
 
@@ -249,20 +250,15 @@ public:
 
   //----------------------------------------------------------------------------
   // Return a view of the Field (appropriate for on accelerator devices)
+  // The second method is really only for debugging
   ViewType& view();
 
-  template<typename FL>
-  ViewType& view(FL&& extension);
-
-  template<typename FL, typename F>
-  ViewType& view(FL&& extension, F&& field_extension);
+  // Set an optional callback method for diagnosing CHAI data usage
+  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using FieldListView<Dimension, DataType>::mSpanFieldViews;
-
-  template<typename F>
-  auto getFieldListCallback(F callback);
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -282,8 +278,12 @@ private:
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 
-  // Internal methods
+  // Callback function for debugging CHAI
+  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+
+  // Set the internal dependent arrays based on the Field pointers.
   void buildDependentArrays();
+  auto getCallback();
 
 public:
   // A data attribute to indicate how to reduce this field across threads.

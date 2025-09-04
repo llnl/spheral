@@ -10,6 +10,7 @@
 #include "Field/FieldListView.hh"
 #include "Kernel/TableKernel.hh"
 #include "Distributed/allReduce.hh"
+#include "Utilities/range.hh"
 #include "Utilities/Logger.hh"
 
 #ifdef USE_MPI
@@ -39,6 +40,7 @@ FieldList<Dimension, DataType>::FieldList():
   mStorageType(FieldStorageType::ReferenceFields),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(NULL) {
 }
@@ -57,6 +59,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   mStorageType(aStorageType),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(NULL) {
 }
@@ -77,6 +80,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
   mStorageType(rhs.storageType()),
   mNodeListPtrs(rhs.mNodeListPtrs),
   mNodeListIndexMap(rhs.mNodeListIndexMap),
+  mChaiCallback(rhs.mChaiCallback),
   reductionType(rhs.reductionType),
   threadMasterPtr(rhs.threadMasterPtr) {
 
@@ -132,6 +136,7 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
       mNodeListIndexMap = rhs.mNodeListIndexMap;
       mFieldPtrs.reserve(rhs.size());
       mFieldBasePtrs.reserve(rhs.size());
+      mChaiCallback = rhs.mChaiCallback;
       reductionType = rhs.reductionType;
       threadMasterPtr = rhs.threadMasterPtr;
 
@@ -197,7 +202,6 @@ FieldList<Dimension, DataType>::copyFields() {
     for (auto* fptr: mFieldPtrs) mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(*fptr));
     mFieldPtrs.clear();
     for (auto& fptr: mFieldCache) mFieldPtrs.push_back(fptr.get());
-    buildDependentArrays();
 
 //     for (int i = 0; i < this->size(); ++i) {
 //       mFieldCache.push_back(*((*this)[i]));
@@ -998,31 +1002,30 @@ buildDependentArrays() {
   mFieldViewPtrs.clear();
   mNodeListPtrs.clear();
   mNodeListIndexMap.clear();
-  int i = 0;
-  for (auto* fptr: mFieldPtrs) {
+  for (auto [i, fptr]: enumerate(mFieldPtrs)) {
     mFieldBasePtrs.push_back(fptr);
     mFieldViewPtrs.push_back(fptr);
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
-    mNodeListIndexMap[nptr] = i++;
+    mNodeListIndexMap[nptr] = i;
   }
-  CHECK(i == int(mFieldPtrs.size()));
 #ifdef SPHERAL_UNIFIED_MEMORY
   mSpanFieldViews = SPHERAL_SPAN_TYPE<typename FieldListView<Dimension, DataType>::value_type>(&mFieldViewPtrs[0], mFieldViewPtrs.size());
 #else
   const auto n = mFieldPtrs.size();
-  if (mSpanFieldViews.size() == 0u and !mSpanFieldViews.getPointer(chai::CPU, false)) {
-    DEBUG_LOG << "FIELDLIST::BDA : allocate";
-    mSpanFieldViews.allocate(n, chai::CPU);
-    DEBUG_LOG << " --> SUCCESS";
-  } else {
-    DEBUG_LOG << "FIELDLIST::BDA : reallocate";
-    mSpanFieldViews.reallocate(n);
+  if (mSpanFieldViews.size() != n or
+      mSpanFieldViews.data(chai::CPU, false) != mFieldViewPtrs.data()) {
+    DEBUG_LOG << "FIELDLIST::BDA : (re)allocate";
+    mSpanFieldViews.free();
+    mSpanFieldViews = chai::makeManagedArray(mFieldViewPtrs.data(), n, chai::CPU, false);
     DEBUG_LOG << " --> SUCCESS";
   }
-  for (size_t i = 0; i < n; ++i) {
-    DEBUG_LOG << "FIELDLIST::BDA : Getting FieldView " << i << " of " << n;
-    mSpanFieldViews[i] = &mFieldPtrs[i]->view(); // static_cast<FieldView<Dimension, DataType>*>(mFieldPtrs[i]);
+  DEBUG_LOG << "FieldList::BDA : setCallback";
+  mSpanFieldViews.setUserCallback(getCallback());
+  DEBUG_LOG << " --> SUCCESS";
+  for (size_t i = 0u; i < n; ++i) {
+    DEBUG_LOG << "FIELDLIST::BDA : Setting FieldView " << i << " of " << n;
+    mSpanFieldViews[i] = &mFieldPtrs[i]->view();
     DEBUG_LOG << " --> SUCCESS";
   }
   DEBUG_LOG << "FIELDLIST:BDA : registerTouch";
@@ -1034,6 +1037,41 @@ buildDependentArrays() {
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
   ENSURE(mSpanFieldViews.size() == mFieldPtrs.size());
+}
+
+//------------------------------------------------------------------------------
+// Default callback action to be used with chai Managed containers. An
+// additional calback can be passed to extend this functionality. Useful for
+// debugging, testing and probing for performance counters / metrics.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+auto
+FieldList<Dimension, DataType>::
+getCallback() {
+  return [callback = mChaiCallback](
+    const chai::PointerRecord * record,
+    chai::Action action,
+    chai::ExecutionSpace space) {
+      if (action == chai::ACTION_MOVE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : MOVED to the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : MOVED to the GPU";
+      }
+      else if (action == chai::ACTION_ALLOC) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : ALLOC on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : ALLOC on the GPU";
+      }
+      else if (action == chai::ACTION_FREE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : FREE on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : FREE on the GPU";
+      }
+      callback(record, action, space);
+    };
 }
 
 //------------------------------------------------------------------------------
@@ -1130,93 +1168,9 @@ template<typename Dimension, typename DataType>
 inline
 FieldListView<Dimension, DataType>&
 FieldList<Dimension, DataType>::view() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  return static_cast<FieldListView<Dimension, DataType>&>(*this);
-#else
-  auto func = [](
-      const chai::PointerRecord *,
-      chai::Action,
-      chai::ExecutionSpace) {};
-
-  return this->view(func, func);
-#endif
-}
-
-template<typename Dimension, typename DataType>
-template<typename FL>
-inline
-FieldListView<Dimension, DataType>&
-FieldList<Dimension, DataType>::view(FL&& extension) {
-  auto func = [](
-      const chai::PointerRecord *,
-      chai::Action,
-      chai::ExecutionSpace) {};
-
-  return this->view(std::forward<FL>(extension), func);
-}
-
-template<typename Dimension, typename DataType>
-template<typename FL, typename F>
-inline
-FieldListView<Dimension, DataType>&
-FieldList<Dimension, DataType>::view(FL&& extension, F&& field_extension) {
-#ifndef SPHERAL_UNIFIED_MEMORY
-  auto callback = getFieldListCallback(std::forward<FL>(extension));
-
-  const auto n = this->size();
-  if (mSpanFieldViews.size() == 0 && !mSpanFieldViews.getPointer(chai::CPU, false)) {
-    DEBUG_LOG << "FIELDLIST::view(e, e) : allocate";
-    mSpanFieldViews.allocate(n, chai::CPU, callback);
-    DEBUG_LOG << " --> SUCCESS";
-  } else {
-    DEBUG_LOG << "FIELDLIST::view(e, e) : setcallback";
-    mSpanFieldViews.setUserCallback(callback);
-    mSpanFieldViews.reallocate(n);
-    DEBUG_LOG << " --> SUCCESS";
-  }
-
-  DEBUG_LOG << "FIELDLIST::view(e, e) : set field views";
-  for (size_t i = 0; i < n; ++i) {
-    mSpanFieldViews[i] = &(mFieldPtrs[i]->view(std::forward<F>(field_extension)));
-  }
-  DEBUG_LOG << " --> SUCCESS";
-
-  DEBUG_LOG << "FIELDLIST::view(e, e) : register touch";
-  mSpanFieldViews.registerTouch(chai::CPU);
-  DEBUG_LOG << " --> SUCCESS";
-#endif
-
   return static_cast<FieldListView<Dimension, DataType>&>(*this);
 }
 
-template<typename Dimension, typename DataType>
-template<typename F>
-inline
-auto FieldList<Dimension, DataType>::getFieldListCallback(F callback) {
-  return [callback](
-    const chai::PointerRecord * record,
-    chai::Action action,
-    chai::ExecutionSpace space) {
-      if (action == chai::ACTION_MOVE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : MOVED to the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : MOVED to the GPU";
-      } else if (action == chai::ACTION_ALLOC) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : ALLOC on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : ALLOC on the GPU";
-      } else if (action == chai::ACTION_FREE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : FREE on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : FREE on the GPU";
-      }
-      callback(record, action, space);
-    };
-}
-  
 //****************************** Global Functions ******************************
 
 //------------------------------------------------------------------------------
