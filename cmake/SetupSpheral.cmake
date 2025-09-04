@@ -86,6 +86,7 @@ if(ENABLE_MPI)
 endif()
 
 if(ENABLE_OPENMP)
+  set(SPHERAL_ENABLE_OPENMP)
   list(APPEND SPHERAL_CXX_DEPENDS openmp)
 endif()
 
