@@ -35,7 +35,7 @@ public:
   // Increment variables for each action and space
   auto callback() {
     return [&](const chai::PointerRecord *, chai::Action action,
-                            chai::ExecutionSpace space) {
+               chai::ExecutionSpace space) {
     if (action == chai::ACTION_MOVE)
       (space == chai::CPU) ? gcounts.DToHCopies++ : gcounts.HToDCopies++;
     if (action == chai::ACTION_ALLOC)
@@ -212,7 +212,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
     field_v = field.view();
     SPHERAL_ASSERT_EQ(field_v.numElements(), N * 10);
 
-    // Capture field_v in the working executino space again. This should trigger
+    // Capture field_v in the working execution space again. This should trigger
     // a new copy to the Device if executing on the GPU.
     RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE(int i) {
