@@ -84,12 +84,13 @@ using LOOP_EXEC_POLICY = RAJA::seq_exec;
 #define COMP_COUNTERS(LHS, RHS)
 #else
 #define COMP_COUNTERS(LHS, RHS) \
-    SPHERAL_ASSERT_EQ_MSG(LHS.HToDCopies, RHS.HToDCopies, "Failed HToDCopies\n");\
-    SPHERAL_ASSERT_EQ_MSG(LHS.DToHCopies, RHS.DToHCopies, "Failed DToHCopies\n");\
-    SPHERAL_ASSERT_EQ_MSG(LHS.HNumAlloc,  RHS.HNumAlloc, "Failed HNumAlloc\n");\
-    SPHERAL_ASSERT_EQ_MSG(LHS.DNumAlloc,  RHS.DNumAlloc, "Failed DNumAlloc\n");\
-    SPHERAL_ASSERT_EQ_MSG(LHS.HNumFree,   RHS.HNumFree, "Failed HNumFree\n");\
-    SPHERAL_ASSERT_EQ_MSG(LHS.DNumFree,   RHS.DNumFree, "Failed DNumFree\n")
+  if (LHS != RHS) LHS.print();                                                  \
+  SPHERAL_ASSERT_EQ_MSG(LHS.HToDCopies, RHS.HToDCopies, "Failed HToDCopies\n"); \
+  SPHERAL_ASSERT_EQ_MSG(LHS.DToHCopies, RHS.DToHCopies, "Failed DToHCopies\n"); \
+  SPHERAL_ASSERT_EQ_MSG(LHS.HNumAlloc,  RHS.HNumAlloc, "Failed HNumAlloc\n");   \
+  SPHERAL_ASSERT_EQ_MSG(LHS.DNumAlloc,  RHS.DNumAlloc, "Failed DNumAlloc\n");   \
+  SPHERAL_ASSERT_EQ_MSG(LHS.HNumFree,   RHS.HNumFree, "Failed HNumFree\n");     \
+  SPHERAL_ASSERT_EQ_MSG(LHS.DNumFree,   RHS.DNumFree, "Failed DNumFree\n")
 #endif
 
 // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
@@ -97,6 +98,12 @@ struct GPUCounters {
   int HToDCopies = 0, DToHCopies = 0;
   int HNumAlloc = 0, DNumAlloc = 0;
   int HNumFree = 0, DNumFree = 0;
+  bool operator==(const GPUCounters& rhs) const { return (HToDCopies == rhs.HToDCopies and
+                                                          DToHCopies == rhs.DToHCopies and
+                                                          HNumAlloc == rhs.HNumAlloc and
+                                                          HNumFree == rhs.HNumFree); }
+  bool operator!=(const GPUCounters& rhs) const { return not this->operator==(rhs); }
+  void print() const { printf("H->D Copy %d : D->H Copy %d : H Alloc %d : D Alloc %d : H Free %d :  D Free %d\n", HToDCopies, DToHCopies, HNumAlloc, DNumAlloc, HNumFree, DNumFree); }
 };
 
 #endif // SPHERAL_TEST_UTILITIES_HH
