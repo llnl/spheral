@@ -99,29 +99,20 @@ public:
   // Compute the lookup table for Pair->index
   void computeLookup() const;
 
-  template<typename F> inline
-  NodePairListView view(F&& extension) {
-    initMA(extension);
-    return NodePairListView(mData);
-  }
   inline NodePairListView view() {
-    initMA();
-    return NodePairListView(mData);
+    return static_cast<NodePairListView>(*this);
   }
 
-  template<typename F> inline
-  void initMA(F&& extension) {
+  void initMA() {
     if (!(mNodePairList.data() == mData.data(chai::CPU, false)
           && mNodePairList.size() == mData.size())) {
       mData.free();
       mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
     }
-    mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
   }
-  inline void initMA() {
-    auto func = [](const chai::PointerRecord *, chai::Action,
-                   chai::ExecutionSpace) {};
-    return this->initMA(func);
+  template<typename F> inline
+  void setUserCallback(F&& extension) {
+    mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
   }
 protected:
   template<typename F>

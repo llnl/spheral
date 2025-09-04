@@ -60,15 +60,19 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, DefaultConstructor) {
 // Test copy and assignment
 GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
   NPL npl = gpu_this->createContainer();
+  npl.setUserCallback(gpu_this->callback());
   {
     NPL npl_2(npl);
     NPL npl_3 = npl;
+    // TODO: Make callbacks copied
+    npl_2.setUserCallback(gpu_this->callback());
+    npl_3.setUserCallback(gpu_this->callback());
     SPHERAL_ASSERT_NE(npl.data(), npl_2.data());
     SPHERAL_ASSERT_EQ(npl_2.size(), npl.size());
     SPHERAL_ASSERT_EQ(npl_3.size(), npl.size());
-    NPLV npl2_view = npl_2.view(gpu_this->callback());
-    NPLV npl3_view = npl_3.view(gpu_this->callback());
-    NPLV npl_v = npl.view(gpu_this->callback());
+    NPLV npl2_view = npl_2.view();
+    NPLV npl3_view = npl_3.view();
+    NPLV npl_v = npl.view();
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_NE(npl2_view.data(), npl_v.data());
       SPHERAL_ASSERT_NE(npl3_view.data(), npl_v.data());
@@ -93,7 +97,8 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
 GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
   {
     NPL npl = gpu_this->createContainer();
-    NPLV npl_v = npl.view(gpu_this->callback());
+    npl.setUserCallback(gpu_this->callback());
+    NPLV npl_v = npl.view();
     SPHERAL_ASSERT_EQ(npl_v.size(), N);
     SPHERAL_ASSERT_EQ(npl_v.data(), npl.data());
 
@@ -126,14 +131,15 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
 GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
   {
     NPL npl = gpu_this->createContainer();
-    NPLV npl_v = npl.view(gpu_this->callback());
+    npl.setUserCallback(gpu_this->callback());
+    NPLV npl_v = npl.view();
 
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(npl_v.size(), N);
     EXEC_IN_SPACE_END()
     npl[0].i_list = 4; // Modify the data on the host
     npl_v.touch(chai::CPU); // Change the execution space for the MA
-    npl_v = npl.view(gpu_this->callback()); // Create a new view
+    npl_v = npl.view(); // Create a new view
 
     RAJA::forall<TypeParam>(TRS_UINT(0, N),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
@@ -157,7 +163,8 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   {
     NPLVec npl_vec = gpu_this->createVec();
     NPL npl(npl_vec);
-    NPLV npl_v = npl.view(gpu_this->callback());
+    npl.setUserCallback(gpu_this->callback());
+    NPLV npl_v = npl.view();
 
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(npl_v.size(), N);
@@ -166,7 +173,9 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
     NPIT nit(4, 4, 4, 4, 4.);
     npl_vec.push_back(nit);
     npl.fill(npl_vec);
-    npl_v = npl.view(gpu_this->callback());
+    // TODO: Make it so callbacks persist
+    npl.setUserCallback(gpu_this->callback());
+    npl_v = npl.view();
 
     RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
