@@ -1,1 +1,1 @@
-set(leos_libs libleos.a libleos_C.a libyaml-cpp.a liblip-cpp.a )
+set(leos_libs libleos.a libyaml-cpp.a liblip-cpp.a )
