@@ -1,21 +1,63 @@
 # ------------------------------------------------------------------------------
 # BUILD JOBS
 
-cray_rocm_Debug_init:
-  extends: [.cray_shell1, .rocm_Debug, .init]
+toss_gcc_~mpi_init:
+  extends: [.gcc_~mpi, .init, .toss_shell1]
 
-cray_rocm_Debug_tpls:
-  extends: [.cray_resource1, .rocm_Debug, .tpls]
-  needs: [cray_rocm_Debug_init]
+toss_gcc_~mpi_tpls:
+  extends: [.gcc_~mpi, .tpls, .toss_resource1]
+  needs: [toss_gcc_~mpi_init]
 
-cray_rocm_Debug_build:
-  extends: [.cray_resource1, .rocm_Debug, .build_and_test]
-  needs: [cray_rocm_Debug_tpls]
+toss_gcc_~mpi_build:
+  extends: [.gcc_~mpi, .build_and_test, .toss_resource1]
+  needs: [toss_gcc_~mpi_tpls]
 
-cray_rocm_Debug_test:
-  extends: [.cray_resource1, .rocm_Debug, .run_ats]
-  needs: [cray_rocm_Debug_build]
+toss_gcc_~mpi_test:
+  extends: [.gcc_~mpi, .run_ats, .toss_resource1]
+  needs: [toss_gcc_~mpi_build]
 
-cray_rocm_Debug_cleanup:
-  extends: [.cray_resource1, .rocm_Debug, .cleanup_dir]
-  needs: [cray_rocm_Debug_test]
+toss_gcc_~mpi_cleanup:
+  extends: [.gcc_~mpi, .cleanup_dir, .toss_resource1]
+  needs: [toss_gcc_~mpi_test]
+
+
+
+cray_hip_rocm_~mpi_init:
+  extends: [.cray_shell1, .hip_rocm_~mpi, .init]
+
+cray_hip_rocm_~mpi_tpls:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .tpls]
+  needs: [cray_hip_rocm_~mpi_init]
+
+cray_hip_rocm_~mpi_build:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .build_and_test]
+  needs: [cray_hip_rocm_~mpi_tpls]
+
+cray_hip_rocm_~mpi_test:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .run_ats]
+  needs: [cray_hip_rocm_~mpi_build]
+
+cray_hip_rocm_~mpi_cleanup:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .cleanup_dir]
+  needs: [cray_hip_rocm_~mpi_test]
+
+
+
+cray_rocm_~mpi_Debug_init:
+  extends: [.cray_shell1, .rocm_~mpi_Debug, .init]
+
+cray_rocm_~mpi_Debug_tpls:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .tpls]
+  needs: [cray_rocm_~mpi_Debug_init]
+
+cray_rocm_~mpi_Debug_build:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .build_and_test]
+  needs: [cray_rocm_~mpi_Debug_tpls]
+
+cray_rocm_~mpi_Debug_test:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .run_ats]
+  needs: [cray_rocm_~mpi_Debug_build]
+
+cray_rocm_~mpi_Debug_cleanup:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .cleanup_dir]
+  needs: [cray_rocm_~mpi_Debug_test]
