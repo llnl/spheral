@@ -182,7 +182,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries = super(Spheral, self).initconfig_hardware_entries()
 
         if spec.satisfies('+rocm'):
-            entries.append(cmake_cache_option("SPHERAL_ENABLE_HIP", True))
+            entries.append(cmake_cache_option("ENABLE_HIP", True))
             entries.append(cmake_cache_string("ROCM_PATH", spec["hip"].prefix))
 
         if spec.satisfies('+cuda'):
@@ -255,8 +255,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         entries.append(cmake_cache_path('polytope_DIR', spec['polytope'].prefix))
 
+        entries.append(cmake_cache_option('ENABLE_MPI', '+mpi' in spec))
         if spec.satisfies("+mpi"):
-            entries.append(cmake_cache_option('ENABLE_MPI', True))
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
 

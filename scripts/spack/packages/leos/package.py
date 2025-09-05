@@ -39,9 +39,10 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     version("8.3.1", sha256="35ae5a24185e29111886adaee66628f9e0b6ed3198e8c6381ef3c53bf662fd55")
     version("8.3.0", sha256="461fb0dc0672d5f284e392a8b70d9d50a035817aacb85a6843a5a75202a86cb5")
 
-    variant("mpi",    default=True, description="Build wit MPI enabled")
+    variant("mpi",     default=True, description="Build wit MPI enabled")
     variant("debug",   default=False, description="Build debug code (-g -O0)")
     variant("filters", default=True , description="Build LEOS filter coding")
+    variant("yaml",    default=True , description="Enable yaml features")
     variant("lto",     default=False, description="Build w/-dlto when cuda-11")
     variant("cuda",    default=False, description="Build LIP using RAJA + CUDA GPU code")
     variant("rocm",    default=False, description="Build LIP using RAJA + ROCM GPU code")
@@ -58,8 +59,8 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("raja+rocm", when="+rocm")
     depends_on("umpire+cuda", when="+cuda")
     depends_on("umpire+rocm", when="+rocm")
-    depends_on("camp", when="+umpire ^umpire@2022:")
     depends_on("camp+cuda", when="+cuda ^umpire@2022:")
+    depends_on("camp+rocm", when="+rocm ^umpire@2022:")
 
     patch("patches/leos-8.5-umpire-import.patch", when="@8.5+rocm")
 
@@ -97,15 +98,21 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_option("ENABLE_SILO", True))
             entries.append(cmake_cache_path("SILO_PATH", spec["silo"].prefix))
             entries.append(cmake_cache_option("ENABLE_PDB", True))
+        entries.append(cmake_cache_option("ENABLE_FILTERS", "+filters" in spec))
+        if spec.satisfies("+filters"):
+            entries.append(cmake_cache_option("USE_LIBXML2", False))
+            entries.append(cmake_cache_option("USE_NOXML", True))
+        entries.append(cmake_cache_option("ENABLE_YAML", "+yaml" in spec))
+        entries.append(cmake_cache_option("ENABLE_MPI", '+mpi' in spec))
         if spec.satisfies("+mpi"):
-            entries.append(cmake_cache_option("ENABLE_MPI", True))
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc))
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx))
-        features_disabled = ["PYTHON", "PYTHON_INTERFACE", "ZFP", "YAML", "TESTS",
+        features_disabled = ["PYTHON", "PYTHON_INTERFACE", "ZFP", "TESTS",
                              "TOOLS", "EXAMPLES", "PARALLEL_EXAMPLES", "FORTRAN_INTERFACE"]
         for fd in features_disabled:
             entries.append(cmake_cache_option(f"ENABLE_{fd}", False))
         entries.append(cmake_cache_option("ENABLE_CPP_LIP", True))
+        entries.append(cmake_cache_option("ENABLE_C_LIP", True))
         entries.append(cmake_cache_option("ENABLE_HDF", True))
         entries.append(cmake_cache_path("HDF5_ROOT", spec["hdf5"].prefix))
         entries.append(cmake_cache_path("EOS_DATA_ROOT_DIR", "/usr/gapps/data/eos"))
