@@ -167,7 +167,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     def initconfig_mpi_entries(self):
         spec = self.spec
         entries = []
-        if spec.satisfied("+mpi"):
+        if spec.satisfies("+mpi"):
           entries = super(Spheral, self).initconfig_mpi_entries()
           # When on cray / flux systems we need to tell CMAKE the mpi flag explicitly
           if "cray-mpich" in spec:
