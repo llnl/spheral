@@ -19,11 +19,14 @@ namespace Spheral {
 
 template<typename Dimension>
 InfinitePlaneSolidBoundary<Dimension>::
-InfinitePlaneSolidBoundary(const Vector& point, const Vector& normal):
+InfinitePlaneSolidBoundary(const Vector& point, 
+                           const Vector& normal, 
+                           const RotationType& angularVelocity):
   SolidBoundaryBase<Dimension>(),
   mPoint(point),
   mNormal(normal),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero),
+  mAngularVelocity(angularVelocity){
 }
 
 template<typename Dimension>
@@ -42,7 +45,7 @@ template<typename Dimension>
 typename Dimension::Vector
 InfinitePlaneSolidBoundary<Dimension>::
 localVelocity(const Vector& position) const { 
-  return mVelocity;
+  return mVelocity + DEMDimension<Dimension>::cross((position-mPoint),mAngularVelocity);  // Include angular velocity effect
 }
 
 template<typename Dimension>
@@ -57,6 +60,7 @@ registerState(DataBase<Dimension>& dataBase,
   state.enroll(pointKey,mPoint);
   state.enroll(velocityKey,mVelocity);
   state.enroll(normalKey,mNormal);
+  state.enroll(angularVelocityKey, mAngularVelocity);  // Enroll angular velocity
 }
 
 template<typename Dimension>
@@ -64,6 +68,10 @@ void
 InfinitePlaneSolidBoundary<Dimension>::
 update(const double multiplier, const double t, const double dt) {   
   mPoint += multiplier*mVelocity;
+  // Update the normal vector based on angular velocity
+  // Using a small angle approximation: newNormal = oldNormal + dt * (angularVelocity x oldNormal)
+  mNormal += multiplier * DEMDimension<Dimension>::cross(mNormal,mAngularVelocity);
+  mNormal = mNormal.unitVector();  // Normalize to maintain it as a unit vector
 }
 
 //------------------------------------------------------------------------------
@@ -76,6 +84,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mPoint, pathName + "/point");
   file.write(mNormal, pathName + "/normal");
   file.write(mVelocity, pathName + "/velocity");
+  file.write(mAngularVelocity, pathName + "/omega");  // Write angular velocity
 }
 
 
@@ -86,6 +95,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mPoint, pathName + "/point");
   file.read(mNormal, pathName + "/normal");
   file.read(mVelocity, pathName + "/velocity");
+  file.read(mAngularVelocity, pathName + "/omega");  // Read angular velocity
 }
 
 }

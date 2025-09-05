@@ -29,6 +29,7 @@ class InfinitePlaneSolidBoundary(SolidBoundaryBase):
     PYB11typedefs = """
     typedef typename %(Dimension)s::Scalar Scalar;
     typedef typename %(Dimension)s::Vector Vector;
+    typedef typename DEMDimension<%(Dimension)s>::AngularVector RotationType;
   """
 
     def pyinit(self,
@@ -68,6 +69,7 @@ class InfinitePlaneSolidBoundary(SolidBoundaryBase):
     velocity = PYB11property("const Vector&", "velocity",  "velocity", returnpolicy="reference_internal", doc="velocity of plane")
     point  = PYB11property("const Vector&", "point",  "point", returnpolicy="reference_internal", doc="point  in plane definition")
     normal = PYB11property("const Vector&", "normal", "normal",returnpolicy="reference_internal", doc="normal in plane definition")
+    angularVelocity = PYB11property("const RotationType&", "angularVelocity", "angularVelocity",returnpolicy="reference_internal",doc="angular velocity of plane")
     
 #-------------------------------------------------------------------------------
 # Finite rectangular solid boundary
@@ -80,12 +82,14 @@ class RectangularPlaneSolidBoundary(SolidBoundaryBase):
     typedef typename %(Dimension)s::Scalar Scalar;
     typedef typename %(Dimension)s::Vector Vector;
     typedef typename %(Dimension)s::Tensor Tensor;
+    typedef typename DEMDimension<%(Dimension)s>::AngularVector RotationType;
   """
 
     def pyinit(self,
                point  = "const Vector&",
                extent = "const Vector&",
-               basis  = "const Tensor&"):
+               basis  = "const Tensor&",
+               angularVelocity = "const RotationType&"):
         "solid planar boundary"
 
     @PYB11virtual 
@@ -121,6 +125,7 @@ class RectangularPlaneSolidBoundary(SolidBoundaryBase):
     point  = PYB11property("const Vector&", "point",  "point", returnpolicy="reference_internal", doc="point in plane definition")
     extent  = PYB11property("const Vector&", "extent",  "extent", returnpolicy="reference_internal", doc="extent of rectangle")
     basis = PYB11property("const Tensor&", "basis", "basis",returnpolicy="reference_internal", doc="basis vectors for rectangle")
+    angularVelocity = PYB11property("const RotationType&", "angularVelocity", "angularVelocity",returnpolicy="reference_internal",doc="angular velocity of plane")
     
 #-------------------------------------------------------------------------------
 # Disk shaped solid boundary
@@ -132,12 +137,14 @@ class CircularPlaneSolidBoundary(SolidBoundaryBase):
     PYB11typedefs = """
     typedef typename %(Dimension)s::Scalar Scalar;
     typedef typename %(Dimension)s::Vector Vector;
+    typedef typename DEMDimension<%(Dimension)s>::AngularVector RotationType;
   """
 
     def pyinit(self,
                point  = "const Vector&",
                normal  = "const Vector&",
-               extent = "const Scalar"):
+               extent = "const Scalar",
+               angularVelocity = "const RotationType&"):
         "solid planar boundary"
 
     @PYB11virtual 
@@ -173,6 +180,7 @@ class CircularPlaneSolidBoundary(SolidBoundaryBase):
     point  = PYB11property("const Vector&", "point",  "point", returnpolicy="reference_internal", doc="point in plane definition")
     extent  = PYB11property("Scalar", "extent",  "extent", returnpolicy="reference_internal", doc="extent of rectangle")
     normal = PYB11property("const Vector&", "normal", "normal",returnpolicy="reference_internal", doc="normal in plane definition")
+    angularVelocity = PYB11property("const RotationType&", "angularVelocity", "angularVelocity", returnpolicy="reference_internal", doc="angular velocity of plane")
 
 #-------------------------------------------------------------------------------
 # Cylinder solid boundary. In 2d this would be two planes.
@@ -184,13 +192,15 @@ class CylinderSolidBoundary(SolidBoundaryBase):
     PYB11typedefs = """
     typedef typename %(Dimension)s::Scalar Scalar;
     typedef typename %(Dimension)s::Vector Vector;
+    typedef typename DEMDimension<%(Dimension)s>::AngularVector RotationType;
   """
 
     def pyinit(self,
                point  = "const Vector&",
                axis  = "const Vector&",
                radius = "const Scalar",
-               length = "const Scalar"):
+               length = "const Scalar",
+               angularVelocity = "const RotationType&"):
         "solid planar boundary"
 
     @PYB11virtual 
@@ -227,6 +237,7 @@ class CylinderSolidBoundary(SolidBoundaryBase):
     axis  = PYB11property("const Vector&", "axis",  "axis", returnpolicy="reference_internal", doc="extent of rectangle")
     radius = PYB11property("Scalar", "radius", "radius", doc="normal in plane definition")
     length = PYB11property("Scalar", "length", "length", doc="normal in plane definition")
+    angularVelocity = PYB11property("const RotationType&", "angularVelocity", "angularVelocity",returnpolicy="reference_internal",doc="angular velocity of plane")
 
 
 #-------------------------------------------------------------------------------

@@ -21,14 +21,16 @@ class CylinderSolidBoundary : public SolidBoundaryBase<Dimension> {
     typedef typename Dimension::Scalar Scalar;
     typedef typename Dimension::Vector Vector;
     typedef typename Dimension::Tensor Tensor;
+    typedef typename DEMDimension<Dimension>::AngularVector RotationType;
 
 public:
   //--------------------------- Public Interface ---------------------------//
 
   CylinderSolidBoundary(const Vector& point,
-                 const Vector& axis, 
-                 const Scalar  radius,
-                 const Scalar  length);
+                        const Vector& axis, 
+                        const Scalar  radius,
+                        const Scalar  length,
+                        const RotationType& angularVelocity);
 
   ~CylinderSolidBoundary();
 
@@ -57,6 +59,9 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
+  const RotationType& angularVelocity() const;
+  void angularVelocity(const RotationType& value);
+
   virtual std::string label() const override { return "CylinderSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
@@ -69,6 +74,7 @@ protected:
   Scalar mLength;
 
   Vector mVelocity;
+  RotationType mAngularVelocity;
 
 private:
   //--------------------------- Private Interface ---------------------------//

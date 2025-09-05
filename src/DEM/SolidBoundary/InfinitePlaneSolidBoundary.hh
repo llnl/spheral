@@ -20,12 +20,14 @@ class InfinitePlaneSolidBoundary : public SolidBoundaryBase<Dimension> {
 
     typedef typename Dimension::Scalar Scalar;
     typedef typename Dimension::Vector Vector;
+    typedef typename DEMDimension<Dimension>::AngularVector RotationType;
 
 public:
   //--------------------------- Public Interface ---------------------------//
 
   InfinitePlaneSolidBoundary(const Vector& point, 
-                const Vector& normal);
+                             const Vector& normal,
+                             const RotationType& angularVelocity);
 
   ~InfinitePlaneSolidBoundary();
 
@@ -48,6 +50,9 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
+  const RotationType& angularVelocity() const;
+  void angularVelocity(const RotationType& value);
+
   virtual std::string label() const override { return "InfinitePlaneSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
@@ -57,6 +62,7 @@ protected:
   Vector mPoint;
   Vector mNormal;
   Vector mVelocity;
+  RotationType mAngularVelocity;
 
 private:
   //--------------------------- Private Interface ---------------------------//
