@@ -183,7 +183,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries = super(Spheral, self).initconfig_hardware_entries()
 
         if spec.satisfies('+rocm'):
-            entries.append(cmake_cache_option("ENABLE_HIP", True))
+            entries.append(cmake_cache_option("SPHERAL_ENABLE_HIP", True))
             entries.append(cmake_cache_string("ROCM_PATH", spec["hip"].prefix))
 
         if spec.satisfies('+cuda'):

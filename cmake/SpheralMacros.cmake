@@ -14,7 +14,7 @@ macro(spheral_add_executable)
     list(APPEND arg_DEPENDS_ON cuda)
   endif()
 
-  if (ENABLE_HIP)
+  if (SPHERAL_ENABLE_HIP)
     list(APPEND arg_DEPENDS_ON blt::hip)
     list(APPEND arg_DEPENDS_ON blt::hip_runtime)
   endif()
