@@ -1037,6 +1037,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
         DepsDtj -= mRZi*deltaDepsDtj;
 
         if(compatibleEnergy){
+          // XXX TODO: check mass factor. SolidSPHRZ has mass here, but SolidFSISPH does not.
           (*pairAccelerationsPtr)[kk][0] =  mRZj*deltaDvDt;
           (*pairAccelerationsPtr)[kk][1] = -mRZi*deltaDvDt;
           (*pairDepsDtPtr)[kk][0] = - deltaDepsDti; 
