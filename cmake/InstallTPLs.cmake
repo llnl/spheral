@@ -181,7 +181,7 @@ message("-----------------------------------------------------------------------
 find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
 if(hdf5_FOUND)
   message("Found hdf5 External Package.")
-  blt_convert_to_system_includes(TARGET hdf5)
+  blt_convert_to_system_includes(TARGET hdf5-shared hdf5-static)
 endif()
 
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire hdf5)
