@@ -1,1 +1,6 @@
-set(leos_libs libleos.a libyaml-cpp.a liblip-cpp.a )
+set(leos_libs libleos.a)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND leos_libs libyaml-cppd.a)
+else()
+  list(APPEND leos_libs libyaml-cpp.a)
+endif()

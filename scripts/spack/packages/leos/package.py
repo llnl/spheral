@@ -40,7 +40,6 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     version("8.3.0", sha256="461fb0dc0672d5f284e392a8b70d9d50a035817aacb85a6843a5a75202a86cb5")
 
     variant("mpi",     default=True,  description="Build wit MPI enabled")
-    variant("debug",   default=False, description="Build debug code (-g -O0)")
     variant("filters", default=True,  description="Build LEOS filter coding")
     variant("yaml",    default=True,  description="Enable yaml features")
     variant("xml",     default=False, description="Enable xml features")
