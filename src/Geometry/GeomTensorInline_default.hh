@@ -14,6 +14,7 @@ namespace Spheral {
 // Return the element index corresponding to the given (row,column)
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomTensor<nDim>::size_type
 GeomTensor<nDim>::elementIndex(const typename GeomTensor<nDim>::size_type row,
@@ -24,19 +25,10 @@ GeomTensor<nDim>::elementIndex(const typename GeomTensor<nDim>::size_type row,
 }
 
 //------------------------------------------------------------------------------
-// Default constructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomTensor<nDim>::
-GeomTensor():
-  GeomTensorBase<nDim>(0.0) {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given values for the elements.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>::
 GeomTensor(const double a11):
@@ -44,6 +36,7 @@ GeomTensor(const double a11):
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>::
 GeomTensor(const double a11, const double a12, 
@@ -53,6 +46,7 @@ GeomTensor(const double a11, const double a12,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>::
 GeomTensor(const double a11, const double a12, const double a13,
@@ -68,6 +62,7 @@ GeomTensor(const double a11, const double a12, const double a13,
 // dimensions.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>::
 GeomTensor(const double /*a11*/, const double /*a12*/,
@@ -77,6 +72,7 @@ GeomTensor(const double /*a11*/, const double /*a12*/,
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>::
 GeomTensor(const double /*a11*/, const double /*a12*/, const double /*a13*/,
@@ -89,14 +85,8 @@ GeomTensor(const double /*a11*/, const double /*a12*/, const double /*a13*/,
 //------------------------------------------------------------------------------
 // Copy constructors.
 //------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomTensor<nDim>::
-GeomTensor(const GeomTensor<nDim>& ten):
-  GeomTensorBase<nDim>(ten) {
-}
-
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>::
 GeomTensor(const GeomSymmetricTensor<1>& ten):
@@ -104,6 +94,7 @@ GeomTensor(const GeomSymmetricTensor<1>& ten):
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>::
 GeomTensor(const GeomSymmetricTensor<2>& ten):
@@ -112,6 +103,7 @@ GeomTensor(const GeomSymmetricTensor<2>& ten):
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>::
 GeomTensor(const GeomSymmetricTensor<3>& ten):
@@ -148,55 +140,10 @@ GeomTensor<3>::GeomTensor(const Eigen::MatrixBase<Derived>& ten):
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomTensor<nDim>::~GeomTensor() {
-}
-
-//------------------------------------------------------------------------------
 // Assignment operators.
 //------------------------------------------------------------------------------
 template<>
-inline
-GeomTensor<1>&
-GeomTensor<1>::
-operator=(const GeomTensor<1>& ten) {
-  this->mxx = ten.mxx;
-  return *this;
-}
-
-template<>
-inline
-GeomTensor<2>&
-GeomTensor<2>::
-operator=(const GeomTensor<2>& ten) {
-  this->mxx = ten.mxx;
-  this->mxy = ten.mxy;
-  this->myx = ten.myx;
-  this->myy = ten.myy;
-  return *this;
-}
-
-template<>
-inline
-GeomTensor<3>&
-GeomTensor<3>::
-operator=(const GeomTensor<3>& ten) {
-  this->mxx = ten.mxx;
-  this->mxy = ten.mxy;
-  this->mxz = ten.mxz;
-  this->myx = ten.myx;
-  this->myy = ten.myy;
-  this->myz = ten.myz;
-  this->mzx = ten.mzx;
-  this->mzy = ten.mzy;
-  this->mzz = ten.mzz;
-  return *this;
-}
-
-template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::
@@ -206,6 +153,7 @@ operator=(const GeomSymmetricTensor<1>& ten) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::
@@ -218,6 +166,7 @@ operator=(const GeomSymmetricTensor<2>& ten) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::
@@ -279,6 +228,7 @@ GeomTensor<3>::operator=(const Eigen::MatrixBase<Derived>& ten) {
 // Access the elements by indicies.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
@@ -289,6 +239,7 @@ GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double&
 GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
@@ -302,6 +253,7 @@ GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
 // Return the (index) element using the bracket operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) const {
@@ -310,6 +262,7 @@ GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double&
 GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) {
@@ -324,6 +277,7 @@ GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) {
 //    zx, zy, zz     31, 32, 33
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::xx() const {
@@ -331,6 +285,7 @@ GeomTensor<nDim>::xx() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::xy() const {
@@ -338,6 +293,7 @@ GeomTensor<nDim>::xy() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::xz() const {
@@ -345,6 +301,7 @@ GeomTensor<nDim>::xz() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::yx() const {
@@ -352,6 +309,7 @@ GeomTensor<nDim>::yx() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::yy() const {
@@ -359,6 +317,7 @@ GeomTensor<nDim>::yy() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::yz() const {
@@ -366,6 +325,7 @@ GeomTensor<nDim>::yz() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::zx() const {
@@ -373,6 +333,7 @@ GeomTensor<nDim>::zx() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::zy() const {
@@ -380,6 +341,7 @@ GeomTensor<nDim>::zy() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::zz() const {
@@ -388,27 +350,28 @@ GeomTensor<nDim>::zz() const {
 
 //------------------------------------------------------------------------------
 // 1D dummy elements
-template<> inline double GeomTensor<1>::xy() const { return 0.0; }
-template<> inline double GeomTensor<1>::xz() const { return 0.0; }
-template<> inline double GeomTensor<1>::yx() const { return 0.0; }
-template<> inline double GeomTensor<1>::yy() const { return 0.0; }
-template<> inline double GeomTensor<1>::yz() const { return 0.0; }
-template<> inline double GeomTensor<1>::zx() const { return 0.0; }
-template<> inline double GeomTensor<1>::zy() const { return 0.0; }
-template<> inline double GeomTensor<1>::zz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::xy() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::xz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::yx() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::yy() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::yz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::zx() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::zy() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<1>::zz() const { return 0.0; }
 
 //------------------------------------------------------------------------------
 // 2D dummy elements
-template<> inline double GeomTensor<2>::xz() const { return 0.0; }
-template<> inline double GeomTensor<2>::yz() const { return 0.0; }
-template<> inline double GeomTensor<2>::zx() const { return 0.0; }
-template<> inline double GeomTensor<2>::zy() const { return 0.0; }
-template<> inline double GeomTensor<2>::zz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<2>::xz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<2>::yz() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<2>::zx() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<2>::zy() const { return 0.0; }
+template<> SPHERAL_HOST_DEVICE inline double GeomTensor<2>::zz() const { return 0.0; }
 
 //------------------------------------------------------------------------------
 // Set the individual elements, as above.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::xx(const double val) {
@@ -416,6 +379,7 @@ GeomTensor<nDim>::xx(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::xy(const double val) {
@@ -423,6 +387,7 @@ GeomTensor<nDim>::xy(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::xz(const double val) {
@@ -430,6 +395,7 @@ GeomTensor<nDim>::xz(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::yx(const double val) {
@@ -437,6 +403,7 @@ GeomTensor<nDim>::yx(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::yy(const double val) {
@@ -444,6 +411,7 @@ GeomTensor<nDim>::yy(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::yz(const double val) {
@@ -451,6 +419,7 @@ GeomTensor<nDim>::yz(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::zx(const double val) {
@@ -458,6 +427,7 @@ GeomTensor<nDim>::zx(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::zy(const double val) {
@@ -465,6 +435,7 @@ GeomTensor<nDim>::zy(const double val) {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<nDim>::zz(double val) {
@@ -473,27 +444,28 @@ GeomTensor<nDim>::zz(double val) {
 
 //------------------------------------------------------------------------------
 // 1D dummy elements
-template<> inline void GeomTensor<1>::xy(const double /*val*/) {}
-template<> inline void GeomTensor<1>::xz(const double /*val*/) {}
-template<> inline void GeomTensor<1>::yx(const double /*val*/) {}
-template<> inline void GeomTensor<1>::yy(const double /*val*/) {}
-template<> inline void GeomTensor<1>::yz(const double /*val*/) {}
-template<> inline void GeomTensor<1>::zx(const double /*val*/) {}
-template<> inline void GeomTensor<1>::zy(const double /*val*/) {}
-template<> inline void GeomTensor<1>::zz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::xy(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::xz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::yx(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::yy(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::yz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::zx(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::zy(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<1>::zz(const double /*val*/) {}
 
 //------------------------------------------------------------------------------
 // 2D dummy elements
-template<> inline void GeomTensor<2>::xz(const double /*val*/) {}
-template<> inline void GeomTensor<2>::yz(const double /*val*/) {}
-template<> inline void GeomTensor<2>::zx(const double /*val*/) {}
-template<> inline void GeomTensor<2>::zy(const double /*val*/) {}
-template<> inline void GeomTensor<2>::zz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<2>::xz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<2>::yz(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<2>::zx(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<2>::zy(const double /*val*/) {}
+template<> SPHERAL_HOST_DEVICE inline void GeomTensor<2>::zz(const double /*val*/) {}
 
 //------------------------------------------------------------------------------
 // Access the individual rows of the GeomTensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomTensor<1>::getRow(const GeomTensor<1>::size_type index) const {
@@ -502,6 +474,7 @@ GeomTensor<1>::getRow(const GeomTensor<1>::size_type index) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 GeomTensor<2>::getRow(const GeomTensor<2>::size_type index) const {
@@ -510,6 +483,7 @@ GeomTensor<2>::getRow(const GeomTensor<2>::size_type index) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomTensor<3>::getRow(const GeomTensor<3>::size_type index) const {
@@ -521,6 +495,7 @@ GeomTensor<3>::getRow(const GeomTensor<3>::size_type index) const {
 // Access the individual columns of the GeomTensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomTensor<1>::getColumn(const GeomTensor<2>::size_type index) const {
@@ -529,6 +504,7 @@ GeomTensor<1>::getColumn(const GeomTensor<2>::size_type index) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 GeomTensor<2>::getColumn(const GeomTensor<2>::size_type index) const {
@@ -537,6 +513,7 @@ GeomTensor<2>::getColumn(const GeomTensor<2>::size_type index) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomTensor<3>::getColumn(const GeomTensor<3>::size_type index) const {
@@ -548,6 +525,7 @@ GeomTensor<3>::getColumn(const GeomTensor<3>::size_type index) const {
 // Set a row of the GeomTensor to a GeomVector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<1>::setRow(const GeomTensor<1>::size_type index,
@@ -557,6 +535,7 @@ GeomTensor<1>::setRow(const GeomTensor<1>::size_type index,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<2>::setRow(const GeomTensor<2>::size_type index,
@@ -567,6 +546,7 @@ GeomTensor<2>::setRow(const GeomTensor<2>::size_type index,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<3>::setRow(const GeomTensor<3>::size_type index,
@@ -581,6 +561,7 @@ GeomTensor<3>::setRow(const GeomTensor<3>::size_type index,
 // Set a column of the GeomTensor to a GeomVector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<1>::setColumn(const GeomTensor<1>::size_type index,
@@ -590,6 +571,7 @@ GeomTensor<1>::setColumn(const GeomTensor<1>::size_type index,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<2>::setColumn(const GeomTensor<2>::size_type index,
@@ -600,6 +582,7 @@ GeomTensor<2>::setColumn(const GeomTensor<2>::size_type index,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<3>::setColumn(const GeomTensor<3>::size_type index,
@@ -614,6 +597,7 @@ GeomTensor<3>::setColumn(const GeomTensor<3>::size_type index,
 // Iterators to the raw data.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomTensor<nDim>::iterator
 GeomTensor<nDim>::begin() {
@@ -621,6 +605,7 @@ GeomTensor<nDim>::begin() {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomTensor<nDim>::iterator
 GeomTensor<nDim>::end() {
@@ -628,6 +613,7 @@ GeomTensor<nDim>::end() {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomTensor<nDim>::const_iterator
 GeomTensor<nDim>::begin() const{
@@ -635,6 +621,7 @@ GeomTensor<nDim>::begin() const{
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomTensor<nDim>::const_iterator
 GeomTensor<nDim>::end() const {
@@ -645,6 +632,7 @@ GeomTensor<nDim>::end() const {
 // Zero out the GeomTensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<1>::Zero() {
@@ -652,6 +640,7 @@ GeomTensor<1>::Zero() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<2>::Zero() {
@@ -662,6 +651,7 @@ GeomTensor<2>::Zero() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<3>::Zero() {
@@ -680,6 +670,7 @@ GeomTensor<3>::Zero() {
 // Force the tensor to be the identity tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<1>::Identity() {
@@ -687,6 +678,7 @@ GeomTensor<1>::Identity() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<2>::Identity() {
@@ -697,6 +689,7 @@ GeomTensor<2>::Identity() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<3>::Identity() {
@@ -715,6 +708,7 @@ GeomTensor<3>::Identity() {
 // Return the negative of a tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::operator-() const {
@@ -724,6 +718,7 @@ GeomTensor<1>::operator-() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::operator-() const {
@@ -736,6 +731,7 @@ GeomTensor<2>::operator-() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::operator-() const {
@@ -756,6 +752,7 @@ GeomTensor<3>::operator-() const {
 // Add two tensors.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -766,6 +763,7 @@ operator+(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -779,6 +777,7 @@ operator+(const GeomSymmetricTensor<nDim>& rhs) const {
 // Subtract a tensor from another.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -789,6 +788,7 @@ operator-(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -802,6 +802,7 @@ operator-(const GeomSymmetricTensor<nDim>& rhs) const {
 // Multiply two tensors.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -810,6 +811,7 @@ operator*(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomTensor<nDim>::
@@ -821,6 +823,7 @@ operator*(const GeomSymmetricTensor<nDim>& rhs) const {
 // Multiply a tensor with a vector.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
@@ -831,6 +834,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // // Add a scalar to a tensor.
 // //------------------------------------------------------------------------------
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<1>
 // GeomTensor<1>::operator+(const double rhs) const {
@@ -838,6 +842,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<2>
 // GeomTensor<2>::operator+(const double rhs) const {
@@ -846,6 +851,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<3>
 // GeomTensor<3>::operator+(const double rhs) const {
@@ -858,6 +864,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // // Subtract a scalar from a tensor.
 // //------------------------------------------------------------------------------
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<1>
 // GeomTensor<1>::operator-(const double rhs) const {
@@ -865,6 +872,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<2>
 // GeomTensor<2>::operator-(const double rhs) const {
@@ -873,6 +881,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<3>
 // GeomTensor<3>::operator-(const double rhs) const {
@@ -886,6 +895,7 @@ GeomTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
 // Multiply a tensor by a scalar
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::operator*(const double rhs) const {
@@ -893,6 +903,7 @@ GeomTensor<1>::operator*(const double rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::operator*(const double rhs) const {
@@ -901,6 +912,7 @@ GeomTensor<2>::operator*(const double rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::operator*(const double rhs) const {
@@ -914,6 +926,7 @@ GeomTensor<3>::operator*(const double rhs) const {
 // Divide a tensor by a scalar
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::operator/(const double rhs) const {
@@ -922,6 +935,7 @@ GeomTensor<1>::operator/(const double rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::operator/(const double rhs) const {
@@ -932,6 +946,7 @@ GeomTensor<2>::operator/(const double rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::operator/(const double rhs) const {
@@ -947,6 +962,7 @@ GeomTensor<3>::operator/(const double rhs) const {
 // += tensor
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator+=(const GeomTensor<1>& rhs) {
@@ -955,6 +971,7 @@ GeomTensor<1>::operator+=(const GeomTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator+=(const GeomTensor<2>& rhs) {
@@ -966,6 +983,7 @@ GeomTensor<2>::operator+=(const GeomTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator+=(const GeomTensor<3>& rhs) {
@@ -985,6 +1003,7 @@ GeomTensor<3>::operator+=(const GeomTensor<3>& rhs) {
 // += symmetric tensor
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator+=(const GeomSymmetricTensor<1>& rhs) {
@@ -993,6 +1012,7 @@ GeomTensor<1>::operator+=(const GeomSymmetricTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator+=(const GeomSymmetricTensor<2>& rhs) {
@@ -1004,6 +1024,7 @@ GeomTensor<2>::operator+=(const GeomSymmetricTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator+=(const GeomSymmetricTensor<3>& rhs) {
@@ -1064,6 +1085,7 @@ GeomTensor<3>::operator+=(const Eigen::MatrixBase<Derived>& rhs) {
 // -= tensor
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator-=(const GeomTensor<1>& rhs) {
@@ -1072,6 +1094,7 @@ GeomTensor<1>::operator-=(const GeomTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator-=(const GeomTensor<2>& rhs) {
@@ -1083,6 +1106,7 @@ GeomTensor<2>::operator-=(const GeomTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator-=(const GeomTensor<3>& rhs) {
@@ -1102,6 +1126,7 @@ GeomTensor<3>::operator-=(const GeomTensor<3>& rhs) {
 // -= symmetric tensor
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator-=(const GeomSymmetricTensor<1>& rhs) {
@@ -1110,6 +1135,7 @@ GeomTensor<1>::operator-=(const GeomSymmetricTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator-=(const GeomSymmetricTensor<2>& rhs) {
@@ -1121,6 +1147,7 @@ GeomTensor<2>::operator-=(const GeomSymmetricTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator-=(const GeomSymmetricTensor<3>& rhs) {
@@ -1181,6 +1208,7 @@ GeomTensor<3>::operator-=(const Eigen::MatrixBase<Derived>& rhs) {
 // Multiply by a tensor in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator*=(const GeomTensor<1>& rhs) {
@@ -1189,6 +1217,7 @@ GeomTensor<1>::operator*=(const GeomTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator*=(const GeomTensor<2>& rhs) {
@@ -1204,6 +1233,7 @@ GeomTensor<2>::operator*=(const GeomTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator*=(const GeomTensor<3>& rhs) {
@@ -1229,6 +1259,7 @@ GeomTensor<3>::operator*=(const GeomTensor<3>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator*=(const GeomSymmetricTensor<1>& rhs) {
@@ -1237,6 +1268,7 @@ GeomTensor<1>::operator*=(const GeomSymmetricTensor<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator*=(const GeomSymmetricTensor<2>& rhs) {
@@ -1252,6 +1284,7 @@ GeomTensor<2>::operator*=(const GeomSymmetricTensor<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
@@ -1280,6 +1313,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // // Add a scalar to this tensor in place.
 // //------------------------------------------------------------------------------
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<1>&
 // GeomTensor<1>::operator+=(const double rhs) {
@@ -1288,6 +1322,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<2>&
 // GeomTensor<2>::operator+=(const double rhs) {
@@ -1299,6 +1334,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<3>&
 // GeomTensor<3>::operator+=(const double rhs) {
@@ -1318,6 +1354,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // // Subtract a scalar from this tensor in place.
 // //------------------------------------------------------------------------------
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<1>&
 // GeomTensor<1>::operator-=(const double rhs) {
@@ -1326,6 +1363,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<2>&
 // GeomTensor<2>::operator-=(const double rhs) {
@@ -1337,6 +1375,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // GeomTensor<3>&
 // GeomTensor<3>::operator-=(const double rhs) {
@@ -1356,6 +1395,7 @@ GeomTensor<3>::operator*=(const GeomSymmetricTensor<3>& rhs) {
 // Multiply this tensor by a scalar in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator*=(const double rhs) {
@@ -1364,6 +1404,7 @@ GeomTensor<1>::operator*=(const double rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator*=(const double rhs) {
@@ -1375,6 +1416,7 @@ GeomTensor<2>::operator*=(const double rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator*=(const double rhs) {
@@ -1394,6 +1436,7 @@ GeomTensor<3>::operator*=(const double rhs) {
 // Divide this tensor by a scalar in place
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>&
 GeomTensor<1>::operator/=(const double rhs) {
@@ -1403,6 +1446,7 @@ GeomTensor<1>::operator/=(const double rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>&
 GeomTensor<2>::operator/=(const double rhs) {
@@ -1416,6 +1460,7 @@ GeomTensor<2>::operator/=(const double rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>&
 GeomTensor<3>::operator/=(const double rhs) {
@@ -1437,6 +1482,7 @@ GeomTensor<3>::operator/=(const double rhs) {
 // Define the equivalence operator.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<1>::
@@ -1445,6 +1491,7 @@ operator==(const GeomTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<2>::
@@ -1456,6 +1503,7 @@ operator==(const GeomTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<3>::
@@ -1472,6 +1520,7 @@ operator==(const GeomTensor<3>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<1>::
@@ -1480,6 +1529,7 @@ operator==(const GeomSymmetricTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<2>::
@@ -1491,6 +1541,7 @@ operator==(const GeomSymmetricTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<3>::
@@ -1507,6 +1558,7 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
 }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<1>::
@@ -1515,6 +1567,7 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<2>::
@@ -1526,6 +1579,7 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<3>::
@@ -1545,6 +1599,7 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
 // Define the not equivalence than comparitor.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1553,6 +1608,7 @@ operator!=(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1561,6 +1617,7 @@ operator!=(const GeomSymmetricTensor<nDim>& rhs) const {
 }
 
 // template<int nDim>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<nDim>::
@@ -1572,6 +1629,7 @@ operator!=(const GeomSymmetricTensor<nDim>& rhs) const {
 // Define the less than operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1580,6 +1638,7 @@ operator<(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1588,6 +1647,7 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
 }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<1>::
@@ -1596,6 +1656,7 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<2>::
@@ -1607,6 +1668,7 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<3>::
@@ -1626,6 +1688,7 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
 // Define the greater than operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1634,6 +1697,7 @@ operator>(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1642,6 +1706,7 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
 }
 
 // template<int nDim>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<nDim>::
@@ -1650,6 +1715,7 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<2>::
@@ -1661,6 +1727,7 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<3>::
@@ -1680,6 +1747,7 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
 // Define the less than or equal operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1688,6 +1756,7 @@ operator<=(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1696,6 +1765,7 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
 }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<1>::
@@ -1704,6 +1774,7 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<2>::
@@ -1715,6 +1786,7 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<3>::
@@ -1734,6 +1806,7 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
 // Define the greater than or equal operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1742,6 +1815,7 @@ operator>=(const GeomTensor<nDim>& rhs) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomTensor<nDim>::
@@ -1750,6 +1824,7 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
 }
 
 // template<int nDim>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<nDim>::
@@ -1758,6 +1833,7 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<2>::
@@ -1769,6 +1845,7 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
 // }
 
 // template<>
+// SPHERAL_HOST_DEVICE
 // inline
 // bool
 // GeomTensor<3>::
@@ -1789,6 +1866,7 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
 //   Bij = 0.5*(Aij + Aji)
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomTensor<1>::Symmetric() const {
@@ -1796,6 +1874,7 @@ GeomTensor<1>::Symmetric() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>
 GeomTensor<2>::Symmetric() const {
@@ -1807,6 +1886,7 @@ GeomTensor<2>::Symmetric() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<3>
 GeomTensor<3>::Symmetric() const {
@@ -1825,6 +1905,7 @@ GeomTensor<3>::Symmetric() const {
 //   Bij = 0.5*(Aij - Aji)
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::SkewSymmetric() const {
@@ -1832,6 +1913,7 @@ GeomTensor<1>::SkewSymmetric() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::SkewSymmetric() const {
@@ -1842,6 +1924,7 @@ GeomTensor<2>::SkewSymmetric() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::SkewSymmetric() const {
@@ -1859,6 +1942,7 @@ GeomTensor<3>::SkewSymmetric() const {
 // Return the transpose of the GeomTensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::
@@ -1867,6 +1951,7 @@ Transpose() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::
@@ -1876,6 +1961,7 @@ Transpose() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::
@@ -1889,6 +1975,7 @@ Transpose() const {
 // Return the inverse of the tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::Inverse() const {
@@ -1897,6 +1984,7 @@ GeomTensor<1>::Inverse() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::Inverse() const {
@@ -1906,6 +1994,7 @@ GeomTensor<2>::Inverse() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::Inverse() const {
@@ -1919,6 +2008,7 @@ GeomTensor<3>::Inverse() const {
 // Return the diagonal elements of the GeomTensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomTensor<1>::diagonalElements() const {
@@ -1926,6 +2016,7 @@ GeomTensor<1>::diagonalElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 GeomTensor<2>::diagonalElements() const {
@@ -1933,6 +2024,7 @@ GeomTensor<2>::diagonalElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomTensor<3>::diagonalElements() const {
@@ -1943,6 +2035,7 @@ GeomTensor<3>::diagonalElements() const {
 // Return the trace of the tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::Trace() const {
@@ -1950,6 +2043,7 @@ GeomTensor<1>::Trace() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::Trace() const {
@@ -1957,6 +2051,7 @@ GeomTensor<2>::Trace() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::Trace() const {
@@ -1967,6 +2062,7 @@ GeomTensor<3>::Trace() const {
 // Return the determinant of the tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::Determinant() const {
@@ -1974,6 +2070,7 @@ GeomTensor<1>::Determinant() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::Determinant() const {
@@ -1981,6 +2078,7 @@ GeomTensor<2>::Determinant() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::Determinant() const {
@@ -1992,6 +2090,7 @@ GeomTensor<3>::Determinant() const {
 // Multiply a tensor with a vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomTensor<1>::dot(const GeomVector<1>& rhs) const {
@@ -1999,6 +2098,7 @@ GeomTensor<1>::dot(const GeomVector<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 GeomTensor<2>::dot(const GeomVector<2>& rhs) const {
@@ -2007,6 +2107,7 @@ GeomTensor<2>::dot(const GeomVector<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomTensor<3>::dot(const GeomVector<3>& rhs) const {
@@ -2020,6 +2121,7 @@ GeomTensor<3>::dot(const GeomVector<3>& rhs) const {
 // multiplication.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::dot(const GeomTensor<1>& rhs) const {
@@ -2027,6 +2129,7 @@ GeomTensor<1>::dot(const GeomTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::dot(const GeomTensor<2>& rhs) const {
@@ -2037,6 +2140,7 @@ GeomTensor<2>::dot(const GeomTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::dot(const GeomTensor<3>& rhs) const {
@@ -2052,6 +2156,7 @@ GeomTensor<3>::dot(const GeomTensor<3>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::dot(const GeomSymmetricTensor<1>& rhs) const {
@@ -2060,6 +2165,7 @@ GeomTensor<1>::dot(const GeomSymmetricTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::dot(const GeomSymmetricTensor<2>& rhs) const {
@@ -2070,6 +2176,7 @@ GeomTensor<2>::dot(const GeomSymmetricTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::dot(const GeomSymmetricTensor<3>& rhs) const {
@@ -2088,6 +2195,7 @@ GeomTensor<3>::dot(const GeomSymmetricTensor<3>& rhs) const {
 // Return the doubledot product.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::
@@ -2096,6 +2204,7 @@ doubledot(const GeomTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::
@@ -2105,6 +2214,7 @@ doubledot(const GeomTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::
@@ -2118,6 +2228,7 @@ doubledot(const GeomTensor<3>& rhs) const {
 // Return the doubledot product with a symmetric tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::
@@ -2126,6 +2237,7 @@ doubledot(const GeomSymmetricTensor<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::
@@ -2135,6 +2247,7 @@ doubledot(const GeomSymmetricTensor<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::
@@ -2148,6 +2261,7 @@ doubledot(const GeomSymmetricTensor<3>& rhs) const {
 // Return the doubledot product with ourself.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::
@@ -2156,6 +2270,7 @@ selfDoubledot() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::
@@ -2165,6 +2280,7 @@ selfDoubledot() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::
@@ -2178,6 +2294,7 @@ selfDoubledot() const {
 // Return the square of this tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::
@@ -2186,6 +2303,7 @@ square() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::
@@ -2197,6 +2315,7 @@ square() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::
@@ -2216,6 +2335,7 @@ square() const {
 // Return a new tensor with the elements of this tensor squared.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::
@@ -2224,6 +2344,7 @@ squareElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomTensor<2>::
@@ -2235,6 +2356,7 @@ squareElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomTensor<3>::
@@ -2254,6 +2376,7 @@ squareElements() const {
 // Apply a rotational transform to this tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<1>::
@@ -2263,6 +2386,7 @@ rotationalTransform(const GeomTensor<1>& R) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<2>::
@@ -2291,6 +2415,7 @@ rotationalTransform(const GeomTensor<2>& R) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomTensor<3>::
@@ -2342,6 +2467,7 @@ rotationalTransform(const GeomTensor<3>& R) {
 // Return the maximum absolute value of the elements.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<1>::
@@ -2350,6 +2476,7 @@ maxAbsElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<2>::
@@ -2361,6 +2488,7 @@ maxAbsElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<3>::

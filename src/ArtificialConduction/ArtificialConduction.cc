@@ -242,7 +242,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
               // get some differentials
               const Vector rij        = ri - rj; /* this is sign flipped but it's ok! */
-              const Vector rji        = rj - ri;
+              //const Vector rji        = rj - ri;
               const Vector etai       = Hi*rij;
               const Vector etaj       = Hj*rij;
               const Vector etaiNorm   = etai.unitVector();

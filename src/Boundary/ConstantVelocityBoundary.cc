@@ -27,7 +27,7 @@ namespace Spheral {
 template<typename Dimension>
 ConstantVelocityBoundary<Dimension>::
 ConstantVelocityBoundary(const NodeList<Dimension>& nodeList,
-                         const vector<int>& nodeIndices):
+                         const vector<size_t>& nodeIndices):
   Boundary<Dimension>(),
   mNodeListPtr(&nodeList),
   mNodes("Constant Nodes", nodeList, 0),
@@ -35,11 +35,9 @@ ConstantVelocityBoundary(const NodeList<Dimension>& nodeList,
   mRestart(registerWithRestart(*this)) {
 
   // Store the ids of the nodes we're watching.
-  for (vector<int>::const_iterator itr = nodeIndices.begin();
-       itr < nodeIndices.end();
-       ++itr) {
-    REQUIRE(*itr >= 0.0 && *itr < (int)nodeList.numInternalNodes());
-    mNodes(*itr) = 1;
+  for (auto i: nodeIndices) {
+    REQUIRE(i < nodeList.numInternalNodes());
+    mNodes(i) = 1;
   }
 
   // Once we're done the boundary condition should be in a valid state.
@@ -99,8 +97,8 @@ setViolationNodes(NodeList<Dimension>& nodeList) {
 
   if (&nodeList == mNodeListPtr) {
     BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-    vector<int>& vNodes = boundaryNodes.violationNodes;
-    vNodes = nodeIndices();
+    auto& vNodes = boundaryNodes.violationNodes;
+    vNodes = this->nodeIndices();
   }
 }
 
@@ -133,12 +131,10 @@ enforceBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
       field.name() == HydroFieldNames::velocity) {
 
     // This is the velocity field, so enforce the boundary.
-    const vector<int> nodeIDs = nodeIndices();
-    for (vector<int>::const_iterator itr = nodeIDs.begin();
-         itr < nodeIDs.end();
-         ++itr) {
-      CHECK(*itr < (int)field.numElements());
-      field[*itr] = mVelocity[*itr];
+    const auto nodeIDs = this->nodeIndices();
+    for (auto i: nodeIDs) {
+      CHECK(i < field.numElements());
+      field[i] = mVelocity[i];
     }
   }
 }

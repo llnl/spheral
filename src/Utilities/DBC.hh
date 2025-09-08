@@ -11,6 +11,7 @@
 #include <exception>
 #include <cmath>
 #include "Distributed/Process.hh"
+#include "config.hh"
 
 #ifndef DBC_FUNCTIONS_HH
 #define DBC_FUNCTIONS_HH
@@ -107,6 +108,7 @@ inline bool nearlyEqual(const T& x,
 //----------------------------------------------------------------------------
 
 #ifdef DBC_USE_REQUIRE
+#if !defined(SPHERAL_GPU_ACTIVE)
 #define DBC_ASSERTION(x, msg, kind)                     \
    if (::Spheral::dbc::assertionLock()) {               \
       if (!(x)) {                                       \
@@ -118,6 +120,13 @@ inline bool nearlyEqual(const T& x,
    }                                                    \
    ::Spheral::dbc::assertionUnLock();                   \
 }
+#else // SPHERAL_GPU_ACTIVE
+#define DBC_ASSERTION(x, null_msg, kind) \
+  if (!(x)) { \
+    printf("%s\n...at line %d of file %s.\n", kind, __LINE__, __FILE__); \
+    abort(); \
+  }
+#endif // SPHERAL_GPU_ACTIVE
 #define REQUIRE2(x, msg) DBC_ASSERTION(x, msg, "Precondition violated")
 #define ASSERT2(x, msg) DBC_ASSERTION(x, msg, "Assertion violated")
 #else
@@ -162,6 +171,7 @@ inline bool nearlyEqual(const T& x,
 #define CHECK(x) ASSERT(x)
 #define CHECK2(x, msg) ASSERT2(x, msg)
 
+#ifndef SPHERAL_GPU_ACTIVE
 #define VERIFY2(x, msg) \
    if (!(x)) { \
       std::stringstream s; \
@@ -171,6 +181,13 @@ inline bool nearlyEqual(const T& x,
       ::Spheral::dbc::VERIFYError reason(s.str());\
       throw reason;\
    }
+#else // SPHERAL_GPU_ACTIVE
+#define VERIFY2(x, null_msg) \
+  if (!(x)) { \
+    printf("Verification failed:\n...at line %d of file %s.\n", __LINE__, __FILE__); \
+    abort(); \
+  }
+#endif // SPHERAL_GPU_ACTIVE
 #define VERIFY(x) VERIFY2(x, #x)
 
 // //----------------------------------------------------------------------------

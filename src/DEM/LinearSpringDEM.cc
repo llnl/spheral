@@ -479,7 +479,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
   const auto omega = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   const auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
-  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (int)0);
+  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (size_t)0);
   const auto compositeIndex = state.fields(DEMFieldNames::compositeParticleIndex, (int)0);
   
   CHECK(mass.size() == numNodeLists);
@@ -495,7 +495,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto shearDisplacement = state.fields(DEMFieldNames::shearDisplacement, std::vector<Vector>());
   const auto rollingDisplacement = state.fields(DEMFieldNames::rollingDisplacement, std::vector<Vector>());
   const auto torsionalDisplacement = state.fields(DEMFieldNames::torsionalDisplacement, std::vector<Scalar>());
-  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<int>());
+  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<size_t>());
 
   CHECK(equilibriumOverlap.size() == numNodeLists);
   CHECK(shearDisplacement.size() == numNodeLists);

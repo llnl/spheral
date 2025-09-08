@@ -1,4 +1,4 @@
-#ATS:test(SELF, label="LEOS analytic EOS comparison (Tillotson and gamma law gas)")
+#ATS:test(SELF, label="LEOS analytic EOS comparison (Tillotson and gamma law gas)", nt=10)
 #-------------------------------------------------------------------------------
 # LEOS unit test: generate an LEOS input from an analytic EOS, and compare
 # looking up values between the two

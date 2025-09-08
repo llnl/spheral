@@ -16,6 +16,7 @@
 #include "DataBase/IncrementState.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/PureReplaceBoundedState.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <string>
 
@@ -282,6 +283,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mAlpha, pathName + "/alpha");
   file.write(mDalphaDt, pathName + "/DalphaDt");
   file.write(mSolidMassDensity, pathName + "/solidMassDensity");
+  file.write(mc0, pathName + "/c0");
   file.write(mfDS, pathName + "/fDS");
   file.write(mfDSnew, pathName + "/fDSnew");
 }
@@ -298,6 +300,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mAlpha, pathName + "/alpha");
   file.read(mDalphaDt, pathName + "/DalphaDt");
   file.read(mSolidMassDensity, pathName + "/solidMassDensity");
+  if (file.readIfAvailable(mc0, pathName + "/c0") != 0) SpheralMessage("PorosityModel WARNING: unable to load variable c0");
   file.read(mfDS, pathName + "/fDS");
   file.read(mfDSnew, pathName + "/fDSnew");
 }

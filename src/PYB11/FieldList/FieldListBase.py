@@ -4,7 +4,7 @@ from PYB11Generator import *
 # FieldBase
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralField")
+@PYB11module("SpheralFieldList")
 class FieldListBase:
     "Base class for FieldLists -- not much to implement in Python."
 

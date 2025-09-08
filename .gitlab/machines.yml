@@ -22,21 +22,21 @@
   timeout: 24 hours
   extends: [.on_toss_4_x86_cray]
 
-.on_ruby:
+.on_dane:
   tags:
-    - ruby
+    - dane
     - batch
   variables:
     JACAMAR_SCHEDULER_ACTION: default
     SCHEDULER_PARAMETERS: "--reservation=ci --exclusive -N 1 -t 120"
-    NPROC: 56
-    HOSTNAME: 'ruby'
+    NPROC: 112
+    HOSTNAME: 'dane'
   timeout: 24 hours
   extends: [.on_toss_4_x86]
 
-.ruby_shell:
+.dane_shell:
   tags:
-    - ruby
+    - dane
     - shell
   variables:
     ENVIRONMENT: "INTERACTIVE"
@@ -46,17 +46,17 @@
 # ------------------------------------------------------------------------------
 
 .toss_resource_general:
-  extends: [.on_ruby]
+  extends: [.on_dane]
 
 .cray_resource_general:
   extends: [.on_tioga]
 
 .toss_shell1:
-  extends: [.ruby_shell]
+  extends: [.dane_shell]
 
 # Use for performance tests
 .toss_shell2:
-  extends: [.ruby_shell]
+  extends: [.dane_shell]
 
 .cray_shell1:
   extends: [.tioga_shell]

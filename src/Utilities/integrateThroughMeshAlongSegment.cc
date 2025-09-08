@@ -156,6 +156,7 @@ findIntersections(const Dim<2>::Vector& xmin,
   BEGIN_CONTRACT_SCOPE
   {
     const Vector shat = (s1 - s0).unitVector();
+    CONTRACT_VAR(shat);
     const double segLen = (s1 - s0).magnitude();
     for (vector<Vector>::const_iterator itr = result.begin();
 	 itr != result.end();
@@ -242,6 +243,7 @@ findIntersections(const Dim<3>::Vector& xmin,
   BEGIN_CONTRACT_SCOPE
   {
     const Vector shat = (s1 - s0).unitVector();
+    CONTRACT_VAR(shat);
     const double segLen = (s1 - s0).magnitude();
     for (vector<Vector>::const_iterator itr = result.begin();
 	 itr != result.end();

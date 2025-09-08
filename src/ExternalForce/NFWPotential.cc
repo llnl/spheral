@@ -126,7 +126,6 @@ dt(const DataBase<Dimension>& dataBase,
        ++nodeItr) {
     const Vector r = position(nodeItr) - mOrigin;
     const Scalar v = velocity(nodeItr).magnitude() + 1.0e-10;
-    const Vector runit = r.unitVector();
     const Scalar rsoft2 = r.magnitude2() + 1.0e-10;
     const Scalar rsoft = sqrt(rsoft2);
     const Scalar rsoft3 = rsoft*rsoft2;

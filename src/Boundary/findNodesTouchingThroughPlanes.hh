@@ -16,7 +16,7 @@
 namespace Spheral {
   
 template<typename Dimension>
-std::vector<int>
+std::vector<size_t>
 findNodesTouchingThroughPlanes(const NodeList<Dimension>& nodeList,
                                const GeomPlane<Dimension>& enterPlane,
                                const GeomPlane<Dimension>& exitPlane,

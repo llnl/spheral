@@ -179,8 +179,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       
       // Node displacement.
       const auto rij = ri - rj;
-      const auto rhatij =rij.unitVector();
-      const auto vij = vi - vj;
       const auto etai = Hi*rij;
       const auto etaj = Hj*rij;
       const auto etaMagi = etai.magnitude();

@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiations.
+// Explicit instantiations.
 //------------------------------------------------------------------------------
 #include "Gravity/NBodyGravity.cc"
 #include "Geometry/Dimension.hh"

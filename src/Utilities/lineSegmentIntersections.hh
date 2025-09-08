@@ -236,7 +236,6 @@ double
 segmentSegmentIntersectionTester<Dim<3>::Vector>::
 area2(const Dim<3>::Vector& a, const Dim<3>::Vector& b, const Dim<3>::Vector& c) const {
   typedef Dim<3>::Vector Vector;
-  const Vector ba = b - a;
   const Vector ca = c - a;
   const Vector norm = (b - a).cross(c - a);
   const Vector nhat = norm.unitVector();

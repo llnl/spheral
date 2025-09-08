@@ -207,6 +207,9 @@ computeOverlapIndices(const DataBase<Dimension>& dataBase) {
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
   const auto& connectivity = dataBase.connectivityMap();
   const auto requireGhostConnectivity = connectivity.buildGhostConnectivity();
   VERIFY(connectivity.buildOverlapConnectivity());
@@ -319,6 +322,10 @@ computeGlobalIndices(const DataBase<Dimension>& dataBase,
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
   const auto numGlobalNodesDB = dataBase.globalNumFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
+  CONTRACT_VAR(numGlobalNodesDB);
 
   // Make sure number of nodes has not changed since computing indices
   VERIFY(numNodesDB == size_t(mNumLocalNodes));
@@ -401,6 +408,9 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
   const auto& connectivity = dataBase.connectivityMap();
   const auto cells = state.fields(HydroFieldNames::cells, FacetedVolume());
   const auto cellFaceFlags = state.fields(HydroFieldNames::cellFaceFlags, std::vector<CellFaceFlag>());
@@ -549,6 +559,9 @@ computeBoundaryInformation(const DataBase<Dimension>& dataBase,
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
 
   // Make sure the sizes haven't changed since the indexing was initialized
   VERIFY(numNodesDB == size_t(mNumLocalNodes));

@@ -158,50 +158,59 @@ evaluateDerivatives(const Scalar time,
     const auto DrhoDti = DrhoDt(i);
     const auto DuDti = DuDt(i);
 
-    // Time evolution of the solid pressure
-    const auto dPsdti = dPsdri*DrhoDti + dPsdui*DuDti;
+    // If fully compressed we're done
+    if (alphai == 1.0) {
 
-    // If we're above the solid transition pressure we should compress out all porosity
-    if (Pi >= mPs) {
-
-      DalphaDt(i) = (1.0 - alphai)*safeInvVar(dt);
+      DalphaDt(i) = 0.0;
       fDSnew(i) = 1.0;
 
     } else {
 
-      // First compute the derivative with respect to pressure
-      auto DalphaDpi = 0.0;
-      if (alphai > 1.0) {
-        if (Pi < mPe or dPsdti < 0.0) {
+      // Time evolution of the solid pressure
+      const auto dPsdti = dPsdri*DrhoDti + dPsdui*DuDti;
 
-          // Elastic
-          if (c0i != mcS0) {  // If initial porous sound speed is the same as solid phase, no elastic evolution
-            const auto halpha = 1.0 + (alphai - 1.0)*(c0i - mcS0)*safeInvVar(mcS0*(mAlphae - 1.0));
-            DalphaDpi = alphai*alphai/mKS0*(1.0 - safeInvVar(halpha*halpha));
-          }
+      // If we're above the solid transition pressure we should compress out all porosity
+      if (Pi >= mPs) {
 
-        } else {
-
-          // Plastic
-          DalphaDpi = (Pi < mPt ?
-                       mn1*(mAlphat - mAlphae)*pow((mPt - Pi)/(mPt - mPe), mn1)*safeInv(mPt - Pi) + mn2*(1.0 - mAlphat)*pow((mPs - Pi)/(mPs - mPe), mn2)*safeInv(mPs - Pi) :
-                       mn2*(1.0 - mAlphat)*pow((mPs - Pi)/(mPs - mPe), mn2)*safeInv(mPs - Pi));
-
-        }
-      }
-
-      // Now we can compute the final time derivative
-      DalphaDpi = min(0.0, DalphaDpi);  // Keep things physical
-      const auto Ainv = safeInvVar(alphai + DalphaDpi*(Pi - rhoi*dPsdri));
-      const auto dPdti = (alphai*dPsdri*DrhoDti + dPsdui*DuDti)*Ainv;
-      DalphaDt(i) = DalphaDpi*dPdti;
-
-      // Optionally update the deviatoric stress scaling term
-      if (mJutziStateUpdate) {
-        auto DalphaDrhoi = (Pi/(rhoi*rhoi)*dPsdui + alphai*dPsdri)*Ainv * DalphaDpi;
-        fDSnew(i) = std::max(0.0, std::min(1.0, 1.0 + DalphaDrhoi*rhoi/alphai));
-      } else {
+        DalphaDt(i) = (1.0 - alphai)*safeInvVar(dt);
         fDSnew(i) = 1.0;
+
+      } else {
+
+        // First compute the derivative with respect to pressure
+        auto DalphaDpi = 0.0;
+        if (alphai > 1.0) {
+          if (Pi < mPe or dPsdti < 0.0) {
+
+            // Elastic
+            if (c0i != mcS0) {  // If initial porous sound speed is the same as solid phase, no elastic evolution
+              const auto halpha = 1.0 + (alphai - 1.0)*(c0i - mcS0)*safeInvVar(mcS0*(mAlphae - 1.0));
+              DalphaDpi = alphai*alphai/mKS0*(1.0 - safeInvVar(halpha*halpha));
+            }
+
+          } else {
+
+            // Plastic
+            DalphaDpi = (Pi < mPt ?
+                         mn1*(mAlphat - mAlphae)*pow((mPt - Pi)/(mPt - mPe), mn1)*safeInv(mPt - Pi) + mn2*(1.0 - mAlphat)*pow((mPs - Pi)/(mPs - mPe), mn2)*safeInv(mPs - Pi) :
+                         mn2*(1.0 - mAlphat)*pow((mPs - Pi)/(mPs - mPe), mn2)*safeInv(mPs - Pi));
+
+          }
+        }
+
+        // Now we can compute the final time derivative
+        DalphaDpi = min(0.0, DalphaDpi);  // Keep things physical
+        const auto Ainv = safeInvVar(alphai + DalphaDpi*(Pi - rhoi*dPsdri));
+        const auto dPdti = (alphai*dPsdri*DrhoDti + dPsdui*DuDti)*Ainv;
+        DalphaDt(i) = DalphaDpi*dPdti;
+
+        // Optionally update the deviatoric stress scaling term
+        if (mJutziStateUpdate) {
+          auto DalphaDrhoi = (Pi/(rhoi*rhoi)*dPsdui + alphai*dPsdri)*Ainv * DalphaDpi;
+          fDSnew(i) = std::max(0.0, std::min(1.0, 1.0 + DalphaDrhoi*rhoi/alphai));
+        } else {
+          fDSnew(i) = 1.0;
+        }
       }
     }
 
@@ -237,7 +246,6 @@ void
 PalphaPorosity<Dimension>::
 dumpState(FileIO& file, const string& pathName) const {
   PorosityModel<Dimension>::dumpState(file, pathName);
-  file.write(mc0, pathName + "/c0");
   file.write(mdPdU, pathName + "/dPdU");
   file.write(mdPdR, pathName + "/dPdR");
 }
@@ -250,7 +258,6 @@ void
 PalphaPorosity<Dimension>::
 restoreState(const FileIO& file, const string& pathName) {
   PorosityModel<Dimension>::restoreState(file, pathName);
-  file.read(mc0, pathName + "/c0");
   file.read(mdPdU, pathName + "/dPdU");
   file.read(mdPdR, pathName + "/dPdR");
 }

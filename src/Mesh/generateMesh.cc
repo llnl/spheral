@@ -45,6 +45,7 @@ generateMesh(const NodeListIterator nodeListBegin,
 
   // The total number of NodeLists we're working on.
   const size_t numNodeLists = distance(nodeListBegin, nodeListEnd);
+  CONTRACT_VAR(numNodeLists);
   const unsigned voidOffset = distance(nodeListBegin, find(nodeListBegin, nodeListEnd, &voidNodes));
 
   // Pre-conditions.

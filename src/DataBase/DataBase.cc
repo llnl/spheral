@@ -579,8 +579,8 @@ updateConnectivityMap(const bool computeGhostConnectivity,
 template<typename Dimension>
 void
 DataBase<Dimension>::
-patchConnectivityMap(const FieldList<Dimension, int>& flags,
-                     const FieldList<Dimension, int>& old2new) const {
+patchConnectivityMap(const FieldList<Dimension, size_t>& flags,
+                     const FieldList<Dimension, size_t>& old2new) const {
   REQUIRE(mConnectivityMapPtr);
   mConnectivityMapPtr->patchConnectivity(flags, old2new);
 }
@@ -1401,14 +1401,11 @@ DataBase<Dimension>::DEMParticleRadius() const {
 // Return the DEM unique particle index
 //------------------------------------------------------------------------------
 template<typename Dimension>
-FieldList<Dimension, int>
+FieldList<Dimension, size_t>
 DataBase<Dimension>::DEMUniqueIndex() const {
   REQUIRE(valid());
-  FieldList<Dimension, int> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->uniqueIndex());
-  }
+  FieldList<Dimension, size_t> result;
+  for (auto* nodeListPtr: mDEMNodeListPtrs) result.appendField(nodeListPtr->uniqueIndex());
   return result;
 }
 
@@ -1442,14 +1439,14 @@ DataBase<Dimension>::setDEMHfieldFromParticleRadius(const int startUniqueIndex) 
 }
 
 //------------------------------------------------------------------------------
-// calculated appropriates H from a given radius for each nodelist
+// Set the DEM particle global indices
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 DataBase<Dimension>::setDEMUniqueIndices() {
   REQUIRE(valid());
-    auto uniqueIndices = this->DEMUniqueIndex();
-    uniqueIndices += globalNodeIDs<Dimension>(this->nodeListBegin(),this->nodeListEnd());
+  auto uniqueIndices = this->DEMUniqueIndex();
+  uniqueIndices += globalNodeIDs<Dimension>(this->nodeListBegin(),this->nodeListEnd());
 }
 
 
@@ -1942,7 +1939,6 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
       }
       radiusNodes = allReduce(radiusNodes, SPHERAL_OP_MAX);
       radiusSample = allReduce(radiusSample, SPHERAL_OP_MAX);
-      const Vector delta = 0.001*(xmaxSample - xminSample);
       radiusNodes *= 1.001;
       radiusSample *= 1.001;
     }

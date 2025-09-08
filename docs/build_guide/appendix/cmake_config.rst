@@ -54,6 +54,10 @@ The following are CMake variables that can be set during configure time. In gene
 
    Enable Caliper timer information for Spheral.
 
+.. option:: -SPHERAL_ENABLE_LOGGER=<OFF, ON>
+
+   Enable debug log output at runtime.
+
 .. option:: -DENABLE_WARNINGS=<OFF, ON>
 
    Enable compiler warnings.

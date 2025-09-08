@@ -279,7 +279,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
   // using Plane = typename ClippingType<Dimension>::Plane;
   // using PolyVolume = typename ClippingType<Dimension>::PolyVolume;
 
-  const auto numGens = position.numNodes();
+  const auto numGens = position.numElements();
   const auto numNodeLists = position.size();
   const auto numGensGlobal = allReduce(numGens, SPHERAL_OP_SUM);
   const auto returnSurface = surfacePoint.size() == numNodeLists;
@@ -296,8 +296,6 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
 #pragma omp parallel for
       for (auto i = 0u; i < n; ++i) {
         const auto& ri = position(nodeListi, i);
-        const auto& Hi = H(nodeListi, i);
-        const auto  Hinv = Hi.Inverse();
 
         // Build the set of inverse positions in eta space about this point (including itself as the origin)
         vector<Vector> invPositions = {Vector::zero};

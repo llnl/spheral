@@ -30,13 +30,13 @@ NodeList.
     # Constructors
     def pyinit(self,
                nodeList = "const NodeList<%(Dimension)s>&",
-               nodeIndices = "const std::vector<int>&"):
+               nodeIndices = "const std::vector<size_t>&"):
         "Construct a constant radial velocity for the given nodes"
 
-    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodes, py::list nodeIndices) { return std::make_unique<ConstantRVelocityBoundary<%(Dimension)s>(nodes, Spheral::PYB11utils::from_list<int>(nodeIndices)); }")
+    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodes, py::list nodeIndices) { return std::make_unique<ConstantRVelocityBoundary<%(Dimension)s>(nodes, Spheral::PYB11utils::from_list<size_t>(nodeIndices)); }")
     def pyinit1(self,
                 nodeList = "const NodeList<%(Dimension)s>&",
-                nodeIndices = "const std::vector<int>&"):
+                nodeIndices = "const std::vector<size_t>&"):
         "Construct a constant radial velocity for the given nodes"
 
     #...........................................................................

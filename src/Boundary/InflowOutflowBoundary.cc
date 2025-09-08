@@ -68,13 +68,6 @@ InflowOutflowBoundary(DataBase<Dimension>& dataBase,
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-InflowOutflowBoundary<Dimension>::~InflowOutflowBoundary() {
-}
-
-//------------------------------------------------------------------------------
 // setGhostNodes
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -97,8 +90,8 @@ setGhostNodes(NodeList<Dimension>& nodeList) {
 
     // Create the ghost nodes.
     nodeList.numGhostNodes(currentNumGhostNodes + mNumInflowNodes[nodeList.name()]);
-    gNodes = vector<int>(mNumInflowNodes[nodeList.name()]);
-    for (auto i = 0; i < mNumInflowNodes[nodeList.name()]; ++i) gNodes[i] = firstNewGhostNode + i;
+    gNodes = vector<size_t>(mNumInflowNodes[nodeList.name()]);
+    for (auto i = 0u; i < mNumInflowNodes[nodeList.name()]; ++i) gNodes[i] = firstNewGhostNode + i;
     this->updateGhostNodes(nodeList);
   }
 }
@@ -188,23 +181,22 @@ updateViolationNodes(NodeList<Dimension>&) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-InflowOutflowBoundary<Dimension>::cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                                                 FieldList<Dimension, int>& old2newIndexMap,
-                                                 vector<int>& numNodesRemoved) {
+InflowOutflowBoundary<Dimension>::cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                                                 FieldList<Dimension, size_t>& old2newIndexMap,
+                                                 vector<size_t>& numNodesRemoved) {
 
   auto& registrar = NodeListRegistrar<Dimension>::instance();
   REQUIRE((int)numNodesRemoved.size() == registrar.numNodeLists());
 
   // Walk the NodeLists.
-  auto nodeListi = 0;
-  for (auto itr = registrar.begin(); itr < registrar.end(); ++itr, ++nodeListi) {
-    const auto* nodeListPtr = *itr;
+  for (auto [nodeListi, nodeListPtr]: enumerate(registrar.begin(), registrar.end())) {
 
     // Does the Boundary have entries for this NodeList?
     if (this->haveNodeList(*nodeListPtr)) {
       auto& boundaryNodes = this->accessBoundaryNodes(const_cast<NodeList<Dimension>&>(*nodeListPtr));
-      if (boundaryNodes.ghostNodes.size() > 0) {
+      if (boundaryNodes.ghostNodes.size() > 0u) {
         const auto myOldFirstGhostNode = boundaryNodes.ghostNodes[0];
+        CHECK(myOldFirstGhostNode >= numNodesRemoved[nodeListi]);
         const auto myNewFirstGhostNode = myOldFirstGhostNode - numNodesRemoved[nodeListi];
 
         // Grab the flags for this NodeList.
@@ -212,7 +204,7 @@ InflowOutflowBoundary<Dimension>::cullGhostNodes(const FieldList<Dimension, int>
         const auto& flags = *(flagSet[nodeListi]);
 
         // Patch up the ghost and control node indices.
-        vector<int> newGhostNodes, newControlNodes;
+        vector<size_t> newGhostNodes, newControlNodes;
         auto newGhostIndex = myNewFirstGhostNode;
         for (auto k = 0u; k < boundaryNodes.ghostNodes.size(); ++k) {
           CHECK(flags(boundaryNodes.ghostNodes[k]) == 1);
@@ -248,8 +240,8 @@ InflowOutflowBoundary<Dimension>::initializeProblemStartup(const bool /*final*/)
   mBufferedValues.clear();
 
   // Check all NodeLists.
-  for (auto itr = mDataBase.nodeListBegin(); itr < mDataBase.nodeListEnd(); ++itr) {
-    auto& nodeList = **itr;
+  for (auto* nodeListPtr: mDataBase.nodeListPtrs()) {
+    auto& nodeList = *nodeListPtr;
     // cerr << "--------------------------------------------------------------------------------" << endl
     //      << nodeList.name() << endl;
 
@@ -261,7 +253,7 @@ InflowOutflowBoundary<Dimension>::initializeProblemStartup(const bool /*final*/)
 
     // Remove any ghost nodes from other BCs.
     const auto firstGhostNode = nodeList.firstGhostNode();
-    nodeIDs.erase(std::remove_if(nodeIDs.begin(), nodeIDs.end(), [&](const unsigned int& x) { return x >= firstGhostNode; }), nodeIDs.end());
+    nodeIDs.erase(std::remove_if(nodeIDs.begin(), nodeIDs.end(), [&](const size_t& x) { return x >= firstGhostNode; }), nodeIDs.end());
 
     // cerr << "Node IDs: ";
     // std::copy(nodeIDs.begin(), nodeIDs.end(), std::ostream_iterator<int>(std::cerr, " "));
@@ -388,24 +380,26 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
 
   // First check every NodeList for any inflow or outflow nodes.
   bool altered = false;
-  for (auto itr = dataBase.nodeListBegin(); itr < dataBase.nodeListEnd(); ++itr) {
-    auto& nodeList = **itr;
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+    auto& nodeList = *nodeListPtr;
     bool nodeListAltered = false;
     // cerr << "--------------------------------------------------------------------------------" << endl
-    //      << nodeList.name() << endl;
+    //      << nodeList.name() << " " << nodeList.numInternalNodes() << " " << nodeList.numGhostNodes() << " " << nodeList.numNodes() << endl;
 
     // Find any ghost points that are inside the entrance plane and within our particle beam
     const auto& gNodes = this->ghostNodes(nodeList);
     auto& pos = nodeList.positions();
-    vector<int> insideNodes;
+    vector<size_t> insideNodes;
 
     // allow limiting of inflow radius from plane center
     const auto p0 = mPlane.point();
     const auto n0 = mPlane.normal();
     for (auto i: gNodes) {
+      CHECK(i >= gNodes[0]);
       const Scalar Ri = ((pos[i] - p0) - (pos[i] - p0).dot(n0)*n0).magnitude();
       const bool addNode = (mPlane.compare(pos[i]) == -1) and (Ri < mInflowRadius);
       if (addNode) insideNodes.push_back(i - gNodes[0]);
+      // if (addNode) cerr << "Adding ghost node [" << i << " " << pos[i] << " " << nodeList.mass()[i] << " " << nodeList.Hfield()[i] << "]" << endl;
     }
 
     const auto numNew = insideNodes.size();
@@ -421,7 +415,7 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
       nodeList.numInternalNodes(firstID + numNew);
 
       // Build the map of ghost IDs --> new internal IDs
-      vector<int> fromIDs(numNew), toIDs(numNew);
+      vector<size_t> fromIDs(numNew), toIDs(numNew);
       for (auto k = 0u; k < numNew; ++k) {
         fromIDs[k] = gNodes[0] + insideNodes[k] + numNew;
         toIDs[k] = firstID + k;
@@ -431,12 +425,12 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
       copyFieldValues(nodeList, fromIDs, toIDs);
 
       // cerr << "New internal positions:";
-      // for (auto k = 0; k < numNew; ++k) cerr << " [" << (firstID + k) << " " << pos[firstID + k] << " " << nodeList.mass()[firstID + k] << " " << nodeList.Hfield()[firstID + k] << "]";
+      // for (auto k = 0u; k < numNew; ++k) cerr << " [" << (firstID + k) << " " << pos[firstID + k] << " " << nodeList.mass()[firstID + k] << " " << nodeList.Hfield()[firstID + k] << "]";
       // cerr << endl;
     }
 
     // Look for any internal points that have exited through the plane.
-    vector<int> outsideNodes;
+    vector<size_t> outsideNodes;
     const auto ni = nodeList.numInternalNodes();
     for (auto i = 0u; i < ni; ++i) {
       if (mPlane.compare(pos[i]) == 1) outsideNodes.push_back(i);
@@ -462,11 +456,9 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
   // If any NodeLists were altered, recompute the boundary conditions.
   if (altered) {
     // Remove any old ghost node information from the NodeLists.
-    for (auto nodeListItr = dataBase.fluidNodeListBegin();
-         nodeListItr != dataBase.fluidNodeListEnd(); 
-         ++nodeListItr) {
-      (*nodeListItr)->numGhostNodes(0);
-      (*nodeListItr)->neighbor().updateNodes();
+    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+      nodeListPtr->numGhostNodes(0);
+      nodeListPtr->neighbor().updateNodes();
     }
     for (auto boundaryItr = this->boundaryBegin(); 
          boundaryItr < this->boundaryEnd();
@@ -485,7 +477,6 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
       }
     }
   }
-
 }
 
 //------------------------------------------------------------------------------
@@ -505,7 +496,7 @@ InflowOutflowBoundary<Dimension>::storedKeys() const {
 template<typename Dimension>
 void
 InflowOutflowBoundary<Dimension>::clearStoredValues() {
-  for (auto& stuff: mNumInflowNodes) stuff.second = 0;
+  for (auto& stuff: mNumInflowNodes) stuff.second = 0u;
   clearValues(mBufferedValues);
 }
 

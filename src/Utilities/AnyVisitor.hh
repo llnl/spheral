@@ -20,10 +20,10 @@ public:
   template<typename T, typename... EXTRAARGS>
   RETURNT visit(T value, EXTRAARGS&&... extraargs) const  {
     auto it = mVisitors.find(std::type_index(value.type()));
-    if (it != mVisitors.end()) {
-      return it->second(value, extraargs...);
+    if (it == mVisitors.end()) {
+      VERIFY2(false, "AnyVisitor ERROR: unable to process unknown data type " << std::quoted(value.type().name()));
     }
-    VERIFY2(false, "AnyVisitor ERROR: unable to process unknown data type " << std::quoted(value.type().name()));
+    return it->second(value, extraargs...);
   }
 
   template<typename T>

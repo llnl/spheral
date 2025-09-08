@@ -492,8 +492,8 @@ NBodyGravity<Dimension>::
 serialize(const FieldList<Dimension, typename Dimension::Scalar>& mass,
           const FieldList<Dimension, typename Dimension::Vector>& position,
           std::vector<char>& buffer) const {
-  const unsigned n = mass.numInternalNodes();
-  CHECK(position.numInternalNodes() == n);
+  const unsigned n = mass.numInternalElements();
+  CHECK(position.numInternalElements() == n);
   packElement(n, buffer);
   const unsigned numFields = mass.numFields();
   for (unsigned ifield = 0; ifield != numFields; ++ifield) {

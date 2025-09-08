@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "ArtificialViscosity/ArtificialViscosityHandle.cc"
 #include "Geometry/Dimension.hh"

@@ -438,7 +438,6 @@ peanoHilbertOrderIndices(const FieldList<Dimension, typename Dimension::Vector>&
   // Get the bounding box and step sizes.
   Vector xmin, xmax;
   globalBoundingBox(positions, xmin, xmax, true);
-  const Vector stepSize = (xmax - xmin)/KeyTraits::maxKey1d;
 
   // Go over all nodes and hash each position.
   for (AllNodeIterator<Dimension> nodeItr = positions.nodeBegin();

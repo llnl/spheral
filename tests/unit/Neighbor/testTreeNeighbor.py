@@ -1,4 +1,4 @@
-#ATS:test(SELF, np=1, level=100, label="TreeNeighbor unit tests")
+#ATS:test(SELF, np=1, level=100, label="TreeNeighbor unit tests", nt=10)
 from math import *
 import unittest
 import random

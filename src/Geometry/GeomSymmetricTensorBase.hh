@@ -7,6 +7,8 @@
 #ifndef __Spheral__GeomSymmetricTensorBase__
 #define __Spheral__GeomSymmetricTensorBase__
 
+#include "config.hh"
+
 namespace Spheral {
 
 template<int nDim> class GeomSymmetricTensorBase {};
@@ -14,46 +16,45 @@ template<int nDim> class GeomSymmetricTensorBase {};
 template<>
 class GeomSymmetricTensorBase<1> {
  public:
-  GeomSymmetricTensorBase(const double xx):
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx):
     mxx(xx) {}
  protected:
-  double mxx;
- private:
-  GeomSymmetricTensorBase();
+  double mxx = 0.0;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase() = default;
 };
 
 template<>
 class GeomSymmetricTensorBase<2> {
  public:
-  GeomSymmetricTensorBase(const double a):
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double a):
     mxx(a),
     mxy(a),
     myy(a) {}
-  GeomSymmetricTensorBase(const double xx, const double xy,
-                                           const double yy):
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx, const double xy,
+                                                               const double yy):
     mxx(xx),
     mxy(xy),
     myy(yy) {}
  protected:
-  double mxx, mxy,
-              myy;
- private:
-  GeomSymmetricTensorBase();
+  double mxx = 0.0;
+  double mxy = 0.0;
+  double myy = 0.0;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase() = default;
 };
 
 template<>
 class GeomSymmetricTensorBase<3> {
  public:
-  GeomSymmetricTensorBase(const double a):
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double a):
     mxx(a),
     mxy(a),
     mxz(a),
     myy(a),
     myz(a),
     mzz(a) {}
-  GeomSymmetricTensorBase(const double xx, const double xy, const double xz,
-                                           const double yy, const double yz,
-                                                            const double zz):
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx, const double xy, const double xz,
+                                                               const double yy, const double yz,
+                                                                                const double zz):
     mxx(xx),
     mxy(xy),
     mxz(xz),
@@ -61,11 +62,13 @@ class GeomSymmetricTensorBase<3> {
     myz(yz),
     mzz(zz) {}
  protected:
-  double mxx, mxy, mxz,
-              myy, myz,
-                   mzz;
- private:
-  GeomSymmetricTensorBase();
+  double mxx = 0.0;
+  double mxy = 0.0;
+  double mxz = 0.0;
+  double myy = 0.0;
+  double myz = 0.0;
+  double mzz = 0.0;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase() = default;
 };
 
 }

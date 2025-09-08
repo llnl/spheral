@@ -311,7 +311,7 @@ if theta == 0.5*pi:
 # Construct a constant velocity boundary conditions to be applied to the outside
 # of the disk.
 #-------------------------------------------------------------------------------
-rNodes = vector_of_int()
+rNodes = vector_of_ULL()
 dr = radius/nr
 rNodes.extend([i for i in range(nodes.numInternalNodes)
                if nodes.positions()[i].magnitude() > radius - 4*dr])
