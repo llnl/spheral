@@ -163,7 +163,7 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
       Scalar Wi, gWi, Wj, gWj;
       W.kernelAndGradValue(etai.magnitude(), Hdeti, Wi, gWi);
       W.kernelAndGradValue(etaj.magnitude(), Hdetj, Wj, gWj);
-      const Vector gradWi = -(Hi*etai.unitVector())*gWi;
+      //const Vector gradWi = -(Hi*etai.unitVector())*gWi;
       const Vector gradWj =  (Hj*etaj.unitVector())*gWj;
 
       // Normalization.

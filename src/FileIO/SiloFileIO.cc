@@ -6,6 +6,7 @@
 #include "SiloFileIO.hh"
 #include "Field/Field.hh"
 
+#include "Utilities/DBC.hh"
 #include "boost/algorithm/string.hpp"
 #include "boost/algorithm/string/replace.hpp"
 
@@ -90,6 +91,7 @@ string setdir(DBfile* filePtr, const string& ipath) {
 void writeInt(DBfile* filePtr, const int& value, const string path) {
   const string varname = setdir(filePtr, path);
   int dims[1] = {1};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(filePtr, varname.c_str(), &value, dims, 1, DB_INT) == 0,
           "SiloFileIO ERROR: unable to write int variable " << path);
 }
@@ -209,6 +211,7 @@ void
 SiloFileIO::write(const unsigned& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {1};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &value, dims, 1, DB_INT) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -220,6 +223,7 @@ void
 SiloFileIO::write(const size_t& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {1};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &value, dims, 1, DB_INT) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -240,6 +244,8 @@ SiloFileIO::write(const bool& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {1};
   int ivalue = value ? 1 : 0;
+  CONTRACT_VAR(dims);
+  CONTRACT_VAR(ivalue);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &ivalue, dims, 1, DB_INT) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -251,6 +257,7 @@ void
 SiloFileIO::write(const double& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {1};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &value, dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -273,6 +280,7 @@ SiloFileIO::write(const std::vector<int>& value, const string path) {
   if (size > 0) {
     const string varname = setdir(mFilePtr, path + "/value");
     int dims[1] = {size};
+    CONTRACT_VAR(dims);
     VERIFY2(DBWrite(mFilePtr, varname.c_str(), static_cast<void*>(const_cast<int*>(&value[0])), dims, 1, DB_INT) == 0,
             "SiloFileIO ERROR: unable to write std::vector " << path);
   }
@@ -288,6 +296,7 @@ SiloFileIO::write(const std::vector<double>& value, const string path) {
   if (size > 0) {
     const string varname = setdir(mFilePtr, path + "/value");
     int dims[1] = {size};
+    CONTRACT_VAR(dims);
     VERIFY2(DBWrite(mFilePtr, varname.c_str(), static_cast<void*>(const_cast<double*>(&value[0])), dims, 1, DB_DOUBLE) == 0,
             "SiloFileIO ERROR: unable to write std::vector " << path);
   }
@@ -316,6 +325,7 @@ void
 SiloFileIO::write(const Dim<1>::Vector& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<1>::Vector::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -327,6 +337,7 @@ void
 SiloFileIO::write(const Dim<1>::Tensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<1>::Tensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -338,6 +349,7 @@ void
 SiloFileIO::write(const Dim<1>::SymTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<1>::SymTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -349,6 +361,7 @@ void
 SiloFileIO::write(const Dim<1>::ThirdRankTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<1>::ThirdRankTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -360,6 +373,7 @@ void
 SiloFileIO::write(const Dim<2>::Vector& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<2>::Vector::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -371,6 +385,7 @@ void
 SiloFileIO::write(const Dim<2>::Tensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<2>::Tensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -382,6 +397,7 @@ void
 SiloFileIO::write(const Dim<2>::SymTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<2>::SymTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -393,6 +409,7 @@ void
 SiloFileIO::write(const Dim<2>::ThirdRankTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<2>::ThirdRankTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -404,6 +421,7 @@ void
 SiloFileIO::write(const Dim<3>::Vector& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<3>::Vector::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -415,6 +433,7 @@ void
 SiloFileIO::write(const Dim<3>::Tensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<3>::Tensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -426,6 +445,7 @@ void
 SiloFileIO::write(const Dim<3>::SymTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<3>::SymTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
@@ -437,6 +457,7 @@ void
 SiloFileIO::write(const Dim<3>::ThirdRankTensor& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {int(Dim<3>::ThirdRankTensor::numElements)};
+  CONTRACT_VAR(dims);
   VERIFY2(DBWrite(mFilePtr, varname.c_str(), &(*value.begin()), dims, 1, DB_DOUBLE) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }

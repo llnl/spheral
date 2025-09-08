@@ -9,11 +9,12 @@ from FieldListBase import *
 class FieldList(FieldListBase):
 
     PYB11typedefs = """
-    typedef FieldList<%(Dimension)s, %(Value)s> FieldListType;
-    typedef Field<%(Dimension)s, %(Value)s> FieldType;
-    typedef NodeList<%(Dimension)s> NodeListType;
-    typedef %(Dimension)s::Vector Vector;
-    typedef %(Dimension)s::SymTensor SymTensor;
+    using FieldListType =  FieldList<%(Dimension)s, %(Value)s>;
+    using FieldType = Field<%(Dimension)s, %(Value)s>;
+    using NodeListType = NodeList<%(Dimension)s>;
+    using Scalar = %(Dimension)s::Scalar;
+    using Vector = %(Dimension)s::Vector;
+    using SymTensor = %(Dimension)s::SymTensor;
 """
 
     def pyinit(self):
@@ -120,7 +121,7 @@ class FieldList(FieldListBase):
     @PYB11const
     def size(self):
         "Number of Fields"
-        return "unsigned"
+        return "size_t"
 
     @PYB11const
     @PYB11returnpolicy("reference_internal")
@@ -167,12 +168,12 @@ class FieldList(FieldListBase):
     @PYB11cppname("size")
     @PYB11const
     def __len__(self):
-        return "unsigned"
+        return "size_t"
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference")
     @PYB11keepalive(0,1)
-    def __getitem__(self, index="const unsigned"):
+    def __getitem__(self, index="const size_t"):
         return "FieldType*"
 
     @PYB11returnpolicy("reference")
@@ -181,15 +182,15 @@ class FieldList(FieldListBase):
         "Python iteration through a FieldList."
 
     def __call__(self,
-                 fieldIndex = "const unsigned",
-                 nodeIndex = "const unsigned"):
+                 fieldIndex = "const size_t",
+                 nodeIndex = "const size_t"):
         "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
         return "%(Value)s&"
 
     #...........................................................................
     # Properties
     storageType = PYB11property("FieldStorageType", doc="The method whereby Fields are stored/referenced by this FieldList")
-    numFields = PYB11property("unsigned", doc="Number of Fields")
-    numNodes = PYB11property("unsigned", doc="Number of nodes in all the associated Fields")
-    numInternalNodes = PYB11property("unsigned", doc="Number of internal nodes in all the associated Fields")
-    numGhostNodes = PYB11property("unsigned", doc="Number of ghost nodes in all the associated Fields")
+    numFields = PYB11property("size_t", doc="Number of Fields")
+    numElements = PYB11property("size_t", doc="Number of elements in all the associated Fields")
+    numInternalElements = PYB11property("size_t", doc="Number of internal elements in all the associated Fields")
+    numGhostElements = PYB11property("size_t", doc="Number of ghost elements in all the associated Fields")

@@ -41,7 +41,6 @@ computeSolidCRKSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityM
 
   typedef typename Dimension::Scalar Scalar;
   typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
 
   const auto W0 = W.kernelValue(0.0, 1.0);
 
@@ -62,8 +61,6 @@ computeSolidCRKSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityM
     // Some scratch variables.
     int i, j, nodeListi, nodeListj;
     Vector rij, etai, etaj;
-    Vector Bi = Vector::zero, Bj = Vector::zero;
-    Tensor Ci = Tensor::zero, Cj = Tensor::zero;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto massDensity_thread = massDensity.threadCopy(threadStack);

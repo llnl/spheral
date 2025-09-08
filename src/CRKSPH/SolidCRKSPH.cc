@@ -314,9 +314,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -370,7 +370,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
     Vector gradWi, gradWj;
     Vector deltagrad, forceij, forceji;
     Vector rij, vij, etai, etaj;
-    SymTensor sigmai, sigmaj, rijdyad;
+    SymTensor sigmai, sigmaj;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDt_thread = DvDt.threadCopy(threadStack);

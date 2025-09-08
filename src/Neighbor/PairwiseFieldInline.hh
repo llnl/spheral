@@ -33,20 +33,22 @@ template<typename Dimension, typename Value, size_t numElements>
 inline
 typename PairwiseField<Dimension, Value, numElements>::const_reference
 PairwiseField<Dimension, Value, numElements>::operator()(const NodePairIdxType& x) const {
-  if (auto p = mPairsPtr.lock()) {
-    return Accessor::at(mValues, p->index(x));
+  auto p = mPairsPtr.lock();
+  if (!p) {
+    VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
   }
-  VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
+  return Accessor::at(mValues, p->index(x));
 }
 
 template<typename Dimension, typename Value, size_t numElements>
 inline
 typename PairwiseField<Dimension, Value, numElements>::reference
 PairwiseField<Dimension, Value, numElements>::operator()(const NodePairIdxType& x) {
-  if (auto p = mPairsPtr.lock()) {
-    return Accessor::at(mValues, p->index(x));
+  auto p = mPairsPtr.lock();
+  if (!p) {
+    VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
   }
-  VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
+  return Accessor::at(mValues, p->index(x));
 }
 
 //------------------------------------------------------------------------------
@@ -56,10 +58,11 @@ template<typename Dimension, typename Value, size_t numElements>
 inline
 const NodePairList&
 PairwiseField<Dimension, Value, numElements>::pairs() const {
-  if (auto p = mPairsPtr.lock()) {
-    return *p;
+  auto p = mPairsPtr.lock();
+  if (!p) {
+    VERIFY2(false, "Orphaned PairwiseField without NodePairList");
   }
-  VERIFY2(false, "Orphaned PairwiseField without NodePairList");
+  return *p;
 }
 
 }

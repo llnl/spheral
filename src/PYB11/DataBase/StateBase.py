@@ -181,7 +181,8 @@ class StateBase:
     @PYB11const
     def fields(self,
                name = "const KeyType&",
-               dummy = ("const %(Value)s&", "%(Value)s()")):
+               dummy = ("const %(Value)s&", "%(Value)s()"),
+               allowNone = ("bool", "false")):
         "Return the %(Value)s FieldList based on the name"
         return "FieldList<%(Dimension)s, %(Value)s>"
 

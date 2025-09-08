@@ -84,8 +84,8 @@ computeGenerators(NodeListIterator nodeListBegin,
            bcItr != boundaryEnd;
            ++bcItr) {
         if ((*bcItr)->meshGhostNodes() and (*bcItr)->haveNodeList(**nodeListItr)) {
-          const vector<int>& ghostNodes = (*bcItr)->ghostNodes(**nodeListItr);
-          for (k = 0; k != ghostNodes.size(); ++k) {
+          const auto& ghostNodes = (*bcItr)->ghostNodes(**nodeListItr);
+          for (k = 0; k < ghostNodes.size(); ++k) {
             i = ghostNodes[k];
             //           if (!(i < pos.numElements())) {
             //             cerr << "Blago!  " << ghostNodes.size() << endl << "  ---> ";

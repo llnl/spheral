@@ -193,12 +193,12 @@ applyGhostBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     field(*ghostItr) = reflectOperator()*field(*controlItr);
   }
 }
@@ -218,12 +218,12 @@ applyGhostBoundary(Field<Dimension, typename Dimension::Tensor>& field) const {
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
 //     field(*ghostItr) = inverseReflectOperator*field(*controlItr)*reflectOperator();
     field(*ghostItr) = reflectOperator()*(field(*controlItr)*reflectOperator());
   }
@@ -244,12 +244,12 @@ applyGhostBoundary(Field<Dimension, typename Dimension::SymTensor>& field) const
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
 //     field(*ghostItr) = (inverseReflectOperator*field(*controlItr)*reflectOperator()).Symmetric();
     field(*ghostItr) = (reflectOperator()*(field(*controlItr)*reflectOperator())).Symmetric();
   }
@@ -266,15 +266,15 @@ applyGhostBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field)
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   ThirdRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     val = ThirdRankTensor::zero;
     const ThirdRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
@@ -305,15 +305,15 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   FourthRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     val = FourthRankTensor::zero;
     const FourthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
@@ -348,15 +348,15 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field)
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   FifthRankTensor val;
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     val = FifthRankTensor::zero;
     const FifthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
@@ -399,8 +399,8 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FacetedVolume>& field) c
   auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     field(*ghostItr) = reflectFacetedVolume(*this, field(*controlItr));
   }
 }
@@ -420,7 +420,7 @@ applyGhostBoundary(Field<Dimension, RKCoefficients<Dimension>>& field) const {
     const auto order = RKFieldNames::correctionOrder(fname);
     const ReproducingKernelMethods<Dimension> WR(order);
     const auto ncoeff = field[0].size();
-    CHECK((int)ncoeff == WR.gradCorrectionsSize() or ncoeff == WR.hessCorrectionsSize());
+    CHECK(ncoeff == (size_t)WR.gradCorrectionsSize() or ncoeff == (size_t)WR.hessCorrectionsSize());
     const bool useHessian = (ncoeff == WR.hessCorrectionsSize());
     const auto itr = mrkReflectOperators.find(order);
     CHECK(itr != mrkReflectOperators.end());
@@ -449,12 +449,12 @@ applyGhostBoundary(Field<Dimension, vector<typename Dimension::Vector>>& field) 
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 && *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() && *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     field(*ghostItr).clear();
     for (const auto& x: field(*controlItr)) field(*ghostItr).push_back(R*x);
   }
@@ -470,13 +470,11 @@ void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
   REQUIRE(valid());
-
-  const NodeList<Dimension>& nodeList = field.nodeList();
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    field(*itr) = reflectOperator()*field(*itr);
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto i: violationNodes) {
+    CHECK(i < nodeList.numInternalNodes());
+    field(i) = reflectOperator()*field(i);
   }
 }
 
@@ -486,13 +484,11 @@ void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::Tensor>& field) const {
   REQUIRE(valid());
-
-  const NodeList<Dimension>& nodeList = field.nodeList();
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    field(*itr) = reflectOperator()*field(*itr)*reflectOperator();
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto i: violationNodes) {
+    CHECK(i < nodeList.numInternalNodes());
+    field(i) = reflectOperator()*field(i)*reflectOperator();
   }
 }
 
@@ -502,13 +498,11 @@ void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::SymTensor>& field) const {
   REQUIRE(valid());
-
-  const NodeList<Dimension>& nodeList = field.nodeList();
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    field(*itr) = (reflectOperator()*field(*itr)*reflectOperator()).Symmetric();
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto i: violationNodes) {
+    CHECK(i < nodeList.numInternalNodes());
+    field(i) = (reflectOperator()*field(i)*reflectOperator()).Symmetric();
   }
 }
 
@@ -519,21 +513,20 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
-  const NodeList<Dimension>& nodeList = field.nodeList();
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
   ThirdRankTensor val;
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
+  for (auto ii: violationNodes) {
+    CHECK(ii < nodeList.numInternalNodes());
     val = ThirdRankTensor::zero;
-    const ThirdRankTensor& fc = field(*itr);
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
-      for (unsigned j = 0; j != Dimension::nDim; ++j) {
-        for (unsigned k = 0; k != Dimension::nDim; ++k) {
-          for (unsigned q = 0; q != Dimension::nDim; ++q) {
-            for (unsigned r = 0; r != Dimension::nDim; ++r) {
-              for (unsigned s = 0; s != Dimension::nDim; ++s) {
+    const ThirdRankTensor& fc = field(ii);
+    for (auto i = 0u; i < Dimension::nDim; ++i) {
+      for (auto j = 0u; j < Dimension::nDim; ++j) {
+        for (auto k = 0u; k < Dimension::nDim; ++k) {
+          for (auto q = 0u; q < Dimension::nDim; ++q) {
+            for (auto r = 0u; r < Dimension::nDim; ++r) {
+              for (auto s = 0u; s < Dimension::nDim; ++s) {
                 val(i,j,k) += T(i,q)*T(j,r)*T(k,s)*fc(q,r,s);
               }
             }
@@ -541,7 +534,7 @@ enforceBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) co
         }
       }
     }
-    field(*itr) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
+    field(ii) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
   }
 }
 
@@ -552,33 +545,32 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
-  const NodeList<Dimension>& nodeList = field.nodeList();
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
   FourthRankTensor val;
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
+  for (auto ii: violationNodes) {
+    CHECK(ii < nodeList.numInternalNodes());
     val = FourthRankTensor::zero;
-    const FourthRankTensor& fc = field(*itr);
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
-      for (unsigned j = 0; j != Dimension::nDim; ++j) {
-        for (unsigned k = 0; k != Dimension::nDim; ++k) {
-          for (unsigned l = 0; l != Dimension::nDim; ++l) {
-          for (unsigned q = 0; q != Dimension::nDim; ++q) {
-            for (unsigned r = 0; r != Dimension::nDim; ++r) {
-              for (unsigned s = 0; s != Dimension::nDim; ++s) {
-                    for (unsigned t = 0; t != Dimension::nDim; ++t) {
+    const FourthRankTensor& fc = field(ii);
+    for (auto i = 0u; i < Dimension::nDim; ++i) {
+      for (auto j = 0u; j < Dimension::nDim; ++j) {
+        for (auto k = 0u; k < Dimension::nDim; ++k) {
+          for (auto l = 0u; l < Dimension::nDim; ++l) {
+            for (auto q = 0u; q < Dimension::nDim; ++q) {
+              for (auto r = 0u; r < Dimension::nDim; ++r) {
+                for (auto s = 0u; s < Dimension::nDim; ++s) {
+                  for (auto t = 0u; t < Dimension::nDim; ++t) {
                     val(i,j,k,l) += T(i,q)*T(j,r)*T(k,s)*T(l,t)*fc(q,r,s,t);
-                    }
-              }
+                  }
+                }
               }
             }
           }
         }
       }
     }
-    field(*itr) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
+    field(ii) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
   }
 }
 
@@ -589,25 +581,24 @@ ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) const {
   REQUIRE(valid());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
-  const NodeList<Dimension>& nodeList = field.nodeList();
+  // const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
   FifthRankTensor val;
-  for (vector<int>::const_iterator itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
+  for (auto ii: violationNodes) {
+    CHECK(ii < nodeList.numInternalNodes());
     val = FifthRankTensor::zero;
-    const FifthRankTensor& fc = field(*itr);
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
-      for (unsigned j = 0; j != Dimension::nDim; ++j) {
-        for (unsigned k = 0; k != Dimension::nDim; ++k) {
-          for (unsigned l = 0; l != Dimension::nDim; ++l) {
-            for (unsigned m = 0; m != Dimension::nDim; ++m) {
-              for (unsigned q = 0; q != Dimension::nDim; ++q) {
-                for (unsigned r = 0; r != Dimension::nDim; ++r) {
-                  for (unsigned s = 0; s != Dimension::nDim; ++s) {
-                    for (unsigned t = 0; t != Dimension::nDim; ++t) {
-                      for (unsigned u = 0; u != Dimension::nDim; ++u) {
+    const FifthRankTensor& fc = field(ii);
+    for (auto i = 0u; i < Dimension::nDim; ++i) {
+      for (auto j = 0u; j < Dimension::nDim; ++j) {
+        for (auto k = 0u; k < Dimension::nDim; ++k) {
+          for (auto l = 0u; l < Dimension::nDim; ++l) {
+            for (auto m = 0u; m < Dimension::nDim; ++m) {
+              for (auto q = 0u; q < Dimension::nDim; ++q) {
+                for (auto r = 0u; r < Dimension::nDim; ++r) {
+                  for (auto s = 0u; s < Dimension::nDim; ++s) {
+                    for (auto t = 0u; t < Dimension::nDim; ++t) {
+                      for (auto u = 0u; u < Dimension::nDim; ++u) {
                         val(i,j,k,l,u) += T(i,q)*T(j,r)*T(k,s)*T(l,t)*T(m,u)*fc(q,r,s,t,u);
                       }
                     }
@@ -619,7 +610,7 @@ enforceBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) co
         }
       }
     }
-    field(*itr) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
+    field(ii) = val; // innerProduct<Dimension>(T, innerProduct<Dimension>(field(*itr), T2));
   }
 }
 
@@ -628,16 +619,13 @@ template<typename Dimension>
 void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, typename Dimension::FacetedVolume>& field) const {
-
   REQUIRE(valid());
-
   const auto& nodeList = field.nodeList();
-  for (auto itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    field(*itr) = reflectFacetedVolume(*this, field(*itr));
-    clipFacetedVolume(*this, field(*itr));
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto ii: violationNodes) {
+    CHECK(ii < nodeList.numInternalNodes());
+    field(ii) = reflectFacetedVolume(*this, field(ii));
+    clipFacetedVolume(*this, field(ii));
   }
 }
 
@@ -646,25 +634,23 @@ template<typename Dimension>
 void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, RKCoefficients<Dimension>>& field) const {
-
   const auto& nodeList = field.nodeList();
-  const auto& vnodes = this->violationNodes(nodeList);
-  if (not vnodes.empty()) {                       // Is there anything to do?
-
+  const auto& violationNodes = this->violationNodes(nodeList);
+  if (not violationNodes.empty()) {               // Is there anything to do?
     // Extract the order of the corrections, and the appropriate transformation
     const auto fname = field.name();
     const auto order = RKFieldNames::correctionOrder(fname);
     const ReproducingKernelMethods<Dimension> WR(order);
     const auto ncoeff = field[0].size();
-    CHECK((int)ncoeff == WR.gradCorrectionsSize() or ncoeff == WR.hessCorrectionsSize());
+    CHECK(ncoeff == (size_t)WR.gradCorrectionsSize() or ncoeff == (size_t)WR.hessCorrectionsSize());
     const auto useHessian = (ncoeff == WR.hessCorrectionsSize());
     const auto itr = mrkReflectOperators.find(order);
     CHECK(itr != mrkReflectOperators.end());
     const auto& T = useHessian ? itr->second.second : itr->second.first;
   
     // Apply the transformation
-    for (auto i: vnodes) {
-      WR.applyTransformation(T, field(i));
+    for (auto ii: violationNodes) {
+      WR.applyTransformation(T, field(ii));
     }
   }
 }
@@ -674,16 +660,13 @@ template<typename Dimension>
 void
 ReflectingBoundary<Dimension>::
 enforceBoundary(Field<Dimension, vector<typename Dimension::Vector>>& field) const {
-
   REQUIRE(valid());
   const auto& R = reflectOperator();
-
-  const NodeList<Dimension>& nodeList = field.nodeList();
-  for (auto itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    for (auto& x: field(*itr)) x = R*x;
+  const auto& nodeList = field.nodeList();
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto ii: violationNodes) {
+    CHECK(ii < nodeList.numInternalNodes());
+    for (auto& x: field(ii)) x = R*x;
   }
 }
 
@@ -786,7 +769,7 @@ enforceBoundary(vector<typename Dimension::ThirdRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   ThirdRankTensor val;
@@ -796,7 +779,7 @@ enforceBoundary(vector<typename Dimension::ThirdRankTensor>& faceField,
     CHECK(*itr < faceField.size());
     val = ThirdRankTensor::zero;
     const ThirdRankTensor& fc = faceField[*itr];
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
+    for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
         for (unsigned k = 0; k != Dimension::nDim; ++k) {
           for (unsigned q = 0; q != Dimension::nDim; ++q) {
@@ -821,7 +804,7 @@ enforceBoundary(vector<typename Dimension::FourthRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   FourthRankTensor val;
@@ -831,7 +814,7 @@ enforceBoundary(vector<typename Dimension::FourthRankTensor>& faceField,
     CHECK(*itr < faceField.size());
     val = FourthRankTensor::zero;
     const FourthRankTensor& fc = faceField[*itr];
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
+    for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
         for (unsigned k = 0; k != Dimension::nDim; ++k) {
           for (unsigned l = 0; l != Dimension::nDim; ++l) {
@@ -860,7 +843,7 @@ enforceBoundary(vector<typename Dimension::FifthRankTensor>& faceField,
                 const Mesh<Dimension>& mesh) const {
   REQUIRE(faceField.size() == mesh.numFaces());
   const Tensor T = this->reflectOperator();
-  const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
+  //const Tensor T2 = innerProduct<Dimension>(T.Transpose(), T.Transpose());
   const GeomPlane<Dimension>& plane = this->enterPlane();
   const vector<unsigned> faceIDs = this->facesOnPlane(mesh, plane, 1.0e-6);
   FifthRankTensor val;
@@ -870,7 +853,7 @@ enforceBoundary(vector<typename Dimension::FifthRankTensor>& faceField,
     CHECK(*itr < faceField.size());
     val = FifthRankTensor::zero;
     const FifthRankTensor& fc = faceField[*itr];
-    for (unsigned i = 0; i != Dimension::nDim; ++i) {
+    for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
         for (unsigned k = 0; k != Dimension::nDim; ++k) {
           for (unsigned l = 0; l != Dimension::nDim; ++l) {

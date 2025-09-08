@@ -1,5 +1,6 @@
 #include "Geometry/GeomPlane.hh"
 #include "NodeList/NodeListRegistrar.hh"
+#include "Utilities/DBC.hh"
 #include "Utilities/DataTypeTraits.hh"
 #include "Field/FieldList.hh"
 
@@ -69,6 +70,7 @@ FileIO::read(FieldList<Dimension, DataType>& fieldList,
     // We need the NodeListRegistrar.
     const NodeListRegistrar<Dimension>& registrar = NodeListRegistrar<Dimension>::instance();
     const size_t numNodeLists = registrar.numNodeLists();
+    CONTRACT_VAR(numNodeLists);
     const std::vector<std::string> registeredNames = registrar.registeredNames();
 
     // Read the set of NodeLists this FieldList is associated with.

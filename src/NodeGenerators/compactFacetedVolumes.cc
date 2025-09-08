@@ -213,7 +213,6 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
                   shapej = shapes[j] + centers[j];
                 }
                 if (shapei.intersect(shapej)) {
-                  const Vector centj = shapej.centroid();
                   const double Rj = radius[j];
                   auto overlap = max(0.0, (Ri + Rj - (shapei.centroid() - shapej.centroid()).magnitude())/(Ri + Rj));
 

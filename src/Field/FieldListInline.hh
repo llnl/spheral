@@ -122,13 +122,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
 template<typename Dimension, typename DataType>
 inline
 FieldList<Dimension, DataType>::~FieldList() {
-
-//   // Unregister this FieldList from each Field we point to.
-//   if (storageType() == FieldStorageType::ReferenceFields) {
-//     for (iterator fieldPtrItr = begin(); fieldPtrItr != end(); ++fieldPtrItr) 
-//       unregisterFromField(**fieldPtrItr);
-//   }
-
+  mFieldViews.free();
 }
 
 //------------------------------------------------------------------------------
@@ -628,7 +622,7 @@ template<typename Dimension, typename DataType>
 inline
 typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
-operator[](const unsigned int index) const {
+operator[](const size_t index) const {
   REQUIRE2(index < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << index << " !< " << mFieldPtrs.size());
   return mFieldPtrs[index];
 }
@@ -637,7 +631,7 @@ template<typename Dimension, typename DataType>
 inline
 typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
-operator[](const unsigned int index) {
+operator[](const size_t index) {
   REQUIRE2(index < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << index << " !< " << mFieldPtrs.size());
   return mFieldPtrs[index];
 }
@@ -649,7 +643,7 @@ template<typename Dimension, typename DataType>
 inline
 typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
-at(const unsigned int index) const {
+at(const size_t index) const {
   return (*this)[index];
 }
 
@@ -657,7 +651,7 @@ template<typename Dimension, typename DataType>
 inline
 typename FieldList<Dimension, DataType>::ElementType
 FieldList<Dimension, DataType>::
-at(const unsigned int index) {
+at(const size_t index) {
   return (*this)[index];
 }
 
@@ -716,8 +710,8 @@ template<typename Dimension, typename DataType>
 inline
 DataType&
 FieldList<Dimension, DataType>::
-operator()(const unsigned int fieldIndex,
-           const unsigned int nodeIndex) {
+operator()(const size_t fieldIndex,
+           const size_t nodeIndex) {
   REQUIRE2(fieldIndex < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << fieldIndex << " !< " << mFieldPtrs.size());
   REQUIRE2(nodeIndex < mFieldPtrs[fieldIndex]->size(), "FieldList node index ERROR: out of bounds " << nodeIndex << " !< " << mFieldPtrs[fieldIndex]->size());
   return mFieldPtrs[fieldIndex]->operator()(nodeIndex);
@@ -727,8 +721,8 @@ template<typename Dimension, typename DataType>
 inline
 const DataType&
 FieldList<Dimension, DataType>::
-operator()(const unsigned int fieldIndex,
-           const unsigned int nodeIndex) const {
+operator()(const size_t fieldIndex,
+           const size_t nodeIndex) const {
   REQUIRE2(fieldIndex < mFieldPtrs.size(), "FieldList index ERROR: out of bounds " << fieldIndex << " !< " << mFieldPtrs.size());
   REQUIRE2(nodeIndex < mFieldPtrs[fieldIndex]->size(), "FieldList node index ERROR: out of bounds " << nodeIndex << " !< " << mFieldPtrs[fieldIndex]->size());
   return mFieldPtrs[fieldIndex]->operator()(nodeIndex);
@@ -894,7 +888,7 @@ inline
 MasterNodeIterator<Dimension>
 FieldList<Dimension, DataType>::masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && masterLists[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -928,7 +922,7 @@ inline
 CoarseNodeIterator<Dimension>
 FieldList<Dimension, DataType>::coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && coarseNeighbors[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -962,7 +956,7 @@ inline
 RefineNodeIterator<Dimension>
 FieldList<Dimension, DataType>::refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
   auto nodeListItr = mNodeListPtrs.begin();
-  unsigned iNodeList = 0;
+  size_t iNodeList = 0;
   while (nodeListItr < mNodeListPtrs.end() && refineNeighbors[iNodeList].empty()) {
     ++nodeListItr;
     ++iNodeList;
@@ -1616,14 +1610,14 @@ operator<=(const DataType& rhs) const {
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-unsigned 
+size_t 
 FieldList<Dimension, DataType>::numFields() const {
   return mFieldPtrs.size();
 }
 
 template<typename Dimension, typename DataType>
 inline
-unsigned 
+size_t 
 FieldList<Dimension, DataType>::size() const {
   return numFields();
 }
@@ -1637,9 +1631,9 @@ FieldList<Dimension, DataType>::empty() const {
 
 template<typename Dimension, typename DataType>
 inline
-unsigned 
-FieldList<Dimension, DataType>::numNodes() const {
-  unsigned numberOfNodes = 0;
+size_t 
+FieldList<Dimension, DataType>::numElements() const {
+  size_t numberOfNodes = 0;
   for (auto iter = begin(); iter != end(); ++iter) {
     numberOfNodes += (*iter)->nodeList().numNodes();
   }
@@ -1648,9 +1642,9 @@ FieldList<Dimension, DataType>::numNodes() const {
 
 template<typename Dimension, typename DataType>
 inline
-unsigned 
-FieldList<Dimension, DataType>::numInternalNodes() const {
-  unsigned numberOfNodes = 0;
+size_t 
+FieldList<Dimension, DataType>::numInternalElements() const {
+  size_t numberOfNodes = 0;
   for (auto iter = begin(); iter != end(); ++iter) {
     numberOfNodes += (*iter)->nodeList().numInternalNodes();
   }
@@ -1659,9 +1653,9 @@ FieldList<Dimension, DataType>::numInternalNodes() const {
 
 template<typename Dimension, typename DataType>
 inline
-unsigned 
-FieldList<Dimension, DataType>::numGhostNodes() const {
-  unsigned numberOfNodes = 0;
+size_t 
+FieldList<Dimension, DataType>::numGhostElements() const {
+  size_t numberOfNodes = 0;
   for (auto iter = begin(); iter != end(); ++iter) {
     numberOfNodes += (*iter)->nodeList().numGhostNodes();
   }
@@ -1687,7 +1681,7 @@ inline
 std::vector<DataType>
 FieldList<Dimension, DataType>::
 internalValues() const {
-  const size_t ntot = this->numInternalNodes();
+  const size_t ntot = this->numInternalElements();
   std::vector<DataType> result(ntot);
   size_t offset = 0;
   for (auto itr = this->begin(); itr != this->end(); ++itr) {
@@ -1707,7 +1701,7 @@ inline
 std::vector<DataType>
 FieldList<Dimension, DataType>::
 ghostValues() const {
-  const size_t ntot = this->numGhostNodes();
+  const size_t ntot = this->numGhostElements();
   std::vector<DataType> result(ntot);
   size_t offset = 0;
   for (auto itr = this->begin(); itr != this->end(); ++itr) {
@@ -1727,7 +1721,7 @@ inline
 std::vector<DataType>
 FieldList<Dimension, DataType>::
 allValues() const {
-  const size_t ntot = this->numNodes();
+  const size_t ntot = this->numElements();
   std::vector<DataType> result(ntot);
   size_t offset = 0;
   for (auto itr = this->begin(); itr != this->end(); ++itr) {
@@ -1889,6 +1883,85 @@ operator*(const DataType& lhs,
     result.appendField(lhs * (*(rhs[i])));
   }
   return result;
+}
+
+//------------------------------------------------------------------------------
+// View functions.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView() {
+  auto func = [](
+      const chai::PointerRecord *,
+      chai::Action,
+      chai::ExecutionSpace) {};
+
+  return this->toView(func, func);
+}
+
+template<typename Dimension, typename DataType>
+template<typename FL>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView(FL&& extension) {
+  auto func = [](
+      const chai::PointerRecord *,
+      chai::Action,
+      chai::ExecutionSpace) {};
+
+  return this->toView(std::forward<FL>(extension), func);
+}
+
+template<typename Dimension, typename DataType>
+template<typename FL, typename F>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::toView(FL&& extension, F&& field_extension) {
+  auto callback = getFieldListCallback(std::forward<FL>(extension));
+
+  if (mFieldViews.size() == 0 && !mFieldViews.getPointer(chai::CPU, false)) {
+    mFieldViews.allocate(size(), chai::CPU, callback);
+  } else {
+    mFieldViews.setUserCallback(callback);
+    mFieldViews.reallocate(size());
+  }
+
+  for (size_t i = 0; i < size(); ++i) {
+    mFieldViews[i] = mFieldPtrs[i]->toView(std::forward<F>(field_extension));
+  }
+
+  mFieldViews.registerTouch(chai::CPU);
+
+  return ViewType(mFieldViews);
+}
+
+template<typename Dimension, typename DataType>
+template<typename F>
+inline
+auto FieldList<Dimension, DataType>::getFieldListCallback(F callback) {
+  return [callback](
+    const chai::PointerRecord * record,
+    chai::Action action,
+    chai::ExecutionSpace space) {
+      if (action == chai::ACTION_MOVE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : MOVED to the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : MOVED to the GPU";
+      } else if (action == chai::ACTION_ALLOC) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : ALLOC on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : ALLOC on the GPU";
+      } else if (action == chai::ACTION_FREE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : FREE on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : FREE on the GPU";
+      }
+      callback(record, action, space);
+    };
 }
 
 // //------------------------------------------------------------------------------

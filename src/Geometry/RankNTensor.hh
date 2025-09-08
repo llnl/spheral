@@ -24,70 +24,68 @@ public:
   // Useful static member data.
   static const size_type nrank;
   static const size_type nDimensions;
+  static constexpr size_type numElements = FastMath::calcPower(nDim, rank);
 
   // Constructors.
-  RankNTensor();
-  explicit RankNTensor(const double val);
-  RankNTensor(const RankNTensor& rhs);
-
-  // Destructor.
-  virtual ~RankNTensor();
+  SPHERAL_HOST_DEVICE RankNTensor() = default;
+  SPHERAL_HOST_DEVICE explicit RankNTensor(const double val);
+  SPHERAL_HOST_DEVICE RankNTensor(const RankNTensor& rhs) = default;
 
   // Assignment.
-  RankNTensor& operator=(const RankNTensor& rhs);
-  RankNTensor& operator=(const double rhs);
+  SPHERAL_HOST_DEVICE RankNTensor& operator=(const RankNTensor& rhs) = default;
+  SPHERAL_HOST_DEVICE RankNTensor& operator=(const double rhs);
 
   // More C++ style indexing.
-  double operator[](size_type index) const;
-  double& operator[](size_type index);
+  SPHERAL_HOST_DEVICE double operator[](size_type index) const;
+  SPHERAL_HOST_DEVICE double& operator[](size_type index);
 
   // Iterator access to the raw data.
-  iterator begin();
-  iterator end();
+  SPHERAL_HOST_DEVICE iterator begin();
+  SPHERAL_HOST_DEVICE iterator end();
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  SPHERAL_HOST_DEVICE const_iterator begin() const;
+  SPHERAL_HOST_DEVICE const_iterator end() const;
 
   // Zero out the tensor.
-  void Zero();
+  SPHERAL_HOST_DEVICE void Zero();
 
   // Assorted operations.
-  Descendant operator-() const;
+  SPHERAL_HOST_DEVICE Descendant operator-() const;
 
-  Descendant& operator+=(const RankNTensor& rhs);
-  Descendant& operator-=(const RankNTensor& rhs);
+  SPHERAL_HOST_DEVICE Descendant& operator+=(const RankNTensor& rhs);
+  SPHERAL_HOST_DEVICE Descendant& operator-=(const RankNTensor& rhs);
 
-  Descendant operator+(const RankNTensor& rhs) const;
-  Descendant operator-(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE Descendant operator+(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE Descendant operator-(const RankNTensor& rhs) const;
 
-  Descendant& operator*=(const double rhs);
-  Descendant& operator/=(const double rhs);
+  SPHERAL_HOST_DEVICE Descendant& operator*=(const double rhs);
+  SPHERAL_HOST_DEVICE Descendant& operator/=(const double rhs);
 
-  Descendant operator*(const double rhs) const;
-  Descendant operator/(const double rhs) const;
+  SPHERAL_HOST_DEVICE Descendant operator*(const double rhs) const;
+  SPHERAL_HOST_DEVICE Descendant operator/(const double rhs) const;
 
-  bool operator==(const RankNTensor& rhs) const;
-  bool operator!=(const RankNTensor& rhs) const;
-  bool operator<(const RankNTensor& rhs) const;
-  bool operator>(const RankNTensor& rhs) const;
-  bool operator<=(const RankNTensor& rhs) const;
-  bool operator>=(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<=(const RankNTensor& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>=(const RankNTensor& rhs) const;
 
-  bool operator==(const double rhs) const;
-  bool operator!=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const double rhs) const;
 
-  double doubledot(const RankNTensor<nDim, rank, Descendant>& rhs) const;
+  SPHERAL_HOST_DEVICE double doubledot(const RankNTensor<nDim, rank, Descendant>& rhs) const;
 
   // Return a tensor where each element is the square of the corresponding 
   // element of this tensor.
-  Descendant squareElements() const;
+  SPHERAL_HOST_DEVICE Descendant squareElements() const;
 
   // Return the max absolute element.
-  double maxAbsElement() const;
+  SPHERAL_HOST_DEVICE double maxAbsElement() const;
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  double* mElements;
+  double mElements[numElements] = {};
 };
 
 // Forward declare the global functions.
@@ -100,7 +98,6 @@ template<int nDim, int rank, typename Descendant> ::std::ostream& operator<<(std
 template<int nDim, int rank, typename Descendant> const typename RankNTensor<nDim, rank, Descendant>::size_type RankNTensor<nDim, rank, Descendant>::nrank = rank;
 template<int nDim, int rank, typename Descendant> const typename RankNTensor<nDim, rank, Descendant>::size_type RankNTensor<nDim, rank, Descendant>::nDimensions = nDim;
 
-template<int nDims, unsigned rank> constexpr int calcNumNRankElements() {return FastMath::calcPower(nDims, rank);}
 }
 
 #ifndef __GCCXML__

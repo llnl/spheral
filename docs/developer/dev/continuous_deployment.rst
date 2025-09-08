@@ -9,7 +9,7 @@ to their environment.
 
 On LC systems we maintain:
   * ``Spheral/risky``
-  * ``Spheral/2025.06.0``
+  * ``Spheral/2025.06.1``
   * ``Spheral/2025.01.0``
   * ``Spheral/2024.06.1``
   * ``Spheral/2024.01.1``

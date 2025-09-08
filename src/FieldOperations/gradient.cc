@@ -164,7 +164,7 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
   typedef typename MathTraits<Dimension, DataType>::GradientType GradientType;
 
   // Get size of vector
-  const auto vectorSize = (fieldList.numInternalNodes() > 0 ?
+  const auto vectorSize = (fieldList.numInternalElements() > 0 ?
                            fieldList(fieldList.internalNodeBegin()).size() :
                            0);
   

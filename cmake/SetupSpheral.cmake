@@ -70,6 +70,7 @@ option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
 option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
 option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
 
+option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
 option(ENABLE_SHARED "Building C++ libs shared" ON)

@@ -40,15 +40,15 @@ __host__ int launchCaller(int a, int b)
 {
   int c;
   int *d_c;
-  hipMalloc((void**) &d_c, sizeof(int));
+  (void)hipMalloc((void**) &d_c, sizeof(int));
 
   launch<<<1,1>>>(a,b,d_c);
   hipError_t err = hipGetLastError();
   if (err != hipSuccess) 
       printf("Error: %s\n", hipGetErrorString(err));
 
-  hipMemcpy(&c, d_c, sizeof(int), hipMemcpyDeviceToHost);
-  hipFree(d_c);
+  (void)hipMemcpy(&c, d_c, sizeof(int), hipMemcpyDeviceToHost);
+  (void)hipFree(d_c);
   return c;
 }
 #endif

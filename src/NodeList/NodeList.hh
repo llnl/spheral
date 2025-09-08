@@ -52,13 +52,13 @@ public:
 
   // Constructors
   explicit NodeList(std::string name,
-                    const unsigned numInternal,
-                    const unsigned numGhost,
+                    const size_t numInternal,
+                    const size_t numGhost,
                     const Scalar hmin = 1.0e-20,
                     const Scalar hmax = 1.0e20,
                     const Scalar hminratio = 0.1,
                     const Scalar nPerh = 2.01,
-                    const unsigned maxNumNeighbors = 500);
+                    const size_t maxNumNeighbors = 500);
 
   // Destructor
   virtual ~NodeList();
@@ -67,11 +67,11 @@ public:
   std::string name() const;
 
   // Get or set the number of Nodes.
-  unsigned numNodes() const;
-  unsigned numInternalNodes() const;
-  unsigned numGhostNodes() const;
-  void numInternalNodes(unsigned size);
-  void numGhostNodes(unsigned size);
+  size_t numNodes() const;
+  size_t numInternalNodes() const;
+  size_t numGhostNodes() const;
+  void numInternalNodes(size_t size);
+  void numGhostNodes(size_t size);
 
   // Provide the standard NodeIterators over the nodes of this NodeList.
   AllNodeIterator<Dimension> nodeBegin() const;
@@ -127,13 +127,13 @@ public:
   // NodeList.
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
-  int numFields() const;
+  size_t numFields() const;
   bool haveField(const FieldBase<Dimension>& field) const;
 
   // NodeLists can contain ghost nodes (either communicated from neighbor
   // processors, or simply created for boundary conditions).
   NodeType nodeType(int i) const;
-  unsigned firstGhostNode() const;
+  size_t firstGhostNode() const;
 
   // Access the neighbor object.
   Neighbor<Dimension>& neighbor() const;
@@ -146,8 +146,8 @@ public:
   void nodesPerSmoothingScale(Scalar val);
 
   // The maximum number of neighbors we want to have (for calculating the ideal H).
-  unsigned maxNumNeighbors() const;
-  void maxNumNeighbors(unsigned val);
+  size_t maxNumNeighbors() const;
+  void maxNumNeighbors(size_t val);
 
   // Allowed range of smoothing scales for use in calculating H.
   Scalar hmin() const;
@@ -163,13 +163,13 @@ public:
   // Methods for adding/removing individual nodes to/from the NodeList
   // (including all Field information.  These methods are primarily useful
   // for redistributing Nodes between parallel domains.
-  virtual void deleteNodes(const std::vector<int>& nodeIDs);
-  virtual std::list< std::vector<char> >  packNodeFieldValues(const std::vector<int>& nodeIDs) const;
-  virtual void appendInternalNodes(const int numNewNodes,
-                                   const std::list< std::vector<char> >& packedFieldValues);
+  virtual void deleteNodes(const std::vector<size_t>& nodeIDs);
+  virtual std::list<std::vector<char>>  packNodeFieldValues(const std::vector<size_t>& nodeIDs) const;
+  virtual void appendInternalNodes(const size_t numNewNodes,
+                                   const std::list<std::vector<char>>& packedFieldValues);
 
   // A related method for reordering the nodes.
-  virtual void reorderNodes(const std::vector<int>& newOrdering);
+  virtual void reorderNodes(const std::vector<size_t>& newOrdering);
   //****************************************************************************
 
   //****************************************************************************
@@ -184,13 +184,18 @@ public:
   bool operator==(const NodeList& rhs) const;
   bool operator!=(const NodeList& rhs) const;
 
+  // No default constructor, copying, or assignment.
+  NodeList() = delete;
+  NodeList(const NodeList& nodes) = delete;
+  NodeList& operator=(const NodeList& rhs) = delete;
+
 protected:
   //--------------------------- Protected Interface ---------------------------//
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  unsigned mNumNodes;
-  unsigned mFirstGhostNode;
+  size_t mNumNodes;
+  size_t mFirstGhostNode;
 
   std::string mName;
 
@@ -206,7 +211,7 @@ private:
   // Stuff for how H is handled.
   Scalar mhmin, mhmax, mhminratio;
   Scalar mNodesPerSmoothingScale;
-  unsigned mMaxNumNeighbors;
+  size_t mMaxNumNeighbors;
 
   // List of fields that are defined over this NodeList.
   mutable std::vector<FieldBase<Dimension>*> mFieldBaseList;
@@ -217,11 +222,6 @@ private:
 
   // The restart registration.
   RestartRegistrationType mRestart;
-
-  // No default constructor, copying, or assignment.
-  NodeList();
-  NodeList(const NodeList& nodes);
-  NodeList& operator=(const NodeList& rhs);
 };
 
 }
