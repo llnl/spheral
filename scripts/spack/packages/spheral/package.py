@@ -87,7 +87,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
 
-    depends_on('leos@8.5.2+filters+yaml+xml+silo', type='build', when='+leos')
+    depends_on('leos@8.5.2+filters+yaml~xml+silo', type='build', when='+leos')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared"]
