@@ -27,8 +27,6 @@ commandLine(seed = "lattice",
             nTheta = 64,
             rmin = 0.0,
             rmax = 1.0,
-            nPerh = 1.00,
-            order = 3,
 
             rho0 = 1.0,
             eps0 = 0.0,
@@ -42,6 +40,9 @@ commandLine(seed = "lattice",
             rhomin = 1e-10,
 
             # kernel
+            kernelConstructor = NBSplineKernel,
+            nPerh = 1.00,
+            order = 3,
             HUpdate = IdealH,
             hmin = 1e-15,
             hmax = 1.0,
@@ -61,7 +62,7 @@ commandLine(seed = "lattice",
             evolveTotalEnergy = False,    
             compatibleEnergy = True,
             gradhCorrection = True,
-            correctVelocityGradient = True,
+            correctVelocityGradient = False,
             densityUpdate = RigorousSumDensity, 
             filter = 0.0,
 
@@ -72,6 +73,7 @@ commandLine(seed = "lattice",
             # gsph options
             RiemannGradientType = SPHSameTimeGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
             linearReconstruction = True,
+            nodeMotionType = "eulerian",
 
             # Artifical Viscosity
             boolReduceViscosity = False,
@@ -167,6 +169,20 @@ elif mfm:
     hydroname = "MFM"
 elif mfv:
     hydroname = "MFV"
+    if nodeMotionType == "eulerian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Eulerian
+    elif nodeMotionType == "lagrangian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Lagrangian
+    elif nodeMotionType == "fician":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Fician
+    elif nodeMotionType == "xsph":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.XSPH
+    else:
+        raise ValueError ("WHAT DID YOU DO!!!???")
 else:
     hydroname = "SPH"
 if asph:
@@ -206,10 +222,13 @@ eos = GammaLawGasMKS(gamma, mu)
 # Create our interpolation kernels -- one for normal hydro interactions, and
 # one for use with the artificial viscosity
 #-------------------------------------------------------------------------------
-WT = TableKernel(NBSplineKernel(order), 1000)
-output("WT")
-kernelExtent = WT.kernelExtent
+if kernelConstructor == NBSplineKernel:
+    WT = TableKernel(NBSplineKernel(order), 1000)
+else:
+    WT = TableKernel(kernelConstructor(), 1000)
 
+    output("WT")
+    kernelExtent = WT.kernelExtent
 #-------------------------------------------------------------------------------
 # Create a NodeList and associated Neighbor object.
 #-------------------------------------------------------------------------------
@@ -391,7 +410,7 @@ elif mfv:
                 correctVelocityGradient= correctVelocityGradient,
                 evolveTotalEnergy = evolveTotalEnergy,
                 gradientType = RiemannGradientType,
-                nodeMotionType=NodeMotionType.Eulerian,
+                nodeMotionType = nodeMotionType,
                 XSPH = XSPH,
                 ASPH = asph,
                 densityUpdate=densityUpdate,
