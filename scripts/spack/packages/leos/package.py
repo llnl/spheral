@@ -41,7 +41,7 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     variant("mpi",     default=True,  description="Build wit MPI enabled")
     variant("filters", default=True,  description="Build LEOS filter coding")
-    variant("yaml",    default=True,  description="Enable yaml features")
+    variant("yaml",    default=False,  description="Enable yaml features")
     variant("xml",     default=False, description="Enable xml features")
     variant("lto",     default=False, description="Build w/-dlto when cuda-11")
     variant("cuda",    default=False, description="Build LIP using RAJA + CUDA GPU code")
