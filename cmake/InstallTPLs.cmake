@@ -191,7 +191,7 @@ endif()
 
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
 list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
-list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR} ${hdf5_DIR})
+list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
