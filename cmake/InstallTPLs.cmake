@@ -155,6 +155,17 @@ if (SPHERAL_ENABLE_TIMERS)
 endif()
 
 message("-----------------------------------------------------------------------------")
+# HDF5
+find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+if(hdf5_FOUND)
+  message("Found HDF5 External Package.")
+  list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
+  list(APPEND SPHERAL_FP_TPLS hdf5-shared hdf5_hl-shared)
+  list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
+  blt_convert_to_system_includes(TARGET hdf5-shared hdf5_hl-shared)
+endif()
+
+message("-----------------------------------------------------------------------------")
 find_package(RAJA REQUIRED NO_DEFAULT_PATH PATHS ${raja_DIR})
 if (RAJA_FOUND)
   message("Found RAJA External Package.")
@@ -176,16 +187,10 @@ if(chai_FOUND)
   blt_convert_to_system_includes(TARGET chai)
 endif()
 
-message("-----------------------------------------------------------------------------")
-# HDF5
-find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
-if(hdf5_FOUND)
-  message("Found hdf5 External Package.")
-  blt_convert_to_system_includes(TARGET hdf5-shared hdf5-static)
-endif()
 
-list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire hdf5)
-list(APPEND SPHERAL_FP_TPLS chai RAJA umpire hdf5)
+
+list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
+list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
 list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR} ${hdf5_DIR})
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
