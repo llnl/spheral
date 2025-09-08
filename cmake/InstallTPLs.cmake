@@ -179,7 +179,7 @@ endif()
 # LIP
 if(ENABLE_LEOS)
   message("-----------------------------------------------------------------------------")
-  find_package(lip REQUIRED NO_DEFAULT_PATH PATHS ${leos_DIR})
+  find_package(LIP REQUIRED NO_DEFAULT_PATH PATHS ${leos_DIR})
   message("Found LIP External Package.")
   blt_convert_to_system_includes(TARGET lip-cpp)
   list(APPEND SPHERAL_BLT_DEPENDS lip-cpp)
