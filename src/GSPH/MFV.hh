@@ -13,7 +13,7 @@
 //        2) Lagrangian -- nodal velocity = fluid velocity. (This is
 //                         a spheralized version of MFV so there
 //                         is some flux between nodes)
-//        3) Fician ------ nodal velocity = fluid velocity + Fician
+//        3) Fickian ------ nodal velocity = fluid velocity + Fician
 //                         PST correction
 //        4) XSPH -------- nodal velocity = xsph velocity
 //

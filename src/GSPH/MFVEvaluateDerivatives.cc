@@ -437,11 +437,11 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
   const auto  numNodeLists = nodeLists.size();
   const auto& pairs = connectivityMap.nodePairList();
   const auto  npairs = pairs.size();
-  //const auto  nPerh = nodeLists[0]->nodesPerSmoothingScale();
+  const auto  nPerh = nodeLists[0]->nodesPerSmoothingScale();
 
   // kernel
   const auto& W = this->kernel();
-  //const auto  WnPerh = W(1.0/nPerh, 1.0);
+  const auto  WnPerh = W(1.0/nPerh, 1.0);
   const auto  W0 = W(0.0, 1.0);
 
   // Get the state and derivative FieldLists. 
@@ -562,6 +562,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
       const auto gradPsii = voli*gradWi;
       const auto gradPsij = volj*gradWj;
 
+      
       //HStretchTensori -= voli*rij.selfdyad()*gWi*rMagij;
       //HStretchTensorj -= volj*rij.selfdyad()*gWj*rMagij;
 
@@ -589,10 +590,10 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         DxDtj -= wij*psij*(vj-vi);
       }
       if(ficianMotion){
-        //const auto fi = FastMath::pow4(Wi/(Hdeti*WnPerh));
-        //const auto fj = FastMath::pow4(Wj/(Hdetj*WnPerh));
-        DxDti -= -rij*psii;
-        DxDtj += -rij*psij;
+        const auto fi = FastMath::pow4(Wi/(Hdeti*WnPerh));
+        const auto fj = FastMath::pow4(Wj/(Hdetj*WnPerh));
+        DxDti -= (1.0+fi)*gradPsii;
+        DxDtj += (1.0+fj)*gradPsij;
       }
 
       normi += psii;//voli*gradWi.magnitude();
@@ -646,8 +647,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
       }
 
       if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
-      if(ficianMotion) DxDti *= nodeMotionCoeff * ci * ci * Dimension::rootnu(Hdeti) *
-                                safeInv( max(10.0*DxDti.magnitude(),ci));
+      if(ficianMotion) DxDti *= nodeMotionCoeff * ci * Dimension::rootnu(Hdeti);
       if(!noMotion) DxDti += vi;
     }
     
