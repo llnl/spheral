@@ -20,7 +20,7 @@ set(Hydro_sources
     )
 
 if (ENABLE_2D)
-  list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)
+  list(APPEND Hydro_sources RZCompatibleDifferenceSpecificThermalEnergyPolicy.cc RZNonSymmetricSpecificThermalEnergyPolicy.cc)
 endif()
 
 if (ENABLE_1D AND ENABLE_2D)
@@ -36,6 +36,7 @@ set(Hydro_headers
     CompatibleDifferenceSpecificThermalEnergyPolicy.hh
     NonSymmetricSpecificThermalEnergyPolicy.hh
     PressurePolicy.hh
+    RZCompatibleDifferenceSpecificThermalEnergyPolicy.hh
     RZNonSymmetricSpecificThermalEnergyPolicy.hh
     SoundSpeedPolicy.hh
     SpecificFromTotalThermalEnergyPolicy.hh

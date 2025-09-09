@@ -22,6 +22,7 @@
 #include "Hydro/SpecificThermalEnergyPolicy.hh"
 #include "Hydro/SpecificFromTotalThermalEnergyPolicy.hh"
 #include "Hydro/RZNonSymmetricSpecificThermalEnergyPolicy.hh"
+#include "Hydro/RZCompatibleDifferenceSpecificThermalEnergyPolicy.hh"
 #include "Hydro/PressurePolicy.hh"
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "RK/ContinuityVolumePolicyRZ.hh"
@@ -204,7 +205,7 @@ registerState(DataBase<Dimension>& dataBase,
   // Register the specific thermal energy.
   auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
   if (compatibleEnergy) {
-    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
+    state.enroll(specificThermalEnergy, make_policy<RZCompatibleDifferenceSpecificThermalEnergyPolicy>(dataBase));
 
   } else if (evolveTotalEnergy) {
     // If we're doing total energy, we register the specific energy to advance with the
@@ -447,8 +448,6 @@ secondDerivativesLoop(const Dimension::Scalar time,
                       const State<Dimension>& state,
                       StateDerivatives<Dimension>& derivs,
                       const QType& Q) const { 
-
-  // XXX TODO: add R factors
 
   using QPiType = typename QType::ReturnType;
 
@@ -1036,11 +1035,9 @@ secondDerivativesLoop(const Dimension::Scalar time,
         DepsDti -= mRZj*deltaDepsDti;
         DepsDtj -= mRZi*deltaDepsDtj;
 
-        if(compatibleEnergy){
-          // XXX TODO: check mass factor. SolidSPHRZ has mass here, but SolidFSISPH does not.
-          (*pairAccelerationsPtr)[kk][0] =  mRZj*deltaDvDt;
-          (*pairAccelerationsPtr)[kk][1] = -mRZi*deltaDvDt;
-          (*pairDepsDtPtr)[kk][0] = - deltaDepsDti; 
+        if (compatibleEnergy) {
+          (*pairAccelerationsPtr)[kk] = -deltaDvDt;
+          (*pairDepsDtPtr)[kk][0] = - deltaDepsDti;
           (*pairDepsDtPtr)[kk][1] = - deltaDepsDtj;
         }
         
@@ -1190,8 +1187,6 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
                      const DataBase<Dimension>& dataBase,
                      const State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) const {
-
-  // XXX TODO: add R factors
 
   // The kernels and such.
   const auto& W = this->kernel();

@@ -28,8 +28,10 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
-  using PairAccelerationsType = PairwiseField<Dimension, Vector, 2u>;
+
+  using PairAccelerationsType = PairwiseField<Dimension, Vector, 1u>;
   using PairWorkType = PairwiseField<Dimension, Scalar, 2u>;
 
   // Constructors.
