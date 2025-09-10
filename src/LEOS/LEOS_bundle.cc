@@ -144,7 +144,6 @@ LEOS_bundle():
 //------------------------------------------------------------------------------
 LEOS_bundle::
 ~LEOS_bundle() {
-  printf("Shutting down leos singleton\n");
   LEOS::shutdown();  // Tell LEOS to close down and clean up
 }
 

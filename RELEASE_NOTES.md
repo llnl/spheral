@@ -36,6 +36,9 @@ Notable changes include:
     * Updated GitHub actions since GitLab mirror changed.
     * CHAI is no longer a submodule.
       * CHAI, RAJA, Umpire, and Camp are all brought in through Spack as external TPLs now.
+      * Umpire is updated to version 2025.03.1.
+      * RAJA is updated to version 2025.03.0.
+      * LEOs spack recipe is simplified.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
