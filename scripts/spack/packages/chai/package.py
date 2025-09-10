@@ -11,5 +11,5 @@ from spack.pkg.builtin.chai import Chai as BuiltinChai
 class Chai(BuiltinChai):
 
     version("develop", commit="b7babdc0c333baa68e53b026c63d65c48c8d8eb1", submodules=False)
-    depends_on("raja@2025.03.2", type="build", when="+raja")
-    depends_on("umpire@2025.03.0", type="build")
+    depends_on("raja@2025.03.0", type="build", when="+raja")
+    depends_on("umpire@2025.03.1", type="build")

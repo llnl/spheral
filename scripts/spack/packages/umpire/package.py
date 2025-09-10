@@ -10,5 +10,5 @@ from spack.pkg.builtin.umpire import Umpire as BuiltinUmpire
 
 class Umpire(BuiltinUmpire):
 
-    version("2025.03.0", tag="v2025.03.0", submodules=False)
+    version("2025.03.1", tag="v2025.03.1", submodules=False)
     depends_on("camp@2025.03.0", type="build")
