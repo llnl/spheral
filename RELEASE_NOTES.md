@@ -39,6 +39,8 @@ Notable changes include:
       * Umpire is updated to version 2025.03.1.
       * RAJA is updated to version 2025.03.0.
       * LEOs spack recipe is simplified.
+    * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
+      by adding `build_type=Debug`.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
