@@ -25,10 +25,10 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     fileUrl = 'file://' + fileLoc
     url = os.path.join(fileUrl, "leos-8.4.1.tar.gz")
 
-    version("8.5.2", sha256="0fd104fd8599c5349d5156a433df0aa04880c01eb0105c9318493fc17b3b5a6f", preferred=True)
+    version("8.5.2", sha256="0fd104fd8599c5349d5156a433df0aa04880c01eb0105c9318493fc17b3b5a6f")
     version("8.5.1", sha256="a072e48100bca21a594c6725158a0a7128f65ee4ce2aaa0be6e8fe55d3eff96a")
     version("8.5.0", sha256="49b6549ce5fbca8afdd58f2266591f6ce68341b2f37bf4302c08c217a353362a")
-    version("8.4.2", sha256="08eb87580e30d7a1db72b1e1a457652dda9535df1c0caf7b5badb9cadf39f2a9")
+    version("8.4.2", sha256="08eb87580e30d7a1db72b1e1a457652dda9535df1c0caf7b5badb9cadf39f2a9", preferred=True)
     version("8.4.1", sha256="93abeea9e336e3a81cc6cc9de10b2a2fd61eda2a89abece50cac80fef58ec38b")
     version("8.4.0", sha256="233333d0ac1bd0fa3a4eb756248c6c996b98bccb8dd957d9fac9e744fb6ede6b")
     version("8.3.5", sha256="60d8298a5fc0dc056f33b39f664aab5ef75b4c4a4b3e1b80b22d769b39175db8")
