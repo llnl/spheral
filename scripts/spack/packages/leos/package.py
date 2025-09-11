@@ -28,7 +28,6 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     version("8.5.2", sha256="0fd104fd8599c5349d5156a433df0aa04880c01eb0105c9318493fc17b3b5a6f", preferred=True)
     version("8.5.1", sha256="a072e48100bca21a594c6725158a0a7128f65ee4ce2aaa0be6e8fe55d3eff96a")
     version("8.5.0", sha256="49b6549ce5fbca8afdd58f2266591f6ce68341b2f37bf4302c08c217a353362a")
-    #version("8.4.2.1", sha256="589a2b664e1bc1d245816dd536c950065ec2a6dac3f16b9ed53fb86e4e79a4db")
     version("8.4.2", sha256="08eb87580e30d7a1db72b1e1a457652dda9535df1c0caf7b5badb9cadf39f2a9")
     version("8.4.1", sha256="93abeea9e336e3a81cc6cc9de10b2a2fd61eda2a89abece50cac80fef58ec38b")
     version("8.4.0", sha256="233333d0ac1bd0fa3a4eb756248c6c996b98bccb8dd957d9fac9e744fb6ede6b")
@@ -40,7 +39,7 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     variant("mpi",     default=True,  description="Build wit MPI enabled")
     variant("filters", default=True,  description="Build LEOS filter coding")
-    variant("yaml",    default=False,  description="Enable yaml features")
+    variant("yaml",    default=True,  description="Enable yaml features")
     variant("xml",     default=False, description="Enable xml features")
     variant("lto",     default=False, description="Build w/-dlto when cuda-11")
     variant("cuda",    default=False, description="Build LIP using RAJA + CUDA GPU code")
