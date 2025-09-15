@@ -223,7 +223,7 @@ registerState(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 void
 SolidFSISPHRZ::
-registerDerivatives(DataBase<Dimension>&  dataBase,
+registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   SolidFSISPH<Dimension>::registerDerivatives(dataBase, derivs);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
@@ -403,7 +403,6 @@ linearReconstruction(const typename Dimension::Vector& ri,
                      const typename Dimension::Vector& DyDxj,
                            typename Dimension::Scalar& ytildei,
                            typename Dimension::Scalar& ytildej) const {
-  // XXX TODO: do I need 2*pi*r factor conversions here too?
   SolidFSISPH<Dimension>::linearReconstruction(ri, rj, yi, yj,
 					    DyDxi, DyDxj, ytildei, ytildej);
 }
@@ -521,9 +520,9 @@ secondDerivativesLoop(const Dimension::Scalar time,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
 
   //const auto yield = state.fields(SolidFieldNames::yieldStrength, 0.0);
   //const auto invJ2 = state.fields(FSIFieldNames::inverseEquivalentDeviatoricStress, 0.0);
@@ -1036,7 +1035,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
         DepsDtj -= mRZi*deltaDepsDtj;
 
         if (compatibleEnergy) {
-          (*pairAccelerationsPtr)[kk] = -deltaDvDt;
+          (*pairAccelerationsPtr)[kk] = - deltaDvDt;
           (*pairDepsDtPtr)[kk][0] = - deltaDepsDti;
           (*pairDepsDtPtr)[kk][1] = - deltaDepsDtj;
         }
@@ -1095,7 +1094,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
       const auto& interfaceFlagsi = interfaceFlags(nodeListi,i);
       const auto& interfaceAreaVectorsi = interfaceAreaVectors(nodeListi,i);
       const auto  Hdeti = Hi.Determinant();
-      const auto psi = Hdeti*mRZi/rhoi*W0; // XXX TODO: is this mRZi or mi?
+      const auto psi = Hdeti*mRZi/rhoi*W0;
       const auto  zetai = abs((Hi*ri).y());
       const auto  hri = abs(ri.y())*safeInv(zetai);
       const auto  riInv = safeInv(abs(ri.y()), 0.25*hri);
@@ -1103,7 +1102,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
 
-      auto& DvDti = DvDt(nodeListi,i); // XXX TODO: no longer a const?
+      auto& DvDti = DvDt(nodeListi,i);
       const auto& localMi = localM(nodeListi, i);
       auto& normi = normalization(nodeListi,i);
       auto& DepsDti = DepsDt(nodeListi,i);
@@ -1146,7 +1145,7 @@ secondDerivativesLoop(const Dimension::Scalar time,
 
       // RZ continuity: include hoop term v_r / r
       const auto vri = vi.y(); // + XSPHDeltaVi.y();
-      DrhoDti -= rhoi*(DvDxi.Trace() + vri*riInv); // XXX TODO -= (like in SolidFSISPHEvaluateDerivatives.cc) or = - (like in SolidFSISPH.cc)?
+      DrhoDti -= rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
       DepsDti += (STTi - pressure(nodeListi, i))/rhoi*vri*riInv;
@@ -1323,8 +1322,8 @@ firstDerivativesLoop(const Dimension::Scalar /*time*/,
         gradWj = gradWij;
       }
 
-      gradWi *= mRZj/rhoj; // XXX TODO: mRZj or mj?
-      gradWj *= mRZi/rhoi; // XXX TODO: mRZi or mi?
+      gradWi *= mRZj/rhoj;
+      gradWj *= mRZi/rhoi;
 
       // spatial gradients and correction
       //---------------------------------------------------------------

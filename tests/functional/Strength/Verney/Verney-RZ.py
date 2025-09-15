@@ -271,7 +271,7 @@ elif hydroType == "FSISPH":
                    # filter = filter, # TODO: add filter to FSISPH too
                    cfl = cfl,
                    interfaceMethod = HLLCInterface,
-                   densityStabilizationCoefficient = 0.00,
+                   densityStabilizationCoefficient = 0.01,
                    compatibleEnergyEvolution = compatibleEnergy,
                    HUpdate = HUpdate,
                    epsTensile = epsilonTensile,

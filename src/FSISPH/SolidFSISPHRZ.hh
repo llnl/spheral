@@ -37,7 +37,7 @@ public:
   // Constructors.
   SolidFSISPHRZ(DataBase<Dimension>& dataBase,
 		ArtificialViscosityHandle<Dimension>& Q,
-		SlideSurface<Dimension>& slide,
+		SlideSurface<Dimension>& slides,
 		const TableKernel<Dimension>& W,
 		const double cfl,
 		const double surfaceForceCoefficient,
