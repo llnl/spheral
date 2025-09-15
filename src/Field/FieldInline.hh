@@ -1319,10 +1319,10 @@ assignDataSpan() {
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
     DEBUG_LOG << " --> SUCCESS";
   }
+  mDataSpan.setUserCallback(getCallback());
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
-  mDataSpan.setUserCallback(getCallback());
 }
 
 // Default callback action to be used with chai Managed containers. An
