@@ -88,7 +88,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
-    depends_on('leos@8.4.2+filters+yaml~xml+silo', type='build', when='+leos')
+    depends_on('leos@8.5.2+filters+yaml~xml+silo', type='build', when='+leos')
     depends_on('leos build_type=Debug', when='+leos build_type=Debug')
 
     # Forward MPI Variants
@@ -99,6 +99,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     # Forward CUDA/ROCM Variants
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
+    if LEOSpresent:
+        gpu_tpl_list.append("leos")
     for ctpl in gpu_tpl_list:
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val}")
