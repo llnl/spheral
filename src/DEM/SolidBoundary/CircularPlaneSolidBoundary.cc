@@ -89,7 +89,7 @@ update(const double multiplier, const double t, const double dt) {
   mPoint += multiplier*mVelocity;
   // Update the orientation of the boundary based on angular velocity
   // Assuming a simple Euler for rotation
-  mNormal += multiplier * DEMDimension<Dimension>::cross(mAngularVelocity,mNormal) * dt;
+  mNormal += multiplier * DEMDimension<Dimension>::cross(mAngularVelocity,mNormal);
   mNormal = mNormal.unitVector(); // Normalize to maintain unit length
 }
 
