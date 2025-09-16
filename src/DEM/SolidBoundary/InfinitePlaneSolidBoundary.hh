@@ -6,6 +6,7 @@
 #ifndef __Spheral_InfinitePlaneSolidBoundary_hh__
 #define __Spheral_InfinitePlaneSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {

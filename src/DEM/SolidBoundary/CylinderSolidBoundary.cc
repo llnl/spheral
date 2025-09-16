@@ -12,6 +12,7 @@
 
 #include "DEM/SolidBoundary/CylinderSolidBoundary.hh"
 
+#include <cmath>
 #include <string>
 using std::string;
 

@@ -8,6 +8,7 @@
 #ifndef __Spheral_CircularPlaneSolidBoundary_hh__
 #define __Spheral_CircularPlaneSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {
@@ -28,7 +29,7 @@ public:
 
   CircularPlaneSolidBoundary(const Vector& point,
                              const Vector& normal,
-                             const Scalar& exent,
+                             const Scalar  exent,
                              const RotationType& angularVelocity);
 
   ~CircularPlaneSolidBoundary();
@@ -46,7 +47,7 @@ public:
   const Vector& point() const;
   void point(const Vector& value);
 
-    const Vector& normal() const;
+  const Vector& normal() const;
   void normal(const Vector& value);
 
   Scalar extent() const;

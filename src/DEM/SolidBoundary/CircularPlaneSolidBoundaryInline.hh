@@ -83,3 +83,5 @@ CircularPlaneSolidBoundary<Dimension>::
 angularVelocity(const typename DEMDimension<Dimension>::AngularVector& value) {
   mAngularVelocity=value;
 }
+
+}

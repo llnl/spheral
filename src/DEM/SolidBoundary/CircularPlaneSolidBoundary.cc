@@ -13,6 +13,7 @@
 
 #include "DEM/SolidBoundary/CircularPlaneSolidBoundary.hh"
 
+#include <cmath>
 #include <string>
 using std::string;
 
@@ -22,7 +23,7 @@ template<typename Dimension>
 CircularPlaneSolidBoundary<Dimension>::
 CircularPlaneSolidBoundary(const Vector& point, 
                            const Vector& normal, 
-                           const Scalar& extent,
+                           const Scalar  extent,
                            const RotationType& angularVelocity):
   SolidBoundaryBase<Dimension>(),
   mPoint(point),

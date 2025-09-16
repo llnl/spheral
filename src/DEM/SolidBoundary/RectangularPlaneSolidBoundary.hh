@@ -8,6 +8,7 @@
 #ifndef __Spheral_RectangularPlaneSolidBoundary_hh__
 #define __Spheral_RectangularPlaneSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {

@@ -7,6 +7,7 @@
 #ifndef __Spheral_CylinderSolidBoundary_hh__
 #define __Spheral_CylinderSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {

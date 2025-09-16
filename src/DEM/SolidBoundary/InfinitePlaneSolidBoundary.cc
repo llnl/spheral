@@ -12,6 +12,7 @@
 
 #include "DEM/SolidBoundary/InfinitePlaneSolidBoundary.hh"
 
+#include <cmath>
 #include <string>
 using std::string;
 
@@ -57,6 +58,7 @@ registerState(DataBase<Dimension>& dataBase,
   const auto pointKey = boundaryKey +"_point";
   const auto velocityKey = boundaryKey +"_velocity";
   const auto normalKey = boundaryKey +"_normal";
+  const auto angularVelocityKey = boundaryKey +"_angularVelocity";
   state.enroll(pointKey,mPoint);
   state.enroll(velocityKey,mVelocity);
   state.enroll(normalKey,mNormal);

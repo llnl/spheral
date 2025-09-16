@@ -34,7 +34,8 @@ class InfinitePlaneSolidBoundary(SolidBoundaryBase):
 
     def pyinit(self,
                point  = "const Vector&", 
-               normal = "const Vector&"):
+               normal = "const Vector&",
+               angularVelocity = "const RotationType&"):
         "solid planar boundary"
 
     @PYB11virtual 
@@ -55,7 +56,7 @@ class InfinitePlaneSolidBoundary(SolidBoundaryBase):
     @PYB11virtual
     @PYB11const
     def localVelocity(self,
-                 position = "const Vector&"):
+                      position = "const Vector&"):
         "velocity of bc."
         return "Vector"
 
