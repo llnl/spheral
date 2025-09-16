@@ -6,7 +6,6 @@ create-pages:
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: public
-    expire_in: 1 year
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
