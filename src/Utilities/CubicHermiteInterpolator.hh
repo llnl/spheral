@@ -56,16 +56,6 @@ public:
     mVals.registerTouch(space);
   }
 
-  SPHERAL_HOST CHIView(size_t N,
-                       double xmin,
-                       double xmax,
-                       double xstep,
-                       ContainerType const& vals) :
-    mN(N),
-    mXmin(xmin),
-    mXmax(xmax),
-    mXstep(xstep),
-    mVals(vals) { mVals.registerTouch(chai::CPU); }
 protected:
   //--------------------------- Protected Interface --------------------------//
   // Member data
@@ -118,9 +108,7 @@ public:
   // Force interpolation to be monotonic (may introduce structure between tabulated points)
   void makeMonotonic();
 
-  CHIView view() {
-    return CHIView(mN, mXmin, mXmax, mXstep, mVals);
-  }
+  CHIView view() { return static_cast<CHIView>(*this); }
 
 private:
   //--------------------------- Private Interface --------------------------//
