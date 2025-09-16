@@ -20,7 +20,7 @@ namespace Spheral {
 // Copy constructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs) :
-  CHIView(rhs) {
+  CHIView() {
   mVec = rhs.mVec;
   initializeMA();
 }
@@ -31,7 +31,6 @@ CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolato
 CubicHermiteInterpolator&
 CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
   if (this != &rhs) {
-    CHIView::operator=(rhs);
     mVec = rhs.mVec;
     initializeMA();
   }
@@ -84,6 +83,7 @@ CubicHermiteInterpolator::~CubicHermiteInterpolator() {
 
 void
 CubicHermiteInterpolator::initializeMA() {
+  mVals.free();
   mVals = chai::makeManagedArray(mVec.data(), mVec.size(), chai::CPU, false);
 }
 

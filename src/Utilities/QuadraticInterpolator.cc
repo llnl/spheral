@@ -18,7 +18,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
   :
-  QIView(rhs) {
+  QIView() {
   mVec = rhs.mVec;
   initializeMA();
 }
@@ -29,7 +29,6 @@ QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
 QuadraticInterpolator&
 QuadraticInterpolator::operator=(const QuadraticInterpolator& rhs) {
   if (this != &rhs) {
-    QIView::operator=(rhs);
     mVec = rhs.mVec;
     initializeMA();
   }
@@ -93,6 +92,7 @@ QuadraticInterpolator::initialize(double xmin,
 
 void
 QuadraticInterpolator::initializeMA() {
+  mcoeffs.free();
   mcoeffs = chai::makeManagedArray(mVec.data(), mVec.size(), chai::CPU, false);
 }
 
