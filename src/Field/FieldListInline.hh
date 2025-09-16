@@ -1920,7 +1920,7 @@ FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::toView(FL&& extension, F&& field_extension) {
   auto callback = getFieldListCallback(std::forward<FL>(extension));
 
-  if (mFieldViews.size() == 0 && !mFieldViews.getPointer(chai::CPU, false)) {
+  if (mFieldViews.size() == 0 && !mFieldViews.data(chai::CPU, false)) {
     mFieldViews.allocate(size(), chai::CPU, callback);
   } else {
     mFieldViews.setUserCallback(callback);
