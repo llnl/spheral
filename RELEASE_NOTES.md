@@ -21,7 +21,10 @@ Notable changes include:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
       * New Logging utility for runtime debug messages.
-
+  
+  * Bug fixes
+    * corrected rolling and torsional coefficient in DEM which were 2x the expected value
+    
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
     * A python virtual environment is installed in the spheral build dir, removing the
