@@ -50,16 +50,6 @@ public:
   void move(chai::ExecutionSpace space) { mcoeffs.move(space); }
   SPHERAL_HOST_DEVICE double* data() const { return mcoeffs.data(); }
 
-  SPHERAL_HOST QIView(size_t N1,
-                      double xmin,
-                      double xmax,
-                      double xstep,
-                      ContainerType const& vals) :
-    mN1(N1),
-    mXmin(xmin),
-    mXmax(xmax),
-    mXstep(xstep),
-    mcoeffs(vals) { mcoeffs.registerTouch(chai::CPU); }
 protected:
   //--------------------------- Private Interface --------------------------//
   // Member data
@@ -85,9 +75,7 @@ public:
   void initialize(double xmin, double xmax, size_t n, const Func& f);
   void initialize(double xmin, double xmax, const std::vector<double>& yvals);
 
-  QIView view() {
-    return QIView(mN1, mXmin, mXmax, mXstep, mcoeffs);
-  }
+  QIView view() { return static_cast<QIView>(*this); }
 private:
   std::vector<double> mVec;
   void initializeMA();
