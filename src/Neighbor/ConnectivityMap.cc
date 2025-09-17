@@ -262,7 +262,8 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   // PairFields pointing at the original pairs.
   REQUIRE(mNodePairListPtr);
   NodePairList& currentPairs = *mNodePairListPtr;
-  std::vector<NodePairIdxType> culledPairs(currentPairs.size());
+  std::vector<NodePairIdxType> culledPairs;
+  culledPairs.reserve(currentPairs.size());
 #pragma omp parallel
   {
     std::vector<NodePairIdxType> culledPairs_thread;
@@ -857,6 +858,9 @@ computeConnectivity() {
   //   trefine = std::clock_t(0), 
   //   twalk = std::clock_t(0);
   std::vector<NodePairIdxType> nodePairs;
+  if (mNodePairListPtr) {
+    nodePairs.reserve(mNodePairListPtr->size());
+  }
   CHECK(mConnectivity.size() == connectivitySize);
   for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
     const auto etaMax = mNodeLists[iiNodeList]->neighbor().kernelExtent();
