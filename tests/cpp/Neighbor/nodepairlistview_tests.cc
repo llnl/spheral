@@ -17,6 +17,7 @@ static constexpr size_t N = 5;
 class NPLVTest : public ::testing::Test {
 public:
   GPUCounters n_count;
+  std::shared_ptr<NPL> shared_npl;
   // Helper to create a ContainerType with values [start, start+count)
   NPLVec createVec(size_t count = N) {
     NPLVec vals;
@@ -30,7 +31,8 @@ public:
     NPL npl(createVec(N));
     return npl;
   }
-
+  const NPL& sharedNPL() const { return *shared_npl; }
+  std::shared_ptr<NPL> sharedNPLPtr() { return shared_npl; }
   // Increment variables for each action and space
   auto callback() {
     return [&](const chai::PointerRecord *, chai::Action action,

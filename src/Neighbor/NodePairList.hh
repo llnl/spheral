@@ -52,13 +52,20 @@ public:
   using const_reverse_iterator = typename ContainerType::const_reverse_iterator;
 
   NodePairList()                                             = default;
+
+  // Constructor: copies underlying data
+  NodePairList(const ContainerType& vals);
+
+  // Constructor: moves underlying data
+  NodePairList(ContainerType&& vals) noexcept;
+
   NodePairList(const NodePairList& rhs);
-  NodePairList(const ContainerType& aVals);
-  ~NodePairList()                                            { mData.free(); }
   NodePairList& operator=(const NodePairList& rhs);
+
+  ~NodePairList()                                            { mData.free(); }
+
   void fill(const ContainerType& vals);
   void clear();
-  void reserve(const size_t n);
 
   // Iterators
   iterator begin()                                           { return mNodePairList.begin(); }
@@ -85,7 +92,7 @@ public:
                              const size_t j_node,
                              const size_t j_list) const      { return mNodePairList[index(NodePairIdxType(i_node, i_list, j_node, j_list))]; }
 
-  // Inserting
+  // Inserting (not performant, avoid if possible)
   template<typename InputIterator>
   iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
     iterator n = mNodePairList.insert(pos, first, last);

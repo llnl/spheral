@@ -261,10 +261,8 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   // Note here we deliberately reallocate the NodePairList, which will invalidate any
   // PairFields pointing at the original pairs.
   REQUIRE(mNodePairListPtr);
-  auto culledPairListPtr = std::make_shared<NodePairList>();
   NodePairList& currentPairs = *mNodePairListPtr;
-  NodePairList& culledPairs = *culledPairListPtr;
-  culledPairs.reserve(currentPairs.size());
+  std::vector<NodePairIdxType> culledPairs(currentPairs.size());
 #pragma omp parallel
   {
     std::vector<NodePairIdxType> culledPairs_thread;
@@ -286,7 +284,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
       culledPairs.insert(culledPairs.end(), culledPairs_thread.begin(), culledPairs_thread.end());
     }
   }
-  mNodePairListPtr = culledPairListPtr;
+  mNodePairListPtr = std::make_shared<NodePairList>(std::move(culledPairs));
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
   {
@@ -813,9 +811,6 @@ computeConnectivity() {
     mConnectivity = ConnectivityStorageType(connectivitySize, vector<vector<int> >(numNodeLists));
     mNodeTraversalIndices = vector<vector<int> >(numNodeLists);
   }
-  const auto noldpairs = mNodePairListPtr ? mNodePairListPtr->size() : 0u;
-  mNodePairListPtr = std::make_shared<NodePairList>();
-  if (noldpairs > 0u) mNodePairListPtr->reserve(noldpairs);
   mIntersectionConnectivity.clear();
 
   // If we're trying to be domain decomposition independent, we need a key to sort
@@ -861,6 +856,7 @@ computeConnectivity() {
   //   tmaster = std::clock_t(0), 
   //   trefine = std::clock_t(0), 
   //   twalk = std::clock_t(0);
+  std::vector<NodePairIdxType> nodePairs;
   CHECK(mConnectivity.size() == connectivitySize);
   for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
     const auto etaMax = mNodeLists[iiNodeList]->neighbor().kernelExtent();
@@ -962,12 +958,13 @@ computeConnectivity() {
             
             // Merge the NodePairList
 #pragma omp critical
-            mNodePairListPtr->insert(mNodePairListPtr->end(), nodePairs_private.begin(), nodePairs_private.end());
+            nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
           } // end OMP parallel
         }
       }
     }
   }
+  mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
 
   // // If necessary add ghost->internal connectivity.
   // if (ghostConnectivity) {

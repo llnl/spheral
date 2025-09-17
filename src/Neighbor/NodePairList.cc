@@ -32,23 +32,28 @@ NodePairList::computeLookup() const {
 
 void
 NodePairList::clear() {
+  mData.free();
   mNodePairList.clear();
   mPair2Index.clear();
-  mData.free();
-}
-
-void
-NodePairList::reserve(const size_t n) {
-  mNodePairList.reserve(n);
 }
 
 //------------------------------------------------------------------------------
-// Constructor
+// Data copy constructor
 //------------------------------------------------------------------------------
 
 NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
   :
   mNodePairList(vals) {
+  initMA();
+}
+
+//------------------------------------------------------------------------------
+// Data move constructor
+//------------------------------------------------------------------------------
+
+NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
+  :
+  mNodePairList(std::move(vals)) {
   initMA();
 }
 
@@ -64,6 +69,7 @@ void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
 //------------------------------------------------------------------------------
 // Copy constructor
 //------------------------------------------------------------------------------
+
 NodePairList::NodePairList(const NodePairList& rhs) :
   NodePairListView() {
   mNodePairList = rhs.mNodePairList;
@@ -73,6 +79,7 @@ NodePairList::NodePairList(const NodePairList& rhs) :
 //------------------------------------------------------------------------------
 // Assignment constructor
 //------------------------------------------------------------------------------
+
 NodePairList& NodePairList::operator=(const NodePairList& rhs) {
   if (this != &rhs) {
     mNodePairList = rhs.mNodePairList;
