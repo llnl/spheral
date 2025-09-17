@@ -13,7 +13,6 @@
 
 #include "DEM/SolidBoundary/CircularPlaneSolidBoundary.hh"
 
-#include <cmath>
 #include <string>
 using std::string;
 

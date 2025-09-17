@@ -12,7 +12,6 @@
 
 #include "DEM/SolidBoundary/InfinitePlaneSolidBoundary.hh"
 
-#include <cmath>
 #include <string>
 using std::string;
 

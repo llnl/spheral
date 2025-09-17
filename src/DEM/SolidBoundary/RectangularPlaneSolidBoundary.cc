@@ -12,7 +12,6 @@
 #include "DataBase/StateDerivatives.hh"
 #include "DEM/SolidBoundary/RectangularPlaneSolidBoundary.hh"
 
-#include <cmath>
 #include <string>
 using std::string;
 
