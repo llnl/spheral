@@ -89,7 +89,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i]->numElements(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
       });
   }
 
