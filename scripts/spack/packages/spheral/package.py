@@ -75,10 +75,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     with when('~rocm') or when('~cuda'):
         depends_on('axom +shared', type='build')
 
-    with when('+openmp'):
-        depends_on('chai+openmp')
-        depends_on('umpire+openmp')
-
     with when('+caliper'):
         depends_on('caliper@2.11 ~shared +adiak +gotcha ~libdw ~papi ~libunwind cppflags="-fPIC"', type='build')
         depends_on('caliper+mpi', type='build', when='+mpi')
