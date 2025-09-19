@@ -29,8 +29,8 @@ packages:
   cray-mpich:
     buildable: false
     externals:
-    - spec: cray-mpich@9.0.1%rocmcc@6.2.0
-      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-6.2.0-magic
+    - spec: cray-mpich@8.1.31%rocmcc@6.2.0
+      prefix: /usr/tce/packages/cray-mpich/cray-mpich-8.1.31-rocmcc-6.2.0-magic
 
   hip:
     version: [6.2.0]
