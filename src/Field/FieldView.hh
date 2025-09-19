@@ -86,9 +86,9 @@ public:
   SPHERAL_HOST_DEVICE FieldView& operator/=(const Scalar& rhs);
 
   // Some useful reduction operations (local versions -- no MPI reductions)
-  SPHERAL_HOST_DEVICE DataType localSumElements() const;
-  SPHERAL_HOST_DEVICE DataType localMin() const;
-  SPHERAL_HOST_DEVICE DataType localMax() const;
+  SPHERAL_HOST_DEVICE DataType localSumElements(const bool includeGhosts = false) const;
+  SPHERAL_HOST_DEVICE DataType localMin(const bool includeGhosts = false) const;
+  SPHERAL_HOST_DEVICE DataType localMax(const bool includeGhosts = false) const;
 
   // Comparison operators (Field-Field element wise).
   SPHERAL_HOST_DEVICE bool operator==(const FieldView& rhs) const;

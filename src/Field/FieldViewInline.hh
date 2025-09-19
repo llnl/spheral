@@ -261,9 +261,10 @@ SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldView<Dimension, DataType>::
-localSumElements() const {
+localSumElements(const bool includeGhosts) const {
   const auto* start = &this->front();
-  return std::accumulate(start, start + numInternalElements(), DataTypeTraits<DataType>::zero());
+  const auto n = includeGhosts ? numElements() : numInternalElements();
+  return std::accumulate(start, start + n, DataTypeTraits<DataType>::zero());
 }
 
 //------------------------------------------------------------------------------
@@ -275,11 +276,12 @@ SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldView<Dimension, DataType>::
-localMin() const {
+localMin(const bool includeGhosts) const {
   const auto* start = &this->front();
+  const auto n = includeGhosts ? numElements() : numInternalElements();
   return (this->empty() ?
           std::numeric_limits<DataType>::max() :
-          *std::min_element(start, start + numInternalElements()));
+          *std::min_element(start, start + n));
 }
 
 //------------------------------------------------------------------------------
@@ -291,11 +293,12 @@ SPHERAL_HOST_DEVICE
 inline
 DataType
 FieldView<Dimension, DataType>::
-localMax() const {
+localMax(const bool includeGhosts) const {
   const auto* start = &this->front();
+  const auto n = includeGhosts ? numElements() : numInternalElements();
   return (this->empty() ?
           std::numeric_limits<DataType>::lowest() :
-          *std::max_element(start, start + numInternalElements()));
+          *std::max_element(start, start + n));
 }
 
 //------------------------------------------------------------------------------

@@ -459,8 +459,8 @@ template<typename Dimension, typename DataType>
 inline
 DataType
 Field<Dimension, DataType>::
-sumElements() const {
-  return allReduce(this->localSumElements(), SPHERAL_OP_SUM);
+sumElements(const bool includeGhosts) const {
+  return allReduce(this->localSumElements(includeGhosts), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
@@ -470,8 +470,8 @@ template<typename Dimension, typename DataType>
 inline
 DataType
 Field<Dimension, DataType>::
-min() const {
-  return allReduce(this->localMin(), SPHERAL_OP_MIN);
+min(const bool includeGhosts) const {
+  return allReduce(this->localMin(includeGhosts), SPHERAL_OP_MIN);
 }
 
 //------------------------------------------------------------------------------
@@ -481,8 +481,8 @@ template<typename Dimension, typename DataType>
 inline
 DataType
 Field<Dimension, DataType>::
-max() const {
-  return allReduce(this->localMax(), SPHERAL_OP_MAX);
+max(const bool includeGhosts) const {
+  return allReduce(this->localMax(includeGhosts), SPHERAL_OP_MAX);
 }
 
 //------------------------------------------------------------------------------
@@ -1310,7 +1310,7 @@ Field<Dimension, DataType>::
 assignDataSpan() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mDataSpan = mDataArray;
-  DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data();
+  DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
 #else
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {

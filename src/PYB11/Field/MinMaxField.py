@@ -29,14 +29,16 @@ class MinMaxField(FieldBase,
     #     return
 
     @PYB11const
-    def min(self):
-        "Return the mimimum value in the FieldView."
-        return
+    def min(self,
+            includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the Field"
+        return "%(Value)s"
 
     @PYB11const
-    def max(self):
-        "Return the maximum value in the FieldView."
-        return
+    def max(self,
+            includeGhosts = ("bool", "false")):
+        "Return the maximum value in the Field"
+        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject base field methods

@@ -134,9 +134,9 @@ public:
   Field operator/(const Scalar& rhs) const;
 
   // Some useful reduction operations.
-  DataType sumElements() const;
-  DataType min() const;
-  DataType max() const;
+  DataType sumElements(const bool includeGhosts = false) const;
+  DataType min(const bool includeGhosts = false) const;
+  DataType max(const bool includeGhosts = false) const;
 
   // Provide the standard iterator methods over the field.
   const_iterator begin() const                                              { return mDataArray.begin(); }

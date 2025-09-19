@@ -49,9 +49,10 @@ class ArithmeticFieldView:
         return
 
     @PYB11const
-    def localSumElements(self):
+    def localSumElements(self,
+                          includeGhosts = ("bool", "false")):
         "Return the sum of the elements in the FieldView local to each processor."
-        return
+        return "%(Value)s"
 
     #...........................................................................
     # Comparators
@@ -89,16 +90,6 @@ class ArithmeticFieldView:
 
     def applyMax(self):
         "Enforce a ceiling on the values of the FieldView."
-        return
-
-    @PYB11const
-    def localMin(self):
-        "Return the mimimum value in the FieldView local to each processor."
-        return
-
-    @PYB11const
-    def localMax(self):
-        "Return the maximum value in the FieldView local to each processor."
         return
 
 #-------------------------------------------------------------------------------
