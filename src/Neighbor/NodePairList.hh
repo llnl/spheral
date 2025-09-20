@@ -111,8 +111,8 @@ public:
   }
 
   void initMA() {
-    if (!(mNodePairList.data() == mData.data(chai::CPU, false)
-          && mNodePairList.size() == mData.size())) {
+    if (mNodePairList.size() > 0 && (mNodePairList.data() != mData.data(chai::CPU, false)
+                                     || mNodePairList.size() != mData.size())) {
       mData.free();
       mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
     }
