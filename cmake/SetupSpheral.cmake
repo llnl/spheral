@@ -73,11 +73,13 @@ option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constr
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
-option(ENABLE_SHARED "Building C++ libs shared" OFF)
+option(ENABLE_SHARED "Building C++ libs shared" ON)
 
 if(ENABLE_STATIC_CXXONLY)
   set(ENABLE_CXXONLY ON)
   set(ENABLE_SHARED OFF)
+elseif(NOT ENABLE_SHARED AND NOT ENABLE_CXXONLY)
+  message(FATAL_ERROR "Python libraries with ENABLE_SHARED=OFF are currently broken")
 endif()
 
 if(ENABLE_MPI)
