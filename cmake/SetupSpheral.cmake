@@ -177,6 +177,7 @@ endif()
 if (ENABLE_TESTS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/tests)
 
+  include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralInstallPythonFiles.cmake)
   spheral_install_python_tests(${SPHERAL_ROOT_DIR}/tests/ ${SPHERAL_TEST_INSTALL_PREFIX})
   # Always install performance.py in the top of the testing script
   install(FILES ${SPHERAL_ROOT_DIR}/tests/performance.py
