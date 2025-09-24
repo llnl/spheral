@@ -35,7 +35,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('mpi', default=True, description='Enable MPI Support.')
     variant('openmp', default=True, description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
-    variant('shared', default=True, description='Build C++ libs as shared.')
+    # TODO: Static libraries are broken, must make them with shared
+    #variant('shared', default=False, description='Build C++ libs as shared.')
     variant('python', default=True, description='Build Python Dependencies.')
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
@@ -272,7 +273,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if spec.satisfies("+mpi"):
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
-        entries.append(cmake_cache_option('ENABLE_SHARED', '+shared' in spec))
+        # TODO: Switch this back once static libraries are working again
+        entries.append(cmake_cache_option('ENABLE_SHARED', True)) # '+shared' in spec))
 
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))
         entries.append(cmake_cache_option('ENABLE_DOCS', '+docs' in spec))
