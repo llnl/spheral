@@ -185,7 +185,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
         }
       });
     npl_v.move(chai::CPU);
-    SPHERAL_ASSERT_EQ(npl_v[N+1].i_node, npl[N+1].i_node);
+    SPHERAL_ASSERT_EQ(npl_v[N].i_node, npl[N].i_node);
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
@@ -196,26 +196,68 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
 }
 
 GPU_TYPED_TEST_P(NPLViewTypedTest, ScopeChanges) {
-  NPLVec npl_vec = gpu_this->createVec();
-  NPL npl(std::move(npl_vec));
-  npl.setUserCallback(gpu_this->callback());
   {
-    NPLV npl2_v = npl.view();
-    SPHERAL_ASSERT_EQ(npl2_v.size(), npl.size());
+    NPLVec npl_vec = gpu_this->createVec();
+    NPL npl(std::move(npl_vec));
+    npl.setUserCallback(gpu_this->callback());
+    {
+      NPLV npl2_v = npl.view();
+      SPHERAL_ASSERT_EQ(npl2_v.size(), npl.size());
+      RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
+        [=] SPHERAL_HOST_DEVICE(size_t i) {
+          SPHERAL_ASSERT_EQ(npl2_v[i].i_node, i);
+        });
+    }
+    NPLV npl3_v = npl.view();
     RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
       [=] SPHERAL_HOST_DEVICE(size_t i) {
-        SPHERAL_ASSERT_EQ(npl2_v[i].i_node, i);
+        SPHERAL_ASSERT_EQ(npl3_v[i].i_node, i);
       });
   }
-  NPLV npl3_v = npl.view();
-  RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
-    [=] SPHERAL_HOST_DEVICE(size_t i) {
-      SPHERAL_ASSERT_EQ(npl3_v[i].i_node, i);
-    });
+  // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
+  GPUCounters ref_count;
+  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+    ref_count = {1, 0, 0, 1, 0, 1};
+  }
+  COMP_COUNTERS(gpu_this->n_count, ref_count);
+}
+
+GPU_TYPED_TEST_P(NPLViewTypedTest, EmptyInit) {
+  NPLVec npl_vec = gpu_this->createVec();
+  npl_vec.clear();
+  NPL npl(std::move(npl_vec));
+  NPLV npl_v = npl.view();
+  SPHERAL_ASSERT_EQ(npl_v.size(), 0u);
+  SPHERAL_ASSERT_EQ(npl.size(), 0u);
+}
+
+GPU_TYPED_TEST_P(NPLViewTypedTest, ViewVector) {
+  NPLVec npl_vec = gpu_this->createVec();
+  NPL npl(std::move(npl_vec));
+  npl_vec = gpu_this->createVec();
+  NPL npl2(std::move(npl_vec));
+  {
+    std::vector<NPLV> view_vec;
+    for (size_t i = 0; i < 4; ++i) {
+      view_vec.push_back(npl.view());
+    }
+    NPLV& ref_view = view_vec[3];
+    SPHERAL_ASSERT_EQ(ref_view[0].i_node, 0u);
+    view_vec.clear();
+    for (size_t i = 0; i < 4; ++i) {
+      view_vec.push_back(npl.view());
+    }
+    NPLV& ref_view2 = view_vec[3];
+    SPHERAL_ASSERT_EQ(ref_view2[0].i_node, 0u);
+    NPLV later_view = npl.view();
+    SPHERAL_ASSERT_EQ(later_view[0].i_node, 0u);
+  }
+  SPHERAL_ASSERT_EQ(npl.size(), N);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(NPLViewTypedTest, DefaultConstructor, CopyAssign,
-                            ConstructorFromContainer, Touch, Resize, ScopeChanges);
+                            ConstructorFromContainer, Touch, Resize, ScopeChanges,
+                            EmptyInit, ViewVector);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodePairListView, NPLViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
