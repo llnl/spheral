@@ -8,6 +8,7 @@
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
+#include "Utilities/CHAI_MA_wrapper.hh"
 
 namespace Spheral {
 
@@ -111,16 +112,14 @@ public:
   }
 
   void initMA() {
-    if (mNodePairList.size() > 0 && (mNodePairList.data() != mData.data(chai::CPU, false)
-                                     || mNodePairList.size() != mData.size())) {
-      mData.free();
-      mData = chai::makeManagedArray(mNodePairList.data(), mNodePairList.size(), chai::CPU, false);
-    }
+    initializeManagedArray(mData, mNodePairList);
   }
+
   template<typename F> inline
   void setUserCallback(F&& extension) {
     mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
   }
+
 protected:
   template<typename F>
   auto getNPLCallback(F callback) {

@@ -17,7 +17,6 @@ static constexpr size_t N = 5;
 class NPLVTest : public ::testing::Test {
 public:
   GPUCounters n_count;
-  std::shared_ptr<NPL> shared_npl;
   // Helper to create a ContainerType with values [start, start+count)
   NPLVec createVec(size_t count = N) {
     NPLVec vals;
@@ -31,8 +30,6 @@ public:
     NPL npl(createVec(N));
     return npl;
   }
-  const NPL& sharedNPL() const { return *shared_npl; }
-  std::shared_ptr<NPL> sharedNPLPtr() { return shared_npl; }
   // Increment variables for each action and space
   auto callback() {
     return [&](const chai::PointerRecord *, chai::Action action,
@@ -198,8 +195,27 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   COMP_COUNTERS(gpu_this->n_count, ref_count);
 }
 
+GPU_TYPED_TEST_P(NPLViewTypedTest, ScopeChanges) {
+  NPLVec npl_vec = gpu_this->createVec();
+  NPL npl(std::move(npl_vec));
+  npl.setUserCallback(gpu_this->callback());
+  {
+    NPLV npl2_v = npl.view();
+    SPHERAL_ASSERT_EQ(npl2_v.size(), npl.size());
+    RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
+      [=] SPHERAL_HOST_DEVICE(size_t i) {
+        SPHERAL_ASSERT_EQ(npl2_v[i].i_node, i);
+      });
+  }
+  NPLV npl3_v = npl.view();
+  RAJA::forall<TypeParam>(TRS_UINT(0, npl.size()),
+    [=] SPHERAL_HOST_DEVICE(size_t i) {
+      SPHERAL_ASSERT_EQ(npl3_v[i].i_node, i);
+    });
+}
+
 REGISTER_TYPED_TEST_SUITE_P(NPLViewTypedTest, DefaultConstructor, CopyAssign,
-                            ConstructorFromContainer, Touch, Resize);
+                            ConstructorFromContainer, Touch, Resize, ScopeChanges);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodePairListView, NPLViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
