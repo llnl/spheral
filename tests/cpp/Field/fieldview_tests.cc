@@ -35,7 +35,7 @@ public:
   // Increment variables for each action and space
   auto callback() {
     return [&](const chai::PointerRecord *, chai::Action action,
-                            chai::ExecutionSpace space) {
+               chai::ExecutionSpace space) {
     if (action == chai::ACTION_MOVE)
       (space == chai::CPU) ? gcounts.DToHCopies++ : gcounts.HToDCopies++;
     if (action == chai::ACTION_ALLOC)

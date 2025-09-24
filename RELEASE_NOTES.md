@@ -17,6 +17,7 @@ Notable changes include:
       * GeomVector and Geom3Vector have been converted for use on the GPU.
         * CPU & GPU unit testing of the public interface.
       * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
+      * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
       * Optimizations to RankTensor types:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
@@ -38,9 +39,14 @@ Notable changes include:
       * CHAI, RAJA, Umpire, and Camp are all brought in through Spack as external TPLs now.
       * Umpire is updated to version 2025.03.1.
       * RAJA is updated to version 2025.03.0.
-      * LEOs spack recipe is simplified.
+    * LEOS interface changes:
+      * LEOS spack recipe is simplified.
+      * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
+    * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
+    * HDF5 is now brought in using `find_package` instead of being brought in manually.
+    * Packages associated with ROCM on Cray machines now have consistent prefixes.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================

@@ -42,6 +42,7 @@ set(Utilities_headers
     setGlobalFlags.hh
     Bessel.hh
     BuildData.hh
+    CHAI_MA_wrapper.hh
     CounterClockwiseComparator.hh
     DBC.hh
     LinearInterpolator.hh

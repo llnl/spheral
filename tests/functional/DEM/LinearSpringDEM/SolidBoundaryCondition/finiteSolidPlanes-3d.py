@@ -10,7 +10,7 @@ from findLastRestart import *
 from GenerateNodeDistribution3d import *
 from GenerateDEMfromSPHGenerator import GenerateDEMfromSPHGenerator3d
 
-sys.path.insert(0, '..')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from DEMConservationTracker import TrackConservation3d as TrackConservation
 
 if mpi.procs > 1:
