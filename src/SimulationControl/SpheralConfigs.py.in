@@ -29,7 +29,10 @@ def enable_mpi():
     return ("MPI" in component_configs())
 
 def enable_timer():
-    return ("SPHERAL_ENABLE_TIMERS" in component_configs())
+    return ("TIMERS" in component_configs())
+
+def enable_shared():
+    return ("SHARED" in component_configs())
 
 def hydro_imports():
     hydro_str = "@SPHERAL_HYDRO_IMPORTS@"
