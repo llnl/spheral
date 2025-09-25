@@ -31,6 +31,7 @@ public:
   using NperhIView = CHIView;
 
   SPHERAL_HOST_DEVICE TableKernelView() = default;
+
   // Equivalence
   SPHERAL_HOST_DEVICE bool operator==(const TableKernelView& rhs) const;
 
@@ -44,14 +45,19 @@ public:
   SPHERAL_HOST_DEVICE Scalar grad2Value(const Scalar etaij, const Scalar Hdet) const;
 
   // Simultaneously return the kernel value and first derivative.
-  SPHERAL_HOST_DEVICE void kernelAndGrad(const Vector& etaj, const Vector& etai, const SymTensor& H,
+  SPHERAL_HOST_DEVICE void kernelAndGrad(const Vector& etaj,
+                                         const Vector& etai,
+                                         const SymTensor& H,
                                          Scalar& W,
                                          Vector& gradW,
                                          Scalar& deltaWsum) const;
-  SPHERAL_HOST_DEVICE void kernelAndGradValue(const Scalar etaij, const Scalar Hdet,
+
+  SPHERAL_HOST_DEVICE void kernelAndGradValue(const Scalar etaij,
+                                              const Scalar Hdet,
                                               Scalar& W,
                                               Scalar& gW) const;
-    // Special kernel values for use in finding smoothing scales (SPH and ASPH versions)
+
+  // Special kernel values for use in finding smoothing scales (SPH and ASPH versions)
   // ***These are only intended for use adapting smoothing scales***, and are used
   // for the succeeding equivalentNodesPerSmoothingScale lookups!
   SPHERAL_HOST_DEVICE Scalar kernelValueSPH(const Scalar etaij) const;
@@ -63,9 +69,9 @@ public:
   SPHERAL_HOST_DEVICE Scalar equivalentWsum(const Scalar nPerh) const;
 
   // Access the internal data
-  SPHERAL_HOST_DEVICE size_t numPoints() const                                    { return mNumPoints; }
-  SPHERAL_HOST_DEVICE Scalar minNperhLookup() const                               { return mMinNperh; }
-  SPHERAL_HOST_DEVICE Scalar maxNperhLookup() const                               { return mMaxNperh; }
+  SPHERAL_HOST_DEVICE size_t numPoints() const      { return mNumPoints; }
+  SPHERAL_HOST_DEVICE Scalar minNperhLookup() const { return mMinNperh; }
+  SPHERAL_HOST_DEVICE Scalar maxNperhLookup() const { return mMaxNperh; }
 protected:
   //--------------------------- Private Interface ---------------------------//
   // Data for the kernel tabulation.
@@ -110,11 +116,11 @@ public:
                            std::vector<Scalar>& gradValues) const;
 
   // Direct access to our interpolators
-  const InterpolatorType& Winterpolator() const               { return mInterpVal; }
-  const InterpolatorType& gradWinterpolator() const           { return mGradInterpVal; }
-  const InterpolatorType& grad2Winterpolator() const          { return mGrad2InterpVal; }
-  const NperhInterpolatorType& nPerhInterpolator() const      { return mNperhLookupVal; }
-  const NperhInterpolatorType& WsumInterpolator() const       { return mWsumLookupVal; }
+  const InterpolatorType& Winterpolator() const          { return mInterpVal; }
+  const InterpolatorType& gradWinterpolator() const      { return mGradInterpVal; }
+  const InterpolatorType& grad2Winterpolator() const     { return mGrad2InterpVal; }
+  const NperhInterpolatorType& nPerhInterpolator() const { return mNperhLookupVal; }
+  const NperhInterpolatorType& WsumInterpolator() const  { return mWsumLookupVal; }
 
   TableKernelView<Dimension> view() {
     return static_cast<TableKernelView<Dimension>>(*this);

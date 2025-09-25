@@ -35,7 +35,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('mpi', default=True, description='Enable MPI Support.')
     variant('openmp', default=True, description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
-    variant('shared', default=True, description='Build C++ libs as shared.')
+    # TODO: Static libraries are broken, must make them with shared
+    #variant('shared', default=False, description='Build C++ libs as shared.')
     variant('python', default=True, description='Build Python Dependencies.')
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
@@ -88,6 +89,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
+    # Forward MPI Variants
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
+    for ctpl in mpi_tpl_list:
+        for mpiv in ["+mpi", "~mpi"]:
+            depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
+
     # Forward CUDA/ROCM Variants
     def set_gpu_variants(ctpl, cond=""):
         for val in CudaPackage.cuda_arch_values:
@@ -95,17 +102,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         for val in ROCmPackage.amdgpu_targets:
             depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} {cond}")
 
-    # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared"]
-    for ctpl in mpi_tpl_list:
-        for mpiv in ["+mpi", "~mpi"]:
-            depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
-
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
         set_gpu_variants(ctpl)
 
-        # Forward debug variants
+    # Forward debug variants
     debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak~shared"]
     for ctpl in debug_tpl_list:
         depends_on(f"{ctpl} build_type=Debug", when="build_type=Debug")
@@ -176,7 +177,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = super(Spheral, self).initconfig_compiler_entries()
         return entries
-    
+
     def initconfig_mpi_entries(self):
         spec = self.spec
         entries = []
@@ -243,7 +244,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('aneos_DIR', spec['m-aneos'].prefix))
 
         entries.append(cmake_cache_path('hdf5_DIR', spec['hdf5'].prefix))
-    
+
         entries.append(cmake_cache_path('conduit_DIR', spec['conduit'].prefix))
 
         entries.append(cmake_cache_path('raja_DIR', spec['raja'].prefix))
@@ -272,7 +273,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if spec.satisfies("+mpi"):
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
-        entries.append(cmake_cache_option('ENABLE_SHARED', '+shared' in spec))
+        # TODO: Switch this back once static libraries are working again
+        entries.append(cmake_cache_option('ENABLE_SHARED', True)) # '+shared' in spec))
 
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))
         entries.append(cmake_cache_option('ENABLE_DOCS', '+docs' in spec))
@@ -310,4 +312,3 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             return os.path.join(self.pkg.stage.source_path, dev_build_dirname)
         else:
             return os.path.join(self.pkg.stage.path, self.build_dirname)
-
