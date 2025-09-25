@@ -94,7 +94,7 @@ protected:
   }
 private:
   std::vector<double> mVec;
-  void initMA();
+  void initView();
 };
 }
 

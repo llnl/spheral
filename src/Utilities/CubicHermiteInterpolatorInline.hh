@@ -73,7 +73,7 @@ CubicHermiteInterpolator::initialize(const double xmin,
     mVec[i] = F(xi);
     mVec[mN + i] = Fgrad(xi);
   }
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------

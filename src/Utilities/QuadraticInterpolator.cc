@@ -25,7 +25,7 @@ QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
   mXmax = rhs.mXmax;
   mXstep = rhs.mXstep;
   mVec = rhs.mVec;
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ QuadraticInterpolator::operator=(const QuadraticInterpolator& rhs) {
     mXmax = rhs.mXmax;
     mXstep = rhs.mXstep;
     mVec = rhs.mVec;
-    initMA();
+    initView();
   }
   return *this;
 }
@@ -96,12 +96,12 @@ QuadraticInterpolator::initialize(double xmin,
   mXmin = xmin;
   mXmax = xmax;
   mXstep = xstep;
-  initMA();
+  initView();
 }
 
 void
-QuadraticInterpolator::initMA() {
-  initializeManagedArray(mcoeffs, mVec);
+QuadraticInterpolator::initView() {
+  initMAView(mcoeffs, mVec);
 }
 
 //------------------------------------------------------------------------------

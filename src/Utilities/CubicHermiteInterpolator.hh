@@ -128,7 +128,7 @@ private:
   // interpolation values
   std::vector<double> mVec;
   void initializeGradientKnots();
-  void initMA();
+  void initView();
 };
 }
 #include "CubicHermiteInterpolatorInline.hh"

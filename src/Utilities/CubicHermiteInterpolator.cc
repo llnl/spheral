@@ -27,7 +27,7 @@ CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolato
   mXmax = rhs.mXmax;
   mXstep = rhs.mXstep;
   mVec = rhs.mVec;
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
     mXmax = rhs.mXmax;
     mXstep = rhs.mXstep;
     mVec = rhs.mVec;
-    initMA();
+    initView();
   }
   return *this;
 }
@@ -91,8 +91,8 @@ CubicHermiteInterpolator::~CubicHermiteInterpolator() {
 }
 
 void
-CubicHermiteInterpolator::initMA() {
-  initializeManagedArray(mVals, mVec);
+CubicHermiteInterpolator::initView() {
+  initMAView(mVals, mVec);
 }
 
 //------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ CubicHermiteInterpolator::initializeGradientKnots() {
   const Eigen::VectorXd x = solver.solve(b);
   CHECK(solver.info() == Eigen::Success);
   for (auto k = 0u; k < mN; ++k) mVec[mN + k] = x(k);
-  initMA();
+  initView();
   // Old crappy but simple method for comparison
   // mVals[mN] = (mVals[1] - mVals[0])/mXstep;
   // mVals[2*mN-1] = (mVals[mN-1] - mVals[mN-2])/mXstep;
