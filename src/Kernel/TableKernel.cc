@@ -13,14 +13,6 @@
 #include "Utilities/simpsonsIntegration.hh"
 #include "Utilities/safeInv.hh"
 
-using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-
 namespace Spheral {
 
 namespace {  // anonymous
@@ -94,7 +86,7 @@ class f1func {
 public:
   f1func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    return abs(safeInvVar(zeta)*eta)*W.kernelValue(abs(zeta - eta), 1.0);
+    return std::abs(safeInvVar(zeta)*eta)*W.kernelValue(std::abs(zeta - eta), 1.0);
   }
 };
 
@@ -106,7 +98,7 @@ class f2func {
 public:
   f2func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    return safeInvVar(zeta*zeta)*eta*abs(eta)*W.kernelValue(abs(zeta - eta), 1.0);
+    return safeInvVar(zeta*zeta)*eta*std::abs(eta)*W.kernelValue(std::abs(zeta - eta), 1.0);
   }
 };
 
@@ -118,9 +110,9 @@ class gradf1func {
 public:
   gradf1func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    const double Wu = W.kernelValue(abs(zeta - eta), 1.0);
-    const double gWu = W.gradValue(abs(zeta - eta), 1.0);
-    const double gf1inv = safeInvVar(zeta)*abs(eta)*gWu - safeInvVar(zeta*zeta)*abs(eta)*Wu;
+    const double Wu = W.kernelValue(std::abs(zeta - eta), 1.0);
+    const double gWu = W.gradValue(std::abs(zeta - eta), 1.0);
+    const double gf1inv = safeInvVar(zeta)*std::abs(eta)*gWu - safeInvVar(zeta*zeta)*std::abs(eta)*Wu;
     if (eta < 0.0) {
       return -gf1inv;
     } else {
