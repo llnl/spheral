@@ -107,13 +107,28 @@ public:
 
   CHIView view() { return static_cast<CHIView>(*this); }
 
+  template<typename F> inline
+  void setUserCallback(F&& extension) {
+    mVals.setUserCallback(getNPLCallback(std::forward<F>(extension)));
+  }
+
+protected:
+  template<typename F>
+  auto getNPLCallback(F callback) {
+    return [callback](
+      const chai::PointerRecord * record,
+      chai::Action action,
+      chai::ExecutionSpace space) {
+             callback(record, action, space);
+           };
+  }
 private:
   //--------------------------- Private Interface --------------------------//
   // Initialize the gradient at the interpolation points based on the tabulated
   // interpolation values
   std::vector<double> mVec;
   void initializeGradientKnots();
-  void initializeMA();
+  void initMA();
 };
 }
 #include "CubicHermiteInterpolatorInline.hh"

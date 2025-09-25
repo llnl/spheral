@@ -9,6 +9,7 @@
 #include "QuadraticInterpolator.hh"
 #include <algorithm>
 
+#include "CHAI_MA_wrapper.hh"
 #include <Eigen/Dense>
 
 namespace Spheral {
@@ -19,8 +20,12 @@ namespace Spheral {
 QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
   :
   QIView() {
+  mN1 = rhs.mN1;
+  mXmin = rhs.mXmin;
+  mXmax = rhs.mXmax;
+  mXstep = rhs.mXstep;
   mVec = rhs.mVec;
-  initializeMA();
+  initMA();
 }
 
 //------------------------------------------------------------------------------
@@ -29,8 +34,12 @@ QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
 QuadraticInterpolator&
 QuadraticInterpolator::operator=(const QuadraticInterpolator& rhs) {
   if (this != &rhs) {
+    mN1 = rhs.mN1;
+    mXmin = rhs.mXmin;
+    mXmax = rhs.mXmax;
+    mXstep = rhs.mXstep;
     mVec = rhs.mVec;
-    initializeMA();
+    initMA();
   }
   return *this;
 }
@@ -87,13 +96,12 @@ QuadraticInterpolator::initialize(double xmin,
   mXmin = xmin;
   mXmax = xmax;
   mXstep = xstep;
-  initializeMA();
+  initMA();
 }
 
 void
-QuadraticInterpolator::initializeMA() {
-  mcoeffs.free();
-  mcoeffs = chai::makeManagedArray(mVec.data(), mVec.size(), chai::CPU, false);
+QuadraticInterpolator::initMA() {
+  initializeManagedArray(mcoeffs, mVec);
 }
 
 //------------------------------------------------------------------------------

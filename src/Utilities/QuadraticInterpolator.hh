@@ -76,9 +76,25 @@ public:
   void initialize(double xmin, double xmax, const std::vector<double>& yvals);
 
   QIView view() { return static_cast<QIView>(*this); }
+
+  template<typename F> inline
+  void setUserCallback(F&& extension) {
+    mcoeffs.setUserCallback(getNPLCallback(std::forward<F>(extension)));
+  }
+
+protected:
+  template<typename F>
+  auto getNPLCallback(F callback) {
+    return [callback](
+      const chai::PointerRecord * record,
+      chai::Action action,
+      chai::ExecutionSpace space) {
+             callback(record, action, space);
+           };
+  }
 private:
   std::vector<double> mVec;
-  void initializeMA();
+  void initMA();
 };
 }
 
