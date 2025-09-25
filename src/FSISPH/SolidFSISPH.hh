@@ -269,7 +269,7 @@ public:
   virtual void restoreState(const FileIO& file, const std::string& pathName);
  //****************************************************************************
 
-private:
+protected:
   const TableKernel<Dimension>& mKernel;
   SlideSurface<Dimension>& mSlideSurface;
 
@@ -338,7 +338,6 @@ private:
   FieldList<Dimension, Scalar> mNewInterfaceSmoothness;           // smoothness metric (0-1) next time step 
   FieldList<Dimension, Scalar> mInterfaceAngles;                  // check the angle for free-surface master nodes (type 2 -> type 3)
 
-protected:
   //--------------------------- Protected Interface ---------------------------//
   // The restart registration.
   RestartRegistrationType mRestart;

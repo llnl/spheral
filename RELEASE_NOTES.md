@@ -21,6 +21,7 @@ Notable changes include:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
       * New Logging utility for runtime debug messages.
+      * FSISPH has an RZ mode (see Noh-RZ and Verney-RZ tests for examples)
 
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.

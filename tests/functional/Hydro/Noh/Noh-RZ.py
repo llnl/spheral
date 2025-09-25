@@ -56,7 +56,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             solid = False,                     # If true, use the fluid limit of the solid hydro option
             asph = False,                      # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
 
-            hydroType = "SPH",                 # one of (SPH, CRKSPH)
+            hydroType = "SPH",                 # one of (SPH, CRKSPH, FSISPH)
             evolveTotalEnergy = False,         # Only for SPH variants -- evolve total rather than specific energy
             boolReduceViscosity = False,
             nhQ = 5.0,
@@ -354,6 +354,18 @@ if hydroType == "CRKSPH":
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate,
                    ASPH = asph)
+elif hydroType == "FSISPH":
+    assert solid
+    hydro = FSISPH(dataBase = db,
+                   W = WT,
+                   cfl = cfl,
+                   interfaceMethod = HLLCInterface,
+                   sumDensityNodeLists=[nodes1],                       
+                   densityStabilizationCoefficient = 0.1,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   evolveTotalEnergy = evolveTotalEnergy,
+                   linearCorrectGradients = correctVelocityGradient,
+                   HUpdate = HUpdate) 
 else:
     assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
