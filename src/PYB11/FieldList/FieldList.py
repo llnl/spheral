@@ -147,7 +147,7 @@ class FieldList(FieldListBase,
         return "py::list"
 
     def view(self):
-        return "ViewType&"
+        return "ViewType"
 
     #...........................................................................
     # Comparators

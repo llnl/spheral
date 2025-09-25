@@ -55,7 +55,7 @@ class FieldListView:
     @PYB11returnpolicy("reference")
     @PYB11keepalive(0,1)
     def __getitem__(self, index="size_t"):
-        return "FieldViewType*"
+        return "FieldViewType&"
 
     @PYB11returnpolicy("reference")
     @PYB11implementation("[](FieldListViewType& self) { return py::make_iterator(self.begin(), self.end()); }, py::keep_alive<0,1>()")

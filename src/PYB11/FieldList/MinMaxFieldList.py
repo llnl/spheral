@@ -32,6 +32,18 @@ class MinMaxFieldList(FieldListBase,
         "Enforce a double ceiling on the values of the Field."
         return
 
+    @PYB11const
+    def min(self,
+            includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the Field."
+        return "%(Value)s"
+
+    @PYB11const
+    def max(self,
+            includeGhosts = ("bool", "false")):
+        "Return the maximum value in the Field."
+        return "%(Value)s"
+
 #-------------------------------------------------------------------------------
 # Inject FieldList
 #-------------------------------------------------------------------------------

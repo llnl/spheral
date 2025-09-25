@@ -176,4 +176,4 @@ class Field(FieldBase,
         return "py::list"
 
     def view(self):
-        return "ViewType&"
+        return "ViewType"

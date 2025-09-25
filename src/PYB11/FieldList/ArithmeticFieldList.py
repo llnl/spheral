@@ -74,9 +74,10 @@ class ArithmeticFieldList(FieldListBase,
         return
 
     @PYB11const
-    def sumElements(self):
+    def sumElements(self,
+                    includeGhosts = ("bool", "false")):
         "Return the sum of the elements in the Field."
-        return
+        return "%(Value)s"
 
     #...........................................................................
     # Comparators
@@ -114,16 +115,6 @@ class ArithmeticFieldList(FieldListBase,
 
     def applyMax(self):
         "Enforce a ceiling on the values of the Field."
-        return
-
-    @PYB11const
-    def min(self):
-        "Return the mimimum value in the Field."
-        return
-
-    @PYB11const
-    def max(self):
-        "Return the maximum value in the Field."
         return
 
 #-------------------------------------------------------------------------------

@@ -35,6 +35,18 @@ class MinMaxFieldListView:
         "Enforce a double ceiling on the values of the Field."
         return
 
+    @PYB11const
+    def localMin(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldListView local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def localMax(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldListView local to each processor."
+        return "%(Value)s"
+
 #-------------------------------------------------------------------------------
 # Inject FieldListView
 #-------------------------------------------------------------------------------
