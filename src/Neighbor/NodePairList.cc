@@ -44,7 +44,7 @@ NodePairList::clear() {
 NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
   :
   mNodePairList(vals) {
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
 NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
   :
   mNodePairList(std::move(vals)) {
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
 
 void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
   mNodePairList = vals;
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
 NodePairList::NodePairList(const NodePairList& rhs) :
   NodePairListView() {
   mNodePairList = rhs.mNodePairList;
-  initMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ NodePairList::NodePairList(const NodePairList& rhs) :
 NodePairList& NodePairList::operator=(const NodePairList& rhs) {
   if (this != &rhs) {
     mNodePairList = rhs.mNodePairList;
-    initMA();
+    initView();
   }
   return *this;
 }

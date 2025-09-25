@@ -97,7 +97,7 @@ public:
   template<typename InputIterator>
   iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
     iterator n = mNodePairList.insert(pos, first, last);
-    initMA();
+    initView();
     return n;
   }
 
@@ -111,8 +111,8 @@ public:
     return static_cast<NodePairListView>(*this);
   }
 
-  void initMA() {
-    initializeManagedArray(mData, mNodePairList);
+  void initView() {
+    initMAView(mData, mNodePairList);
   }
 
   template<typename F> inline
