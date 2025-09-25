@@ -11,8 +11,8 @@ namespace Spheral {
 
 template<typename DataType, typename ContainerType>
 void
-initializeManagedArray(chai::ManagedArray<DataType>& a_ma,
-                       ContainerType& a_dc) {
+initMAView(chai::ManagedArray<DataType>& a_ma,
+           ContainerType& a_dc) {
   if (a_dc.size() > 0u && (a_dc.data() != a_ma.data(chai::CPU, false) ||
                            a_dc.size() != a_ma.size())) {
     a_ma.free();
