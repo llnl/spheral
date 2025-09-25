@@ -8,6 +8,7 @@
 #include "CubicHermiteInterpolator.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/safeInv.hh"
+#include "CHAI_MA_wrapper.hh"
 
 #include <Eigen/Sparse>
 
@@ -21,8 +22,12 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs) :
   CHIView() {
+  mN = rhs.mN;
+  mXmin = rhs.mXmin;
+  mXmax = rhs.mXmax;
+  mXstep = rhs.mXstep;
   mVec = rhs.mVec;
-  initializeMA();
+  initView();
 }
 
 //------------------------------------------------------------------------------
@@ -31,8 +36,12 @@ CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolato
 CubicHermiteInterpolator&
 CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
   if (this != &rhs) {
+    mN = rhs.mN;
+    mXmin = rhs.mXmin;
+    mXmax = rhs.mXmax;
+    mXstep = rhs.mXstep;
     mVec = rhs.mVec;
-    initializeMA();
+    initView();
   }
   return *this;
 }
@@ -82,9 +91,8 @@ CubicHermiteInterpolator::~CubicHermiteInterpolator() {
 }
 
 void
-CubicHermiteInterpolator::initializeMA() {
-  mVals.free();
-  mVals = chai::makeManagedArray(mVec.data(), mVec.size(), chai::CPU, false);
+CubicHermiteInterpolator::initView() {
+  initMAView(mVals, mVec);
 }
 
 //------------------------------------------------------------------------------
@@ -190,7 +198,7 @@ CubicHermiteInterpolator::initializeGradientKnots() {
   const Eigen::VectorXd x = solver.solve(b);
   CHECK(solver.info() == Eigen::Success);
   for (auto k = 0u; k < mN; ++k) mVec[mN + k] = x(k);
-  initializeMA();
+  initView();
   // Old crappy but simple method for comparison
   // mVals[mN] = (mVals[1] - mVals[0])/mXstep;
   // mVals[2*mN-1] = (mVals[mN-1] - mVals[mN-2])/mXstep;
