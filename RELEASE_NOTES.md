@@ -22,6 +22,7 @@ Notable changes include:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
       * New Logging utility for runtime debug messages.
+      * Created `initMAView()`, a wrapper for chai::ManagedArray with proper checking.
 
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
