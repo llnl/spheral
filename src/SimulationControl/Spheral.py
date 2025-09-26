@@ -8,9 +8,10 @@
 # ------------------------------------------------------------------------------
 import mpi
 
+import SpheralConfigs
 from SpheralUtilities import BuildData
-
-if not BuildData.cxx_compiler_id == "GNU":
+if SpheralConfigs.enable_shared() and \
+   not BuildData.cxx_compiler_id == "GNU":
     try:
         import sys, ctypes
         sys.setdlopenflags(sys.getdlopenflags() | ctypes.RTLD_GLOBAL)
@@ -51,7 +52,6 @@ from DEMNodeLists import *
 # ------------------------------------------------------------------------------
 # Import hydro configurations
 # ------------------------------------------------------------------------------
-import SpheralConfigs
 hydroImports = SpheralConfigs.hydro_imports()
 for x in hydroImports:
     exec(f"from {x} import *")

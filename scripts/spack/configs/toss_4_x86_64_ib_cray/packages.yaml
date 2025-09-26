@@ -37,37 +37,37 @@ packages:
     buildable: false
     externals:
     - spec: hip@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/
   llvm-amdgpu:
     version: [6.2.0]
     buildable: false
     externals:
     - spec: llvm-amdgpu@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/llvm
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/llvm
   hsa-rocr-dev:
     version: [6.2.0]
     buildable: false
     externals:
     - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocminfo:
     version: [6.2.0]
     buildable: false
     externals:
     - spec: rocminfo@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocm-device-libs:
     version: [6.2.0]
     buildable: false
     externals:
     - spec: rocm-device-libs@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocprim:
     version: [6.2.0]
     buildable: false
     externals:
     - spec: rocprim@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
 
 # ------ SYSTEM LIBS -------
   py-decorator:
