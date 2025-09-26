@@ -6,6 +6,7 @@
 #define __Spheral_CHAI_MA_wrapper__
 
 #include "chai/ManagedArray.hpp"
+#include "chai/managed_ptr.hpp"
 
 namespace Spheral {
 
@@ -19,5 +20,22 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
     a_ma = chai::makeManagedArray(a_dc.data(), a_dc.size(), chai::CPU, false);
   }
 }
+
+template<typename DerivedClass, typename BaseClass, typename... Args>
+chai::managed_ptr<BaseClass>
+initMP(chai::ExecutionSpace space,
+       Args&&... args) {
+  BaseClass* base_ptr;
+#if defined(SPHERAL_GPU_ENABLED)
+  if (space == chai::GPU) {
+    base_ptr = chai::make_on_device<DerivedClass>(std::forward<Args>(args)...);
+  } else
+#endif
+    {
+      base_ptr = new DerivedClass(std::forward<Args>(args)...);
+    }
+  return chai::managed_ptr<BaseClass> ({space}, {base_ptr});
+}
+
 }
 #endif

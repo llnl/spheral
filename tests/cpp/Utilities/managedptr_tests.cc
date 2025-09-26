@@ -6,6 +6,7 @@
 #include "chai/Types.hpp"
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 #include "chai/managed_ptr.hpp"
 
 #include <Utilities/Logger.hh>
@@ -51,20 +52,20 @@ public:
   }
 };
 
-class FlexPointerTest : public ::testing::Test {
+class ManagedPointerTest : public ::testing::Test {
 };
 
 // Setting up G Test for FieldList
-TYPED_TEST_SUITE_P(FlexPointerTypedTest);
-template <typename T> class FlexPointerTypedTest : public FlexPointerTest {};
+TYPED_TEST_SUITE_P(ManagedPointerTypedTest);
+template <typename T> class ManagedPointerTypedTest : public ManagedPointerTest {};
 
-GPU_TYPED_TEST_P(FlexPointerTypedTest, Start) {
+GPU_TYPED_TEST_P(ManagedPointerTypedTest, Start) {
   EXEC_IN_SPACE_BEGIN(TypeParam)
     Spheral::GeomVector<3> vec(1., 2., 3.);
   EXEC_IN_SPACE_END()
 }
 
-GPU_TYPED_TEST_P(FlexPointerTypedTest, BasicCapture) {
+GPU_TYPED_TEST_P(ManagedPointerTypedTest, BasicCapture) {
   double val0 = 2.;
   double val1 = 1.;
   double val2 = 3.;
@@ -76,23 +77,14 @@ GPU_TYPED_TEST_P(FlexPointerTypedTest, BasicCapture) {
     space = chai::CPU;
   }
   for (int i = 0; i < 10; ++i) {
-    Base* base_ptr;
     double ref_val = ref_valA;
+    chai::managed_ptr<Base> d_ptr;
     if (i%2 == 0) {
-      if (space == chai::GPU) {
-        base_ptr = chai::make_on_device<DerivedA>(val1, val2, val3);
-      } else {
-        base_ptr = new DerivedA(val1, val2, val3);
-      }
+      d_ptr = Spheral::initMP<DerivedA, Base>(space, val1, val2, val3);
     } else {
-      if (space == chai::GPU) {
-        base_ptr = chai::make_on_device<DerivedB>(val1, val2);
-      } else {
-        base_ptr = new DerivedB(val1, val2);
-      }
+      d_ptr = Spheral::initMP<DerivedB, Base>(space, val1, val2);
       ref_val = ref_valB;
     }
-    chai::managed_ptr<Base> d_ptr({space}, {base_ptr});
     EXEC_IN_SPACE_BEGIN(TypeParam)
       double val = d_ptr->operate(val0);
       SPHERAL_ASSERT_FLOAT_EQ(val, ref_val);
@@ -101,7 +93,7 @@ GPU_TYPED_TEST_P(FlexPointerTypedTest, BasicCapture) {
   }
 }
 
-GPU_TYPED_TEST_P(FlexPointerTypedTest, ModifyClass) {
+GPU_TYPED_TEST_P(ManagedPointerTypedTest, ModifyClass) {
   double val0 = 2.;
   double val1 = 1.;
   double val2 = 3.;
@@ -113,13 +105,7 @@ GPU_TYPED_TEST_P(FlexPointerTypedTest, ModifyClass) {
   if (typeid(RAJA::seq_exec) == typeid(TypeParam)) {
     space = chai::CPU;
   }
-  Base* base_ptr;
-  if (space == chai::GPU) {
-    base_ptr = chai::make_on_device<DerivedA>(val1, val2, val3);
-  } else {
-    base_ptr = new DerivedA(val1, val2, val3);
-  }
-  chai::managed_ptr<Base> d_ptr({space}, {base_ptr});
+  chai::managed_ptr<Base> d_ptr = Spheral::initMP<DerivedA, Base>(space, val1, val2, val3);
   for (int i = 0; i < 10; ++i) {
     double ref_val = ref_valA;
     if (i%2 == 0) {
@@ -140,7 +126,7 @@ GPU_TYPED_TEST_P(FlexPointerTypedTest, ModifyClass) {
   d_ptr.free();
 }
 
-REGISTER_TYPED_TEST_SUITE_P(FlexPointerTypedTest, Start, BasicCapture, ModifyClass);
+REGISTER_TYPED_TEST_SUITE_P(ManagedPointerTypedTest, Start, BasicCapture, ModifyClass);
 
-INSTANTIATE_TYPED_TEST_SUITE_P(FlexPointer, FlexPointerTypedTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(ManagedPointer, ManagedPointerTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
