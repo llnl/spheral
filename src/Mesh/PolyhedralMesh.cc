@@ -3,7 +3,7 @@
 //
 // Created by JMO, Wed Jan  5 21:09:11 PST 2011
 //----------------------------------------------------------------------------//
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
 
@@ -53,7 +53,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
   CONTRACT_VAR(generators);
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 
   // Some useful typedefs.
   typedef Dim<3> Dimension;
@@ -204,7 +204,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
                                     << Timing::difference(t0, Timing::currentTime())
                                     << " seconds to construct mesh elements." << endl;
 
-#endif
+#endif // USE_POLYTOPE
 }
 
 //------------------------------------------------------------------------------

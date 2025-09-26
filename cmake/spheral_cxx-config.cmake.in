@@ -17,7 +17,7 @@ if(NOT SPHERAL_FOUND)
 
   set(SPHERAL_CXX_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
   set(SPHERAL_CXX_INCLUDE_DIRS "${SPHERAL_CXX_INSTALL_PREFIX}/include")
-  if(NOT @ENABLE_CXXONLY@ AND NOT TARGET Python3)
+  if(@SPHERAL_ENABLE_PYTHON@ AND NOT TARGET Python3)
     set(python_DIR "@python_DIR@")
     set(Python_EXECUTABLE ${python_DIR}/bin/python3)
     set(Python3_EXECUTABLE ${python_DIR}/bin/python3)

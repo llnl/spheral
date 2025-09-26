@@ -69,15 +69,15 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _packages SVPH)
 endif()
 
-if (ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SUNDIALS)
   list(APPEND _packages Solvers)
 endif()
 
-if (ENABLE_LEOS)
+if (SPHERAL_ENABLE_LEOS)
   list(APPEND _packages LEOS)
 endif()
 
-if(NOT ENABLE_CXXONLY)
+if(SPHERAL_ENABLE_PYTHON)
   list(APPEND _packages
     SimulationControl
     PYB11)

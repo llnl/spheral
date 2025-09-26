@@ -7,6 +7,7 @@
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "Utilities/DBC.hh"
+#include "config.hh"
 
 #include "boost/algorithm/string.hpp"
 
@@ -22,7 +23,7 @@ using std::min;
 using std::max;
 using std::abs;
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
 namespace py = pybind11;
 #endif
 
@@ -268,7 +269,7 @@ FileIO::fileOpen() const {
   return mFileOpen;
 }
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
 //------------------------------------------------------------------------------
 // Python objects (handle with pickle)
 //------------------------------------------------------------------------------

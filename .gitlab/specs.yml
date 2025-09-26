@@ -3,18 +3,18 @@
 
 .gcc_mvapich2_cxxonly:
   variables:
-    SPEC: '%gcc+mpi'
-    EXTRA_CMAKE_ARGS: '-DENABLE_CXXONLY=On -DENABLE_WARNINGS_AS_ERRORS=On'
+    SPEC: '%gcc+mpi~python'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_PYTHON=OFF -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_mvapich2:
   variables:
     SPEC: '%gcc+mpi'
-    EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_~mpi:
   variables:
     SPEC: '%gcc~mpi'
-    EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_~mpi_Debug:
   variables:

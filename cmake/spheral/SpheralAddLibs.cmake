@@ -104,7 +104,7 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
       HEADERS     ${${package_name}_headers}
       SOURCES     ${${package_name}_sources}
       DEPENDS_ON  ${_cxx_obj_list} ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
-      SHARED      ${ENABLE_SHARED})
+      SHARED      ${SPHERAL_ENABLE_SHARED})
   endif()
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
   if(ENABLE_CUDA)

@@ -20,6 +20,7 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 #include "Integrator.hh"
+#include "config.hh"
 
 #include <limits.h>
 #include <float.h>
@@ -155,7 +156,7 @@ selectDt(const typename Dimension::Scalar dtMin,
         dt.first >= dtMin and dt.first <= dtMax);
 
   // In the parallel case we need to find the minimum timestep across all processors.
-#ifdef GLOBALDT_REDUCTION
+#ifdef SPHERAL_ENABLE_GLOBALDT_REDUCTION
   const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
 #else
   const auto globalDt = dt.first;

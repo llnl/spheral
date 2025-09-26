@@ -35,13 +35,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('mpi', default=True, description='Enable MPI Support.')
     variant('openmp', default=True, description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
-    # TODO: Static libraries are broken, must make them with shared
-    #variant('shared', default=False, description='Build C++ libs as shared.')
-    variant('python', default=True, description='Build Python Dependencies.')
+    variant('shared', default=True, description='Build C++ libs as shared.')
+    variant('python', default=True, description='Enable Spheral python interface.')
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
-    variant('sundials', default=True, when="+mpi", description='Build Sundials package.')
+    variant('sundials', default=True, when="+mpi", description='Enable use of SUNDIALS solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
 
     # -------------------------------------------------------------------------
@@ -223,9 +222,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = []
 
-        entries.append(cmake_cache_option('ENABLE_CXXONLY', not spec.satisfies("+python")))
-        entries.append(cmake_cache_option('TPL_VERBOSE', False))
-        entries.append(cmake_cache_option('BUILD_TPL', True))
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_PYTHON', spec.satisfies("+python")))
 
         entries.append(cmake_cache_string('SPHERAL_SYS_ARCH', self._get_sys_type(spec)))
         entries.append(cmake_cache_string('SPHERAL_CONFIGURATION', self._get_config_name(spec)))
@@ -262,7 +259,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         if spec.satisfies("+opensubdiv"):
             entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
-            entries.append(cmake_cache_option('ENABLE_OPENSUBDIV', True))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_OPENSUBDIV', True))
 
         if spec.satisfies("~network"):
             entries.append(cmake_cache_option('SPHERAL_NETWORK_CONNECTED', False))
@@ -273,22 +270,21 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if spec.satisfies("+mpi"):
             entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
             entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
-        # TODO: Switch this back once static libraries are working again
-        entries.append(cmake_cache_option('ENABLE_SHARED', True)) # '+shared' in spec))
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_SHARED', '+shared' in spec))
 
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))
-        entries.append(cmake_cache_option('ENABLE_DOCS', '+docs' in spec))
 
         if spec.satisfies("+python"):
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_DOCS', '+docs' in spec))
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
 
         if spec.satisfies("+sundials"):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
-            entries.append(cmake_cache_option('ENABLE_SUNDIALS', True))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_SUNDIALS', True))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
-            entries.append(cmake_cache_option('ENABLE_LEOS', True))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_LEOS', True))
 
         return entries
 

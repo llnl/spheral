@@ -14,8 +14,9 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include "config.hh"
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
 #include "pybind11/pybind11.h"
 #include "Utilities/SPHERAL_DLL_EXPORT.hh"
 #endif
@@ -188,7 +189,7 @@ public:
   //          2 => unable to read value
   template<typename T> int readIfAvailable(T& value, const std::string path) const;
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
   // PyObjects for Python
   SPHERAL_DLL_PUBLIC virtual void writeObject(pybind11::object thing, const std::string path);
   SPHERAL_DLL_PUBLIC virtual pybind11::object readObject(const std::string path) const;

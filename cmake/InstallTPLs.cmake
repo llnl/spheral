@@ -17,7 +17,7 @@ include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralPRT.cmake)
 # Submodules
 #-----------------------------------------------------------------------------------
 
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
   # Find the appropriate Python
   find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
   set(SPHERAL_SITE_PACKAGES_PATH "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" )
@@ -45,7 +45,7 @@ if (NOT ENABLE_CXXONLY)
   # python_build_env.
   set(BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/build-requirements.txt)
   list(APPEND BUILD_REQ_LIST ${SPHERAL_BINARY_DIR}/scripts/runtime-requirements.txt)
-  if(ENABLE_DOCS)
+  if(SPHERAL_ENABLE_DOCS)
     list(APPEND BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/docs-requirements.txt)
   endif()
 
@@ -123,7 +123,7 @@ if(POLYTOPE_FOUND)
   list(APPEND SPHERAL_FP_DIRS ${polytope_DIR})
   blt_convert_to_system_includes(TARGET polytope)
   # Install Polytope python library to our site-packages
-  if (NOT ENABLE_CXXONLY)
+  if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
       DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
     )
@@ -187,8 +187,6 @@ if(chai_FOUND)
   blt_convert_to_system_includes(TARGET chai)
 endif()
 
-
-
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
 list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
 list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
@@ -197,7 +195,7 @@ set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials
-if (ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SUNDIALS)
   set(SUNDIALS_DIR "${sundials_DIR}")
   find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
     COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial
@@ -214,9 +212,9 @@ message("-----------------------------------------------------------------------
 # TPLs that must be imported
 list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
 
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF ENABLE_LEOS)
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF ENABLE_ANEOS)
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF ENABLE_OPENSUBDIV)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF SPHERAL_ENABLE_LEOS)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF SPHERAL_ENABLE_ANEOS)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF SPHERAL_ENABLE_OPENSUBDIV)
 
 # Create and install target library for each external library
 foreach(lib ${SPHERAL_EXTERN_LIBS})
@@ -233,7 +231,7 @@ if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
   include(${EXTERNAL_SPHERAL_TPL_CMAKE})
 endif()
 
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
   configure_file(
     ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
     ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so

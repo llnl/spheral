@@ -13,7 +13,7 @@ set(Integrator_inst
 
 set(Integrator_sources )
 
-if (ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SUNDIALS)
   list(APPEND Integrator_inst
     BackwardEuler
     ImplicitIntegrationVectorOperator

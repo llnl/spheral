@@ -20,6 +20,7 @@
 #include "Neighbor/ConnectivityMap.hh"
 #include "Strength/SolidFieldNames.hh"
 #include "Utilities/range.hh"
+#include "config.hh"
 
 #include <limits>
 #include <algorithm>
@@ -150,7 +151,7 @@ dt(const DataBase<Dimension>& dataBase,
   if (haveDS) S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
 
   // Check if the longitudinal sound speed is registered.
-#ifdef LONGCSDT
+#ifdef SPHERAL_ENABLE_LONGCSDT
   const auto haveLongCs = state.fieldNameRegistered(SolidFieldNames::longitudinalSoundSpeed);
 #else
   const auto haveLongCs = false; // ignore longitudinal sound speed

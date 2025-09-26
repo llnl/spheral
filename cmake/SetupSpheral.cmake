@@ -48,37 +48,12 @@ endif()
 include(${SPHERAL_BLT_DIR}/SetupBLT.cmake)
 
 #-------------------------------------------------------------------------------
-# Include standard build system logic and options / definitions
+# Set Spheral options
 #-------------------------------------------------------------------------------
-# TODO: Prefix Spheral options
-set(ENABLE_CXXONLY OFF CACHE BOOL "enable C++ only build without python bindings")
-set(ENABLE_1D ON CACHE BOOL "enable 1d")
-set(ENABLE_2D ON CACHE BOOL "enable 2d")
-set(ENABLE_3D ON CACHE BOOL "enable 3d")
-set(ENABLE_INSTANTIATIONS ON CACHE BOOL "enable instantiations")
-set(SPHERAL_ENABLE_TIMERS OFF CACHE BOOL "enable timer")
-set(ENABLE_ANEOS ON CACHE BOOL "enable the ANEOS equation of state package")
-set(ENABLE_OPENSUBDIV ON CACHE BOOL "enable the Opensubdiv Pixar extension for refining polyhedra")
-set(ENABLE_HELMHOLTZ ON CACHE BOOL "enable the Helmholtz equation of state package")
 
-option(SPHERAL_ENABLE_ARTIFICIAL_CONDUCTION "Enable the artificial conduction package" ON)
-option(SPHERAL_ENABLE_EXTERNAL_FORCE "Enable the external force package" ON)
-option(SPHERAL_ENABLE_FSISPH "Enable the FSISPH package" ON)
-option(SPHERAL_ENABLE_GRAVITY "Enable the gravity package" ON)
-option(SPHERAL_ENABLE_GSPH "Enable the GSPH package" ON)
-option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
-option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
-option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
+include(${SPHERAL_ROOT_DIR}/cmake/SpheralOptions.cmake)
 
-option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
-option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
-option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
-option(ENABLE_SHARED "Building C++ libs shared" ON)
-
-if(ENABLE_STATIC_CXXONLY)
-  set(ENABLE_CXXONLY ON)
-  set(ENABLE_SHARED OFF)
-elseif(NOT ENABLE_SHARED AND NOT ENABLE_CXXONLY)
+if(SPHERAL_ENABLE_PYTHON AND NOT SPHERAL_ENABLE_SHARED)
   message(FATAL_ERROR "Python libraries with ENABLE_SHARED=OFF are currently broken")
 endif()
 
@@ -118,11 +93,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
-
-#-------------------------------------------------------------------------------
-# Should we build sphinx documentation
-#-------------------------------------------------------------------------------
-set(ENABLE_DOCS OFF CACHE BOOL "enable sphinx Spheral documentation")
 
 #-------------------------------------------------------------------------------
 # Locate third party libraries
@@ -167,14 +137,14 @@ add_subdirectory(${SPHERAL_ROOT_DIR}/src)
 #-------------------------------------------------------------------------------
 # Add the documentation
 #-------------------------------------------------------------------------------
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_DOCS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/docs)
 endif()
 
 #-------------------------------------------------------------------------------
 # Build C++ tests and install tests to install directory
 #-------------------------------------------------------------------------------
-if (ENABLE_TESTS)
+if (SPHERAL_ENABLE_TESTS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/tests)
 
   include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralInstallPythonFiles.cmake)

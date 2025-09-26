@@ -2,9 +2,6 @@
 # Definitions to be added as compile flags for spheral 
 #-----------------------------------------------------------------------------------
 
-option(ENABLE_BOUNDCHECKING "Check bounds on STL types (expensive, Gnu only)" OFF)
-option(ENABLE_NAN_EXCEPTIONS "Raise an excpetion when a NAN occurs (Gnu only)" OFF)
-
 # If we're building debug default DBC to All
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("-- building Debug")
@@ -28,7 +25,7 @@ else()
 endif()
 
 # Bound checking option -- very expensive at run time
-if (ENABLE_BOUNDCHECKING)
+if (SPHERAL_ENABLE_BOUNDCHECKING)
   message("-- bound checking enabled")
   add_definitions(-D_GLIBCXX_DEBUG=1)
 else()
@@ -36,50 +33,26 @@ else()
 endif()
 
 # NAN handling (Gnu only)
-if (ENABLE_NAN_EXCEPTIONS)
-  message("-- Enabling NAN floating point exceptions (only applicable to Gnu compilers")
+if (SPHERAL_ENABLE_NAN_EXCEPTIONS)
+  message("-- Enabling NAN floating point exceptions (only applicable to GNU compilers")
   add_definitions(-DENABLE_NAN_EXCEPTIONS)
 endif()
 
-# CXXONLY
-if (ENABLE_CXXONLY)
-  add_definitions(-DCXXONLY=1)
-endif()
-
-# SPHERAL_ENABLE_GLOBALDT_REDUCTION
-if (SPHERAL_ENABLE_GLOBALDT_REDUCTION)
-  add_definitions(-DGLOBALDT_REDUCTION)
-endif()
-
-# SPHERAL_ENABLE_LONGCSDT
-if (SPHERAL_ENABLE_LONGCSDT)
-  add_definitions(-DLONGCSDT)
-endif()
-
-# Default Polytope options
-add_definitions(-DUSE_TETGEN=0)
-add_definitions(-DUSE_TRIANGLE=0)
-add_definitions(-DNOPOLYTOPE=1)
-
-# Are we using Opensubdiv?
-if (ENABLE_OPENSUBDIV)
-  add_definitions(-DENABLE_OPENSUBDIV)
-endif()
+# Default Polytope options (currently undefined until polytope is fixed)
+#add_definitions(-DUSE_TETGEN)
+#add_definitions(-DUSE_TRIANGLE)
+#add_definitions(-DUSE_POLYTOPE)
 
 # Choose the dimensions we build
-if (ENABLE_1D)
+if (SPHERAL_ENABLE_1D)
   add_definitions(-DSPHERAL1D=1)
 endif()
-if (ENABLE_2D)
+if (SPHERAL_ENABLE_2D)
   add_definitions(-DSPHERAL2D=1)
 endif()
-if (ENABLE_3D)
+if (SPHERAL_ENABLE_3D)
   add_definitions(-DNOR3D=1)
   add_definitions(-DSPHERAL3D=1)
-endif()
-
-if (SPHERAL_ENABLE_TIMERS)
-  add_definitions(-DSPHERAL_ENABLE_TIMERS=1)
 endif()
 
 if (ENABLE_MPI)

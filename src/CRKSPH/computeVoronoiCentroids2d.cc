@@ -10,7 +10,6 @@
 
 namespace Spheral {
 
-
 //------------------------------------------------------------------------------
 // 2D
 //------------------------------------------------------------------------------
@@ -51,7 +50,7 @@ computeVoronoiCentroids(const FieldList<Dim<2>, Dim<2>::Vector>& position) {
   {
 #ifdef USE_MPI
     polytope::DistributedTessellator<2, double> tessellator
-#if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
+#if defined USE_TRIANGLE
       (new polytope::TriangleTessellator<double>(),
 #else
       (new polytope::BoostTessellator<double>(),
@@ -59,7 +58,7 @@ computeVoronoiCentroids(const FieldList<Dim<2>, Dim<2>::Vector>& position) {
        true,     // Manage memory for serial tessellator
        true);    // Build parallel connectivity
 #else
-#if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
+#if defined USE_TRIANGLE
     polytope::TriangleTessellator<double> tessellator;
 #else
     polytope::BoostTessellator<double> tessellator;

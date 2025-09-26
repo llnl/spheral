@@ -3,7 +3,7 @@
 //
 // Created by JMO, Tue Nov 16 14:18:20 PST 2010
 //----------------------------------------------------------------------------//
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
 
@@ -33,7 +33,7 @@ namespace Spheral {
 
 namespace {
 
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 //------------------------------------------------------------------------------
 // Internal worker method with common code for building from a 2D polytope
 // tessellation.
@@ -179,7 +179,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
 
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
   // Some useful typedefs.
   typedef Dim<2> Dimension;
 
@@ -282,7 +282,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
                     const Dim<2>::FacetedVolume& boundary) {
   CONTRACT_VAR(generators);
   CONTRACT_VAR(boundary);
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 
   // Some useful typedefs.
   typedef Dim<2> Dimension;
