@@ -31,6 +31,8 @@ namespace Spheral {
 
 // Forward declaration.
 template<typename Dimension> class NodeList;
+template<typename Dimension> class FieldBase;
+template<typename Dimension> class FieldListBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
 template<typename Dimension> class ConnectivityMap;
