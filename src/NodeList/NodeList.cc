@@ -16,6 +16,7 @@
 #include "Kernel/TableKernel.hh"
 #include "Utilities/DBC.hh"
 #include "Utilities/packElement.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "DataBase/IncrementState.hh"
 #include "DataBase/ReplaceState.hh"
@@ -56,8 +57,8 @@ NodeList<Dimension>::NodeList(std::string name,
   mhminratio(hminratio),
   mNodesPerSmoothingScale(nPerh),
   mMaxNumNeighbors(maxNumNeighbors),
-  mFieldBaseList(),
-  mNeighborPtr(0),
+  mFieldBases(),
+  mNeighborPtr(nullptr),
   mDummyList(),
   mRestart(registerWithRestart(*this, 10)) {
   NodeListRegistrar<Dimension>::instance().registerNodeList(*this);
@@ -76,20 +77,15 @@ NodeList<Dimension>::NodeList(std::string name,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 NodeList<Dimension>::~NodeList() {
-  
-  // Loop over all the fields defined on this mesh, and destroy them.
-  vector<FieldBase<Dimension>*> fieldBaseListCopy(mFieldBaseList);
-  for (FieldBaseIterator fieldItr = fieldBaseListCopy.begin();
-       fieldItr < fieldBaseListCopy.end(); ++fieldItr) {
-    (*fieldItr)->unregisterNodeList();
-  }
+  DEBUG_LOG << "NodeList::~NodeList " << mName << " " << this;
+  // for (auto x: mFieldBases) x.get().unregisterNodeList();
 
   // Unregister ourselves from the NodeListRegistrar, freeing up our name.
   NodeListRegistrar<Dimension>::instance().unregisterNodeList(*this);
 
-  // After we're done, all the field should have unregistered themselves
-  // from the Node List.
-  ENSURE(numFields() == 0u);
+  // // After we're done, all the field should have unregistered themselves
+  // // from the Node List.
+  // ENSURE(numFields() == 0u);
 }
 
 //------------------------------------------------------------------------------
@@ -98,14 +94,11 @@ NodeList<Dimension>::~NodeList() {
 template<typename Dimension>
 void
 NodeList<Dimension>::numInternalNodes(size_t size) {
-  size_t numGhost = numGhostNodes();
-  size_t oldFirstGhostNode = mFirstGhostNode;
+  const auto numGhost = numGhostNodes();
+  const auto oldFirstGhostNode = mFirstGhostNode;
   mFirstGhostNode = size;
   mNumNodes = size + numGhost;
-  for (FieldBaseIterator fieldPtrItr = mFieldBaseList.begin();
-       fieldPtrItr < mFieldBaseList.end(); ++fieldPtrItr) {
-    (*fieldPtrItr)->resizeFieldInternal(size, oldFirstGhostNode);
-  }
+  for (auto x: mFieldBases)     x.get().resizeFieldInternal(size, oldFirstGhostNode);
 }
 
 //------------------------------------------------------------------------------
@@ -114,12 +107,9 @@ NodeList<Dimension>::numInternalNodes(size_t size) {
 template<typename Dimension>
 void
 NodeList<Dimension>::numGhostNodes(size_t size) {
-  size_t numInternal = numInternalNodes();
+  const auto numInternal = numInternalNodes();
   mNumNodes = numInternal + size;
-  for (FieldBaseIterator fieldPtrItr = mFieldBaseList.begin();
-       fieldPtrItr < mFieldBaseList.end(); ++fieldPtrItr) {
-    (*fieldPtrItr)->resizeFieldGhost(size);
-  }
+  for (auto x: mFieldBases)     x.get().resizeFieldGhost(size);
 }
 
 //------------------------------------------------------------------------------
@@ -332,61 +322,14 @@ Hinverse(Field<Dimension, typename Dimension::SymTensor>& field) const {
 }
 
 //------------------------------------------------------------------------------
-// Return the number of fields registered on this nodelist.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-NodeList<Dimension>::numFields() const {
-  return mFieldBaseList.size();
-}
-
-//------------------------------------------------------------------------------
-// Register a field with this NodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::registerField(FieldBase<Dimension>& field) const {
-  if (haveField(field)) {
-    cerr << "WARNING: Attempt to register field " << &field
-         << " with NodeList " << this << " that already has it." 
-         << endl;
-  } else {
-    CHECK(&mFieldBaseList);
-    mFieldBaseList.push_back(&field);
-  }
-}
-
-//------------------------------------------------------------------------------
-// Unregister a field that is listed with this NodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::unregisterField(FieldBase<Dimension>& field) const {
-#pragma omp critical
-  {
-    if (!haveField(field)) {
-      cerr << "WARNING: Attempt to unregister field " << &field
-           << " from a NodeList " << this << " that does not recognize it." 
-           << endl;
-    } else {
-      FieldBaseIterator fieldPtrItr = find(mFieldBaseList.begin(),
-                                           mFieldBaseList.end(),
-                                           &field);
-      mFieldBaseList.erase(fieldPtrItr);
-    }
-  }
-}
-
-//------------------------------------------------------------------------------
 // Check if the given field is registered with this NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 bool
 NodeList<Dimension>::haveField(const FieldBase<Dimension>& field) const {
-  const_FieldBaseIterator fieldPtrItr = find(mFieldBaseList.begin(),
-                                             mFieldBaseList.end(),
-                                             &field);
-  return fieldPtrItr != mFieldBaseList.end();
+  return (find_if(mFieldBases.begin(),
+                  mFieldBases.end(),
+                  [&](const std::reference_wrapper<FieldBase<Dimension>>& x) { return &(x.get()) == &field; }) != mFieldBases.end());
 }
 
 //------------------------------------------------------------------------------
@@ -394,53 +337,11 @@ NodeList<Dimension>::haveField(const FieldBase<Dimension>& field) const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 NodeType
-NodeList<Dimension>::nodeType(int i) const {
-  CHECK(i >=0 && i < (int)numNodes());
-  if (i < (int)firstGhostNode()) {
-    return NodeType::InternalNode;
-  } else {
-    return NodeType::GhostNode;
-  }
-}
-
-//------------------------------------------------------------------------------
-// The index of the first ghost node.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t 
-NodeList<Dimension>::firstGhostNode() const {
-  CHECK(mFirstGhostNode <= numNodes());
-  return mFirstGhostNode;
-}
-
-//------------------------------------------------------------------------------
-// Access the neighbor object.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-Neighbor<Dimension>&
-NodeList<Dimension>::neighbor() const {
-  CHECK(mNeighborPtr != 0);
-  return *mNeighborPtr;
-}
-
-//------------------------------------------------------------------------------
-// Register the given neighbor object with this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::
-registerNeighbor(Neighbor<Dimension>& neighbor) {
-  mNeighborPtr = &neighbor;
-}
-
-//------------------------------------------------------------------------------
-// Unregister the current neighbor object from this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::unregisterNeighbor() {
-  mNeighborPtr = nullptr;
-  // mNeighborPtr = 0;
+NodeList<Dimension>::nodeType(size_t i) const {
+  REQUIRE(i < mNumNodes);
+  return (i < mFirstGhostNode ? 
+          NodeType::InternalNode :
+          NodeType::GhostNode);
 }
 
 //------------------------------------------------------------------------------
@@ -472,14 +373,14 @@ deleteNodes(const vector<size_t>& nodeIDs) {
 
     // Now iterate over the Fields defined on this NodeList, and remove the appropriate
     // elements from each.
-    for (auto* fieldPtr: mFieldBaseList) fieldPtr->deleteElements(uniqueIDs);
+    for (auto x: mFieldBases)     x.get().deleteElements(uniqueIDs);
   }
 
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
-  for (auto* fieldPtr: mFieldBaseList) {
-    CONTRACT_VAR(fieldPtr) ;
-    ENSURE(fieldPtr->size() == mNumNodes);
+  for (auto x: mFieldBases) {
+    CONTRACT_VAR(x) ;
+    ENSURE(x.get().size() == mNumNodes);
   }
   END_CONTRACT_SCOPE
 }
@@ -505,16 +406,16 @@ packNodeFieldValues(const vector<size_t>& nodeIDs) const {
 
   // Iterate over all the Fields defined on this NodeList, and append it's packed 
   // field values to the stack.
-  for (auto* fieldPtr: mFieldBaseList) {
-    result.push_back(fieldPtr->packValues(uniqueIDs));
+  for (auto x: mFieldBases) {
+    result.push_back(x.get().packValues(uniqueIDs));
   }
 
-  ENSURE(result.size() == mFieldBaseList.size());
+  ENSURE(result.size() == mFieldBases.size());
   return result;
 }
 
 //------------------------------------------------------------------------------
-// Append the requested number of nodes onto this FieldList, and fill in the
+// Append the requested number of nodes onto this Field, and fill in the
 // Field values using the provided packed data.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -523,7 +424,7 @@ NodeList<Dimension>::
 appendInternalNodes(const size_t numNewNodes,
                     const list<vector<char>>& packedFieldValues) {
 
-  REQUIRE(packedFieldValues.size() == mFieldBaseList.size());
+  REQUIRE(packedFieldValues.size() == mFieldBases.size());
 
   // We only work if there are new nodes.
   if (numNewNodes > 0) {
@@ -538,15 +439,12 @@ appendInternalNodes(const size_t numNewNodes,
     vector<size_t> nodeIDs(numNewNodes);
     for (auto i = 0u; i < numNewNodes; ++i) nodeIDs[i] = beginInsertionIndex + i;
     auto bufItr = packedFieldValues.begin();
-    for (auto fieldItr = mFieldBaseList.begin();
-         fieldItr != mFieldBaseList.end();
-         ++fieldItr, ++bufItr) {
+    for (auto x: mFieldBases) {
       CHECK(bufItr != packedFieldValues.end());
-      (*fieldItr)->unpackValues(nodeIDs, *bufItr);
+      x.get().unpackValues(nodeIDs, *bufItr);
+      ++bufItr;
     }
-
-    // That's it.
-    ENSURE(bufItr == packedFieldValues.end());
+    CHECK(bufItr == packedFieldValues.end());
   }
 }
 
@@ -580,14 +478,15 @@ reorderNodes(const vector<size_t>& newOrdering) {
 
   // Pack up all the current nodal field values.
   list<vector<char>> packedFieldValues;
-  for (auto* fieldPtr: mFieldBaseList) packedFieldValues.push_back(fieldPtr->packValues(oldOrdering));
-  CHECK(packedFieldValues.size() == mFieldBaseList.size());
+  for (auto x: mFieldBases) packedFieldValues.push_back(x.get().packValues(oldOrdering));
+  CHECK(packedFieldValues.size() == mFieldBases.size());
 
   // Now unpack in the desired order.
   auto bufItr = packedFieldValues.begin();
-  for (auto fieldItr = mFieldBaseList.begin();
-       fieldItr != mFieldBaseList.end();
-       ++fieldItr, ++bufItr) (*fieldItr)->unpackValues(newOrdering, *bufItr);
+  for (auto x: mFieldBases) {
+    x.get().unpackValues(newOrdering, *bufItr);
+    ++bufItr;
+  }
   CHECK(bufItr == packedFieldValues.end());
 
   // Post-conditions.
@@ -645,6 +544,58 @@ restoreState(const FileIO& file, const string& pathName) {
   mNeighborPtr->updateNodes();
 }
 
+//------------------------------------------------------------------------------
+// Register a field with this NodeList.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::registerField(FieldBase<Dimension>& field) const {
+  DEBUG_LOG << "NodeList::registerField : " << mName << " " << this << " : " << field.name() << " " << &field;
+  if (haveField(field)) {
+    SpheralMessage("WARNING: Attempt to register field " << &field << " (" << field.name()
+                   << ") with NodeList " << this << " (" << this->name() << ") that already has it.");
+  } else {
+    mFieldBases.push_back(std::ref(field));
+  }
+}
+
+//------------------------------------------------------------------------------
+// Unregister a field that is listed with this NodeList.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::unregisterField(FieldBase<Dimension>& field) const {
+  DEBUG_LOG << "NodeList::unregisterField : " << mName << " " << this << " : " << field.name() << " " << &field;
+#pragma omp critical
+  {
+    auto itr = find_if(mFieldBases.begin(),
+                       mFieldBases.end(),
+                       [&](const std::reference_wrapper<FieldBase<Dimension>>& x) { return &(x.get()) == &field; });
+    if (itr != mFieldBases.end()) mFieldBases.erase(itr);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Register the given neighbor object with this node list.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::
+registerNeighbor(Neighbor<Dimension>& neighbor) {
+  DEBUG_LOG << "NodeList::registerNeighbor : " << mName << " " << this << " : " << &neighbor;
+  mNeighborPtr = &neighbor;
+}
+
+//------------------------------------------------------------------------------
+// Unregister the current neighbor object from this node list.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::unregisterNeighbor() {
+  DEBUG_LOG << "NodeList::unregisterNeighbor : " << mName << " " << this;
+  mNeighborPtr = nullptr;
+}
+
 // //------------------------------------------------------------------------------
 // // Notify all Fields registered on this NodeList to cache their coarse neighbor
 // // values.
@@ -653,8 +604,8 @@ restoreState(const FileIO& file, const string& pathName) {
 // void
 // NodeList<Dimension>::
 // notifyFieldsCacheCoarseValues() const {
-//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBaseList.begin();
-//        fieldItr < mFieldBaseList.end();
+//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBases.begin();
+//        fieldItr < mFieldBases.end();
 //        ++fieldItr) {
 //     (*fieldItr)->notifyNewCoarseNodes();
 //   }
@@ -668,8 +619,8 @@ restoreState(const FileIO& file, const string& pathName) {
 // void
 // NodeList<Dimension>::
 // notifyFieldsCacheRefineValues() const {
-//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBaseList.begin();
-//        fieldItr < mFieldBaseList.end();
+//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBases.begin();
+//        fieldItr < mFieldBases.end();
 //        ++fieldItr) {
 //     (*fieldItr)->notifyNewRefineNodes();
 //   }
