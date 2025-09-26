@@ -538,7 +538,7 @@ def extractFields(nodeLists, time, cycle, fields,
             assert len(subfields) <= len(nodeLists)
 
             # Build the meta-data for this field entry.
-            name = str(fieldName).replace(" ", "_")
+            name = str(fieldName).replace(" ", "_").replace("-", "_”)
             varDef, varType, optlistDef, optlistMV, optlistVar = metaDataMethod(name, time, cycle, dim)
 
             # Build the complete values for this field.
