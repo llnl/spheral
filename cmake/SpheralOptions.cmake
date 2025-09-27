@@ -22,7 +22,7 @@ option(SPHERAL_ENABLE_GSPH "Enable the GSPH package" ON)
 option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
 option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
 option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
-option(SPHERAL_ENABLE_SUNDIALS "Enable use of SUNDIALS" ON)
+cmake_dependent_option(SPHERAL_ENABLE_SUNDIALS "Enable use of SUNDIALS" ON ENABLE_MPI OFF)
 option(SPHERAL_ENABLE_LEOS "Enable use of LEOS" OFF)
 
 option(SPHERAL_NETWORK_CONNECTED "Enable use of network. Disable if using a build cache" ON)

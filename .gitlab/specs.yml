@@ -3,7 +3,7 @@
 
 .gcc_mvapich2_cxxonly:
   variables:
-    SPEC: '%gcc+mpi~python'
+    SPEC: '%gcc+mpi'
     EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_PYTHON=OFF -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_mvapich2:
