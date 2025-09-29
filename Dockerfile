@@ -102,5 +102,6 @@ WORKDIR ../install
 #RUN ./bin/spheral-ats --level 99 --mpiexe mpiexec --npMax $JCXX tests/integration.ats
 
 # Instead, we will just run it normally
-RUN ./bin/spheral-ats --level 99 tests/integration.ats
+RUN ./bin/spheral-ats --level 99 tests/integration.ats || exit_code=$?
+RUN exit $exit_code
 # -----------------------------------------------------------------------------
