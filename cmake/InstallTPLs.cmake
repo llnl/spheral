@@ -89,7 +89,7 @@ set(SPHERAL_FP_DIRS )
 
 # Use find_package to get axom (which brings in fmt) and patch fmt
 find_package(axom REQUIRED NO_DEFAULT_PATH PATHS ${axom_DIR}/lib/cmake)
-list(APPEND SPHERAL_BLT_DEPENDS axom )
+list(APPEND SPHERAL_BLT_DEPENDS axom)
 list(APPEND SPHERAL_FP_TPLS axom)
 list(APPEND SPHERAL_FP_DIRS ${axom_DIR}/lib/cmake)
 
@@ -160,7 +160,7 @@ find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
 if(hdf5_FOUND)
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
-  list(APPEND SPHERAL_FP_TPLS hdf5-shared hdf5_hl-shared)
+  list(APPEND SPHERAL_FP_TPLS hdf5)
   list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
   blt_convert_to_system_includes(TARGET hdf5-shared hdf5_hl-shared)
 endif()
@@ -190,8 +190,6 @@ endif()
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
 list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
 list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
-set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
-set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials
@@ -201,12 +199,18 @@ if (SPHERAL_ENABLE_SUNDIALS)
     COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial
     PATHS ${sundials_DIR}/lib64/cmake/sundials ${sundials_DIR}/lib/cmake/sundials)
   if(SUNDIALS_FOUND)
-    list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
-    list(APPEND SPHERAL_FP_TPLS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
+    set(SUNDIAL_LIBS kinsol nvecparallel nvecmpiplusx nvecserial)
+    foreach(_lib ${SUNDIAL_LIBS})
+      list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::${_lib}_static)
+    endforeach()
+    list(APPEND SPHERAL_FP_TPLS SUNDIALS)
     list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
     message("Found SUNDIALS External Package.")
   endif()
 endif()
+
+set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
+set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
 # TPLs that must be imported
