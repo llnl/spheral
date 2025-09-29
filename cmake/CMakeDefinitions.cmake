@@ -51,7 +51,6 @@ if (SPHERAL_ENABLE_2D)
   add_definitions(-DSPHERAL2D=1)
 endif()
 if (SPHERAL_ENABLE_3D)
-  add_definitions(-DNOR3D=1)
   add_definitions(-DSPHERAL3D=1)
 endif()
 
