@@ -32,31 +32,26 @@
       - ci-dir.txt
       - job-name.txt
 
-.build_script: &build_script
-  script:
-    - CI_BUILD_DIR=$(cat ci-dir.txt)
-    - cd $CI_BUILD_DIR && cat job-name.txt
-    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
-
 .build:
   extends: [.retry_rule]
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
   script:
-    - *build_script
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
   artifacts:
     paths:
       - ci-dir.txt
       - job-name.txt
 
 .build_and_test:
-  extends: [.retry_rule]
-  stage: build_and_install
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - *build_script
+  extends: [.build]
+  after_script:
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+
     - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
   artifacts:
     paths:
