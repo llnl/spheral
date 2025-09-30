@@ -27,6 +27,9 @@
     - echo $CI_BUILD_DIR
     - echo $SPEC
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --spec="${SPACK_PKG_NAME}${SPEC}" --ci-run
+  artifacts:
+    reports:
+      dotenv: build.env
 
 .build:
   extends: [.retry_rule]
@@ -38,6 +41,9 @@
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+  artifacts:
+    reports:
+      dotenv: build.env
 
 .build_and_test:
   extends: [.build]
@@ -46,6 +52,9 @@
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
+  artifacts:
+    reports:
+      dotenv: build.env
 
 .run_ats:
   extends: [.retry_rule]
@@ -64,6 +73,9 @@
   allow_failure:
     exit_codes:
       - 80
+  artifacts:
+    reports:
+      dotenv: build.env
 
 # Run the performance suite and move the resulting Caliper files into the benchmark location
 .run_perf:
@@ -79,6 +91,9 @@
     - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
     - exit $exit_code
+  artifacts:
+    reports:
+      dotenv: build.env
 
 .cleanup_dir:
   stage: cleanup
@@ -168,6 +183,9 @@
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
     - dchmod --mode go+rx $INSTALL_DIR
+  artifacts:
+    reports:
+      dotenv: build.env
 
 .prod_permissions:
   stage: update_permissions
