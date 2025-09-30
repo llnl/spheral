@@ -7,15 +7,13 @@
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
-    - echo "export CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
-    - echo "export SPEC=$SPEC" >> build.env
-    - echo "export ARCH=$ARCH" >> build.env
-    - cat build.env
+    - echo $CI_BUILD_DIR &> ci-dir.txt && echo $CI_JOB_NAME &> job-name.txt
     - echo $CI_BUILD_DIR && echo $CI_PROJECT_DIR
     - mkdir -p $CI_BUILD_DIR && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR
   artifacts:
     paths:
-      - build.env
+      - ci-dir.txt
+      - job-name.txt
   interruptible: true
 
 .tpls:
@@ -24,11 +22,15 @@
   variables:
     GIT_STRATEGY: none
   script:
-    - source build.env && cd $CI_BUILD_DIR
-    - echo $CI_JOB_NAME
-    - echo $CI_BUILD_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
     - echo $SPEC
+
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --spec="${SPACK_PKG_NAME}${SPEC}" --ci-run
+  artifacts:
+    paths:
+      - ci-dir.txt
+      - job-name.txt
 
 .build:
   extends: [.retry_rule]
@@ -36,18 +38,25 @@
   variables:
     GIT_STRATEGY: none
   script:
-    - source build.env && cd $CI_BUILD_DIR
-    - echo $CI_JOB_NAME
-    - echo $CI_BUILD_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
     - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+  artifacts:
+    paths:
+      - ci-dir.txt
+      - job-name.txt
 
 .build_and_test:
   extends: [.build]
   after_script:
-    - source build.env && cd $CI_BUILD_DIR
-    - echo $CI_JOB_NAME
-    - echo $CI_BUILD_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+
     - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
+  artifacts:
+    paths:
+      - ci-dir.txt
+      - job-name.txt
 
 .run_ats:
   extends: [.retry_rule]
@@ -57,12 +66,17 @@
     FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
-    - source build.env && cd $CI_BUILD_DIR
-    - echo $CI_JOB_NAME
-    - echo $CI_BUILD_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
+  artifacts:
+    when: always
+    paths:
+      - ci-dir.txt
+      - test-logs/
   allow_failure:
     exit_codes:
       - 80
@@ -76,32 +90,41 @@
     FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
-    - source build.env && cd $CI_BUILD_DIR
-    - echo $CI_JOB_NAME
-    - echo $CI_BUILD_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+
     - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
     - exit $exit_code
+  artifacts:
+    when: always
+    paths:
+      - ci-dir.txt
 
 .cleanup_dir:
   stage: cleanup
   variables:
     GIT_STRATEGY: empty
   script:
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+
     - ml load mpifileutils
     - cd $SPHERAL_BUILDS_DIR
     - $RUN_CMD -n 20 drm $CI_BUILD_DIR/..
   interruptible: true
 
-# .export_test:
-#   stage: run_ats
-#   variables:
-#     GIT_STRATEGY: empty
-#   trigger:
-#     project: 'owen/SpheralC'
-#     strategy: mirror
-#     inputs:
-#       environment: $ARCH
-#       compiler: $COMPILER_SPEC
+.export_test:
+  stage: run_ats
+  variables:
+    GIT_STRATEGY: empty
+  trigger:
+    project: 'owen/SpheralC'
+    strategy: mirror
+    inputs:
+      environment: $ARCH
+      compiler: $COMPILER_SPEC
+  artifacts:
+    paths:
+      - ci-dir.txt
 
 # ------------------------------------------------------------------------------
 # Shared TPL scripts.
@@ -142,25 +165,30 @@
     - DEV_PKG_NAME=$SYS_TYPE-spheral-dev-pkg-$SPHERAL_REV_STR
     - INSTALL_DIR=/usr/gapps/Spheral/$SYS_TYPE/spheral-$SPHERAL_REV_STR
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID
-    - echo "export DEV_PKG_NAME=$DEV_PKG_NAME" >> build.env
-    - echo "export CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
-    - echo "export INSTALL_DIR=$INSTALL_DIR" >> build.env
+    - echo $DEV_PKG_NAME &> dev-pkg-name.txt
+    - echo $CI_BUILD_DIR &> ci-dir.txt
+    - echo $INSTALL_DIR &> install-dir.txt
     - mkdir -p $CI_BUILD_DIR/$DEV_PKG_NAME && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR/$DEV_PKG_NAME
     - cd $CI_BUILD_DIR/$DEV_PKG_NAME
 
     - env SCRIPT_DIR=$SCRIPT_DIR DEV_PKG_NAME=$DEV_PKG_NAME CI_BULD_DIR=$CI_BUILD_DIR
       bash ./$SCRIPT_DIR/lc/generate-buildcache.sh
+
   artifacts:
     paths:
-      - build.env
+      - dev-pkg-name.txt
+      - ci-dir.txt
+      - install-dir.txt
 
 .install_dev_pkg:
   stage: install_production
   variables:
     GIT_STRATEGY: empty
   script:
-    - source build.env
+    - INSTALL_DIR=$(cat install-dir.txt)
     - rm -rf $INSTALL_DIR
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - DEV_PKG_NAME=$(cat dev-pkg-name.txt)
 
     - cp $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz .
     - tar -xzf $DEV_PKG_NAME.tar.gz
@@ -171,11 +199,18 @@
     - ml load mpifileutils
     - dchmod --mode go+rx $INSTALL_DIR
 
+  artifacts:
+    paths:
+      - ci-dir.txt
+      - install-dir.txt
+
 .prod_permissions:
   stage: update_permissions
   variables:
     GIT_STRATEGY: none
   script:
+    - INSTALL_DIR=$(cat install-dir.txt)
+
     - sed 's/YYYY\.MM\.p/'"$ALIAS"'/g' $SCRIPT_DIR/lc/modulefile-template.lua > /usr/gapps/Spheral/modulefiles/Spheral/"$ALIAS".lua
     - chmod go+r /usr/gapps/Spheral/modulefiles/Spheral/"$ALIAS".lua
 
@@ -195,6 +230,7 @@
     GIT_STRATEGY: none
   script:
     - cd $SPHERAL_BUILDS_DIR
+
     - MAX_DIR=30
     - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
     - echo $DIR_LIST
