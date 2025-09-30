@@ -16,7 +16,7 @@ toss_gcc_mvapich2_cxxonly_export:
   extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .export_test]
   needs: [toss_gcc_mvapich2_cxxonly_tpls]
   variables:
-    COMPILER_SPEC: "gcc"
+    COMPILER_SPEC: gcc
   rules:
     - if: $SPHERAL_MODULE == "LLNLSpheral"
 
