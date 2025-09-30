@@ -7,13 +7,15 @@
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
-    - echo "CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
-    - echo "CI_JOB_NAME=$CI_JOB_NAME" >> build.env
+    - echo "export CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
+    - echo "export SPEC=$SPEC" >> build.env
+    - echo "export ARCH=$ARCH" >> build.env
+    - cat build.env
     - echo $CI_BUILD_DIR && echo $CI_PROJECT_DIR
     - mkdir -p $CI_BUILD_DIR && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR
   artifacts:
-    reports:
-      dotenv: build.env
+    paths:
+      - build.env
   interruptible: true
 
 .tpls:
@@ -22,14 +24,11 @@
   variables:
     GIT_STRATEGY: none
   script:
-    - cd $CI_BUILD_DIR
+    - source build.env && cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - echo $SPEC
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --spec="${SPACK_PKG_NAME}${SPEC}" --ci-run
-  artifacts:
-    reports:
-      dotenv: build.env
 
 .build:
   extends: [.retry_rule]
@@ -37,24 +36,18 @@
   variables:
     GIT_STRATEGY: none
   script:
-    - cd $CI_BUILD_DIR
+    - source build.env && cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
-  artifacts:
-    reports:
-      dotenv: build.env
 
 .build_and_test:
   extends: [.build]
   after_script:
-    - cd $CI_BUILD_DIR
+    - source build.env && cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
-  artifacts:
-    reports:
-      dotenv: build.env
 
 .run_ats:
   extends: [.retry_rule]
@@ -64,7 +57,7 @@
     FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
-    - cd $CI_BUILD_DIR
+    - source build.env && cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
@@ -73,9 +66,6 @@
   allow_failure:
     exit_codes:
       - 80
-  artifacts:
-    reports:
-      dotenv: build.env
 
 # Run the performance suite and move the resulting Caliper files into the benchmark location
 .run_perf:
@@ -86,14 +76,11 @@
     FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
-    - cd $CI_BUILD_DIR
+    - source build.env && cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
     - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
     - exit $exit_code
-  artifacts:
-    reports:
-      dotenv: build.env
 
 .cleanup_dir:
   stage: cleanup
@@ -155,24 +142,24 @@
     - DEV_PKG_NAME=$SYS_TYPE-spheral-dev-pkg-$SPHERAL_REV_STR
     - INSTALL_DIR=/usr/gapps/Spheral/$SYS_TYPE/spheral-$SPHERAL_REV_STR
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID
-    - echo "DEV_PKG_NAME=$DEV_PKG_NAME" >> build.env
-    - echo "CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
-    - echo "INSTALL_DIR=$INSTALL_DIR" >> build.env
+    - echo "export DEV_PKG_NAME=$DEV_PKG_NAME" >> build.env
+    - echo "export CI_BUILD_DIR=$CI_BUILD_DIR" >> build.env
+    - echo "export INSTALL_DIR=$INSTALL_DIR" >> build.env
     - mkdir -p $CI_BUILD_DIR/$DEV_PKG_NAME && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR/$DEV_PKG_NAME
     - cd $CI_BUILD_DIR/$DEV_PKG_NAME
 
     - env SCRIPT_DIR=$SCRIPT_DIR DEV_PKG_NAME=$DEV_PKG_NAME CI_BULD_DIR=$CI_BUILD_DIR
       bash ./$SCRIPT_DIR/lc/generate-buildcache.sh
-
   artifacts:
-    reports:
-      dotenv: build.env
+    paths:
+      - build.env
 
 .install_dev_pkg:
   stage: install_production
   variables:
     GIT_STRATEGY: empty
   script:
+    - source build.env
     - rm -rf $INSTALL_DIR
 
     - cp $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz .
@@ -183,9 +170,6 @@
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
     - dchmod --mode go+rx $INSTALL_DIR
-  artifacts:
-    reports:
-      dotenv: build.env
 
 .prod_permissions:
   stage: update_permissions
