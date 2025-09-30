@@ -24,6 +24,7 @@
   script:
     - cd $CI_BUILD_DIR
     - echo $CI_JOB_NAME
+    - echo $CI_BUILD_DIR
     - echo $SPEC
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --spec="${SPACK_PKG_NAME}${SPEC}" --ci-run
 
@@ -34,12 +35,16 @@
     GIT_STRATEGY: none
   script:
     - cd $CI_BUILD_DIR
+    - echo $CI_JOB_NAME
+    - echo $CI_BUILD_DIR
     - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
 
 .build_and_test:
   extends: [.build]
   after_script:
     - cd $CI_BUILD_DIR
+    - echo $CI_JOB_NAME
+    - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
 
 .run_ats:
@@ -51,6 +56,8 @@
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
     - cd $CI_BUILD_DIR
+    - echo $CI_JOB_NAME
+    - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
@@ -68,6 +75,8 @@
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
     - cd $CI_BUILD_DIR
+    - echo $CI_JOB_NAME
+    - echo $CI_BUILD_DIR
     - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
     - exit $exit_code
 
@@ -184,7 +193,6 @@
     GIT_STRATEGY: none
   script:
     - cd $SPHERAL_BUILDS_DIR
-
     - MAX_DIR=30
     - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
     - echo $DIR_LIST
