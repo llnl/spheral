@@ -83,6 +83,10 @@ if(NOT ENABLE_CXXONLY)
     PYB11)
 endif()
 
+set(SPHERAL_ENABLE_1D ${ENABLE_1D})
+set(SPHERAL_ENABLE_2D ${ENABLE_2D})
+set(SPHERAL_ENABLE_3D ${ENABLE_3D})
+
 configure_file(config.hh.in
   ${PROJECT_BINARY_DIR}/src/config.hh)
 

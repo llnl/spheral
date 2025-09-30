@@ -13,6 +13,10 @@
 #cmakedefine SPHERAL_ENABLE_HIP
 #cmakedefine SPHERAL_ENABLE_VVI
 
+#cmakedefine SPHERAL_ENABLE_1D
+#cmakedefine SPHERAL_ENABLE_2D
+#cmakedefine SPHERAL_ENABLE_3D
+
 #if defined(SPHERAL_ENABLE_HIP) && defined(__HIP_DEVICE_COMPILE__)
 #define SPHERAL_GPU_ACTIVE
 #endif // SPHERAL_ENABLE_CUDA && __CUDACC__
