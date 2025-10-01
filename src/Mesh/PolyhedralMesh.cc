@@ -3,6 +3,7 @@
 //
 // Created by JMO, Wed Jan  5 21:09:11 PST 2011
 //----------------------------------------------------------------------------//
+#include "config.hh"
 #ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
@@ -106,7 +107,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<3, double> tessellation;
 //   {
-// #ifdef USE_MPI
+// #ifdef ENABLE_MPI
 //     polytope::SerialDistributedTessellator<3, double> tessellator
 // #if defined USE_TETGEN && ( USE_TETGEN>0 )
 //         (new polytope::TetgenTessellator(),
@@ -115,13 +116,13 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
 // #endif
 //          true,     // Manage memory for serial tessellator
 //          true);    // Build parallel connectivity
-// #else  // not USE_MPI
+// #else  // not ENABLE_MPI
 // #if defined USE_TETGEN && ( USE_TETGEN>0 )
 //     polytope::TetgenTessellator tessellator ;
 // #else
 //     polytope::VoroPP_3d<double> tessellator ;
 // #endif
-// #endif  // USE_MPI
+// #endif  // ENABLE_MPI
 
 //     // Bounded Voronoi tessellation
 //     tessellator.tessellate(gens, 
@@ -271,7 +272,7 @@ boundingSurface() const {
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // In the parallel case we have to construct the total surface and distribute
   // it to everyone.
   //const unsigned rank = Process::getRank();

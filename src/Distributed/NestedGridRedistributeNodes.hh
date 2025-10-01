@@ -13,9 +13,7 @@
 #include <vector>
 #include <map>
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
+#include "config.hh"
 
 namespace Spheral {
   template<typename Dimension> class DataBase;

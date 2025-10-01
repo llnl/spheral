@@ -21,9 +21,7 @@
 #include "Utilities/removeElements.hh"
 #include "Distributed/Communicator.hh"
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
+#include "config.hh"
 
 #include <algorithm>
 #include <set>

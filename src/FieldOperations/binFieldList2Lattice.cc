@@ -31,7 +31,8 @@ using std::min;
 using std::max;
 using std::abs;
 
-#ifdef USE_MPI
+#include "config.hh"
+#ifdef ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }
@@ -180,7 +181,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   CHECK(numProcs >= 1);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   BoundingVolumeDistributedBoundary<Dimension>& distributedBoundary = BoundingVolumeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -198,7 +199,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
        ++nodeItr) {
 
     // Mask out any parallel boundary nodes.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
                           count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                                 distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -217,7 +218,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   }
 
   // In parallel we have to reduce the elements across processors.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   vector<char> localBuffer;
   packElement(result, localBuffer);
   int bufSize = localBuffer.size();
@@ -268,7 +269,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   CHECK(numProcs >= 1);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   BoundingVolumeDistributedBoundary<Dimension>& distributedBoundary = BoundingVolumeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -286,7 +287,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
        ++nodeItr) {
 
     // Mask out any parallel boundary nodes.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
                           count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                                 distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -303,7 +304,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   }
 
   // In parallel we have to reduce the elements across processors.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   vector<char> localBuffer;
   packElement(result, localBuffer);
   int bufSize = localBuffer.size();

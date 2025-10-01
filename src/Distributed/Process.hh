@@ -11,6 +11,7 @@
 #ifndef PROCESS_HH
 #define PROCESS_HH
 
+#include "config.hh"
 
 namespace Spheral {
 class Process
@@ -28,7 +29,7 @@ class Process
 
    private:
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
    // MPI rank of this process.
    static int sRank;
 

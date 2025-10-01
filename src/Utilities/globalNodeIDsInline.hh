@@ -23,8 +23,9 @@
 
 #include <vector>
 #include <tuple>
+#include "config.hh"
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -97,7 +98,7 @@ globalNodeIDs(const NodeList<Dimension>& nodeList) {
   // Reduce the list of node info to processor 0.
   auto nglobal = numLocalNodes;
   CONTRACT_VAR(nglobal);
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   if (procID == 0u) {
 
     // Process 0 receives and builds the global info.
@@ -170,7 +171,7 @@ globalNodeIDs(const NodeList<Dimension>& nodeList) {
     for (auto i = 0u; i < numLocalNodes; ++i) result(i) = globalIDs[0][i];
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Farm the ID info back to all processors.
   if (procID == 0u) {
 
@@ -227,7 +228,7 @@ globalNodeIDs(const NodeListIterator& begin,
   for (auto* nodeListPtr: range(begin, end)) result.appendNewField("global IDs", *nodeListPtr, size_t(0));
   CHECK(result.numFields() == numNodeLists);
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // This processors domain id.
   const size_t procID = Process::getRank();
   const size_t numProcs = Process::getTotalNumberOfProcesses();

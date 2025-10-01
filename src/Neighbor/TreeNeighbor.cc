@@ -21,6 +21,8 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 
+#include "config.hh"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -542,7 +544,7 @@ dumpTree(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {
@@ -624,7 +626,7 @@ dumpTreeStatistics(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {

@@ -12,11 +12,13 @@
 #include <fenv.h>
 #endif
 
+#include "config.hh"
+
 namespace Spheral {
 void setGlobalFlags() {
 
 #ifdef __GNUC__
-#ifdef ENABLE_NAN_EXCEPTIONS
+#ifdef SPHERAL_ENABLE_NAN_EXCEPTIONS
   feenableexcept(FE_DIVBYZERO | FE_INVALID);
   // feenableexcept(FE_DIVBYZERO | FE_UNDERFLOW | FE_OVERFLOW | FE_INVALID);
 #endif

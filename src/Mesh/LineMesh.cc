@@ -10,7 +10,9 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#include "config.hh"
+
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -72,7 +74,7 @@ reconstructInternal(const vector<Mesh<Dim<1> >::Vector>& localGenerators,
 
   // Get the full set of generators we need.
   vector<Vector> generators = localGenerators;
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Parallel info.
   const unsigned rank = Process::getRank();
   const unsigned numDomains = Process::getTotalNumberOfProcesses();

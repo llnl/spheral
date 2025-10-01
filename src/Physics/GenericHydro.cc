@@ -3,9 +3,6 @@
 //
 // Created by JMO, Sat May 20 22:50:20 PDT 2000
 //----------------------------------------------------------------------------//
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 #include "GenericHydro.hh"
 

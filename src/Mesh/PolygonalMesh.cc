@@ -3,6 +3,7 @@
 //
 // Created by JMO, Tue Nov 16 14:18:20 PST 2010
 //----------------------------------------------------------------------------//
+#include "config.hh"
 #ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
@@ -221,7 +222,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<2, double> tessellation;
   {
-#if 0     //#ifdef USE_MPI                                // FIXME when parallel polytope working again!
+#if 0     //#ifdef ENABLE_MPI                                // FIXME when parallel polytope working again!
     polytope::DistributedTessellator<2, double> tessellator
 #if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
       (new polytope::TriangleTessellator<double>(),
@@ -346,7 +347,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<2, double> tessellation;
   {
-#if 0   //  #ifdef USE_MPI                                    // FIXME when polytope Distributed fixed
+#if 0   //  #ifdef ENABLE_MPI                                    // FIXME when polytope Distributed fixed
     polytope::DistributedTessellator<2, double> tessellator
 #if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
       (new polytope::TriangleTessellator<double>(),
@@ -446,7 +447,7 @@ boundingSurface() const {
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // In the parallel case we have to construct the total surface and distribute
   // it to everyone.
   //const unsigned rank = Process::getRank();

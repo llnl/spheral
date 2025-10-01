@@ -11,12 +11,13 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Communicator.hh"
 
-#ifdef USE_MPI
+#include "config.hh"
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #endif
 
 namespace Spheral {
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
 //------------------------------------------------------------------------------
 // MPI version
 //------------------------------------------------------------------------------

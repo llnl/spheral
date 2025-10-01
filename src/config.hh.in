@@ -7,6 +7,7 @@
 
 #cmakedefine SPHERAL_ENABLE_LOGGER
 
+#cmakedefine ENABLE_MPI
 #cmakedefine ENABLE_OPENMP
 
 #cmakedefine SPHERAL_ENABLE_CUDA
@@ -36,5 +37,6 @@
 #cmakedefine SPHERAL_ENABLE_OPENSUBDIV
 #cmakedefine SPHERAL_ENABLE_GLOBALDT_REDUCTION
 #cmakedefine SPHERAL_ENABLE_LONGCSDT
+#cmakedefine SPHERAL_ENABLE_NAN_EXCEPTIONS
 
 #endif //  SPHERAL_config_HPP

@@ -9,7 +9,8 @@
 #include "Kernel/TableKernel.hh"
 #include "Distributed/allReduce.hh"
 
-#ifdef USE_MPI
+#include "config.hh"
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/packElement.hh"
@@ -765,7 +766,7 @@ operator()(const typename Dimension::Vector& position,
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // In parallel, we need to sum up the result across all processors.
   {
     int procID, numProcs;

@@ -19,6 +19,8 @@
 #include "Material/PhysicalConstants.hh"
 #include "Utilities/packElement.hh"
 
+#include "config.hh" // for ENABLE_MPI
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -146,7 +148,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   vector<char> localBuffer, buffer;
   this->serialize(mass, position, localBuffer);
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Get the processor information.
   const unsigned rank = Process::getRank();
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
@@ -174,7 +176,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   this->deserialize(localBuffer, otherMass, otherPosition);
   this->applyPairForces(otherMass, otherPosition, position, DvDt, mPotential);
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Now walk the other processes and get their contributions.
   unsigned bufSize;
   MPI_Status recvStatus;
@@ -223,7 +225,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   mOldMaxAcceleration = allReduce(mOldMaxAcceleration, SPHERAL_OP_MAX);
   mOldMaxVelocity = allReduce(mOldMaxVelocity, SPHERAL_OP_MAX);
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Wait until all our sends are complete.
   vector<MPI_Status> sendStatus(sendRequests.size());
   MPI_Waitall(sendRequests.size(), &(*sendRequests.begin()), &(*sendStatus.begin()));

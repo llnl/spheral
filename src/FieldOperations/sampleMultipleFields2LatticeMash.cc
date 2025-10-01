@@ -22,7 +22,8 @@
 
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#include "config.hh"
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #include "Distributed/TreeDistributedBoundary.hh"
 #include "Distributed/Communicator.hh"
@@ -370,7 +371,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
   CHECK(numProcs > 0);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   TreeDistributedBoundary<Dimension>& distributedBoundary = TreeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -418,7 +419,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
        nodeItr != position.nodeEnd();
        ++nodeItr) {
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     const bool useNode = (numProcs == 1 ? true :
                           count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                                 distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -519,7 +520,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
   // In parallel we have to reduce the elements across processors.
 
   // Calculate the size of the packed data per position.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   const int sizeOfElement = (numScalarFieldLists*DataTypeTraits<Scalar>::numElements(0.0)*sizeof(typename DataTypeTraits<Scalar>::ElementType) +
                              numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero)*sizeof(typename DataTypeTraits<Vector>::ElementType) +
                              numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero)*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
@@ -634,7 +635,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   vector<MPI_Request> sendRequests;
   sendRequests.reserve(3*(numProcs - 1));
   if (numProcs > 1) {
@@ -800,7 +801,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Wait until all our sends are completed.
   if (numProcs > 1 and not sendRequests.empty()) {
     vector<MPI_Status> sendStatus(sendRequests.size());

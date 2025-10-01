@@ -9,6 +9,8 @@
 #include "Geometry/GeomPlane.hh"
 #include "Utilities/DBC.hh"
 
+#include "config.hh"
+
 #include <map>
 #include <algorithm>
 using std::vector;
@@ -161,7 +163,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   const Field<Dimension, SymTensor>& HD = donorNodeListPtr->Hfield();
   // const Field<Dimension, Vector>& posA = acceptorNodeListPtr->positions();
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Parallel info
   const int myproc = Process::getRank();
   const int nprocs = Process::getTotalNumberOfProcesses();

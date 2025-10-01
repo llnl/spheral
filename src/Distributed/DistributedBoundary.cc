@@ -15,6 +15,7 @@
 #include "Utilities/range.hh"
 #include "Utilities/DBC.hh"
 #include "waitAllWithDeadlockDetection.hh"
+#include "Process.hh"
 
 #include <sstream>
 #include <list>
@@ -45,7 +46,7 @@ DistributedBoundary<Dimension>::DistributedBoundary():
   mMPIFieldTag(0),
   mSendRequests(),
   mRecvRequests(),
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
   mSendProcIDs(),
   mRecvProcIDs(),
 #endif
@@ -53,7 +54,7 @@ DistributedBoundary<Dimension>::DistributedBoundary():
   mRecvBuffers() {
   
   // Get the number of processor and this one's rank.
-  MPI_Comm_rank(Communicator::communicator(), &mDomainID);
+  mDomainID = Process::getRank();
   CHECK(mDomainID >= 0 && mDomainID < numDomains());
 
   // Reserve space in the request buffers.
@@ -692,7 +693,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
         MPI_Irecv(&(*recvValues.begin()), bufSize, MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mRecvRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
         mRecvProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -732,7 +733,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
         MPI_Isend(&(*sendValues.begin()), sendValues.size(), MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mSendRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
         mSendProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -888,7 +889,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
         MPI_Isend(&(*sendValues.begin()), sendValues.size(), MPI_CHAR, neighborDomainID, mMPIFieldTag, 
                   Communicator::communicator(), &(mSendRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
         mSendProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -935,7 +936,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
         MPI_Irecv(&(*recvValues.begin()), bufSize, MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mRecvRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
         mRecvProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -1287,7 +1288,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
   }
   END_CONTRACT_SCOPE
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
   vector<int> dummyInts;
   vector<MPI_Request> dummyRequests;
   vector<MPI_Status> dummyStatus;
@@ -1298,7 +1299,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
 
     // Wait until all of our receives have been satisfied.
     vector<MPI_Status> recvStatus(mRecvRequests.size());
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
     waitallWithDeadlockDetection("DistributedBoundary::finalizeExchanges -- RECEIVE waitall",
                                  dummyInts, mRecvProcIDs, dummyRequests, mRecvRequests, dummyStatus, recvStatus, Communicator::communicator());
 #else
@@ -1318,7 +1319,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
 
     // Wait until all of our sends have been satisfied.
     vector<MPI_Status> sendStatus(mSendRequests.size());
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
     waitallWithDeadlockDetection("DistributedBoundary::finalizeExchanges -- RECEIVE waitall",
                                  mSendProcIDs, dummyInts, mSendRequests, dummyRequests, sendStatus, dummyStatus, Communicator::communicator());
 #else
@@ -1334,7 +1335,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
   mMPIFieldTag = 0;
   mSendRequests = vector<MPI_Request>();
   mRecvRequests = vector<MPI_Request>();
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
   mSendProcIDs = vector<int>();
   mRecvProcIDs = vector<int>();
 #endif

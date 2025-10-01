@@ -11,6 +11,12 @@
 #include "Utilities/packElement.hh"
 #include "Distributed/allReduce.hh"
 
+#include "config.hh"
+
+#ifdef ENABLE_MPI
+#include <mpi.h>
+#endif
+
 namespace Spheral {
 
 
@@ -164,7 +170,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
       }
       tothers += std::clock() - t0;
 
-      // #ifdef USE_MPI
+      // #ifdef ENABLE_MPI
       //     // Global broadcast of the new centers.
       //     for (int iproc = 0; iproc != nprocs; ++iproc) {
       //       int jmin = imin, jmax = imax;
@@ -246,7 +252,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
       }
       toverlap += std::clock() - t0;
 
-      // #ifdef USE_MPI
+      // #ifdef ENABLE_MPI
       //     // Global broadcast of the new flags.
       //     for (int iproc = 0; iproc != nprocs; ++iproc) {
       //       int jmin = imin, jmax = imax;
@@ -308,7 +314,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     }
   }
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   const size_t rank = Process::getRank();
   const size_t nprocs = Process::getTotalNumberOfProcesses();
   // Global broadcast of the new geometry.

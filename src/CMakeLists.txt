@@ -85,6 +85,8 @@ endif()
 
 configure_file(config.hh.in
   ${PROJECT_BINARY_DIR}/src/config.hh)
+install(FILES ${PROJECT_BINARY_DIR}/src/config.hh
+  DESTINATION include/config.hh)
 
 foreach(_package ${_packages})
   add_subdirectory(${_package})

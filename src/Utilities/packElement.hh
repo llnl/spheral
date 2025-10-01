@@ -15,6 +15,9 @@
 #include "Utilities/uniform_random.hh"
 #include "RK/RKCorrectionParams.hh"
 #include "RK/RKCoefficients.hh"
+#include "Distributed/Process.hh"
+
+#include "config.hh"
 
 #include <stdint.h>
 #include <vector>
@@ -23,11 +26,6 @@
 #include <iterator>
 #include <string>
 #include <tuple>
-
-#ifdef USE_MPI
-#include <mpi.h>
-#include "Distributed/Communicator.hh"
-#endif
 
 namespace Spheral {
 
@@ -757,12 +755,7 @@ computeBufferSize(const Field<Dimension, std::vector<DataType> >& field,
                            sizeof(typename DataTypeTraits<DataType>::ElementType));
 
   // Find the rank of this processor.
-  int rank = 0;
-#ifdef USE_MPI
-  MPI_Comm_rank(Communicator::communicator(), &rank);
-#else
-  CONTRACT_VAR(recvProc);
-#endif
+  int rank = Process::getRank();
   REQUIRE(rank == sendProc || rank == recvProc);
 
   // The send proc can compute the necessary size.
@@ -775,13 +768,15 @@ computeBufferSize(const Field<Dimension, std::vector<DataType> >& field,
   }
 
   // Communicate the result to the receiving processor.
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   if (rank == recvProc) {
     MPI_Status status;
     MPI_Recv(&bufSize, 1, MPI_INT, sendProc, 103, Communicator::communicator(), &status);
   } else if (rank == sendProc) {
     MPI_Send(&bufSize, 1, MPI_INT, recvProc, 103, Communicator::communicator());
   }
+#else
+  CONTRACT_VAR(recvProc);
 #endif
   return bufSize;
 }

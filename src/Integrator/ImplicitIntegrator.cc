@@ -11,6 +11,8 @@
 #include "FileIO/FileIO.hh"
 #include "Distributed/Communicator.hh"
 
+#include "config.hh"
+
 namespace Spheral {
 
 using std::cout;
@@ -113,7 +115,7 @@ selectDt(const typename Dimension::Scalar dtMin,
 
   // Now set the dt to the global answer
   dt.first = globalDt;
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   {
     int msgSize = dt.second.size();
     MPI_Bcast(&msgSize, 1, MPI_INT, dtRank, Communicator::communicator());

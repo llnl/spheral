@@ -13,9 +13,9 @@
 
 #include <vector>
 #include <map>
+#include "config.hh"
 
-#ifdef USE_MPI
-#include <mpi.h>
+#ifdef ENABLE_MPI
 extern "C" {
 #include "parmetis.h"
 }

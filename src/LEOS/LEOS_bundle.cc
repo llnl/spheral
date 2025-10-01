@@ -11,6 +11,7 @@
 #include "Utilities/range.hh"
 
 #include <algorithm>
+#include "config.hh"
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -128,7 +129,7 @@ LEOS_bundle():
   // units through our interface.
   LEOS::LEOS_StartupOptions opts;
   opts.units(LEOS::LEOS_UNITS_CGS);
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   opts.communicator(Communicator::communicator());
 #endif
 #ifdef ENABLE_HIP

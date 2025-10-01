@@ -8,7 +8,9 @@
 #ifndef DistributedBoundary_HH
 #define DistributedBoundary_HH
 
-#ifdef USE_MPI
+#include "config.hh"
+
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -159,13 +161,14 @@ private:
   // Internal tag for MPI communiators.
   mutable int mMPIFieldTag;
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
   // Send/receive requests.
   mutable std::vector<MPI_Request> mSendRequests;
   mutable std::vector<MPI_Request> mRecvRequests;
 #endif
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+  // TODO: Determine if this is still a thing?
+#ifdef ENABLE_MPI_DEADLOCK_DETECTION
   mutable std::vector<int> mSendProcIDs;
   mutable std::vector<int> mRecvProcIDs;
 #endif

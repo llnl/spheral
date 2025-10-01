@@ -8,8 +8,9 @@
 
 #include <vector>
 #include <tuple>
+#include "config.hh"
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
 #include <mpi.h>
 #include "Distributed/Communicator.hh"
 #endif
@@ -30,7 +31,7 @@ setUniqueNodeIDs(FieldList<Dimension,size_t>& uniqueIndex) {
   const auto numFields = uniqueIndex.numFields();
   const auto maxUnique = uniqueIndex.max();
 
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
 
   // This processors domain id.
   const int procID = Process::getRank();

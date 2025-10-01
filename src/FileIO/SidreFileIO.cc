@@ -6,6 +6,7 @@
 #include "SidreFileIO.hh"
 
 #include "axom/sidre.hpp"
+#include "config.hh"
 
 namespace Spheral
 {
@@ -171,12 +172,12 @@ void SidreFileIO::open(const std::string fileName, AccessType access)
 
   if (access == AccessType::Read)
   {
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     axom::sidre::IOManager reader(Communicator::communicator());
     reader.read(baseGroup, fileName + ".root");
 #else
     baseGroup->load(fileName);
-#endif // USE_MPI
+#endif // ENABLE_MPI
   }
 
   VERIFY2(mDataStorePtr != 0, "SidreFileIO ERROR: unable to open " << fileName);
@@ -190,12 +191,12 @@ void SidreFileIO::close()
 {
   if (mDataStorePtr != 0)
   {
-#ifdef USE_MPI
+#ifdef ENABLE_MPI
     axom::sidre::IOManager writer(Communicator::communicator());
     writer.write(baseGroup, numRestartFiles, mFileName, "sidre_hdf5");
 #else
     baseGroup->save(mFileName);
-#endif // USE_MPI
+#endif // ENABLE_MPI
     mDataStorePtr.reset();
   }
   mFileOpen = false;
