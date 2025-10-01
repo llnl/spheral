@@ -16,7 +16,7 @@
 #include "Field/Field.hh"
 #include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
-#include "Utilities/Communicator.hh"
+#include "Distributed/Communicator.hh"
 #include "Material/PhysicalConstants.hh"
 #include "Utilities/packElement.hh"
 
