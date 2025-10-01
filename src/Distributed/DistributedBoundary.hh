@@ -8,9 +8,8 @@
 #ifndef DistributedBoundary_HH
 #define DistributedBoundary_HH
 
-#include "config.hh"
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -161,14 +160,14 @@ private:
   // Internal tag for MPI communiators.
   mutable int mMPIFieldTag;
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Send/receive requests.
   mutable std::vector<MPI_Request> mSendRequests;
   mutable std::vector<MPI_Request> mRecvRequests;
 #endif
 
   // TODO: Determine if this is still a thing?
-#ifdef ENABLE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
   mutable std::vector<int> mSendProcIDs;
   mutable std::vector<int> mRecvProcIDs;
 #endif

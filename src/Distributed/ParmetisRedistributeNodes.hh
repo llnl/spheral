@@ -13,9 +13,8 @@
 
 #include <vector>
 #include <map>
-#include "config.hh"
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include "parmetis.h"
 }

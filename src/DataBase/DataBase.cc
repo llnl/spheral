@@ -19,9 +19,8 @@
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
-#include "config.hh"
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }
@@ -1899,7 +1898,7 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 				    xminNodes, xmaxNodes,
 				    xminSample, xmaxSample);
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Now find the global bounds across all processors.
   {
     size_t nlocal = this->numInternalNodes();
@@ -2047,7 +2046,7 @@ globalSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
   // First get each domains local values.
   localSamplingBoundingBoxes(xminima, xmaxima);
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel crap.
   const int procID = Process::getRank();
   const int numProcs = Process::getTotalNumberOfProcesses();

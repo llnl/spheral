@@ -20,7 +20,6 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 #include "Integrator.hh"
-#include "config.hh"
 
 #include <limits.h>
 #include <float.h>

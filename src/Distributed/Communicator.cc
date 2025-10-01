@@ -7,14 +7,15 @@
 #include "Communicator.hh"
 #include "Utilities/DBC.hh"
 
+#include "config.hh"
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
 // Default constructor (private).
 //------------------------------------------------------------------------------
-Communicator::
-Communicator() {
-#ifdef ENABLE_MPI
+Communicator::Communicator() {
+#ifdef SPHERAL_ENABLE_MPI
   mCommunicator = MPI_COMM_WORLD;
 #else
   mCommunicator = 0;
@@ -24,8 +25,7 @@ Communicator() {
 //------------------------------------------------------------------------------
 // Destructor (private).
 //------------------------------------------------------------------------------
-Communicator::
-~Communicator() {
+Communicator::~Communicator() {
 }
 
 //------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ Communicator::
 //------------------------------------------------------------------------------
 
 MPI_Comm* Communicator::comm_ptr() {
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   return &(instance().mCommunicator);
 #else
   return nullptr;
@@ -41,7 +41,7 @@ MPI_Comm* Communicator::comm_ptr() {
 }
 
 void Communicator::finalize() {
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   int finalized = 0;
   MPI_Finalized(&finalized);
   if (finalized != 0) {

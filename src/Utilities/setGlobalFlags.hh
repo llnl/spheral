@@ -12,8 +12,6 @@
 #include <fenv.h>
 #endif
 
-#include "config.hh"
-
 namespace Spheral {
 void setGlobalFlags() {
 

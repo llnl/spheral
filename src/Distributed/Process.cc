@@ -10,7 +10,7 @@
 #include "Process.hh"
 #include "Communicator.hh"
 #include "config.hh"
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 
 // Static member data initialization.
@@ -22,7 +22,7 @@ namespace Spheral {
 //----------------------------------------------------------------------------
 int
 Process::getRank() {
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (sRank == -1) {
     int isInitialized;
     MPI_Initialized(&isInitialized);
@@ -43,7 +43,7 @@ Process::getRank() {
 //----------------------------------------------------------------------------
 int
 Process::getTotalNumberOfProcesses() {
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (sTotalProcs == -1) {
     int isInitialized;
     MPI_Initialized(&isInitialized);
@@ -63,7 +63,7 @@ void Process::haltAll(const char* msg) {
   std::cout << msg << std::endl;
   std::cout.flush();
   std::cerr.flush();
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   int isInitialized;
   MPI_Initialized(&isInitialized);
   if (isInitialized) {

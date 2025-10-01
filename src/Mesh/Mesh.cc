@@ -21,9 +21,7 @@ using std::abs;
 #include "Distributed/Communicator.hh"
 #include "NodeList/NodeList.hh"
 
-#include "config.hh"
-
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/packElement.hh"
 #endif
@@ -48,7 +46,7 @@ namespace Spheral {
 
 namespace { // anonymous
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 //------------------------------------------------------------------------------
 // Look for anyone who has a non-empty string.
 //------------------------------------------------------------------------------
@@ -738,7 +736,7 @@ generateDomainInfo() {
   REQUIRE(mNodePositions.size() == numNodes());
 
   // This method is empty and a no-op unless we're building a parallel code!
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 
   // Start out by determining the global extent of the mesh.
   Vector xmin, xmax;
@@ -1022,7 +1020,7 @@ generateParallelRind(vector<typename Dimension::Vector>& generators,
   REQUIRE(generators.size() == this->numZones());
   REQUIRE(Hs.size() == this->numZones());
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel procs.
   const unsigned numDomains = Process::getTotalNumberOfProcesses();
   //const unsigned rank = Process::getRank();
@@ -1216,7 +1214,7 @@ globalMeshNodeIDs() const {
 
   // If we're serial this is easy!
   vector<unsigned> result(nlocal, UNSETID);
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (numDomains != 1) {
     unsigned nown;
     const unsigned rank = Process::getRank();
@@ -1449,7 +1447,7 @@ Mesh<Dimension>::
 boundingBox(typename Dimension::Vector& xmin,
             typename Dimension::Vector& xmax) const {
   Spheral::boundingBox(mNodePositions, xmin, xmax);
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   for (unsigned i = 0; i != Dimension::nDim; ++i) {
     xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
     xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
@@ -1469,7 +1467,7 @@ boundingBox(typename Dimension::Vector& xmin,
 //   cerr << Process::getRank() << " Mesh::buildAncillaryCommData 1" << endl;
 //   mSharedFaces = vector<vector<unsigned> >();
 
-// #ifdef ENABLE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //   // Compute the shared faces.  First get the unique global face IDs.
 //   const vector<unsigned> globalNodeIDs = this->globalMeshNodeIDs();
 //   const vector<unsigned> globalFaceIDs = this->globalMeshFaceIDs(globalNodeIDs);
@@ -1532,7 +1530,7 @@ boundingBox(typename Dimension::Vector& xmin,
 //   // Post-conditions.
 //   ENSURE(mSharedNodes.size() == mNeighborDomains.size());
 //   ENSURE(mSharedFaces.size() == mNeighborDomains.size());
-// #ifdef ENABLE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //   BEGIN_CONTRACT_SCOPE
 //   {
 //     cerr << Process::getRank() << " Mesh::buildAncillaryCommData 6" << endl;
@@ -1615,7 +1613,7 @@ validDomainInfo(const typename Dimension::Vector& xmin,
 
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned rank = Process::getRank();
   const unsigned numDomains = Process::getTotalNumberOfProcesses();
 

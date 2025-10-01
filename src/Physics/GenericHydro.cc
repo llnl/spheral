@@ -17,7 +17,6 @@
 #include "Neighbor/ConnectivityMap.hh"
 #include "Strength/SolidFieldNames.hh"
 #include "Utilities/range.hh"
-#include "config.hh"
 
 #include <limits>
 #include <algorithm>

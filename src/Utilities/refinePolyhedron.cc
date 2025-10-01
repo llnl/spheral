@@ -11,7 +11,6 @@
 //----------------------------------------------------------------------------//
 #include "refinePolyhedron.hh"
 #include "Geometry/Dimension.hh"
-#include "config.hh"
 
 // We use Pixar's opensubdiv package to do the refinement.
 #ifdef SPHERAL_ENABLE_OPENSUBDIV

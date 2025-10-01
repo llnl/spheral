@@ -7,7 +7,6 @@
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "Utilities/DBC.hh"
-#include "config.hh"
 
 #include "boost/algorithm/string.hpp"
 

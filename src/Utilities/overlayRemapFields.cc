@@ -8,8 +8,8 @@
 #include "VoronoiCells/computeVoronoiVolume.hh"
 #include "Geometry/GeomPlane.hh"
 #include "Utilities/DBC.hh"
-
-#include "config.hh"
+#include "Distributed/Process.hh"
+#include "Distributed/Communicator.hh"
 
 #include <map>
 #include <algorithm>
@@ -163,7 +163,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   const Field<Dimension, SymTensor>& HD = donorNodeListPtr->Hfield();
   // const Field<Dimension, Vector>& posA = acceptorNodeListPtr->positions();
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel info
   const int myproc = Process::getRank();
   const int nprocs = Process::getTotalNumberOfProcesses();

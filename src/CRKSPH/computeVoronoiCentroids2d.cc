@@ -7,7 +7,6 @@
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "NodeList/NodeList.hh"
-#include "config.hh"
 
 namespace Spheral {
 
@@ -49,7 +48,7 @@ computeVoronoiCentroids(const FieldList<Dim<2>, Dim<2>::Vector>& position) {
   // Do the polytope tessellation.
   polytope::Tessellation<2, double> tessellation;
   {
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     polytope::DistributedTessellator<2, double> tessellator
 #if defined USE_TRIANGLE
       (new polytope::TriangleTessellator<double>(),

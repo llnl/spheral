@@ -13,8 +13,6 @@
 #include <vector>
 #include <map>
 
-#include "config.hh"
-
 namespace Spheral {
   template<typename Dimension> class DataBase;
   template<typename Dimension> class NodeList;

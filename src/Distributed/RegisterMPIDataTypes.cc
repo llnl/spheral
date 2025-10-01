@@ -10,6 +10,8 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Geometry/Dimension.hh"
 
+#include "config.hh"
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
@@ -18,7 +20,7 @@ namespace Spheral {
 RegisterMPIDataTypes::
 RegisterMPIDataTypes() {
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Vectors.
   MPI_Type_contiguous(DataTypeTraits<Dim<1>::Vector>::numElements(Dim<1>::Vector::zero), MPI_DOUBLE, &MPI_Vector1d);
   MPI_Type_contiguous(DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero), MPI_DOUBLE, &MPI_Vector2d);

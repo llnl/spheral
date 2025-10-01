@@ -9,8 +9,8 @@
 #define __Spheral__RegisterMPIDataTypes__
 
 #include "Geometry/Dimension.hh"
-#include "config.hh"
-#ifdef ENABLE_MPI
+
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -23,7 +23,7 @@ public:
   static RegisterMPIDataTypes& instance();
 
   // The MPI types we're here to provide.
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   MPI_Datatype MPI_Vector1d, MPI_Vector2d, MPI_Vector3d;
   MPI_Datatype MPI_Tensor1d, MPI_Tensor2d, MPI_Tensor3d;
   MPI_Datatype MPI_SymTensor1d, MPI_SymTensor2d, MPI_SymTensor3d;

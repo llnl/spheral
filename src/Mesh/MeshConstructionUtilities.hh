@@ -11,9 +11,7 @@
 #include "Utilities/packElement.hh"
 #include "Distributed/Communicator.hh"
 
-#include "config.hh"
-
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -329,7 +327,7 @@ exchangeTuples(const std::vector<std::tuple<T, T, T> >& localKeys,
   CONTRACT_VAR(localKeys);
   CONTRACT_VAR(neighborDomains);
   CONTRACT_VAR(neighborKeys);
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   typedef std::tuple<T, T, T> Key;
   using std::vector;
 
@@ -393,7 +391,7 @@ exchangeTuples(const std::vector<std::tuple<T, T, T> >& localKeys,
   CONTRACT_VAR(neighborDomains);
   CONTRACT_VAR(sendIndices);
   CONTRACT_VAR(neighborKeys);
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   typedef std::tuple<T, T, T> Key;
 
   const unsigned numNeighborDomains = neighborDomains.size();

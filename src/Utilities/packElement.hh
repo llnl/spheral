@@ -16,8 +16,7 @@
 #include "RK/RKCorrectionParams.hh"
 #include "RK/RKCoefficients.hh"
 #include "Distributed/Process.hh"
-
-#include "config.hh"
+#include "Distributed/Communicator.hh"
 
 #include <stdint.h>
 #include <vector>
@@ -768,7 +767,7 @@ computeBufferSize(const Field<Dimension, std::vector<DataType> >& field,
   }
 
   // Communicate the result to the receiving processor.
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (rank == recvProc) {
     MPI_Status status;
     MPI_Recv(&bufSize, 1, MPI_INT, sendProc, 103, Communicator::communicator(), &status);

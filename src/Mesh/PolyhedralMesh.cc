@@ -3,7 +3,6 @@
 //
 // Created by JMO, Wed Jan  5 21:09:11 PST 2011
 //----------------------------------------------------------------------------//
-#include "config.hh"
 #ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
@@ -107,7 +106,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<3, double> tessellation;
 //   {
-// #ifdef ENABLE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //     polytope::SerialDistributedTessellator<3, double> tessellator
 // #if defined USE_TETGEN && ( USE_TETGEN>0 )
 //         (new polytope::TetgenTessellator(),
@@ -272,7 +271,7 @@ boundingSurface() const {
     }
   }
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // In the parallel case we have to construct the total surface and distribute
   // it to everyone.
   //const unsigned rank = Process::getRank();

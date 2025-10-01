@@ -38,7 +38,6 @@ Notable changes include:
       * The CXXONLY variables have been removed and replaced with a `SPHERAL_ENABLE_PYTHON` variable.
         C++ builds default to being static when this variable is disabled.
       * `ENABLE_INSTATIATION` option has been removed.
-      * Some compile time options were removed in favor of setting them in `config.hh`.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
       * Increased the number of threads for certain memory intensive tests to prevent OOM error.

@@ -21,8 +21,6 @@
 #include "Utilities/removeElements.hh"
 #include "Distributed/Communicator.hh"
 
-#include "config.hh"
-
 #include <algorithm>
 #include <set>
 using std::vector;

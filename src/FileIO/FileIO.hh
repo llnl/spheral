@@ -14,7 +14,6 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "config.hh"
 
 #ifdef SPHERAL_ENABLE_PYTHON
 #include "pybind11/pybind11.h"

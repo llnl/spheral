@@ -7,9 +7,8 @@
 #ifndef __Spheral_Communicator__
 #define __Spheral_Communicator__
 
-#include "config.hh"
 
-#ifdef ENABLE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/DBC.hh"
 #else
