@@ -63,6 +63,9 @@ if (NOT polyclipper_DIR)
   # If no PolyClipper is specified, build it as an internal target
   set(polyclipper_DIR "${SPHERAL_ROOT_DIR}/extern/PolyClipper")
   # Must set this so PolyClipper doesn't include unnecessary python scripts
+  if(NOT SPHERAL_ENABLE_PYTHON)
+    set(POLYCLIPPER_ENABLE_PYTHON OFF)
+  endif()
   set(POLYCLIPPER_MODULE_GEN OFF)
   set(POLYCLIPPER_ENABLE_DOCS OFF)
   set(POLYCLIPPER_INSTALL_DIR "PolyClipper/include")
