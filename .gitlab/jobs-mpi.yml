@@ -12,14 +12,6 @@ toss_gcc_mvapich2_cxxonly_build:
   extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .build]
   needs: [toss_gcc_mvapich2_cxxonly_tpls]
 
-toss_gcc_mvapich2_cxxonly_export:
-  extends: [.gcc_mvapich2_cxxonly, .export_test]
-  needs: [toss_gcc_mvapich2_cxxonly_tpls]
-  variables:
-    COMPILER_SPEC: gcc
-  rules:
-    - if: $SPHERAL_MODULE == "LLNLSpheral"
-
 toss_gcc_mvapich2_cxxonly_cleanup:
   extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .cleanup_dir]
   needs:

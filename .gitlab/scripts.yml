@@ -112,18 +112,6 @@
     - $RUN_CMD -n 20 drm $CI_BUILD_DIR/..
   interruptible: true
 
-.export_test:
-  stage: run_ats
-  variables:
-    GIT_STRATEGY: empty
-    UPSTREAM_BRANCH: $CI_MERGE_REQUEST_REF_PATH
-  trigger:
-    project: 'owen/SpheralC'
-    strategy: mirror
-    inputs:
-      environment: $ARCH
-      compiler: $COMPILER_SPEC
-
 # ------------------------------------------------------------------------------
 # Shared TPL scripts.
 # ------------------------------------------------------------------------------
