@@ -116,6 +116,7 @@
   stage: run_ats
   variables:
     GIT_STRATEGY: empty
+    UPSTREAM_BRANCH: $CI_MERGE_REQUEST_REF_PATH
   trigger:
     project: 'owen/SpheralC'
     strategy: mirror
