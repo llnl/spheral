@@ -40,14 +40,11 @@
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
-    - echo "CI_JOB_ID=$CI_JOB_ID" >> build.env
     - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
   artifacts:
     paths:
       - ci-dir.txt
       - job-name.txt
-    reports:
-      dotenv: build.env
 
 .build_and_test:
   extends: [.build]
