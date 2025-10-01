@@ -1,20 +1,16 @@
 from PYB11Generator import *
 from FieldListBase import *
-from FieldListView import FieldListView
 
 #-------------------------------------------------------------------------------
 # FieldList
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11module("SpheralFieldList")
-class FieldList(FieldListBase,
-                FieldListView):
+class FieldList(FieldListBase):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
-    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
-    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
@@ -146,6 +142,15 @@ class FieldList(FieldListBase,
         "Return a python list (as a copy) of all values in the FieldList"
         return "py::list"
 
+    @PYB11const
+    def size(self):
+        "Number of Fields"
+        return "size_t"
+
+    @PYB11const
+    def empty(self):
+        return "bool"
+
     def view(self):
         return "ViewType"
 
@@ -167,10 +172,10 @@ class FieldList(FieldListBase,
 
     #...........................................................................
     # Sequence methods
-    # @PYB11cppname("size")
-    # @PYB11const
-    # def __len__(self):
-    #     return "size_t"
+    @PYB11cppname("size")
+    @PYB11const
+    def __len__(self):
+        return "size_t"
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference")
@@ -183,11 +188,13 @@ class FieldList(FieldListBase,
     def __iter__(self):
         "Python iteration through a FieldList."
 
-    # def __call__(self,
-    #              fieldIndex = "const size_t",
-    #              nodeIndex = "const size_t"):
-    #     "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
-    #     return "%(Value)s&"
+    @PYB11returnpolicy("reference")
+    @PYB11const
+    def __call__(self,
+                 fieldIndex = "const size_t",
+                 nodeIndex = "const size_t"):
+        "Return the %(Value)s for the given (fieldIndex, nodeIndex)."
+        return "%(Value)s&"
 
     #...........................................................................
     # Properties

@@ -12,6 +12,7 @@
 
 #include "Field/FieldListBase.hh"
 #include "Field/FieldListView.hh"
+#include "Utilities/span.hh"
 #include "Utilities/OpenMP_wrapper.hh"
 #include "Utilities/Logger.hh"
 
@@ -48,8 +49,7 @@ enum class FieldStorageType {
 
 template<typename Dimension, typename DataType>
 class FieldList:
-    public FieldListBase<Dimension>,
-    public FieldListView<Dimension, DataType> {
+    public FieldListBase<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -76,18 +76,16 @@ public:
   using const_cache_iterator = typename CacheElementsType::const_iterator;
 
   using ViewType = FieldListView<Dimension, DataType>;
-
-  // Bring in various methods hidden in FieldListView
-  using FieldListView<Dimension, DataType>::operator();
-  // using FieldListView<Dimension, DataType>::operator[];
-
+  using FieldPtrSpan = SPHERAL_SPAN_TYPE<Field<Dimension, DataType>*>;
+  using FieldBasePtrSpan = SPHERAL_SPAN_TYPE<FieldBase<Dimension>*>;
+  
   // Constructors.
   FieldList();
   explicit FieldList(FieldStorageType aStorageType);
   FieldList(const FieldList& rhs);
 
   // Destructor.
-  virtual ~FieldList();
+  virtual ~FieldList() = default;
 
   // Assignment.
   FieldList& operator=(const FieldList& rhs);
@@ -123,9 +121,9 @@ public:
                       const NodeList<Dimension>& nodeList,
                       const DataType value);
 
-  // Index operator.
-  value_type operator[](const size_t index) const;
-  value_type at(const size_t index) const;
+  // Span views
+  FieldPtrSpan fieldPtrs() const                                                        { return FieldPtrSpan(mFieldPtrs); }
+  FieldBasePtrSpan fieldBasePtrs() const                                                { return FieldBasePtrSpan(mFieldBasePtrs); }
 
   // Provide the standard iterators over the Fields.
   iterator begin()                                                                      { return mFieldPtrs.begin(); } 
@@ -148,6 +146,14 @@ public:
   virtual typename FieldListBase<Dimension>::const_iterator end_base()            const { return mFieldBasePtrs.end(); }   
   virtual typename FieldListBase<Dimension>::const_reverse_iterator rbegin_base() const { return mFieldBasePtrs.rbegin(); }
   virtual typename FieldListBase<Dimension>::const_reverse_iterator rend_base()   const { return mFieldBasePtrs.rend(); }  
+
+  // Index operator.
+  value_type operator[](const size_t index) const;
+  value_type at(const size_t index) const;
+
+  // Provide direct access to Field elements
+  DataType& operator()(const size_t fieldIndex,
+                       const size_t nodeIndex) const;
 
   // Return an iterator to the Field associated with the given NodeList.
   iterator fieldForNodeList(const NodeList<Dimension>& nodeList);
@@ -200,6 +206,18 @@ public:
   void Zero();
 
   // Reproduce the standard Field operators for FieldLists.
+  FieldList& operator+=(const FieldList& rhs);
+  FieldList& operator-=(const FieldList& rhs);
+
+  FieldList& operator+=(const DataType& rhs);
+  FieldList& operator-=(const DataType& rhs);
+
+  FieldList& operator*=(const FieldList<Dimension, Scalar>& rhs);
+  FieldList& operator*=(const Scalar& rhs);
+
+  FieldList& operator/=(const FieldList<Dimension, Scalar>& rhs);
+  FieldList& operator/=(const Scalar& rhs);
+
   FieldList operator+(const FieldList& rhs) const;
   FieldList operator-(const FieldList& rhs) const;
 
@@ -210,24 +228,45 @@ public:
   FieldList operator/(const Scalar& rhs) const;
 
   // Some useful reduction operations.
-  DataType sumElements() const;
-  DataType min() const;
-  DataType max() const;
+  DataType localSumElements(const bool includeGhosts = false) const;
+  DataType localMin(const bool includeGhosts = false) const;
+  DataType localMax(const bool includeGhosts = false) const;
+
+  DataType sumElements(const bool includeGhosts = false) const;
+  DataType min(const bool includeGhosts = false) const;
+  DataType max(const bool includeGhosts = false) const;
+
+  // Apply limiting
+  void applyMin(const DataType& dataMin);
+  void applyMax(const DataType& dataMax);
+
+  void applyScalarMin(const Scalar dataMin);
+  void applyScalarMax(const Scalar dataMax);
 
   // Comparison operators (Field-Field element wise).
-  bool operator==(const FieldList& rhs) const { return FieldListView<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const FieldList& rhs) const { return FieldListView<Dimension, DataType>::operator!=(rhs); }
+  bool operator==(const FieldList& rhs) const;
+  bool operator!=(const FieldList& rhs) const;
 
   // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator!=(rhs); }
-  bool operator> (const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator> (rhs); }
-  bool operator< (const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator< (rhs); }
-  bool operator>=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator>=(rhs); }
-  bool operator<=(const DataType& rhs) const { return FieldListView<Dimension, DataType>::operator<=(rhs); }
+  bool operator==(const DataType& rhs) const;
+  bool operator!=(const DataType& rhs) const;
+  bool operator> (const DataType& rhs) const;
+  bool operator< (const DataType& rhs) const;
+  bool operator>=(const DataType& rhs) const;
+  bool operator<=(const DataType& rhs) const;
+
+  // The number of fields in the FieldList
+  size_t numFields() const                                                              { return mFieldPtrs.size(); } 
+  size_t size() const                                                                   { return mFieldPtrs.size(); } 
+  bool empty() const                                                                    { return mFieldPtrs.empty(); }
+
+  // The number of nodes in the FieldList
+  size_t numElements() const;
+  size_t numInternalElements() const;
+  size_t numGhostElements() const;
 
   // Get the NodeLists this FieldList is defined on.
-  const std::vector<NodeList<Dimension>*>& nodeListPtrs() const { return mNodeListPtrs; }
+  const std::vector<NodeList<Dimension>*>& nodeListPtrs()                         const { return mNodeListPtrs; }
 
   // Helpers to flatten the values across all Fields to a single array.
   std::vector<DataType> internalValues() const;
@@ -250,15 +289,9 @@ public:
 
   //----------------------------------------------------------------------------
   // Return a view of the Field (appropriate for on accelerator devices)
-  // The second method is really only for debugging
-  ViewType& view();
-
-  // Set an optional callback method for diagnosing CHAI data usage
-  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; buildDependentArrays(); }
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  using FieldListView<Dimension, DataType>::mSpanFieldViews;
+  // The 2nd and 3rd versions are for debugging/diagnostics.
+  ViewType view();
+  template<typename FLCB>               ViewType view(FLCB&& fieldlist_callback);
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -270,20 +303,13 @@ private:
   FieldCacheType mFieldCache;
   FieldStorageType mStorageType;
 
-  // For use when building a span view of the FieldList
-  std::vector<FieldView<Dimension, DataType>*> mFieldViewPtrs;
-
   // Maintain a vector of the NodeLists this FieldList is defined in order to
   // construct NodeIterators.
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 
-  // Callback function for debugging CHAI
-  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
-
   // Set the internal dependent arrays based on the Field pointers.
-  void buildDependentArrays();
-  auto getCallback();
+  virtual void buildDependentArrays() override;
 
 public:
   // A data attribute to indicate how to reduce this field across threads.

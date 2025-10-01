@@ -1,3 +1,5 @@
+// #define SPHERAL_ENABLE_LOGGER
+
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
 
@@ -64,9 +66,9 @@ using NodeList_t = Spheral::NodeList<DIM3>;
 
 class FieldListTest : public ::testing::Test {
 public:
-  NodeList_t nodes1 = NodeList_t("nodes1", 10, 5);
-  NodeList_t nodes2 = NodeList_t("nodes2", 20, 10);
-  NodeList_t nodes3 = NodeList_t("nodes3", 40, 20);
+  NodeList_t nodes1 = NodeList_t("nodes1", 1000, 5);
+  NodeList_t nodes2 = NodeList_t("nodes2", 2000, 10);
+  NodeList_t nodes3 = NodeList_t("nodes3", 4000, 20);
 
   void SetUp() override {}
 };
@@ -274,10 +276,25 @@ TEST_F(FieldListTest, appendNewField) {
   FieldListDouble fl1(Spheral::FieldStorageType::CopyFields);
   fl1.appendNewField("stuff", nodes1, 2.0);
   fl1.appendNewField("stuff", nodes2, -3.0);
+  DEBUG_LOG << "Resize ghosts";
+  nodes1.numGhostNodes(100u);
+  nodes2.numGhostNodes(500u);
+  // fl1.buildDependentArrays();
   SPHERAL_ASSERT_EQ(fl1.numFields(), 2u);
-  SPHERAL_ASSERT_EQ(*fl1[0], 2.0);
-  SPHERAL_ASSERT_EQ(*fl1[1], -3.0);
+  for (auto i = nodes1.firstGhostNode(); i < nodes1.numNodes(); ++i) fl1(0,i) = 15.0;
+  for (auto i = nodes2.firstGhostNode(); i < nodes2.numNodes(); ++i) fl1(1,i) = -8.0;
 
+  RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0u, nodes1.numInternalNodes()),
+                                 [&](size_t i) { SPHERAL_ASSERT_EQ(fl1(0,i), 2.0); });
+  RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(nodes1.firstGhostNode(), nodes1.numNodes()),
+                                 [&](size_t i) { SPHERAL_ASSERT_EQ(fl1(0,i), 15.0); });
+
+  RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0u, nodes2.numInternalNodes()),
+                                 [&](size_t i) { SPHERAL_ASSERT_EQ(fl1(1,i), -3.0); });
+  RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(nodes2.firstGhostNode(), nodes2.numNodes()),
+                                 [&](size_t i) { SPHERAL_ASSERT_EQ(fl1(1,i), -8.0); });
+
+  // Check adding a field on a NodeList we already have fails
   FieldListDouble fl2(Spheral::FieldStorageType::ReferenceFields);
   size_t numFails = 0u, numSucceeds = 0u;
   try {
@@ -289,6 +306,7 @@ TEST_F(FieldListTest, appendNewField) {
   SPHERAL_ASSERT_EQ(numFails, 1u);
   SPHERAL_ASSERT_EQ(numSucceeds, 0u);
   SPHERAL_ASSERT_EQ(fl2.numFields(), 0u);
+  DEBUG_LOG << "TEST SUCCESS!";
 }
 
 //------------------------------------------------------------------------------

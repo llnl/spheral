@@ -1,21 +1,17 @@
 from PYB11Generator import *
 from FieldList import FieldList
 from FieldListBase import FieldListBase
-from ArithmeticFieldListView import ArithmeticFieldListView
 
 #-------------------------------------------------------------------------------
 # FieldList with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
-class ArithmeticFieldList(FieldListBase,
-                          ArithmeticFieldListView):
+class ArithmeticFieldList(FieldListBase):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
     using FieldType = Field<%(Dimension)s, %(Value)s>;
-    using FieldListViewType = FieldListView<%(Dimension)s, %(Value)s>;
-    using FieldViewType = FieldView<%(Dimension)s, %(Value)s>;
     using NodeListType = NodeList<%(Dimension)s>;
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
@@ -72,6 +68,12 @@ class ArithmeticFieldList(FieldListBase,
     @PYB11pyname("__itruediv__")
     def __itruediv__SFL(self, rhs="FieldList<%(Dimension)s, Scalar>()"):
         return
+
+    @PYB11const
+    def localSumElements(self,
+                         includeGhosts = ("bool", "false")):
+        "Return the sum of the elements in the FieldList local to each processor."
+        return "%(Value)s"
 
     @PYB11const
     def sumElements(self,

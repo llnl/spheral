@@ -182,10 +182,8 @@ public:
   axom::sidre::DataTypeId getAxomTypeID() const;
 
   // Get the view (for trivially copyable types)
-  ViewType& view();
-
-  // Set an optional callback method for diagnosing CHAI data usage
-  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; assignDataSpan(); }
+  ViewType view();
+  template<typename CB>  ViewType view(CB&& field_callback);
 
   // No default constructor.
   Field() = delete;
@@ -203,9 +201,6 @@ private:
   // Private Data
   std::vector<DataType, DataAllocator<DataType>> mDataArray;
 
-  // Callback function for debugging CHAI
-  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
-
   friend FieldView<Dimension, DataType>;
   using FieldView<Dimension, DataType>::mDataSpan;
   using FieldView<Dimension, DataType>::mNumInternalElements;
@@ -213,7 +208,6 @@ private:
 
   // Helper method to keep mDataSpan and mDataArray consistent
   void assignDataSpan();
-  auto getCallback();
 };
 
 } // namespace Spheral

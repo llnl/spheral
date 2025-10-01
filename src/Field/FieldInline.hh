@@ -34,8 +34,8 @@ Field<Dimension, DataType>::
 Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
   FieldView<Dimension, DataType>(),
-  mDataArray(),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray() {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   mNumInternalElements = 0u;
   mNumGhostElements = 0u;
 }
@@ -50,8 +50,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(name, *field.nodeListPtr()),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray(field.mDataArray) {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
 }
 
@@ -65,8 +65,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const NodeList<Dimension>& nodeList):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
   REQUIRE(this->size() == nodeList.numNodes());
 }
@@ -82,8 +82,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       DataType value):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes(), value),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray(nodeList.numNodes(), value) {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(this->size() == nodeList.numNodes());
   this->assignDataSpan();
 }
@@ -99,8 +99,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
       const std::vector<DataType,DataAllocator<DataType>>& array):
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(nodeList.numNodes()),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray(nodeList.numNodes()) {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
   mDataArray = array;
@@ -117,8 +117,8 @@ Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
                                   const Field<Dimension, DataType>& field):
   FieldBase<Dimension>(field.name(), nodeList),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mDataArray(field.mDataArray) {
+  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   this->assignDataSpan();
   ENSURE(size() == nodeList.numNodes());
 }
@@ -133,8 +133,8 @@ inline
 Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
   FieldView<Dimension, DataType>(),
-  mDataArray(field.mDataArray),
-  mChaiCallback(field.mChaiCallback) {
+  mDataArray(field.mDataArray) {
+  // mChaiCallback(field.mChaiCallback) {
   this->assignDataSpan();
   DEBUG_LOG << "Field::copy : " << field.name() << " -> " << this->name() << " : " << field.mDataArray.data() << " -> " << mDataArray.data() << " : " << field.mDataSpan.data() << " -> " << mDataSpan.data();
 }
@@ -177,7 +177,7 @@ Field<Dimension, DataType>::operator=(const FieldBase<Dimension>& rhs) {
       CHECK2(rhsPtr != 0, "Passed incorrect Field to operator=!");
       FieldBase<Dimension>::operator=(rhs);
       mDataArray = rhsPtr->mDataArray;
-      mChaiCallback = rhsPtr->mChaiCallback;
+      // mChaiCallback = rhsPtr->mChaiCallback;
       this->assignDataSpan();
     } catch (const std::bad_cast &) {
       VERIFY2(false, "Attempt to assign a field to an incompatible field type.");
@@ -196,7 +196,7 @@ Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
   if (this != &rhs) {
     FieldBase<Dimension>::operator=(rhs);
     mDataArray = rhs.mDataArray;
-    mChaiCallback = rhs.mChaiCallback;
+    // mChaiCallback = rhs.mChaiCallback;
     this->assignDataSpan();
   }
   DEBUG_LOG << "Field::assign : " << rhs.name() << " -> " << this->name() << " : " << rhs.mDataArray.data() << " -> " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " -> " <<  mDataSpan.data();
@@ -1289,15 +1289,27 @@ getAxomTypeID() const {
 }
 
 //------------------------------------------------------------------------------
-// Default view function call without an additionally defined callback.
+// Return the view
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
-typename Field<Dimension, DataType>::ViewType&
+typename Field<Dimension, DataType>::ViewType
 Field<Dimension, DataType>::
 view() {
   // CHECK2(std::is_trivially_copyable<DataType>::value, "Error: attempt to use view() with non-trivially copyable type");
-  return static_cast<ViewType&>(*this);
+  return static_cast<ViewType>(*this);
+}
+
+template<typename Dimension, typename DataType>
+template<typename CB>
+inline
+typename Field<Dimension, DataType>::ViewType
+Field<Dimension, DataType>::
+view(CB&& field_callback) {
+  // CHECK2(std::is_trivially_copyable<DataType>::value, "Error: attempt to use view() with non-trivially copyable type");
+  auto result = static_cast<ViewType>(*this);
+  result.setCallback(field_callback);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1323,40 +1335,6 @@ assignDataSpan() {
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
-}
-
-// Default callback action to be used with chai Managed containers. An
-// additional calback can be passed to extend this functionality. Useful for
-// debuggin, testing and probing for performance counters / metrics.
-template<typename Dimension, typename DataType>
-inline
-auto
-Field<Dimension, DataType>::
-getCallback() {
-  return [n = this->name(), callback = mChaiCallback](
-    const chai::PointerRecord * record,
-    chai::Action action,
-    chai::ExecutionSpace space) {
-      if (action == chai::ACTION_MOVE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": MOVED to the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": MOVED to the GPU";
-      }
-      else if (action == chai::ACTION_ALLOC) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": ALLOC on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": ALLOC on the GPU";
-      }
-      else if (action == chai::ACTION_FREE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": FREE on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": FREE on the GPU";
-      }
-      callback(record, action, space);
-    };
 }
 
 } // namespace Spheral

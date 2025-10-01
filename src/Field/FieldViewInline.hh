@@ -2,6 +2,7 @@
 #include "Geometry/Dimension.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/DataTypeTraits.hh"
+#include "Utilities/Logger.hh"
 
 #include <cmath>
 #include <iostream>
@@ -572,7 +573,7 @@ void
 FieldView<Dimension, DataType>::
 shallowCopy(FieldView const& other) const {
 #ifdef SPHERAL_UNIFIED_MEMORY
-  mDataSpan = other.mDataSpan;
+  const_cast<ContainerType&>(mDataSpan) = other.mDataSpan;
 #else
   mDataSpan.shallowCopy(other.mDataSpan);
 #endif
@@ -590,6 +591,55 @@ touch(chai::ExecutionSpace space) {
 #ifndef SPHERAL_UNIFIED_MEMORY
   mDataSpan.registerTouch(space);
 #endif
+}
+
+//------------------------------------------------------------------------------
+// setCallback
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+void
+FieldView<Dimension, DataType>::
+setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mChaiCallback = f;
+  mDataSpan.setUserCallback(getCallback());
+#endif
+}
+
+// Default callback action to be used with chai Managed containers. An
+// additional calback can be passed to extend this functionality. Useful for
+// debuggin, testing and probing for performance counters / metrics.
+template<typename Dimension, typename DataType>
+inline
+auto
+FieldView<Dimension, DataType>::
+getCallback() {
+  return [n = this->name(), callback = mChaiCallback](
+    const chai::PointerRecord * record,
+    chai::Action action,
+    chai::ExecutionSpace space) {
+      if (action == chai::ACTION_MOVE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "Field :" << n << ": MOVED to the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "Field :" << n << ": MOVED to the GPU";
+      }
+      else if (action == chai::ACTION_ALLOC) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "Field :" << n << ": ALLOC on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "Field :" << n << ": ALLOC on the GPU";
+      }
+      else if (action == chai::ACTION_FREE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "Field :" << n << ": FREE on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "Field :" << n << ": FREE on the GPU";
+      }
+      callback(record, action, space);
+    };
 }
 
 //****************************** Global Functions ******************************

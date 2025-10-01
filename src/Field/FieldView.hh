@@ -47,6 +47,7 @@ public:
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldView& operator=(FieldView& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView& operator=(FieldView&& rhs) = default;
   SPHERAL_HOST_DEVICE FieldView& operator=(const DataType& rhs);
 
   // Element access.
@@ -141,6 +142,7 @@ public:
   SPHERAL_HOST        void move(chai::ExecutionSpace space);
   SPHERAL_HOST_DEVICE void shallowCopy(FieldView const& other) const;
   SPHERAL_HOST        void touch(chai::ExecutionSpace space);
+  SPHERAL_HOST        void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
   //..........................................................................
 
 protected:
@@ -148,6 +150,10 @@ protected:
   // Private Data
   ContainerType mDataSpan;
   size_t mNumInternalElements, mNumGhostElements;
+
+  // Callback function for debugging CHAI
+  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+  auto getCallback();
 };
 
 } // namespace Spheral

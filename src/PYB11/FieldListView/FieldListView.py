@@ -62,6 +62,7 @@ class FieldListView:
     def __iter__(self):
         "Python iteration through a FieldListView."
 
+    @PYB11returnpolicy("reference")
     @PYB11const
     def __call__(self,
                  fieldIndex = "const size_t",
