@@ -1,18 +1,18 @@
 include_directories(.)
-set(Field_inst
-    AllNodeIterator
-    CoarseNodeIterator
-    GhostNodeIterator
-    InternalNodeIterator
-    MasterNodeIterator
-    NodeIteratorBase
-    RefineNodeIterator
-   )
-
 
 set(Field_sources )
 
-instantiate(Field_inst Field_sources)
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND Field_sources
+       AllNodeIteratorInst.cc
+       CoarseNodeIteratorInst.cc
+       GhostNodeIteratorInst.cc
+       InternalNodeIteratorInst.cc
+       MasterNodeIteratorInst.cc
+       NodeIteratorBaseInst.cc
+       RefineNodeIteratorInst.cc
+       )
+endif()
 
 set(Field_headers
     AggregateField.hh
@@ -45,6 +45,18 @@ set(Field_headers
     RefineNodeIteratorInline.hh
     uvm_allocator.hh
     )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND Field_headers
+     AllNodeIterator.cc
+     CoarseNodeIterator.cc
+     GhostNodeIterator.cc
+     InternalNodeIterator.cc
+     MasterNodeIterator.cc
+     NodeIteratorBase.cc
+     RefineNodeIterator.cc
+     )
 
 spheral_add_obj_library(Field SPHERAL_OBJ_LIBS)
 
