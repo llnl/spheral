@@ -1,34 +1,36 @@
 include_directories(.)
 
-set(GSPH_inst
-    computeSumVolume
-    computeMFMDensity
-    initializeGradients
-    GenericRiemannHydro
-    GSPH
-    MFM
-    MFV
-    Policies/MassFluxPolicy
-    Policies/MFVIncrementVelocityPolicy
-    Policies/MFVIncrementSpecificThermalEnergyPolicy
-    Policies/CompatibleMFVSpecificThermalEnergyPolicy
-    Limiters/LimiterBase
-    Limiters/VanLeerLimiter
-    Limiters/SuperbeeLimiter
-    Limiters/MinModLimiter
-    Limiters/VanAlbaLimiter
-    Limiters/OspreLimiter
-    Limiters/BarthJespersenLimiter
-    WaveSpeeds/WaveSpeedBase
-    WaveSpeeds/AcousticWaveSpeed
-    WaveSpeeds/DavisWaveSpeed
-    WaveSpeeds/EinfeldtWaveSpeed
-    RiemannSolvers/RiemannSolverBase
-    RiemannSolvers/HLLC
-    RiemannSolvers/SecondOrderArtificialViscosity)
-
 set(GSPH_sources 
     GSPHFieldNames.cc)
+
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND GSPH_sources
+       computeSumVolumeInst.cc
+       computeMFMDensityInst.cc
+       initializeGradientsInst.cc
+       GenericRiemannHydroInst.cc
+       GSPHInst.cc
+       MFMInst.cc
+       MFVInst.cc
+       Policies/MassFluxPolicyInst.cc
+       Policies/MFVIncrementVelocityPolicyInst.cc
+       Policies/MFVIncrementSpecificThermalEnergyPolicyInst.cc
+       Policies/CompatibleMFVSpecificThermalEnergyPolicyInst.cc
+       Limiters/LimiterBaseInst.cc
+       Limiters/VanLeerLimiterInst.cc
+       Limiters/SuperbeeLimiterInst.cc
+       Limiters/MinModLimiterInst.cc
+       Limiters/VanAlbaLimiterInst.cc
+       Limiters/OspreLimiterInst.cc
+       Limiters/BarthJespersenLimiterInst.cc
+       WaveSpeeds/WaveSpeedBaseInst.cc
+       WaveSpeeds/AcousticWaveSpeedInst.cc
+       WaveSpeeds/DavisWaveSpeedInst.cc
+       WaveSpeeds/EinfeldtWaveSpeedInst.cc
+       RiemannSolvers/RiemannSolverBaseInst.cc
+       RiemannSolvers/HLLCInst.cc
+       RiemannSolvers/SecondOrderArtificialViscosityInst.cc)
+endif()
 
 set(GSPH_headers
     computeSumVolume.hh
@@ -62,14 +64,35 @@ set(GSPH_headers
     RiemannSolvers/HLLC.hh
     RiemannSolvers/SecondOrderArtificialViscosity.hh)
 
-add_subdirectory(Limiters)
-add_subdirectory(WaveSpeeds)
-add_subdirectory(RiemannSolvers)
-add_subdirectory(Policies)
-
-instantiate(GSPH_inst GSPH_sources)
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND GSPH_headers
+     computeSumVolumeInst.cc
+     computeMFMDensityInst.cc
+     initializeGradientsInst.cc
+     GenericRiemannHydroInst.cc
+     GSPHInst.cc
+     MFMInst.cc
+     MFVInst.cc
+     Policies/MassFluxPolicyInst.cc
+     Policies/MFVIncrementVelocityPolicyInst.cc
+     Policies/MFVIncrementSpecificThermalEnergyPolicyInst.cc
+     Policies/CompatibleMFVSpecificThermalEnergyPolicyInst.cc
+     Limiters/LimiterBaseInst.cc
+     Limiters/VanLeerLimiterInst.cc
+     Limiters/SuperbeeLimiterInst.cc
+     Limiters/MinModLimiterInst.cc
+     Limiters/VanAlbaLimiterInst.cc
+     Limiters/OspreLimiterInst.cc
+     Limiters/BarthJespersenLimiterInst.cc
+     WaveSpeeds/WaveSpeedBaseInst.cc
+     WaveSpeeds/AcousticWaveSpeedInst.cc
+     WaveSpeeds/DavisWaveSpeedInst.cc
+     WaveSpeeds/EinfeldtWaveSpeedInst.cc
+     RiemannSolvers/RiemannSolverBaseInst.cc
+     RiemannSolvers/HLLCInst.cc
+     RiemannSolvers/SecondOrderArtificialViscosityInst.cc)
 
 spheral_install_python_files(GSPHHydros.py)
 
 spheral_add_obj_library(GSPH SPHERAL_OBJ_LIBS)
-
