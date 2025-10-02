@@ -1,30 +1,33 @@
 include_directories(.)
 set(Damage_inst
-    DamageModel
-    TensorDamageModel
-    ProbabilisticDamageModel
-    ProbabilisticDamagePolicy
-    IvanoviSALEDamageModel
-    IvanoviSALEDamagePolicy
-    StrainPolicy
-    TensorStrainPolicy
-    TensorDamagePolicy
-    YoungsModulusPolicy
-    LongitudinalSoundSpeedPolicy
-    weibullFlawDistributionBenzAsphaug
-    weibullFlawDistributionOwen
-    computeFragmentField
-    JohnsonCookDamage
-    JohnsonCookFailureStrainPolicy
-    JohnsonCookDamagePolicy
-    PairMaxDamageNodeCoupling
-    ThreePointDamagedNodeCoupling
-    DamageGradientNodeCoupling
    )
 
 set(Damage_sources )
 
-instantiate(Damage_inst Damage_sources)
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND Damage_sources
+       DamageModelInst.cc
+       TensorDamageModelInst.cc
+       ProbabilisticDamageModelInst.cc
+       ProbabilisticDamagePolicyInst.cc
+       IvanoviSALEDamageModelInst.cc
+       IvanoviSALEDamagePolicyInst.cc
+       StrainPolicyInst.cc
+       TensorStrainPolicyInst.cc
+       TensorDamagePolicyInst.cc
+       YoungsModulusPolicyInst.cc
+       LongitudinalSoundSpeedPolicyInst.cc
+       weibullFlawDistributionBenzAsphaugInst.cc
+       weibullFlawDistributionOwenInst.cc
+       computeFragmentFieldInst.cc
+       JohnsonCookDamageInst.cc
+       JohnsonCookFailureStrainPolicyInst.cc
+       JohnsonCookDamagePolicyInst.cc
+       PairMaxDamageNodeCouplingInst.cc
+       ThreePointDamagedNodeCouplingInst.cc
+       DamageGradientNodeCouplingInst.cc
+       )
+endif()
 
 set(Damage_headers
     DamageGradientPolicy.hh
@@ -59,6 +62,31 @@ set(Damage_headers
     MaxDamageNodeCoupling.hh
     ThreePointDamagedNodeCoupling.hh
     )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND Damage_headers
+     DamageModelInst.cc
+     TensorDamageModelInst.cc
+     ProbabilisticDamageModelInst.cc
+     ProbabilisticDamagePolicyInst.cc
+     IvanoviSALEDamageModelInst.cc
+     IvanoviSALEDamagePolicyInst.cc
+     StrainPolicyInst.cc
+     TensorStrainPolicyInst.cc
+     TensorDamagePolicyInst.cc
+     YoungsModulusPolicyInst.cc
+     LongitudinalSoundSpeedPolicyInst.cc
+     weibullFlawDistributionBenzAsphaugInst.cc
+     weibullFlawDistributionOwenInst.cc
+     computeFragmentFieldInst.cc
+     JohnsonCookDamageInst.cc
+     JohnsonCookFailureStrainPolicyInst.cc
+     JohnsonCookDamagePolicyInst.cc
+     PairMaxDamageNodeCouplingInst.cc
+     ThreePointDamagedNodeCouplingInst.cc
+     DamageGradientNodeCouplingInst.cc
+     )
 
 spheral_install_python_files(
   identifyFragments.py
