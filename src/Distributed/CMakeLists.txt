@@ -6,8 +6,6 @@ set(Distributed_sources
     RegisterMPIDataTypes.cc
     )
 
-set(Distributed_inst )
-
 set(Distributed_headers
     allReduce.hh
     Communicator.hh
@@ -34,49 +32,65 @@ if (ENABLE_MPI)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes3d.cc)
   endif()
 
-  list(APPEND Distributed_inst
-       DistributedBoundary
-       NestedGridDistributedBoundary
-       TreeDistributedBoundary
-       BoundingVolumeDistributedBoundary
-       RedistributeNodes
-       DistributeByXPosition
-       SortAndDivideRedistributeNodes
-       SpaceFillingCurveRedistributeNodes
-       MortonOrderRedistributeNodes
-       PeanoHilbertOrderRedistributeNodes
-       VoronoiRedistributeNodes
+  if (ENABLE_INSTANTIATIONS)
+    list(APPEND Distributed_sources
+         DistributedBoundaryInst.cc
+         NestedGridDistributedBoundaryInst.cc
+         TreeDistributedBoundaryInst.cc
+         BoundingVolumeDistributedBoundaryInst.cc
+         RedistributeNodesInst.cc
+         DistributeByXPositionInst.cc
+         SortAndDivideRedistributeNodesInst.cc
+         SpaceFillingCurveRedistributeNodesInst.cc
+         MortonOrderRedistributeNodesInst.cc
+         PeanoHilbertOrderRedistributeNodesInst.cc
+         VoronoiRedistributeNodesInst.cc
+         )
+  endif()
+
+  list(APPEND Distributed_headers
+       BoundingVolumeDistributedBoundary.hh
+       BoundingVolumeDistributedBoundaryInline.hh
+       CompareDomainNodesByPosition.hh
+       DistributeByXPosition.hh
+       DistributedBoundary.hh
+       DistributedBoundaryInline.hh
+       MortonOrderRedistributeNodes.hh
+       NestedGridDistributedBoundary.hh
+       NestedGridDistributedBoundaryInline.hh
+       NestedGridRedistributeNodes.hh
+       NestedGridRedistributeNodesInline.hh
+       NestedGridUtilities.hh
+       ParmetisRedistributeNodes.hh
+       ParmetisRedistributeNodesInline.hh
+       PeanoHilbertOrderRedistributeNodes.hh
+       RedistributeNodes.hh
+       RedistributeNodesInline.hh
+       SortAndDivideRedistributeNodes.hh
+       SortAndDivideRedistributeNodes1d.hh
+       SortAndDivideRedistributeNodes2d.hh
+       SortAndDivideRedistributeNodes3d.hh
+       SortAndDivideRedistributeNodesInline.hh
+       SpaceFillingCurveRedistributeNodes.hh
+       TreeDistributedBoundary.hh
+       TreeDistributedBoundaryInline.hh
+       VoronoiRedistributeNodes.hh
+       waitAllWithDeadlockDetection.hh
        )
 
- list(APPEND Distributed_headers
-      BoundingVolumeDistributedBoundary.hh
-      BoundingVolumeDistributedBoundaryInline.hh
-      CompareDomainNodesByPosition.hh
-      DistributeByXPosition.hh
-      DistributedBoundary.hh
-      DistributedBoundaryInline.hh
-      MortonOrderRedistributeNodes.hh
-      NestedGridDistributedBoundary.hh
-      NestedGridDistributedBoundaryInline.hh
-      NestedGridRedistributeNodes.hh
-      NestedGridRedistributeNodesInline.hh
-      NestedGridUtilities.hh
-      ParmetisRedistributeNodes.hh
-      ParmetisRedistributeNodesInline.hh
-      PeanoHilbertOrderRedistributeNodes.hh
-      RedistributeNodes.hh
-      RedistributeNodesInline.hh
-      SortAndDivideRedistributeNodes.hh
-      SortAndDivideRedistributeNodes1d.hh
-      SortAndDivideRedistributeNodes2d.hh
-      SortAndDivideRedistributeNodes3d.hh
-      SortAndDivideRedistributeNodesInline.hh
-      SpaceFillingCurveRedistributeNodes.hh
-      TreeDistributedBoundary.hh
-      TreeDistributedBoundaryInline.hh
-      VoronoiRedistributeNodes.hh
-      waitAllWithDeadlockDetection.hh
-      )
+  list(APPEND Distributed_sources
+       DistributedBoundary.cc
+       NestedGridDistributedBoundary.cc
+       TreeDistributedBoundary.cc
+       BoundingVolumeDistributedBoundary.cc
+       RedistributeNodes.cc
+       DistributeByXPosition.cc
+       SortAndDivideRedistributeNodes.cc
+       SpaceFillingCurveRedistributeNodes.cc
+       MortonOrderRedistributeNodes.cc
+       PeanoHilbertOrderRedistributeNodes.cc
+       VoronoiRedistributeNodes.cc
+       )
 
   set(MPIPY_FILE_NAME "mpi_mpi4py.py")
 
@@ -98,6 +112,5 @@ if (NOT ENABLE_CXXONLY)
           RENAME      mpi.py
           )
 endif()
-instantiate(Distributed_inst Distributed_sources)
 
 spheral_add_obj_library(Distributed SPHERAL_OBJ_LIBS)
