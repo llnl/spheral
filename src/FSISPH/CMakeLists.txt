@@ -1,19 +1,18 @@
 include_directories(.)
 
-set(FSISPH_inst
-    SolidFSISPH
-    computeFSISPHSumMassDensity
-    computeHWeightedFSISPHSumMassDensity
-    computeInterfacePressureCorrectedSumMassDensity
-    SlideSurface
+set(FSISPH_sources
+    FSIFieldNames.cc
     )
 
-
-set(FSISPH_sources
-    FSIFieldNames.cc )
-
-
-instantiate(FSISPH_inst FSISPH_sources)
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND FSISPH_sources
+       SolidFSISPHInst.cc
+       computeFSISPHSumMassDensityInst.cc
+       computeHWeightedFSISPHSumMassDensityInst.cc
+       computeInterfacePressureCorrectedSumMassDensityInst.cc
+       SlideSurfaceInst.cc
+       )
+endif()
 
 set(FSISPH_headers
     SolidFSISPH.hh
@@ -25,6 +24,14 @@ set(FSISPH_headers
     SlideSurface.hh
     SlideSurfaceInline.hh
     )
+
+list(APPEND FSISPH_sources
+     SolidFSISPH.cc
+     computeFSISPHSumMassDensity.cc
+     computeHWeightedFSISPHSumMassDensity.cc
+     computeInterfacePressureCorrectedSumMassDensity.cc
+     SlideSurface.cc
+     )
 
 spheral_install_python_files(
   FSISPHHydros.py
