@@ -1,16 +1,16 @@
 include_directories(.)
-set(DataBase_inst
-    DataBase
-    ReplaceWithRatioPolicy
-    State
-    StateBase
-    StateDerivatives
-   )
-
 
 set(DataBase_sources )
 
-instantiate(DataBase_inst DataBase_sources)
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND DataBase_sources
+       DataBaseInst.cc
+       ReplaceWithRatioPolicyInst.cc
+       StateInst.cc
+       StateBaseInst.cc
+       StateDerivativesInst.cc
+       )
+endif()
 
 set(DataBase_headers
     DataBase.hh
@@ -44,6 +44,16 @@ set(DataBase_headers
     applyPolicyToFieldList.hh
     updateStateFields.hh
     )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND DataBase_headers
+     DataBase.cc
+     ReplaceWithRatioPolicy.cc
+     State.cc
+     StateBase.cc
+     StateDerivatives.cc
+     )
 
 spheral_add_obj_library(DataBase SPHERAL_OBJ_LIBS)
 
