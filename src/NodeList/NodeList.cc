@@ -78,14 +78,15 @@ NodeList<Dimension>::NodeList(std::string name,
 template<typename Dimension>
 NodeList<Dimension>::~NodeList() {
   DEBUG_LOG << "NodeList::~NodeList " << mName << " " << this;
-  // for (auto x: mFieldBases) x.get().unregisterNodeList();
+  auto startingFields = mFieldBases;
+  for (auto x: startingFields) x.get().unregisterNodeList();
 
   // Unregister ourselves from the NodeListRegistrar, freeing up our name.
   NodeListRegistrar<Dimension>::instance().unregisterNodeList(*this);
 
-  // // After we're done, all the field should have unregistered themselves
-  // // from the Node List.
-  // ENSURE(numFields() == 0u);
+  // After we're done, all the field should have unregistered themselves
+  // from the Node List.
+  ENSURE(numFields() == 0u);
 }
 
 //------------------------------------------------------------------------------
