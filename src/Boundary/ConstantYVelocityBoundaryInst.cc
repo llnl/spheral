@@ -3,8 +3,8 @@
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "Boundary/ConstantYVelocityBoundary.cc"
 #include "Geometry/Dimension.hh"
+#include "Boundary/ConstantYVelocityBoundary.cc"
 
 namespace Spheral {
 

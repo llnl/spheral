@@ -3,8 +3,8 @@
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "Boundary/InflowOutflowBoundary.cc"
 #include "Geometry/Dimension.hh"
+#include "Boundary/InflowOutflowBoundary.cc"
 
 namespace Spheral {
 

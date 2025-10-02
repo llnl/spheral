@@ -3,8 +3,8 @@
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "Boundary/findNodesTouchingThroughPlanes.cc"
 #include "Geometry/Dimension.hh"
+#include "Boundary/findNodesTouchingThroughPlanes.cc"
 
 namespace Spheral {
 

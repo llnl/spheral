@@ -3,8 +3,8 @@
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "Boundary/ReflectingBoundary.cc"
 #include "Geometry/Dimension.hh"
+#include "Boundary/ReflectingBoundary.cc"
 
 namespace Spheral {
 

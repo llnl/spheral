@@ -1,11 +1,10 @@
-
 //------------------------------------------------------------------------------
 // Explicit instantiations.
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "ArtificialViscosity/CullenDehnenViscosity.cc"
 #include "Geometry/Dimension.hh"
+#include "ArtificialViscosity/CullenDehnenViscosity.cc"
 
 namespace Spheral {
 

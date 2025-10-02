@@ -1,11 +1,10 @@
-
 //------------------------------------------------------------------------------
 // Explicit instantiations.
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "ArtificialConduction/ArtificialConduction.cc"
 #include "Geometry/Dimension.hh"
+#include "ArtificialConduction/ArtificialConduction.cc"
 
 namespace Spheral {
 

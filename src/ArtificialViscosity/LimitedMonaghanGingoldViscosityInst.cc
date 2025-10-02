@@ -1,11 +1,10 @@
-
 //------------------------------------------------------------------------------
 // Explicit instantiations.
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "ArtificialViscosity/LimitedMonaghanGingoldViscosity.cc"
 #include "Geometry/Dimension.hh"
+#include "ArtificialViscosity/LimitedMonaghanGingoldViscosity.cc"
 
 namespace Spheral {
 

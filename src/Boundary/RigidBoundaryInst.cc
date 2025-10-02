@@ -3,8 +3,8 @@
 //------------------------------------------------------------------------------
 
 #include "config.hh"
-#include "Boundary/RigidBoundary.cc"
 #include "Geometry/Dimension.hh"
+#include "Boundary/RigidBoundary.cc"
 
 namespace Spheral {
 
