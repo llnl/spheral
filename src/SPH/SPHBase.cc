@@ -215,6 +215,8 @@ registerState(DataBase<Dimension>& dataBase,
 
   // Create the local storage for time step mask, pressure, sound speed, and position weight.
   dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::pressure);
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::soundSpeed);
   dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // We may need the volume per node as well.
