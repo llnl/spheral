@@ -66,26 +66,26 @@ set(Damage_headers
 # Even though these files have a .cc extension, they are template definitions
 # and should be treated as headers.
 list(APPEND Damage_headers
-     DamageModelInst.cc
-     TensorDamageModelInst.cc
-     ProbabilisticDamageModelInst.cc
-     ProbabilisticDamagePolicyInst.cc
-     IvanoviSALEDamageModelInst.cc
-     IvanoviSALEDamagePolicyInst.cc
-     StrainPolicyInst.cc
-     TensorStrainPolicyInst.cc
-     TensorDamagePolicyInst.cc
-     YoungsModulusPolicyInst.cc
-     LongitudinalSoundSpeedPolicyInst.cc
-     weibullFlawDistributionBenzAsphaugInst.cc
-     weibullFlawDistributionOwenInst.cc
-     computeFragmentFieldInst.cc
-     JohnsonCookDamageInst.cc
-     JohnsonCookFailureStrainPolicyInst.cc
-     JohnsonCookDamagePolicyInst.cc
-     PairMaxDamageNodeCouplingInst.cc
-     ThreePointDamagedNodeCouplingInst.cc
-     DamageGradientNodeCouplingInst.cc
+     DamageModel.cc
+     TensorDamageModel.cc
+     ProbabilisticDamageModel.cc
+     ProbabilisticDamagePolicy.cc
+     IvanoviSALEDamageModel.cc
+     IvanoviSALEDamagePolicy.cc
+     StrainPolicy.cc
+     TensorStrainPolicy.cc
+     TensorDamagePolicy.cc
+     YoungsModulusPolicy.cc
+     LongitudinalSoundSpeedPolicy.cc
+     weibullFlawDistributionBenzAsphaug.cc
+     weibullFlawDistributionOwen.cc
+     computeFragmentField.cc
+     JohnsonCookDamage.cc
+     JohnsonCookFailureStrainPolicy.cc
+     JohnsonCookDamagePolicy.cc
+     PairMaxDamageNodeCoupling.cc
+     ThreePointDamagedNodeCoupling.cc
+     DamageGradientNodeCoupling.cc
      )
 
 spheral_install_python_files(
