@@ -1,15 +1,4 @@
 include_directories(.)
-set(CRKSPH_inst
-    computeCRKSPHSumMassDensity
-    computeSolidCRKSPHSumMassDensity
-    detectSurface
-    editMultimaterialSurfaceTopology
-    zerothOrderSurfaceCorrections
-    CRKSPHBase
-    CRKSPH
-    SolidCRKSPH
-   )
-
 
 set(CRKSPH_sources
     centerOfMass.cc
@@ -22,12 +11,18 @@ if(ENABLE_2D)
       )
 endif()
 
-if(ENABLE_3D)
+if(ENABLE_INSTANTIATIONS)
   list(APPEND CRKSPH_sources
+       computeCRKSPHSumMassDensityInst.cc
+       computeSolidCRKSPHSumMassDensityInst.cc
+       detectSurfaceInst.cc
+       editMultimaterialSurfaceTopologyInst.cc
+       zerothOrderSurfaceCorrectionsInst.cc
+       CRKSPHBaseInst.cc
+       CRKSPHInst.cc
+       SolidCRKSPHInst.cc
       )
 endif()
-
-instantiate(CRKSPH_inst CRKSPH_sources)
 
 set(CRKSPH_headers
     CRKSPHBase.hh
@@ -48,6 +43,19 @@ set(CRKSPH_headers
     volumeSpacing.hh
     zerothOrderSurfaceCorrections.hh
     )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND Boundary_headers
+     computeCRKSPHSumMassDensity.cc
+     computeSolidCRKSPHSumMassDensity.cc
+     detectSurface.cc
+     editMultimaterialSurfaceTopology.cc
+     zerothOrderSurfaceCorrections.cc
+     CRKSPHBase.cc
+     CRKSPH.cc
+     SolidCRKSPH.cc
+     )
 
 spheral_add_obj_library(CRKSPH SPHERAL_OBJ_LIBS)
 
