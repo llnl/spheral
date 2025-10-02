@@ -1,7 +1,4 @@
 include_directories(.)
-set(Geometry_inst
-    invertRankNTensor
-   )
 
 set(Geometry_sources
     GeometryRegistrar.cc
@@ -22,7 +19,11 @@ set(Geometry_sources
     PolyClipperUtilities.cc
    )
 
-instantiate(Geometry_inst Geometry_sources)
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND Geometry_sources
+       invertRankNTensorInst.cc
+       )
+endif()
 
 set(Geometry_headers
     GeometryRegistrar.hh
@@ -99,6 +100,12 @@ set(Geometry_headers
     invertRankNTensor.hh
     outerProduct.hh
     )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND Geometry_headers
+     invertRankNTensor.cc
+     )
 
 spheral_add_obj_library(Geometry SPHERAL_OBJ_LIBS)
 
