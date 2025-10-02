@@ -1,13 +1,20 @@
-set(FVCRKH_inst
-  FVCRKHydroBase
-  )
-
 set(FVCRKH_sources )
-instantiate(FVCRKH_inst FVCRKH_sources)
+
+if(ENABLE_INSTANTIATIONS)
+  list(APPEND FVCRKH_sources
+       FVCRKHydroBaseInst.cc
+       )
+endif()
 
 set(FVCRKH_headers
   FVCRKHydroBase.hh
   )
+
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND FVCRKH_headers
+     FVCRKHydroBase.cc
+     )
 
 set(FVCRKH_includes
   ${SPHERAL_SOURCE_DIR}
