@@ -41,5 +41,20 @@ set(ArtificialViscosity_headers
     TensorSVPHViscosity.hh
     )
 
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND ArtificialViscosity_headers
+     ArtificialViscosityHandle.cc
+     CullenDehnenViscosity.cc
+     IncrementCullenMultipliers.cc
+     MorrisMonaghanReducingViscosity.cc
+     MonaghanGingoldViscosity.cc
+     LimitedMonaghanGingoldViscosity.cc
+     FiniteVolumeViscosity.cc
+     TensorMonaghanGingoldViscosity.cc
+     TensorSVPHViscosity.cc
+     TensorCRKSPHViscosity.cc
+     )
+
 spheral_add_obj_library(ArtificialViscosity SPHERAL_OBJ_LIBS)
 
