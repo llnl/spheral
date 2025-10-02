@@ -25,7 +25,9 @@ set(FSISPH_headers
     SlideSurfaceInline.hh
     )
 
-list(APPEND FSISPH_sources
+# Even though these files have a .cc extension, they are template definitions
+# and should be treated as headers.
+list(APPEND FSISPH_headers
      SolidFSISPH.cc
      computeFSISPHSumMassDensity.cc
      computeHWeightedFSISPHSumMassDensity.cc
