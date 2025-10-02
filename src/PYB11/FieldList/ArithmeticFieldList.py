@@ -111,13 +111,37 @@ class ArithmeticFieldList(FieldListBase):
         "Less than or equal comparision with a %(Value)s"
         return "bool"
 
-    def applyMin(self):
-        "Enforce a floor on the values of the Field."
+    def applyMin(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s floor on the values of the FieldList."
         return
 
-    def applyMax(self):
-        "Enforce a ceiling on the values of the Field."
+    def applyMax(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s ceiling on the values of the FieldList."
         return
+
+    @PYB11const
+    def localMin(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldList local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def localMax(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldList local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def min(self,
+            includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def max(self,
+            includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldList."
+        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject FieldList

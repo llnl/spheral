@@ -20,14 +20,6 @@ class MinMaxFieldList(FieldListBase):
     using ViewType = typename FieldListType::ViewType;
 """
 
-    def applyMin(self, rhs="const %(Value)s&"):
-        "Enforce a %(Value)s floor on the values of the Field."
-        return
-
-    def applyMax(self, rhs="const %(Value)s&"):
-        "Enforce a %(Value)s ceiling on the values of the Field."
-        return
-
     def applyScalarMin(self):
         "Enforce a double floor on the values of the Field."
         return
@@ -35,30 +27,6 @@ class MinMaxFieldList(FieldListBase):
     def applyScalarMax(self):
         "Enforce a double ceiling on the values of the Field."
         return
-
-    @PYB11const
-    def localMin(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the mimimum value in the FieldList local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def localMax(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the maximum value in the FieldList local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def min(self,
-            includeGhosts = ("bool", "false")):
-        "Return the mimimum value in the Field."
-        return "%(Value)s"
-
-    @PYB11const
-    def max(self,
-            includeGhosts = ("bool", "false")):
-        "Return the maximum value in the Field."
-        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject FieldList
