@@ -199,3 +199,7 @@ class FieldList(FieldListBase):
     #...........................................................................
     # Properties
     storageType = PYB11property("FieldStorageType", doc="The method whereby Fields are stored/referenced by this FieldList")
+    numFields = PYB11property("size_t", doc="Number of Fields")
+    numElements = PYB11property("size_t", doc="Number of elements in all the associated Fields")
+    numInternalElements = PYB11property("size_t", doc="Number of internal elements in all the associated Fields")
+    numGhostElements = PYB11property("size_t", doc="Number of ghost elementes in all the associated Fields")
