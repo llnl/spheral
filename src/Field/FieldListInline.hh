@@ -340,6 +340,7 @@ appendNewField(const typename Field<Dimension, DataType>::FieldName name,
   BEGIN_CONTRACT_SCOPE
   {
     const auto* fieldPtr = mFieldPtrs.back();
+    CONTRACT_VAR(fieldPtr);
     ENSURE(this->size() == mNodeListPtrs.size());
     ENSURE(mFieldPtrs[mNodeListIndexMap[fieldPtr->nodeListPtr()]] == *(fieldForNodeList(*(fieldPtr->nodeListPtr()))));
     ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
