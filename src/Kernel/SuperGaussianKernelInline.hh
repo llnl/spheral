@@ -87,4 +87,19 @@ SuperGaussianKernel<Dimension>::grad2Value(double etaij, const double Hdet) cons
     exp(-etaij2);
 }
 
+#if defined(SPHERAL1D)
+template<> const double SuperGaussianKernel<Dim<1> >::mKW = 0.5*3.0;
+template<> const double SuperGaussianKernel<Dim<1> >::mKGW = 0.5*1.0;
+#endif
+
+#if defined(SPHERAL2D)
+template<> const double SuperGaussianKernel<Dim<2> >::mKW = 0.5*4.0;
+template<> const double SuperGaussianKernel<Dim<2> >::mKGW = 0.5*2.0;
+#endif
+
+#if defined(SPHERAL3D)
+template<> const double SuperGaussianKernel<Dim<3> >::mKW = 0.5*5.0;
+template<> const double SuperGaussianKernel<Dim<3> >::mKGW = 0.5*3.0;
+#endif
+
 }

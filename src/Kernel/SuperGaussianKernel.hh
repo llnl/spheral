@@ -49,14 +49,20 @@ private:
 
 };
 
+#if defined(SPHERAL1D)
 template<> const double SuperGaussianKernel<Dim<1>>::mKW;
 template<> const double SuperGaussianKernel<Dim<1>>::mKGW;
+#endif
 
+#if defined(SPHERAL2D)
 template<> const double SuperGaussianKernel<Dim<2>>::mKW;
 template<> const double SuperGaussianKernel<Dim<2>>::mKGW;
+#endif
 
+#if defined(SPHERAL3D)
 template<> const double SuperGaussianKernel<Dim<3>>::mKW;
 template<> const double SuperGaussianKernel<Dim<3>>::mKGW;
+#endif
 
 }
 
