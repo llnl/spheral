@@ -49,7 +49,7 @@ if (NOT ENABLE_CXXONLY)
     list(APPEND BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/docs-requirements.txt)
   endif()
 
-  Spheral_Python_Env(python_build_env 
+  Spheral_Python_Env(python_build_env
     REQUIREMENTS ${BUILD_REQ_LIST}
     PREFIX ${CMAKE_BINARY_DIR}
   )
@@ -74,7 +74,7 @@ if (NOT polyclipper_DIR)
     EXPORT spheral_cxx-targets
     DESTINATION lib/cmake)
   set_target_properties(PolyClipperAPI PROPERTIES EXPORT_NAME spheral::PolyClipperAPI)
-  message("Found PolyClipper External Package")
+  message("Found PolyClipper External Package.")
 else()
   list(APPEND SPHERAL_EXTERN_LIBS polyclipper)
 endif()
@@ -111,7 +111,7 @@ if(adiak_FOUND)
   list(APPEND SPHERAL_BLT_DEPENDS adiak::adiak)
   list(APPEND SPHERAL_FP_TPLS adiak)
   list(APPEND SPHERAL_FP_DIRS ${adiak_DIR})
-  message("Found Adiak External Package")
+  message("Found Adiak External Package.")
 endif()
 
 message("-----------------------------------------------------------------------------")
@@ -132,7 +132,7 @@ if(POLYTOPE_FOUND)
         "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
     endif()
   endif()
-  message("Found Polytope External Package")
+  message("Found Polytope External Package.")
 else()
   list(APPEND SPHERAL_EXTERN_LIBS polytope)
 endif()
@@ -150,45 +150,48 @@ if (SPHERAL_ENABLE_TIMERS)
     list(APPEND SPHERAL_BLT_DEPENDS caliper)
     list(APPEND SPHERAL_FP_TPLS caliper)
     list(APPEND SPHERAL_FP_DIRS ${caliper_DIR})
-    message("Found Caliper External Package")
+    message("Found Caliper External Package.")
   endif()
 endif()
 
 message("-----------------------------------------------------------------------------")
+# HDF5
+find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+if(hdf5_FOUND)
+  message("Found HDF5 External Package.")
+  list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
+  list(APPEND SPHERAL_FP_TPLS hdf5-shared hdf5_hl-shared)
+  list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
+  blt_convert_to_system_includes(TARGET hdf5-shared hdf5_hl-shared)
+endif()
+
+message("-----------------------------------------------------------------------------")
 find_package(RAJA REQUIRED NO_DEFAULT_PATH PATHS ${raja_DIR})
-if (RAJA_FOUND) 
+if (RAJA_FOUND)
   message("Found RAJA External Package.")
   blt_convert_to_system_includes(TARGET RAJA)
 endif()
 
 message("-----------------------------------------------------------------------------")
 find_package(umpire REQUIRED NO_DEFAULT_PATH PATHS ${umpire_DIR})
-if (umpire_FOUND) 
+if (umpire_FOUND)
   message("Found umpire External Package.")
   blt_convert_to_system_includes(TARGET umpire)
 endif()
 
 message("-----------------------------------------------------------------------------")
 # Chai
-if(chai_DIR AND USE_EXTERNAL_CHAI)
-  find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
-  if (chai_FOUND) 
-    message("Found chai External Package.")
-  endif()
-  list(APPEND SPHERAL_FP_TPLS chai)
-  list(APPEND SPHERAL_FP_DIRS ${chai_DIR})
-else()
-  message("Using chai Submodule.")
-  set(chai_DIR "${SPHERAL_ROOT_DIR}/extern/chai")
-  set(CHAI_ENABLE_TESTS Off)
-  set(CHAI_ENABLE_EXAMPLES Off)
-  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
-  add_subdirectory(${chai_DIR})
+find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
+if(chai_FOUND)
+  message("Found chai External Package.")
+  blt_convert_to_system_includes(TARGET chai)
 endif()
 
+
+
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
-list(APPEND SPHERAL_FP_TPLS RAJA umpire)
-list(APPEND SPHERAL_FP_DIRS ${raja_DIR} ${umpire_DIR})
+list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
+list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
@@ -197,19 +200,19 @@ message("-----------------------------------------------------------------------
 if (ENABLE_SUNDIALS)
   set(SUNDIALS_DIR "${sundials_DIR}")
   find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
-    COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
+    COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial
     PATHS ${sundials_DIR}/lib64/cmake/sundials ${sundials_DIR}/lib/cmake/sundials)
   if(SUNDIALS_FOUND)
     list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
     list(APPEND SPHERAL_FP_TPLS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
     list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
-    message("Found SUNDIALS External Package")
+    message("Found SUNDIALS External Package.")
   endif()
 endif()
 
 message("-----------------------------------------------------------------------------")
 # TPLs that must be imported
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
+list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
 
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF ENABLE_LEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF ENABLE_ANEOS)
@@ -241,4 +244,3 @@ if (NOT ENABLE_CXXONLY)
     DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
   )
 endif()
-
