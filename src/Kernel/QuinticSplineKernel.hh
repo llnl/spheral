@@ -41,18 +41,9 @@ public:
 };
 
 // Forward declare the specialized constructors.
-
-#if defined(SPHERAL1D)
 template<> QuinticSplineKernel<Dim<1> >::QuinticSplineKernel();
-#endif
-
-#if defined(SPHERAL2D)
 template<> QuinticSplineKernel<Dim<2> >::QuinticSplineKernel();
-#endif
-
-#if defined(SPHERAL3D)
 template<> QuinticSplineKernel<Dim<3> >::QuinticSplineKernel();
-#endif
 
 }
 
