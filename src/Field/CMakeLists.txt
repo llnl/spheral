@@ -23,6 +23,7 @@ set(Field_headers
     Field.hh
     FieldBase.hh
     FieldBaseInline.hh
+    FieldView.hh
     FieldInline.hh
     FieldList.hh
     FieldListBase.hh

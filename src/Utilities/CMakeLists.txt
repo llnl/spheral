@@ -67,6 +67,7 @@ set(Utilities_headers
     GeometricUtilities.hh
     Hashes.hh
     KeyTraits.hh
+    Logger.hh
     NodeCoupling.hh
     NodeListHashMap.hh
     OpenMP_wrapper.hh

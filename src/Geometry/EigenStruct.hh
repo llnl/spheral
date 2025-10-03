@@ -9,7 +9,6 @@
 
 #include <iostream>
 
-#include "config.hh"
 #include "Geometry/GeomVector_fwd.hh"
 #include "Geometry/GeomTensor_fwd.hh"
 #include "Geometry/GeomSymmetricTensor_fwd.hh"

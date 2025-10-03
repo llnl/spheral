@@ -15,8 +15,6 @@ toss_gcc_mvapich2_cxxonly_build:
 toss_gcc_mvapich2_cxxonly_cleanup:
   extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .cleanup_dir]
   needs:
-    - job: toss_gcc_mvapich2_cxxonly_export
-      optional: true
     - job: toss_gcc_mvapich2_cxxonly_build
 
 
