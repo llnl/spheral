@@ -12,17 +12,21 @@ import re
 
 def generate_instantiations(input_file, output_file, dimensions):
     # Read the input file to get the definition of the string "text",
-    # which we use to generate the explicit instantiation .cc file
+    # which we use to generate the explicit instantiation .cc file.
     variables = {}
 
     with open(input_file) as f:
         exec(f.read(), variables)
 
-    # Take the intersection of the given dimensions and the supported dimensions
-    explicit_dimensions = variables.get("dimensions")
+    # Get the intersection of the given dimensions and the supported dimensions,
+    # if specified.
+    supported_dimensions = variables.get("dimensions")
 
-    if explicit_dimensions:
-        dimensions = [dim for dim in dimensions if dim in explicit_dimensions]
+    if supported_dimensions:
+        dimensions = [dim for dim in dimensions if dim in supported_dimensions]
+
+    # Get specializations, if any.
+    specializations = variables.get("specializations")
 
     # Parse "text" into a header, instantiations, and footer.
     text = variables["text"]
@@ -39,6 +43,9 @@ def generate_instantiations(input_file, output_file, dimensions):
     output_text = header
 
     for ndim in dimensions:
+        if ndim in specializations:
+            output_text += f"{specializations[ndim].rstrip()}\n\n"
+
         dictionary = {"ndim"      : ndim,
                       "Dim"       : "Dim<%s>" % ndim,
                       "Scalar"    : "Dim<%s>::Scalar" % ndim,

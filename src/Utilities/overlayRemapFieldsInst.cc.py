@@ -1,5 +1,3 @@
-dimensions = [2, 3]
-
 text = """
 //------------------------------------------------------------------------------
 // Explicit instantiation.
@@ -21,3 +19,6 @@ overlayRemapFields(const std::vector<Boundary<Dim<%(ndim)s>>*>& boundaries,
 }
 
 """
+
+# Only supports 2D and 3D
+dimensions = [2, 3]
