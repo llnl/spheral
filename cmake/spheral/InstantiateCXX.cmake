@@ -36,13 +36,11 @@ function(instantiate _inst_var _source_var)
         set(_inst_py ${CMAKE_CURRENT_SOURCE_DIR}/${_inst}Inst.cc.py)
         set(_inst_file ${_inst}Inst.cc)
 
-        string(REPLACE ";" " " _dims_string "${_dims}")
-
         # Generate the C++ file
         # Uses BLT's python for instantiations to work when building CXX_ONLY as well as with python
         add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_inst_file}
                            DEPENDS ${_inst_py}
-                           COMMAND ${Python3_EXECUTABLE} ${SPHERAL_ROOT_DIR}/src/helpers/InstantiationGenerator.py ${_inst_py} ${_inst_file} ${_dims_string}
+                           COMMAND ${Python3_EXECUTABLE} ${SPHERAL_ROOT_DIR}/src/helpers/InstantiationGenerator.py ${_inst_py} ${_inst_file} ${_dims}
                            BYPRODUCTS ${_inst_file}
                            COMMENT "Generating instantiation ${_inst_file}..."
                            )
