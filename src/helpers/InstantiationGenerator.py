@@ -18,9 +18,15 @@ def generate_instantiations(input_file, output_file, dimensions):
     with open(input_file) as f:
         exec(f.read(), variables)
 
-    text = variables["text"]
+    # Take the intersection of the given dimensions and the supported dimensions
+    explicit_dimensions = variables.get("dimensions")
+
+    if explicit_dimensions:
+        dimensions = [dim for dim in dimensions if dim in explicit_dimensions]
 
     # Parse "text" into a header, instantiations, and footer.
+    text = variables["text"]
+
     index = re.search("^[ \t]*template", text, re.MULTILINE).start()
     header = text[:index]
     remainder = text[index:]
