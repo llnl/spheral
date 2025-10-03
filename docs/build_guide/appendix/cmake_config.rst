@@ -22,7 +22,7 @@ The following are CMake variables that can be set during configure time. In gene
 
    Build a single shared Spheral C++ library.
 
-.. options:: -DSPHERAL_ENABLE_STATIC=<OFF, ON>
+.. option:: -DSPHERAL_ENABLE_STATIC=<OFF, ON>
 
    Build a single static Spheral C++ library. Defaults to ``ON`` if ``SPHERAL_ENABLE_PYTHON=OFF``.
 
