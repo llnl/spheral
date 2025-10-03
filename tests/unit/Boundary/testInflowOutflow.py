@@ -37,7 +37,7 @@ commandLine(geometry = "1d",    # (1d, 2d, 3d, RZ)
             )
 
 assert geometry in ("1d", "2d", "3d", "RZ")
-exec("from Spheral%s import *" % geometry)
+exec("from Spheral%s import *" % geometry, globals())
 
 vizDir = "dumps-InflowOutflow-%s" % geometry
 
