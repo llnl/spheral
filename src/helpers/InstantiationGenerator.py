@@ -26,7 +26,7 @@ def generate_instantiations(input_file, output_file, dimensions):
         dimensions = [dim for dim in dimensions if dim in supported_dimensions]
 
     # Get specializations, if any.
-    specializations = variables.get("specializations")
+    specializations = variables.get("specializations", {})
 
     # Parse "text" into a header, instantiations, and footer.
     text = variables["text"]
