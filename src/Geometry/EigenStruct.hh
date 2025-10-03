@@ -31,9 +31,6 @@ template<int nDim> std::ostream& operator<<(::std::ostream os, Spheral::EigenStr
 // Include these here to avoid compiler complaints incomplete types.
 #include "GeomVector.hh"
 #include "GeomTensor.hh"
-
-#ifndef __GCCXML__
 #include "EigenStructInline.hh"
-#endif
 
 #endif

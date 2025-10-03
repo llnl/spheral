@@ -34,10 +34,11 @@ Notable changes include:
       * The following CMake options now have the added `SPHERAL_` prefix:
         * `ENABLE_TESTS`, `ENABLE_1D`, `ENABLE_2D`, `ENABLE_3D`, `ENABLE_SHARED`, `ENABLE_DOCS`.
         * `ENABLE_ANEOS`, `ENABLE_LEOS`, `ENABLE_HELMHOLTZ`, `ENABLE_OPENSUBDIV`.
-        * `ENABLE_NAN_EXCEPTIONS`, `ENABLE_BOUNDCHECKING`.
+        * `ENABLE_NAN_EXCEPTIONS`, `ENABLE_BOUNDCHECKING`, `DBC_MODE`.
       * The CXXONLY variables have been removed and replaced with a `SPHERAL_ENABLE_PYTHON` variable.
         C++ builds default to being static when this variable is disabled.
       * `ENABLE_INSTATIATION` option has been removed.
+    * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
       * Increased the number of threads for certain memory intensive tests to prevent OOM error.

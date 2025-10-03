@@ -17,8 +17,6 @@
 #include "waitAllWithDeadlockDetection.hh"
 #include "Process.hh"
 
-#include "config.hh"
-
 #include <sstream>
 #include <list>
 #include <algorithm>

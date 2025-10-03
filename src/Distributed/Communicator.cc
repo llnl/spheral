@@ -7,8 +7,6 @@
 #include "Communicator.hh"
 #include "Utilities/DBC.hh"
 
-#include "config.hh"
-
 namespace Spheral {
 
 //------------------------------------------------------------------------------

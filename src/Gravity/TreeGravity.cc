@@ -22,8 +22,6 @@
 #include "Utilities/DBC.hh"
 #include "Utilities/Hashes.hh"
 
-#include "config.hh"
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

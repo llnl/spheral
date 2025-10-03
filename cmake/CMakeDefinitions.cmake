@@ -6,18 +6,15 @@
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("-- building Debug")
   add_compile_definitions("DEBUG=1")
-  if (NOT DBC_MODE)
-    set(DBC_MODE "All")
-  endif()
 else()
   add_compile_definitions("DEBUG=0")
 endif()
 
 # The DBC flag
-if (DBC_MODE STREQUAL "All")
+if (SPHERAL_DBC_MODE STREQUAL "All")
   message("-- DBC (design by contract) set to All")
   add_compile_definitions("DBC_COMPILE_ALL")
-elseif (DBC_MODE STREQUAL "Pre")
+elseif (SPHERAL_DBC_MODE STREQUAL "Pre")
   message("-- DBC (design by contract) set to Pre")
   add_compile_definitions("DBC_COMPILE_PRE")
 else()
@@ -32,6 +29,7 @@ else()
   message("-- bound checking disabled")
 endif()
 
+# Add SPHERAL_* definitions based on the corresponding option
 set(_comp_flags
   ENABLE_MPI
   ENABLE_HIP

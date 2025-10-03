@@ -9,7 +9,6 @@
 
 #include "Process.hh"
 #include "Communicator.hh"
-#include "config.hh"
 #ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 

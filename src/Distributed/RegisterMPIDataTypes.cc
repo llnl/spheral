@@ -10,8 +10,6 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Geometry/Dimension.hh"
 
-#include "config.hh"
-
 namespace Spheral {
 
 //------------------------------------------------------------------------------

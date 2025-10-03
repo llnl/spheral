@@ -42,3 +42,8 @@ cmake_dependent_option(SPHERAL_ENABLE_DOCS "Enable sphinx Spheral documentation"
 #-------------------------------------------------------------------------------
 option(SPHERAL_ENABLE_BOUNDCHECKING "Check bounds on STL types (expensive, Gnu only)" OFF)
 option(SPHERAL_ENABLE_NAN_EXCEPTIONS "Raise an excpetion when a NAN occurs (Gnu only)" OFF)
+set(DEFAULT_DBC_MODE "None")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(DEFAULT_DBC_MODE "All")
+endif()
+set(SPHERAL_DBC_MODE ${DEFAULT_DBC_MODE} CACHE STRING "Design-by-contract flag for debugging. Options: 'All', 'Pre', 'None'")

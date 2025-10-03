@@ -53,6 +53,16 @@ include(${SPHERAL_BLT_DIR}/SetupBLT.cmake)
 
 include(${SPHERAL_ROOT_DIR}/cmake/SpheralOptions.cmake)
 
+if(ENABLE_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_CXXONLY is deprecated. Use SPHERAL_ENABLE_PYTHON=OFF "
+    "and either SPHERAL_ENABLE_STATIC or SHARED.")
+elseif(ENABLE_STATIC_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_STATIC_CXXONLY is deprecated. Use SPHERAL_ENABLE_PYTHON=OFF, "
+    "which defaults to static.")
+endif()
+
 if(SPHERAL_ENABLE_PYTHON AND NOT SPHERAL_ENABLE_SHARED)
   message(FATAL_ERROR "Python libraries with ENABLE_SHARED=OFF are currently broken")
 endif()
