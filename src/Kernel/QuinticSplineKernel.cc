@@ -76,4 +76,37 @@ QuinticSplineKernel<Dimension>::grad2Value(double eta, const double Hdet) const 
   }
 }
 
+//------------------------------------------------------------------------------
+// Default constructor specializations.
+//------------------------------------------------------------------------------
+#if defined(SPHERAL1D)
+template<>
+QuinticSplineKernel< Dim<1> >::QuinticSplineKernel():
+  Kernel<Dim<1>, QuinticSplineKernel< Dim<1> > >() {
+  setVolumeNormalization(FastMath::pow5(3.0)/40.0);
+  setKernelExtent(1.0);
+  setInflectionPoint(0.342037); // (2.0/15.0*(7.0 - pow(2.0, 1.0/3.0) - pow(22.0, 2.0/3.0)));
+}
+#endif
+
+#if defined(SPHERAL2D)
+template<>
+QuinticSplineKernel< Dim<2> >::QuinticSplineKernel():
+  Kernel<Dim<2>, QuinticSplineKernel< Dim<2> > >() {
+  setVolumeNormalization(FastMath::pow7(3.0)*7.0/(478.0*M_PI));
+  setKernelExtent(1.0);
+  setInflectionPoint(0.342037); // (2.0/15.0*(7.0 - pow(2.0, 1.0/3.0) - pow(22.0, 2.0/3.0)));
+}
+#endif
+
+#if defined(SPHERAL3D)
+template<>
+QuinticSplineKernel< Dim<3> >::QuinticSplineKernel():
+  Kernel<Dim<3>, QuinticSplineKernel< Dim<3> > >() {
+  setVolumeNormalization(FastMath::pow7(3.0)/(40.0*M_PI));
+  setKernelExtent(1.0);
+  setInflectionPoint(0.342037); // (2.0/15.0*(7.0 - pow(2.0, 1.0/3.0) - pow(22.0, 2.0/3.0)));
+}
+#endif
+
 }
