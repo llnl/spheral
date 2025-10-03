@@ -1,11 +1,11 @@
 #-------------------------------------------------------------------------------
 # IntantiationGenerator
 # 
-# A python script to automatically generate Spheral++ instantion files to be 
-# compiled.  Assumed arguments:
-#    input_file - the file to be read, defining "text"
+# A python script to automatically generate Spheral++ instantiation files
+# to be compiled.  Assumed arguments:
+#   input_file  - the file to be read, defining "text"
 #   output_file - the file to be written out
-#      ndim - an integer value for the dimensionality being generated (1,2,3)
+#   dimensions  - a list of dimensions for which to generate instantiations (e.g. 1 2 3)
 #-------------------------------------------------------------------------------
 import argparse
 import re
@@ -65,7 +65,7 @@ def generate_instantiations(input_file, output_file, dimensions):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Generate a C++ instantiation file from a template string."
+        description="Generate a Spheral++ instantiation file from a template string."
     )
 
     parser.add_argument(
