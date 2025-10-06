@@ -403,4 +403,15 @@ intersectionConnectivity(const NodePairIdxType& pair) const {
   return itr->second;
 }
 
+//------------------------------------------------------------------------------
+// Set the function for excluding node pairs
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+setNodePairExclusion(std::function<bool(int, int, int, int)> excludePairs)
+{
+  mExcludePairs = excludePairs;
+}
+
 }

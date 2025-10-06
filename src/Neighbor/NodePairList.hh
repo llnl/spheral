@@ -27,7 +27,9 @@ public:
   void push_back(NodePairIdxType nodePair)                                     { mNodePairList.push_back(nodePair); }
   void clear()                                                                 { mNodePairList.clear(); mPair2Index.clear(); }
   void reserve(const size_t n)                                                 { mNodePairList.reserve(n); }
+  void resize(const size_t n) { mNodePairList.resize(n, NodePairIdxType(-1,-1,-1,-1)); }
   size_t size() const                                                          { return mNodePairList.size(); }
+  void makeUnique();
 
   // Iterators
   iterator begin()                                                             { return mNodePairList.begin(); }

@@ -559,8 +559,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         if (freeParticle) {
           DvDti += mj*deltaDvDt;
           DvDtj -= mi*deltaDvDt;
-        } 
-      
+        }
+
         // Velocity Gradient
         //-----------------------------------------------------------
         // construct our interface velocity 

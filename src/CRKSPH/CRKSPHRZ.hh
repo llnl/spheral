@@ -12,6 +12,7 @@
 
 #include "CRKSPH/CRKSPHBase.hh"
 #include "Geometry/Dimension.hh"
+#include "Neighbor/PairwiseField.hh"
 
 namespace Spheral {
 
@@ -22,7 +23,6 @@ template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
-template<typename Dimension, typename Value, size_t numElements> class PairwiseField;
 class FileIO;
 
 class CRKSPHRZ: public CRKSPHBase<Dim<2>> {

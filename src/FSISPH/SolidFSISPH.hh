@@ -9,6 +9,7 @@
 #define __Spheral_SolidFSISPH_hh__
 
 #include "Physics/GenericHydro.hh"
+#include "Neighbor/PairwiseField.hh"
 #include "Utilities/SpheralMessage.hh"
 
 #include <string>
@@ -33,6 +34,7 @@ enum class FSIMassDensityMethod {
   FSISumMassDensity = 0,
   PressureCorrectSumMassDensity = 1,
   HWeightedSumMassDensity = 2,
+  FSIConsistentSumMassDensity = 3,
 };
 
 template<typename Dimension> class State;
@@ -43,7 +45,6 @@ template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
-template<typename Dimension, typename Value, size_t numElements> class PairwiseField;
 class FileIO;
 
 template<typename Dimension>

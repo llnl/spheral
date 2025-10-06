@@ -22,6 +22,7 @@ computeFSISPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
                             const FieldList<Dimension, typename Dimension::Vector>& position,
                             const FieldList<Dimension, typename Dimension::Scalar>& mass,
                             const FieldList<Dimension, typename Dimension::SymTensor>& H,
+                            const bool consistentSum,
                             FieldList<Dimension, typename Dimension::Scalar>& massDensity);
 
 }

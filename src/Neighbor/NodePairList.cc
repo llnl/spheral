@@ -1,6 +1,8 @@
 #include "NodePairList.hh"
 #include "Utilities/DBC.hh"
 
+#include <algorithm>
+
 namespace Spheral {
   
 //------------------------------------------------------------------------------
@@ -25,5 +27,32 @@ NodePairList::computeLookup() const {
     mPair2Index[mNodePairList[k]] = k;
   }
 }
+
+  void NodePairList::makeUnique() {
+    // Make sure the node pairs are ordered correctly
+    for (auto kk = 0u; kk < mNodePairList.size(); ++kk)
+    {
+      auto& pair = mNodePairList[kk];
+      if (pair.i_list > pair.j_list)
+      {
+        const auto temp_list = pair.j_list;
+        const auto temp_node = pair.j_node;
+        pair.j_list = pair.i_list;
+        pair.j_node = pair.i_node;
+        pair.i_list = temp_list;
+        pair.i_node = temp_node;
+      }
+      if (pair.i_list == pair.j_list && pair.i_node > pair.j_node)
+      {
+        const auto temp = pair.j_node;
+        pair.j_node = pair.i_node;
+        pair.i_node = temp;
+      }
+    }
+    
+    // Remove duplicates
+    std::sort(mNodePairList.begin(), mNodePairList.end());
+    mNodePairList.erase(std::unique(mNodePairList.begin(), mNodePairList.end()), mNodePairList.end());
+  }
 
 }

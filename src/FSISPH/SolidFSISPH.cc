@@ -459,6 +459,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   TIME_BEGIN("SolidFSISPHpreStepInitialize");
   if (mApplySelectDensitySum){
   switch(this->densityUpdate()){
+   case FSIMassDensityMethod::FSIConsistentSumMassDensity:
+     // fallthrough intended
    case FSIMassDensityMethod::FSISumMassDensity:
     {
       const auto& W = this->kernel();
@@ -467,7 +469,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
       const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
             auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-      computeFSISPHSumMassDensity(connectivityMap, W, mSumDensityNodeLists, position, mass, H, massDensity);
+      const auto consistentSum = (this->densityUpdate() == FSIMassDensityMethod::FSIConsistentSumMassDensity);
+      computeFSISPHSumMassDensity(connectivityMap, W, mSumDensityNodeLists, position, mass, H, consistentSum, massDensity);
       for (auto boundaryItr = this->boundaryBegin(); boundaryItr < this->boundaryEnd(); ++boundaryItr) (*boundaryItr)->applyFieldListGhostBoundary(massDensity);
       for (auto boundaryItr = this->boundaryBegin(); boundaryItr < this->boundaryEnd(); ++boundaryItr) (*boundaryItr)->finalizeGhostBoundary();
      break;

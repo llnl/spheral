@@ -13,6 +13,7 @@
 
 #include "Physics/GenericHydro.hh"
 #include "Physics/Physics.hh"
+#include "Neighbor/PairwiseField.hh"
 
 namespace Spheral {
 
@@ -39,7 +40,6 @@ template<typename Dimension> class RiemannSolverBase;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
-template<typename Dimension, typename Value, size_t numElements> class PairwiseField;
 class FileIO;
 
 template<typename Dimension>

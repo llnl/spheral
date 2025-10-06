@@ -14,6 +14,7 @@ computeFSISPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
                             const FieldList<Dimension, typename Dimension::Vector>& position,
                             const FieldList<Dimension, typename Dimension::Scalar>& mass,
                             const FieldList<Dimension, typename Dimension::SymTensor>& H,
+                            const bool consistentSum,
                             FieldList<Dimension, typename Dimension::Scalar>& massDensity) {
 
   // Pre-conditions.
@@ -61,6 +62,7 @@ computeFSISPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
       const auto& ri = position(nodeListi, i);
       const auto& rj = position(nodeListj, j);
       const auto  rij = ri - rj;
+      const auto normalSum = (nodeListi == nodeListj) || consistentSum;
 
       if(sumDensityNodeLists[nodeListi]==1){
         const auto& Hi = H(nodeListi, i);
@@ -68,7 +70,7 @@ computeFSISPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
         const auto  etai = (Hi*rij).magnitude();
         const auto  Wi = W.kernelValue(etai, Hdeti);
 
-        massDensity_thread(nodeListi, i) += (nodeListi == nodeListj ? mj : mi)*Wi; 
+        massDensity_thread(nodeListi, i) += (normalSum ? mj : mi)*Wi; 
       } 
       
       if(sumDensityNodeLists[nodeListj]==1){
@@ -77,7 +79,7 @@ computeFSISPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
         const auto  etaj = (Hj*rij).magnitude();
         const auto  Wj = W.kernelValue(etaj, Hdetj);
     
-        massDensity_thread(nodeListj, j) += (nodeListi == nodeListj ? mi : mj)*Wj;
+        massDensity_thread(nodeListj, j) += (normalSum ? mi : mj)*Wj;
       }
     }
 

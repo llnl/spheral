@@ -8,6 +8,7 @@
 #include "ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Neighbor/Neighbor.hh"
+#include "Neighbor/NodePairList.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Boundary/Boundary.hh"
@@ -134,7 +135,8 @@ ConnectivityMap():
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
   mCouplingPtr(std::make_shared<NodeCoupling>()),
-  mIntersectionConnectivity() {
+  mIntersectionConnectivity(),
+  mExcludePairs([](int, int, int, int) { return false; }){
 }
 
 //------------------------------------------------------------------------------
@@ -286,6 +288,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
       culledPairs.insert(culledPairs.end(), culledPairs_thread.begin(), culledPairs_thread.end());
     }
   }
+
   mNodePairListPtr = culledPairListPtr;
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
@@ -930,9 +933,14 @@ computeConnectivity() {
 
                     // We don't include self-interactions.
                     if ((iNodeList != jNodeList) or (i != j)) {
-                      neighbors[jNodeList].push_back(j);
-                      if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
-                      if (domainDecompIndependent) keys[jNodeList].push_back(pair<int, Key>(j, mKeys(jNodeList, j)));
+
+                      // Exclude specified pairs.
+                      if (!mExcludePairs(iNodeList, i, jNodeList, j))
+                      {
+                        neighbors[jNodeList].push_back(j);
+                        if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
+                        if (domainDecompIndependent) keys[jNodeList].push_back(pair<int, Key>(j, mKeys(jNodeList, j)));
+                      }
                     }
                   }
                 }
@@ -1139,6 +1147,8 @@ computeConnectivity() {
   //   }
   // }
 
+  mNodePairListPtr->makeUnique();
+  
   // Post conditions.
   BEGIN_CONTRACT_SCOPE
   // Make sure that the correct number of nodes have been completed.
@@ -1156,6 +1166,55 @@ computeConnectivity() {
   END_CONTRACT_SCOPE
 
   TIME_END("ConnectivityMap_computeConnectivity");
+}
+
+//------------------------------------------------------------------------------
+// Remove given pairs from the connectivity in place
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+removeConnectivity(std::function<bool(int, int, int, int)> excludePairs)
+{
+  const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
+  const auto numNodeLists = mNodeLists.size();
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto numNodes = ((domainDecompIndependent or mBuildGhostConnectivity or mBuildOverlapConnectivity) ? 
+                           mNodeLists[iNodeList]->numNodes() :
+                           mNodeLists[iNodeList]->numInternalNodes());
+    for (auto i = 0u; i < numNodes; ++i) {
+      auto& neighbors = mConnectivity[i];
+      CHECK(neighbors.size() == numNodeLists);
+      for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
+        auto& neighborsj = neighbors[jNodeList];
+        auto l = 0u;
+        for (auto k = 0u; k < neighborsj.size(); ++k)
+        {
+          const auto j = neighborsj[k];
+          if (!excludePairs(iNodeList, i, jNodeList, j))
+          {
+            neighborsj[l++] = neighborsj[k];
+          }
+        }
+        neighborsj.resize(l);
+      }
+    }
+  }
+
+  auto& nodePairList = *mNodePairListPtr;
+  const auto npairs = nodePairList.size();
+  auto l = 0u;
+  for (auto k = 0u; k < npairs; ++k) {
+    const auto iNodeList = nodePairList[k].i_list;
+    const auto jNodeList = nodePairList[k].j_list;
+    const auto i = nodePairList[k].i_node;
+    const auto j = nodePairList[k].j_node;
+    if (!excludePairs(iNodeList, i, jNodeList, j))
+    {
+      nodePairList[l++] = nodePairList[k];
+    }
+  }
+  nodePairList.resize(l);
 }
 
 }

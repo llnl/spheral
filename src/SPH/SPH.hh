@@ -7,6 +7,7 @@
 #define __Spheral_SPH__
 
 #include "SPH/SPHBase.hh"
+#include "Neighbor/PairwiseField.hh"
 
 #include <memory>
 
@@ -20,7 +21,6 @@ template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
-template<typename Dimension, typename Value, size_t numElements> class PairwiseField;
 
 template<typename Dimension>
 class SPH: public SPHBase<Dimension> {

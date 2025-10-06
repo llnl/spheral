@@ -18,10 +18,9 @@
 
 #include "SPHBase.hh"
 #include "Geometry/Dimension.hh"
+#include "Neighbor/PairwiseField.hh"
 
 namespace Spheral {
-
-template<typename Dimension, typename Value, size_t numElements> class PairwiseField;
 
 class SPHRZ: public SPHBase<Dim<2> > {
 
