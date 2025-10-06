@@ -26,6 +26,7 @@
 #include "Utilities/boundPointWithinBox.hh"
 #include "Utilities/testBoxIntersection.hh"
 #include "Utilities/PairComparisons.hh"
+#include "Utilities/Timer.hh"
 #include "allReduce.hh"
 #include "Communicator.hh"
 
@@ -340,6 +341,7 @@ void
 VoronoiRedistributeNodes<Dimension>::
 redistributeNodes(DataBase<Dimension>& dataBase,
                   vector<Boundary<Dimension>*> boundaries) {
+  TIME_FUNCTION;
 
   // The usual parallel info.
   const int numProcs = this->numDomains();
