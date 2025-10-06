@@ -61,9 +61,10 @@ Notable changes include:
       * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
-    * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
+    * Building static C++ libraries with python enabled is currently broken.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * PolyClipper and PYB11Generator are updated.
 
 
 Version v2025.06.1 -- Release date 2025-07-21
