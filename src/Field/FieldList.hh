@@ -137,15 +137,15 @@ public:
   const_reverse_iterator rend()                                                   const { return mFieldPtrs.rend(); }  
 
   // Iterators over FieldBase* required by base class.
-  virtual typename FieldListBase<Dimension>::iterator begin_base()                      { return mFieldBasePtrs.begin(); } 
-  virtual typename FieldListBase<Dimension>::iterator end_base()                        { return mFieldBasePtrs.end(); }   
-  virtual typename FieldListBase<Dimension>::reverse_iterator rbegin_base()             { return mFieldBasePtrs.rbegin(); }
-  virtual typename FieldListBase<Dimension>::reverse_iterator rend_base()               { return mFieldBasePtrs.rend(); }  
+  virtual typename FieldListBase<Dimension>::iterator begin_base()                      override { return mFieldBasePtrs.begin(); } 
+  virtual typename FieldListBase<Dimension>::iterator end_base()                        override { return mFieldBasePtrs.end(); }   
+  virtual typename FieldListBase<Dimension>::reverse_iterator rbegin_base()             override { return mFieldBasePtrs.rbegin(); }
+  virtual typename FieldListBase<Dimension>::reverse_iterator rend_base()               override { return mFieldBasePtrs.rend(); }  
 
-  virtual typename FieldListBase<Dimension>::const_iterator begin_base()          const { return mFieldBasePtrs.begin(); } 
-  virtual typename FieldListBase<Dimension>::const_iterator end_base()            const { return mFieldBasePtrs.end(); }   
-  virtual typename FieldListBase<Dimension>::const_reverse_iterator rbegin_base() const { return mFieldBasePtrs.rbegin(); }
-  virtual typename FieldListBase<Dimension>::const_reverse_iterator rend_base()   const { return mFieldBasePtrs.rend(); }  
+  virtual typename FieldListBase<Dimension>::const_iterator begin_base()          const override { return mFieldBasePtrs.begin(); } 
+  virtual typename FieldListBase<Dimension>::const_iterator end_base()            const override { return mFieldBasePtrs.end(); }   
+  virtual typename FieldListBase<Dimension>::const_reverse_iterator rbegin_base() const override { return mFieldBasePtrs.rbegin(); }
+  virtual typename FieldListBase<Dimension>::const_reverse_iterator rend_base()   const override { return mFieldBasePtrs.rend(); }  
 
   // Index operator.
   value_type operator[](const size_t index) const;
