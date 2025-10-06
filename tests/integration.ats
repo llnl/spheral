@@ -130,3 +130,4 @@ source("functional/RK/testVoronoiVolume.py")
 
 # KernelIntegrator tests
 source("unit/KernelIntegrator/TestIntegrator.py")
+source("unit/KernelIntegrator/testFlatConnectivity.py")

@@ -77,7 +77,7 @@ assert testDim in ("1d", "2d", "3d", "spherical")
 if testDim == "spherical":
     from SphericalSpheral import *
 else:
-    exec("from Spheral%s import *" % testDim)
+    exec("from Spheral%s import *" % testDim, globals())
 HydroConstructor = eval(HydroChoice)
 
 #-------------------------------------------------------------------------------
