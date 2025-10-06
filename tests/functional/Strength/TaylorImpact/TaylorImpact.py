@@ -154,7 +154,7 @@ assert geometry in ("2d", "3d", "RZ")
 assert not (compatibleEnergy and evolveTotalEnergy)
 assert not (hydroType == "FSISPH" and geometry == "RZ")
 
-exec("from Spheral%s import *" % geometry)
+exec("from Spheral%s import *" % geometry, globals())
 
 if hydroType == "CRKSPH":
     hydroname = os.path.join("CRKSPH",
