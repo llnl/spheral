@@ -44,7 +44,7 @@ The following are CMake variables that can be set during configure time. In gene
 
 .. option:: -DSPHERAL_ENABLE_ANEOS=<ON, OFF>
 
-     Install the ANEOS (Analytics Equation of State) package along with the Spheral interface to it.  This is a legacy equation of state frequently used for geophysical materials.  See descriptions in the `iSALE <https://github.com/isale-code/M-ANEOS>`_ documentation.
+   Install the ANEOS (Analytics Equation of State) package along with the Spheral interface to it.  This is a legacy equation of state frequently used for geophysical materials.  See descriptions in the `iSALE <https://github.com/isale-code/M-ANEOS>`_ documentation.
 
 .. option:: -DSPHERAL_ENABLE_HELMHOLTZ=<ON, OFF>
 
