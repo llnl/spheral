@@ -9,6 +9,7 @@ option(SPHERAL_ENABLE_2D "Enable 2D" ON)
 option(SPHERAL_ENABLE_3D "Enable 3D" ON)
 option(SPHERAL_ENABLE_TIMERS "Enable Caliper timers" OFF)
 option(SPHERAL_ENABLE_TESTS "Enable tests" ON)
+option(SPHERAL_COMBINE_INSTANTIATIONS "Combine instantiations" ON)
 
 option(SPHERAL_ENABLE_ANEOS "Enable the ANEOS equation of state package" ON)
 option(SPHERAL_ENABLE_OPENSUBDIV "Enable the Opensubdiv Pixar extension for refining polyhedra" ON)
