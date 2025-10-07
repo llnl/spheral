@@ -55,6 +55,7 @@ Notable changes include:
     * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
 
 
 Version v2025.06.1 -- Release date 2025-07-21

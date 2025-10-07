@@ -7,15 +7,18 @@ text = """
 // be in the range of an unsigned long long (2^64 on the machines I'm using).
 #include "Neighbor/GridCellIndex.cc"
 
-namespace Spheral {
-
-  // 2^20
+// 2^20
 #define INDEXMAX 1048576 - 1
 #define INDEXMIN -INDEXMAX - 1
 #define XMULTIPLIER (INDEXMAX - INDEXMIN)
 
+namespace Spheral {
   template<> const int GridCellIndex< Dim< %(ndim)s > >::mIndexMax = INDEXMAX; // 2^20 - 1
   template<> const int GridCellIndex< Dim< %(ndim)s > >::mIndexMin = INDEXMIN;
-
 }
+
+#undef INDEXMAX
+#undef INDEXMIN
+#undef XMULTIPLIER
+
 """
