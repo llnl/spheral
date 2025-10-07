@@ -616,27 +616,27 @@ inline
 auto
 FieldView<Dimension, DataType>::
 getCallback() {
-  return [n = this->name(), callback = mChaiCallback](
+  return [callback = mChaiCallback](
     const chai::PointerRecord * record,
     chai::Action action,
     chai::ExecutionSpace space) {
       if (action == chai::ACTION_MOVE) {
         if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": MOVED to the CPU";
+          DEBUG_LOG << "Field : MOVED to the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": MOVED to the GPU";
+          DEBUG_LOG << "Field : MOVED to the GPU";
       }
       else if (action == chai::ACTION_ALLOC) {
         if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": ALLOC on the CPU";
+          DEBUG_LOG << "Field : ALLOC on the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": ALLOC on the GPU";
+          DEBUG_LOG << "Field : ALLOC on the GPU";
       }
       else if (action == chai::ACTION_FREE) {
         if (space == chai::CPU)
-          DEBUG_LOG << "Field :" << n << ": FREE on the CPU";
+          DEBUG_LOG << "Field : FREE on the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "Field :" << n << ": FREE on the GPU";
+          DEBUG_LOG << "Field : FREE on the GPU";
       }
       callback(record, action, space);
     };

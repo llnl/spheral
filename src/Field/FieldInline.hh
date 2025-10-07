@@ -35,9 +35,9 @@ Field(typename FieldBase<Dimension>::FieldName name):
   FieldBase<Dimension>(name),
   FieldView<Dimension, DataType>(),
   mDataArray() {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   mNumInternalElements = 0u;
   mNumGhostElements = 0u;
+  mChaiCallback = [](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {};
 }
 
 //------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldBase<Dimension>(name, *field.nodeListPtr()),
   FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mChaiCallback = [](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {};
   this->assignDataSpan();
 }
 
@@ -66,7 +66,7 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes(), DataTypeTraits<DataType>::zero()) {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mChaiCallback = [](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {};
   this->assignDataSpan();
   REQUIRE(this->size() == nodeList.numNodes());
 }
@@ -83,8 +83,8 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes(), value) {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(this->size() == nodeList.numNodes());
+  mChaiCallback = [](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {};
   this->assignDataSpan();
 }
 
@@ -100,9 +100,9 @@ Field(typename FieldBase<Dimension>::FieldName name,
   FieldBase<Dimension>(name, nodeList),
   FieldView<Dimension, DataType>(),
   mDataArray(nodeList.numNodes()) {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   REQUIRE(size() == nodeList.numNodes());
   REQUIRE(size() == array.size());
+  mChaiCallback = [](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {};
   mDataArray = array;
   this->assignDataSpan();
 }
@@ -118,7 +118,7 @@ Field<Dimension, DataType>::Field(const NodeList<Dimension>& nodeList,
   FieldBase<Dimension>(field.name(), nodeList),
   FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
-  // mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mChaiCallback = field.mChaiCallback;
   this->assignDataSpan();
   ENSURE(size() == nodeList.numNodes());
 }
@@ -134,7 +134,7 @@ Field<Dimension, DataType>::Field(const Field& field):
   FieldBase<Dimension>(field),
   FieldView<Dimension, DataType>(),
   mDataArray(field.mDataArray) {
-  // mChaiCallback(field.mChaiCallback) {
+  mChaiCallback = field.mChaiCallback;
   this->assignDataSpan();
   DEBUG_LOG << "Field::copy : " << field.name() << " -> " << this->name() << " : " << field.mDataArray.data() << " -> " << mDataArray.data() << " : " << field.mDataSpan.data() << " -> " << mDataSpan.data();
 }
@@ -177,7 +177,7 @@ Field<Dimension, DataType>::operator=(const FieldBase<Dimension>& rhs) {
       CHECK2(rhsPtr != 0, "Passed incorrect Field to operator=!");
       FieldBase<Dimension>::operator=(rhs);
       mDataArray = rhsPtr->mDataArray;
-      // mChaiCallback = rhsPtr->mChaiCallback;
+      mChaiCallback = rhsPtr->mChaiCallback;
       this->assignDataSpan();
     } catch (const std::bad_cast &) {
       VERIFY2(false, "Attempt to assign a field to an incompatible field type.");
@@ -196,7 +196,7 @@ Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
   if (this != &rhs) {
     FieldBase<Dimension>::operator=(rhs);
     mDataArray = rhs.mDataArray;
-    // mChaiCallback = rhs.mChaiCallback;
+    mChaiCallback = rhs.mChaiCallback;
     this->assignDataSpan();
   }
   DEBUG_LOG << "Field::assign : " << rhs.name() << " -> " << this->name() << " : " << rhs.mDataArray.data() << " -> " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " -> " <<  mDataSpan.data();
@@ -1331,7 +1331,7 @@ assignDataSpan() {
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
     DEBUG_LOG << " --> SUCCESS";
   }
-  mDataSpan.setUserCallback(getCallback());
+  mDataSpan.setUserCallback(this->getCallback());
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();

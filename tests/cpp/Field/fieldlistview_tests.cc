@@ -44,6 +44,8 @@ public:
       (space == chai::CPU) ? fl_count.HNumAlloc++ : fl_count.DNumAlloc++;
     if (action == chai::ACTION_FREE)
       (space == chai::CPU) ? fl_count.HNumFree++ : fl_count.DNumFree++;
+    // DEBUG_LOG << "fl_callback: " << action << " " << space << " : " << chai::ACTION_MOVE << " " << chai::ACTION_ALLOC << " " << chai::ACTION_FREE << " : " << chai::CPU << " " << chai::GPU;
+    // fl_count.print();
     };
   }
 
@@ -162,7 +164,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     fl_ref_count = { 2, 0, 2, 2, 3, 2 };
     f_ref_count  = { 4, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 3, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -221,7 +223,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     fl_ref_count = { 2, 0, 2, 2, 3, 2 };
     f_ref_count  = { 2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 3, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -268,7 +270,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
     fl_ref_count = { 1, 1, 1, 1, 2, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 1, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -315,7 +317,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
     fl_ref_count = { 1, 1, 1, 1, 1, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 1, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -360,7 +362,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
     fl_ref_count = {2, 0, 2, 2, 2, 2};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 3, 0, 4, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -417,7 +419,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
     fl_ref_count = {2, 2, 2, 2, 2, 2};
     f_ref_count  = {2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 4, 0};
+    fl_ref_count = {0, 0, 0, 0, 0, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 

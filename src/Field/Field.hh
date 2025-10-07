@@ -205,6 +205,7 @@ private:
   using FieldView<Dimension, DataType>::mDataSpan;
   using FieldView<Dimension, DataType>::mNumInternalElements;
   using FieldView<Dimension, DataType>::mNumGhostElements;
+  using FieldView<Dimension, DataType>::mChaiCallback;
 
   // Helper method to keep mDataSpan and mDataArray consistent
   void assignDataSpan();
