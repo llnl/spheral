@@ -21,7 +21,16 @@ Notable changes include:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
       * New Logging utility for runtime debug messages.
-  
+      * Adds a few types to the state
+        * std::vector of boundary, for when you want to register the boundaries in the state
+        * Option to enroll copies of items, without which enrolling a double or any other built-in type from the python interface will fail (with the standard enroll, it will create a temporary double, enroll the address of that temporary double, and then kill the temporary double)
+      * Adds timing to a few high-cost functions
+      * Updates to FlatConnectivity:
+        * Adds some missed variable initializations
+        * Adds unique index computation for global connectivity, without which indices would need to be summed directly
+        * Fixes non-functional python bindings
+      * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if a temporary variable is used elsewhere
+
   * Bug fixes
     * corrected rolling and torsional coefficient in DEM which were 2x the expected value
     
@@ -49,6 +58,8 @@ Notable changes include:
     * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
+
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================

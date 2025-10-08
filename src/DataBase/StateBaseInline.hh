@@ -21,6 +21,16 @@ enroll(const KeyType& key, T& thing) {
   mStorage[key] = std::ref(thing);
 }
 
+template<typename Dimension>
+template<typename T>
+inline
+void
+StateBase<Dimension>::
+enrollCopy(const KeyType& key, T& thing) {
+  mCache.emplace_back(thing);
+  mStorage[key] = std::ref(std::any_cast<T&>(mCache.back()));
+}
+
 //------------------------------------------------------------------------------
 // Return the Field for the given key.
 //------------------------------------------------------------------------------
