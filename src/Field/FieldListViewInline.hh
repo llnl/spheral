@@ -3,6 +3,7 @@
 
 #include "Field/FieldView.hh"
 #include "Field/FieldList.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 #include "Distributed/allReduce.hh"
 
 #include <algorithm>
@@ -20,8 +21,10 @@ FieldListView<Dimension, DataType>::
 FieldListView():
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
-  mFieldViews.setUserCallback(getCallback());
   DEBUG_LOG << "FieldListView::FieldListView() : " << this;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.setUserCallback(getCallback());
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -31,19 +34,17 @@ template<typename Dimension, typename DataType>
 SPHERAL_HOST
 inline
 FieldListView<Dimension, DataType>::
-FieldListView(const FieldList<Dimension, DataType>& rhs):
+FieldListView(FieldList<Dimension, DataType>& rhs):
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
-  const auto n = rhs.size();
-  if (n > 0u) {
-    mFieldViews.reallocate(n);
-    for (auto i = 0u; i < n; ++i) mFieldViews[i] = rhs[i]->view();
-  } else {
-    mFieldViews.free();
-  }
-  mFieldViews.setUserCallback(getCallback());
-  ENSURE(this->size() == rhs.size());
   DEBUG_LOG << "FieldListView::FieldListView(const FieldList& " << &rhs << ") : " << this;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mFieldViews = rhs.fieldViews();
+#else
+  initMAView(mFieldViews, rhs.fieldViews());
+  mFieldViews.setUserCallback(getCallback());
+#endif
+  ENSURE(this->size() == rhs.size());
 }
 
 //------------------------------------------------------------------------------
@@ -54,7 +55,9 @@ SPHERAL_HOST_DEVICE
 inline
 FieldListView<Dimension, DataType>::
 ~FieldListView() {
-  // mFieldViews.free();
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.free();
+#endif
   DEBUG_LOG << "FieldListView::~FieldListView() : " << this;
 }
 
@@ -549,12 +552,14 @@ inline
 void
 FieldListView<Dimension, DataType>::
 move(chai::ExecutionSpace space, bool recursive) {
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.move(space);
   if (recursive) {
     for (auto& d: mFieldViews) {
       d.move(space);
     }
   }
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -578,7 +583,11 @@ inline
 typename FieldListView<Dimension, DataType>::value_type*
 FieldListView<Dimension, DataType>::
 data(chai::ExecutionSpace space, bool do_move) const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  return mFieldViews.data();
+#else
   return mFieldViews.data(space, do_move);
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -590,12 +599,29 @@ inline
 void
 FieldListView<Dimension, DataType>::
 touch(chai::ExecutionSpace space, bool recursive) {
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.registerTouch(space);
   if (recursive) {
     for (auto& d : mFieldViews) {
       d.touch(space);
     }
   }
+#endif
+}
+
+//------------------------------------------------------------------------------
+// setCallback
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+SPHERAL_HOST
+inline
+void
+FieldListView<Dimension, DataType>::
+setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
+  mChaiCallback = f;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.setUserCallback(getCallback());
+#endif
 }
 
 //------------------------------------------------------------------------------

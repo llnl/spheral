@@ -35,6 +35,7 @@ FieldList<Dimension, DataType>::FieldList():
   FieldListBase<Dimension>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
+  mFieldViews(),
   mFieldCache(),
   mStorageType(FieldStorageType::ReferenceFields),
   mNodeListPtrs(),
@@ -53,6 +54,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   FieldListBase<Dimension>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
+  mFieldViews(),
   mFieldCache(),
   mStorageType(aStorageType),
   mNodeListPtrs(),
@@ -73,6 +75,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
   FieldListBase<Dimension>(rhs),
   mFieldPtrs(rhs.mFieldPtrs),
   mFieldBasePtrs(rhs.mFieldBasePtrs),
+  mFieldViews(),
   mFieldCache(),
   mStorageType(rhs.storageType()),
   mNodeListPtrs(rhs.mNodeListPtrs),
@@ -90,8 +93,8 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
       mFieldPtrs.clear();
       for (auto& fcache: mFieldCache) mFieldPtrs.push_back(fcache.get());
     }
-    buildDependentArrays();
   } // OMP critical
+  buildDependentArrays();
 
   DEBUG_LOG << "FieldList::copy";
 }
@@ -1473,6 +1476,18 @@ view(FLCB&& fieldlist_callback) {
   return result;
 }
 
+template<typename Dimension, typename DataType>
+template<typename FLCB, typename FCB>
+inline
+FieldListView<Dimension, DataType>
+FieldList<Dimension, DataType>::
+view(FLCB&& fieldlist_callback, FCB&& field_callback) {
+  auto result = FieldListView<Dimension, DataType>(*this);
+  result.setCallback(fieldlist_callback);
+  for (auto& x: result) result.setCallback(field_callback);
+  return result;
+}
+
 //------------------------------------------------------------------------------
 // Build all the dependent FieldList internal state assuming mFieldPtrs and
 // mFieldCache are provided.
@@ -1486,14 +1501,17 @@ buildDependentArrays() {
   const auto oldNodeListPtrs = mNodeListPtrs;
   mFieldBasePtrs.clear();
   mNodeListPtrs.clear();
+  mFieldViews.clear();
   mNodeListIndexMap.clear();
   for (auto [i, fptr]: enumerate(mFieldPtrs)) {
     mFieldBasePtrs.push_back(fptr);
+    mFieldViews.push_back(fptr->view());
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
     mNodeListIndexMap[nptr] = i;
   }
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
+  ENSURE(mFieldViews.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
 }

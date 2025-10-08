@@ -79,6 +79,8 @@ public:
   using FieldPtrSpan = SPHERAL_SPAN_TYPE<Field<Dimension, DataType>*>;
   using FieldBasePtrSpan = SPHERAL_SPAN_TYPE<FieldBase<Dimension>*>;
   
+  using FieldViewSpan = SPHERAL_SPAN_TYPE<FieldView<Dimension, DataType>>;
+
   // Constructors.
   FieldList();
   explicit FieldList(FieldStorageType aStorageType);
@@ -124,6 +126,7 @@ public:
   // Span views
   FieldPtrSpan fieldPtrs() const                                                        { return FieldPtrSpan(mFieldPtrs); }
   FieldBasePtrSpan fieldBasePtrs() const                                                { return FieldBasePtrSpan(mFieldBasePtrs); }
+  FieldViewSpan fieldViews()                                                            { return FieldViewSpan(mFieldViews); }
 
   // Provide the standard iterators over the Fields.
   iterator begin()                                                                      { return mFieldPtrs.begin(); } 
@@ -292,6 +295,7 @@ public:
   // The 2nd and 3rd versions are for debugging/diagnostics.
   ViewType view();
   template<typename FLCB>               ViewType view(FLCB&& fieldlist_callback);
+  template<typename FLCB, typename FCB> ViewType view(FLCB&& fieldlist_callback, FCB&& field_callback);
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -300,6 +304,7 @@ private:
 
   std::vector<ElementType> mFieldPtrs;
   std::vector<BaseElementType> mFieldBasePtrs;
+  std::vector<FieldView<Dimension, DataType>> mFieldViews; 
   FieldCacheType mFieldCache;
   FieldStorageType mStorageType;
 

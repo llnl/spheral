@@ -12,6 +12,10 @@
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
 
+#ifdef SPHERAL_UNIFIED_MEMORY
+#include "Utilities/span.hh"
+#endif
+
 namespace Spheral {
 
 // Forward declarations.
@@ -28,13 +32,19 @@ public:
   using FieldDataType = DataType;
 
   using value_type = FieldView<Dimension, DataType>;    // STL compatibility
+
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using ContainerType = SPHERAL_SPAN_TYPE<value_type>;
+  using iterator = typename ContainerType::iterator;
+#else
   using ContainerType = typename chai::ManagedArray<value_type>;
   using iterator = value_type*;
+#endif
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE FieldListView();
-  SPHERAL_HOST        FieldListView(const FieldList<Dimension, DataType>& rhs);
-  SPHERAL_HOST_DEVICE FieldListView(const FieldListView& rhs) = default;
+  SPHERAL_HOST        FieldListView(FieldList<Dimension, DataType>& rhs);
+  SPHERAL_HOST_DEVICE FieldListView(FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
   SPHERAL_HOST_DEVICE ~FieldListView();
 
@@ -44,9 +54,15 @@ public:
   SPHERAL_HOST_DEVICE FieldListView& operator=(const DataType& rhs);
 
   // Provide the standard iterators over the FieldViews
+#ifdef SPHERAL_UNIFIED_MEMORY
+  SPHERAL_HOST_DEVICE iterator begin()                                                         { return mFieldViews.begin(); }
+  SPHERAL_HOST_DEVICE iterator end()                                                           { return mFieldViews.end(); }
+  SPHERAL_HOST_DEVICE bool empty()                                                             { return mFieldViews.empty(); }
+#else
   SPHERAL_HOST_DEVICE iterator begin()                                                         { return &mFieldViews[0]; }
   SPHERAL_HOST_DEVICE iterator end()                                                           { return &mFieldViews[0] + mFieldViews.size(); }
   SPHERAL_HOST_DEVICE bool empty()                                                             { return mFieldViews.size() == 0u; }
+#endif
 
   // Index operator.
   SPHERAL_HOST_DEVICE value_type& operator[](const size_t index) const;
@@ -111,7 +127,7 @@ public:
   SPHERAL_HOST_DEVICE value_type* data() const;
   SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const;
   SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);
-  SPHERAL_HOST        void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) { mChaiCallback = f; mFieldViews.setUserCallback(getCallback()); }
+  SPHERAL_HOST        void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
   //..........................................................................
 
 private:
