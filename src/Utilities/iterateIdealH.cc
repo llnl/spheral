@@ -14,6 +14,7 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Geometry/GeometryRegistrar.hh"
 #include "SmoothingScale/ASPHSmoothingScale.hh"
+#include "Utilities/Timer.hh"
 
 #include <ctime>
 using std::vector;
@@ -39,6 +40,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
               const double nPerhForIteration,
               const bool sphericalStart,
               const bool fixDeterminant) {
+  TIME_FUNCTION;
 
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;

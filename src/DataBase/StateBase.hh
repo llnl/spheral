@@ -78,6 +78,7 @@ public:
   virtual              void enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr);
   virtual              void enroll(FieldListBase<Dimension>& fieldList);
   template<typename T> void enroll(const KeyType& key, T& thing);
+  template<typename T> void enrollCopy(const KeyType& key, T& thing);
 
   //............................................................................
   // Access Fields
