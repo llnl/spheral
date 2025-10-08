@@ -41,7 +41,8 @@ FieldListView(FieldList<Dimension, DataType>& rhs):
 #ifdef SPHERAL_UNIFIED_MEMORY
   mFieldViews = rhs.fieldViews();
 #else
-  initMAView(mFieldViews, rhs.fieldViews());
+  auto fvs = rhs.fieldViews();
+  initMAView(mFieldViews, fvs);
   mFieldViews.setUserCallback(getCallback());
 #endif
   ENSURE(this->size() == rhs.size());
