@@ -148,7 +148,11 @@ Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  mDataSpan.free();
+  try {
+    mDataSpan.free();
+  } catch (umpire::runtime_error&) {
+    DEBUG_LOG << "Field::~Field attempt to double free ManagedArray";
+  }
   DEBUG_LOG << " --> SUCCESS";
 #endif
 }
