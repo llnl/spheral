@@ -132,6 +132,21 @@ getQuadrature(const int numOrdinates,
   }
 }
 
+void
+GaussLegendreValues::
+getQuadrature(const int numOrdinates,
+              std::vector<double>& weights,
+              std::vector<double>& ordinates) {
+  std::vector<Dim<1>::Vector> ordinatesVec;
+  getQuadrature(numOrdinates, weights, ordinatesVec);
+  REQUIRE(weights.size() == static_cast<size_t>(numOrdinates) &&
+          ordinatesVec.size() == static_cast<size_t>(numOrdinates));
+  ordinates.resize(numOrdinates);
+  for (auto i = 0; i < numOrdinates; ++i) {
+    ordinates[i] = ordinatesVec[i].x();
+  }
+}
+
 const std::vector<double> GaussLegendreValues::values2 =
   {5.7735026918962576451e-01, 1.0000000000000000000e0};
 const std::vector<double> GaussLegendreValues::values4 =

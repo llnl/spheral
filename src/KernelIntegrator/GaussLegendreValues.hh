@@ -40,6 +40,9 @@ struct GaussLegendreValues {
   static void getQuadrature(const int numOrdinates,
                             std::vector<double>& weights,
                             std::vector<Dim<2>::Vector>& ordinates);
+  static void getQuadrature(const int numOrdinates,
+                            std::vector<double>& weights,
+                            std::vector<double>& ordinates);
 };
 
 } // end namespace Spheral
