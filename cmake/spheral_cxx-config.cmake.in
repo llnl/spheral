@@ -46,6 +46,7 @@ if(NOT SPHERAL_FOUND)
     endif()
   endif()
   include("${SPHERAL_CXX_INSTALL_PREFIX}/lib/cmake/spheral_cxx-targets.cmake")
+  include("${SPHERAL_CXX_INSTALL_PREFIX}/lib/cmake/BLTSetupTargets.cmake")
   set_property(TARGET Spheral_CXX
     APPEND PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES ${SPHERAL_CXX_INCLUDE_DIRS})

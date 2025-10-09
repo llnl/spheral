@@ -121,23 +121,20 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
       DEFINES     ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON  ${_cxx_obj_list} ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
       SHARED      ${SPHERAL_ENABLE_SHARED})
+    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_OPTS})
+    # The cmake export files have many repeating lines because of our use of object libs
+    # This cleans them up but not fully
+    set(_properties INTERFACE_COMPILE_OPTIONS) # INTERFACE_LINK_OPTIONS)
+    foreach(_prop ${_properties})
+      get_target_property(temp_prop Spheral_${package_name} ${_prop})
+      list(REMOVE_DUPLICATES temp_prop)
+      set_target_properties(Spheral_${package_name} PROPERTIES ${_prop} "${temp_prop}")
+    endforeach()
   endif()
-  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_OPTS})
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
   if(ENABLE_CUDA)
     set_target_properties(Spheral_${package_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   endif()
-
-  # The cmake export files have many repeating lines because of our use of object libs
-  # This cleans them up but not fully
-  set(_properties INTERFACE_COMPILE_OPTIONS) # INTERFACE_LINK_OPTIONS)
-  foreach(_prop ${_properties})
-   get_target_property(temp_prop Spheral_${package_name} ${_prop})
-   list(REMOVE_DUPLICATES temp_prop)
-   set_target_properties(Spheral_${package_name} PROPERTIES ${_prop} "${temp_prop}")
-  endforeach()
-
-  #set_target_properties(Spheral_${package_name} PROPERTIES INTERFACE_LINK_LIBRARIES "")
 
   # Install Spheral C++ target and set it as an exportable CMake target
   install(TARGETS Spheral_${package_name}
