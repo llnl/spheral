@@ -270,9 +270,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         # MPI
         entries.append(cmake_cache_option('ENABLE_MPI', '+mpi' in spec))
-        if spec.satisfies("+mpi"):
-            entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc))
-            entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx))
 
         # OpenMP
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))

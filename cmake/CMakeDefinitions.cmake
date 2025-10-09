@@ -2,21 +2,23 @@
 # Definitions to be added as compile flags for spheral 
 #-----------------------------------------------------------------------------------
 
+set(SPHERAL_COMPILE_DEFS )
+
 # If we're building debug default DBC to All
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("-- building Debug")
-  add_compile_definitions("DEBUG=1")
+  list(APPEND SPHERAL_COMPILE_DEFS "DEBUG=1")
 else()
-  add_compile_definitions("DEBUG=0")
+  list(APPEND SPHERAL_COMPILE_DEFS "DEBUG=0")
 endif()
 
 # The DBC flag
 if (SPHERAL_DBC_MODE STREQUAL "All")
   message("-- DBC (design by contract) set to All")
-  add_compile_definitions("DBC_COMPILE_ALL")
+  list(APPEND SPHERAL_COMPILE_DEFS "DBC_COMPILE_ALL")
 elseif (SPHERAL_DBC_MODE STREQUAL "Pre")
   message("-- DBC (design by contract) set to Pre")
-  add_compile_definitions("DBC_COMPILE_PRE")
+  list(APPEND SPHERAL_COMPILE_DEFS "DBC_COMPILE_PRE")
 else()
   message("-- DBC (design by contract) off")
 endif()
@@ -24,7 +26,7 @@ endif()
 # Bound checking option -- very expensive at run time
 if (SPHERAL_ENABLE_BOUNDCHECKING)
   message("-- bound checking enabled")
-  add_compile_definitions(_GLIBCXX_DEBUG=1)
+  list(APPEND SPHERAL_COMPILE_DEFS _GLIBCXX_DEBUG=1)
 else()
   message("-- bound checking disabled")
 endif()
@@ -44,7 +46,7 @@ set(_comp_flags
 
 foreach(_comp ${_comp_flags})
   if(SPHERAL_${_comp})
-    add_compile_definitions(SPHERAL_${_comp})
+    list(APPEND SPHERAL_COMPILE_DEFS SPHERAL_${_comp})
   endif()
 endforeach()
 
@@ -54,17 +56,19 @@ if (SPHERAL_ENABLE_NAN_EXCEPTIONS)
 endif()
 
 # Default Polytope options (currently undefined until polytope is fixed)
-#add_definitions(-DUSE_TETGEN)
-#add_definitions(-DUSE_TRIANGLE)
-#add_definitions(-DUSE_POLYTOPE)
+#list(APPEND SPHERAL_COMPILE_DEFS USE_TETGEN)
+#list(APPEND SPHERAL_COMPILE_DEFS USE_TRIANGLE)
+#list(APPEND SPHERAL_COMPILE_DEFS USE_POLYTOPE)
 
 # Choose the dimensions we build
 if (SPHERAL_ENABLE_1D)
-  add_compile_definitions(SPHERAL1D)
+  list(APPEND SPHERAL_COMPILE_DEFS SPHERAL1D)
 endif()
 if (SPHERAL_ENABLE_2D)
-  add_compile_definitions(SPHERAL2D)
+  list(APPEND SPHERAL_COMPILE_DEFS SPHERAL2D)
 endif()
 if (SPHERAL_ENABLE_3D)
-  add_compile_definitions(SPHERAL3D)
+  list(APPEND SPHERAL_COMPILE_DEFS SPHERAL3D)
 endif()
+
+set_property(GLOBAL PROPERTY SPHERAL_COMPILE_DEFS "${SPHERAL_COMPILE_DEFS}")

@@ -8,7 +8,7 @@ option(ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
 
 option(ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
 option(ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
-option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "show unused parameter warnings" ON)
+option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
 
 
 set(CXX_WARNING_FLAGS "")
@@ -53,8 +53,9 @@ message("-- Compiler missing include dir warnings ${ENABLE_MISSING_INCLUDE_DIR_W
 
 set(CUDA_WARNING_FLAGS -Xcudafe=\"--diag_suppress=esa_on_defaulted_function_ignored\")
 
-add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNING_FLAGS}>")
-add_compile_options("$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
+set_property(GLOBAL PROPERTY SPHERAL_CXX_OPTS "$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNING_FLAGS}>")
+# Currently unused
+set_property(GLOBAL PROPERTY SPHERAL_CUDA_OPTS "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
 message("-- using warning flags ${CXX_WARNING_FLAGS}")
 
 # We build some Fortran code from outside sources (like the Helmholtz EOS) that
@@ -69,6 +70,7 @@ set(SPHERAL_PYB11_TARGET_FLAGS
   -O1
   -Wno-unused-local-typedefs 
   -Wno-overloaded-virtual)
+list(APPEND SPHERAL_PYB11_TARGET_FLAGS "${CXX_WARNING_FLAGS}")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND SPHERAL_PYB11_TARGET_FLAGS
     -Wno-self-assign-overloaded 
@@ -88,21 +90,3 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
   set(CMAKE_CXX_FLAGS -wd11074,11076,654)
   set(SPHERAL_PYB11_TARGET_FLAGS )
 endif()
-
-#-------------------------------------------------------------------------------
-# BlueOS specific flags
-#-------------------------------------------------------------------------------
-if (DEFINED ENV{SYS_TYPE})
-  if ("$ENV{SYS_TYPE}" STREQUAL "blueos_3_ppc64le_ib_p9")
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-      set(CXX_BLUEOS_FLAGS "-Os")    # Needed to prevent relocation overflow errors during link
-      add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:${CXX_BLUEOS_FLAGS}>")
-      message("-- Adding ${CXX_BLUEOS_FLAGS} to C++ compile flags")
-    endif()
-  endif()
-endif()
-#set(CXX_STRIP_FLAGS "-fdata-sections;-ffunction-sections")
-#set(CXX_LINK_STRIP_FLAGS "-Wl,--gc-sections")
-#set(CXX_LINK_STRIP_FLAGS "-Wl,-z combreloc")
-#add_link_options("${CXX_LINK_STRIP_FLAGS}")
-
