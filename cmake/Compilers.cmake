@@ -10,6 +10,10 @@ option(ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" 
 option(ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
 option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
 
+set(LANG_STR "CXX")
+if (ENABLE_HIP)
+  set(LANG_STR "HIP")
+endif()
 
 set(CXX_WARNING_FLAGS "")
 if (ENABLE_WARNINGS)
@@ -53,10 +57,13 @@ message("-- Compiler missing include dir warnings ${ENABLE_MISSING_INCLUDE_DIR_W
 
 set(CUDA_WARNING_FLAGS -Xcudafe=\"--diag_suppress=esa_on_defaulted_function_ignored\")
 
-set_property(GLOBAL PROPERTY SPHERAL_CXX_OPTS "$<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNING_FLAGS}>")
-# Currently unused
-set_property(GLOBAL PROPERTY SPHERAL_CUDA_OPTS "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
+set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS
+  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_WARNING_FLAGS}>")
 message("-- Using CXX warning flags ${CXX_WARNING_FLAGS}")
+
+# Currently unused
+set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
+  "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
 
 # We build some Fortran code from outside sources (like the Helmholtz EOS) that
 # cause building errors if the compiler is too picky...
@@ -65,22 +72,25 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
 #-------------------------------------------------------------------------------
 # PYB11 Target Flags
 #-------------------------------------------------------------------------------
-set(SPHERAL_PYB11_TARGET_FLAGS ${CXX_WARNING_FLAGS})
-list(APPEND SPHERAL_PYB11_TARGET_FLAGS
+set(SPHERAL_PYB11_FLAGS ${CXX_WARNING_FLAGS})
+list(APPEND SPHERAL_PYB11_FLAGS
   -O1
   -Wno-unused-local-typedefs 
   -Wno-overloaded-virtual)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  list(APPEND SPHERAL_PYB11_TARGET_FLAGS
+  list(APPEND SPHERAL_PYB11_FLAGS
     -Wno-self-assign-overloaded 
     -Wno-inconsistent-missing-override
     -Wno-delete-non-abstract-non-virtual-dtor
     -Wno-delete-abstract-non-virtual-dtor)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  list(APPEND SPHERAL_PYB11_TARGET_FLAGS
+  list(APPEND SPHERAL_PYB11_FLAGS
     -Wno-pedantic
     -fno-var-tracking-assignments)
 endif()
+
+set_property(GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS
+  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${SPHERAL_PYB11_FLAGS}>")
 
 #-------------------------------------------------------------------------------
 # Compiler specific flags

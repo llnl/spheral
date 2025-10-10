@@ -7,7 +7,7 @@
 # SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
-# SPHERAL_CXX_OPTS       : REQUIRED : List of C++ compiler options
+# SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -30,8 +30,8 @@ function(spheral_add_obj_library package_name obj_list_name)
   get_property(SPHERAL_CXX_DEPENDS GLOBAL PROPERTY SPHERAL_CXX_DEPENDS)
   # Assumes global variable SPHERAL_COMPILE_DEFS exists and is filled with compiler definititions
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-  # Assumes global variable SPHERAL_CXX_OPTS exists and is filled with C++ compiler options
-  get_property(SPHERAL_CXX_OPTS GLOBAL PROPERTY SPHERAL_CXX_OPTS)
+  # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
+  get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
 
@@ -50,7 +50,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
       OBJECT      TRUE)
   endif()
-  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_OPTS})
+  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
   target_include_directories(Spheral_${package_name} SYSTEM PUBLIC ${SPHERAL_SUBMOD_INCLUDES})
   # Install the headers
   install(FILES ${${package_name}_headers}
@@ -81,7 +81,7 @@ endfunction()
 # SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
-# SPHERAL_CXX_OPTS       : REQUIRED : List of C++ compiler options
+# SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -102,8 +102,8 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
   get_property(SPHERAL_CXX_DEPENDS GLOBAL PROPERTY SPHERAL_CXX_DEPENDS)
   # Assumes global variable spheral_compile_defs exists and is filled with compiler definitions
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-  # Assumes global variable SPHERAL_CXX_OPTS exists and is filled with C++ compiler options
-  get_property(SPHERAL_CXX_OPTS GLOBAL PROPERTY SPHERAL_CXX_OPTS)
+  # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
+  get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
   # Convert package name to lower-case for export target name
@@ -123,11 +123,11 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
       SHARED      ${SPHERAL_ENABLE_SHARED})
 
     # Add compile options
-    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_OPTS})
+    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
 
     # The cmake export files have many repeating lines because of our use of object libs
     # This cleans them up but not fully
-    set(_properties INTERFACE_COMPILE_OPTIONS) # INTERFACE_LINK_OPTIONS)
+    set(_properties INTERFACE_COMPILE_OPTIONS)
     foreach(_prop ${_properties})
       get_target_property(temp_prop Spheral_${package_name} ${_prop})
       list(REMOVE_DUPLICATES temp_prop)
@@ -243,6 +243,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   # Get the TPL dependencies
   get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
+  get_property(SPHERAL_PYB11_TARGET_FLAGS GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS)
   list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
 
   set(MODULE_NAME Spheral${package_name})
@@ -252,7 +253,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     DEPENDS         ${SPHERAL_CXX_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
     PYTHONPATH      ${PYTHON_ENV_STR}
     INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
-    COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:CXX>:${SPHERAL_PYB11_TARGET_FLAGS}>"
+    COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
     INSTALL         OFF

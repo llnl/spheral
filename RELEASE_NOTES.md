@@ -41,7 +41,7 @@ Notable changes include:
     * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
     * CMake directly handles all of the installation environment configuration and setup
       during the install stage.
-    * CMake options have been reconfigured:
+    * CMake/build logic has been reconfigured:
       * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
       * The following CMake options now have the added `SPHERAL_` prefix:
         * `ENABLE_TESTS`, `ENABLE_1D`, `ENABLE_2D`, `ENABLE_3D`, `ENABLE_SHARED`, `ENABLE_DOCS`.
@@ -50,6 +50,10 @@ Notable changes include:
       * The CXXONLY variables have been removed and replaced with a `SPHERAL_ENABLE_PYTHON` variable.
         C++ builds default to being static when this variable is disabled.
       * `ENABLE_INSTATIATION` option has been removed.
+      * Compiler definitions and options are now applied directly to targets instead of using
+        `add_compile_definition` or `add_compile_options`.
+      * Compiler flags are set for HIP or CXX depending on the configuration.
+      * Update BLT to version 0.7.1.
     * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
@@ -64,7 +68,6 @@ Notable changes include:
       * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
-    * Building static C++ libraries with python enabled is currently broken.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
     * PolyClipper and PYB11Generator are updated.
