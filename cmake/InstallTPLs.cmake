@@ -159,7 +159,7 @@ endif()
 
 message("-----------------------------------------------------------------------------")
 # HDF5
-find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
 if(hdf5_FOUND)
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_FP_TPLS hdf5)
