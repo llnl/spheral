@@ -58,7 +58,7 @@ macro(spheral_add_test)
   else()
     get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
     get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-    get_property(SPHERAL_CXX_OPTS GLOBAL PROPERTY SPHERAL_CXX_OPTS)
+    get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
 
     blt_add_library(
       NAME ${original_test_name}_lib
@@ -67,7 +67,7 @@ macro(spheral_add_test)
       DEPENDS_ON ${SPHERAL_BLT_DEPENDS} ${original_deps}
       SHARED False)
 
-    target_compile_options(${original_test_name}_lib PUBLIC ${SPHERAL_CXX_OPTS})
+    target_compile_options(${original_test_name}_lib PUBLIC ${SPHERAL_CXX_FLAGS})
     target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files")
 
     spheral_add_executable(
