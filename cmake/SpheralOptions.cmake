@@ -29,6 +29,7 @@ option(SPHERAL_ENABLE_LEOS "Enable use of LEOS" OFF)
 option(SPHERAL_NETWORK_CONNECTED "Enable use of network. Disable if using a build cache" ON)
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
+
 # Default is to build shared when python is enabled and build static if python is disabled
 set(DEFAULT_STATIC )
 if(SPHERAL_ENABLE_PYTHON)
@@ -43,6 +44,11 @@ cmake_dependent_option(SPHERAL_ENABLE_SHARED "Building shared C++ libraries" ON 
 # Should we build sphinx documentation
 #-------------------------------------------------------------------------------
 cmake_dependent_option(SPHERAL_ENABLE_DOCS "Enable sphinx Spheral documentation" OFF SPHERAL_ENABLE_PYTHON OFF)
+
+#-------------------------------------------------------------------------------
+# For using static TPLs
+#-------------------------------------------------------------------------------
+option(ENABLE_STATIC_TPL "Assume TPLs are built statically" OFF)
 
 #-------------------------------------------------------------------------------
 # Debug options
