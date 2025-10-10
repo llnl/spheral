@@ -171,6 +171,8 @@ if(hdf5_FOUND)
     list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
     blt_convert_to_system_includes(TARGET hdf5-shared hdf5_hl-shared)
   endif()
+else()
+  list(APPEND SPHERAL_EXTERN_LIBS hdf5)
 endif()
 
 message("-----------------------------------------------------------------------------")
