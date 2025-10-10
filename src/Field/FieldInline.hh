@@ -6,6 +6,7 @@
 #include "Utilities/packElement.hh"
 #include "Utilities/removeElements.hh"
 #include "Utilities/safeInv.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 
@@ -1330,8 +1331,7 @@ assignDataSpan() {
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
-    mDataSpan.free();
-    mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
+    initMAView(mDataSpan, mDataArray);
   }
   mDataSpan.setUserCallback(this->getCallback());
 #endif
