@@ -11,12 +11,12 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Communicator.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #endif
 
 namespace Spheral {
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 //------------------------------------------------------------------------------
 // MPI version
 //------------------------------------------------------------------------------
@@ -49,6 +49,11 @@ distScan(const Value& value, const MPI_Op op,
   return result;
 }
 
+inline void
+Barrier(const MPI_Comm comm = Communicator::communicator()) {
+  MPI_Barrier(comm);
+}
+
 #else
 //------------------------------------------------------------------------------
 // Non-MPI version
@@ -73,6 +78,10 @@ distScan(const Value& value, const int /*op*/, const int = 0) {
   return value;
 }
 
+inline void
+Barrier(const int = 0) {
+  return;
+}
 #endif
 }
 #endif

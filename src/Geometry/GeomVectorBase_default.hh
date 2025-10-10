@@ -13,28 +13,31 @@ template<int nDim> class GeomVectorBase {};
 template<>
 class GeomVectorBase<1> {
  public:
+  SPHERAL_HOST_DEVICE
   GeomVectorBase(const double x):
     mx(x) {}
  protected:
-  double mx;
+  double mx = 0.0;
 };
 
 template<>
 class GeomVectorBase<2> {
  public:
+  SPHERAL_HOST_DEVICE
   GeomVectorBase(const double x,
                  const double y):
     mx(x),
     my(y) {}
  protected:
-  double mx;
-  double my;
-  double mz;
+  double mx = 0.0;
+  double my = 0.0;
+  double mz = 0.0;
 };
 
 template<>
 class GeomVectorBase<3> {
  public:
+  SPHERAL_HOST_DEVICE
   GeomVectorBase(const double x,
                  const double y,
                  const double z):
@@ -42,9 +45,9 @@ class GeomVectorBase<3> {
     my(y),
     mz(z) {}
  protected:
-  double mx;
-  double my;
-  double mz;
+  double mx = 0.0;
+  double my = 0.0;
+  double mz = 0.0;
 };
 
 }

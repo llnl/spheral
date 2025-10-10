@@ -99,8 +99,9 @@ WORKDIR ../install
 # If it did, we would need some of the following commands
 #RUN export OMP_NUM_THREADS=1
 #RUN export MACHINE_TYPE="winParallel"
-#RUN ./spheral-ats --level 99 --mpiexe mpiexec --npMax $JCXX tests/integration.ats
+#RUN ./bin/spheral-ats --level 99 --mpiexe mpiexec --npMax $JCXX tests/integration.ats
 
 # Instead, we will just run it normally
-RUN ./spheral-ats --level 99 tests/integration.ats
+RUN ./bin/spheral-ats --level 99 tests/integration.ats || exit_code=$?
+RUN exit $exit_code
 # -----------------------------------------------------------------------------

@@ -87,9 +87,9 @@ update(const KeyType& key,
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-  const auto  eps0 = state.fields(HydroFieldNames::specificThermalEnergy + "0", Scalar());
+  // const auto  eps0 = state.fields(HydroFieldNames::specificThermalEnergy + "0", Scalar());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
-  const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero);
+  const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero, true);
   const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
   const auto& pairs = connectivityMap.nodePairList();

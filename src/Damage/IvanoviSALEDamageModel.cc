@@ -40,8 +40,6 @@
 #include "Utilities/mortonOrderIndices.hh"
 #include "Utilities/uniform_random.hh"
 
-#include <boost/functional/hash.hpp>  // hash_combine
-
 #include <string>
 #include <vector>
 #include <algorithm>

@@ -44,7 +44,9 @@ def _ConstantStrengthFactory(ndim):
             # The arguments that need to be passed to this method.
             expectedArgs = ["materialName", "units"]
             optionalKwArgs = {"mu0" : None,
-                              "Y0" : None}
+                              "Y0" : None,
+                              "muD" : 0.0,
+                              "YD" : 0.0}
 
             # The base units for parameters in this file.
             cgs = PhysicalConstants(0.01,    # Length in m
@@ -63,7 +65,7 @@ def _ConstantStrengthFactory(ndim):
 
                 # Check for any invalid keywords
                 for arg in kwargs: # deal with optional args
-                    if arg not in (expectedArgs + list(optionalKwArgs.keys()) + ["TillConstructor"]):
+                    if arg not in (expectedArgs + list(optionalKwArgs.keys())):
                         raise ValueError(expectedUsageString)
 
                 # Set the arguments dictionary
@@ -85,6 +87,10 @@ def _ConstantStrengthFactory(ndim):
                     ARGS.mu0 = SpheralMaterialPropertiesLib[mat]["mu0"]
                 if ARGS.Y0 is None:
                     ARGS.Y0 = SpheralMaterialPropertiesLib[mat]["Y0"]
+                if ARGS.muD is None:
+                    ARGS.muD = ARGS.mu0
+                if ARGS.YD is None:
+                    ARGS.YD = ARGS.Y0
 
                 # Figure out the conversions to the requested units.
                 lconv = cgs.unitLengthMeters / ARGS.units.unitLengthMeters

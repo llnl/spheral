@@ -47,8 +47,8 @@ public:
         const double minimumPressureDamage,
         const MaterialPressureMinType minPressureType,
         const bool useInterpolation);
-  ANEOS(const ANEOS& rhs);
-  ~ANEOS();
+  ANEOS(const ANEOS& rhs) = default;
+  ~ANEOS() = default;
 
   // We require any equation of state to define the following properties.
   virtual void setPressure(Field<Dimension, Scalar>& Pressure,

@@ -11,6 +11,7 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "DataBase/UpdatePolicyBase.hh"
 #include "DataBase/IncrementState.hh"
+#include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "Field/Field.hh"
@@ -85,26 +86,35 @@ update(const KeyType& key,
 
   // Check if a porosity model has registered a modifier for the deviatoric stress.
   // They should have added it as a dependency of this policy if so.
-  const auto usePorosity = state.registered(buildKey(SolidFieldNames::fDSjutzi));
+  const auto porosityScaling = state.registered(buildKey(SolidFieldNames::fDSjutzi));
   const Field<Dimension, Scalar>* fDSptr = nullptr;
-  if (usePorosity) {
+  const Field<Dimension, Scalar>* alphaPtr = nullptr;
+  const Field<Dimension, Scalar>* DalphaDtPtr = nullptr;
+  if (porosityScaling) {
     fDSptr = &state.field(buildKey(SolidFieldNames::fDSjutzi), 0.0);
+    alphaPtr = &state.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
+    DalphaDtPtr = &derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   }
 
   // Iterate over the internal nodes.
   const auto ni = stateField.numInternalElements();
 #pragma omp parallel for
   for (auto i = 0u; i < ni; ++i) {
-    const auto fDSi = (usePorosity ?
-                       (*fDSptr)(i) :
-                       1.0);
+    double fDSi = 1.0;
 
     // Begin the big bonanza of options!
 
     // PseudoPlasticStrain.
     if (mStrainType == TensorStrainAlgorithm::PseudoPlasticStrain) {
 
-      const auto DSDti = fDSi * DSDt(i);
+      auto DSDti = DSDt(i);
+      if (porosityScaling) {
+        fDSi = (*fDSptr)(i);
+        const auto alphai = (*alphaPtr)(i);
+        const auto DalphaDti = (*DalphaDtPtr)(i);
+        CHECK(alphai >= 1.0);
+        DSDti = (fDSi*DSDti - S(i)*DalphaDti/alphai)/alphai;
+      }
       strain(i) += multiplier*safeInv(mu(i), 1.0e-10)*DSDti;
       stateField(i) = strain(i);
 
@@ -127,7 +137,7 @@ update(const KeyType& key,
       switch(mStrainType) {
 
       case(TensorStrainAlgorithm::BenzAsphaugStrain):
-        CHECK(E(i) >= 0.0);
+        CHECK2(E(i) >= 0.0, "Bad Youngs modulus for " << stateField.nodeList().name() << " " << i << " : " << E(i));
         stateField(i) = (S(i) - P(i)*SymTensor::one)/(E(i) + tiny);
         break;
 

@@ -14,6 +14,7 @@ namespace Spheral {
 // Construct with the given values for the elements.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>::GeomVector(const double x,
                           const double /*y*/,
@@ -22,6 +23,7 @@ GeomVector<1>::GeomVector(const double x,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>::GeomVector(const double x,
                           const double y,
@@ -30,20 +32,12 @@ GeomVector<2>::GeomVector(const double x,
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>::GeomVector(const double x,
                           const double y,
                           const double z):
   GeomVectorBase<3>(x, y, z) {
-}
-
-//------------------------------------------------------------------------------
-// Copy constructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomVector<nDim>::GeomVector(const GeomVector<nDim>& vec):
-  GeomVectorBase<nDim>(vec) {
 }
 
 //------------------------------------------------------------------------------
@@ -68,37 +62,6 @@ template<typename Derived>
 inline
 GeomVector<3>::GeomVector(const Eigen::MatrixBase<Derived>& vec):
   GeomVectorBase<3>(vec(0), vec(1), vec(2)) {
-}
-
-
-//------------------------------------------------------------------------------
-// The assignment operator.
-//------------------------------------------------------------------------------
-template<>
-inline
-GeomVector<1>&
-GeomVector<1>::operator=(const GeomVector<1>& vec) {
-  this->mx = vec.mx;
-  return *this;
-}
-
-template<>
-inline
-GeomVector<2>&
-GeomVector<2>::operator=(const GeomVector<2>& vec) {
-  this->mx = vec.mx;
-  this->my = vec.my;
-  return *this;
-}
-
-template<>
-inline
-GeomVector<3>&
-GeomVector<3>::operator=(const GeomVector<3>& vec) {
-  this->mx = vec.mx;
-  this->my = vec.my;
-  this->mz = vec.mz;
-  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -138,6 +101,7 @@ GeomVector<3>::operator=(const Eigen::MatrixBase<Derived>& vec) {
 // Set the vector elements to a constant scalar value.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>&
 GeomVector<1>::operator=(const double val) {
@@ -146,6 +110,7 @@ GeomVector<1>::operator=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>&
 GeomVector<2>::operator=(const double val) {
@@ -155,6 +120,7 @@ GeomVector<2>::operator=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>&
 GeomVector<3>::operator=(const double val) {
@@ -165,16 +131,10 @@ GeomVector<3>::operator=(const double val) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomVector<nDim>::~GeomVector() {}
-
-//------------------------------------------------------------------------------
 // Return the (index) element using the parenthesis operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<nDim>::operator()(typename GeomVector<nDim>::size_type index) const {
@@ -183,6 +143,7 @@ GeomVector<nDim>::operator()(typename GeomVector<nDim>::size_type index) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double&
 GeomVector<nDim>::operator()(typename GeomVector<nDim>::size_type index) {
@@ -194,6 +155,7 @@ GeomVector<nDim>::operator()(typename GeomVector<nDim>::size_type index) {
 // Return the (index) element using the bracket operator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<nDim>::operator[](typename GeomVector<nDim>::size_type index) const {
@@ -202,6 +164,7 @@ GeomVector<nDim>::operator[](typename GeomVector<nDim>::size_type index) const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double&
 GeomVector<nDim>::operator[](typename GeomVector<nDim>::size_type index) {
@@ -213,6 +176,7 @@ GeomVector<nDim>::operator[](typename GeomVector<nDim>::size_type index) {
 // Return the x (first) element.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<nDim>::x() const {
@@ -223,6 +187,7 @@ GeomVector<nDim>::x() const {
 // Return the y (second) element
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<nDim>::y() const {
@@ -231,6 +196,7 @@ GeomVector<nDim>::y() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::y() const {
@@ -241,6 +207,7 @@ GeomVector<1>::y() const {
 // Return the z (third) element
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<nDim>::z() const {
@@ -249,6 +216,7 @@ GeomVector<nDim>::z() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::z() const {
@@ -256,6 +224,7 @@ GeomVector<1>::z() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::z() const {
@@ -266,6 +235,7 @@ GeomVector<2>::z() const {
 // Set the x (first) element.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<nDim>::x(const double val) {
@@ -276,6 +246,7 @@ GeomVector<nDim>::x(const double val) {
 // Set the y (second) element
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<nDim>::y(const double val) {
@@ -284,6 +255,7 @@ GeomVector<nDim>::y(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<1>::y(const double /*val*/) {
@@ -293,6 +265,7 @@ GeomVector<1>::y(const double /*val*/) {
 // Set the z (third) element
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<nDim>::z(const double val) {
@@ -301,12 +274,14 @@ GeomVector<nDim>::z(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<1>::z(const double /*val*/) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<2>::z(const double /*val*/) {
@@ -317,6 +292,7 @@ GeomVector<2>::z(const double /*val*/) {
 //------------------------------------------------------------------------------
 // Non-const versions.
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomVector<nDim>::iterator
 GeomVector<nDim>::begin() {
@@ -324,6 +300,7 @@ GeomVector<nDim>::begin() {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomVector<nDim>::iterator
 GeomVector<nDim>::end() {
@@ -332,6 +309,7 @@ GeomVector<nDim>::end() {
 
 // Const versions.
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomVector<nDim>::const_iterator
 GeomVector<nDim>::begin() const {
@@ -339,6 +317,7 @@ GeomVector<nDim>::begin() const {
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 typename GeomVector<nDim>::const_iterator
 GeomVector<nDim>::end() const {
@@ -349,6 +328,7 @@ GeomVector<nDim>::end() const {
 // Zero out the Vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<1>::Zero() {
@@ -356,6 +336,7 @@ GeomVector<1>::Zero() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<2>::Zero() {
@@ -364,6 +345,7 @@ GeomVector<2>::Zero() {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 void
 GeomVector<3>::Zero() {
@@ -376,6 +358,7 @@ GeomVector<3>::Zero() {
 // Return the negative of a vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomVector<1>::operator-() const {
@@ -383,6 +366,7 @@ GeomVector<1>::operator-() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 GeomVector<2>::operator-() const {
@@ -390,6 +374,7 @@ GeomVector<2>::operator-() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomVector<3>::operator-() const {
@@ -400,6 +385,7 @@ GeomVector<3>::operator-() const {
 // Add two vectors.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomVector<nDim>::operator+(const GeomVector<nDim>& vec) const {
@@ -412,6 +398,7 @@ GeomVector<nDim>::operator+(const GeomVector<nDim>& vec) const {
 // Subtract a vector from another.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomVector<nDim>::operator-(const GeomVector<nDim>& vec) const {
@@ -424,6 +411,7 @@ GeomVector<nDim>::operator-(const GeomVector<nDim>& vec) const {
 // Mutiply two vectors.  For our purposes this returns the dyad.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomVector<nDim>::operator*(const GeomVector<nDim>& vec) const {
@@ -434,6 +422,7 @@ GeomVector<nDim>::operator*(const GeomVector<nDim>& vec) const {
 // Multiply a vector by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomVector<nDim>::operator*(const double val) const {
@@ -446,6 +435,7 @@ GeomVector<nDim>::operator*(const double val) const {
 // Divide a vector by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomVector<nDim>::operator/(const double val) const {
@@ -459,6 +449,7 @@ GeomVector<nDim>::operator/(const double val) const {
 // Add two vectors in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>&
 GeomVector<1>::operator+=(const GeomVector<1>& vec) {
@@ -467,6 +458,7 @@ GeomVector<1>::operator+=(const GeomVector<1>& vec) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>&
 GeomVector<2>::operator+=(const GeomVector<2>& vec) {
@@ -476,6 +468,7 @@ GeomVector<2>::operator+=(const GeomVector<2>& vec) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>&
 GeomVector<3>::operator+=(const GeomVector<3>& vec) {
@@ -489,6 +482,7 @@ GeomVector<3>::operator+=(const GeomVector<3>& vec) {
 // Subtract a vector in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>& 
 GeomVector<1>::operator-=(const GeomVector<1>& vec) {
@@ -497,6 +491,7 @@ GeomVector<1>::operator-=(const GeomVector<1>& vec) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>&
 GeomVector<2>::operator-=(const GeomVector<2>& vec) {
@@ -506,6 +501,7 @@ GeomVector<2>::operator-=(const GeomVector<2>& vec) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>&
 GeomVector<3>::operator-=(const GeomVector<3>& vec) {
@@ -585,6 +581,7 @@ GeomVector<3>::operator-=(const Eigen::MatrixBase<Derived>& vec) {
 // Multiply this vector by a scalar in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>&
 GeomVector<1>::operator*=(const double val) {
@@ -593,6 +590,7 @@ GeomVector<1>::operator*=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>&
 GeomVector<2>::operator*=(const double val) {
@@ -602,6 +600,7 @@ GeomVector<2>::operator*=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>&
 GeomVector<3>::operator*=(const double val) {
@@ -615,6 +614,7 @@ GeomVector<3>::operator*=(const double val) {
 // Divide this vector by a scalar in place.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>&
 GeomVector<1>::operator/=(const double val) {
@@ -624,6 +624,7 @@ GeomVector<1>::operator/=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>&
 GeomVector<2>::operator/=(const double val) {
@@ -635,6 +636,7 @@ GeomVector<2>::operator/=(const double val) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>&
 GeomVector<3>::operator/=(const double val) {
@@ -651,6 +653,7 @@ GeomVector<3>::operator/=(const double val) {
 // the given vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<1>::compare(const GeomVector<1>& vec) const {
@@ -660,6 +663,7 @@ GeomVector<1>::compare(const GeomVector<1>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<2>::compare(const GeomVector<2>& vec) const {
@@ -671,6 +675,7 @@ GeomVector<2>::compare(const GeomVector<2>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<3>::compare(const GeomVector<3>& vec) const {
@@ -688,6 +693,7 @@ GeomVector<3>::compare(const GeomVector<3>& vec) const {
 // the given double.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<1>::compare(const double val) const {
@@ -697,6 +703,7 @@ GeomVector<1>::compare(const double val) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<2>::compare(const double val) const {
@@ -708,6 +715,7 @@ GeomVector<2>::compare(const double val) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 int
 GeomVector<3>::compare(const double val) const {
@@ -724,6 +732,7 @@ GeomVector<3>::compare(const double val) const {
 // The equivalence comparator.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<1>::operator==(const GeomVector<1>& vec) const {
@@ -731,6 +740,7 @@ GeomVector<1>::operator==(const GeomVector<1>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<2>::operator==(const GeomVector<2>& vec) const {
@@ -738,6 +748,7 @@ GeomVector<2>::operator==(const GeomVector<2>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<3>::operator==(const GeomVector<3>& vec) const {
@@ -748,6 +759,7 @@ GeomVector<3>::operator==(const GeomVector<3>& vec) const {
 // The non-equivalence comparator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator!=(const GeomVector<nDim>& vec) const {
@@ -758,6 +770,7 @@ GeomVector<nDim>::operator!=(const GeomVector<nDim>& vec) const {
 // The less than comparator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator<(const GeomVector<nDim>& rhs) const {
@@ -768,6 +781,7 @@ GeomVector<nDim>::operator<(const GeomVector<nDim>& rhs) const {
 // The greater than comparator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator>(const GeomVector<nDim>& rhs) const {
@@ -778,6 +792,7 @@ GeomVector<nDim>::operator>(const GeomVector<nDim>& rhs) const {
 // The less than or equal comparator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator<=(const GeomVector<nDim>& rhs) const {
@@ -788,6 +803,7 @@ GeomVector<nDim>::operator<=(const GeomVector<nDim>& rhs) const {
 // The greater than or equal comparator.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator>=(const GeomVector<nDim>& rhs) const {
@@ -798,6 +814,7 @@ GeomVector<nDim>::operator>=(const GeomVector<nDim>& rhs) const {
 // The equivalence comparator (double).
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<1>::operator==(const double val) const {
@@ -805,6 +822,7 @@ GeomVector<1>::operator==(const double val) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<2>::operator==(const double val) const {
@@ -812,6 +830,7 @@ GeomVector<2>::operator==(const double val) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<3>::operator==(const double val) const {
@@ -822,6 +841,7 @@ GeomVector<3>::operator==(const double val) const {
 // The non-equivalence comparator (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator!=(const double val) const {
@@ -832,6 +852,7 @@ GeomVector<nDim>::operator!=(const double val) const {
 // The less than comparator (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator<(const double val) const {
@@ -842,6 +863,7 @@ GeomVector<nDim>::operator<(const double val) const {
 // The greater than comparator (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator>(const double val) const {
@@ -852,6 +874,7 @@ GeomVector<nDim>::operator>(const double val) const {
 // The less than or equal comparator (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator<=(const double val) const {
@@ -862,6 +885,7 @@ GeomVector<nDim>::operator<=(const double val) const {
 // The greater than or equal comparator (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 bool
 GeomVector<nDim>::operator>=(const double val) const {
@@ -872,6 +896,7 @@ GeomVector<nDim>::operator>=(const double val) const {
 // Dot two vectors.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::dot(const GeomVector<1>& vec) const {
@@ -879,6 +904,7 @@ GeomVector<1>::dot(const GeomVector<1>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::dot(const GeomVector<2>& vec) const {
@@ -886,6 +912,7 @@ GeomVector<2>::dot(const GeomVector<2>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::dot(const GeomVector<3>& vec) const {
@@ -896,6 +923,7 @@ GeomVector<3>::dot(const GeomVector<3>& vec) const {
 // Cross two vectors.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomVector<3>::cross(const GeomVector<3>& vec) const {
@@ -905,6 +933,7 @@ GeomVector<3>::cross(const GeomVector<3>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomVector<2>::cross(const GeomVector<2>& vec) const {
@@ -913,6 +942,7 @@ GeomVector<2>::cross(const GeomVector<2>& vec) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomVector<1>::cross(const GeomVector<1>&) const {
@@ -923,6 +953,7 @@ GeomVector<1>::cross(const GeomVector<1>&) const {
 // Perform the dyad operation with another vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomVector<1>::dyad(const GeomVector<1>& rhs) const {
@@ -930,6 +961,7 @@ GeomVector<1>::dyad(const GeomVector<1>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomVector<2>::dyad(const GeomVector<2>& rhs) const {
@@ -938,6 +970,7 @@ GeomVector<2>::dyad(const GeomVector<2>& rhs) const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomVector<3>::dyad(const GeomVector<3>& rhs) const {
@@ -950,6 +983,7 @@ GeomVector<3>::dyad(const GeomVector<3>& rhs) const {
 // Perform the dyad operation with ourself, resulting in a symmetric tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomVector<1>::selfdyad() const {
@@ -957,6 +991,7 @@ GeomVector<1>::selfdyad() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>
 GeomVector<2>::selfdyad() const {
@@ -968,6 +1003,7 @@ GeomVector<2>::selfdyad() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<3>
 GeomVector<3>::selfdyad() const {
@@ -986,6 +1022,7 @@ GeomVector<3>::selfdyad() const {
 // Return a unit vector with the direction of this one.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 GeomVector<nDim>::unitVector() const {
@@ -997,6 +1034,7 @@ GeomVector<nDim>::unitVector() const {
 // Return the magnitude of the Vector.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::magnitude() const {
@@ -1004,6 +1042,7 @@ GeomVector<1>::magnitude() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::magnitude() const {
@@ -1011,6 +1050,7 @@ GeomVector<2>::magnitude() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::magnitude() const {
@@ -1021,6 +1061,7 @@ GeomVector<3>::magnitude() const {
 // Return the square of the magnitude.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::magnitude2() const {
@@ -1028,6 +1069,7 @@ GeomVector<1>::magnitude2() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::magnitude2() const {
@@ -1035,6 +1077,7 @@ GeomVector<2>::magnitude2() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::magnitude2() const {
@@ -1045,6 +1088,7 @@ GeomVector<3>::magnitude2() const {
 // Return the minimum element.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::minElement() const {
@@ -1052,6 +1096,7 @@ GeomVector<1>::minElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::minElement() const {
@@ -1059,6 +1104,7 @@ GeomVector<2>::minElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::minElement() const {
@@ -1069,6 +1115,7 @@ GeomVector<3>::minElement() const {
 // Return the maximum element.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::maxElement() const {
@@ -1076,6 +1123,7 @@ GeomVector<1>::maxElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::maxElement() const {
@@ -1083,6 +1131,7 @@ GeomVector<2>::maxElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::maxElement() const {
@@ -1093,6 +1142,7 @@ GeomVector<3>::maxElement() const {
 // Return the maximum element by absolute value.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::maxAbsElement() const {
@@ -1100,6 +1150,7 @@ GeomVector<1>::maxAbsElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::maxAbsElement() const {
@@ -1108,6 +1159,7 @@ GeomVector<2>::maxAbsElement() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::maxAbsElement() const {
@@ -1120,6 +1172,7 @@ GeomVector<3>::maxAbsElement() const {
 // Return the sum of the elements.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<1>::sumElements() const {
@@ -1127,6 +1180,7 @@ GeomVector<1>::sumElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<2>::sumElements() const {
@@ -1134,6 +1188,7 @@ GeomVector<2>::sumElements() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomVector<3>::sumElements() const {
@@ -1172,6 +1227,7 @@ GeomVector<3>::eigen() const {
 // Multiply a scalar by a vector.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<nDim>
 operator*(const double val, const GeomVector<nDim>& vec) {
@@ -1182,6 +1238,7 @@ operator*(const double val, const GeomVector<nDim>& vec) {
 // Element wise minimum comparison.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 elementWiseMin(const GeomVector<1>& lhs, const GeomVector<1>& rhs) {
@@ -1189,6 +1246,7 @@ elementWiseMin(const GeomVector<1>& lhs, const GeomVector<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 elementWiseMin(const GeomVector<2>& lhs, const GeomVector<2>& rhs) {
@@ -1197,6 +1255,7 @@ elementWiseMin(const GeomVector<2>& lhs, const GeomVector<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 elementWiseMin(const GeomVector<3>& lhs, const GeomVector<3>& rhs) {
@@ -1209,6 +1268,7 @@ elementWiseMin(const GeomVector<3>& lhs, const GeomVector<3>& rhs) {
 // Element wise maximum comparison.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 elementWiseMax(const GeomVector<1>& lhs, const GeomVector<1>& rhs) {
@@ -1216,6 +1276,7 @@ elementWiseMax(const GeomVector<1>& lhs, const GeomVector<1>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<2>
 elementWiseMax(const GeomVector<2>& lhs, const GeomVector<2>& rhs) {
@@ -1224,6 +1285,7 @@ elementWiseMax(const GeomVector<2>& lhs, const GeomVector<2>& rhs) {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 elementWiseMax(const GeomVector<3>& lhs, const GeomVector<3>& rhs) {
@@ -1267,4 +1329,4 @@ operator<<(std::ostream& os, const GeomVector<nDim>& vec) {
   return os;
 }
 
-}
+} // namespace Spheral

@@ -113,7 +113,7 @@ selectDt(const typename Dimension::Scalar dtMin,
 
   // Now set the dt to the global answer
   dt.first = globalDt;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   {
     int msgSize = dt.second.size();
     MPI_Bcast(&msgSize, 1, MPI_INT, dtRank, Communicator::communicator());
@@ -149,9 +149,7 @@ selectDt(const typename Dimension::Scalar dtMin,
   }
   cout.flush();
 
-#ifdef USE_MPI
-  MPI_Barrier(Communicator::communicator());
-#endif
+  Barrier(Communicator::communicator());
 
   return dt.first;
 }

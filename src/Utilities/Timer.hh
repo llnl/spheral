@@ -4,8 +4,9 @@
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_Timer__
 #define __Spheral_Timer__
-// If TIMER is defined then we want timer functionality
-#ifdef TIMER
+
+// If SPHERAL_ENABLE_TIMERS is defined then we want timer functionality
+#ifdef SPHERAL_ENABLE_TIMERS
 #include "caliper/cali.h"
 #include "caliper/cali-manager.h"
 
@@ -17,8 +18,8 @@
 #define TIME_PHASE_BEGIN(regionName) CALI_MARK_PHASE_BEGIN(regionName)
 #define TIME_PHASE_END(regionName) CALI_MARK_PHASE_END(regionName)
 
-#else // TIMER
-// Stub TIME macros, when TIMER is off
+#else // SPHERAL_ENABLE_TIMERS
+// Stub TIME macros, when SPHERAL_ENABLE_TIMERS is off
 
 #define TIME_FUNCTION
 #define TIME_SCOPE(regionName)
@@ -27,7 +28,7 @@
 #define TIME_PHASE_BEGIN(regionName)
 #define TIME_PHASE_END(regionName)
 
-#endif // TIMER
+#endif // SPHERAL_ENABLE_TIMERS
 // Note: This class is initialized in
 // SimulationControl/SpheralTimingParser.py
 namespace Spheral {
@@ -60,7 +61,7 @@ public:
   static std::string get_filename() {
     return instance().caliperFilename;
   }
-#ifdef TIMER
+#ifdef SPHERAL_ENABLE_TIMERS
 private:
   cali::ConfigManager cali_mgr;
 public:

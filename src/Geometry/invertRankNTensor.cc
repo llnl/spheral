@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <algorithm>
-#include "boost/static_assert.hpp"
 #include <assert.h>
 #include "Eigen/Dense"
 

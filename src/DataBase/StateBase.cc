@@ -6,6 +6,7 @@
 // Created by JMO, Wed Aug 25 22:23:35 2004
 //----------------------------------------------------------------------------//
 #include "StateBase.hh"
+#include "Boundary/Boundary.hh"
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "Neighbor/PairwiseField.hh"
@@ -36,30 +37,14 @@ namespace {
 // //------------------------------------------------------------------------------
 // template<typename T>
 // T*
-// extractType(boost::any& anyT) {
+// extractType(std::any& anyT) {
 //   try {
-//     T* result = boost::any_cast<T*>(anyT);
+//     T* result = std::any_cast<T*>(anyT);
 //     return result;
-//   } catch (boost::any_cast_error) {
+//   } catch (std::any_cast_error) {
 //     return NULL;
 //   }
 // }
-
-// //------------------------------------------------------------------------------
-// // Check if a boost::any object contains a pointer to the given type
-// //------------------------------------------------------------------------------
-// template<typename T>
-// inline
-// bool
-// is_ptype(boost::any& anyT) {
-//   return anyT.type() == typeid(T*);
-// }
-
-// template<typename Dimension>
-// inline
-// bool
-// is_known_noncopy_type(boost::any& anyT) {
-//   return is_ptype<ReproducingKernel<Dimension>>(anyT);
 
 //------------------------------------------------------------------------------
 // Comparison
@@ -152,6 +137,7 @@ operator==(const StateBase<Dimension>& rhs) const {
   addCompare<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Scalar>>              (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (EQUAL);
+  addCompare<VisitorType, vector<Boundary<Dimension>*>>                   (EQUAL);
   
   // Apply the equality visitor to all the stored State data
   auto lhsitr = mStorage.begin();
@@ -426,6 +412,7 @@ assign(const StateBase<Dimension>& rhs) {
   addAssign<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Scalar>>              (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (ASSIGN);
+  addAssign<VisitorType, vector<Boundary<Dimension>*>>                   (ASSIGN);
 
   // Apply the assignment visitor to all the stored State data
   auto lhsitr = mStorage.begin();
@@ -487,6 +474,7 @@ copyState() {
   addClone<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Scalar>>              (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (CLONE);
+  addClone<VisitorType, vector<Boundary<Dimension>*>>                   (CLONE);
 
   // Clone all our stored data to cache
   for (auto& [key, anyval]: mStorage) {

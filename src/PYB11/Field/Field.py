@@ -10,7 +10,7 @@ from FieldBase import FieldBase
 class Field(FieldBase):
 
     PYB11typedefs = """
-  typedef Field<%(Dimension)s, %(Value)s> FieldType;
+  using FieldType = Field<%(Dimension)s, %(Value)s>;
 """
 
     def pyinit(self, name="std::string"):
@@ -52,16 +52,16 @@ class Field(FieldBase):
     @PYB11cppname("size")
     @PYB11const
     def __len__(self):
-        return "unsigned"
+        return "size_t"
 
     @PYB11cppname("operator[]")
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation('[](FieldType& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
+    @PYB11implementation('[](FieldType& self, int i) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }')
     def __getitem__(self):
         #return "%(Value)s&"
         return
 
-    @PYB11implementation("[](FieldType& self, int i, const %(Value)s v) { const int n = self.size(); if (i >= n) throw py::index_error(); self[(i %% n + n) %% n] = v; }")
+    @PYB11implementation("[](FieldType& self, int i, const %(Value)s v) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); self[(i %% n + n) %% n] = v; }")
     def __setitem__(self):
         "Set a value"
 
@@ -70,7 +70,7 @@ class Field(FieldBase):
         "Python iteration through a Field."
 
     @PYB11returnpolicy("reference_internal")
-    @PYB11implementation("[](FieldType& self, int i) { const int n = self.size(); if (i >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
+    @PYB11implementation("[](FieldType& self, int i) { const auto n = self.size(); if (size_t(i) >= n) throw py::index_error(); return &self[(i %% n + n) %% n]; }")
     def __call__(self):
         "Index into a Field"
         #return "%(Value)s&"
@@ -82,7 +82,7 @@ class Field(FieldBase):
     @PYB11const
     def size(self):
         "Number of elements"
-        return "unsigned"
+        return "size_t"
 
     @PYB11virtual
     def Zero(self):
@@ -96,21 +96,21 @@ class Field(FieldBase):
 
     @PYB11virtual
     @PYB11const
-    def packValues(self, nodeIDs="const std::vector<int>&"):
+    def packValues(self, nodeIDs="const std::vector<size_t>&"):
         "Serialize the indicated elements into a vector<char>"
         return "std::vector<char>"
 
     @PYB11virtual
     def unpackValues(self,
-                     nodeIDs="const std::vector<int>&",
+                     nodeIDs="const std::vector<size_t>&",
                      buffer = "const std::vector<char>&"):
         "Deserialize values from the given buffer"
         return "void"
 
     @PYB11virtual
     def copyElements(self,
-                     fromIndices="const std::vector<int>&",
-                     toIndices="const std::vector<int>&"):
+                     fromIndices="const std::vector<size_t>&",
+                     toIndices="const std::vector<size_t>&"):
         "Copy a range of values from/to elements of the Field"
         return "void"
 
@@ -151,6 +151,6 @@ class Field(FieldBase):
 
     #...........................................................................
     # Properties
-    numElements = PYB11property("unsigned", doc="Number of elements in field")
-    numInternalElements = PYB11property("unsigned", doc="Number of internal elements in field")
-    numGhostElements = PYB11property("unsigned", doc="Number of ghost elements in field")
+    numElements = PYB11property("size_t", doc="Number of elements in field")
+    numInternalElements = PYB11property("size_t", doc="Number of internal elements in field")
+    numGhostElements = PYB11property("size_t", doc="Number of ghost elements in field")

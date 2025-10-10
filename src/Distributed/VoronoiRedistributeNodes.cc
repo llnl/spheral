@@ -26,6 +26,7 @@
 #include "Utilities/boundPointWithinBox.hh"
 #include "Utilities/testBoxIntersection.hh"
 #include "Utilities/PairComparisons.hh"
+#include "Utilities/Timer.hh"
 #include "allReduce.hh"
 #include "Communicator.hh"
 
@@ -46,8 +47,6 @@ using std::endl;
 using std::min;
 using std::max;
 using std::abs;
-
-#include <boost/assign.hpp>
 
 namespace Spheral {
 
@@ -342,13 +341,14 @@ void
 VoronoiRedistributeNodes<Dimension>::
 redistributeNodes(DataBase<Dimension>& dataBase,
                   vector<Boundary<Dimension>*> boundaries) {
+  TIME_FUNCTION;
 
   // The usual parallel info.
   const int numProcs = this->numDomains();
   const int procID = this->domainID();
 
   // Get the global IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Compute the work and number density per node.
   const TableKernel<Dimension> W(BSplineKernel<Dimension>(), 100u);

@@ -76,6 +76,7 @@ public:
   virtual              void enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr);
   virtual              void enroll(FieldListBase<Dimension>& fieldList);
   template<typename T> void enroll(const KeyType& key, T& thing);
+  template<typename T> void enrollCopy(const KeyType& key, T& thing);
 
   //............................................................................
   // Access Fields
@@ -89,9 +90,11 @@ public:
 
   //............................................................................
   // Access FieldLists
-  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name) const;
+  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name,
+                                                              bool allowNone = false) const;
   template<typename Value> FieldList<Dimension, Value> fields(const std::string& name, 
-                                                              const Value& dummy) const;
+                                                              const Value& dummy,
+                                                              bool allowNone = false) const;
 
   //............................................................................
   // Access an arbitrary type

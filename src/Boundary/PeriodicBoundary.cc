@@ -99,13 +99,13 @@ PeriodicBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
 
   // Now add this NodeList to this master Boundary condition.
   this->addNodeList(nodeList);
-  typename Boundary<Dimension>::BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& controlNodes = boundaryNodes.controlNodes;
-  vector<int>& ghostNodes = boundaryNodes.ghostNodes;
+  auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
+  auto& controlNodes = boundaryNodes.controlNodes;
+  auto& ghostNodes = boundaryNodes.ghostNodes;
 
   // Copy the control info from the subclasses to this one, so it can be
   // accessed from the outside world.
-  controlNodes = vector<int>();
+  controlNodes.clear();
   controlNodes.reserve(mPlane1Boundary.controlNodes(nodeList).size() +
                        mPlane2Boundary.controlNodes(nodeList).size());
   copy(mPlane1Boundary.controlBegin(nodeList),
@@ -116,7 +116,7 @@ PeriodicBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
        back_inserter(controlNodes));
 
   // Ditto for the ghost nodes.
-  ghostNodes = vector<int>();
+  ghostNodes.clear();
   ghostNodes.reserve(mPlane1Boundary.ghostNodes(nodeList).size() +
                      mPlane2Boundary.ghostNodes(nodeList).size());
   copy(mPlane1Boundary.ghostBegin(nodeList),
@@ -150,9 +150,9 @@ PeriodicBoundary<Dimension>::setViolationNodes(NodeList<Dimension>& nodeList) {
   // Copy the violation node info from the subclasses to this one, so it can be
   // accessed from the outside world.
   this->addNodeList(nodeList);
-  typename Boundary<Dimension>::BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& violationNodes = boundaryNodes.violationNodes;
-  violationNodes = vector<int>();
+  auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
+  auto& violationNodes = boundaryNodes.violationNodes;
+  violationNodes.clear();
   violationNodes.reserve(mPlane1Boundary.violationNodes(nodeList).size() +
 			 mPlane2Boundary.violationNodes(nodeList).size());
   copy(mPlane1Boundary.violationBegin(nodeList),
@@ -188,12 +188,9 @@ PeriodicBoundary<Dimension>::updateViolationNodes(NodeList<Dimension>& nodeList)
   const Vector& origin = plane1.point();
   const Vector& nhat = plane1.normal();
   const Scalar L = plane1.minimumDistance(plane2.point());
-  const vector<int>& vNodes = this->violationNodes(nodeList);
-  Field<Dimension, Vector>& position = nodeList.positions();
-  for (vector<int>::const_iterator vItr = vNodes.begin();
-       vItr != vNodes.end();
-       ++vItr) {
-    const unsigned i = *vItr;
+  const auto& vNodes = this->violationNodes(nodeList);
+  auto& position = nodeList.positions();
+  for (auto i: vNodes) {
     if (position(i) < plane1 or position(i) < plane2) {
       const Vector p0 = position(i) + (origin - position(i)).dot(nhat)*nhat; // closest point on the plane.
       const Scalar f = max(-1.0, min(1.0, fmod(plane1.signedDistance(position(i))/L, 1.0)));
@@ -245,9 +242,9 @@ setExitPlane(const GeomPlane<Dimension>& exitPlane) {
 template<typename Dimension>
 void
 PeriodicBoundary<Dimension>::
-cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-               FieldList<Dimension, int>& old2newIndexMap,
-               vector<int>& numNodesRemoved) {
+cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+               FieldList<Dimension, size_t>& old2newIndexMap,
+               vector<size_t>& numNodesRemoved) {
   mPlane1Boundary.cullGhostNodes(flagSet, old2newIndexMap, numNodesRemoved);
   mPlane2Boundary.cullGhostNodes(flagSet, old2newIndexMap, numNodesRemoved);
 

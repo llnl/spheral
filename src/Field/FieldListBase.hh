@@ -31,7 +31,7 @@ public:
   FieldListBase(const FieldListBase& rhs);
 
   // Destructor.
-  virtual ~FieldListBase();
+  virtual ~FieldListBase() = default;
 
   // Assignment operator.
   FieldListBase& operator=(const FieldListBase& rhs);

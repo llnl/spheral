@@ -180,8 +180,8 @@ public:
   void updateConnectivityMap(const bool computeGhostConnectivity,
                              const bool computeOverlapConnectivity,
                              const bool computeIntersectionConnectivity) const;
-  void patchConnectivityMap(const FieldList<Dimension, int>& flags,
-                            const FieldList<Dimension, int>& old2new) const;
+  void patchConnectivityMap(const FieldList<Dimension, size_t>& flags,
+                            const FieldList<Dimension, size_t>& old2new) const;
 
   // Get the connectivity map.
   const ConnectivityMapType& connectivityMap() const;
@@ -266,7 +266,7 @@ public:
   FieldList<Dimension, SymTensor> DEMHfield() const;
   FieldList<Dimension, Scalar> DEMParticleRadius() const;
   FieldList<Dimension, int> DEMCompositeParticleIndex() const;
-  FieldList<Dimension, int> DEMUniqueIndex() const;
+  FieldList<Dimension, size_t> DEMUniqueIndex() const;
 
   void setDEMHfieldFromParticleRadius(const int startUniqueIndex);
   void setDEMUniqueIndices();

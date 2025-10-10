@@ -14,9 +14,10 @@ cur_dir = os.path.dirname(__file__)
 # Set current directory to install prefix
 if (os.path.islink(__file__)):
     cur_dir = os.path.join(cur_dir, os.readlink(__file__))
-install_prefix = os.path.join(cur_dir, "..")
-ats_exe = os.path.join(install_prefix, ".venv/bin/ats")
-spheral_exe = os.path.join(install_prefix, "spheral")
+
+spheral_prefix = sys.executable.split(".venv")[0]
+ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
+spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 
 # Benchmark file directory
 # This is passed into both ATS and Caliper
@@ -96,10 +97,10 @@ def install_ats_args():
 #---------------------------------------------------------------------------
 def main():
     test_log_name = "test-logs"
-    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "ruby", "rztrona"] # Machines using Slurm scheduler
+    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
     toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
     np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
-    ci_launch_flags = {"ruby": "--reservation=ci", "rzadams": "-q pdebug"}
+    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
     temp_uname = os.uname()
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
@@ -154,7 +155,7 @@ def main():
         mac_args = [] # Machine specific arguments to give to ATS
         if any(x in hostname for x in toss_machine_names):
             numNodes = numNodes if numNodes else 1
-            timeLimit = timeLimit if timeLimit else 120
+            timeLimit = timeLimit if timeLimit else 60
             inAllocVars = ["SLURM_JOB_NUM_NODES", "SLURM_NNODES"]
             if (options.batch):
                 launch_cmd = "sbatch "

@@ -8,8 +8,8 @@
 #include "RK/RKCorrectionParams.hh"
 #include "RK/ReproducingKernel.hh"
 
-#include "boost/variant.hpp"
 #include <vector>
+#include <variant>
 
 namespace Spheral {
 
@@ -18,16 +18,16 @@ template<typename Dimension> class ConnectivityMap;
 template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension>
-std::vector<boost::variant<FieldList<Dimension, typename Dimension::Scalar>,
-                           FieldList<Dimension, typename Dimension::Vector>,
-                           FieldList<Dimension, typename Dimension::Tensor>,
-                           FieldList<Dimension, typename Dimension::SymTensor>,
-                           FieldList<Dimension, typename Dimension::ThirdRankTensor>>>
-interpolateRK(const std::vector<boost::variant<FieldList<Dimension, typename Dimension::Scalar>,
-                                               FieldList<Dimension, typename Dimension::Vector>,
-                                               FieldList<Dimension, typename Dimension::Tensor>,
-                                               FieldList<Dimension, typename Dimension::SymTensor>,
-                                               FieldList<Dimension, typename Dimension::ThirdRankTensor>>>& fieldLists,
+std::vector<std::variant<FieldList<Dimension, typename Dimension::Scalar>,
+                         FieldList<Dimension, typename Dimension::Vector>,
+                         FieldList<Dimension, typename Dimension::Tensor>,
+                         FieldList<Dimension, typename Dimension::SymTensor>,
+                         FieldList<Dimension, typename Dimension::ThirdRankTensor>>>
+interpolateRK(const std::vector<std::variant<FieldList<Dimension, typename Dimension::Scalar>,
+                                             FieldList<Dimension, typename Dimension::Vector>,
+                                             FieldList<Dimension, typename Dimension::Tensor>,
+                                             FieldList<Dimension, typename Dimension::SymTensor>,
+                                             FieldList<Dimension, typename Dimension::ThirdRankTensor>>>& fieldLists,
                   const FieldList<Dimension, typename Dimension::Vector>& position,
                   const FieldList<Dimension, typename Dimension::Scalar>& weight,
                   const FieldList<Dimension, typename Dimension::SymTensor>& H,

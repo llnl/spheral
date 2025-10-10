@@ -20,6 +20,7 @@
 #include "Field/Field.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
+#include "Utilities/Hashes.hh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -178,11 +179,11 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   CompletedCellSet cellsCompleted;
   for (unsigned nodeListi = 0; nodeListi != mass.numFields(); ++nodeListi) {
     for (unsigned i = 0; i != mass[nodeListi]->numInternalElements(); ++i) {
-      cellsCompleted[NodeID(nodeListi, i)] = vector<boost::unordered_set<CellKey> >(num1dbits);
+      cellsCompleted[NodeID(nodeListi, i)] = vector<std::unordered_set<CellKey> >(num1dbits);
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 
   // Get the processor information.
   const unsigned rank = Process::getRank();
@@ -320,7 +321,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   mExtraEnergy = allReduce(mExtraEnergy, SPHERAL_OP_SUM);
 
   // Wait until all our sends are complete.
@@ -400,7 +401,7 @@ initialize(const Scalar /*time*/,
       }
     }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 
     // We require the true global center of mass for each cell, which means
     // in parallel we need to exchange the local trees and build up this information.
@@ -552,7 +553,7 @@ TreeGravity<Dimension>::
 dumpTree(const bool globalTree) const {
   std::stringstream ss;
   CellKey ix, iy, iz;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
   const unsigned rank = Process::getRank();
 #endif
@@ -574,7 +575,7 @@ dumpTree(const bool globalTree) const {
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     if (globalTree) {
       for (unsigned sendProc = 0; sendProc != numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();
@@ -629,7 +630,7 @@ std::string
 TreeGravity<Dimension>::
 dumpTreeStatistics(const bool globalTree) const {
   std::stringstream ss;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
   const unsigned rank = Process::getRank();
 #endif
@@ -651,7 +652,7 @@ dumpTreeStatistics(const bool globalTree) const {
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     if (globalTree) {
       for (unsigned sendProc = 0; sendProc != numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();

@@ -7,6 +7,7 @@ on:
       - scripts/devtools/**
       - scripts/runtime-requirements.txt.in
       - scripts/build-requirements.txt
+      - Dockerfile
 
 env:
   REGISTRY: ghcr.io

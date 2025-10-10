@@ -70,6 +70,7 @@ bisectRoot(const Function& functor,
 
   VERIFY2(false, "bisectRoot: failed to converge!");
 
+  return 0;
 }
 
 }

@@ -893,28 +893,6 @@ extraEnergy() const
 
 //------------------------------------------------------------------------------
 template <typename Dimension>
-boost::python::handle<PyObject>
-SPHGravity<Dimension>::
-matrix() const
-{
-  return boost::python::handle<PyObject>(mMatrix);
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-template <typename Dimension>
-boost::python::handle<PyObject>
-SPHGravity<Dimension>::
-RHS() const
-{
-  return boost::python::handle<PyObject>(mRHS);
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-template <typename Dimension>
 const FieldList<Dimension, typename SPHGravity<Dimension>::Scalar>&
 SPHGravity<Dimension>::
 potential() const

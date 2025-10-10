@@ -63,10 +63,13 @@ materialPtr(const eosnum_t eosnum,
     bundle.mMatPtrs[key] = matPtr;
     
     // Add the EOS functions we need
-    // LEOS::LEOS_FunctionOptions opts;
+    LEOS::LEOS_FunctionOptions opts;
+    opts.interpolantMemoryType(LEOS::MT_CPU);
+    opts.interpolantTemporaryMemoryType(LEOS::MT_CPU);
+    opts.execSpace(LEOS::ExecType_t::CPU);
     // opts.setTcalc(true);
     for (const auto& funcName: bundle.mFuncTemplate) {
-      auto funcPtr = matPtr->getFunction(funcName, LEOS::BIMOND); //, &opts);
+      auto funcPtr = matPtr->getFunction(funcName, LEOS::BIMOND, &opts);
       if (funcPtr->isValid()) bundle.mFuncPtrs[key][funcName] = funcPtr;
     }
     // CHECK(bundle.mFuncPtrs[key].size() == bundle.mFuncTemplate.size());
@@ -125,8 +128,13 @@ LEOS_bundle():
   // units through our interface.
   LEOS::LEOS_StartupOptions opts;
   opts.units(LEOS::LEOS_UNITS_CGS);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   opts.communicator(Communicator::communicator());
+#endif
+#ifdef ENABLE_HIP
+  opts.permanentMemoryType(LEOS::MT_CPU);
+  opts.temporaryMemoryType(LEOS::MT_CPU);
+  opts.execSpace(LEOS::ExecType_t::CPU);
 #endif
   LEOS::startup(opts);
 }

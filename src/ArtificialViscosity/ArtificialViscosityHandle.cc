@@ -225,7 +225,6 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
     int i, j, nodeListi, nodeListj;
     Scalar Hdeti, Hdetj, etaMagi, etaMagj;
     Vector rij, vij, etai, etaj, etaiUnit, etajUnit, gradWi, gradWj;
-    Tensor QPiij, QPiji;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDx_thread = DvDx_Q.threadCopy(threadStack);

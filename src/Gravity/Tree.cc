@@ -16,6 +16,7 @@
 #include "Utilities/PairComparisons.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
+#include "Utilities/Hashes.hh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -69,7 +70,7 @@ Tree<Dimension>::
 dumpTree(const bool globalTree) const {
   std::stringstream ss;
   CellKey ix, iy, iz;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
   const unsigned rank = Process::getRank();
 #endif
@@ -91,7 +92,7 @@ dumpTree(const bool globalTree) const {
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     if (globalTree) {
       for (unsigned sendProc = 0; sendProc != numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();
@@ -146,7 +147,7 @@ std::string
 Tree<Dimension>::
 dumpTreeStatistics(const bool globalTree) const {
   std::stringstream ss;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
   const unsigned rank = Process::getRank();
 #endif
@@ -168,7 +169,7 @@ dumpTreeStatistics(const bool globalTree) const {
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     if (globalTree) {
       for (unsigned sendProc = 0; sendProc != numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();

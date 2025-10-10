@@ -14,7 +14,6 @@
 #include "Utilities/bisectRoot.hh"
 #include "Utilities/DBC.hh"
 
-#include "boost/multi_array.hpp"
 #include <iostream>
 #include <ctime>
 using std::vector;
@@ -141,39 +140,38 @@ private:
 //------------------------------------------------------------------------------
 class Textrapolator {
 public:
-  Textrapolator(const double Tmin,
-                const double Tmax,
-                const InterpolatorType& epsMinInterp,
+  Textrapolator(const InterpolatorType& epsMinInterp,
                 const InterpolatorType& epsMaxInterp,
                 const BiInterpolatorType& Tinterp):
-    mTmin(Tmin),
-    mTmax(Tmax),
     mEpsMinInterp(epsMinInterp),
     mEpsMaxInterp(epsMaxInterp),
     mTinterp(Tinterp) {}
 
   double operator()(const double rho, const double eps) const {
-    if (eps < mEpsMinInterp(rho)) {
-      return mTmin;
-    } else if (eps > mEpsMaxInterp(rho)) {
-      return mTmax;
+    const auto eps0 = mEpsMinInterp(rho);
+    const auto eps1 = mEpsMaxInterp(rho);
+    if (eps < eps0) {
+      return mTinterp(rho, eps0);
+    } else if (eps > eps1) {
+      return mTinterp(rho, eps1);
     } else {
       return mTinterp(rho, eps);
     }
   }
 
   double dTdeps(const double rho, const double eps) const {
-    if (eps < mEpsMinInterp(rho)) {
-      return 0.0;
-    } else if (eps > mEpsMaxInterp(rho)) {
-      return 0.0;
+    const auto eps0 = mEpsMinInterp(rho);
+    const auto eps1 = mEpsMaxInterp(rho);
+    if (eps < eps0) {
+      return mTinterp.prime_y(rho, eps0);
+    } else if (eps > eps1) {
+      return mTinterp.prime_y(rho, eps1);
     } else {
       return mTinterp.prime_y(rho, eps);
     }
   }
 
 private:
-  double mTmin, mTmax;
   const InterpolatorType& mEpsMinInterp, mEpsMaxInterp;
   const BiInterpolatorType& mTinterp;
 };
@@ -506,7 +504,7 @@ ANEOS(const int materialNumber,
 
   // And finally the interpolators for most of our derived quantities
   t0 = clock();
-  const auto Textra = Textrapolator(mTmin, mTmax, *mEpsMinInterp, *mEpsMaxInterp, *mTinterp);
+  const auto Textra = Textrapolator(*mEpsMinInterp, *mEpsMaxInterp, *mTinterp);
   const auto Fpres = Pfunc(mMaterialNumber, mRhoConv, mTconv, mPconv, Textra);
   mPinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                    mEpsMin, mEpsMax,
@@ -554,53 +552,6 @@ ANEOS(const int materialNumber,
                                                       mEpsMin, mEpsMax,
                                                       mNumRhoVals, mNumTvals, Fdpdrho);
   if (Process::getRank() == 0) cout << "ANEOS: Time to build DPDRinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << endl;
-}
-
-//------------------------------------------------------------------------------
-// Copy constructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ANEOS<Dimension>::
-ANEOS(const ANEOS& rhs):
-  SolidEquationOfState<Dimension>(rhs),
-  mUseInterpolation(rhs.mUseInterpolation),
-  mMaterialNumber(rhs.mMaterialNumber),
-  mNumRhoVals(rhs.mNumRhoVals),
-  mNumTvals(rhs.mNumTvals),
-  mRhoMin(rhs.mRhoMin),
-  mRhoMax(rhs.mRhoMax),
-  mTmin(rhs.mTmin),
-  mTmax(rhs.mTmax),
-  mEpsMin(rhs.mEpsMin),
-  mEpsMax(rhs.mEpsMax),
-  mEpsMinInterp(rhs.mEpsMinInterp),
-  mEpsMaxInterp(rhs.mEpsMaxInterp),
-  mEpsInterp(rhs.mEpsInterp),
-  mTinterp(rhs.mTinterp),
-  mPinterp(rhs.mPinterp),
-  mCVinterp(rhs.mCVinterp),
-  mCSinterp(rhs.mCSinterp),
-  mKinterp(rhs.mKinterp),
-  mSinterp(rhs.mSinterp),
-  mDPDepsInterp(rhs.mDPDepsInterp),
-  mDPDRinterp(rhs.mDPDRinterp),
-  mANEOSunits(rhs.mANEOSunits),
-  mRhoConv(rhs.mRhoConv),
-  mTconv(rhs.mTconv),
-  mPconv(rhs.mPconv),
-  mEconv(rhs.mEconv),
-  mCVconv(rhs.mCVconv),
-  mVelConv(rhs.mVelConv),
-  mSconv(rhs.mSconv),
-  mAtomicWeight(rhs.mAtomicWeight) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ANEOS<Dimension>::
-~ANEOS() {
 }
 
 //------------------------------------------------------------------------------
@@ -820,7 +771,7 @@ ANEOS<Dimension>::
 temperature(const Scalar massDensity,
             const Scalar specificThermalEnergy) const {
   if (mUseInterpolation) {
-    const auto Textra = Textrapolator(mTmin, mTmax, *mEpsMinInterp, *mEpsMaxInterp, *mTinterp);
+    const auto Textra = Textrapolator(*mEpsMinInterp, *mEpsMaxInterp, *mTinterp);
     return Textra(massDensity, specificThermalEnergy);
   } else {
     const auto Feps = epsFunc(mMaterialNumber, mRhoConv, mTconv, mEconv);

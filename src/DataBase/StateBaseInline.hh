@@ -21,6 +21,16 @@ enroll(const KeyType& key, T& thing) {
   mStorage[key] = std::ref(thing);
 }
 
+template<typename Dimension>
+template<typename T>
+inline
+void
+StateBase<Dimension>::
+enrollCopy(const KeyType& key, T& thing) {
+  mCache.emplace_back(thing);
+  mStorage[key] = std::ref(std::any_cast<T&>(mCache.back()));
+}
+
 //------------------------------------------------------------------------------
 // Return the Field for the given key.
 //------------------------------------------------------------------------------
@@ -85,7 +95,8 @@ template<typename Value>
 inline
 FieldList<Dimension, Value>
 StateBase<Dimension>::
-fields(const std::string& name) const {
+fields(const std::string& name,
+       bool allowNone) const {
   FieldList<Dimension, Value> result;
   KeyType fieldName, nodeListName;
   for (auto [key, aref]: mStorage) {
@@ -99,6 +110,7 @@ fields(const std::string& name) const {
       }
     }
   }
+  CHECK2(allowNone or result.size() > 0u, "Error: found no fields for key " << name);
   return result;
 }
 
@@ -107,8 +119,8 @@ template<typename Value>
 inline
 FieldList<Dimension, Value>
 StateBase<Dimension>::
-fields(const std::string& name, const Value& dummy) const {
-  return this->template fields<Value>(name);
+fields(const std::string& name, const Value& dummy, bool allowNone) const {
+  return this->template fields<Value>(name, allowNone);
 }
 
 //------------------------------------------------------------------------------

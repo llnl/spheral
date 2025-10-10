@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "GSPH/GSPH.cc"
 #include "GSPH/GSPHEvaluateDerivatives.cc"

@@ -40,7 +40,8 @@ PYB11includes += ['"RK/RKCoefficients.hh"',
                   '"FileIO/FileIO.hh"',
                   '"Boundary/Boundary.hh"',
                   '"Utilities/NodeCoupling.hh"',
-                  '<sstream>']
+                  '<sstream>',
+                  '<variant>']
 
 #-------------------------------------------------------------------------------
 # Namespaces
@@ -53,18 +54,17 @@ PYB11namespaces = ["Spheral"]
 PYB11preamble += """
 namespace {
 template<typename Dimension>
-struct AppendFieldLists: public boost::static_visitor<> {
+struct AppendFieldLists {
     
-    typedef std::vector<boost::variant<FieldList<Dimension, typename Dimension::Scalar>,
-                                       FieldList<Dimension, typename Dimension::Vector>,
-                                       FieldList<Dimension, typename Dimension::Tensor>,
-                                       FieldList<Dimension, typename Dimension::SymTensor>,
-                                       FieldList<Dimension, typename Dimension::ThirdRankTensor>>> FieldListArray;
+    typedef std::vector<std::variant<FieldList<Dimension, typename Dimension::Scalar>,
+                                     FieldList<Dimension, typename Dimension::Vector>,
+                                     FieldList<Dimension, typename Dimension::Tensor>,
+                                     FieldList<Dimension, typename Dimension::SymTensor>,
+                                     FieldList<Dimension, typename Dimension::ThirdRankTensor>>> FieldListArray;
 
     py::list& pylist;
 
     AppendFieldLists(py::list& pylist_):
-        boost::static_visitor<>(),
         pylist(pylist_) {}
 
     template<typename FieldListType>
@@ -171,11 +171,11 @@ def computeHVolumes(nPerh = "const typename %(Dimension)s::Scalar",
                            const ReproducingKernel<%(Dimension)s>& WR,
                            const FieldList<%(Dimension)s, RKCoefficients<%(Dimension)s>>& corrections,
                            const NodeCoupling& nodeCoupling) {
-                               std::vector<boost::variant<FieldList<%(Dimension)s, %(Dimension)s::Scalar>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::Vector>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::Tensor>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::SymTensor>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::ThirdRankTensor>>> fieldLists;
+                               std::vector<std::variant<FieldList<%(Dimension)s, %(Dimension)s::Scalar>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::Vector>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::Tensor>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::SymTensor>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::ThirdRankTensor>>> fieldLists;
                                fieldLists.emplace_back(fieldList);
                                auto flvec = interpolateRK(fieldLists,
                                                           position,
@@ -186,7 +186,7 @@ def computeHVolumes(nPerh = "const typename %(Dimension)s::Scalar",
                                                           corrections,
                                                           nodeCoupling);
                                CHECK(flvec.size() == 1);
-                               FieldList<%(Dimension)s, %(DataType)s> result(boost::get<FieldList<%(Dimension)s, %(DataType)s>>(flvec[0]));
+                               FieldList<%(Dimension)s, %(DataType)s> result(std::get<FieldList<%(Dimension)s, %(DataType)s>>(flvec[0]));
                                result.copyFields();
                                return result;
                            }""")
@@ -212,11 +212,11 @@ def interpolateRK1(fieldList = "const FieldList<%(Dimension)s, %(DataType)s>&",
                            const ReproducingKernel<%(Dimension)s>& WR,
                            const FieldList<%(Dimension)s, RKCoefficients<%(Dimension)s>>& corrections,
                            const NodeCoupling& nodeCoupling) {
-                               std::vector<boost::variant<FieldList<%(Dimension)s, %(Dimension)s::Scalar>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::Vector>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::Tensor>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::SymTensor>,
-                                                          FieldList<%(Dimension)s, %(Dimension)s::ThirdRankTensor>>> fieldLists;
+                               std::vector<std::variant<FieldList<%(Dimension)s, %(Dimension)s::Scalar>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::Vector>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::Tensor>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::SymTensor>,
+                                                        FieldList<%(Dimension)s, %(Dimension)s::ThirdRankTensor>>> fieldLists;
                                for (auto& pyfl: pyFieldLists) {
                                    try {
                                            auto fl = pyfl.cast<FieldList<%(Dimension)s, %(Dimension)s::Scalar>&>();
@@ -254,7 +254,7 @@ def interpolateRK1(fieldList = "const FieldList<%(Dimension)s, %(DataType)s>&",
                                                                corrections,
                                                                nodeCoupling);
                                py::list result;
-                               for (auto fl: cppresult) boost::apply_visitor(AppendFieldLists<%(Dimension)s>(result), fl);
+                               for (auto fl: cppresult) std::visit(AppendFieldLists<%(Dimension)s>(result), fl);
                                return result;
                            }""")
 def interpolateRK(fieldLists = "py::list&",

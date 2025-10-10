@@ -8,6 +8,7 @@ glue(fsisph = False)
 glue(gsph = False)
 glue(svph = False)
 glue(independent = True)
+glue(nt = 1)
 
 # Fail test to make sure tests are working
 source("unit/Utilities/testFails.py")
@@ -132,3 +133,4 @@ source("functional/RK/testVoronoiVolume.py")
 
 # KernelIntegrator tests
 source("unit/KernelIntegrator/TestIntegrator.py")
+source("unit/KernelIntegrator/testFlatConnectivity.py")

@@ -21,8 +21,8 @@ class FieldBase {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename std::string FieldName;
-  typedef typename Dimension::Scalar Scalar;
+  using FieldName = std::string;
+  using Scalar = typename Dimension::Scalar;
 
   // Constructors.
   FieldBase(FieldName name);
@@ -51,35 +51,38 @@ public:
   void unregisterNodeList();
 
   // Methods every field must provide.
-  virtual unsigned size() const = 0;
+  virtual size_t size() const = 0;
   virtual void Zero() = 0;
   virtual void setNodeList(const NodeList<Dimension>& nodeList) = 0;
-  virtual std::vector<char> packValues(const std::vector<int>& nodeIDs) const = 0;
-  virtual void unpackValues(const std::vector<int>& nodeIDs,
+  virtual std::vector<char> packValues(const std::vector<size_t>& nodeIDs) const = 0;
+  virtual void unpackValues(const std::vector<size_t>& nodeIDs,
                             const std::vector<char>& buffer) = 0;
-  virtual void copyElements(const std::vector<int>& fromIndices,
-                            const std::vector<int>& toIndices) = 0;
+  virtual void copyElements(const std::vector<size_t>& fromIndices,
+                            const std::vector<size_t>& toIndices) = 0;
   virtual bool fixedSizeDataType() const = 0;
-  virtual int numValsInDataType() const = 0;
-  virtual int sizeofDataType() const = 0;
-  virtual int computeCommBufferSize(const std::vector<int>& packIndices,
-                                    const int sendProc,
-                                    const int recvProc) const = 0;
+  virtual size_t numValsInDataType() const = 0;
+  virtual size_t sizeofDataType() const = 0;
+  virtual size_t computeCommBufferSize(const std::vector<size_t>& packIndices,
+                                       const int sendProc,
+                                       const int recvProc) const = 0;
 
 //   // Methods to support cacheing of coarse and refine neighbor values.
 //   void notifyNewCoarseNodes() const;
 //   void notifyNewRefineNodes() const;
+
+  // Disallow the default constructor.
+  FieldBase() = delete;
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
   void setFieldBaseNodeList(const NodeList<Dimension>& nodeListPtr);
 
   friend class NodeList<Dimension>;
-  virtual void resizeField(unsigned size) = 0;
-  virtual void resizeFieldInternal(unsigned size, unsigned oldFirstGhostNode) = 0;
-  virtual void resizeFieldGhost(unsigned size) = 0;
-  virtual void deleteElement(int nodeID) = 0;
-  virtual void deleteElements(const std::vector<int>& nodeIDs) = 0;
+  virtual void resizeField(size_t size) = 0;
+  virtual void resizeFieldInternal(size_t size, size_t oldFirstGhostNode) = 0;
+  virtual void resizeFieldGhost(size_t size) = 0;
+  virtual void deleteElement(size_t nodeID) = 0;
+  virtual void deleteElements(const std::vector<size_t>& nodeIDs) = 0;
 
   // Make the FieldListBase a friend, so that it can use the registration
   // methods.
@@ -95,9 +98,6 @@ private:
 
   // The set of FieldLists currently referencing this Field.
   mutable std::vector<const FieldListBase<Dimension>*> mFieldListBaseList;
-
-  // Disallow the default constructor.
-  FieldBase();
 };
 
 }

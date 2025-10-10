@@ -337,8 +337,6 @@ gradientMash2(const FieldList<Dimension, DataType>& fieldList,
           const Vector etaj = Hj*rij;
           const Scalar etaiMag = etai.magnitude();
           const Scalar etajMag = etaj.magnitude();
-          const Vector etaiNorm = etai.unitVector();
-          const Vector etajNorm = etaj.unitVector();
 
           // Get the symmetrized kernel gradient for this node pair.
           Scalar Wij;

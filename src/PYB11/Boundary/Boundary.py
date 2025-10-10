@@ -37,8 +37,16 @@ class Boundary:
     @PYB11pycppname("applyGhostBoundary")
     @PYB11virtual
     @PYB11const
-    def applyGhostBoundary1(self,
-                            field = "Field<%(Dimension)s, int>&"):
+    def applyGhostBoundaryInt(self,
+                              field = "Field<%(Dimension)s, int>&"):
+        "Apply the boundary condition to the ghost node values in the given Field."
+        return "void"
+
+    @PYB11pycppname("applyGhostBoundary")
+    @PYB11virtual
+    @PYB11const
+    def applyGhostBoundarySizeT(self,
+                                field = "Field<%(Dimension)s, size_t>&"):
         "Apply the boundary condition to the ghost node values in the given Field."
         return "void"
 
@@ -142,8 +150,16 @@ class Boundary:
     @PYB11pycppname("enforceBoundary")
     @PYB11virtual
     @PYB11const
-    def enforceBoundary1(self,
-                         field = "Field<%(Dimension)s, int>&"):
+    def enforceBoundaryInt(self,
+                           field = "Field<%(Dimension)s, int>&"):
+        "Apply the boundary condition to the violation node values in the given Field."
+        return "void"
+
+    @PYB11pycppname("enforceBoundary")
+    @PYB11virtual
+    @PYB11const
+    def enforceBoundarySizeT(self,
+                             field = "Field<%(Dimension)s, size_t>&"):
         "Apply the boundary condition to the violation node values in the given Field."
         return "void"
 
@@ -250,9 +266,9 @@ class Boundary:
 
     @PYB11virtual
     def cullGhostNodes(self,
-                       flagSet = "const FieldList<%(Dimension)s, int>&",
-                       old2newIndexMap = "FieldList<%(Dimension)s, int>&",
-                       numNodesRemoved = "std::vector<int>&"):
+                       flagSet = "const FieldList<%(Dimension)s, size_t>&",
+                       old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
+                       numNodesRemoved = "std::vector<size_t>&"):
         "Use a set of flags to cull out inactive ghost nodes."
         return "void"
 
@@ -360,19 +376,19 @@ class Boundary:
     @PYB11const
     def controlNodes(self, nodeList="const NodeList<%(Dimension)s>&"):
         "Control nodes for a given NodeList"
-        return "const std::vector<int>&"
+        return "const std::vector<size_t>&"
 
     @PYB11returnpolicy("reference_internal")
     @PYB11const
     def ghostNodes(self, nodeList="const NodeList<%(Dimension)s>&"):
         "Ghost nodes for a given NodeList"
-        return "const std::vector<int>&"
+        return "const std::vector<size_t>&"
 
     @PYB11returnpolicy("reference_internal")
     @PYB11const
     def violationNodes(self, nodeList="const NodeList<%(Dimension)s>&"):
         "Violation nodes for a given NodeList"
-        return "const std::vector<int>&"
+        return "const std::vector<size_t>&"
 
     #...........................................................................
     # applyFieldListGhostBoundary/enforceFieldListBoundary

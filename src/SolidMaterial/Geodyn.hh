@@ -14,8 +14,6 @@
 #ifndef __Spheral_Geodyn_hh__
 #define __Spheral_Geodyn_hh__
 
-#include "boost/multi_array.hpp"
-
 #include "SolidMaterial/SolidEquationOfState.hh"
 #include "SolidMaterial/StrengthModel.hh"
 #include "Physics/Physics.hh"

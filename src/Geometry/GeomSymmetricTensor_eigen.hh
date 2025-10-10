@@ -256,8 +256,6 @@ template<int nDim> ::std::ostream& operator<<(::std::ostream& os, const GeomSymm
 #endif
 }
 
-#ifndef __GCCXML__
 #include "GeomSymmetricTensorInline_eigen.hh"
-#endif
 
 #endif

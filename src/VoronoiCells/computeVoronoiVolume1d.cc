@@ -54,7 +54,7 @@ computeVoronoiVolume(const FieldList<Dim<1>, Dim<1>::Vector>& position,
   typedef Dim<1>::Vector Vector;
   typedef Dim<1>::FacetedVolume FacetedVolume;
 
-  const auto numGens = position.numNodes();
+  const auto numGens = position.numElements();
   const auto numNodeLists = position.size();
   const auto haveFacetedBoundaries = facetedBoundaries.size() == numNodeLists;
   const auto haveWeights = weight.size() == numNodeLists;

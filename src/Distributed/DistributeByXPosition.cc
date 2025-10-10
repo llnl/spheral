@@ -75,7 +75,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   // the partitioning all by itself.
 
   // Assign temporary global IDs for each NodeList in the DataBase.
-  const FieldList<Dimension, int> globalNodeIDs = Spheral::globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalNodeIDs = Spheral::globalNodeIDs(dataBase);
   CHECK(globalNodeIDs.size() == dataBase.numNodeLists());
 
   // First get the local description of the domain distribution.

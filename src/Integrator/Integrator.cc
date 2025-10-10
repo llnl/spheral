@@ -155,7 +155,7 @@ selectDt(const typename Dimension::Scalar dtMin,
         dt.first >= dtMin and dt.first <= dtMax);
 
   // In the parallel case we need to find the minimum timestep across all processors.
-#ifdef GLOBALDT_REDUCTION
+#ifdef SPHERAL_ENABLE_GLOBALDT_REDUCTION
   const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
 #else
   const auto globalDt = dt.first;
@@ -460,7 +460,7 @@ Integrator<Dimension>::setGhostNodes() const {
       const auto& cm = db.connectivityMap();
 
       // First build the set of flags indicating which nodes are used.
-      FieldList<Dimension, int> flags = db.newGlobalFieldList(0, "active nodes");
+      FieldList<Dimension, size_t> flags = db.newGlobalFieldList(size_t(0u), "active nodes");
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto& nodeList = *nodeListPtr;
         for (auto i = 0u; i < nodeList.numInternalNodes(); ++i) {
@@ -481,7 +481,7 @@ Integrator<Dimension>::setGhostNodes() const {
           const auto& ghostNodes = boundary.ghostNodes(nodeList);
           // CHECK(controlNodes.size() == ghostNodes.size());  // Not true if this is a DistributedBoundary!
           for (auto i: controlNodes) {
-            if (i >= (int)firstGhostNode) flags(nodeListi, i) = 1;
+            if (i >= firstGhostNode) flags(nodeListi, i) = 1;
           }
 
           // Boundary conditions are allowed to opt out of culling entirely.
@@ -492,14 +492,14 @@ Integrator<Dimension>::setGhostNodes() const {
       }
 
       // Create the index mapping from old to new node orderings.
-      FieldList<Dimension, int> old2newIndexMap = db.newGlobalFieldList(int(0), "index map");
+      FieldList<Dimension, size_t> old2newIndexMap = db.newGlobalFieldList(size_t(0u), "index map");
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto numNodes = nodeListPtr->numNodes();
         for (auto i = 0u; i < numNodes; ++i) old2newIndexMap(nodeListi, i) = i;
       }
 
       // Now use these flags to cull the boundary conditions.
-      vector<int> numNodesRemoved(numNodeLists, 0);
+      vector<size_t> numNodesRemoved(numNodeLists, 0);
       for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
         boundaryPtr->cullGhostNodes(flags, old2newIndexMap, numNodesRemoved);
       }
@@ -511,7 +511,7 @@ Integrator<Dimension>::setGhostNodes() const {
       // the ghost nodes themselves from the NodeLists.
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         auto& nodeList = *nodeListPtr;
-        vector<int> nodesToRemove;
+        vector<size_t> nodesToRemove;
         for (auto i = nodeList.firstGhostNode(); i < nodeList.numNodes(); ++i) {
           if (flags(nodeListi, i) == 0) nodesToRemove.push_back(i);
         }
