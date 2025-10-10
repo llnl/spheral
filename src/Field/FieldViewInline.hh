@@ -57,7 +57,7 @@ SPHERAL_HOST_DEVICE
 inline
 DataType&
 FieldView<Dimension, DataType>::at(size_t index) {
-  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
+  VERIFY2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
   return mDataSpan[index];
 }
 
@@ -66,7 +66,7 @@ SPHERAL_HOST_DEVICE
 inline
 DataType&
 FieldView<Dimension, DataType>::at(size_t index) const {
-  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
+  VERIFY2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
   return mDataSpan[index];
 }
 
@@ -79,8 +79,7 @@ inline
 DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) {
-  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
-  // std::cerr << "FieldView::operator[] : " << mDataSpan.data() << " " << index << " " << dynamic_cast<Field<Dimension, DataType>*>(this)->mDataArray.data() << std::endl;
+  CHECK2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
   return mDataSpan[index];
 }
 
@@ -90,8 +89,7 @@ inline
 DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) const {
-  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
-  // std::cerr << "FieldView::operator[] : " << mDataSpan.data() << " " << index << " " << dynamic_cast<const Field<Dimension, DataType>*>(this)->mDataArray.data() << std::endl;
+  CHECK2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
   return mDataSpan[index];
 }
 
