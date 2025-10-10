@@ -79,15 +79,19 @@ public:
   using FieldPtrSpan = SPHERAL_SPAN_TYPE<Field<Dimension, DataType>*>;
   using FieldBasePtrSpan = SPHERAL_SPAN_TYPE<FieldBase<Dimension>*>;
   
+#ifdef SPHERAL_UNIFIED_MEMORYne
   using FieldViewSpan = SPHERAL_SPAN_TYPE<FieldView<Dimension, DataType>>;
+#else
+  using FieldViewSpan = chai::ManagedArray<FieldView<Dimension, DataType>>;
+#endif
 
-  // Constructors.
+  // constructors.
   FieldList();
   explicit FieldList(FieldStorageType aStorageType);
   FieldList(const FieldList& rhs);
 
   // Destructor.
-  virtual ~FieldList() = default;
+  virtual ~FieldList();
 
   // Assignment.
   FieldList& operator=(const FieldList& rhs);
@@ -296,6 +300,7 @@ public:
   ViewType view();
   template<typename FLCB>               ViewType view(FLCB&& fieldlist_callback);
   template<typename FLCB, typename FCB> ViewType view(FLCB&& fieldlist_callback, FCB&& field_callback);
+  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -304,7 +309,6 @@ private:
 
   std::vector<ElementType> mFieldPtrs;
   std::vector<BaseElementType> mFieldBasePtrs;
-  std::vector<FieldView<Dimension, DataType>> mFieldViews; 
   FieldCacheType mFieldCache;
   FieldStorageType mStorageType;
 
@@ -313,8 +317,18 @@ private:
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 
+  // FieldViews for use in FieldListView
+#ifdef SPHERAL_UNIFIED_MEMORY  
+  std::vector<FieldView<Dimension, DataType>> mFieldViews;
+#else
+  FieldViewSpan mFieldViews;
+#endif
+  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+
   // Set the internal dependent arrays based on the Field pointers.
   virtual void buildDependentArrays() override;
+
+  auto getCallback();
 
 public:
   // A data attribute to indicate how to reduce this field across threads.

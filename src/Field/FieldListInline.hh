@@ -35,14 +35,18 @@ FieldList<Dimension, DataType>::FieldList():
   FieldListBase<Dimension>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
-  mFieldViews(),
   mFieldCache(),
   mStorageType(FieldStorageType::ReferenceFields),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViews(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList() : " << this;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.setUserCallback(getCallback());
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -54,14 +58,18 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   FieldListBase<Dimension>(),
   mFieldPtrs(),
   mFieldBasePtrs(),
-  mFieldViews(),
   mFieldCache(),
   mStorageType(aStorageType),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViews(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList(aStorageType) : " << this;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.setUserCallback(getCallback());
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -75,13 +83,15 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
   FieldListBase<Dimension>(rhs),
   mFieldPtrs(rhs.mFieldPtrs),
   mFieldBasePtrs(rhs.mFieldBasePtrs),
-  mFieldViews(),
   mFieldCache(),
   mStorageType(rhs.storageType()),
   mNodeListPtrs(rhs.mNodeListPtrs),
   mNodeListIndexMap(rhs.mNodeListIndexMap),
+  mFieldViews(),
+  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(rhs.reductionType),
   threadMasterPtr(rhs.threadMasterPtr) {
+  DEBUG_LOG << "FieldList::copy";
 
   // If we're maintaining Fields by copy, then copy the Field cache.
 #pragma omp critical (FieldList_copy)
@@ -95,9 +105,20 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
     }
   } // OMP critical
   buildDependentArrays();
-
-  DEBUG_LOG << "FieldList::copy";
 }
+
+//------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+FieldList<Dimension, DataType>::
+~FieldList() {
+  DEBUG_LOG << "FieldList::~FieldList : " << this;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.free();
+#endif
+}  
 
 //------------------------------------------------------------------------------
 // Assignment with another FieldList.
@@ -107,6 +128,7 @@ inline
 FieldList<Dimension, DataType>&
 FieldList<Dimension, DataType>::
 operator=(const FieldList<Dimension, DataType>& rhs) {
+  DEBUG_LOG << "FieldList::assignment";
 #pragma omp critical (FieldList_assign)
   {
     if (this != &rhs) {
@@ -138,7 +160,6 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
     }
   } // OMP critical
 
-  DEBUG_LOG << "FieldList::assignment";
   ENSURE(this->size() == rhs.size());
   return *this;
 }
@@ -1471,6 +1492,8 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback) {
+  setCallback(fieldlist_callback);
+  mFieldViews.setUserCallback(getCallback());
   auto result = FieldListView<Dimension, DataType>(*this);
   result.setCallback(fieldlist_callback);
   return result;
@@ -1482,9 +1505,11 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback, FCB&& field_callback) {
+  setCallback(fieldlist_callback);
+  mFieldViews.setUserCallback(getCallback());
   auto result = FieldListView<Dimension, DataType>(*this);
   result.setCallback(fieldlist_callback);
-  for (auto& x: result) result.setCallback(field_callback);
+  for (auto& x: result) x.setCallback(field_callback);
   return result;
 }
 
@@ -1501,19 +1526,85 @@ buildDependentArrays() {
   const auto oldNodeListPtrs = mNodeListPtrs;
   mFieldBasePtrs.clear();
   mNodeListPtrs.clear();
-  mFieldViews.clear();
   mNodeListIndexMap.clear();
+
+  const auto nfields = mFieldPtrs.size();
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.resize(nfields);
+#else
+  mFieldViews.setUserCallback(getCallback());
+  if (mFieldViews.size() == 0u && !mFieldViews.data(chai::CPU, false)) {
+    mFieldViews.allocate(nfields, chai::CPU);
+  } else {
+    mFieldViews.reallocate(nfields);
+  }
+#endif
+
   for (auto [i, fptr]: enumerate(mFieldPtrs)) {
     mFieldBasePtrs.push_back(fptr);
-    mFieldViews.push_back(fptr->view());
+    mFieldViews[i] = fptr->view();
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
     mNodeListIndexMap[nptr] = i;
   }
+
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.registerTouch(chai::CPU);
+#endif
+
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
   ENSURE(mFieldViews.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
+}
+
+//------------------------------------------------------------------------------
+// setCallback
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::
+setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
+  mChaiCallback = f;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mFieldViews.setUserCallback(getCallback());
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Default callback action to be used with chai Managed containers. An
+// additional calback can be passed to extend this functionality. Useful for
+// debugging, testing and probing for performance counters / metrics.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+auto
+FieldList<Dimension, DataType>::
+getCallback() {
+  return [callback = mChaiCallback](
+    const chai::PointerRecord * record,
+    chai::Action action,
+    chai::ExecutionSpace space) {
+      if (action == chai::ACTION_MOVE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : MOVED to the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : MOVED to the GPU";
+      }
+      else if (action == chai::ACTION_ALLOC) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : ALLOC on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : ALLOC on the GPU";
+      }
+      else if (action == chai::ACTION_FREE) {
+        if (space == chai::CPU)
+          DEBUG_LOG << "FieldList : FREE on the CPU";
+        if (space == chai::GPU)
+          DEBUG_LOG << "FieldList : FREE on the GPU";
+      }
+      callback(record, action, space);
+    };
 }
 
 //****************************** Global Functions ******************************

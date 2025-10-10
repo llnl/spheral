@@ -78,15 +78,13 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
     FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, val);
     FieldListDouble field_list;
-    field1.setCallback(gpu_this->f_callback());
-    field2.setCallback(gpu_this->f_callback());
 
     field_list.appendField(field1);
     field_list.appendField(field2);
 
     const size_t numFields = field_list.size();
-    auto fl_v = field_list.view();
-    fl_v.setCallback(gpu_this->fl_callback());
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
+    DEBUG_LOG << "fl_v: " << &fl_v;
 
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -132,29 +130,29 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     const size_t numFields = field_list.size() ;
 
     { // Scope 1
-    auto fl_v = field_list.view(gpu_this->fl_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 1";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 1";
+      DEBUG_LOG << "Start Kernel 1";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 1";
 
-    fl_v.touch(chai::CPU, true);
+      fl_v.touch(chai::CPU, true);
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.view(gpu_this->fl_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 2";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 2";
+      DEBUG_LOG << "Start Kernel 2";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
   }
 
@@ -164,7 +162,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
     fl_ref_count = { 2, 0, 2, 2, 3, 2 };
     f_ref_count  = { 4, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 0, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -193,27 +191,27 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     const size_t numFields = field_list.size();
 
     { // Scope 1
-    auto fl_v = field_list.view(gpu_this->fl_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 1";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 1";
+      DEBUG_LOG << "Start Kernel 1";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 1";
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.view(gpu_this->fl_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 2";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 2";
+      DEBUG_LOG << "Start Kernel 2";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
   }
 
@@ -223,7 +221,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
     fl_ref_count = { 2, 0, 2, 2, 3, 2 };
     f_ref_count  = { 2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 0, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -362,7 +360,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
     fl_ref_count = {2, 0, 2, 2, 2, 2};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 0, 0, 2, 0};
+    fl_ref_count = {0, 0, 1, 0, 2, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 

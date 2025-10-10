@@ -35,16 +35,25 @@ SPHERAL_HOST
 inline
 FieldListView<Dimension, DataType>::
 FieldListView(FieldList<Dimension, DataType>& rhs):
-  mFieldViews(),
+  mFieldViews(rhs.fieldViews()),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   DEBUG_LOG << "FieldListView::FieldListView(const FieldList& " << &rhs << ") : " << this;
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mFieldViews = rhs.fieldViews();
-#else
-  auto fvs = rhs.fieldViews();
-  initMAView(mFieldViews, fvs);
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
 #endif
+
+// #ifdef SPHERAL_UNIFIED_MEMORY
+//   mFieldViews = rhs.fieldViews();
+// #else
+//   auto fvs = rhs.fieldViews();
+//   // initMAView(mFieldViews, fvs);
+//   const auto n = fvs.size();
+//   if (n > 0u) {
+//     mFieldViews = ContainerType(n);
+//     for (auto i = 0u; i < n; ++i) mFieldViews[i] = fvs[i];
+//   }
+//   mFieldViews.setUserCallback(getCallback());
+// #endif
   ENSURE(this->size() == rhs.size());
 }
 
@@ -56,10 +65,10 @@ SPHERAL_HOST_DEVICE
 inline
 FieldListView<Dimension, DataType>::
 ~FieldListView() {
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.free();
-#endif
   DEBUG_LOG << "FieldListView::~FieldListView() : " << this;
+// #ifndef SPHERAL_UNIFIED_MEMORY
+//   mFieldViews.free();
+// #endif
 }
 
 //------------------------------------------------------------------------------
@@ -71,6 +80,7 @@ inline
 FieldListView<Dimension, DataType>&
 FieldListView<Dimension, DataType>::
 operator=(const DataType& rhs) {
+  DEBUG_LOG << "FieldListView::FieldListView(" << rhs << ")";
   for (auto& x: mFieldViews) x = rhs;
   return *this;
 }
@@ -640,21 +650,21 @@ getCallback() {
     chai::ExecutionSpace space) {
       if (action == chai::ACTION_MOVE) {
         if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : MOVED to the CPU";
+          DEBUG_LOG << "FieldListView : MOVED to the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : MOVED to the GPU";
+          DEBUG_LOG << "FieldListView : MOVED to the GPU";
       }
       else if (action == chai::ACTION_ALLOC) {
         if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : ALLOC on the CPU";
+          DEBUG_LOG << "FieldListView : ALLOC on the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : ALLOC on the GPU";
+          DEBUG_LOG << "FieldListView : ALLOC on the GPU";
       }
       else if (action == chai::ACTION_FREE) {
         if (space == chai::CPU)
-          DEBUG_LOG << "FieldList : FREE on the CPU";
+          DEBUG_LOG << "FieldListView : FREE on the CPU";
         if (space == chai::GPU)
-          DEBUG_LOG << "FieldList : FREE on the GPU";
+          DEBUG_LOG << "FieldListView : FREE on the GPU";
       }
       callback(record, action, space);
     };

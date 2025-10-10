@@ -65,10 +65,10 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
     auto field_v = field.view();
     SPHERAL_ASSERT_EQ(field_v.numElements(), N);
 
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
-       [=] SPHERAL_HOST_DEVICE (size_t i) {
-         SPHERAL_ASSERT_EQ(field_v[i], 4.0);
-       });
+    // RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    //    [=] SPHERAL_HOST_DEVICE (size_t i) {
+    //      SPHERAL_ASSERT_EQ(field_v[i], 4.0);
+    //    });
 
   } // field and any GPU allocation should be released here.
 

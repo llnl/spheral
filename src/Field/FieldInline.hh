@@ -148,12 +148,11 @@ Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  try {
+  // try {
     mDataSpan.free();
-  } catch (umpire::runtime_error&) {
-    DEBUG_LOG << "Field::~Field attempt to double free ManagedArray";
-  }
-  DEBUG_LOG << " --> SUCCESS";
+  // } catch (umpire::runtime_error&) {
+  //   DEBUG_LOG << "Field::~Field attempt to double free ManagedArray";
+  // }
 #endif
 }
 
@@ -1333,7 +1332,6 @@ assignDataSpan() {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     mDataSpan.free();
     mDataSpan = chai::makeManagedArray(mDataArray.data(), mDataArray.size(), chai::CPU, false);
-    DEBUG_LOG << " --> SUCCESS";
   }
   mDataSpan.setUserCallback(this->getCallback());
 #endif
