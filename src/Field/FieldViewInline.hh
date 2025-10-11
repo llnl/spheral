@@ -101,7 +101,13 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyMin(const DataType& dataMin) {
-  for (auto& x: mDataSpan) x = std::max(x, dataMin);
+  for (auto& x: *this) x = std::max(x, dataMin);
+// #ifdef SPHERAL_UNIFIED_MEMORY
+//   for (auto& x: mDataSpan) x = std::max(x, dataMin);
+// #else
+//   const auto n = this->numElements();
+//   for (auto i = 0u; i < n; ++i) mDataSpan[i] = std::max(mDataSpan[i], dataMin);
+// #endif
 }
 
 //------------------------------------------------------------------------------
@@ -112,7 +118,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyMax(const DataType& dataMax) {
-  for (auto& x: mDataSpan) x = std::min(x, dataMax);
+  for (auto& x: *this) x = std::min(x, dataMax);
 }
 
 //------------------------------------------------------------------------------
@@ -123,7 +129,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
-  for (auto& x: mDataSpan) x = std::max(x, dataMin);
+  for (auto& x: *this) x = std::max(x, dataMin);
 }
 
 //------------------------------------------------------------------------------
@@ -134,7 +140,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
-  for (auto& x: mDataSpan) x = std::min(x, dataMax);
+  for (auto& x: *this) x = std::min(x, dataMax);
 }
 
 //------------------------------------------------------------------------------
@@ -176,7 +182,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator+=(const DataType& rhs) {
-  for (auto& x: mDataSpan) x += rhs;
+  for (auto& x: *this) x += rhs;
   return *this;
 }
 
@@ -189,7 +195,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator-=(const DataType& rhs) {
-  for (auto& x: mDataSpan) x -= rhs;
+  for (auto& x: *this) x -= rhs;
   return *this;
 }
 
@@ -232,7 +238,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator*=(const Scalar& rhs) {
-  for (auto& x: mDataSpan) x *= rhs;
+  for (auto& x: *this) x *= rhs;
   return *this;
 }
 
@@ -246,7 +252,7 @@ FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator/=(const Scalar& rhs) {
   const auto rhsInv = safeInvVar(rhs, 1.0e-60);
-  for (auto& x: mDataSpan) x *= rhsInv;
+  for (auto& x: *this) x *= rhsInv;
   return *this;
 }
 
