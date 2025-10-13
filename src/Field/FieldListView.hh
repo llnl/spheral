@@ -46,7 +46,7 @@ public:
   SPHERAL_HOST        FieldListView(FieldList<Dimension, DataType>& rhs);
   SPHERAL_HOST_DEVICE FieldListView(const FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
-  SPHERAL_HOST_DEVICE ~FieldListView();
+  SPHERAL_HOST_DEVICE ~FieldListView() = default;
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldListView& operator=(FieldListView& rhs) = default;

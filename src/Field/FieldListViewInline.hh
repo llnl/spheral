@@ -35,40 +35,14 @@ SPHERAL_HOST
 inline
 FieldListView<Dimension, DataType>::
 FieldListView(FieldList<Dimension, DataType>& rhs):
-  mFieldViews(rhs.fieldViews()),
+  mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
   DEBUG_LOG << "FieldListView::FieldListView(const FieldList& " << &rhs << ") : " << this;
+  mFieldViews = rhs.fieldViews();
 #ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
 #endif
-
-// #ifdef SPHERAL_UNIFIED_MEMORY
-//   mFieldViews = rhs.fieldViews();
-// #else
-//   auto fvs = rhs.fieldViews();
-//   // initMAView(mFieldViews, fvs);
-//   const auto n = fvs.size();
-//   if (n > 0u) {
-//     mFieldViews = ContainerType(n);
-//     for (auto i = 0u; i < n; ++i) mFieldViews[i] = fvs[i];
-//   }
-//   mFieldViews.setUserCallback(getCallback());
-// #endif
   ENSURE(this->size() == rhs.size());
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST_DEVICE
-inline
-FieldListView<Dimension, DataType>::
-~FieldListView() {
-  DEBUG_LOG << "FieldListView::~FieldListView() : " << this;
-// #ifndef SPHERAL_UNIFIED_MEMORY
-//   mFieldViews.free();
-// #endif
 }
 
 //------------------------------------------------------------------------------
