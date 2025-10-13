@@ -79,7 +79,7 @@ public:
   using FieldPtrSpan = SPHERAL_SPAN_TYPE<Field<Dimension, DataType>*>;
   using FieldBasePtrSpan = SPHERAL_SPAN_TYPE<FieldBase<Dimension>*>;
   
-#ifdef SPHERAL_UNIFIED_MEMORYne
+#ifdef SPHERAL_UNIFIED_MEMORY
   using FieldViewSpan = SPHERAL_SPAN_TYPE<FieldView<Dimension, DataType>>;
 #else
   using FieldViewSpan = chai::ManagedArray<FieldView<Dimension, DataType>>;

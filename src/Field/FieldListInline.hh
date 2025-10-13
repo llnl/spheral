@@ -1493,7 +1493,9 @@ FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback) {
   setCallback(fieldlist_callback);
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
+#endif
   auto result = FieldListView<Dimension, DataType>(*this);
   result.setCallback(fieldlist_callback);
   return result;
@@ -1506,7 +1508,9 @@ FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback, FCB&& field_callback) {
   setCallback(fieldlist_callback);
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
+#endif
   auto result = FieldListView<Dimension, DataType>(*this);
   result.setCallback(fieldlist_callback);
   for (auto& x: result) x.setCallback(field_callback);
