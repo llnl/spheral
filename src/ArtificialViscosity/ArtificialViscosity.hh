@@ -41,8 +41,8 @@ public:
 
   // Constructors, destructor
   ArtificialViscosity(const Scalar Clinear,
-                            const Scalar Cquadratic,
-                            const TableKernel<Dimension>& kernel);
+                      const Scalar Cquadratic,
+                      const TableKernel<Dimension>& kernel);
   virtual ~ArtificialViscosity() = default;
 
   // No default constructor, copying, or assignment

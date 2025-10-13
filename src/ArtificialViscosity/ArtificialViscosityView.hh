@@ -31,8 +31,8 @@ public:
 
   // Constructors, destructor
   ArtificialViscosityView(const Scalar Clinear,
-                      const Scalar Cquadratic,
-                      const TableKernel<Dimension>& kernel): ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {}
+                          const Scalar Cquadratic,
+                          const TableKernel<Dimension>& kernel): ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {}
   virtual ~ArtificialViscosityView() = default;
 
   // No default constructor, copying, or assignment
