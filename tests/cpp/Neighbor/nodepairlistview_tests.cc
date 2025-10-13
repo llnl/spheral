@@ -59,6 +59,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, DefaultConstructor) {
 // Test copy and assignment
 GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
   NPL npl = gpu_this->createContainer();
+  SPHERAL_ASSERT_EQ(npl.size(), N);
   npl.setUserCallback(gpu_this->callback());
   {
     NPL npl_2(npl);
@@ -224,9 +225,14 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, ScopeChanges) {
 
 GPU_TYPED_TEST_P(NPLViewTypedTest, EmptyInit) {
   NPLVec npl_vec = gpu_this->createVec();
-  npl_vec.clear();
-  NPL npl(std::move(npl_vec));
+  NPL npl(npl_vec);
   NPLV npl_v = npl.view();
+  SPHERAL_ASSERT_EQ(npl_v.size(), N);
+  SPHERAL_ASSERT_EQ(npl.size(), N);
+  npl_vec = gpu_this->createVec();
+  npl_vec.clear();
+  npl.fill(npl_vec);
+  npl_v = npl.view();
   SPHERAL_ASSERT_EQ(npl_v.size(), 0u);
   SPHERAL_ASSERT_EQ(npl.size(), 0u);
 }
