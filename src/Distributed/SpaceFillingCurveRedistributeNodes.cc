@@ -291,6 +291,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       {
         for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
           const Field<Dimension, Key>& keyField = **indices.fieldForNodeList(*nodeListPtr);
+          CONTRACT_VAR(keyField);
           for (auto i = 1u; i < nodeListPtr->numInternalNodes(); ++i) {
             ENSURE2(keyField(i) >= keyField(i - 1), nodeListPtr->name()
                     << " (" << (i - 1) << " " << i << ") (" 
