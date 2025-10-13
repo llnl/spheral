@@ -36,6 +36,9 @@ Notable changes include:
       * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if
         a temporary variable is used elsewhere.
 
+  * Bug fixes
+    * corrected rolling and torsional coefficient in DEM which were 2x the expected value
+    
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
     * A python virtual environment is installed in the spheral build dir, removing the
@@ -60,6 +63,7 @@ Notable changes include:
     * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
 
 
 Version v2025.06.1 -- Release date 2025-07-21
