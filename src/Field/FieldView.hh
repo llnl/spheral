@@ -61,11 +61,7 @@ public:
   SPHERAL_HOST_DEVICE DataType& operator[](const size_t index) const;
 
   // The number of elements in the field.
-#ifdef SPHERAL_UNIFIED_MEMORY
   SPHERAL_HOST_DEVICE size_t numElements()         const { return mDataSpan.size(); }
-#else
-  SPHERAL_HOST_DEVICE size_t numElements()         const { return mNumInternalElements + mNumGhostElements; }
-#endif
   SPHERAL_HOST_DEVICE size_t numInternalElements() const { return mNumInternalElements; }
   SPHERAL_HOST_DEVICE size_t numGhostElements()    const { return mNumGhostElements; }
 

@@ -149,11 +149,7 @@ Field<Dimension, DataType>::
 ~Field() {
 #ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  // try {
-    mDataSpan.free();
-  // } catch (umpire::runtime_error&) {
-  //   DEBUG_LOG << "Field::~Field attempt to double free ManagedArray";
-  // }
+  mDataSpan.free();
 #endif
 }
 
@@ -1337,6 +1333,7 @@ assignDataSpan() {
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
+  ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
 }
 
 } // namespace Spheral

@@ -102,12 +102,6 @@ inline
 void
 FieldView<Dimension, DataType>::applyMin(const DataType& dataMin) {
   for (auto& x: *this) x = std::max(x, dataMin);
-// #ifdef SPHERAL_UNIFIED_MEMORY
-//   for (auto& x: mDataSpan) x = std::max(x, dataMin);
-// #else
-//   const auto n = this->numElements();
-//   for (auto i = 0u; i < n; ++i) mDataSpan[i] = std::max(mDataSpan[i], dataMin);
-// #endif
 }
 
 //------------------------------------------------------------------------------
@@ -337,81 +331,6 @@ FieldView<Dimension, DataType>::
 operator!=(const FieldView<Dimension, DataType>& rhs) const {
   return !((*this) == rhs);
 }
-
-// //------------------------------------------------------------------------------
-// // operator>(FieldView)
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// bool
-// FieldView<Dimension, DataType>::
-// operator>(const FieldView<Dimension, DataType>& rhs) const {
-//   const auto n = this->numElements();
-//   if (rhs.numElements() != n) return false;
-//   auto result = true;
-//   size_t i = 0u;
-//   while (i < n and result) {
-//     result = (*this)[i] > rhs[i];
-//     ++i;
-//   }
-//   return result;
-// }
-
-// //------------------------------------------------------------------------------
-// // operator<(FieldView)
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// bool
-// FieldView<Dimension, DataType>::
-// operator<(const FieldView<Dimension, DataType>& rhs) const {
-//   const auto n = this->numElements();
-//   if (rhs.numElements() != n) return false;
-//   auto result = true;
-//   size_t i = 0u;
-//   while (i < n and result) {
-//     result = (*this)[i] < rhs[i];
-//     ++i;
-//   }
-//   return result;
-// }
-
-// //------------------------------------------------------------------------------
-// // operator>=(FieldView)
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// bool
-// FieldView<Dimension, DataType>::
-// operator>=(const FieldView<Dimension, DataType>& rhs) const {
-//   const auto n = this->numElements();
-//   if (rhs.numElements() != n) return false;
-//   auto result = true;
-//   size_t i = 0u;
-//   while (i < n and result) {
-//     result = (*this)[i] >= rhs[i];
-//     ++i;
-//   }
-// }
-
-// //------------------------------------------------------------------------------
-// // operator<=(Field)
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// bool
-// FieldView<Dimension, DataType>::
-// operator<=(const FieldView<Dimension, DataType>& rhs) const {
-//   const auto n = this->numElements();
-//   if (rhs.numElements() != n) return false;
-//   auto result = true;
-//   size_t i = 0u;
-//   while (i < n and result) {
-//     result = (*this)[i] <= rhs[i];
-//     ++i;
-//   }
-//   return result;
-// }
 
 //------------------------------------------------------------------------------
 // operator==(value)
