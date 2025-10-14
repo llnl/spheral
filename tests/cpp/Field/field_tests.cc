@@ -234,6 +234,44 @@ TEST_F(FieldTest, FieldOperators) {
 
     auto h = a / b;
     RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(h(i), A / B); });
+
+    {
+      auto z = a;
+      z += b;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A + B); });
+    }
+      
+    {
+      auto z = a;
+      z -= b;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A - B); });
+    }
+      
+    {
+      auto z = a;
+      z += 4.5;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A + 4.5); });
+    }
+      
+    {
+      auto z = a;
+      z -= 4.5;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A - 4.5); });
+    }
+      
+    {
+      auto z = a;
+      z *= 4.5;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A * 4.5); });
+    }
+      
+    {
+      auto z = a;
+      z /= 4.5;
+      RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, 10), [=](int i) { SPHERAL_ASSERT_EQ(z(i), A / 4.5); });
+    }
+      
+    
   }
   SPHERAL_ASSERT_EQ(this->test_node_list.numFields(), 5);
 }
