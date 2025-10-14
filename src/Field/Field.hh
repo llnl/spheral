@@ -99,16 +99,16 @@ public:
   virtual bool operator==(const FieldBase<Dimension>& rhs) const override;
 
   // Foward the FieldView Field-Field comparison operators
-  bool operator==(const Field& rhs) const { return FieldView<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const Field& rhs) const { return FieldView<Dimension, DataType>::operator!=(rhs); }
+  bool operator==(const Field& rhs) const { return ViewType::operator==(rhs); }
+  bool operator!=(const Field& rhs) const { return ViewType::operator!=(rhs); }
 
   // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator==(rhs); }
-  bool operator!=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator!=(rhs); }
-  bool operator> (const DataType& rhs) const { return FieldView<Dimension, DataType>::operator> (rhs); }
-  bool operator< (const DataType& rhs) const { return FieldView<Dimension, DataType>::operator< (rhs); }
-  bool operator>=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator>=(rhs); }
-  bool operator<=(const DataType& rhs) const { return FieldView<Dimension, DataType>::operator<=(rhs); }
+  bool operator==(const DataType& rhs) const { return ViewType::operator==(rhs); }
+  bool operator!=(const DataType& rhs) const { return ViewType::operator!=(rhs); }
+  bool operator> (const DataType& rhs) const { return ViewType::operator> (rhs); }
+  bool operator< (const DataType& rhs) const { return ViewType::operator< (rhs); }
+  bool operator>=(const DataType& rhs) const { return ViewType::operator>=(rhs); }
+  bool operator<=(const DataType& rhs) const { return ViewType::operator<=(rhs); }
 
   // Element access by NodeIterator
   DataType& operator()(const NodeIteratorBase<Dimension>& itr);
@@ -119,6 +119,16 @@ public:
 
   // Zero out the field elements.
   virtual void Zero() override;
+
+  // Forward the in-place arithmetic operations from FieldView
+  Field& operator+=(const ViewType& rhs)                       { return static_cast<Field&>(ViewType::operator+=(rhs)); }
+  Field& operator-=(const ViewType& rhs)                       { return static_cast<Field&>(ViewType::operator-=(rhs)); }
+  Field& operator+=(const DataType& rhs)                       { return static_cast<Field&>(ViewType::operator+=(rhs)); }
+  Field& operator-=(const DataType& rhs)                       { return static_cast<Field&>(ViewType::operator-=(rhs)); }
+  Field& operator*=(const FieldView<Dimension, Scalar>& rhs)   { return static_cast<Field&>(ViewType::operator*=(rhs)); }
+  Field& operator/=(const FieldView<Dimension, Scalar>& rhs)   { return static_cast<Field&>(ViewType::operator/=(rhs)); }
+  Field& operator*=(const Scalar& rhs)                         { return static_cast<Field&>(ViewType::operator*=(rhs)); }
+  Field& operator/=(const Scalar& rhs)                         { return static_cast<Field&>(ViewType::operator/=(rhs)); }
 
   // Standard field additive operators.
   Field operator+(const Field& rhs) const;
@@ -148,12 +158,12 @@ public:
   const_iterator ghostEnd() const                                           { return mDataArray.end(); }
 
   // We have to explicitly redefine the non-const iterators
-  iterator begin()                                                          { return FieldView<Dimension, DataType>::begin(); }
-  iterator end()                                                            { return FieldView<Dimension, DataType>::end(); }
-  iterator internalBegin()                                                  { return FieldView<Dimension, DataType>::internalBegin(); }
-  iterator internalEnd()                                                    { return FieldView<Dimension, DataType>::internalEnd(); }
-  iterator ghostBegin()                                                     { return FieldView<Dimension, DataType>::ghostBegin(); }
-  iterator ghostEnd()                                                       { return FieldView<Dimension, DataType>::ghostEnd(); }
+  iterator begin()                                                          { return ViewType::begin(); }
+  iterator end()                                                            { return ViewType::end(); }
+  iterator internalBegin()                                                  { return ViewType::internalBegin(); }
+  iterator internalEnd()                                                    { return ViewType::internalEnd(); }
+  iterator ghostBegin()                                                     { return ViewType::ghostBegin(); }
+  iterator ghostEnd()                                                       { return ViewType::ghostEnd(); }
 
   // Required functions from FieldBase
   virtual void setNodeList(const NodeList<Dimension>& nodeList) override;
