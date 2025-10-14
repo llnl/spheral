@@ -57,7 +57,7 @@ SPHERAL_HOST_DEVICE
 inline
 DataType&
 FieldView<Dimension, DataType>::at(size_t index) {
-  VERIFY2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
+  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -66,7 +66,7 @@ SPHERAL_HOST_DEVICE
 inline
 DataType&
 FieldView<Dimension, DataType>::at(size_t index) const {
-  VERIFY2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
+  VERIFY2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -79,7 +79,7 @@ inline
 DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) {
-  CHECK2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -89,7 +89,7 @@ inline
 DataType&
 FieldView<Dimension, DataType>::
 operator[](const size_t index) const {
-  CHECK2(index < this->numElements(), "FieldView index out of range: " << index << " " << this->numElements());
+  CHECK2(index < mDataSpan.size(), "FieldView index out of range: " << index << " " << mDataSpan.size());
   return mDataSpan[index];
 }
 
@@ -146,7 +146,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator+=(const FieldView<Dimension, DataType>& rhs) {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) += rhs(i);
   return *this;
@@ -161,7 +161,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator-=(const FieldView<Dimension, DataType>& rhs) {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) -= rhs(i);
   return *this;
@@ -202,7 +202,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator*=(const FieldView<Dimension, Scalar>& rhs) {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) *= rhs(i);
   return *this;
@@ -217,7 +217,7 @@ inline
 FieldView<Dimension, DataType>&
 FieldView<Dimension, DataType>::
 operator/=(const FieldView<Dimension, typename Dimension::Scalar>& rhs) {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   REQUIRE(rhs.numElements() == n);
   for (auto i = 0u; i < n; ++i) (*this)(i) *= safeInvVar(rhs(i), 1.0e-60);
   return *this;
@@ -309,7 +309,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator==(const FieldView<Dimension, DataType>& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   if (rhs.numElements() != n) return false;
   auto result = true;
   size_t i = 0u;
@@ -341,7 +341,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator==(const DataType& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   auto result = true;
   size_t i = 0u;
   while (i < n and result) {
@@ -372,7 +372,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator>(const DataType& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   auto result = true;
   size_t i = 0u;
   while (i < n and result) {
@@ -391,7 +391,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator<(const DataType& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   auto result = true;
   size_t i = 0u;
   while (i < n and result) {
@@ -410,7 +410,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator>=(const DataType& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   auto result = true;
   size_t i = 0u;
   while (i < n and result) {
@@ -429,7 +429,7 @@ inline
 bool
 FieldView<Dimension, DataType>::
 operator<=(const DataType& rhs) const {
-  const auto n = this->numElements();
+  const auto n = mDataSpan.size();
   auto result = true;
   size_t i = 0u;
   while (i < n and result) {
@@ -514,55 +514,6 @@ touch(chai::ExecutionSpace space) {
 #ifndef SPHERAL_UNIFIED_MEMORY
   mDataSpan.registerTouch(space);
 #endif
-}
-
-//------------------------------------------------------------------------------
-// setCallback
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST
-inline
-void
-FieldView<Dimension, DataType>::
-setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mChaiCallback = f;
-  mDataSpan.setUserCallback(getCallback());
-#endif
-}
-
-// Default callback action to be used with chai Managed containers. An
-// additional calback can be passed to extend this functionality. Useful for
-// debuggin, testing and probing for performance counters / metrics.
-template<typename Dimension, typename DataType>
-inline
-auto
-FieldView<Dimension, DataType>::
-getCallback() {
-  return [callback = mChaiCallback](
-    const chai::PointerRecord * record,
-    chai::Action action,
-    chai::ExecutionSpace space) {
-      if (action == chai::ACTION_MOVE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field : MOVED to the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field : MOVED to the GPU";
-      }
-      else if (action == chai::ACTION_ALLOC) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field : ALLOC on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field : ALLOC on the GPU";
-      }
-      else if (action == chai::ACTION_FREE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "Field : FREE on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "Field : FREE on the GPU";
-      }
-      callback(record, action, space);
-    };
 }
 
 //****************************** Global Functions ******************************

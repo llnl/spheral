@@ -42,7 +42,7 @@ public:
 #endif
 
   // Constructors, destructor
-  SPHERAL_HOST_DEVICE FieldListView();
+  SPHERAL_HOST_DEVICE FieldListView() = default;
   SPHERAL_HOST        FieldListView(FieldList<Dimension, DataType>& rhs);
   SPHERAL_HOST_DEVICE FieldListView(const FieldListView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldListView(FieldListView&& rhs) = default;
@@ -127,15 +127,11 @@ public:
   SPHERAL_HOST_DEVICE value_type* data() const;
   SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const;
   SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);
-  SPHERAL_HOST        void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
   //..........................................................................
 
 private:
   //--------------------------- Private Interface ---------------------------//
   ContainerType mFieldViews;
-  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
-
-  auto getCallback();
 };
 
 }

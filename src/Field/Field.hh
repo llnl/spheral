@@ -71,6 +71,7 @@ public:
   using FieldView<Dimension, DataType>::operator[];
 
   // Constructors.
+  Field() = delete;
   explicit Field(FieldName name);
   Field(FieldName name, const Field& field);
   Field(FieldName name,
@@ -181,12 +182,12 @@ public:
   // Functions to help with storing the field in a Sidre datastore.
   axom::sidre::DataTypeId getAxomTypeID() const;
 
+  // Callback method for CHAI
+  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
+
   // Get the view (for trivially copyable types)
   ViewType view();
   template<typename CB>  ViewType view(CB&& field_callback);
-
-  // No default constructor.
-  Field() = delete;
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -201,11 +202,13 @@ private:
   // Private Data
   std::vector<DataType, DataAllocator<DataType>> mDataArray;
 
-  friend FieldView<Dimension, DataType>;
   using FieldView<Dimension, DataType>::mDataSpan;
   using FieldView<Dimension, DataType>::mNumInternalElements;
   using FieldView<Dimension, DataType>::mNumGhostElements;
-  using FieldView<Dimension, DataType>::mChaiCallback;
+
+  // Callback function for debugging CHAI
+  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+  auto getCallback();
 
   // Helper method to keep mDataSpan and mDataArray consistent
   void assignDataSpan();

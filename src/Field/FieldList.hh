@@ -295,7 +295,7 @@ public:
   void threadReduce() const;
 
   //----------------------------------------------------------------------------
-  // Return a view of the Field (appropriate for on accelerator devices)
+  // Return a view of the FieldList (appropriate for on accelerator devices)
   // The 2nd and 3rd versions are for debugging/diagnostics.
   ViewType view();
   template<typename FLCB>               ViewType view(FLCB&& fieldlist_callback);
@@ -323,12 +323,13 @@ private:
 #else
   FieldViewSpan mFieldViews;
 #endif
+
+  // CHAI callback functions for debugging
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+  auto getCallback();
 
   // Set the internal dependent arrays based on the Field pointers.
   virtual void buildDependentArrays() override;
-
-  auto getCallback();
 
 public:
   // A data attribute to indicate how to reduce this field across threads.

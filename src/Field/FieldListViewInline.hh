@@ -12,22 +12,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST_DEVICE
-inline
-FieldListView<Dimension, DataType>::
-FieldListView():
-  mFieldViews(),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
-  DEBUG_LOG << "FieldListView::FieldListView() : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.setUserCallback(getCallback());
-#endif
-}
-
-//------------------------------------------------------------------------------
 // Construct from a FieldList
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
@@ -35,13 +19,9 @@ SPHERAL_HOST
 inline
 FieldListView<Dimension, DataType>::
 FieldListView(FieldList<Dimension, DataType>& rhs):
-  mFieldViews(),
-  mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}) {
+  mFieldViews() {
   DEBUG_LOG << "FieldListView::FieldListView(const FieldList& " << &rhs << ") : " << this;
   mFieldViews = rhs.fieldViews();
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.setUserCallback(getCallback());
-#endif
   ENSURE(this->size() == rhs.size());
 }
 
@@ -592,56 +572,6 @@ touch(chai::ExecutionSpace space, bool recursive) {
     }
   }
 #endif
-}
-
-//------------------------------------------------------------------------------
-// setCallback
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-SPHERAL_HOST
-inline
-void
-FieldListView<Dimension, DataType>::
-setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
-  mChaiCallback = f;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.setUserCallback(getCallback());
-#endif
-}
-
-//------------------------------------------------------------------------------
-// Default callback action to be used with chai Managed containers. An
-// additional calback can be passed to extend this functionality. Useful for
-// debugging, testing and probing for performance counters / metrics.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-auto
-FieldListView<Dimension, DataType>::
-getCallback() {
-  return [callback = mChaiCallback](
-    const chai::PointerRecord * record,
-    chai::Action action,
-    chai::ExecutionSpace space) {
-      if (action == chai::ACTION_MOVE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldListView : MOVED to the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldListView : MOVED to the GPU";
-      }
-      else if (action == chai::ACTION_ALLOC) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldListView : ALLOC on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldListView : ALLOC on the GPU";
-      }
-      else if (action == chai::ACTION_FREE) {
-        if (space == chai::CPU)
-          DEBUG_LOG << "FieldListView : FREE on the CPU";
-        if (space == chai::GPU)
-          DEBUG_LOG << "FieldListView : FREE on the GPU";
-      }
-      callback(record, action, space);
-    };
 }
 
 }
