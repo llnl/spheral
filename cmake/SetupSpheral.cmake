@@ -76,7 +76,7 @@ option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
 option(ENABLE_SHARED "Building C++ libs shared" ON)
-option(SPHERAL_UNIFIED_MEMORY "On GPU machines configure Spheral to use unified memory" ON)
+option(SPHERAL_UNIFIED_MEMORY "On GPU machines configure Spheral to use unified memory" OFF)
 
 if (SPHERAL_UNIFIED_MEMORY)
   message("-- Enabling unified memory for GPU architectures")
