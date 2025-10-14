@@ -84,7 +84,7 @@ using LOOP_EXEC_POLICY = RAJA::seq_exec;
 #define COMP_COUNTERS(LHS, RHS)
 #else
 #define COMP_COUNTERS(LHS, RHS) \
-  if (LHS != RHS) LHS.print();                                                  \
+  if (LHS != RHS) { LHS.print(); RHS.print(); }                                 \
   SPHERAL_ASSERT_EQ_MSG(LHS.HToDCopies, RHS.HToDCopies, "Failed HToDCopies\n"); \
   SPHERAL_ASSERT_EQ_MSG(LHS.DToHCopies, RHS.DToHCopies, "Failed DToHCopies\n"); \
   SPHERAL_ASSERT_EQ_MSG(LHS.HNumAlloc,  RHS.HNumAlloc, "Failed HNumAlloc\n");   \

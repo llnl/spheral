@@ -84,7 +84,6 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
 
     const size_t numFields = field_list.size();
     auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
-    DEBUG_LOG << "fl_v: " << &fl_v;
 
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -96,7 +95,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {1, 0, 1, 1, 2, 1};
+    fl_ref_count = {1, 0, 0, 1, 1, 1};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 1, 0};
@@ -159,7 +158,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 2, 0, 2, 2, 3, 2 };
+    fl_ref_count = { 2, 0, 0, 1, 1, 1 };
     f_ref_count  = { 4, 0, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 1, 0};
@@ -218,7 +217,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 2, 0, 2, 2, 3, 2 };
+    fl_ref_count = { 1, 0, 0, 1, 1, 1 };
     f_ref_count  = { 2, 0, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 1, 0};
@@ -265,7 +264,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 1, 1, 1, 1, 2, 1 };
+    fl_ref_count = { 1, 1, 0, 1, 1, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 1, 0};
@@ -312,7 +311,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 1, 1, 1, 1, 1, 1 };
+    fl_ref_count = { 1, 1, 0, 1, 1, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 1, 0};
@@ -357,7 +356,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {2, 0, 2, 2, 2, 2};
+    fl_ref_count = {2, 0, 1, 2, 2, 2};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 1, 0, 2, 0};
@@ -414,7 +413,7 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {2, 2, 2, 2, 2, 2};
+    fl_ref_count = {2, 2, 0, 2, 2, 2};
     f_ref_count  = {2, 2, 0, 2, 0, 2};
   } else {
     fl_ref_count = {0, 0, 0, 0, 2, 0};
