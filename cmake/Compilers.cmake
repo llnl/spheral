@@ -1,5 +1,16 @@
 message("-- C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 
+#-------------------------------------------------------------------------------
+# Optionally suppress compiler warnings
+#-------------------------------------------------------------------------------
+
+option(SPHERAL_ENABLE_WARNINGS "show compiler warnings" ON)
+option(SPHERAL_ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
+
+option(SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
+option(SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
+option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
+
 set(LANG_STR "CXX")
 if (ENABLE_HIP)
   set(LANG_STR "HIP")

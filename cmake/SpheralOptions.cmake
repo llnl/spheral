@@ -58,14 +58,3 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(DEFAULT_DBC_MODE "All")
 endif()
 set(SPHERAL_DBC_MODE ${DEFAULT_DBC_MODE} CACHE STRING "Design-by-contract flag for debugging. Options: 'All', 'Pre', 'None'")
-
-#-------------------------------------------------------------------------------
-# Optionally suppress compiler warnings
-#-------------------------------------------------------------------------------
-
-option(SPHERAL_ENABLE_WARNINGS "show compiler warnings" ON)
-option(SPHERAL_ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
-
-option(SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
-option(SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
-option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
