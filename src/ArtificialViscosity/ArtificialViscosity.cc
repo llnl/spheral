@@ -42,8 +42,8 @@ using std::vector;
 template<typename Dimension>
 ArtificialViscosity<Dimension>::
 ArtificialViscosity(const Scalar Clinear,
-                          const Scalar Cquadratic,
-                          const TableKernel<Dimension>& kernel):
+                    const Scalar Cquadratic,
+                    const TableKernel<Dimension>& kernel):
   Physics<Dimension>(),
   mClinear(Clinear),
   mCquadratic(Cquadratic),

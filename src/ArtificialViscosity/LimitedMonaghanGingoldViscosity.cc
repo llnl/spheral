@@ -52,6 +52,7 @@ namespace {
 //  }
 //}
 
+//SPHERAL_HOST_DEVICE
 double limiterVL(const double x) {
   if (x > 0.0) {
     return 2.0/(1.0 + x)*2.0*x/(1.0 + x);                       // van Leer
@@ -115,17 +116,22 @@ LimitedMonaghanGingoldViscosity(const Scalar Clinear,
                                 const Scalar etaCritFrac,
                                 const Scalar etaFoldFrac):
   MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel, 
-                                      linearInExpansion, quadraticInExpansion),
-  mEtaCritFrac(etaCritFrac),
-  mEtaFoldFrac(etaFoldFrac) {
+                                      linearInExpansion, quadraticInExpansion) {
+  m_viewPtr = chai::make_managed<m_viewType>(Clinear,
+                                             Cquadratic,
+                                             linearInExpansion,
+                                             quadraticInExpansion,
+                                             etaCritFrac,
+                                             etaFoldFrac);
 }
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 void
-LimitedMonaghanGingoldViscosity<Dimension>::
+LimitedMonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
       const unsigned nodeListi, const unsigned i, 
@@ -155,7 +161,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // We need nPerh to figure out our critical folding distance. We assume the first NodeList value for this is
   // correct for all of them...
-  const auto nPerh = DvDx[0]->nodeList().nodesPerSmoothingScale();
+  // TODO: DO NOT COMMIT THIS CHANGE
+  const auto nPerh = 10;
+  //const auto nPerh = DvDx[0]->nodeList().nodesPerSmoothingScale();
   const auto etaCrit = mEtaCritFrac/nPerh;
   const auto etaFold = mEtaFoldFrac/nPerh;
   CHECK(etaFold > 0.0);
@@ -192,7 +200,7 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   // phi *= (etaij2 < etaCrit2 ? 0.0 : 1.0);
   // phi *= min(1.0, etaij2*etaij2/(etaCrit2etaCrit2));
   if (etaij < etaCrit) {
-    phi *= exp(-FastMath::square((etaij - etaCrit)/etaFold));
+    phi *= exp(-std::pow((etaij - etaCrit)/etaFold), 2);
   }
 
   // Compute the corrected velocity difference.
@@ -211,9 +219,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // The artificial internal energy.
   const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : min(0.0, mui)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(min(0.0, mui)));
+    Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : std::pow(min(0.0, mui), 2));
   const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : min(0.0, muj)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(min(0.0, muj)));
+    Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : std::pow(min(0.0, muj), 2));
   CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
 

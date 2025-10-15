@@ -40,15 +40,17 @@ FiniteVolumeViscosity<Dimension>::
 FiniteVolumeViscosity(const Scalar Clinear,
                       const Scalar Cquadratic,
                       const TableKernel<Dimension>& WT):
-  ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic, WT) {
+  ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) {
+  m_viewPtr = chai::make_managed<m_viewType>(Clinear, Cquadratic);
 }
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 void
-FiniteVolumeViscosity<Dimension>::
+FiniteVolumeViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
       const unsigned nodeListi, const unsigned i, 

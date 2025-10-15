@@ -7,6 +7,7 @@
 #define __Spheral_safevInv__
 
 #include "SpheralFunctions.hh"
+#include "config.hh"
 
 namespace Spheral {
 

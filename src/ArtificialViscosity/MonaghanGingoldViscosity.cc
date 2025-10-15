@@ -36,17 +36,20 @@ MonaghanGingoldViscosity(const Scalar Clinear,
                          const TableKernel<Dimension>& kernel,
                          const bool linearInExpansion,
                          const bool quadraticInExpansion):
-  ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic, kernel),
-  mLinearInExpansion(linearInExpansion),
-  mQuadraticInExpansion(quadraticInExpansion) {
+  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
+  m_viewPtr = chai::make_managed<m_viewType>(Clinear,
+                                             Cquadratic,
+                                             linearInExpansion,
+                                             quadraticInExpansion);
 }
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 void
-MonaghanGingoldViscosity<Dimension>::
+MonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
       const unsigned nodeListi, const unsigned i, 

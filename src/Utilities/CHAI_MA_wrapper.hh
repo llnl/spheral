@@ -25,18 +25,9 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
 
 template<typename DerivedClass, typename BaseClass, typename... Args>
 chai::managed_ptr<BaseClass>
-initMP(chai::ExecutionSpace space,
-       Args&&... args) {
-  BaseClass* base_ptr;
-#if defined(SPHERAL_GPU_ENABLED)
-  if (space == chai::GPU) {
-    base_ptr = chai::make_on_device<DerivedClass>(std::forward<Args>(args)...);
-  } else
-#endif
-    {
-      base_ptr = new DerivedClass(std::forward<Args>(args)...);
-    }
-  return chai::managed_ptr<BaseClass> ({space}, {base_ptr});
+initMP(Args&&... args) {
+  chai::managed_ptr<BaseClass> derived = chai::make_managed<DerivedClass>(std::forward<Args>(args)...);
+  return derived;
 }
 
 }

@@ -53,11 +53,6 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   RKOrder mOrder;
-
-  using ArtificialViscosityView<Dimension, Tensor>::mClinear;
-  using ArtificialViscosityView<Dimension, Tensor>::mCquadratic;
-  using ArtificialViscosityView<Dimension, Tensor>::mEpsilon2;
-  using ArtificialViscosityView<Dimension, Tensor>::mBalsaraShearCorrection;
 };
 
 }

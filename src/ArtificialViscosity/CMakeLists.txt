@@ -25,8 +25,8 @@ instantiate(ArtificialViscosity_inst ArtificialViscosity_sources)
 
 set(ArtificialViscosity_headers
     ArtificialViscosity.hh
-    ArtificialViscosityInline.hh
     ArtificialViscosityView.hh
+    ArtificialViscosityViewInline.hh
     LimitedMonaghanGingoldViscosity.hh
     LimitedMonaghanGingoldViscosityRZ.hh
     CullenDehnenViscosity.hh

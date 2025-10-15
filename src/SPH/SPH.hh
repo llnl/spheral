@@ -7,6 +7,7 @@
 #define __Spheral_SPH__
 
 #include "SPH/SPHBase.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 
 #include <memory>
 
@@ -87,7 +88,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Access our state.
   const PairAccelerationsType& pairAccelerations() const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }

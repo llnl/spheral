@@ -7,12 +7,12 @@
 #ifndef __Spheral_TensorSVPHViscosity__
 #define __Spheral_TensorSVPHViscosity__
 
-#include "ArtificialViscosityView.hh"
+#include "ArtificialViscosity.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorSVPHViscosity: public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
+class TensorSVPHViscosity: public ArtificialViscosity<Dimension> {//, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -37,25 +37,25 @@ public:
 
   // We are abusing the normal ArtificialViscosity interface, and this normally
   // required method is a no-op for this specialization.
-  virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
-                     Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const unsigned nodeListi, const unsigned i, 
-                     const unsigned nodeListj, const unsigned j,
-                     const Vector& xi,
-                     const SymTensor& Hi,
-                     const Vector& etai,
-                     const Vector& vi,
-                     const Scalar rhoi,
-                     const Scalar csi,
-                     const Vector& xj,
-                     const SymTensor& Hj,
-                     const Vector& etaj,
-                     const Vector& vj,
-                     const Scalar rhoj,
-                     const Scalar csj,
-                     const FieldList<Dimension, Scalar>& fCl,
-                     const FieldList<Dimension, Scalar>& fCq,
-                     const FieldList<Dimension, Tensor>& DvDx) const override { VERIFY2(false, "TensorSVPHViscosity ERROR: cannot call QPiij"); }
+  // virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
+  //                    Scalar& Qij, Scalar& Qji,          // result for viscous pressure
+  //                    const unsigned nodeListi, const unsigned i, 
+  //                    const unsigned nodeListj, const unsigned j,
+  //                    const Vector& xi,
+  //                    const SymTensor& Hi,
+  //                    const Vector& etai,
+  //                    const Vector& vi,
+  //                    const Scalar rhoi,
+  //                    const Scalar csi,
+  //                    const Vector& xj,
+  //                    const SymTensor& Hj,
+  //                    const Vector& etaj,
+  //                    const Vector& vj,
+  //                    const Scalar rhoj,
+  //                    const Scalar csj,
+  //                    const FieldList<Dimension, Scalar>& fCl,
+  //                    const FieldList<Dimension, Scalar>& fCq,
+  //                    const FieldList<Dimension, Tensor>& DvDx) const override { VERIFY2(false, "TensorSVPHViscosity ERROR: cannot call QPiij"); }
 
   // Access our internal state.
   Scalar fslice()                               const          { return mfslice; }
@@ -64,6 +64,8 @@ public:
   const std::vector<Tensor>& DvDx()             const          { return mDvDx; }
   const std::vector<Scalar>& shearCorrection()  const          { return mShearCorrection; }
   const std::vector<Tensor>& Qface()            const          { return mQface; }
+
+  virtual std::type_index QPiTypeIndex() const override        { return typeid(Tensor); }
 
   // Restart methods.
   virtual std::string label()                   const override { return "TensorSVPHViscosity"; }

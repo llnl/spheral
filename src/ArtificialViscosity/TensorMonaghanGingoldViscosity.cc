@@ -36,6 +36,7 @@ namespace {
 // Helper to remove any expansion terms from DvDx
 //------------------------------------------------------------------------------
 template<typename Tensor>
+//SPHERAL_HOST_DEVICE
 inline
 void
 removeExpansion(Tensor& DvDx) {
@@ -57,15 +58,18 @@ TensorMonaghanGingoldViscosity<Dimension>::
 TensorMonaghanGingoldViscosity(const Scalar Clinear,
                                const Scalar Cquadratic,
                                const TableKernel<Dimension>& kernel):
-  ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic, kernel) {
+  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
+  m_viewPtr = chai::make_managed<m_viewType>(Clinear,
+                                             Cquadratic);
 }
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 void
-TensorMonaghanGingoldViscosity<Dimension>::
+TensorMonaghanGingoldViscosityView<Dimension>::
 QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
       const unsigned nodeListi, const unsigned i, 

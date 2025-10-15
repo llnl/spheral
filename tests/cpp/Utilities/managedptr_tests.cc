@@ -72,17 +72,13 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, BasicCapture) {
   double val3 = 4.;
   double ref_valA = val0*(val1 + val2 + val3);
   double ref_valB = -val0*(val1 + val2);
-  chai::ExecutionSpace space = chai::GPU;
-  if (typeid(RAJA::seq_exec) == typeid(TypeParam)) {
-    space = chai::CPU;
-  }
   for (int i = 0; i < 10; ++i) {
     double ref_val = ref_valA;
     chai::managed_ptr<Base> d_ptr;
     if (i%2 == 0) {
-      d_ptr = Spheral::initMP<DerivedA, Base>(space, val1, val2, val3);
+      d_ptr = Spheral::initMP<DerivedA, Base>(val1, val2, val3);
     } else {
-      d_ptr = Spheral::initMP<DerivedB, Base>(space, val1, val2);
+      d_ptr = Spheral::initMP<DerivedB, Base>(val1, val2);
       ref_val = ref_valB;
     }
     EXEC_IN_SPACE_BEGIN(TypeParam)
@@ -101,11 +97,7 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, ModifyClass) {
   double val12 = 10.;
   double ref_valA = val0*(val1 + val2 + val3);
   double ref_valA2 = val0*(val12 + val2 + val3);
-  chai::ExecutionSpace space = chai::GPU;
-  if (typeid(RAJA::seq_exec) == typeid(TypeParam)) {
-    space = chai::CPU;
-  }
-  chai::managed_ptr<Base> d_ptr = Spheral::initMP<DerivedA, Base>(space, val1, val2, val3);
+  chai::managed_ptr<Base> d_ptr = Spheral::initMP<DerivedA, Base>(val1, val2, val3);
   for (int i = 0; i < 10; ++i) {
     double ref_val = ref_valA;
     if (i%2 == 0) {

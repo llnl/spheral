@@ -25,6 +25,7 @@
 #include "Utilities/range.hh"
 #include "Utilities/Timer.hh"
 #include "Utilities/timingUtilities.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -156,11 +157,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -177,7 +178,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        const QType& Q) const {
+                        QType Q) const {
   TIME_BEGIN("SPHevalDerivs");
   TIME_BEGIN("SPHevalDerivs_initial");
 

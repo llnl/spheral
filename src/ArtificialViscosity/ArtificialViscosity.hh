@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// ArtificialViscosity -- A base class for ArtficialViscosity that strips
+// ArtificialViscosity -- A base class for ArtificialViscosity that strips
 // off the QPiType template parameter.  This makes a convenient way to break
 // that template parameter from spreading into classes that need to consume an
 // ArtificialViscosity.
@@ -13,6 +13,8 @@
 #include "Field/FieldList.hh"
 #include "DataOutput/registerWithRestart.hh"
 #include "Utilities/SpheralMessage.hh"
+#include "ArtificialViscosityView.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <utility>
 #include <typeindex>
@@ -38,6 +40,8 @@ public:
   using SymTensor = typename Dimension::SymTensor;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
   using ResidualType = typename Physics<Dimension>::ResidualType;
+  using ArtViscViewScalar = ArtificialViscosityView<Dimension, Scalar>;
+  using ArtViscViewTensor = ArtificialViscosityView<Dimension, Tensor>;
 
   // Constructors, destructor
   ArtificialViscosity(const Scalar Clinear,
@@ -52,7 +56,7 @@ public:
 
   //...........................................................................
   // Virtual methods we expect ArtificialViscosities to provide
-  // Require ArtificialViscosities to specify the type_index of the descendant QPiType
+  // Require ArtificialViscosities to specify the type_index of the view QPiType
   virtual std::type_index QPiTypeIndex() const = 0;
 
   // Some AVs need the velocity gradient computed, so they should override this to true
@@ -118,16 +122,6 @@ public:
                                    const State<Dimension>& state0,
                                    const Scalar tol) const override { return std::make_pair<double, std::string>(0.0, this->label() + " no vote"); }
 
-  //...........................................................................
-  // Methods
-  // Calculate the curl of the velocity given the stress tensor.
-  Scalar curlVelocityMagnitude(const Tensor& DvDx) const;
-
-  // Find the Balsara shear correction multiplier
-  Scalar calcBalsaraShearCorrection(const Tensor& DvDx,
-                                    const SymTensor& H,
-                                    const Scalar& cs) const;
-
   // Access stored state
   Scalar                              Cl()                                const { return mClinear; }
   Scalar                              Cq()                                const { return mCquadratic; }
@@ -158,6 +152,13 @@ public:
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
 
+  virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() const {
+    return chai::managed_ptr<ArtViscViewScalar>();
+  }
+  virtual chai::managed_ptr<ArtViscViewTensor> getTensorView() const {
+    return chai::managed_ptr<ArtViscViewTensor>();
+  }
+
 protected:
   //--------------------------- Protected Interface ---------------------------//
   Scalar mClinear;
@@ -169,7 +170,7 @@ protected:
   // Parameters for the Q limiter.
   Scalar mEpsilon2;
   Scalar mNegligibleSoundSpeed;
-    
+
   // Maintain the last max viscous pressure for timestep control
   FieldList<Dimension, Scalar> mMaxViscousPressure;
   FieldList<Dimension, Scalar> mEffViscousPressure;
@@ -185,7 +186,5 @@ protected:
 };
 
 }
-
-#include "ArtificialViscosityInline.hh"
 
 #endif

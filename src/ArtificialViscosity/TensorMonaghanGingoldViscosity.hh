@@ -8,11 +8,13 @@
 #define __Spheral_TensorMonaghanGingoldViscosity__
 
 #include "ArtificialViscosityView.hh"
+#include "ArtificialViscosity.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorMonaghanGingoldViscosity: public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
+class TensorMonaghanGingoldViscosityView
+  : public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -20,24 +22,14 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors and destuctor
-  TensorMonaghanGingoldViscosity(const Scalar Clinear,
-                                 const Scalar Cquadratic,
-                                 const TableKernel<Dimension>& kernel);
-  virtual ~TensorMonaghanGingoldViscosity() = default;
-
-  // No default construction, copying, or assignment
-  TensorMonaghanGingoldViscosity() = delete;
-  TensorMonaghanGingoldViscosity(const TensorMonaghanGingoldViscosity&) = delete;
-  TensorMonaghanGingoldViscosity& operator=(const TensorMonaghanGingoldViscosity&) = delete;
-
-  // We need the velocity gradient
-  virtual bool requireVelocityGradient() const override { return true; }
+  //SPHERAL_HOST_DEVICE
+  virtual ~TensorMonaghanGingoldViscosityView() = default;
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
   // Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered
   // by the ArtficialViscosity (particularly DvDx).
+  //SPHERAL_HOST_DEVICE
   virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
                      const unsigned nodeListi, const unsigned i, 
@@ -57,16 +49,52 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
-
-  // Restart methods.
-  virtual std::string label() const override { return "TensorMonaghanGingoldViscosity"; }
-
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityView<Dimension, Tensor>::mClinear;
   using ArtificialViscosityView<Dimension, Tensor>::mCquadratic;
   using ArtificialViscosityView<Dimension, Tensor>::mEpsilon2;
   using ArtificialViscosityView<Dimension, Tensor>::mBalsaraShearCorrection;
+};
+
+template<typename Dimension>
+class TensorMonaghanGingoldViscosity : public ArtificialViscosity<Dimension> {
+public:
+  //--------------------------- Public Interface ---------------------------//
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ArtViscView = ArtificialViscosityView<Dimension, Tensor>;
+
+  // Constructors and destuctor
+  TensorMonaghanGingoldViscosity(const Scalar Clinear,
+                                 const Scalar Cquadratic,
+                                 const TableKernel<Dimension>& kernel);
+  virtual ~TensorMonaghanGingoldViscosity() { m_viewPtr.free(); }
+
+  // No default construction, copying, or assignment
+  TensorMonaghanGingoldViscosity() = delete;
+  TensorMonaghanGingoldViscosity(const TensorMonaghanGingoldViscosity&) = delete;
+  TensorMonaghanGingoldViscosity& operator=(const TensorMonaghanGingoldViscosity&) = delete;
+
+  // We need the velocity gradient
+  virtual bool requireVelocityGradient() const override { return true; }
+
+  // Restart methods.
+  virtual std::string label() const override { return "TensorMonaghanGingoldViscosity"; }
+
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Tensor));
+  }
+
+  virtual chai::managed_ptr<ArtViscView> getTensorView() const override {
+    return m_viewPtr;
+  }
+
+protected:
+  std::type_index m_viewType = typeid(TensorMonaghanGingoldViscosityView<Dimension>);
+  chai::managed_ptr<ArtViscView> m_viewPtr;
 };
 
 }
