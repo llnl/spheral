@@ -31,11 +31,9 @@ option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 
 # Default is to build shared when python is enabled and build static if python is disabled
-set(DEFAULT_STATIC )
+set(DEFAULT_STATIC ON)
 if(SPHERAL_ENABLE_PYTHON)
   set(DEFAULT_STATIC OFF)
-else()
-  set(DEFAULT_STATIC ON)
 endif()
 option(SPHERAL_ENABLE_STATIC "Building static C++ libraries" ${DEFAULT_STATIC})
 cmake_dependent_option(SPHERAL_ENABLE_SHARED "Building shared C++ libraries" ON "NOT SPHERAL_ENABLE_STATIC" OFF)
@@ -60,3 +58,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(DEFAULT_DBC_MODE "All")
 endif()
 set(SPHERAL_DBC_MODE ${DEFAULT_DBC_MODE} CACHE STRING "Design-by-contract flag for debugging. Options: 'All', 'Pre', 'None'")
+
+#-------------------------------------------------------------------------------
+# Optionally suppress compiler warnings
+#-------------------------------------------------------------------------------
+
+option(SPHERAL_ENABLE_WARNINGS "show compiler warnings" ON)
+option(SPHERAL_ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
+
+option(SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
+option(SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
+option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
