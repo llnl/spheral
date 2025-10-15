@@ -59,8 +59,8 @@ TensorMonaghanGingoldViscosity(const Scalar Clinear,
                                const Scalar Cquadratic,
                                const TableKernel<Dimension>& kernel):
   ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
-  m_viewPtr = chai::make_managed<m_viewType>(Clinear,
-                                             Cquadratic);
+  m_viewPtr = chai::make_managed<TensorMonaghanGingoldViscosityView<Dimension>>(Clinear,
+                                                                                Cquadratic);
 }
 
 //------------------------------------------------------------------------------

@@ -13,8 +13,8 @@
 namespace Spheral {
 
 template<typename Dimension>
-class TensorMonaghanGingoldViscosityView
-  : public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
+class TensorMonaghanGingoldViscosityView :
+    public ArtificialViscosityView<Dimension, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -22,7 +22,12 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
+  TensorMonaghanGingoldViscosityView(const Scalar Clinear,
+                                     const Scalar Cquadratic) :
+    ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic) {}
+
+  SPHERAL_HOST_DEVICE
   virtual ~TensorMonaghanGingoldViscosityView() = default;
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
@@ -51,10 +56,10 @@ public:
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  using ArtificialViscosityView<Dimension, Tensor>::mClinear;
-  using ArtificialViscosityView<Dimension, Tensor>::mCquadratic;
-  using ArtificialViscosityView<Dimension, Tensor>::mEpsilon2;
-  using ArtificialViscosityView<Dimension, Tensor>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
 };
 
 template<typename Dimension>
@@ -66,6 +71,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using ArtViscView = ArtificialViscosityView<Dimension, Tensor>;
+  using ViewType = TensorMonaghanGingoldViscosityView<Dimension>;
 
   // Constructors and destuctor
   TensorMonaghanGingoldViscosity(const Scalar Clinear,
@@ -89,12 +95,12 @@ public:
   }
 
   virtual chai::managed_ptr<ArtViscView> getTensorView() const override {
-    return m_viewPtr;
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
 protected:
-  std::type_index m_viewType = typeid(TensorMonaghanGingoldViscosityView<Dimension>);
-  chai::managed_ptr<ArtViscView> m_viewPtr;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr;
 };
 
 }

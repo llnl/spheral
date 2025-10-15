@@ -20,8 +20,16 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  //SPHERAL_HOST_DEVICE
+
+  // Constructors, destructor
+  SPHERAL_HOST_DEVICE
+  FiniteVolumeViscosityView(const Scalar Clinear,
+                            const Scalar Cquadratic) :
+    ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic) {}
+  
+  SPHERAL_HOST_DEVICE
   virtual ~FiniteVolumeViscosityView() = default;
+
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
   // Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered
@@ -46,6 +54,13 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mNegligibleSoundSpeed;
 };
 
 template<typename Dimension>
@@ -56,7 +71,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using ArtViscView = ArtificialViscosityView<Dimension, Tensor>;
+  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = FiniteVolumeViscosityView<Dimension>;
 
   // Constructor, destructor
   FiniteVolumeViscosity(const Scalar Clinear,
@@ -66,11 +82,11 @@ public:
   virtual ~FiniteVolumeViscosity() { m_viewPtr.free(); }
 
   virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(Tensor));
+    return std::type_index(typeid(Scalar));
   }
 
-  virtual chai::managed_ptr<ArtViscView> getTensorView() const override {
-    return m_viewPtr;
+  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // No default construction, copying, or assignment
@@ -90,8 +106,8 @@ public:
   virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
 protected:
-  std::type_index m_viewType = typeid(FiniteVolumeViscosityView<Dimension>);
-  chai::managed_ptr<ArtViscView> m_viewPtr;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr;
 };
 
 }

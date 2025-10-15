@@ -37,11 +37,11 @@ curlVelocityMagnitude(const Dim<3>::Tensor& DvDx) {
 //------------------------------------------------------------------------------
 // Calculate the curl of the velocity given the stress tensor.
 //------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-SPHERAL_HOST_DEVICE
+template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
-ArtificialViscosityView<Dimension, QPiType>::
+ArtificialViscosityBase<Dimension>::
 curlVelocityMagnitude(const Tensor& DvDx) const {
   return ArtificialViscosityDetail::curlVelocityMagnitude(DvDx);
 }
@@ -49,11 +49,11 @@ curlVelocityMagnitude(const Tensor& DvDx) const {
 //------------------------------------------------------------------------------
 // Compute the Balsara shear correction term
 //------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-SPHERAL_HOST_DEVICE
+template<typename Dimension>
+//SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
-ArtificialViscosityView<Dimension, QPiType>::
+ArtificialViscosityBase<Dimension>::
 calcBalsaraShearCorrection(const Tensor& DvDx,
                            const SymTensor& H,
                            const Scalar& cs) const {

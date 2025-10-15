@@ -12,6 +12,9 @@
 
 namespace Spheral {
 
+// Forward declare so it can be made a friend of the view class
+template<typename Dimension> class LimitedMonaghanGingoldViscosity;
+
 template<typename Dimension>
 class LimitedMonaghanGingoldViscosityView final
   : public MonaghanGingoldViscosityView<Dimension> {
@@ -26,7 +29,7 @@ public:
   using FifthRankTensor = typename Dimension::FifthRankTensor;
 
   // Constructors.
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   LimitedMonaghanGingoldViscosityView(const Scalar Clinear,
                                       const Scalar Cquadratic,
                                       const bool linearInExpansion,
@@ -39,6 +42,9 @@ public:
                                             quadraticInExpansion),
     mEtaCritFrac(etaCritFrac),
     mEtaFoldFrac(etaFoldFrac) {}
+
+  SPHERAL_HOST_DEVICE
+  virtual ~LimitedMonaghanGingoldViscosityView() = default;
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
@@ -64,7 +70,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
-
+  friend class LimitedMonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Private Interface ---------------------------//
   double mEtaCritFrac, mEtaFoldFrac;
@@ -89,6 +95,7 @@ public:
   using FourthRankTensor = typename Dimension::FourthRankTensor;
   using FifthRankTensor = typename Dimension::FifthRankTensor;
   using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = LimitedMonaghanGingoldViscosityView<Dimension>;
 
   // Constructors.
   LimitedMonaghanGingoldViscosity(const Scalar Clinear,
@@ -113,7 +120,7 @@ public:
   }
 
   virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
-    return m_viewPtr;
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // Access our data
@@ -126,8 +133,8 @@ public:
   // Restart methods.
   virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
 protected:
-  std::type_index m_viewType = typeid(LimitedMonaghanGingoldViscosityView<Dimension>);
-  chai::managed_ptr<ArtViscView> m_viewPtr;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr;
 };
 
 }

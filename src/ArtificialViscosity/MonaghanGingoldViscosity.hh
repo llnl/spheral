@@ -14,6 +14,9 @@
 
 namespace Spheral {
 
+// Forward declare so it can be made a friend of the view class
+template<typename Dimension> class MonaghanGingoldViscosity;
+
 template<typename Dimension>
 class MonaghanGingoldViscosityView:
     public ArtificialViscosityView<Dimension, typename Dimension::Scalar> {
@@ -25,14 +28,16 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   // Constructors.
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   MonaghanGingoldViscosityView(const Scalar Clinear,
                                const Scalar Cquadratic,
                                const bool linearInExpansion,
                                const bool quadraticInExpansion) :
-    ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic),
+    ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic),
     mLinearInExpansion(linearInExpansion),
     mQuadraticInExpansion(quadraticInExpansion) {}
+
+  SPHERAL_HOST_DEVICE virtual ~MonaghanGingoldViscosityView() = default;
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
@@ -59,16 +64,16 @@ public:
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 
-
+  friend class MonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   bool mLinearInExpansion = false;
   bool mQuadraticInExpansion = false;
 
-  using ArtificialViscosityView<Dimension, Scalar>::mClinear;
-  using ArtificialViscosityView<Dimension, Scalar>::mCquadratic;
-  using ArtificialViscosityView<Dimension, Scalar>::mEpsilon2;
-  using ArtificialViscosityView<Dimension, Scalar>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
 };
 
 template<typename Dimension>
@@ -80,6 +85,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = MonaghanGingoldViscosityView<Dimension>;
 
   // Constructors.
   MonaghanGingoldViscosity(const Scalar Clinear,
@@ -100,7 +106,7 @@ public:
   }
 
   virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
-    return m_viewPtr;
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // Restart methods.
@@ -112,8 +118,8 @@ public:
   void linearInExpansion(const bool x)          { m_viewPtr->mLinearInExpansion = x; }
   void quadraticInExpansion(const bool x)       { m_viewPtr->mQuadraticInExpansion = x; }
 protected:
-  std::type_index m_viewType = typeid(MonaghanGingoldViscosityView<Dimension>);
-  chai::managed_ptr<ArtViscView> m_viewPtr;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr;
 };
 
 }

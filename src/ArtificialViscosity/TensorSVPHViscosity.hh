@@ -12,7 +12,7 @@
 namespace Spheral {
 
 template<typename Dimension>
-class TensorSVPHViscosity: public ArtificialViscosity<Dimension> {//, typename Dimension::Tensor> {
+class TensorSVPHViscosity: public ArtificialViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;

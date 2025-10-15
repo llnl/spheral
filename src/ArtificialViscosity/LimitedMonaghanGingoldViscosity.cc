@@ -20,6 +20,8 @@
 #include "DataBase/IncrementState.hh"
 #include "Utilities/Timer.hh"
 
+#include <cmath>
+
 using std::vector;
 using std::string;
 using std::cout;
@@ -117,12 +119,12 @@ LimitedMonaghanGingoldViscosity(const Scalar Clinear,
                                 const Scalar etaFoldFrac):
   MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel, 
                                       linearInExpansion, quadraticInExpansion) {
-  m_viewPtr = chai::make_managed<m_viewType>(Clinear,
-                                             Cquadratic,
-                                             linearInExpansion,
-                                             quadraticInExpansion,
-                                             etaCritFrac,
-                                             etaFoldFrac);
+  m_viewPtr = chai::make_managed<LimitedMonaghanGingoldViscosityView<Dimension>>(Clinear,
+                                                                                 Cquadratic,
+                                                                                 linearInExpansion,
+                                                                                 quadraticInExpansion,
+                                                                                 etaCritFrac,
+                                                                                 etaFoldFrac);
 }
 
 //------------------------------------------------------------------------------
@@ -161,9 +163,7 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // We need nPerh to figure out our critical folding distance. We assume the first NodeList value for this is
   // correct for all of them...
-  // TODO: DO NOT COMMIT THIS CHANGE
-  const auto nPerh = 10;
-  //const auto nPerh = DvDx[0]->nodeList().nodesPerSmoothingScale();
+  const auto nPerh = DvDx[0]->nodeList().nodesPerSmoothingScale();
   const auto etaCrit = mEtaCritFrac/nPerh;
   const auto etaFold = mEtaFoldFrac/nPerh;
   CHECK(etaFold > 0.0);
@@ -200,7 +200,7 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   // phi *= (etaij2 < etaCrit2 ? 0.0 : 1.0);
   // phi *= min(1.0, etaij2*etaij2/(etaCrit2etaCrit2));
   if (etaij < etaCrit) {
-    phi *= exp(-std::pow((etaij - etaCrit)/etaFold), 2);
+    phi *= std::exp(-std::pow((etaij - etaCrit)/etaFold, 2));
   }
 
   // Compute the corrected velocity difference.

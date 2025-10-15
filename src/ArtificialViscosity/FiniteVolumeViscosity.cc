@@ -41,7 +41,7 @@ FiniteVolumeViscosity(const Scalar Clinear,
                       const Scalar Cquadratic,
                       const TableKernel<Dimension>& WT):
   ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) {
-  m_viewPtr = chai::make_managed<m_viewType>(Clinear, Cquadratic);
+  m_viewPtr = chai::make_managed<FiniteVolumeViscosityView<Dimension>>(Clinear, Cquadratic);
 }
 
 //------------------------------------------------------------------------------

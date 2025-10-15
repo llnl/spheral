@@ -6,7 +6,6 @@
 #include "chai/Types.hpp"
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
 #include "chai/managed_ptr.hpp"
 
 #include <Utilities/Logger.hh>
@@ -35,11 +34,13 @@ class DerivedA final : public Base {
 public:
   SPHERAL_HOST_DEVICE DerivedA(double a_val1, double a_val2, double a_val3) :
     Base(a_val1, a_val2), m_val3(a_val3) {}
-  SPHERAL_HOST_DEVICE double operate(double a_val) const override {
+  SPHERAL_HOST_DEVICE virtual double operate(double a_val) const override {
     return a_val*(m_val1 + m_val2 + m_val3);
   }
 protected:
   double m_val3 = 10.;
+  using Base::m_val1;
+  using Base::m_val2;
 };
 
 // Derived class 2
@@ -47,9 +48,12 @@ class DerivedB final : public Base {
 public:
   SPHERAL_HOST_DEVICE DerivedB(double a_val1, double a_val2) :
     Base(a_val1, a_val2) {}
-  SPHERAL_HOST_DEVICE double operate(double a_val) const override {
+  SPHERAL_HOST_DEVICE double virtual operate(double a_val) const override {
     return -a_val*(m_val1 + m_val2);
   }
+protected:
+  using Base::m_val1;
+  using Base::m_val2;
 };
 
 class ManagedPointerTest : public ::testing::Test {
@@ -76,9 +80,9 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, BasicCapture) {
     double ref_val = ref_valA;
     chai::managed_ptr<Base> d_ptr;
     if (i%2 == 0) {
-      d_ptr = Spheral::initMP<DerivedA, Base>(val1, val2, val3);
+      d_ptr = chai::make_managed<DerivedA>(val1, val2, val3);
     } else {
-      d_ptr = Spheral::initMP<DerivedB, Base>(val1, val2);
+      d_ptr = chai::make_managed<DerivedB>(val1, val2);
       ref_val = ref_valB;
     }
     EXEC_IN_SPACE_BEGIN(TypeParam)
@@ -97,7 +101,7 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, ModifyClass) {
   double val12 = 10.;
   double ref_valA = val0*(val1 + val2 + val3);
   double ref_valA2 = val0*(val12 + val2 + val3);
-  chai::managed_ptr<Base> d_ptr = Spheral::initMP<DerivedA, Base>(val1, val2, val3);
+  chai::managed_ptr<Base> d_ptr = chai::make_managed<DerivedA>(val1, val2, val3);
   for (int i = 0; i < 10; ++i) {
     double ref_val = ref_valA;
     if (i%2 == 0) {

@@ -12,16 +12,17 @@
 #define __Spheral_ArtificialViscosityView__
 
 #include "config.hh"
+#include "chai/managed_ptr.hpp"
+#include "Field/FieldList.hh"
+#include "ArtificialViscosityBase.hh"
+
 #include <utility>
 #include <typeindex>
 
 namespace Spheral {
 
-template<typename Dimension> class ArtificialViscosity;
-template<typename Dimension, typename DataType> class FieldList;
-
 template<typename Dimension, typename QPiType>
-class ArtificialViscosityView {
+class ArtificialViscosityView : public ArtificialViscosityBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -29,32 +30,22 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using ReturnType = QPiType;
-
   // Constructors, destructor
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   ArtificialViscosityView(const Scalar Clinear,
-                          const Scalar Cquadratic,
-                          const bool   BalsaraShearCorrection = false,
-                          const Scalar Epsilon2 = 1.0E-2,
-                          const Scalar NegligibleSoundSpeed = 1.0E-10) :
-    mClinear(Clinear),
-    mCquadratic(Cquadratic),
-    mBalsaraShearCorrection(BalsaraShearCorrection),
-    mEpsilon2(Epsilon2),
-    mNegligibleSoundSpeed(NegligibleSoundSpeed) {}
-  //SPHERAL_HOST_DEVICE
+                          const Scalar Cquadratic) :
+    ArtificialViscosityBase<Dimension>(Clinear, Cquadratic) {}
+
+  SPHERAL_HOST_DEVICE
   virtual ~ArtificialViscosityView() = default;
 
   // No default constructor, copying, or assignment
-  ArtificialViscosityView() = delete;
-  ArtificialViscosityView(const ArtificialViscosityView&) = delete;
-  ArtificialViscosityView& operator=(const ArtificialViscosityView&) = delete;
+  // ArtificialViscosityView() = delete;
+  // ArtificialViscosityView(const ArtificialViscosityView&) = delete;
+  // ArtificialViscosityView& operator=(const ArtificialViscosityView&) = delete;
 
   //...........................................................................
   // Virtual methods we expect ArtificialViscosities to provide
-  // Required method returning the type_index of the descendant QPiType
-  //std::type_index QPiTypeIndex() const { return std::type_index(typeid(QPiType)); }
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
@@ -80,30 +71,15 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const = 0;
-  //...........................................................................
-  // Methods
-  // Calculate the curl of the velocity given the stress tensor.
-  //SPHERAL_HOST_DEVICE
-  Scalar curlVelocityMagnitude(const Tensor& DvDx) const;
-
-  // Find the Balsara shear correction multiplier
-  //SPHERAL_HOST_DEVICE
-  Scalar calcBalsaraShearCorrection(const Tensor& DvDx,
-                                    const SymTensor& H,
-                                    const Scalar& cs) const;
-  friend class ArtificialViscosity<Dimension>;
 protected:
-  Scalar mClinear;
-  Scalar mCquadratic;
-  // Switch for the Balsara shear correction.
-  bool mBalsaraShearCorrection;
-  // Parameters for the Q limiter.
-  Scalar mEpsilon2;
-  Scalar mNegligibleSoundSpeed;
+  //--------------------------- Protected Interface ---------------------------//
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mNegligibleSoundSpeed;
 };
 
 }
-
-#include "ArtificialViscosityViewInline.hh"
 
 #endif

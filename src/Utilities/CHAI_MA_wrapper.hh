@@ -6,7 +6,6 @@
 #define __Spheral_CHAI_MA_wrapper__
 
 #include "chai/ManagedArray.hpp"
-#include "chai/managed_ptr.hpp"
 
 namespace Spheral {
 
@@ -21,13 +20,6 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
     a_ma.free();
     a_ma = chai::makeManagedArray(a_dc.data(), a_dc.size(), chai::CPU, false);
   }
-}
-
-template<typename DerivedClass, typename BaseClass, typename... Args>
-chai::managed_ptr<BaseClass>
-initMP(Args&&... args) {
-  chai::managed_ptr<BaseClass> derived = chai::make_managed<DerivedClass>(std::forward<Args>(args)...);
-  return derived;
 }
 
 }

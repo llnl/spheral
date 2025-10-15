@@ -31,7 +31,8 @@ template<typename Dimension> class Boundary;
 class FileIO;
 
 template<typename Dimension>
-class ArtificialViscosity: public Physics<Dimension> {
+class ArtificialViscosity: public Physics<Dimension>,
+                           public ArtificialViscosityBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -161,15 +162,11 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  Scalar mClinear;
-  Scalar mCquadratic;
-
-  // Switch for the Balsara shear correction.
-  bool mBalsaraShearCorrection;
-
-  // Parameters for the Q limiter.
-  Scalar mEpsilon2;
-  Scalar mNegligibleSoundSpeed;
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mNegligibleSoundSpeed;
 
   // Maintain the last max viscous pressure for timestep control
   FieldList<Dimension, Scalar> mMaxViscousPressure;
