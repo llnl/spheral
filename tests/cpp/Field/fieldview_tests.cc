@@ -11,12 +11,11 @@
 
 #include "Field/FieldView.hh"
 
-/**
- * These are unit tests for Spehral::FieldView with a basic double datatype.
- * Spheral::FieldView is a host/device capable. It is tested using typed
- * tests to check for correct execution on both host and device.
- */
-
+//------------------------------------------------------------------------------
+// These are unit tests for Spehral::FieldView with a basic double datatype.
+// Spheral::FieldView is a host/device capable. It is tested using typed
+// tests to check for correct execution on both host and device.
+//------------------------------------------------------------------------------
 using DIM3 = Spheral::Dim<3>;
 using FieldBase = Spheral::FieldBase<DIM3>;
 using FieldDouble = Spheral::Field<DIM3, double>;
@@ -50,11 +49,12 @@ public:
 TYPED_TEST_SUITE_P(FieldViewTypedTest);
 template <typename T> class FieldViewTypedTest : public FieldViewTest {};
 
-/**
- * Host/Device test for the FieldView being captured in a RAJA execution space.
- * GPU execution spaces should trigger an allocation on the device, a copy from
- * the host to the device, and a deallocation when the Field Dtor is triggered.
- */
+
+//------------------------------------------------------------------------------
+// Host/Device test for the FieldView being captured in a RAJA execution space.
+// GPU execution spaces should trigger an allocation on the device, a copy from
+// the host to the device, and a deallocation when the Field Dtor is triggered.
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
   using WORK_EXEC_POLICY = TypeParam;
   {
@@ -82,10 +82,10 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
 }
 
-/**
- * This test ensures the FieldView Data is migrated back and forth between
- * RAJA execution spaces through implicit capture.
- */
+//------------------------------------------------------------------------------
+// This test ensures the FieldView Data is migrated back and forth between
+// RAJA execution spaces through implicit capture.
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
   using WORK_EXEC_POLICY = TypeParam;
   {
@@ -125,11 +125,11 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
 }
 
-/**
- * Test the multi-view semantics for a copy. If multiple views are made from a
- * single Field then only one copy should be performed as both views will reference
- * the same data.
- */
+//------------------------------------------------------------------------------
+// Test the multi-view semantics for a copy. If multiple views are made from a
+// single Field then only one copy should be performed as both views will reference
+// the same data.
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
   const double val = 4.;
   using WORK_EXEC_POLICY = TypeParam;
@@ -177,13 +177,14 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
   COMP_COUNTERS(gpu_this->gcounts, ref_count);
 }
 
-/**
- * Resize the field after a copy to the execution space. The Second view
- * Call should trigger a free of any GPU memory and reassign the FieldView
- * CPU pointer to the underlying vectors new address. This test should expect
- * two allocations, two copies to the device and two deallocations on the
- * device.
- */
+
+//------------------------------------------------------------------------------
+// Resize the field after a copy to the execution space. The Second view
+// Call should trigger a free of any GPU memory and reassign the FieldView
+// CPU pointer to the underlying vectors new address. This test should expect
+// two allocations, two copies to the device and two deallocations on the
+// device.
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
   using WORK_EXEC_POLICY = TypeParam;
   {
