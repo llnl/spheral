@@ -41,6 +41,16 @@ class SPHBase(GenericHydro):
     #...........................................................................
     # Virtual methods
     @PYB11virtual
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
+        """An optional hook to initialize once when the problem is starting up.
+Typically this is used to size arrays once all the materials and NodeLists have
+been created.  It is assumed after this method has been called it is safe to
+call Physics::registerState for instance to create full populated State objects."""
+
+        return "void"
+
+    @PYB11virtual
     def initializeProblemStartupDependencies(self,
                                              dataBase = "DataBase<%(Dimension)s>&",
                                              state = "State<%(Dimension)s>&",

@@ -191,7 +191,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   TIME_BEGIN("SolidSPHinitializeStartup");
 
   // Call the ancestor.
-  SPH<Dimension>::initializeProblemStartup(dataBase);
+  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
 
   // Set the moduli.
   updateStateFields(SolidFieldNames::bulkModulus, state, derivs);

@@ -54,7 +54,7 @@ GPU_TYPED_TEST_P(FieldViewDataTypeTypedTest, CopyAndMutate) {
     SPHERAL_ASSERT_EQ(field.name(), field_name);
     SPHERAL_ASSERT_EQ(field.size(), 10);
 
-    FieldViewType field_v = field.toView();
+    FieldViewType field_v = field.view();
     SPHERAL_ASSERT_EQ(field.size(), 10);
 
     // clang-format off

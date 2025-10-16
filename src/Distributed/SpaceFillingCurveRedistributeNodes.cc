@@ -111,20 +111,14 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     if (this->workBalance()) {
 
       // Enforce boundary conditions for the work computation.
-      for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-           nodeListItr != dataBase.nodeListEnd();
-           ++nodeListItr) {
-        (*nodeListItr)->numGhostNodes(0);
-        (*nodeListItr)->neighbor().updateNodes();
+      for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+        nodeListPtr->numGhostNodes(0);
+        nodeListPtr->neighbor().updateNodes();
       }
-      for (typename vector<Boundary<Dimension>*>::iterator boundaryItr = boundaries.begin(); 
-           boundaryItr != boundaries.end();
-           ++boundaryItr) {
-        (*boundaryItr)->setAllGhostNodes(dataBase);
-        (*boundaryItr)->finalizeGhostBoundary();
-        for (typename DataBase<Dimension>::FluidNodeListIterator nodeListItr = dataBase.fluidNodeListBegin();
-             nodeListItr != dataBase.fluidNodeListEnd(); 
-             ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
+      for (auto* boundaryPtr: boundaries) {
+        boundaryPtr->setAllGhostNodes(dataBase);
+        boundaryPtr->finalizeGhostBoundary();
+        for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) nodeListPtr->neighbor().updateNodes();
       }
 
       // Get the local description of the domain distribution, with the work per node filled in.
@@ -149,11 +143,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     // Clear out any ghost nodes.
     // We won't bother to update the neighbor info at this point -- we don't need 
     // it for this algorithm, so we just update it when we're done.
-    for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) {
-      (*nodeListItr)->numGhostNodes(0);
-    }
+    for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
 
     // Compute the target work per domain.
     const Scalar targetWork = workField.sumElements()/numProcs;
@@ -260,12 +250,10 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // We now know the target index range for each domain.
     // Go through our local DomainNode set and assign them appropriately.
-    nodeDistribution = vector<DomainNode<Dimension> >();
-    for (typename vector<pair<Key, DomainNode<Dimension> > >::iterator itr = sortedIndices.begin();
-         itr != sortedIndices.end();
-         ++itr) {
-      nodeDistribution.push_back(itr->second);
-      nodeDistribution.back().domainID = domainForIndex(itr->first, indexRanges);
+    nodeDistribution = vector<DomainNode<Dimension>>();
+    for (auto [key, dnode]: sortedIndices) {
+      nodeDistribution.push_back(dnode);
+      nodeDistribution.back().domainID = domainForIndex(key, indexRanges);
       CHECK(nodeDistribution.back().domainID >= 0 and
             nodeDistribution.back().domainID < numProcs);
     }
@@ -301,12 +289,11 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     // Make sure the nodes are now sorted by the index keys.
     BEGIN_CONTRACT_SCOPE
       {
-        for (typename DataBase<Dimension>::ConstNodeListIterator nodeListItr = dataBase.nodeListBegin();
-             nodeListItr != dataBase.nodeListEnd();
-             ++nodeListItr) {
-          const Field<Dimension, Key> keyField = **indices.fieldForNodeList(**nodeListItr);
-          for (int i = 1; i < (int)(*nodeListItr)->numInternalNodes(); ++i) {
-            ENSURE2(keyField(i) >= keyField(i - 1), (**nodeListItr).name()
+        for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+          const Field<Dimension, Key>& keyField = **indices.fieldForNodeList(*nodeListPtr);
+          CONTRACT_VAR(keyField);
+          for (auto i = 1u; i < nodeListPtr->numInternalNodes(); ++i) {
+            ENSURE2(keyField(i) >= keyField(i - 1), nodeListPtr->name()
                     << " (" << (i - 1) << " " << i << ") (" 
                     << keyField(i-1) << " " << keyField(i) << ")");
           }
