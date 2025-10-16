@@ -14,7 +14,6 @@ namespace Spheral {
 
 // Forward declarations
 template<typename Dimension> class NodeList;
-template<typename Dimension> class FieldListBase;
 
 template<typename Dimension>
 class FieldBase {
@@ -84,20 +83,10 @@ protected:
   virtual void deleteElement(size_t nodeID) = 0;
   virtual void deleteElements(const std::vector<size_t>& nodeIDs) = 0;
 
-  // Make the FieldListBase a friend, so that it can use the registration
-  // methods.
-  friend class FieldListBase<Dimension>;
-  void registerFieldList(const FieldListBase<Dimension>& fieldList) const;
-  void unregisterFieldList(const FieldListBase<Dimension>& fieldList) const;
-  bool haveFieldList(const FieldListBase<Dimension>& fieldList) const;
-
 private:
   //--------------------------- Private Interface ---------------------------//
   FieldName mName;
   const NodeList<Dimension>* mNodeListPtr;
-
-  // The set of FieldLists currently referencing this Field.
-  mutable std::vector<const FieldListBase<Dimension>*> mFieldListBaseList;
 };
 
 }

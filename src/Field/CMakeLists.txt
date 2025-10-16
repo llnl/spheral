@@ -20,18 +20,21 @@ set(Field_headers
     AllNodeIteratorInline.hh
     CoarseNodeIterator.hh
     CoarseNodeIteratorInline.hh
-    Field.hh
     FieldBase.hh
     FieldBaseInline.hh
+    FieldView.hh
+    FieldViewInline.hh
+    Field.hh
     FieldInline.hh
-    FieldList.hh
     FieldListBase.hh
     FieldListBaseInline.hh
+    FieldList.hh
     FieldListInline.hh
+    FieldListView.hh
+    FieldListViewInline.hh
     FieldListSet.hh
     FieldListSetInline.hh
     FieldListThreadWrapper.hh
-    FieldListView.hh
     GhostNodeIterator.hh
     GhostNodeIteratorInline.hh
     InternalNodeIterator.hh
