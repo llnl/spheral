@@ -39,26 +39,4 @@ operator=(const FieldListBase<Dimension>& rhs) {
   return *this;
 }
 
-//------------------------------------------------------------------------------
-// Register this FieldList with the given Field.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-void
-FieldListBase<Dimension>::
-registerWithField(const FieldBase<Dimension>& fieldBase) const {
-  fieldBase.registerFieldList(*this);
-}
-
-//------------------------------------------------------------------------------
-// Unregister this FieldList from the given Field.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-void
-FieldListBase<Dimension>::
-unregisterFromField(const FieldBase<Dimension>& fieldBase) const {
-  fieldBase.unregisterFieldList(*this);
-}
-
 }

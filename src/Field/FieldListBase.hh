@@ -11,6 +11,7 @@
 namespace Spheral {
 
 template<typename Dimension> class FieldBase;
+template<typename Dimension> class NodeList;
 
 template<typename Dimension>
 class FieldListBase {
@@ -52,9 +53,8 @@ protected:
   mutable bool mNewCoarseNodes;
   mutable bool mNewRefineNodes;
 
-  // Provide methods for the FieldList to register with its member Fields.
-  void registerWithField(const FieldBase<Dimension>& fieldBase) const;
-  void unregisterFromField(const FieldBase<Dimension>& fieldBase) const;
+  friend NodeList<Dimension>;
+  virtual void buildDependentArrays() = 0;
 
 private:
   //--------------------------- Private Interface ---------------------------//

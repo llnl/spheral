@@ -35,6 +35,9 @@ Notable changes include:
         * Fixes non-functional python bindings.
       * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if
         a temporary variable is used elsewhere.
+      * Field/FieldView reimplemented using our value/view inheritance pattern.
+      * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
+        * New Cmake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray)
 
   * Bug fixes
     * corrected rolling and torsional coefficient in DEM which were 2x the expected value

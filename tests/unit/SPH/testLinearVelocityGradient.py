@@ -31,7 +31,6 @@ commandLine(
 
     # What hydro operator should we test?
     HydroChoice = "SPH",
-    gradhCorrection = False,
     solid = True,
 
     # Should we randomly perturb the positions?
@@ -253,43 +252,32 @@ if HydroChoice in ("PSPH", "PASPH"):
 else:
     hydro = HydroConstructor(dataBase = db,
                              W = WT,
-                             gradhCorrection = gradhCorrection,
+                             gradhCorrection = True,
                              correctVelocityGradient = False)
 
 #-------------------------------------------------------------------------------
-# Iterate the h to convergence if requested.
+# Build a controller
 #-------------------------------------------------------------------------------
-if iterateH:
-    bounds = vector_of_Boundary()
-    pkgs = [hydro._smoothingScaleMethod]
-    if "ASPH" in HydroChoice:
-        VC = VoronoiCells(db.maxKernelExtent)
-        pkgs = [VC] + pkgs
-    for pkg in pkgs:
-        pkg.initializeProblemStartup(db)
-    iterateIdealH(db,
-                  pkgs,
-                  bounds,
-                  maxHIterations,
-                  Htolerance)
+# The controller has non-trivial logic to get our packages initialized and
+# organized correctly, so we just use it here
+integrator = SynchronousRK2Integrator(db, [hydro])
+control = SpheralController(integrator,
+                            kernel = WT,
+                            iterateInitialH = iterateH)
 
 #-------------------------------------------------------------------------------
 # Invoke the SPH evaluateDerivatives, which will put velocity gradients in the 
 # derivatives state object.
 #-------------------------------------------------------------------------------
-integrator = CheapSynchronousRK2Integrator(db)
-integrator.appendPhysicsPackage(hydro)
-for pkg in integrator.physicsPackages():
-    pkg.initializeProblemStartup(db)
+# Compute the uncorrected derivatives.
+hydro.correctVelocityGradient = False
 state = State(db, integrator.physicsPackages())
 derivs = StateDerivatives(db, integrator.physicsPackages())
-for pkg in integrator.physicsPackages():
-    pkg.initializeProblemStartupDependencies(db, state, derivs)
-
-# Compute the uncorrected derivatives.
 integrator.preStepInitialize(state, derivs)
 integrator.initializeDerivatives(0.0, 1.0, state, derivs)
+derivs.Zero()
 integrator.evaluateDerivatives(0.0, 1.0, db, state, derivs)
+integrator.finalizeDerivatives(0.0, 1.0, db, state, derivs)
 dfSPH0_fl = derivs.tensorFields(HydroFieldNames.velocityGradient)
 dfSPH0_fl.copyFields()
 dfSPH0 = dfSPH0_fl[0]
@@ -300,6 +288,7 @@ derivs.Zero()
 integrator.preStepInitialize(state, derivs)
 integrator.initializeDerivatives(0.0, 1.0, state, derivs)
 integrator.evaluateDerivatives(0.0, 1.0, db, state, derivs)
+integrator.finalizeDerivatives(0.0, 1.0, db, state, derivs)
 dfSPH1_fl = derivs.tensorFields(HydroFieldNames.velocityGradient)
 dfSPH1_fl.copyFields()
 dfSPH1 = dfSPH1_fl[0]
@@ -378,13 +367,13 @@ if graphics:
     p4.set_title("Error in derivatives")
     p4.legend(loc = "best")
 
-    # If we're in 2D dump a silo file too.
-    if testDim == "2d":
-        from siloPointmeshDump import siloPointmeshDump
-        siloPointmeshDump("testLinearVelocityGradient_%s_2d" % testCase,
-                          fields = [dfSPH0, dfSPH1,
-                                    dyans,
-                                    errdySPH0, errdySPH1])
+    # # If we're in 2D dump a silo file too.
+    # if testDim == "2d":
+    #     from siloPointmeshDump import siloPointmeshDump
+    #     siloPointmeshDump("testLinearVelocityGradient_%s_2d" % testCase,
+    #                       fields = [dfSPH0, dfSPH1,
+    #                                 dyans,
+    #                                 errdySPH0, errdySPH1])
 
 #-------------------------------------------------------------------------------
 # Check the maximum corrected SPH error and fail the test if it's out of bounds.
