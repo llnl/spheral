@@ -56,17 +56,6 @@ RKCorrections(const std::set<RKOrder> orders,
     mCorrections.emplace(std::make_pair(order, FieldList<Dimension, RKCoefficients<Dimension>>(FieldStorageType::CopyFields)));
   }
 
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
-  mSurfaceArea = dataBase.newFluidFieldList(0.0, HydroFieldNames::surfaceArea);
-  mNormal = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::normal);
-  mSurfacePoint = dataBase.newFluidFieldList(0, HydroFieldNames::surfacePoint);
-  mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
-  if (mVolumeType == RKVolumeType::RKVoronoiVolume) {
-    mCells = dataBase.newFluidFieldList(FacetedVolume(), HydroFieldNames::cells);
-    mCellFaceFlags = dataBase.newFluidFieldList(std::vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags);
-  }
-  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero, "delta centroid");
-  
   ENSURE(mWR.size() == mOrders.size());
   ENSURE(mCorrections.size() == mOrders.size());
 }
@@ -86,9 +75,22 @@ template<typename Dimension>
 void
 RKCorrections<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
+  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  mSurfaceArea = dataBase.newFluidFieldList(0.0, HydroFieldNames::surfaceArea);
+  mNormal = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::normal);
+  mSurfacePoint = dataBase.newFluidFieldList(0, HydroFieldNames::surfacePoint);
+  mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
+  if (mVolumeType == RKVolumeType::RKVoronoiVolume) {
+    mCells = dataBase.newFluidFieldList(FacetedVolume(), HydroFieldNames::cells);
+    mCellFaceFlags = dataBase.newFluidFieldList(std::vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags);
+  }
+  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero, "delta centroid");
+  
   for (auto order: mOrders) {
     mCorrections[order] = dataBase.newFluidFieldList(RKCoefficients<Dimension>(), RKFieldNames::rkCorrections(order));
   }
+  ENSURE(mWR.size() == mOrders.size());
+  ENSURE(mCorrections.size() == mOrders.size());
 }
 
 //------------------------------------------------------------------------------

@@ -6,6 +6,8 @@ set (_python_packages
   Silo
   DataOutput
   NodeList
+  FieldView
+  FieldListView
   Field
   FieldList
   Kernel
@@ -97,10 +99,6 @@ set(PYB11_python_targets
   ${CMAKE_CURRENT_BINARY_DIR}/SpheralCompiledPackages.py)
 
 spheral_install_python_files(${PYB11_python_targets})
-
-configure_file(Spheral.pth
-  ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral.pth
-  COPYONLY)
 
 install(FILES       Spheral.pth
         DESTINATION ${SPHERAL_SITE_PACKAGES_PATH})

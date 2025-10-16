@@ -47,9 +47,10 @@ for ndim in dims:
 FieldListBase{ndim}d = PYB11TemplateClass(FieldListBase, template_parameters="{Dimension}")
 FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dimension}")
 ''')
+
     #...........................................................................
     # FieldList -- non-numeric types
-    for (value, label) in (( FacetedVolume,                 "FacetedVolume"),
+    for (value, label) in (( FacetedVolume,                 "FacetedVolume"), 
                            ( "std::vector<int>",            "VectorInt"),
                            ( "std::vector<unsigned>",       "VectorUnsigned"),
                            ( "std::vector<uint64_t>",       "VectorULL"),
@@ -65,7 +66,7 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
 ''')
 
     #...........................................................................
-    # STL collections of Field types
+    # STL collections of FieldList types
     for value, label in (("int",     "Int"),
                          ("double",  "Scalar"),
                          (Vector,    "Vector"),

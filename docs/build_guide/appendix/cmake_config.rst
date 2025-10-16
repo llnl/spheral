@@ -70,6 +70,10 @@ The following are CMake variables that can be set during configure time. In gene
 
    Choose whether or not to build this documentation.
 
+.. option:: -DSPHERAL_UNIFIED_MEMORY=<OFF, ON>
+
+   Configure Spheral to use unified memory on GPU machines.
+
 .. option:: -DSPHERAL_NETWORK_CONNECTED=<ON, OFF>
 
    Spheral assumes there exists a network connection. Disable this to force pip to build python environments using only ``SPHERAL_PIP_CACHE_DIR``.
