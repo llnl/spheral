@@ -114,7 +114,16 @@ SPHBase(DataBase<Dimension>& dataBase,
   mLocalM(FieldStorageType::CopyFields),
   mVolume(FieldStorageType::CopyFields),
   mRestart(registerWithRestart(*this)) {
+}
 
+//------------------------------------------------------------------------------
+// On problem start up, we need to initialize our internal data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+SPHBase<Dimension>::
+initializeProblemStartup(DataBase<Dimension>& dataBase) {
+  TIME_BEGIN("SPHBaseInitializeStartup");
   // Create storage for our internal state.
   mTimeStepMask = dataBase.newFluidFieldList(int(0), HydroFieldNames::timeStepMask);
   mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
@@ -135,6 +144,7 @@ SPHBase(DataBase<Dimension>& dataBase,
   mGradRho = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::massDensityGradient);
   mM = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::M_SPHCorrection);
   mLocalM = dataBase.newFluidFieldList(Tensor::zero, "local " + HydroFieldNames::M_SPHCorrection);
+  TIME_END("SPHBaseInitializeStartup");
 }
 
 //------------------------------------------------------------------------------
@@ -146,7 +156,7 @@ SPHBase<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SPHBaseInitializeStartup");
+  TIME_BEGIN("SPHBaseInitializeStartupDependencies");
 
   // Set the moduli.
   updateStateFields(HydroFieldNames::pressure, state, derivs);
@@ -190,7 +200,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   //     }
   //   }
   // }
-  TIME_END("SPHBaseInitializeStartup");
+  TIME_END("SPHBaseInitializeStartupDependencies");
 }
 
 //------------------------------------------------------------------------------
@@ -205,6 +215,8 @@ registerState(DataBase<Dimension>& dataBase,
 
   // Create the local storage for time step mask, pressure, sound speed, and position weight.
   dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::pressure);
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::soundSpeed);
   dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // We may need the volume per node as well.
@@ -684,9 +696,9 @@ updateVolume(State<Dimension>& state,
     for (i = 0; i != numInternal; ++i) {
       volume(nodeListi, i) = mesh.zone(i + offset).volume();
     }
-    fill(volume[nodeListi]->begin() + numInternal,
-         volume[nodeListi]->end(),
-         1.0e-10);
+    std::fill(volume[nodeListi]->begin() + numInternal,
+              volume[nodeListi]->end(),
+              1.0e-10);
   }
 
   // Optionally fill in the boundary values for the volume.

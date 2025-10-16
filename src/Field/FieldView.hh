@@ -1,68 +1,157 @@
-#ifndef __Spheral_FieldView_hh__
-#define __Spheral_FieldView_hh__
+//---------------------------------Spheral++----------------------------------//
+// FieldView -- provides a reference view (span) of the elements in an existing
+// Field.
+//
+// Created by JMO, Mon Apr 28 15:05:15 PDT 2025
+// Merged with FieldView work by Mike Davis and Landon Owen
+//----------------------------------------------------------------------------//
+#ifndef __Spheral_FieldView__
+#define __Spheral_FieldView__
 
 #include "chai/ManagedArray.hpp"
-#include "config.hh"
+#include "chai/ExecutionSpaces.hpp"
+
+#ifdef SPHERAL_UNIFIED_MEMORY
+#include "Utilities/span.hh"
+#endif
 
 namespace Spheral {
 
-template <typename Dimension, typename DataType>
-class FieldView : public chai::CHAICopyable{
+template<typename Dimension, typename DataType> class Field;
 
-  using ContainerType = typename chai::ManagedArray<DataType>;
-
-  ContainerType mData;
-
+template<typename Dimension, typename DataType>
+class FieldView: public chai::CHAICopyable {
+   
 public:
-  SPHERAL_HOST_DEVICE FieldView() {}
+  //--------------------------- Public Interface ---------------------------//
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using ContainerType = SPHERAL_SPAN_TYPE<DataType>;
+  using iterator = typename ContainerType::iterator;
+  // using const_iterator = typename SPHERAL_SPAN_TYPE<DataType>::const_iterator;  // Not until C++23
+#else
+  using ContainerType = typename chai::ManagedArray<DataType>;
+  using iterator = DataType*;
+#endif
 
-  SPHERAL_HOST
-  FieldView(ContainerType const &d) : mData(d) {}
+  using Scalar = typename Dimension::Scalar;
 
-  SPHERAL_HOST_DEVICE
-  FieldView(FieldView const &) = default;
-  SPHERAL_HOST_DEVICE
-  FieldView(FieldView &&) = default;
-  SPHERAL_HOST_DEVICE
-  FieldView& operator=(const FieldView&) = default;
+  using FieldDimension = Dimension;
+  using FieldDataType = DataType;
+  using value_type = DataType;      // STL compatibility.
+
+  // Constructors, destructor
+  SPHERAL_HOST_DEVICE FieldView() = default;
+  SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;
+  SPHERAL_HOST_DEVICE ~FieldView() = default;
+
+  // Assignment
+  SPHERAL_HOST_DEVICE FieldView& operator=(FieldView& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView& operator=(FieldView&& rhs) = default;
+  SPHERAL_HOST_DEVICE FieldView& operator=(const DataType& rhs);
 
   // Element access.
-  SPHERAL_HOST_DEVICE
-  DataType &operator()(int index) { return FieldView::operator[](index); }
+  SPHERAL_HOST_DEVICE DataType& operator()(size_t index);
+  SPHERAL_HOST_DEVICE DataType& operator()(size_t index) const;
 
-  SPHERAL_HOST_DEVICE
-  DataType &at(int index) { return FieldView::operator[](index); }
+  SPHERAL_HOST_DEVICE DataType& at(size_t index);
+  SPHERAL_HOST_DEVICE DataType& at(size_t index) const;
 
-  // Index operator.
-  SPHERAL_HOST_DEVICE
-  DataType &operator[](const size_t index) { return mData[index]; }
-  SPHERAL_HOST_DEVICE
-  DataType &operator[](const size_t index) const { return mData[index]; }
+  SPHERAL_HOST_DEVICE DataType& operator[](const size_t index);
+  SPHERAL_HOST_DEVICE DataType& operator[](const size_t index) const;
 
-  SPHERAL_HOST_DEVICE
-  size_t size() const { return mData.size(); }
+  // The number of elements in the field.
+  SPHERAL_HOST_DEVICE size_t numElements()         const { return mDataSpan.size(); }
+  SPHERAL_HOST_DEVICE size_t numInternalElements() const { return mNumInternalElements; }
+  SPHERAL_HOST_DEVICE size_t numGhostElements()    const { return mNumGhostElements; }
 
-  SPHERAL_HOST_DEVICE
-  DataType *data() const { return mData.getActivePointer(); }
+  // Methods to apply limits to Field data members.
+  SPHERAL_HOST_DEVICE void applyMin(const DataType& dataMin);
+  SPHERAL_HOST_DEVICE void applyMax(const DataType& dataMax);
 
-  SPHERAL_HOST
-  DataType *data(chai::ExecutionSpace space, bool do_move = true) const {
-    return mData.data(space, do_move);
-  }
+  SPHERAL_HOST_DEVICE void applyScalarMin(const Scalar& dataMin);
+  SPHERAL_HOST_DEVICE void applyScalarMax(const Scalar& dataMax);
 
-  void move(chai::ExecutionSpace space) { mData.move(space); }
+  // Standard field additive operators.
+  SPHERAL_HOST_DEVICE FieldView& operator+=(const FieldView& rhs);
+  SPHERAL_HOST_DEVICE FieldView& operator-=(const FieldView& rhs);
 
-  SPHERAL_HOST_DEVICE
-  void shallowCopy(FieldView const& other) const {
-    mData.shallowCopy(other.mData);
-  }
+  SPHERAL_HOST_DEVICE FieldView& operator+=(const DataType& rhs);
+  SPHERAL_HOST_DEVICE FieldView& operator-=(const DataType& rhs);
 
-  SPHERAL_HOST
-  void touch(chai::ExecutionSpace space) {
-    mData.registerTouch(space);
-  }
+  // Multiplication and division by scalar(s)
+  SPHERAL_HOST_DEVICE FieldView& operator*=(const FieldView<Dimension, Scalar>& rhs);
+  SPHERAL_HOST_DEVICE FieldView& operator/=(const FieldView<Dimension, Scalar>& rhs);
+
+  SPHERAL_HOST_DEVICE FieldView& operator*=(const Scalar& rhs);
+  SPHERAL_HOST_DEVICE FieldView& operator/=(const Scalar& rhs);
+
+  // Some useful reduction operations (local versions -- no MPI reductions)
+  SPHERAL_HOST_DEVICE DataType localSumElements(const bool includeGhosts = false) const;
+  SPHERAL_HOST_DEVICE DataType localMin(const bool includeGhosts = false) const;
+  SPHERAL_HOST_DEVICE DataType localMax(const bool includeGhosts = false) const;
+
+  // Comparison operators (Field-Field element wise).
+  SPHERAL_HOST_DEVICE bool operator==(const FieldView& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const FieldView& rhs) const;
+  // bool operator> (const FieldView& rhs) const;
+  // bool operator< (const FieldView& rhs) const;
+  // bool operator>=(const FieldView& rhs) const;
+  // bool operator<=(const FieldView& rhs) const;
+
+  // Comparison operators (Field-value element wise).
+  SPHERAL_HOST_DEVICE bool operator==(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator> (const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator< (const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>=(const DataType& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<=(const DataType& rhs) const;
+
+  // Provide the standard iterator methods over the field.
+#ifdef SPHERAL_UNIFIED_MEMORY
+  SPHERAL_HOST        iterator begin() const                                              { return mDataSpan.begin(); }
+  SPHERAL_HOST        iterator end() const                                                { return mDataSpan.end(); }
+  SPHERAL_HOST        iterator internalBegin() const                                      { return mDataSpan.begin(); }
+  SPHERAL_HOST        iterator internalEnd() const                                        { return mDataSpan.begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostBegin() const                                         { return mDataSpan.begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostEnd() const                                           { return mDataSpan.end(); }
+  SPHERAL_HOST        value_type& front()                                                 { return mDataSpan.front(); }
+  SPHERAL_HOST        value_type& back()                                                  { return mDataSpan.back(); }
+  SPHERAL_HOST        const value_type& front() const                                     { return mDataSpan.front(); }
+  SPHERAL_HOST        const value_type& back()  const                                     { return mDataSpan.back(); }
+  SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.empty(); }
+#else
+  SPHERAL_HOST        iterator begin() const                                              { return &mDataSpan[0]; }
+  SPHERAL_HOST        iterator end() const                                                { return &mDataSpan[0] + mDataSpan.size(); }
+  SPHERAL_HOST        iterator internalBegin() const                                      { return this->begin(); }
+  SPHERAL_HOST        iterator internalEnd() const                                        { return this->begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostBegin() const                                         { return this->begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostEnd() const                                           { return this->end(); }
+  SPHERAL_HOST        value_type& front()                                                 { return mDataSpan[0]; }
+  SPHERAL_HOST        value_type& back()                                                  { return this->empty() ? mDataSpan[0] : mDataSpan[mDataSpan.size() - 1u]; }
+  SPHERAL_HOST        const value_type& front() const                                     { return mDataSpan[0]; }
+  SPHERAL_HOST        const value_type& back()  const                                     { return this->empty() ? mDataSpan[0] : mDataSpan[mDataSpan.size() - 1u]; }
+  SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.size() == 0u; }
+#endif
+
+  //..........................................................................
+  // These methods only make sense when we're using the ManagedArray
+  SPHERAL_HOST_DEVICE DataType* data() const;
+  SPHERAL_HOST        DataType* data(chai::ExecutionSpace space,
+                                     bool do_move = true) const;
+  SPHERAL_HOST        void move(chai::ExecutionSpace space);
+  SPHERAL_HOST_DEVICE void shallowCopy(FieldView const& other) const;
+  SPHERAL_HOST        void touch(chai::ExecutionSpace space);
+  //..........................................................................
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  ContainerType mDataSpan;
+  size_t mNumInternalElements, mNumGhostElements;
 };
 
 } // namespace Spheral
+
+#include "FieldViewInline.hh"
 
 #endif

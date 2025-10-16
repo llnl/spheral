@@ -44,6 +44,7 @@ source("unit/SVPH/testSVPHInterpolation-1d.py")
 
 # Field unit tests
 source("unit/Field/testField.py")
+source("unit/Field/testFieldView.py")
 
 # Neighbor unit tests
 source("unit/Neighbor/testNestedGridNeighbor.py")

@@ -1,13 +1,13 @@
 from PYB11Generator import *
-import FieldList
-import FieldListBase
+from FieldList import FieldList
+from FieldListBase import FieldListBase
 
 #-------------------------------------------------------------------------------
 # FieldList with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
-class ArithmeticFieldList(FieldListBase.FieldListBase):
+class ArithmeticFieldList(FieldListBase):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
@@ -16,6 +16,7 @@ class ArithmeticFieldList(FieldListBase.FieldListBase):
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
+    using ViewType = typename FieldListType::ViewType;
 """
 
     # @PYB11const
@@ -69,14 +70,16 @@ class ArithmeticFieldList(FieldListBase.FieldListBase):
         return
 
     @PYB11const
-    def sumElements(self):
-        "Return the sum of the elements in the Field."
-        return
+    def localSumElements(self,
+                         includeGhosts = ("bool", "false")):
+        "Return the sum of the elements in the FieldList local to each processor."
+        return "%(Value)s"
 
     @PYB11const
-    def localSumElements(self):
-        "Return the sum of the elements in the Field local to each processor."
-        return
+    def sumElements(self,
+                    includeGhosts = ("bool", "false")):
+        "Return the sum of the elements in the Field."
+        return "%(Value)s"
 
     #...........................................................................
     # Comparators
@@ -108,35 +111,39 @@ class ArithmeticFieldList(FieldListBase.FieldListBase):
         "Less than or equal comparision with a %(Value)s"
         return "bool"
 
-    def applyMin(self):
-        "Enforce a floor on the values of the Field."
+    def applyMin(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s floor on the values of the FieldList."
         return
 
-    def applyMax(self):
-        "Enforce a ceiling on the values of the Field."
-        return
-
-    @PYB11const
-    def min(self):
-        "Return the mimimum value in the Field."
+    def applyMax(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s ceiling on the values of the FieldList."
         return
 
     @PYB11const
-    def max(self):
-        "Return the maximum value in the Field."
-        return
+    def localMin(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldList local to each processor."
+        return "%(Value)s"
 
     @PYB11const
-    def localMin(self):
-        "Return the mimimum value in the Field local to each processor."
-        return
+    def localMax(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldList local to each processor."
+        return "%(Value)s"
 
     @PYB11const
-    def localMax(self):
-        "Return the maximum value in the Field local to each processor."
-        return
+    def min(self,
+            includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def max(self,
+            includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldList."
+        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject FieldList
 #-------------------------------------------------------------------------------
-PYB11inject(FieldList.FieldList, ArithmeticFieldList)
+PYB11inject(FieldList, ArithmeticFieldList)
