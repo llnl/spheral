@@ -10,6 +10,7 @@
 
 #include "Physics/GenericHydro.hh"
 #include "Utilities/SpheralMessage.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <string>
 #include <vector>
@@ -132,7 +133,7 @@ public:
                              const DataBase<Dimension>& dataBase,
                              const State<Dimension>& state,
                                    StateDerivatives<Dimension>& derivatives,
-                             const QType& Q) const;
+                             chai::managed_ptr<QType> Q) const;
 
   virtual 
   void finalizeDerivatives(const Scalar time, 

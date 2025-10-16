@@ -22,7 +22,7 @@
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "Hydro/EntropyPolicy.hh"
 #include "RK/ContinuityVolumePolicyRZ.hh"
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -226,11 +226,11 @@ evaluateDerivatives(const Dimension::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -246,7 +246,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        const QType& Q) const {
+                        chai::managed_ptr<QType> Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -412,11 +412,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
       deltagrad = gradWj - gradWi;
 
       // Compute the artificial viscous pressure (Pi = P/rho^2 actually).
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              posi, Hi, etai, vi, rhoi, ci,  
-              posj, Hj, etaj, vj, rhoj, cj,
-              fClQ, fCqQ, DvDxQ); 
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               posi, Hi, etai, vi, rhoi, ci,  
+               posj, Hj, etaj, vj, rhoj, cj,
+               fClQ, fCqQ, DvDxQ); 
       const auto Qaccij = (rhoi*rhoi*QPiij + rhoj*rhoj*QPiji)*deltagrad;
       const auto workQi = (rhoj*rhoj*QPiji*vij).dot(deltagrad);                // CRK
       const auto workQj = (rhoi*rhoi*QPiij*vij).dot(deltagrad);                // CRK

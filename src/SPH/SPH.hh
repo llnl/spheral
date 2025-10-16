@@ -7,7 +7,7 @@
 #define __Spheral_SPH__
 
 #include "SPH/SPHBase.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <memory>
 

@@ -9,6 +9,7 @@
 #include "Physics/GenericHydro.hh"
 #include "Geometry/CellFaceFlag.hh"
 #include "RK/RKCorrectionParams.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <string>
 

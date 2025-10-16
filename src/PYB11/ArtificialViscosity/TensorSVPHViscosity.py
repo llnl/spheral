@@ -6,8 +6,7 @@ from ArtificialViscosityView import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
-class TensorSVPHViscosity(ArtificialViscosityView):
+class TensorSVPHViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
     using Scalar = typename %(Dimension)s::Scalar;
@@ -17,7 +16,6 @@ class TensorSVPHViscosity(ArtificialViscosityView):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
@@ -56,4 +54,4 @@ class TensorSVPHViscosity(ArtificialViscosityView):
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(ArtificialViscosityAbstractMethods, TensorSVPHViscosity, virtual=True, pure_virtual=False)
+#PYB11inject(ArtificialViscosityAbstractMethods, TensorSVPHViscosity, virtual=True, pure_virtual=False)

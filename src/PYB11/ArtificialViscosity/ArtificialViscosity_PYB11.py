@@ -1,5 +1,5 @@
 """
-Spheral ArtificialViscosityView module.
+Spheral ArtificialViscosity module.
 
 Provides the artificial viscosity algorithms for use with the hydrodynamics methods.
 """
@@ -13,7 +13,7 @@ dims = spheralDimensions()
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"ArtificialViscosity/ArtificialViscosity.hh"',
-                  '"ArtificialViscosity/ArtificialViscosityView.hh"',
+                  '"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"ArtificialViscosity/MonaghanGingoldViscosity.hh"',
                   '"ArtificialViscosity/LimitedMonaghanGingoldViscosity.hh"',
                   '"ArtificialViscosity/MorrisMonaghanReducingViscosity.hh"',
@@ -45,18 +45,22 @@ from FiniteVolumeViscosity import *
 from TensorSVPHViscosity import *
 from TensorCRKSPHViscosity import *
 
+art_visc_names = ["MonaghanGingold", "TensorMonaghanGingold", "LimitedMonaghanGingold", "FiniteVolume"]
+
 for ndim in dims:
     Dimension = f"Dim<{ndim}>"
     exec(f'''
 ArtificialViscosity{ndim}d = PYB11TemplateClass(ArtificialViscosity, template_parameters="{Dimension}")
 ScalarArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
 TensorArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
-MonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(MonaghanGingoldViscosity, template_parameters="{Dimension}")
-TensorMonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(TensorMonaghanGingoldViscosity, template_parameters="{Dimension}")
-LimitedMonaghanGingoldViscosity{ndim}d = PYB11TemplateClass(LimitedMonaghanGingoldViscosity, template_parameters="{Dimension}")
 MorrisMonaghanReducingViscosity{ndim}d = PYB11TemplateClass(MorrisMonaghanReducingViscosity, template_parameters="{Dimension}")
 CullenDehnenViscosity{ndim}d = PYB11TemplateClass(CullenDehnenViscosity, template_parameters="{Dimension}")
-FiniteVolumeViscosity{ndim}d = PYB11TemplateClass(FiniteVolumeViscosity, template_parameters="{Dimension}")
 TensorSVPHViscosity{ndim}d = PYB11TemplateClass(TensorSVPHViscosity, template_parameters="{Dimension}")
 TensorCRKSPHViscosity{ndim}d = PYB11TemplateClass(TensorCRKSPHViscosity, template_parameters="{Dimension}")
+''')
+
+    for avn in art_visc_names:
+        exec(f'''
+{avn}Viscosity{ndim}d = PYB11TemplateClass({avn}Viscosity, template_parameters="{Dimension}")
+{avn}ViscosityView{ndim}d = PYB11TemplateClass({avn}ViscosityView, template_parameters="{Dimension}")
 ''')

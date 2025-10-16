@@ -9,6 +9,7 @@
 #include "CRKSPH/CRKSPHBase.hh"
 #include "Geometry/CellFaceFlag.hh"
 #include "RK/RKCorrectionParams.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <memory>
 
@@ -88,7 +89,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
     
   // The state field lists we're maintaining.
   const PairAccelerationsType& pairAccelerations() const { VERIFY2(mPairAccelerationsPtr, "CRKSPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }

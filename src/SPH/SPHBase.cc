@@ -26,7 +26,7 @@
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "Mesh/MeshPolicy.hh"
 #include "Mesh/generateMesh.hh"
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"

@@ -1,16 +1,15 @@
 include_directories(.)
 set(ArtificialViscosity_inst
-    ArtificialViscosity
-    CullenDehnenViscosity
-    IncrementCullenMultipliers
-    MorrisMonaghanReducingViscosity
-    MonaghanGingoldViscosity
-    LimitedMonaghanGingoldViscosity
-    FiniteVolumeViscosity
-    TensorMonaghanGingoldViscosity
-    TensorSVPHViscosity
-    TensorCRKSPHViscosity
-   )
+  ArtificialViscosity
+  CullenDehnenViscosity
+  IncrementCullenMultipliers
+  MorrisMonaghanReducingViscosity
+  MonaghanGingoldViscosity
+  LimitedMonaghanGingoldViscosity
+  FiniteVolumeViscosity
+  TensorMonaghanGingoldViscosity
+  TensorSVPHViscosity
+  TensorCRKSPHViscosity)
 
 
 set(ArtificialViscosity_sources )
@@ -24,22 +23,22 @@ set(ArtificialViscosity_sources )
 instantiate(ArtificialViscosity_inst ArtificialViscosity_sources)
 
 set(ArtificialViscosity_headers
-    ArtificialViscosity.hh
-    ArtificialViscosityBase.hh
-    ArtificialViscosityView.hh
-    LimitedMonaghanGingoldViscosity.hh
-    LimitedMonaghanGingoldViscosityRZ.hh
-    CullenDehnenViscosity.hh
-    FiniteVolumeViscosity.hh
-    IncrementCullenMultipliers.hh
-    MonaghanGingoldViscosity.hh
-    MonaghanGingoldViscosityGSRZ.hh
-    MonaghanGingoldViscosityRZ.hh
-    MorrisMonaghanReducingViscosity.hh
-    TensorCRKSPHViscosity.hh
-    TensorMonaghanGingoldViscosity.hh
-    TensorSVPHViscosity.hh
-    )
+  ArtificialViscosity.hh
+  ArtificialViscosityBase.hh
+  ArtificialViscosityBaseInline.hh
+  ArtificialViscosityView.hh
+  LimitedMonaghanGingoldViscosity.hh
+  LimitedMonaghanGingoldViscosityRZ.hh
+  CullenDehnenViscosity.hh
+  FiniteVolumeViscosity.hh
+  IncrementCullenMultipliers.hh
+  MonaghanGingoldViscosity.hh
+  MonaghanGingoldViscosityGSRZ.hh
+  MonaghanGingoldViscosityRZ.hh
+  MorrisMonaghanReducingViscosity.hh
+  TensorCRKSPHViscosity.hh
+  TensorMonaghanGingoldViscosity.hh
+  TensorSVPHViscosity.hh)
 
 spheral_add_obj_library(ArtificialViscosity SPHERAL_OBJ_LIBS)
 

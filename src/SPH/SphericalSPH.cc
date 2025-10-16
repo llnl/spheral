@@ -22,7 +22,7 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Hydro/SphericalPositionPolicy.hh"
 #include "Hydro/NonSymmetricSpecificThermalEnergyPolicy.hh"
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
@@ -229,11 +229,11 @@ evaluateDerivatives(const Dim<1>::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -249,7 +249,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
                         const DataBase<Dim<1>>& dataBase,
                         const State<Dim<1>>& state,
                         StateDerivatives<Dim<1>>& derivs,
-                        const QType& Q) const {
+                        chai::managed_ptr<QType> Q) const {
   TIME_BEGIN("SphericalSPHevalDerivs");
   TIME_BEGIN("SphericalSPHevalDerivs_initial");
 
@@ -471,11 +471,11 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              ri, Hi, etaii - etaji, vi, rhoi, ci,  
-              rj, Hj, etaij - etajj, vj, rhoj, cj,
-              fClQ, fCqQ, DvDxQ);
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               ri, Hi, etaii - etaji, vi, rhoi, ci,  
+               rj, Hj, etaij - etajj, vj, rhoj, cj,
+               fClQ, fCqQ, DvDxQ);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mj*Qi*WQii/rhoj;

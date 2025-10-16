@@ -10,6 +10,7 @@
 
 #include "Physics/GenericHydro.hh"
 #include "CRKSPHHydroBase.hh"
+#include "chai/managed_ptr.hpp"
 
 namespace Spheral {
   template<typename Dimension> class State;

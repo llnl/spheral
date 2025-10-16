@@ -16,7 +16,7 @@
 #include "DataBase/ReplaceState.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Neighbor/ConnectivityMap.hh"
@@ -25,7 +25,6 @@
 #include "Utilities/range.hh"
 #include "Utilities/Timer.hh"
 #include "Utilities/timingUtilities.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -178,7 +177,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        QType Q) const {
+                        chai::managed_ptr<QType> Q) const {
   TIME_BEGIN("SPHevalDerivs");
   TIME_BEGIN("SPHevalDerivs_initial");
 
@@ -404,11 +403,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              ri, Hi, etai, vi, rhoi, ci,  
-              rj, Hj, etaj, vj, rhoj, cj,
-              fClQ, fCqQ, DvDxQ); 
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               ri, Hi, etai, vi, rhoi, ci,  
+               rj, Hj, etaj, vj, rhoj, cj,
+               fClQ, fCqQ, DvDxQ); 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);

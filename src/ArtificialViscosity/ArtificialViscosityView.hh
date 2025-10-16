@@ -30,6 +30,8 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
+  using ReturnType = QPiType;
+
   // Constructors, destructor
   SPHERAL_HOST_DEVICE
   ArtificialViscosityView(const Scalar Clinear,
@@ -38,6 +40,8 @@ public:
 
   SPHERAL_HOST_DEVICE
   virtual ~ArtificialViscosityView() = default;
+
+  std::type_index QPiTypeIndex() const { return std::type_index(typeid(QPiType)); }
 
   // No default constructor, copying, or assignment
   // ArtificialViscosityView() = delete;

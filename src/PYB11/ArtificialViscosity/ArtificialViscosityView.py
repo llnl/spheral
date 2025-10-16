@@ -7,7 +7,7 @@ from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension", "QPiType")
 @PYB11module("SpheralArtificialViscosity")
-class ArtificialViscosityView(ArtificialViscosity):
+class ArtificialViscosityView():
 
     PYB11typedefs = """
   using Scalar = typename %(Dimension)s::Scalar;
@@ -23,13 +23,11 @@ class ArtificialViscosityView(ArtificialViscosity):
     # Constructors
     def pyinit(self,
                Clinear = "const Scalar",
-               Cquadratic = "const Scalar",
-               kernel = "const TableKernel<%(Dimension)s>&"):
+               Cquadratic = "const Scalar"):
         "ArtificialViscosityView constructor"
 
     #...........................................................................
     # Methods
-    @PYB11virtual
     @PYB11const
     def QPiTypeIndex(self):
         "Require ArtificialViscosities to specify the type_index of the descendant QPiType"

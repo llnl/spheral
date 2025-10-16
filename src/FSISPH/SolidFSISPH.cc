@@ -38,7 +38,7 @@
 #include "DataBase/updateStateFields.hh"
 #include "DataBase/ReplaceWithRatioPolicy.hh"
 
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"

@@ -16,7 +16,7 @@ PYB11includes += ['"Physics/Physics.hh"',
                   '"Physics/GenericHydro.hh"',
                   '"Physics/GenericBodyForce.hh"',
                   '"Boundary/Boundary.hh"',
-                  '"ArtificialViscosity/ArtificialViscosityView.hh"',
+                  '"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"Kernel/TableKernel.hh"']

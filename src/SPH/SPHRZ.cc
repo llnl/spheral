@@ -25,7 +25,7 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Hydro/RZNonSymmetricSpecificThermalEnergyPolicy.hh"
 #include "Mesh/generateMesh.hh"
-#include "ArtificialViscosity/ArtificialViscosityView.hh"
+#include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -212,11 +212,11 @@ evaluateDerivatives(const Dimension::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -232,7 +232,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        const QType& Q) const {
+                        chai::managed_ptr<QType> Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -449,11 +449,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              posi, Hi, etai, vi, rhoi, ci,  
-              posj, Hj, etaj, vj, rhoj, cj,
-              fClQ, fCqQ, DvDxQ); 
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               posi, Hi, etai, vi, rhoi, ci,  
+               posj, Hj, etaj, vj, rhoj, cj,
+               fClQ, fCqQ, DvDxQ); 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);

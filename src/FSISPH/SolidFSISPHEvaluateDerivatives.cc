@@ -20,11 +20,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   }
 
@@ -43,7 +43,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
                       const DataBase<Dimension>& dataBase,
                       const State<Dimension>& state,
                       StateDerivatives<Dimension>& derivs,
-                      const QType& Q) const { 
+                      chai::managed_ptr<QType> Q) const { 
 
   using QPiType = typename QType::ReturnType;
 
@@ -481,11 +481,11 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         const auto cij = 0.5*(ci+cj); 
 
         // raw AV
-        Q.QPiij(QPiij, QPiji, Qi, Qj,
-                nodeListi, i, nodeListj, j,
-                ri, Hij, etaij, vi, rhoij, cij,  
-                rj, Hij, etaij, vj, rhoij, cij,
-                fClQ, fCqQ, DvDxQ); 
+        Q->QPiij(QPiij, QPiji, Qi, Qj,
+                 nodeListi, i, nodeListj, j,
+                 ri, Hij, etaij, vi, rhoij, cij,  
+                 rj, Hij, etaij, vj, rhoij, cij,
+                 fClQ, fCqQ, DvDxQ); 
 
         // slide correction
         if (slides.isSlideSurface(nodeListi,nodeListj)){

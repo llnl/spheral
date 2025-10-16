@@ -48,7 +48,7 @@ class DerivedB final : public Base {
 public:
   SPHERAL_HOST_DEVICE DerivedB(double a_val1, double a_val2) :
     Base(a_val1, a_val2) {}
-  SPHERAL_HOST_DEVICE double virtual operate(double a_val) const override {
+  SPHERAL_HOST_DEVICE virtual double operate(double a_val) const override {
     return -a_val*(m_val1 + m_val2);
   }
 protected:

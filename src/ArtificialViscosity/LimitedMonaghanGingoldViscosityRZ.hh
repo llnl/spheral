@@ -13,7 +13,7 @@
 
 namespace Spheral {
 
-class LimitedMonaghanGingoldViscosityRZ: public LimitedMonaghanGingoldViscosity<Dim<2> > {
+class LimitedMonaghanGingoldViscosityRZ final : public LimitedMonaghanGingoldViscosity<Dim<2> > {
 public:
   //--------------------------- Public Interface ---------------------------//
   typedef Dim<2> Dimension;

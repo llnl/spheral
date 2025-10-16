@@ -16,7 +16,7 @@ namespace Spheral {
 template<typename Dimension> class LimitedMonaghanGingoldViscosity;
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosityView final
+class LimitedMonaghanGingoldViscosityView
   : public MonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -84,7 +84,7 @@ protected:
 };
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosity final : public MonaghanGingoldViscosity<Dimension> {
+class LimitedMonaghanGingoldViscosity : public MonaghanGingoldViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
