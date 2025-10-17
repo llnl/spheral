@@ -55,6 +55,18 @@ public:
   Scalar calcBalsaraShearCorrection(const Tensor& DvDx,
                                     const SymTensor& H,
                                     const Scalar& cs) const;
+
+  SPHERAL_HOST_DEVICE Scalar Cl()                     const { return mClinear; }
+  SPHERAL_HOST_DEVICE Scalar Cq()                     const { return mCquadratic; }
+  SPHERAL_HOST_DEVICE Scalar epsilon2()               const { return mEpsilon2; }
+  SPHERAL_HOST_DEVICE Scalar balsaraShearCorrection() const { return mBalsaraShearCorrection; }
+  SPHERAL_HOST_DEVICE Scalar negligibleSoundSpeed()   const { return mNegligibleSoundSpeed; }
+  SPHERAL_HOST_DEVICE void Cl(Scalar x)                     { mClinear = x; }
+  SPHERAL_HOST_DEVICE void Cq(Scalar x)                     { mCquadratic = x; }
+  SPHERAL_HOST_DEVICE void epsilon2(Scalar x)               { mEpsilon2 = x; }
+  SPHERAL_HOST_DEVICE void balsaraShearCorrection(bool x)   { mBalsaraShearCorrection = x; }
+  SPHERAL_HOST_DEVICE void negligibleSoundSpeed(Scalar x)   { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; }
+
 protected:
   Scalar mClinear;
   Scalar mCquadratic;

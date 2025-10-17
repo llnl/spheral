@@ -21,6 +21,8 @@
 
 namespace Spheral {
 
+template<typename Dimension> class ArtificialViscosity;
+
 template<typename Dimension, typename QPiType>
 class ArtificialViscosityView : public ArtificialViscosityBase<Dimension> {
 public:
@@ -35,8 +37,15 @@ public:
   // Constructors, destructor
   SPHERAL_HOST_DEVICE
   ArtificialViscosityView(const Scalar Clinear,
-                          const Scalar Cquadratic) :
-    ArtificialViscosityBase<Dimension>(Clinear, Cquadratic) {}
+                          const Scalar Cquadratic,
+                          const bool   BalsaraShearCorrection = false,
+                          const Scalar Epsilon2 = 1.0E-2,
+                          const Scalar NegligibleSoundSpeed = 1.0E-10) :
+    ArtificialViscosityBase<Dimension>(Clinear,
+                                       Cquadratic,
+                                       BalsaraShearCorrection,
+                                       Epsilon2,
+                                       NegligibleSoundSpeed) {}
 
   SPHERAL_HOST_DEVICE
   virtual ~ArtificialViscosityView() = default;
@@ -75,6 +84,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const = 0;
+  friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;

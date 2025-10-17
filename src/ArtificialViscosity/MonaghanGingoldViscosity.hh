@@ -11,6 +11,7 @@
 
 #include "ArtificialViscosityView.hh"
 #include "ArtificialViscosity.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 
 namespace Spheral {
 
@@ -33,7 +34,8 @@ public:
                                const Scalar Cquadratic,
                                const bool linearInExpansion,
                                const bool quadraticInExpansion) :
-    ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic),
+    ArtificialViscosityView<Dimension, Scalar>(Clinear,
+                                               Cquadratic),
     mLinearInExpansion(linearInExpansion),
     mQuadraticInExpansion(quadraticInExpansion) {}
 
@@ -64,6 +66,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 
+  friend class ArtificialViscosity<Dimension>;
   friend class MonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -113,11 +116,20 @@ public:
   virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
   // Access data members
-  bool linearInExpansion()                const { return m_viewPtr->mLinearInExpansion; }
-  bool quadraticInExpansion()             const { return m_viewPtr->mQuadraticInExpansion; }
-  void linearInExpansion(const bool x)          { m_viewPtr->mLinearInExpansion = x; }
-  void quadraticInExpansion(const bool x)       { m_viewPtr->mQuadraticInExpansion = x; }
+  virtual bool linearInExpansion()                const { return m_viewPtr->mLinearInExpansion; }
+  virtual bool quadraticInExpansion()             const { return m_viewPtr->mQuadraticInExpansion; }
+  virtual void linearInExpansion(const bool x)          { m_viewPtr->mLinearInExpansion = x; updateManagedPtr(); }
+  virtual void quadraticInExpansion(const bool x)       { m_viewPtr->mQuadraticInExpansion = x; updateManagedPtr(); }
+
+  friend class ArtificialViscosity<Dimension>;
 protected:
+  virtual void updateManagedPtr() override {
+    this->updateMembers(m_viewPtr);
+    bool lExp = linearInExpansion();
+    bool qExp = quadraticInExpansion();
+    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, lExp);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, qExp);
+  }
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

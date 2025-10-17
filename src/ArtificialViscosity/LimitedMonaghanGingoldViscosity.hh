@@ -36,10 +36,8 @@ public:
                                       const bool quadraticInExpansion,
                                       const Scalar etaCritFrac,
                                       const Scalar etaFoldFrac) :
-    MonaghanGingoldViscosityView<Dimension>(Clinear,
-                                            Cquadratic,
-                                            linearInExpansion,
-                                            quadraticInExpansion),
+    MonaghanGingoldViscosityView<Dimension>(Clinear, Cquadratic,
+                                            linearInExpansion, quadraticInExpansion),
     mEtaCritFrac(etaCritFrac),
     mEtaFoldFrac(etaFoldFrac) {}
 
@@ -70,6 +68,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
+  friend class ArtificialViscosity<Dimension>;
   friend class LimitedMonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Private Interface ---------------------------//
@@ -77,10 +76,10 @@ protected:
 
   using MonaghanGingoldViscosityView<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosityView<Dimension>::mQuadraticInExpansion;
-  using ArtificialViscosityView<Dimension, Scalar>::mClinear;
-  using ArtificialViscosityView<Dimension, Scalar>::mCquadratic;
-  using ArtificialViscosityView<Dimension, Scalar>::mEpsilon2;
-  using ArtificialViscosityView<Dimension, Scalar>::mBalsaraShearCorrection;
+  using ArtificialViscosityBase<Dimension>::mClinear;
+  using ArtificialViscosityBase<Dimension>::mCquadratic;
+  using ArtificialViscosityBase<Dimension>::mEpsilon2;
+  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
 };
 
 template<typename Dimension>
@@ -124,15 +123,32 @@ public:
   }
 
   // Access our data
-  Scalar etaCritFrac()                       const { return m_viewPtr->mEtaCritFrac; }
-  Scalar etaFoldFrac()                       const { return m_viewPtr->mEtaFoldFrac; }
+  virtual bool linearInExpansion()                const override { return m_viewPtr->mLinearInExpansion; }
+  virtual bool quadraticInExpansion()             const override { return m_viewPtr->mQuadraticInExpansion; }
+  virtual void linearInExpansion(const bool x)          override { m_viewPtr->mLinearInExpansion = x; updateManagedPtr(); }
+  virtual void quadraticInExpansion(const bool x)       override { m_viewPtr->mQuadraticInExpansion = x; updateManagedPtr(); }
 
-  void etaCritFrac(const Scalar x)                 { m_viewPtr->mEtaCritFrac = x; }
-  void etaFoldFrac(const Scalar x)                 { m_viewPtr->mEtaFoldFrac = x; }
+  Scalar etaCritFrac()                    const { return m_viewPtr->mEtaCritFrac; }
+  Scalar etaFoldFrac()                    const { return m_viewPtr->mEtaFoldFrac; }
+
+  void etaCritFrac(const Scalar x)       { m_viewPtr->mEtaCritFrac = x; updateManagedPtr(); }
+  void etaFoldFrac(const Scalar x)       { m_viewPtr->mEtaFoldFrac = x; updateManagedPtr(); }
 
   // Restart methods.
   virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
+
 protected:
+  virtual void updateManagedPtr() override {
+    this->updateMembers(m_viewPtr);
+    bool lExp = m_viewPtr->mLinearInExpansion;
+    bool qExp = m_viewPtr->mQuadraticInExpansion;
+    Scalar etaCF = etaCritFrac();
+    Scalar etaFF = etaFoldFrac();
+    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, lExp);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, qExp);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaCritFrac, etaCF);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaFoldFrac, etaFF);
+  }
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

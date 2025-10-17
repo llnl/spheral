@@ -23,8 +23,7 @@ public:
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE
-  FiniteVolumeViscosityView(const Scalar Clinear,
-                            const Scalar Cquadratic) :
+  FiniteVolumeViscosityView(const Scalar Clinear, const Scalar Cquadratic) :
     ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic) {}
   
   SPHERAL_HOST_DEVICE
@@ -54,6 +53,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
+  friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;
@@ -106,6 +106,9 @@ public:
   virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
 protected:
+  virtual void updateManagedPtr() override {
+    this->updateMembers(m_viewPtr);
+  }
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

@@ -14,6 +14,7 @@
 #include "DataOutput/registerWithRestart.hh"
 #include "Utilities/SpheralMessage.hh"
 #include "ArtificialViscosityView.hh"
+#include "Utilities/CHAI_MA_wrapper.hh"
 #include "chai/managed_ptr.hpp"
 
 #include <utility>
@@ -124,28 +125,28 @@ public:
                                    const Scalar tol) const override { return std::make_pair<double, std::string>(0.0, this->label() + " no vote"); }
 
   // Access stored state
-  Scalar                              Cl()                                const { return mClinear; }
-  Scalar                              Cq()                                const { return mCquadratic; }
-  bool                                balsaraShearCorrection()            const { return mBalsaraShearCorrection; }
-  Scalar epsilon2()                                                       const { return mEpsilon2; }
-  Scalar negligibleSoundSpeed()                                           const { return mNegligibleSoundSpeed; }
-  const FieldList<Dimension, Scalar>& maxViscousPressure()                const { return mMaxViscousPressure; }
-  const FieldList<Dimension, Scalar>& effViscousPressure()                const { return mEffViscousPressure; }
-  const FieldList<Dimension, Tensor>& DvDx()                              const { return mDvDx; }
+  Scalar Cl()                                              const { return mClinear; }
+  Scalar Cq()                                              const { return mCquadratic; }
+  bool   balsaraShearCorrection()                          const { return mBalsaraShearCorrection; }
+  Scalar epsilon2()                                        const { return mEpsilon2; }
+  Scalar negligibleSoundSpeed()                            const { return mNegligibleSoundSpeed; }
+  bool   rigorousVelocityGradient()                        const { return mRigorousVelocityGradient; }
+  const FieldList<Dimension, Scalar>& maxViscousPressure() const { return mMaxViscousPressure; }
+  const FieldList<Dimension, Scalar>& effViscousPressure() const { return mEffViscousPressure; }
+  const FieldList<Dimension, Tensor>& DvDx()               const { return mDvDx; }
+  const TableKernel<Dimension>&       kernel()             const { return mWT; }
+  void rigorousVelocityGradient(bool x)                          { mRigorousVelocityGradient = x; }
 
-  bool                                rigorousVelocityGradient()          const { return mRigorousVelocityGradient; }
-  const TableKernel<Dimension>&       kernel()                            const { return mWT; }
-
-  void Cl(Scalar x)                                                             { mClinear = x; }
-  void Cq(Scalar x)                                                             { mCquadratic = x; }
-  void balsaraShearCorrection(bool x)                                           { mBalsaraShearCorrection = x; }
-  void epsilon2(Scalar x)                                                       { mEpsilon2 = x; }
-  void negligibleSoundSpeed(Scalar x)                                           { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; }
-  void rigorousVelocityGradient(bool x)                                         { mRigorousVelocityGradient = x; }
+  // Assign member data from Base class
+  void Cl(Scalar x)                   { mClinear = x; updateManagedPtr(); }
+  void Cq(Scalar x)                   { mCquadratic = x; updateManagedPtr(); }
+  void balsaraShearCorrection(bool x) { mBalsaraShearCorrection = x; updateManagedPtr(); }
+  void epsilon2(Scalar x)             { mEpsilon2 = x; updateManagedPtr(); }
+  void negligibleSoundSpeed(Scalar x) { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; updateManagedPtr(); }
 
   // Deprecated options
-  bool                               limiter()                            const { DeprecationWarning("ArtificialViscosity::limiter"); return false; }
-  void                               limiter(const bool x)                      { DeprecationWarning("ArtificialViscosity::limiter"); }
+  bool limiter()               const { DeprecationWarning("ArtificialViscosity::limiter"); return false; }
+  void limiter(const bool x)         { DeprecationWarning("ArtificialViscosity::limiter"); }
 
   //...........................................................................
   // Methods required for restarting.
@@ -153,6 +154,8 @@ public:
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
 
+  //...........................................................................
+  // Methods for accessing the view.
   virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() const {
     return chai::managed_ptr<ArtViscViewScalar>();
   }
@@ -161,6 +164,15 @@ public:
   }
 
 protected:
+  template<typename ViewPtr>
+  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+    ASSIGN_MEMBER_ALL(a_viewPtr, mClinear, mClinear);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mCquadratic, mCquadratic);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mEpsilon2, mEpsilon2);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mBalsaraShearCorrection, mBalsaraShearCorrection);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mNegligibleSoundSpeed, mNegligibleSoundSpeed);
+  }
+  virtual void updateManagedPtr() = 0;
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;
   using ArtificialViscosityBase<Dimension>::mCquadratic;

@@ -23,8 +23,7 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   SPHERAL_HOST_DEVICE
-  TensorMonaghanGingoldViscosityView(const Scalar Clinear,
-                                     const Scalar Cquadratic) :
+  TensorMonaghanGingoldViscosityView(const Scalar Clinear, const Scalar Cquadratic) :
     ArtificialViscosityView<Dimension, Tensor>(Clinear, Cquadratic) {}
 
   SPHERAL_HOST_DEVICE
@@ -54,6 +53,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
+  friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;
@@ -99,6 +99,9 @@ public:
   }
 
 protected:
+  virtual void updateManagedPtr() override {
+    this->updateMembers(m_viewPtr);
+  }
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };
