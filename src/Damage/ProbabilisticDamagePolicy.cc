@@ -280,8 +280,8 @@ update(const KeyType& key,
           const auto alpha = (*alphaPtr)(i);
           const auto DalphaDti = std::min(0.0, (*DalphaDtPtr)(i));   // Only allowed to grow damage, not reduce it.
           const auto phi0_13 = FastMath::CubeRootHalley2(1.0 - 1.0/alpha0);
-          const auto DD13Dt_p = -phi0_13/(3.0 * pow(1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0) + Dtiny, 2.0/3.0) * (alpha0 - 1.0))*Dtiny1*DalphaDti;
-          CHECK(DD13Dt_p >= 0.0);
+          const auto DD13Dt_p = -phi0_13*safeInv(3.0 * pow(1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0) + Dtiny, 2.0/3.0) * (alpha0 - 1.0), 1.0e-10)*Dtiny1*DalphaDti;
+          CHECK2(DD13Dt_p >= 0.0, DD13Dt_p << " " << phi0_13 << " " << DalphaDti << " " << (1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0, 1.0e-10) + Dtiny));
           D113 = std::min(1.0, D113 + std::min(phi0_13, multiplier*DD13Dt_p));
         }
 

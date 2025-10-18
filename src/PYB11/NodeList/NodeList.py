@@ -100,7 +100,7 @@ class NodeList:
 
     @PYB11const
     def nodeType(self,
-                 ID = "int"):
+                 ID = "size_t"):
         "Return the classification of the given node"
         return "NodeType"
 

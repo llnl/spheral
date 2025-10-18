@@ -18,7 +18,6 @@ set(NodeList_headers
     FluidNodeListInline.hh
     FluidNodeTraits.hh
     NodeList.hh
-    NodeListInline.hh
     NodeListRegistrar.hh
     NodeListRegistrarInline.hh
     SolidNodeList.hh
