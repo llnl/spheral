@@ -3,11 +3,12 @@ message("-- C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 #-------------------------------------------------------------------------------
 # Optionally suppress compiler warnings
 #-------------------------------------------------------------------------------
-option(ENABLE_WARNINGS "show compiler warnings" ON)
-option(ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
 
-option(ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
-option(ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
+option(SPHERAL_ENABLE_WARNINGS "show compiler warnings" ON)
+option(SPHERAL_ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
+
+option(SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
+option(SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
 option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
 
 set(LANG_STR "CXX")
@@ -16,7 +17,7 @@ if (ENABLE_HIP)
 endif()
 
 set(CXX_WARNING_FLAGS "")
-if (ENABLE_WARNINGS)
+if (SPHERAL_ENABLE_WARNINGS)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND CXX_WARNING_FLAGS -fdiagnostics-show-option -Wno-unused-command-line-argument -Wno-c++17-extensions)
     if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 18.0.0)
@@ -26,9 +27,9 @@ if (ENABLE_WARNINGS)
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
 endif()
-message("-- Compiler warnings ${ENABLE_WARNINGS}")
+message("-- Compiler warnings ${SPHERAL_ENABLE_WARNINGS}")
 
-if (ENABLE_WARNINGS_AS_ERRORS)
+if (SPHERAL_ENABLE_WARNINGS_AS_ERRORS)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     list(APPEND CXX_WARNING_FLAGS /W4 /WX)
   else()
@@ -38,16 +39,16 @@ if (ENABLE_WARNINGS_AS_ERRORS)
 endif()
 
 
-if (NOT ENABLE_UNUSED_VARIABLE_WARNINGS)
+if (NOT SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS)
   list(APPEND CXX_WARNING_FLAGS -Wno-unused-variable)
 endif()
-message("-- Compiler unused variable warnings ${ENABLE_UNUSED_VARIABLE_WARNINGS}")
+message("-- Compiler unused variable warnings ${SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS}")
 
 
-if (NOT ENABLE_UNUSED_PARAMETER_WARNINGS)
+if (NOT SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS)
   list(APPEND CXX_WARNING_FLAGS -Wno-unused-parameter)
 endif()
-message("-- Compiler unused parameter warnings ${ENABLE_UNUSED_PARAMETER_WARNINGS}")
+message("-- Compiler unused parameter warnings ${SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS}")
 
 
 if (NOT ENABLE_MISSING_INCLUDE_DIR_WARNINGS)

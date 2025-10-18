@@ -29,13 +29,12 @@ option(SPHERAL_ENABLE_LEOS "Enable use of LEOS" OFF)
 option(SPHERAL_NETWORK_CONNECTED "Enable use of network. Disable if using a build cache" ON)
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
+cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified memory on GPU machines" OFF SPHERAL_GPU_ENABLED OFF)
 
 # Default is to build shared when python is enabled and build static if python is disabled
-set(DEFAULT_STATIC )
+set(DEFAULT_STATIC ON)
 if(SPHERAL_ENABLE_PYTHON)
   set(DEFAULT_STATIC OFF)
-else()
-  set(DEFAULT_STATIC ON)
 endif()
 option(SPHERAL_ENABLE_STATIC "Building static C++ libraries" ${DEFAULT_STATIC})
 cmake_dependent_option(SPHERAL_ENABLE_SHARED "Building shared C++ libraries" ON "NOT SPHERAL_ENABLE_STATIC" OFF)
@@ -53,8 +52,8 @@ option(ENABLE_STATIC_TPL "Assume TPLs are built statically" OFF)
 #-------------------------------------------------------------------------------
 # Debug options
 #-------------------------------------------------------------------------------
-option(SPHERAL_ENABLE_BOUNDCHECKING "Check bounds on STL types (expensive, Gnu only)" OFF)
-option(SPHERAL_ENABLE_NAN_EXCEPTIONS "Raise an excpetion when a NAN occurs (Gnu only)" OFF)
+option(SPHERAL_ENABLE_BOUNDCHECKING "Check bounds on STL types (expensive, GNU only)" OFF)
+option(SPHERAL_ENABLE_NAN_EXCEPTIONS "Raise an excpetion when a NAN occurs (GNU only)" OFF)
 set(DEFAULT_DBC_MODE "None")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(DEFAULT_DBC_MODE "All")

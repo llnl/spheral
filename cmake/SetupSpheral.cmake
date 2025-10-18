@@ -3,6 +3,8 @@ include(ExternalProject)
 #-------------------------------------------------------------------------------
 # Configure CMake
 #-------------------------------------------------------------------------------
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
 if (NOT SPHERAL_CMAKE_MODULE_PATH)
@@ -93,6 +95,12 @@ if(ENABLE_HIP)
   list(APPEND SPHERAL_CXX_DEPENDS blt::hip)
   list(APPEND SPHERAL_CXX_DEPENDS blt::hip_runtime)
   set(SPHERAL_ENABLE_HIP ON)
+endif()
+
+if(ENABLE_HIP OR ENABLE_CUDA)
+  set(SPHERAL_GPU_ENABLED ON CACHE BOOL "Whether CUDA or HIP is enabled")
+else()
+  set(SPHERAL_GPU_ENABLED OFF CACHE BOOL "Whether CUDA or HIP is enabled")
 endif()
 
 #-------------------------------------------------------------------------------#

@@ -107,9 +107,7 @@ updateGhostNodes(NodeList<Dimension>& nodeList) {
   if (mActive) {
 
     // Go ahead and set all the ghost values!
-    for (auto fieldItr = nodeList.registeredFieldsBegin();
-         fieldItr != nodeList.registeredFieldsEnd();
-         ++fieldItr) this->applyGhostBoundary(**fieldItr);
+    for (auto fref: nodeList.registeredFields()) this->applyGhostBoundary(fref.get());
     // this->applyGhostBoundary(pos);
     // this->applyGhostBoundary(nodeList.Hfield());
 

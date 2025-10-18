@@ -11,15 +11,20 @@
 #ifndef __Spheral_NodeListRegistrar__
 #define __Spheral_NodeListRegistrar__
 
+#include "NodeList/NodeList.hh"
+#include "NodeList/FluidNodeList.hh"
+#include "Field/FieldBase.hh"
+#include "Field/Field.hh"
+
 #include <string>
 #include <vector>
 
 namespace Spheral {
 
-// Forward decalarations.
-template<typename Dimension> class NodeList;
-template<typename Dimension> class FluidNodeList;
-template<typename Dimension> class FieldBase;
+// // Forward decalarations.
+// template<typename Dimension> class NodeList;
+// template<typename Dimension> class FluidNodeList;
+// template<typename Dimension> class FieldBase;
 
 template<typename Dimension>
 class NodeListRegistrar {

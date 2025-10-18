@@ -112,7 +112,7 @@ nodeOrdering(const FieldList<Dimension, DataType>& criteria) {
       int countGlobal = 0;
       for (typename FieldList<Dimension, int>::const_iterator itr = result.begin();
            itr != result.end();
-           ++itr, ++iNodeList) countGlobal += count((**itr).internalBegin(), (**itr).internalEnd(), iGlobal);
+           ++itr, ++iNodeList) countGlobal += std::count((**itr).internalBegin(), (**itr).internalEnd(), iGlobal);
       countGlobal = allReduce(countGlobal, SPHERAL_OP_SUM);
       ENSURE(countGlobal == 1);
     }

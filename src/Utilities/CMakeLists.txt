@@ -42,6 +42,7 @@ set(Utilities_headers
     setGlobalFlags.hh
     Bessel.hh
     BuildData.hh
+    CHAI_MA_wrapper.hh
     CounterClockwiseComparator.hh
     DBC.hh
     LinearInterpolator.hh
@@ -127,6 +128,7 @@ set(Utilities_headers
     simpsonsIntegration.hh
     size_t_bits.hh
     sort_permutation.hh
+    span.hh
     StrideIterator.hh
     testBoxIntersection.hh
     timingUtilities.hh

@@ -22,6 +22,10 @@ The following are CMake variables that can be set during configure time. In gene
 
    Build a single shared Spheral C++ library.
 
+.. option:: -DSPHERAL_ENABLE_TESTS=<ON, OFF>
+
+   Enable Spheral tests.
+
 .. option:: -DSPHERAL_ENABLE_STATIC=<OFF, ON>
 
    Build a single static Spheral C++ library. Defaults to ``ON`` if ``SPHERAL_ENABLE_PYTHON=OFF``.
@@ -58,25 +62,17 @@ The following are CMake variables that can be set during configure time. In gene
 
    Enable Caliper timer information for Spheral.
 
-.. option:: -SPHERAL_ENABLE_LOGGER=<OFF, ON>
+.. option:: -DSPHERAL_ENABLE_LOGGER=<OFF, ON>
 
    Enable debug log output at runtime.
-
-.. option:: -DENABLE_WARNINGS=<OFF, ON>
-
-   Enable compiler warnings.
-
-.. option:: -DSPHERAL_ENABLE_BOUNDCHECKING=<OFF, ON>
-
-   If building with the Gnu compilers enable STL bound checking by passing -D_GLIBCXX_DEBUG=1 to the compiler. Note, this is a very expensive option at runtime.
-
-.. option:: -DSPHERAL_ENABLE_NAN_EXCEPTIONS=<OFF, ON>
-
-   Raise exceptions in the C++ code when floating-point exceptions occur. GNU compilers only.
 
 .. option:: -DSPHERAL_ENABLE_DOCS=<OFF, ON>
 
    Choose whether or not to build this documentation.
+
+.. option:: -DSPHERAL_UNIFIED_MEMORY=<OFF, ON>
+
+   Configure Spheral to use unified memory on GPU machines.
 
 .. option:: -DSPHERAL_NETWORK_CONNECTED=<ON, OFF>
 
@@ -86,7 +82,7 @@ The following are CMake variables that can be set during configure time. In gene
 
    Default location Spheral will search for cached pip packages.
 
-.. option:: -SPHERAL_DDBC_MODE=<None, All, Pre>
+.. option:: -DSPHERAL_DDBC_MODE=<None, All, Pre>
 
    Set the compile time design by contract (DBC) mode for Spheral. Design by contract statements are very useful developer tools, whereby the developer can insert tests in the code as they write it.
    These statements are both useful for tracking down bugs with fine-grained testing throughout the code, as well as useful documentation in the code about what sort of conditions are expected to hold.
@@ -104,3 +100,24 @@ The following are CMake variables that can be set during configure time. In gene
    - ``CMAKE_BUILD_TYPE=Debug`` default ``SPHERAL_DBC_MODE`` is ``All``
    - In all other cases the default is ``None``.
    - It is worth noting ``SPHERAL_DBC_MODE=All`` is quite expensive at run time (of order 4x more), so this is not intended to be active for a release/production compilation of Spheral.
+
+Compiler Options
+================
+
+Options specific to compilers:
+
+.. option:: -DSPHERAL_ENABLE_WARNINGS=<ON, OFF>
+
+   Show compiler warnings.
+
+.. option:: -DSPHERAL_ENABLE_WARNINGS_AS_ERRORS=<OFF, ON>
+
+   Return an error during compilation if warning occurs.
+
+.. option:: -DSPHERAL_ENABLE_BOUNDCHECKING=<OFF, ON>
+
+   Enable STL bound checking by passing -D_GLIBCXX_DEBUG=1 to the compiler. Note, this is a very expensive option at runtime. GNU compilers only.
+
+.. option:: -DSPHERAL_ENABLE_NAN_EXCEPTIONS=<OFF, ON>
+
+   Raise exceptions in the C++ code when floating-point exceptions occur. GNU compilers only.

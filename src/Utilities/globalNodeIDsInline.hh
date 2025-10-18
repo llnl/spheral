@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <tuple>
+#include <algorithm>
 
 #ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
@@ -284,7 +285,7 @@ globalNodeIDs(const NodeListIterator& begin,
           ENSURE(i < nGlobal);
           if (procID != checkProc){
             CONTRACT_VAR(fieldEnd);
-            ENSURE(find(fieldBegin, fieldEnd, id) == fieldEnd);
+            ENSURE(std::find(fieldBegin, fieldEnd, id) == fieldEnd);
           }
         }
       }

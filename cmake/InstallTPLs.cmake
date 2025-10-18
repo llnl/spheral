@@ -70,8 +70,6 @@ if (NOT polyclipper_DIR)
   set(POLYCLIPPER_ENABLE_DOCS OFF)
   set(POLYCLIPPER_INSTALL_DIR "PolyClipper/include")
   add_subdirectory(${polyclipper_DIR} ${CMAKE_CURRENT_BINARY_DIR}/PolyClipper)
-  # Treat includes as system to prevent warnings
-  blt_convert_to_system_includes(TARGET PolyClipperAPI)
   list(APPEND SPHERAL_BLT_DEPENDS PolyClipperAPI)
   install(TARGETS PolyClipperAPI
     EXPORT spheral_cxx-targets
@@ -103,7 +101,6 @@ foreach(_comp ${AXOM_COMPONENTS_ENABLED})
   # strip cuda out so we have control over when cuda is enabled
   list(REMOVE_DUPLICATES axom_deps)
   list(REMOVE_ITEM axom_deps cuda)
-  blt_convert_to_system_includes(TARGET ${axom_deps})
   list(APPEND SPHERAL_BLT_DEPENDS ${axom_deps})
 endforeach()
 
@@ -124,7 +121,6 @@ if(POLYTOPE_FOUND)
   list(APPEND SPHERAL_BLT_DEPENDS polytope)
   list(APPEND SPHERAL_FP_TPLS polytope)
   list(APPEND SPHERAL_FP_DIRS ${polytope_DIR})
-  blt_convert_to_system_includes(TARGET polytope)
   # Install Polytope python library to our site-packages
   if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
@@ -159,17 +155,15 @@ endif()
 
 message("-----------------------------------------------------------------------------")
 # HDF5
-find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
 if(hdf5_FOUND)
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_FP_TPLS hdf5)
   list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
   if(ENABLE_STATIC_TPL)
     list(APPEND SPHERAL_BLT_DEPENDS hdf5-static hdf5_hl-static)
-    blt_convert_to_system_includes(TARGET hdf5-static hdf5_hl-static)
   else()
     list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
-    blt_convert_to_system_includes(TARGET hdf5-shared hdf5_hl-shared)
   endif()
 else()
   list(APPEND SPHERAL_EXTERN_LIBS hdf5)
@@ -179,14 +173,12 @@ message("-----------------------------------------------------------------------
 find_package(RAJA REQUIRED NO_DEFAULT_PATH PATHS ${raja_DIR})
 if (RAJA_FOUND)
   message("Found RAJA External Package.")
-  blt_convert_to_system_includes(TARGET RAJA)
 endif()
 
 message("-----------------------------------------------------------------------------")
 find_package(umpire REQUIRED NO_DEFAULT_PATH PATHS ${umpire_DIR})
 if (umpire_FOUND)
   message("Found umpire External Package.")
-  blt_convert_to_system_includes(TARGET umpire)
 endif()
 
 message("-----------------------------------------------------------------------------")
@@ -194,7 +186,6 @@ message("-----------------------------------------------------------------------
 find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
 if(chai_FOUND)
   message("Found chai External Package.")
-  blt_convert_to_system_includes(TARGET chai)
 endif()
 
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
@@ -234,10 +225,10 @@ blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF SPHERAL_ENABLE_OP
 foreach(lib ${SPHERAL_EXTERN_LIBS})
   if(NOT TARGET ${lib})
     Spheral_Handle_TPL(${lib} ${TPL_SPHERAL_CMAKE_DIR})
-    blt_convert_to_system_includes(TARGET ${lib})
   endif()
   list(APPEND SPHERAL_BLT_DEPENDS ${lib})
 endforeach()
+blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
 # Note: SPHERAL_BLT_DEPENDS is made global after this in SetupSpheral.cmake
 
 # This calls LLNLSpheralInstallTPLs.cmake
