@@ -410,7 +410,7 @@ template<typename Dimension>
 void
 MFV<Dimension>::
 firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
-                     const typename Dimension::Scalar /*dt*/,
+                     const typename Dimension::Scalar dt,
                      const DataBase<Dimension>& dataBase,
                      const State<Dimension>& state,
                            StateDerivatives<Dimension>& derivs) const {
@@ -607,12 +607,13 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = M[nodeListi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
+    const auto  kernelExtent = nodeList.neighbor().kernelExtent();
 
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
       
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
-
+      
       const auto& ci = soundSpeed(nodeListi,i);
       const auto& vi = velocity(nodeListi,i);
       const auto& voli = volume(nodeListi,i);
@@ -643,8 +644,13 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         newRiemannDvDxi = newRiemannDvDxi*Mi;
       }
 
+      const auto hinv = Dimension::rootnu(Hdeti);
       if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
-      if(ficianMotion) DxDti *= nodeMotionCoeff * ci * Dimension::rootnu(Hdeti);
+      if(ficianMotion){
+        DxDti *= nodeMotionCoeff * (kernelExtent * kernelExtent) /(dt * hinv * hinv);
+        const auto DxDtiMag = DxDti.magnitude();
+        DxDti *= min(ci*safeInv(5*DxDtiMag),1.0);
+      }
       if(!noMotion) DxDti += vi;
     }
     
