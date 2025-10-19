@@ -13,7 +13,7 @@
 //        2) Lagrangian -- nodal velocity = fluid velocity. (This is
 //                         a spheralized version of MFV so there
 //                         is some flux between nodes)
-//        3) Fickian ------ nodal velocity = fluid velocity + Fician
+//        3) Fickian ------ nodal velocity = fluid velocity + Fickian
 //                         PST correction
 //        4) XSPH -------- nodal velocity = xsph velocity
 //
@@ -23,9 +23,7 @@
 // J.M. Pearl 2023
 //----------------------------------------------------------------------------//
 // TODO:
-//   1 backpressure and fician particle shifting
 //   2 Eulerian model will still crash on the Noh implosion due to void particles
-//   3 Good implementation of Ngb update
 //   4 treatment for material interfaces
 //---------------------------------------------------------------------------//
 
@@ -42,9 +40,9 @@ namespace Spheral {
 enum class NodeMotionType {
   Lagrangian = 0,
   Eulerian = 1,
-  Fician = 2,
+  Fickian = 2,
   XSPH = 3,
-  BackgroundPressure = 4,
+  EulerianFickian = 4,
 };
 
 template<typename Dimension> class State;

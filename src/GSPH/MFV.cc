@@ -13,7 +13,7 @@
 //        2) Lagrangian -- nodal velocity = fluid velocity. (This is
 //                         a spheralized version of MFV so there
 //                         is some flux between nodes)
-//        3) Fician ------ nodal velocity = fluid velocity + Fician
+//        3) Fickian ------ nodal velocity = fluid velocity + Fickian
 //                         PST correction
 //        4) XSPH -------- nodal velocity = xsph velocity
 //
@@ -23,7 +23,7 @@
 // J.M. Pearl 2023
 //----------------------------------------------------------------------------//
 // TODO:
-//   1 backpressure and fician particle shifting
+//   1 backpressure and fickian particle shifting
 //   2 Eulerian model will still crash on the Noh implosion due to void particles
 //   3 Good implementation of Ngb update
 //   4 treatment for material interfaces

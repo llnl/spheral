@@ -364,6 +364,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
   const auto tiny = std::numeric_limits<Scalar>::epsilon();
   const auto nodeMotionCoeff = this->nodeMotionCoefficient();
+  const auto cfl = this->cfl();
 
   const auto calcSpatialGradients =  (this->gradientType() == GradientType::SPHSameTimeGradient 
                                   or  this->gradientType() == GradientType::SPHUncorrectedGradient);
@@ -371,8 +372,10 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
   const auto nodeMotion = this->nodeMotionType();
   const auto xsphMotion = (nodeMotion == NodeMotionType::XSPH);
-  const auto ficianMotion = (nodeMotion == NodeMotionType::Fician);
-  const auto noMotion = (nodeMotion == NodeMotionType::Eulerian);
+  const auto fickianMotion = (nodeMotion == NodeMotionType::Fickian or
+                              nodeMotion == NodeMotionType::EulerianFickian);
+  const auto noMotion = (nodeMotion == NodeMotionType::Eulerian or
+                         nodeMotion == NodeMotionType::EulerianFickian);
 
   // The connectivity.
   const auto& connectivityMap = dataBase.connectivityMap();
@@ -522,15 +525,15 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         DxDti -= wij*psii*(vi-vj);
         DxDtj -= wij*psij*(vj-vi);
       }
-      if(ficianMotion){
+      if(fickianMotion){
         const auto fi = FastMath::pow4(Wi/(Hdeti*WnPerh));
         const auto fj = FastMath::pow4(Wj/(Hdetj*WnPerh));
         DxDti -= (1.0+fi)*gradPsii;
         DxDtj += (1.0+fj)*gradPsij;
       }
 
-      normi += psii;//voli*gradWi.magnitude();
-      normj += psij;//volj*gradWj.magnitude();
+      normi += psii;
+      normj += psij;
 
     } // loop over pairs
 
@@ -563,6 +566,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
       normi += voli*Hdeti*W0;
 
+      // finish up spatial gradients
       const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2);
       const auto goodM =  (Mdeti > 1e-2 and enoughNeighbors);                   
 
@@ -578,14 +582,16 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         newRiemannDvDxi = newRiemannDvDxi*Mi;
       }
 
-      const auto hinv = Dimension::rootnu(Hdeti);
+      // finish up the node motion
       if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
-      if(ficianMotion){
+      if(fickianMotion){
+        const auto hinv = Dimension::rootnu(Hdeti);
         DxDti *= nodeMotionCoeff * (kernelExtent * kernelExtent) /(dt * hinv * hinv);
-        const auto DxDtiMag = DxDti.magnitude();
-        DxDti *= min(ci*safeInv(5*DxDtiMag),1.0);
       }
+      const auto DxDtiMag = DxDti.magnitude();
+      DxDti *= min(cfl*ci*safeInv(DxDtiMag),1.0);
       if(!noMotion) DxDti += vi;
+
     }
     
   }

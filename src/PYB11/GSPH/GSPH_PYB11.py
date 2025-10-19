@@ -61,7 +61,7 @@ GradientType = PYB11enum(("RiemannGradient",
 
 NodeMotionType = PYB11enum(("Lagrangian",
                             "Eulerian",
-                            "Fician",
+                            "Fickian",
                             "XSPH",
                             "BackgroundPressure"), export_values = False)
 
