@@ -78,11 +78,22 @@ class MFV(GenericRiemannHydro):
                        
     @PYB11virtual
     @PYB11const
-    def evaluateDerivatives(time = "const Scalar",
-                            dt = "const Scalar",
-                            dataBase = "const DataBase<%(Dimension)s>&",
-                            state = "const State<%(Dimension)s>&",
-                            derivs = "StateDerivatives<%(Dimension)s>&"):
+    def firstDerivativesLoop(time = "const Scalar",
+                             dt = "const Scalar",
+                             dataBase = "const DataBase<%(Dimension)s>&",
+                             state = "const State<%(Dimension)s>&",
+                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        """Evaluate the derivatives for the principle hydro 
+mass density, velocity, and specific thermal energy."""
+        return "void"
+    
+    @PYB11virtual
+    @PYB11const
+    def secondDerivativesLoop(time = "const Scalar",
+                              dt = "const Scalar",
+                              dataBase = "const DataBase<%(Dimension)s>&",
+                              state = "const State<%(Dimension)s>&",
+                              derivs = "StateDerivatives<%(Dimension)s>&"):
         """Evaluate the derivatives for the principle hydro 
 mass density, velocity, and specific thermal energy."""
         return "void"
@@ -110,6 +121,10 @@ mass density, velocity, and specific thermal energy."""
         return "void"
 
     DvolumeDt = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "DvolumeDt", returnpolicy="reference_internal")
+    DmassDt = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "DmassDt", returnpolicy="reference_internal")
+    DmomentumDt = PYB11property("const FieldList<%(Dimension)s, Vector>&", "DmomentumDt", returnpolicy="reference_internal")
+    DthermalEnergyDt = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "DthermalEnergyDt", returnpolicy="reference_internal")
+    
     nodeMotionCoefficient = PYB11property("double", "nodeMotionCoefficient", "nodeMotionCoefficient",doc="multiplier for XSPH and Fician node motion schemes.")
     nodeMotionType = PYB11property("NodeMotionType","nodeMotionType","nodeMotionType")
     

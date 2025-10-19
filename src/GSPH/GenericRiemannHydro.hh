@@ -123,6 +123,28 @@ public:
                   const DataBase<Dimension>& dataBase,
                   State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) override;
+
+  // In GSPH/MFM/MFV eval derivs is split into 2 loops, sub class implement to loops
+  virtual
+  void evaluateDerivatives(const Scalar time,
+                           const Scalar dt,
+                           const DataBase<Dimension>& dataBase,
+                           const State<Dimension>& state,
+                           StateDerivatives<Dimension>& derivatives) const override;
+  virtual
+  void
+  firstDerivativesLoop(const typename Dimension::Scalar time,
+                       const typename Dimension::Scalar dt,
+                       const DataBase<Dimension>& dataBase,
+                       const State<Dimension>& state,
+                             StateDerivatives<Dimension>& derivatives) const = 0;
+  virtual
+  void
+  secondDerivativesLoop(const typename Dimension::Scalar time,
+                        const typename Dimension::Scalar dt,
+                        const DataBase<Dimension>& dataBase,
+                        const State<Dimension>& state,
+                              StateDerivatives<Dimension>& derivatives) const = 0;
                        
   // Finalize the derivatives.
   virtual

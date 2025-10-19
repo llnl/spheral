@@ -5,11 +5,11 @@ namespace Spheral {
 template<typename Dimension>
 void
 MFM<Dimension>::
-evaluateDerivatives(const typename Dimension::Scalar time,
-                    const typename Dimension::Scalar dt,
-                    const DataBase<Dimension>& dataBase,
-                    const State<Dimension>& state,
-                    StateDerivatives<Dimension>& derivs) const {
+secondDerivativesLoop(const typename Dimension::Scalar time,
+                      const typename Dimension::Scalar dt,
+                      const DataBase<Dimension>& dataBase,
+                      const State<Dimension>& state,
+                      StateDerivatives<Dimension>& derivs) const {
 
   const auto& riemannSolver = this->riemannSolver();
 
@@ -95,8 +95,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
   CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
 
-  this->computeMCorrection(time,dt,dataBase,state,derivs);
-
   // Walk all the interacting pairs.
 #pragma omp parallel
   {
@@ -129,7 +127,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto& vi = velocity(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
       const auto& voli = volume(nodeListi, i);
-      //const auto& epsi = specificThermalEnergy(nodeListi, i);
       const auto& Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& ci = soundSpeed(nodeListi, i);
@@ -157,7 +154,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto& vj = velocity(nodeListj, j);
       const auto& rhoj = massDensity(nodeListj, j);
       const auto& volj = volume(nodeListj, j);
-      //const auto& epsj = specificThermalEnergy(nodeListj, j);
       const auto& Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
       const auto& cj = soundSpeed(nodeListj, j);
@@ -364,11 +360,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 template<typename Dimension>
 void
 MFM<Dimension>::
-computeMCorrection(const typename Dimension::Scalar /*time*/,
-                   const typename Dimension::Scalar /*dt*/,
-                   const DataBase<Dimension>& dataBase,
-                   const State<Dimension>& state,
-                   StateDerivatives<Dimension>& derivs) const {
+firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
+                     const typename Dimension::Scalar /*dt*/,
+                     const DataBase<Dimension>& dataBase,
+                     const State<Dimension>& state,
+                     StateDerivatives<Dimension>& derivs) const {
 
   const auto calcSpatialGradients =  (this->gradientType() == GradientType::SPHSameTimeGradient 
                                   or  this->gradientType() == GradientType::SPHUncorrectedGradient);

@@ -4,6 +4,7 @@
 from PYB11Generator import *
 from Physics import *
 from RestartMethods import *
+from GenericRiemannHydroAbstractMethods import *
 
 @PYB11template("Dimension")
 @PYB11module("SpheralGSPH")
@@ -86,16 +87,16 @@ temperature or pressure."""
         "Initialize the Hydro before we start a derivative evaluation."
         return "bool"
                        
-#     @PYB11virtual
-#     @PYB11const
-#     def evaluateDerivatives(time = "const Scalar",
-#                             dt = "const Scalar",
-#                             dataBase = "const DataBase<%(Dimension)s>&",
-#                             state = "const State<%(Dimension)s>&",
-#                             derivs = "StateDerivatives<%(Dimension)s>&"):
-#         """Evaluate the derivatives for the principle hydro 
-# mass density, velocity, and specific thermal energy."""
-#         return "void"
+    @PYB11virtual
+    @PYB11const
+    def evaluateDerivatives(time = "const Scalar",
+                            dt = "const Scalar",
+                            dataBase = "const DataBase<%(Dimension)s>&",
+                            state = "const State<%(Dimension)s>&",
+                            derivs = "StateDerivatives<%(Dimension)s>&"):
+        """Evaluate the derivatives for the principle hydro 
+mass density, velocity, and specific thermal energy."""
+        return "void"
 
     @PYB11virtual
     @PYB11const
@@ -188,6 +189,8 @@ temperature or pressure."""
     
     pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")
     pairDepsDt = PYB11property("const PairWorkType&", "pairDepsDt", returnpolicy="reference_internal")
+    
+    DrhoDx = PYB11property("const FieldList<%(Dimension)s, Vector>&","DrhoDx",returnpolicy="reference_internal")
     riemannDpDx = PYB11property("const FieldList<%(Dimension)s, Vector>&","riemannDpDx",returnpolicy="reference_internal")
     newRiemannDpDx = PYB11property("const FieldList<%(Dimension)s, Vector>&","newRiemannDpDx",returnpolicy="reference_internal")
     riemannDvDx = PYB11property("const FieldList<%(Dimension)s, Tensor>&","riemannDvDx",returnpolicy="reference_internal")
@@ -211,3 +214,4 @@ temperature or pressure."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, GenericRiemannHydro)
+PYB11inject(GenericRiemannHydroAbstractMethods, GenericRiemannHydro, pure_virtual=True)

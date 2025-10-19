@@ -1,17 +1,6 @@
 namespace Spheral {
 
-template<typename Dimension>
-void
-MFV<Dimension>::
-evaluateDerivatives(const typename Dimension::Scalar time,
-                    const typename Dimension::Scalar dt,
-                    const DataBase<Dimension>& dataBase,
-                    const State<Dimension>& state,
-                    StateDerivatives<Dimension>& derivs) const {
-  this->firstDerivativesLoop(time,dt,dataBase,state,derivs);
-  this->secondDerivativesLoop(time,dt,dataBase,state,derivs);
-  //this->setH(time,dt,dataBase,state,derivatves)
-}
+
 //------------------------------------------------------------------------------
 // Determine the principle derivatives.
 //------------------------------------------------------------------------------
@@ -80,7 +69,6 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   auto  DEDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, 0.0);
   auto  DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero);
   auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
   auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
   auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
   auto* pairAccelerationsPtr = (compatibleEnergy ?
@@ -122,7 +110,6 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
     auto DvDx_thread = DvDx.threadCopy(threadStack);
     auto newRiemannDpDx_thread = newRiemannDpDx.threadCopy(threadStack);
     auto newRiemannDvDx_thread = newRiemannDvDx.threadCopy(threadStack);
-    auto XSPHDeltaV_thread =  XSPHDeltaV.threadCopy(threadStack);
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -188,7 +175,6 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       auto& newRiemannDpDxj = newRiemannDpDx_thread(nodeListj,j);
       auto& newRiemannDvDxj = newRiemannDvDx_thread(nodeListj,j);
       auto& DvDxj = DvDx_thread(nodeListj, j);
-      auto& XSPHDeltaVj = XSPHDeltaV_thread(nodeListj,j);
       const auto& gradRhoj = DrhoDx(nodeListj, j);
       const auto& Mj = M(nodeListj,j);
 

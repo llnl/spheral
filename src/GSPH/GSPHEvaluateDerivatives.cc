@@ -6,11 +6,11 @@ namespace Spheral {
 template<typename Dimension>
 void
 GSPH<Dimension>::
-evaluateDerivatives(const typename Dimension::Scalar time,
-                    const typename Dimension::Scalar dt,
-                    const DataBase<Dimension>& dataBase,
-                    const State<Dimension>& state,
-                    StateDerivatives<Dimension>& derivs) const {
+secondDerivativesLoop(const typename Dimension::Scalar time,
+                      const typename Dimension::Scalar dt,
+                      const DataBase<Dimension>& dataBase,
+                      const State<Dimension>& state,
+                      StateDerivatives<Dimension>& derivs) const {
   TIME_BEGIN("GSPHevalDerivs");
 
   const auto& riemannSolver = this->riemannSolver();
@@ -96,8 +96,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(newRiemannDvDx.size() == numNodeLists);
   CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
   CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
-
-  this->computeMCorrection(time,dt,dataBase,state,derivs);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -368,11 +366,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 template<typename Dimension>
 void
 GSPH<Dimension>::
-computeMCorrection(const typename Dimension::Scalar /*time*/,
-                   const typename Dimension::Scalar /*dt*/,
-                   const DataBase<Dimension>& dataBase,
-                   const State<Dimension>& state,
-                   StateDerivatives<Dimension>& derivs) const {
+firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
+                     const typename Dimension::Scalar /*dt*/,
+                     const DataBase<Dimension>& dataBase,
+                     const State<Dimension>& state,
+                     StateDerivatives<Dimension>& derivs) const {
   // The kernels and such.
   const auto& W = this->kernel();
   const auto calcSpatialGradients =  (this->gradientType() == GradientType::SPHSameTimeGradient 

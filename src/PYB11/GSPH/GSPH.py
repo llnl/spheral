@@ -82,11 +82,22 @@ temperature or pressure."""
                        
     @PYB11virtual
     @PYB11const
-    def evaluateDerivatives(time = "const Scalar",
-                            dt = "const Scalar",
-                            dataBase = "const DataBase<%(Dimension)s>&",
-                            state = "const State<%(Dimension)s>&",
-                            derivs = "StateDerivatives<%(Dimension)s>&"):
+    def firstDerivativesLoop(time = "const Scalar",
+                             dt = "const Scalar",
+                             dataBase = "const DataBase<%(Dimension)s>&",
+                             state = "const State<%(Dimension)s>&",
+                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        """Evaluate the derivatives for the principle hydro 
+mass density, velocity, and specific thermal energy."""
+        return "void"
+    
+    @PYB11virtual
+    @PYB11const
+    def secondDerivativesLoop(time = "const Scalar",
+                              dt = "const Scalar",
+                              dataBase = "const DataBase<%(Dimension)s>&",
+                              state = "const State<%(Dimension)s>&",
+                              derivs = "StateDerivatives<%(Dimension)s>&"):
         """Evaluate the derivatives for the principle hydro 
 mass density, velocity, and specific thermal energy."""
         return "void"

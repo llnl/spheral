@@ -485,6 +485,21 @@ initialize(const typename Dimension::Scalar time,
 }
 
 //------------------------------------------------------------------------------
+// calculate the derivatives (sub classes define the two loops)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+GenericRiemannHydro<Dimension>::
+evaluateDerivatives(const typename Dimension::Scalar time,
+                    const typename Dimension::Scalar dt,
+                    const DataBase<Dimension>& dataBase,
+                    const State<Dimension>& state,
+                    StateDerivatives<Dimension>& derivs) const {
+  this->firstDerivativesLoop(time,dt,dataBase,state,derivs);
+  this->secondDerivativesLoop(time,dt,dataBase,state,derivs);
+}
+
+//------------------------------------------------------------------------------
 // Finalize the derivatives.
 //------------------------------------------------------------------------------
 template<typename Dimension>

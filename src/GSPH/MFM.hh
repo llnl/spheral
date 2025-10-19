@@ -103,17 +103,19 @@ public:
   // Evaluate the derivatives for the principle hydro variables:
   // mass density, velocity, and specific thermal energy.
   virtual
-  void evaluateDerivatives(const Scalar time,
-                           const Scalar dt,
-                           const DataBase<Dimension>& dataBase,
-                           const State<Dimension>& state,
-                           StateDerivatives<Dimension>& derivatives) const override;
   void
-  computeMCorrection(const typename Dimension::Scalar time,
-                     const typename Dimension::Scalar dt,
-                     const DataBase<Dimension>& dataBase,
-                     const State<Dimension>& state,
-                           StateDerivatives<Dimension>& derivatives) const;
+  firstDerivativesLoop(const typename Dimension::Scalar time,
+                       const typename Dimension::Scalar dt,
+                       const DataBase<Dimension>& dataBase,
+                       const State<Dimension>& state,
+                             StateDerivatives<Dimension>& derivatives) const override;
+  virtual
+  void
+  secondDerivativesLoop(const typename Dimension::Scalar time,
+                        const typename Dimension::Scalar dt,
+                        const DataBase<Dimension>& dataBase,
+                        const State<Dimension>& state,
+                              StateDerivatives<Dimension>& derivatives) const override;
 
   // Finalize the derivatives.
   virtual
