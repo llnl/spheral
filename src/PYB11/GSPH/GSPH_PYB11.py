@@ -63,7 +63,7 @@ NodeMotionType = PYB11enum(("Lagrangian",
                             "Eulerian",
                             "Fickian",
                             "XSPH",
-                            "BackgroundPressure"), export_values = False)
+                            "EulerianFickian"), export_values = False)
 
 #-------------------------------------------------------------------------------
 # Instantiate our types
