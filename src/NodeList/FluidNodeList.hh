@@ -88,6 +88,10 @@ public:
   void rhoMin(Scalar x);
   void rhoMax(Scalar x);
 
+  // used to let MFV do ALE on a per-material basis
+  bool allowALE() const;
+  void allowALE(bool x);
+
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
@@ -105,6 +109,9 @@ private:
   //--------------------------- Private Interface ---------------------------//
   // Min/max mass densities.
   Scalar mRhoMin, mRhoMax;
+
+  // let nodal motion decouple from fluid velocity in MFV (ALE)
+  bool mAllowALE = true;
 
   // Fields that define the fluid's current state.
   Field<Dimension, Scalar> mMassDensity;

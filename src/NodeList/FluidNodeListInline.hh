@@ -93,4 +93,24 @@ rhoMax(typename Dimension::Scalar x) {
   mRhoMax = x;
 }
 
+
+//------------------------------------------------------------------------------
+// allow ALE schemes in MFV
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+bool
+FluidNodeList<Dimension>::
+allowALE() const {
+  return mAllowALE;
+}
+
+template<typename Dimension>
+inline
+void
+FluidNodeList<Dimension>::
+allowALE(bool x) {
+  mAllowALE = x;
+}
+
 }

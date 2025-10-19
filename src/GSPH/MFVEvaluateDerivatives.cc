@@ -542,31 +542,31 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
   }   // OpenMP parallel region
   
-  // Finish up the spatial gradient calculation
+  // Finish up the spatial gradient and nodal motion calculations
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = M[nodeListi]->nodeList();
-    const auto ni = nodeList.numInternalNodes();
-    const auto  kernelExtent = nodeList.neighbor().kernelExtent();
+    const auto  ni = nodeList.numInternalNodes();
+    const auto& fluidNodeList = **(dataBase.fluidNodeListBegin() + nodeListi);
+    const auto  allowALE = fluidNodeList.allowALE();
 
+    // finish up spatial gradients
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
       
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       
-      const auto& ci = soundSpeed(nodeListi,i);
-      const auto& vi = velocity(nodeListi,i);
+      
       const auto& voli = volume(nodeListi,i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
 
-      auto& DxDti = DxDt(nodeListi,i);
       auto& Mi = M(nodeListi, i);
       auto& normi = normalization(nodeListi, i);
       const auto Mdeti = std::abs(Mi.Determinant());
 
       normi += voli*Hdeti*W0;
 
-      // finish up spatial gradients
+      
       const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2);
       const auto goodM =  (Mdeti > 1e-2 and enoughNeighbors);                   
 
@@ -581,17 +581,30 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         newRiemannDpDxi = Mi.Transpose()*newRiemannDpDxi;
         newRiemannDvDxi = newRiemannDvDxi*Mi;
       }
+    }
 
-      // finish up the node motion
-      if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
-      if(fickianMotion){
-        const auto hinv = Dimension::rootnu(Hdeti);
-        DxDti *= nodeMotionCoeff * (kernelExtent * kernelExtent) /(dt * hinv * hinv);
+    // finish up the node motion
+    if(allowALE){
+#pragma omp parallel for
+      for (auto i = 0u; i < ni; ++i) {
+
+        const auto& ci = soundSpeed(nodeListi,i);
+        const auto& vi = velocity(nodeListi,i);
+
+        const auto& normi = normalization(nodeListi, i);
+        auto& DxDti = DxDt(nodeListi,i);
+
+        if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
+        if(fickianMotion){
+          //const auto& Hi = H(nodeListi, i);
+          //const auto  Hdeti = Hi.Determinant();
+          //const auto hinv = Dimension::rootnu(Hdeti);
+          DxDti *= nodeMotionCoeff * ci*ci*dt;//(kernelExtent * kernelExtent) /(dt * hinv * hinv);
+        }
+        const auto DxDtiMag = DxDti.magnitude();
+        DxDti *= min(cfl*ci*safeInv(DxDtiMag),1.0);
+        if(!noMotion) DxDti += vi;
       }
-      const auto DxDtiMag = DxDti.magnitude();
-      DxDti *= min(cfl*ci*safeInv(DxDtiMag),1.0);
-      if(!noMotion) DxDti += vi;
-
     }
     
   }

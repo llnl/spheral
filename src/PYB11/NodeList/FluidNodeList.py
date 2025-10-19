@@ -123,6 +123,7 @@ class FluidNodeList(NodeList):
     # Properties
     rhoMin = PYB11property("Scalar", "rhoMin", "rhoMin", doc="The minimum allowed mass density.")
     rhoMax = PYB11property("Scalar", "rhoMax", "rhoMax", doc="The maximum allowed mass density.")
+    allowALE = PYB11property("bool", "allowALE", "allowALE", doc="allows for ALE schemes in MFV to apply to this nodelist.")
 
 #-------------------------------------------------------------------------------
 # Inject the restart methods
