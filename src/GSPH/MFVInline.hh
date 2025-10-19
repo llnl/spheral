@@ -43,14 +43,6 @@ nodeMotionType(NodeMotionType x) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-const FieldList<Dimension, typename Dimension::Vector>&
-MFV<Dimension>::
-nodalVelocity() const {
-  return mNodalVelocity;
-}
-
-template<typename Dimension>
-inline
 const FieldList<Dimension, typename Dimension::Scalar>&
 MFV<Dimension>::
 DmassDt() const {
@@ -86,11 +78,4 @@ pairMassFlux() const {
   return *mPairMassFluxPtr;
 }
 
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension, typename Dimension::SymTensor>&
-// MFV<Dimension>::
-// HStretchTensor() const {
-//   return mHStretchTensor;
-// }
 }

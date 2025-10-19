@@ -178,12 +178,10 @@ public:
   NodeMotionType nodeMotionType() const;
   void nodeMotionType(NodeMotionType x);
 
-  const FieldList<Dimension,Vector>& nodalVelocity() const;
   const FieldList<Dimension,Scalar>& DmassDt() const;
   const FieldList<Dimension,Scalar>& DthermalEnergyDt() const;
   const FieldList<Dimension,Vector>& DmomentumDt() const;
   const FieldList<Dimension,Scalar>& DvolumeDt() const;
-  //const FieldList<Dimension,SymTensor>& HStretchTensor() const;
 
   const PairMassFluxType& pairMassFlux() const;
   
@@ -199,12 +197,10 @@ private:
 
   NodeMotionType mNodeMotionType;
 
-  FieldList<Dimension, Vector> mNodalVelocity;
   FieldList<Dimension, Scalar> mDmassDt;
   FieldList<Dimension, Scalar> mDthermalEnergyDt;
   FieldList<Dimension, Vector> mDmomentumDt;
   FieldList<Dimension, Scalar> mDvolumeDt;
-  //FieldList<Dimension, SymTensor> mHStretchTensor;
 
   std::unique_ptr<PairMassFluxType> mPairMassFluxPtr;
 };
