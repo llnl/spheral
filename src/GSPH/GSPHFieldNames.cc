@@ -10,6 +10,7 @@ const std::string Spheral::GSPHFieldNames::nodalVelocity = "velocity of node";
 const std::string Spheral::GSPHFieldNames::momentum = "momentum";
 const std::string Spheral::GSPHFieldNames::thermalEnergy = "thermal energy";
 const std::string Spheral::GSPHFieldNames::densityGradient = "density gradient";
+const std::string Spheral::GSPHFieldNames::specificThermalEnergyGradient = "specific thermal energy gradient";
 const std::string Spheral::GSPHFieldNames::pressureGradient = "pressure gradient";
 const std::string Spheral::GSPHFieldNames::deviatoricStressTensorGradient = "deviatoric stress tensor gradient";
 const std::string Spheral::GSPHFieldNames::RiemannPressureGradient = "Riemann solvers pressure gradient";

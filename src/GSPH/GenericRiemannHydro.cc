@@ -118,6 +118,7 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
   mDvDt(FieldStorageType::CopyFields),                       // move up one layer
   mDspecificThermalEnergyDt(FieldStorageType::CopyFields),   // move up one layer
   mDrhoDx(FieldStorageType::CopyFields),
+  mDepsDx(FieldStorageType::CopyFields),
   mDvDx(FieldStorageType::CopyFields),
   mRiemannDpDx(FieldStorageType::CopyFields),
   mRiemannDvDx(FieldStorageType::CopyFields),
@@ -139,6 +140,7 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
   mDvDt = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::hydroAcceleration);
   mDspecificThermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy);
   mDrhoDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::densityGradient);
+  mDepsDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::specificThermalEnergyGradient);
   mDvDx = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::velocityGradient);
   mRiemannDpDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::RiemannPressureGradient);
   mRiemannDvDx = dataBase.newFluidFieldList(Tensor::zero,GSPHFieldNames::RiemannVelocityGradient);
@@ -275,6 +277,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mDspecificThermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, false);
   dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::velocityGradient, false);
   dataBase.resizeFluidFieldList(mDrhoDx, Vector::zero, GSPHFieldNames::densityGradient, false);
+  dataBase.resizeFluidFieldList(mDepsDx, Vector::zero, GSPHFieldNames::specificThermalEnergyGradient, false);
   dataBase.resizeFluidFieldList(mM, Tensor::zero, HydroFieldNames::M_SPHCorrection, false);
   
   // Check if someone already registered DxDt.
@@ -285,6 +288,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // Check that no-one else is trying to control the hydro vote for DvDt.
   CHECK(not derivs.registered(mDvDt));
   derivs.enroll(mDrhoDx);
+  derivs.enroll(mDepsDx);
   derivs.enroll(mNewRiemannDpDx);
   derivs.enroll(mNewRiemannDvDx);
   derivs.enroll(mDvDt);
@@ -542,6 +546,8 @@ applyGhostBoundaries(State<Dimension>& state,
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero); 
   auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero); 
+  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero);
+  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero);
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
        boundaryItr != this->boundaryEnd();
@@ -555,6 +561,8 @@ applyGhostBoundaries(State<Dimension>& state,
     (*boundaryItr)->applyFieldListGhostBoundary(soundSpeed);
     (*boundaryItr)->applyFieldListGhostBoundary(DpDx);
     (*boundaryItr)->applyFieldListGhostBoundary(DvDx);
+    (*boundaryItr)->applyFieldListGhostBoundary(DrhoDx);
+    (*boundaryItr)->applyFieldListGhostBoundary(DepsDx);
 
   }
 }
@@ -575,8 +583,10 @@ enforceBoundaries(State<Dimension>& state,
   auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero); 
-  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero); 
+  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero);
+  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero);
+  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero);
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
        boundaryItr != this->boundaryEnd();
@@ -590,6 +600,8 @@ enforceBoundaries(State<Dimension>& state,
     (*boundaryItr)->enforceFieldListBoundary(soundSpeed);
     (*boundaryItr)->enforceFieldListBoundary(DpDx);
     (*boundaryItr)->enforceFieldListBoundary(DvDx);
+    (*boundaryItr)->enforceFieldListBoundary(DrhoDx);
+    (*boundaryItr)->enforceFieldListBoundary(DepsDx);
   }
 }
 
@@ -623,6 +635,8 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mRiemannDpDx, pathName + "/riemannDpDx");
   file.write(mNewRiemannDvDx, pathName + "/newRiemannDvDx");
   file.write(mNewRiemannDpDx, pathName + "/newRiemannDpDx");
+  file.write(mDrhoDx, pathName + "/DrhoDx");
+  file.write(mDepsDx, pathName + "/DepsDx");
   
 
 }
@@ -656,6 +670,8 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mRiemannDpDx, pathName + "/riemannDpDx");
   file.read(mNewRiemannDvDx, pathName + "/newRiemannDvDx");
   file.read(mNewRiemannDpDx, pathName + "/newRiemannDpDx");
+  file.read(mDrhoDx, pathName + "/DrhoDx");
+  file.read(mDepsDx, pathName + "/DepsDx");
 
 }
 

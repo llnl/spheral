@@ -233,6 +233,7 @@ public:
   const PairWorkType&                    pairDepsDt() const;
 
   const FieldList<Dimension, Vector>&    DrhoDx() const;
+  const FieldList<Dimension, Vector>&    DepsDx() const;
   const FieldList<Dimension, Vector>&    riemannDpDx() const;
   const FieldList<Dimension, Tensor>&    riemannDvDx() const;
   const FieldList<Dimension, Vector>&    newRiemannDpDx() const;
@@ -288,6 +289,7 @@ private:
   FieldList<Dimension, SymTensor> mDHDt;
 
   FieldList<Dimension, Vector>    mDrhoDx;
+  FieldList<Dimension, Vector>    mDepsDx;
   FieldList<Dimension, Tensor>    mDvDx;
   FieldList<Dimension, Vector>    mRiemannDpDx;
   FieldList<Dimension, Tensor>    mRiemannDvDx;

@@ -594,6 +594,14 @@ template<typename Dimension>
 inline
 const FieldList<Dimension, typename Dimension::Vector>&
 GenericRiemannHydro<Dimension>::
+DepsDx() const {
+  return mDepsDx;
+}
+
+template<typename Dimension>
+inline
+const FieldList<Dimension, typename Dimension::Vector>&
+GenericRiemannHydro<Dimension>::
 riemannDpDx() const {
   return mRiemannDpDx;
 }

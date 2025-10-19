@@ -40,8 +40,8 @@ waveSpeed(const typename Dimension::Scalar rhoi,
           const typename Dimension::Scalar uj,
                 typename Dimension::Scalar& Si,  
                 typename Dimension::Scalar& Sj) const {
-  Si = rhoi*(std::max(uj+cj,ui+ci)-ui);
-  Sj = rhoj*(std::min(ui-ci,uj-cj)-uj);
+  Si = std::max(uj+cj,ui+ci);
+  Sj = std::min(ui-ci,uj-cj);
 }
 
 

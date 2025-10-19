@@ -29,16 +29,16 @@ AcousticWaveSpeed<Dimension>::
 template<typename Dimension>
 void
 AcousticWaveSpeed<Dimension>::
-waveSpeed(const typename Dimension::Scalar rhoi, 
-          const typename Dimension::Scalar rhoj, 
+waveSpeed(const typename Dimension::Scalar /*rhoi*/, 
+          const typename Dimension::Scalar /*rhoj*/, 
           const typename Dimension::Scalar ci,   
           const typename Dimension::Scalar cj, 
-          const typename Dimension::Scalar /*ui*/,   
-          const typename Dimension::Scalar /*uj*/,
+          const typename Dimension::Scalar ui,   
+          const typename Dimension::Scalar uj,
                 typename Dimension::Scalar& Si,  
                 typename Dimension::Scalar& Sj) const {
-  Si =  rhoi * ci;
-  Sj = -rhoj * cj;
+  Si = ui+ci;
+  Sj = ui-ci;
 }
 
 

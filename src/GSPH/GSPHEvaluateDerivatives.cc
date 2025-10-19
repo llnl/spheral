@@ -102,7 +102,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   {
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
-    Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj;
+    Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj, epsstari, epsstarj;
     Vector gradPsii, gradPsij, Ai, Aj, vstar;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
@@ -128,6 +128,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto& mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
+      //const auto& epsi = specificThermalEnergy(nodeListi, i);
       const auto& voli = volume(nodeListi, i);
       const auto& Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
@@ -155,6 +156,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto& mj = mass(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& rhoj = massDensity(nodeListj, j);
+      //const auto& epsi = specificThermalEnergy(nodeListi, i);
       const auto& volj = volume(nodeListj, j);
       const auto& Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
@@ -217,17 +219,21 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       
       riemannSolver.interfaceState(ri,           rj, 
                                    Hi,           Hj, 
-                                   rhoi,         rhoj, 
+                                   rhoi,         rhoj,
+                                   rhoi,         rhoj, // dumby for eps
                                    ci,           cj, 
                                    Peffi,        Peffj, 
                                    vi,           vj, 
                                    gradRhoi,     gradRhoj,
+                                   gradRhoi,     gradRhoj, // dumby for gradeps
                                    gradPi,       gradPj, 
                                    gradVi,       gradVj, 
                                    Pstar,     //output
                                    vstar,     //output
                                    rhostari,  //output
-                                   rhostarj); //output
+                                   rhostarj,  //output
+                                   epsstari,  //output
+                                   epsstarj); //output
       
       // get our basis function and interface area vectors
       //--------------------------------------------------------

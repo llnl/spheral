@@ -43,15 +43,19 @@ public:
                       const SymTensor& Hi,
                       const SymTensor& Hj,
                       const Scalar& rhoi,   
-                      const Scalar& rhoj, 
+                      const Scalar& rhoj,
+                      const Scalar& epsi,
+                      const Scalar& epsj,
                       const Scalar& ci,   
                       const Scalar& cj, 
-                      const Scalar& sigmai,    
-                      const Scalar& sigmaj,
+                      const Scalar& Pi,    
+                      const Scalar& Pj,
                       const Vector& vi,    
                       const Vector& vj,
                       const Vector& DrhoDxi,
                       const Vector& DrhoDxj,
+                      const Vector& DepsDxi,
+                      const Vector& DepsDxj,
                       const Vector& DpDxi,
                       const Vector& DpDxj,
                       const Tensor& DvDxi,
@@ -59,7 +63,9 @@ public:
                             Scalar& Pstar,
                             Vector& vstar,
                             Scalar& rhostari,
-                            Scalar& rhostarj) const override;
+                            Scalar& rhostarj,
+                            Scalar& epsstari,
+                            Scalar& epsstarj) const override;
 
 
   virtual

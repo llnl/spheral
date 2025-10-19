@@ -65,6 +65,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   // Derivative FieldLists.
   const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
   const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero);
+  //const auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero);
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
   auto  DvolDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, 0.0);
@@ -81,6 +82,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
   auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
   
+  //CHECK(DepsDx.size() == numNodeLists);
   CHECK(DrhoDx.size() == numNodeLists);
   CHECK(M.size() == numNodeLists);
   CHECK(normalization.size() == numNodeLists);
@@ -100,7 +102,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   {
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
-    Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj;
+    Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj, epsstari, epsstarj;
     Vector gradPsii, gradPsij, Ai, Aj, vstar;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
@@ -145,6 +147,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       auto& XSPHDeltaVi = XSPHDeltaV_thread(nodeListi,i);
       const auto& Mi = M(nodeListi,i);
       const auto& gradRhoi = DrhoDx(nodeListi,i);
+      //const auto& gradEpsi = DepsDx(nodeListi,i);
 
       // Get the state for node j
       const auto& riemannDpDxj = riemannDpDx(nodeListj, j);
@@ -172,6 +175,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       auto& XSPHDeltaVj = XSPHDeltaV_thread(nodeListj,j);
       const auto& Mj = M(nodeListj,j);
       const auto& gradRhoj = DrhoDx(nodeListj,j);
+      //const auto& gradEpsj = DepsDx(nodeListj,j);
 
       // Node displacement.
       const auto rij = ri - rj;
@@ -214,17 +218,21 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       }
       riemannSolver.interfaceState(ri,           rj, 
                                    Hi,           Hj, 
-                                   rhoi,         rhoj, 
+                                   rhoi,         rhoj,
+                                   rhoi,         rhoj, // dumby for gradeps
                                    ci,           cj, 
                                    Peffi,        Peffj, 
                                    vi,           vj, 
                                    gradRhoi,     gradRhoj,
+                                   gradRhoi,     gradRhoj, // dumby for gradeps
                                    gradPi,       gradPj, 
                                    gradVi,       gradVj, 
                                    Pstar,     //output
                                    vstar,     //output
                                    rhostari,  //output
-                                   rhostarj); //output
+                                   rhostarj,  //output
+                                   epsstari,  //output
+                                   epsstarj); //output
 
       // get our basis function and interface area vectors
       //--------------------------------------------------------
