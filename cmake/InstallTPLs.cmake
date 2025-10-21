@@ -155,8 +155,9 @@ endif()
 
 message("-----------------------------------------------------------------------------")
 # HDF5
-find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
-if(hdf5_FOUND)
+# This is a hack to allow other codes to use old versions of hdf5
+if(NOT ENABLE_STATIC_TPL)
+  find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_FP_TPLS hdf5)
   list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
