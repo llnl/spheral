@@ -66,6 +66,7 @@ public:
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 
+  friend class ArtificialViscosity<Dimension>;
   friend class MonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
