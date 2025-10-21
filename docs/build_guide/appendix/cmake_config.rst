@@ -82,7 +82,7 @@ The following are CMake variables that can be set during configure time. In gene
 
    Default location Spheral will search for cached pip packages.
 
-.. option:: -DSPHERAL_DDBC_MODE=<None, All, Pre>
+.. option:: -DSPHERAL_DBC_MODE=<None, All, Pre>
 
    Set the compile time design by contract (DBC) mode for Spheral. Design by contract statements are very useful developer tools, whereby the developer can insert tests in the code as they write it.
    These statements are both useful for tracking down bugs with fine-grained testing throughout the code, as well as useful documentation in the code about what sort of conditions are expected to hold.
