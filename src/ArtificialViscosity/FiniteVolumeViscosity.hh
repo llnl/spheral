@@ -105,7 +105,6 @@ public:
   // Restart methods.
   virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
-protected:
   // Can simplify this call because no new value/view member data is made
   virtual void updateManagedPtr() override {
     this->updateMembers(m_viewPtr);

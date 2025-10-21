@@ -121,7 +121,6 @@ public:
   void linearInExpansion(const bool x)          { mLinearInExpansion = x; updateManagedPtr(); }
   void quadraticInExpansion(const bool x)       { mQuadraticInExpansion = x; updateManagedPtr(); }
 
-protected:
   // New member variables mLinearInExpansion and mQuadraticInExpansion require
   // this
   template<typename ViewPtr>
@@ -134,7 +133,7 @@ protected:
   virtual void updateManagedPtr() override {
     updateMembers(m_viewPtr);
   }
-
+protected:
   // Not ideal but there is repeated member data between the value and view
   bool mLinearInExpansion = false;
   bool mQuadraticInExpansion = false;

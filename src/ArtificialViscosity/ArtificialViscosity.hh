@@ -163,7 +163,6 @@ public:
     return chai::managed_ptr<ArtViscViewTensor>();
   }
 
-protected:
   // TODO: Change this from being a macro to being a templated function that takes an
   // array of member variables that are assigned in a recrusive function, something like:
   // template<typename ViewType, typename MemberType, typename ValueType, typename... Rest>
@@ -200,6 +199,7 @@ protected:
   // This function should only call updateMembers(m_viewPtr) in downstream classes
   virtual void updateManagedPtr() = 0;
 
+protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;
   using ArtificialViscosityBase<Dimension>::mCquadratic;

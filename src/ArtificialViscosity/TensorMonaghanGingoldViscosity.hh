@@ -99,7 +99,6 @@ public:
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
-protected:
   // Can simplify this call because no new value/view member data is made
   virtual void updateManagedPtr() override {
     this->updateMembers(m_viewPtr);

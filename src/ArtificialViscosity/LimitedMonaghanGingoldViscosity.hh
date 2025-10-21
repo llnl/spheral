@@ -133,7 +133,6 @@ public:
   // Restart methods.
   virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
 
-protected:
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
@@ -144,7 +143,7 @@ protected:
   virtual void updateManagedPtr() override {
     updateMembers(m_viewPtr);
   }
-
+protected:
   // Not ideal but there is repeated member data between the value and view
   double mEtaCritFrac;
   double mEtaFoldFrac;
