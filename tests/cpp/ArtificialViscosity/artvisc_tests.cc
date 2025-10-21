@@ -60,9 +60,13 @@ GPU_TYPED_TEST_P(ArtViscTypedTest, DiffInit) {
   Q.Cq(Cq);
   Q.linearInExpansion(false);
   chai::managed_ptr<ArtViscScalarView3D> Qview = Q.getScalarView();
+  chai::managed_ptr<MonGArtView> QAview = Q.getView();
+  SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
+  SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
   SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
   EXEC_IN_SPACE_BEGIN(TypeParam)
     SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+    SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
   EXEC_IN_SPACE_END()
 }
 

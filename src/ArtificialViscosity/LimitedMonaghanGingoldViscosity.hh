@@ -41,8 +41,13 @@ public:
     mEtaCritFrac(etaCritFrac),
     mEtaFoldFrac(etaFoldFrac) {}
 
+  SPHERAL_HOST_DEVICE virtual ~LimitedMonaghanGingoldViscosityView() = default;
+
+  // Data access
   SPHERAL_HOST_DEVICE
-  virtual ~LimitedMonaghanGingoldViscosityView() = default;
+  Scalar etaCritFrac() const { return mEtaCritFrac; }
+  SPHERAL_HOST_DEVICE
+  Scalar etaFoldFrac() const { return mEtaFoldFrac; }
 
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
@@ -68,12 +73,13 @@ public:
                      const FieldList<Dimension, Scalar>& fCl,
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
+
   friend class ArtificialViscosity<Dimension>;
   friend class LimitedMonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  double mEtaCritFrac = 0.0;
-  double mEtaFoldFrac = 0.0;
+  Scalar mEtaCritFrac;
+  Scalar mEtaFoldFrac;
 
   using MonaghanGingoldViscosityView<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosityView<Dimension>::mQuadraticInExpansion;
@@ -116,14 +122,14 @@ public:
   virtual bool requireVelocityGradient() const override { return true; }
 
   // Access our data
-  Scalar etaCritFrac()                    const { return mEtaCritFrac; }
-  Scalar etaFoldFrac()                    const { return mEtaFoldFrac; }
+  Scalar etaCritFrac()                 const { return mEtaCritFrac; }
+  Scalar etaFoldFrac()                 const { return mEtaFoldFrac; }
 
-  void etaCritFrac(const Scalar x)       { mEtaCritFrac = x; updateManagedPtr(); }
-  void etaFoldFrac(const Scalar x)       { mEtaFoldFrac = x; updateManagedPtr(); }
+  void etaCritFrac(const Scalar x)           { mEtaCritFrac = x; updateManagedPtr(); }
+  void etaFoldFrac(const Scalar x)           { mEtaFoldFrac = x; updateManagedPtr(); }
 
   // Restart methods.
-  virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
+  virtual std::string label() const override { return "LimitedMonaghanGingoldViscosity"; }
 
   // View methods
   virtual std::type_index QPiTypeIndex() const override {
@@ -134,6 +140,10 @@ public:
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
+  // Useful for testing
+  chai::managed_ptr<ViewType> getView() const {
+    return m_viewPtr;
+  }
 protected:
   //--------------------------- Protected Interface ---------------------------//
   template<typename ViewPtr>
@@ -146,8 +156,8 @@ protected:
   virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
 
   // Not ideal but there is repeated member data between the value and view
-  double mEtaCritFrac;
-  double mEtaFoldFrac;
+  Scalar mEtaCritFrac = 1.0;
+  Scalar mEtaFoldFrac = 0.2;
   using MonaghanGingoldViscosity<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosity<Dimension>::mQuadraticInExpansion;
 private:

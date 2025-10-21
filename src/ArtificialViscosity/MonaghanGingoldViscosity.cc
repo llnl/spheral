@@ -54,7 +54,7 @@ void
 MonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-      const unsigned nodeListi, const unsigned i, 
+      const unsigned nodeListi, const unsigned i,
       const unsigned nodeListj, const unsigned j,
       const Vector& xi,
       const SymTensor& Hi,

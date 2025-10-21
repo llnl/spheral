@@ -118,7 +118,9 @@ LimitedMonaghanGingoldViscosity(const Scalar Clinear,
                                 const Scalar etaCritFrac,
                                 const Scalar etaFoldFrac):
   MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel, 
-                                      linearInExpansion, quadraticInExpansion) {
+                                      linearInExpansion, quadraticInExpansion),
+  mEtaCritFrac(etaCritFrac),
+  mEtaFoldFrac(etaFoldFrac) {
   m_viewPtr = chai::make_managed<LimitedMonaghanGingoldViscosityView<Dimension>>(Clinear,
                                                                                  Cquadratic,
                                                                                  linearInExpansion,

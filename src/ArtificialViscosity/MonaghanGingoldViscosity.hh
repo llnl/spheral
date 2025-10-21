@@ -41,6 +41,12 @@ public:
 
   SPHERAL_HOST_DEVICE virtual ~MonaghanGingoldViscosityView() = default;
 
+  // Data access
+  SPHERAL_HOST_DEVICE
+  bool linearInExpansion() const { return mLinearInExpansion; }
+  SPHERAL_HOST_DEVICE
+  bool quadraticInExpansion() const { return mQuadraticInExpansion; }
+
   // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
   // Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered
@@ -122,6 +128,10 @@ public:
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
+  // Useful for testing
+  chai::managed_ptr<ViewType> getView() const {
+    return m_viewPtr;
+  }
 protected:
   //--------------------------- Protected Interface ---------------------------//
   // New member variables like mLinearInExpansion require this
