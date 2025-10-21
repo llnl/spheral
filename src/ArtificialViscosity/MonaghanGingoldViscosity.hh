@@ -66,7 +66,6 @@ public:
                      const FieldList<Dimension, Scalar>& fCq,
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 
-  friend class ArtificialViscosity<Dimension>;
   friend class MonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -116,20 +115,29 @@ public:
   virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
   // Access data members
-  virtual bool linearInExpansion()                const { return m_viewPtr->mLinearInExpansion; }
-  virtual bool quadraticInExpansion()             const { return m_viewPtr->mQuadraticInExpansion; }
-  virtual void linearInExpansion(const bool x)          { m_viewPtr->mLinearInExpansion = x; updateManagedPtr(); }
-  virtual void quadraticInExpansion(const bool x)       { m_viewPtr->mQuadraticInExpansion = x; updateManagedPtr(); }
+  bool linearInExpansion()                const { return mLinearInExpansion; }
+  bool quadraticInExpansion()             const { return mQuadraticInExpansion; }
+  void linearInExpansion(const bool x)          { mLinearInExpansion = x; updateManagedPtr(); }
+  void quadraticInExpansion(const bool x)       { mQuadraticInExpansion = x; updateManagedPtr(); }
 
-  friend class ArtificialViscosity<Dimension>;
 protected:
-  virtual void updateManagedPtr() override {
-    this->updateMembers(m_viewPtr);
-    bool lExp = linearInExpansion();
-    bool qExp = quadraticInExpansion();
-    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, lExp);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, qExp);
+  // New member variables mLinearInExpansion and mQuadraticInExpansion require
+  // this
+  template<typename ViewPtr>
+  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+    ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, mLinearInExpansion);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
   }
+
+  virtual void updateManagedPtr() override {
+    updateMembers(m_viewPtr);
+  }
+
+  // Not ideal but there is repeated member data between the value and view
+  bool mLinearInExpansion = false;
+  bool mQuadraticInExpansion = false;
+private:
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

@@ -103,6 +103,11 @@ class ArtificialViscosity(Physics):
         "Find the Balsara shear correction multiplier"
         return "Scalar"
 
+    @PYB11pure_virtual
+    def updateManagedPtr(self):
+        "Update member data for managed pointer."
+        return "void"
+
     #...........................................................................
     # Properties
     Cl = PYB11property("Scalar", "Cl", "Cl",

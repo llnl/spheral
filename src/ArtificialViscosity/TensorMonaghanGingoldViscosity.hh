@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// A modified form of the Monaghan & Gingold viscosity, extended to tensor 
+// A modified form of the Monaghan & Gingold viscosity, extended to tensor
 // formalism.
 //
 // Created by J. Michael Owen, Mon Sep  2 14:45:35 PDT 2002
@@ -36,7 +36,7 @@ public:
   //SPHERAL_HOST_DEVICE
   virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const unsigned nodeListi, const unsigned i, 
+                     const unsigned nodeListi, const unsigned i,
                      const unsigned nodeListj, const unsigned j,
                      const Vector& xi,
                      const SymTensor& Hi,
@@ -77,6 +77,7 @@ public:
   TensorMonaghanGingoldViscosity(const Scalar Clinear,
                                  const Scalar Cquadratic,
                                  const TableKernel<Dimension>& kernel);
+
   virtual ~TensorMonaghanGingoldViscosity() { m_viewPtr.free(); }
 
   // No default construction, copying, or assignment
@@ -99,9 +100,11 @@ public:
   }
 
 protected:
+  // Can simplify this call because no new value/view member data is made
   virtual void updateManagedPtr() override {
     this->updateMembers(m_viewPtr);
   }
+private:
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

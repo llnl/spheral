@@ -164,6 +164,30 @@ public:
   }
 
 protected:
+  // TODO: Change this from being a macro to being a templated function that takes an
+  // array of member variables that are assigned in a recrusive function, something like:
+  // template<typename ViewType, typename MemberType, typename ValueType, typename... Rest>
+  // SPHERAL_HOST_DEVICE
+  // void assign(chai::managed_ptr<ViewType> a_view,
+  //             MemberType ViewType::* a_memberPtr,
+  //             ValueType a_inputValue,
+  //             Rest... rest) {
+  //   a_view->*a_memberPtr = value;
+  //   if constexpr (sizeof...(Rest) > 0) {
+  //       assign(rest...);
+  //     }
+  // }
+  /* Downstream classes should redefine a version of this function that includes
+     any new member data that must be kept consistent between the value and
+     view instances like the following:
+
+     template<typename ViewPtr>
+     void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+       ArtificialViscosity<Dimension>::updateMembers(a_viewPtr); // This should be the most recent upstream class
+       ASSIGN_MEMBER_ALL(a_viewPtr, mNewMemberData, mNewMemberData);
+       ... etc
+     }
+  */
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     ASSIGN_MEMBER_ALL(a_viewPtr, mClinear, mClinear);
@@ -172,7 +196,10 @@ protected:
     ASSIGN_MEMBER_ALL(a_viewPtr, mBalsaraShearCorrection, mBalsaraShearCorrection);
     ASSIGN_MEMBER_ALL(a_viewPtr, mNegligibleSoundSpeed, mNegligibleSoundSpeed);
   }
+
+  // This function should only call updateMembers(m_viewPtr) in downstream classes
   virtual void updateManagedPtr() = 0;
+
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;
   using ArtificialViscosityBase<Dimension>::mCquadratic;

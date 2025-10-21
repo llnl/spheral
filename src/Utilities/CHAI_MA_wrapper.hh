@@ -28,6 +28,7 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
 }
 
 // Macros for updating managed_ptr member data
+// TODO: Modify this to work on a list of member variables
 #define ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, EXEC_SPACE) \
   do {                                                                  \
     /* Get the object type from the pointer (removes 'volatile' and '&' if present) */ \

@@ -36,7 +36,9 @@ MonaghanGingoldViscosity(const Scalar Clinear,
                          const TableKernel<Dimension>& kernel,
                          const bool linearInExpansion,
                          const bool quadraticInExpansion):
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
+  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
+  mLinearInExpansion(linearInExpansion),
+  mQuadraticInExpansion(quadraticInExpansion) {
   m_viewPtr = chai::make_managed<MonaghanGingoldViscosityView<Dimension>>(Clinear,
                                                                           Cquadratic,
                                                                           linearInExpansion,

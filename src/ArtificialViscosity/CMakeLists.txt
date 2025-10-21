@@ -28,17 +28,19 @@ set(ArtificialViscosity_headers
   ArtificialViscosityBaseInline.hh
   ArtificialViscosityView.hh
   LimitedMonaghanGingoldViscosity.hh
-  LimitedMonaghanGingoldViscosityRZ.hh
   CullenDehnenViscosity.hh
   FiniteVolumeViscosity.hh
   IncrementCullenMultipliers.hh
   MonaghanGingoldViscosity.hh
-  MonaghanGingoldViscosityGSRZ.hh
-  MonaghanGingoldViscosityRZ.hh
   MorrisMonaghanReducingViscosity.hh
   TensorCRKSPHViscosity.hh
   TensorMonaghanGingoldViscosity.hh
   TensorSVPHViscosity.hh)
+
+# The following are currently not compiled
+# MonaghanGingoldViscosityGSRZ.hh
+# MonaghanGingoldViscosityRZ.hh
+# LimitedMonaghanGingoldViscosityRZ.hh
 
 spheral_add_obj_library(ArtificialViscosity SPHERAL_OBJ_LIBS)
 

@@ -25,7 +25,7 @@ public:
   SPHERAL_HOST_DEVICE
   FiniteVolumeViscosityView(const Scalar Clinear, const Scalar Cquadratic) :
     ArtificialViscosityView<Dimension, Scalar>(Clinear, Cquadratic) {}
-  
+
   SPHERAL_HOST_DEVICE
   virtual ~FiniteVolumeViscosityView() = default;
 
@@ -106,9 +106,11 @@ public:
   virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
 protected:
+  // Can simplify this call because no new value/view member data is made
   virtual void updateManagedPtr() override {
     this->updateMembers(m_viewPtr);
   }
+private:
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };

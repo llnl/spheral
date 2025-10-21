@@ -4,6 +4,8 @@
 // velocity jump at the mid-point between points.
 //
 // Created by JMO, Thu Nov 20 14:13:18 PST 2014
+//
+// CURRENTLY UNUSABLE
 //----------------------------------------------------------------------------//
 #ifndef LimitedMonaghanGingoldViscosityRZ_HH
 #define LimitedMonaghanGingoldViscosityRZ_HH

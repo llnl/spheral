@@ -71,8 +71,9 @@ public:
   friend class ArtificialViscosity<Dimension>;
   friend class LimitedMonaghanGingoldViscosity<Dimension>;
 protected:
-  //--------------------------- Private Interface ---------------------------//
-  double mEtaCritFrac, mEtaFoldFrac;
+  //--------------------------- Protected Interface ---------------------------//
+  double mEtaCritFrac = 0.0;
+  double mEtaFoldFrac = 0.0;
 
   using MonaghanGingoldViscosityView<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosityView<Dimension>::mQuadraticInExpansion;
@@ -123,32 +124,33 @@ public:
   }
 
   // Access our data
-  virtual bool linearInExpansion()                const override { return m_viewPtr->mLinearInExpansion; }
-  virtual bool quadraticInExpansion()             const override { return m_viewPtr->mQuadraticInExpansion; }
-  virtual void linearInExpansion(const bool x)          override { m_viewPtr->mLinearInExpansion = x; updateManagedPtr(); }
-  virtual void quadraticInExpansion(const bool x)       override { m_viewPtr->mQuadraticInExpansion = x; updateManagedPtr(); }
+  Scalar etaCritFrac()                    const { return mEtaCritFrac; }
+  Scalar etaFoldFrac()                    const { return mEtaFoldFrac; }
 
-  Scalar etaCritFrac()                    const { return m_viewPtr->mEtaCritFrac; }
-  Scalar etaFoldFrac()                    const { return m_viewPtr->mEtaFoldFrac; }
-
-  void etaCritFrac(const Scalar x)       { m_viewPtr->mEtaCritFrac = x; updateManagedPtr(); }
-  void etaFoldFrac(const Scalar x)       { m_viewPtr->mEtaFoldFrac = x; updateManagedPtr(); }
+  void etaCritFrac(const Scalar x)       { mEtaCritFrac = x; updateManagedPtr(); }
+  void etaFoldFrac(const Scalar x)       { mEtaFoldFrac = x; updateManagedPtr(); }
 
   // Restart methods.
   virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
 
 protected:
-  virtual void updateManagedPtr() override {
-    this->updateMembers(m_viewPtr);
-    bool lExp = m_viewPtr->mLinearInExpansion;
-    bool qExp = m_viewPtr->mQuadraticInExpansion;
-    Scalar etaCF = etaCritFrac();
-    Scalar etaFF = etaFoldFrac();
-    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, lExp);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, qExp);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaCritFrac, etaCF);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaFoldFrac, etaFF);
+  template<typename ViewPtr>
+  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+    MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaCritFrac, mEtaCritFrac);
+    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
   }
+    
+  virtual void updateManagedPtr() override {
+    updateMembers(m_viewPtr);
+  }
+
+  // Not ideal but there is repeated member data between the value and view
+  double mEtaCritFrac;
+  double mEtaFoldFrac;
+  using MonaghanGingoldViscosity<Dimension>::mLinearInExpansion;
+  using MonaghanGingoldViscosity<Dimension>::mQuadraticInExpansion;
+private:
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;
 };
