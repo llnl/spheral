@@ -91,6 +91,7 @@ public:
   // Restart methods.
   virtual std::string label() const override { return "TensorMonaghanGingoldViscosity"; }
 
+  // View methods
   virtual std::type_index QPiTypeIndex() const override {
     return std::type_index(typeid(Tensor));
   }
@@ -99,10 +100,11 @@ public:
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
+protected:
+  //--------------------------- Protected Interface ---------------------------//
   // Can simplify this call because no new value/view member data is made
-  virtual void updateManagedPtr() override {
-    this->updateMembers(m_viewPtr);
-  }
+  virtual void updateManagedPtr() override { this->updateMembers(m_viewPtr); }
+
 private:
   std::type_index m_viewType = typeid(ViewType);
   chai::managed_ptr<ViewType> m_viewPtr;

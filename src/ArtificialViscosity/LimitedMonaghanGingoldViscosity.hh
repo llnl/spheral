@@ -115,14 +115,6 @@ public:
   // We need the velocity gradient
   virtual bool requireVelocityGradient() const override { return true; }
 
-  virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(Scalar));
-  }
-
-  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
-    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
-  }
-
   // Access our data
   Scalar etaCritFrac()                    const { return mEtaCritFrac; }
   Scalar etaFoldFrac()                    const { return mEtaFoldFrac; }
@@ -133,6 +125,17 @@ public:
   // Restart methods.
   virtual std::string label()       const override { return "LimitedMonaghanGingoldViscosity"; }
 
+  // View methods
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Scalar));
+  }
+
+  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  }
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
@@ -140,10 +143,8 @@ public:
     ASSIGN_MEMBER_ALL(m_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
   }
     
-  virtual void updateManagedPtr() override {
-    updateMembers(m_viewPtr);
-  }
-protected:
+  virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
+
   // Not ideal but there is repeated member data between the value and view
   double mEtaCritFrac;
   double mEtaFoldFrac;

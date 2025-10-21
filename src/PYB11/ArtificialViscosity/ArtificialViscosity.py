@@ -104,6 +104,7 @@ class ArtificialViscosity(Physics):
         return "Scalar"
 
     @PYB11pure_virtual
+    @PYB11protected
     def updateManagedPtr(self):
         "Update member data for managed pointer."
         return "void"

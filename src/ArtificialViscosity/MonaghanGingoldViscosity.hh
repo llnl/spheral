@@ -104,14 +104,6 @@ public:
   MonaghanGingoldViscosity(const MonaghanGingoldViscosity&) = delete;
   MonaghanGingoldViscosity& operator=(const MonaghanGingoldViscosity&) = delete;
 
-  virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(Scalar));
-  }
-
-  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
-    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
-  }
-
   // Restart methods.
   virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
@@ -121,8 +113,18 @@ public:
   void linearInExpansion(const bool x)          { mLinearInExpansion = x; updateManagedPtr(); }
   void quadraticInExpansion(const bool x)       { mQuadraticInExpansion = x; updateManagedPtr(); }
 
-  // New member variables mLinearInExpansion and mQuadraticInExpansion require
-  // this
+  // View methods
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Scalar));
+  }
+
+  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  }
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  // New member variables like mLinearInExpansion require this
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
@@ -130,10 +132,8 @@ public:
     ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
   }
 
-  virtual void updateManagedPtr() override {
-    updateMembers(m_viewPtr);
-  }
-protected:
+  virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
+
   // Not ideal but there is repeated member data between the value and view
   bool mLinearInExpansion = false;
   bool mQuadraticInExpansion = false;
