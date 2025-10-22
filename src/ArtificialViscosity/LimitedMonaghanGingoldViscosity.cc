@@ -165,7 +165,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // We need nPerh to figure out our critical folding distance. We assume the first NodeList value for this is
   // correct for all of them...
-  const auto nPerh = DvDx[0]->nodeList().nodesPerSmoothingScale();
+  const auto nPerhi = DvDx[nodeListi]->nodesPerSmoothingScale();
+  const auto nPerhj = DvDx[nodeListj]->nodesPerSmoothingScale();
+  const auto nPerh = 0.5*(nPerhi + nPerhj);
   const auto etaCrit = mEtaCritFrac/nPerh;
   const auto etaFold = mEtaFoldFrac/nPerh;
   CHECK(etaFold > 0.0);

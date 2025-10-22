@@ -19,22 +19,8 @@ using ArtViscScalarView3D = Spheral::ArtificialViscosityView<Spheral::Dim<3>, Sc
 using TableKernel3D = Spheral::TableKernel<Spheral::Dim<3>>;
 using WC4Kernel3D = Spheral::WendlandC4Kernel<Spheral::Dim<3>>;
 using NodeList_t = Spheral::NodeList<Spheral::Dim<3>>;
-using MonGArtVisc = Spheral::LimitedMonaghanGingoldViscosity<Spheral::Dim<3>>;
-using MonGArtView = Spheral::LimitedMonaghanGingoldViscosityView<Spheral::Dim<3>>;
-
-//static constexpr int NL_count = 100;
-
-// class FakeSPH {
-// public:
-//   FakeSPH(ArtVisc3D& A) :
-//     m_ArtVisc(A) {
-//     m_nl = NodeList_t("NL", NL_count, 0);
-//   }
-
-// private:
-//   ArtVisc3D& m_ArtVisc;
-//   NodeList_T m_nl;
-// };
+using LimMonGArtVisc = Spheral::LimitedMonaghanGingoldViscosity<Spheral::Dim<3>>;
+using LimMonGArtView = Spheral::LimitedMonaghanGingoldViscosityView<Spheral::Dim<3>>;
 
 class ArtViscTest : public ::testing::Test {
 };
@@ -44,7 +30,7 @@ TYPED_TEST_SUITE_P(ArtViscTypedTest);
 template <typename T> class ArtViscTypedTest : public ArtViscTest {};
 
 // Test copy and assignment constructors
-GPU_TYPED_TEST_P(ArtViscTypedTest, DiffInit) {
+GPU_TYPED_TEST_P(ArtViscTypedTest, InitTests) {
   WC4Kernel3D w_kernel;
   TableKernel3D t_kernel(w_kernel, 200);
   Scalar kernelExtent = t_kernel.kernelExtent();
@@ -54,27 +40,44 @@ GPU_TYPED_TEST_P(ArtViscTypedTest, DiffInit) {
   Scalar etaFF = 0.3;
   bool linear = true;
   bool quad = false;
-  MonGArtVisc Q(Cl, Cq, t_kernel, linear, quad, etaCF, etaFF);
-  Cl = 11.5; Cq = 12.5;
-  Q.Cl(Cl);
-  Q.Cq(Cq);
-  Q.linearInExpansion(false);
+  // Initialize with certain variables
+  LimMonGArtVisc Q(Cl, Cq, t_kernel, linear, quad, etaCF, etaFF);
+  // This grabs the dynamically casted view, used in the code
   chai::managed_ptr<ArtViscScalarView3D> Qview = Q.getScalarView();
-  chai::managed_ptr<MonGArtView> QAview = Q.getView();
+  // This grabs the view directly, only used for testing
+  chai::managed_ptr<LimMonGArtView> QAview = Q.getView();
+
+  // Test if initialized variables are set properly
   SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
   SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
   SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+  SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
   EXEC_IN_SPACE_BEGIN(TypeParam)
     SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
     SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+    SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
+  EXEC_IN_SPACE_END()
+
+  // Modify variables in the value class
+  Cl = 11.5; Cq = 12.5; linear = false; etaCF = 1.3;
+  Q.Cl(Cl);
+  Q.Cq(Cq);
+  Q.linearInExpansion(linear);
+  Q.etaCritFrac(etaCF);
+
+  // Test that the value and view classes are properly updated
+  SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
+  SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+  SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+  SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
+  EXEC_IN_SPACE_BEGIN(TypeParam)
+    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+    SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+    SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
   EXEC_IN_SPACE_END()
 }
 
-// Test copy and assignment constructors
-// GPU_TYPED_TEST_P(TableKernelTypedTest, FillTest) {
-// }
-
-REGISTER_TYPED_TEST_SUITE_P(ArtViscTypedTest, DiffInit);//, FillTest);
+REGISTER_TYPED_TEST_SUITE_P(ArtViscTypedTest, InitTests);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(ArtificialViscosity, ArtViscTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

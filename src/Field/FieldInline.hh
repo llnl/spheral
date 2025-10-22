@@ -1386,6 +1386,7 @@ assignDataSpan() {
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
+  mNodesPerSmoothingScale = this->nodeList().nodesPerSmoothingScale();
 }
 
 } // namespace Spheral

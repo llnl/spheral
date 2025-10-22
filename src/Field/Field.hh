@@ -215,6 +215,7 @@ private:
   using FieldView<Dimension, DataType>::mDataSpan;
   using FieldView<Dimension, DataType>::mNumInternalElements;
   using FieldView<Dimension, DataType>::mNumGhostElements;
+  using FieldView<Dimension, DataType>::mNodesPerSmoothingScale;
 
   // Callback function for debugging CHAI
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;

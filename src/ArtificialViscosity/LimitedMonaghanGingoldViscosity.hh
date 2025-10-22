@@ -75,6 +75,7 @@ public:
                      const FieldList<Dimension, Tensor>& DvDx) const override;
 
   friend class ArtificialViscosity<Dimension>;
+  friend class MonaghanGingoldViscosity<Dimension>;
   friend class LimitedMonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -149,8 +150,8 @@ protected:
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaCritFrac, mEtaCritFrac);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mEtaCritFrac, mEtaCritFrac);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
   }
     
   virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }

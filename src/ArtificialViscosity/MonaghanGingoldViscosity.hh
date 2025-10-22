@@ -138,8 +138,8 @@ protected:
   template<typename ViewPtr>
   void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
     ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mLinearInExpansion, mLinearInExpansion);
-    ASSIGN_MEMBER_ALL(m_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mLinearInExpansion, mLinearInExpansion);
+    ASSIGN_MEMBER_ALL(a_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
   }
 
   virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
