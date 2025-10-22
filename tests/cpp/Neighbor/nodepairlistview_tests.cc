@@ -5,6 +5,7 @@
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
 #include "Neighbor/NodePairList.hh"
+
 #include <typeinfo>
 
 using NPIT = Spheral::NodePairIdxType;
