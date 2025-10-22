@@ -2,13 +2,13 @@
 #define Spheral_NodePairList_hh
 
 #include "Neighbor/NodePairIdxType.hh"
-
-#include <vector>
-#include <unordered_map>
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
 #include "Utilities/CHAI_MA_wrapper.hh"
+
+#include <vector>
+#include <unordered_map>
 
 namespace Spheral {
 
