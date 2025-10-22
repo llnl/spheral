@@ -3,9 +3,9 @@
 
 #include "Utilities/size_t_bits.hh"
 #include "Utilities/DBC.hh"
+#include "config.hh"
 
 #include <iostream>
-#include "config.hh"
 
 // These are based on what we get from size_t_bits
 #define MAX_NODE_INDEX (size_t(1u) << ((SIZE_T_BITS - 10)/2))
