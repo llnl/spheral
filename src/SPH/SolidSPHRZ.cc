@@ -308,9 +308,12 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -540,7 +543,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
                nodeListi, i, nodeListj, j,
                posi, Hi, etai, vi, rhoi, ci,  
                posj, Hj, etaj, vj, rhoj, cj,
-               fClQ, fCqQ, DvDxQ); 
+               fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);

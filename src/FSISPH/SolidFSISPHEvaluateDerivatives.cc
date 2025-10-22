@@ -117,9 +117,12 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
 
   //const auto yield = state.fields(SolidFieldNames::yieldStrength, 0.0);
   //const auto invJ2 = state.fields(FSIFieldNames::inverseEquivalentDeviatoricStress, 0.0);
@@ -485,7 +488,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
                  nodeListi, i, nodeListj, j,
                  ri, Hij, etaij, vi, rhoij, cij,  
                  rj, Hij, etaij, vj, rhoij, cij,
-                 fClQ, fCqQ, DvDxQ); 
+                 fClQView, fCqQView, DvDxQView);
 
         // slide correction
         if (slides.isSlideSurface(nodeListi,nodeListj)){

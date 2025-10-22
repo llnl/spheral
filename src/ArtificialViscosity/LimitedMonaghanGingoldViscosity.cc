@@ -152,9 +152,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       const Vector& vj,
       const Scalar rhoj,
       const Scalar csj,
-      const FieldList<Dimension, Scalar>& fCl,
-      const FieldList<Dimension, Scalar>& fCq,
-      const FieldList<Dimension, Tensor>& DvDx) const {
+      const FieldListView<Dimension, Scalar>& fCl,
+      const FieldListView<Dimension, Scalar>& fCq,
+      const FieldListView<Dimension, Tensor>& DvDx) const {
 
   // Preconditions
   REQUIRE(fCl.size() == fCq.size());
@@ -165,8 +165,8 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // We need nPerh to figure out our critical folding distance. We assume the first NodeList value for this is
   // correct for all of them...
-  const auto nPerhi = DvDx[nodeListi]->nodesPerSmoothingScale();
-  const auto nPerhj = DvDx[nodeListj]->nodesPerSmoothingScale();
+  const auto nPerhi = DvDx[nodeListi].nodesPerSmoothingScale();
+  const auto nPerhj = DvDx[nodeListj].nodesPerSmoothingScale();
   const auto nPerh = 0.5*(nPerhi + nPerhj);
   const auto etaCrit = mEtaCritFrac/nPerh;
   const auto etaFold = mEtaFoldFrac/nPerh;

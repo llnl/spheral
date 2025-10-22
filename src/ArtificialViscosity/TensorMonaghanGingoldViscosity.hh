@@ -50,9 +50,9 @@ public:
                      const Vector& vj,
                      const Scalar rhoj,
                      const Scalar csj,
-                     const FieldList<Dimension, Scalar>& fCl,
-                     const FieldList<Dimension, Scalar>& fCq,
-                     const FieldList<Dimension, Tensor>& DvDx) const override;
+                     const FieldListView<Dimension, Scalar>& fCl,
+                     const FieldListView<Dimension, Scalar>& fCq,
+                     const FieldListView<Dimension, Tensor>& DvDx) const override;
   friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//

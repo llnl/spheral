@@ -52,11 +52,6 @@ public:
 
   std::type_index QPiTypeIndex() const { return std::type_index(typeid(QPiType)); }
 
-  // No default constructor, copying, or assignment
-  // ArtificialViscosityView() = delete;
-  // ArtificialViscosityView(const ArtificialViscosityView&) = delete;
-  // ArtificialViscosityView& operator=(const ArtificialViscosityView&) = delete;
-
   //...........................................................................
   // Virtual methods we expect ArtificialViscosities to provide
 
@@ -81,9 +76,9 @@ public:
                      const Vector& vj,
                      const Scalar rhoj,
                      const Scalar csj,
-                     const FieldList<Dimension, Scalar>& fCl,
-                     const FieldList<Dimension, Scalar>& fCq,
-                     const FieldList<Dimension, Tensor>& DvDx) const = 0;
+                     const FieldListView<Dimension, Scalar>& fCl,
+                     const FieldListView<Dimension, Scalar>& fCq,
+                     const FieldListView<Dimension, Tensor>& DvDx) const = 0;
   friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//

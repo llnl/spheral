@@ -290,9 +290,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto gamma = state.fields(HydroFieldNames::gamma, 0.0);
   const auto PSPHcorrection = state.fields(HydroFieldNames::PSPHcorrection, 0.0);
-  const auto reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto reducingViscosityMultiplierL = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto reducingViscosityMultiplierL = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto DvDxQView = DvDxQ.view();
+  auto RVMQView = reducingViscosityMultiplierQ.view();
+  auto RVMLView = reducingViscosityMultiplierL.view();
 
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
@@ -463,7 +466,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
                rj, Hj, etaj, vj, rhoj, cj,
-               reducingViscosityMultiplierL, reducingViscosityMultiplierQ, DvDxQ); 
+               RVMLView, RVMQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);

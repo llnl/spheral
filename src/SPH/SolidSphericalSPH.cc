@@ -328,9 +328,12 @@ evaluateDerivativesImpl(const Dim<1>::Scalar /*time*/,
   const auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
   const auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -538,7 +541,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar /*time*/,
                nodeListi, i, nodeListj, j,
                ri, Hi, etaii - etaji, vi, rhoi, ci,  
                rj, Hj, etaij - etajj, vj, rhoj, cj,
-               fClQ, fCqQ, DvDxQ);
+               fClQView, fCqQView, DvDxQView);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mj*Qi*WQii/rhoj;

@@ -86,9 +86,9 @@ QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
       const Vector& vj,
       const Scalar rhoj,
       const Scalar csj,
-      const FieldList<Dimension, Scalar>& fCl,
-      const FieldList<Dimension, Scalar>& fCq,
-      const FieldList<Dimension, Tensor>& DvDx) const {
+      const FieldListView<Dimension, Scalar>& fCl,
+      const FieldListView<Dimension, Scalar>& fCq,
+      const FieldListView<Dimension, Tensor>& DvDx) const {
 
   // Preconditions
   REQUIRE(fCl.size() == fCq.size());

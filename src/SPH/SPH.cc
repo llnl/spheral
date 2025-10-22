@@ -217,9 +217,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto omega = state.fields(HydroFieldNames::omegaGradh, 0.0);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -407,7 +410,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
                rj, Hj, etaj, vj, rhoj, cj,
-               fClQ, fCqQ, DvDxQ); 
+               fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);
