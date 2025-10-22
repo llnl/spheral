@@ -4,9 +4,6 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID
       when: never
-    # Skip CI if commit message contains [skip-ci]
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip-ci]\]/'
-      when: never
     - when: always
 
 variables:
