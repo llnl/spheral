@@ -156,6 +156,13 @@ endif()
 message("-----------------------------------------------------------------------------")
 # HDF5
 # This is a hack to allow other codes to use old versions of hdf5
+# Ideally, if(NOT ENABLE_STATIC_TPL) would be replaced and the
+# find_package call would be moved outside of the if statement:
+#
+# find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+# if (hdf5_FOUND)
+
+
 if(NOT ENABLE_STATIC_TPL)
   find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
   message("Found HDF5 External Package.")
