@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-// #ifdef USE_MPI
+// #ifdef SPHERAL_ENABLE_MPi
 // //------------------------------------------------------------------------------
 // // Create our own Test framework main to initialize/finalize MPI
 // //------------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 #
 # The list of python files should be passed as the arguments
 #
-# Note, if ENABLE_CXXONLY is set, this function does nothing
+# Note, if SPHERAL_ENABLE_PYTHON is set to OFF, this function does nothing
 #-----------------------------------------------------------------------------------
 
 
@@ -20,7 +20,7 @@ function(spheral_install_python_files)
     COPYONLY)
   endforeach()
 
-  if (NOT ENABLE_CXXONLY)
+  if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${ARGV}
       DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
     install(CODE "execute_process( \

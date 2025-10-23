@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <algorithm>
+
 using std::vector;
 using std::string;
 
@@ -37,7 +38,7 @@ globalReduceToUniqueElements(vector<int>& x) {
   // Begin by making the local copy unique.
   reduceToUniqueElements(x);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // If we're parallel, collect the unique set across all processors.
   int procID;
   int numProcs;
@@ -87,7 +88,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   REQUIRE(damage.nodeListPtr() == &nodes);
   const auto haveMask = mask.numInternalElements() == nodes.numInternalNodes();
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Get the rank and total number of processors.
   int procID = 0;
   int numProcs = 1;
@@ -168,7 +169,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
     // Is this node on this domain?
     auto ilocal = globalMinID;
     bool localNode = true;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     auto nodeDomain = procID;
     const auto ilocalItr = find(gIDs.begin(),
                                 gIDs.end(),
@@ -194,7 +195,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
       ri = r(ilocal);
       Hi = H(ilocal);
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     MPI_Bcast(&(*ri.begin()), Dimension::nDim, MPI_DOUBLE, nodeDomain, Communicator::communicator());
     MPI_Bcast(&(*Hi.begin()), Hsize, MPI_DOUBLE, nodeDomain, Communicator::communicator());
 #endif
@@ -232,7 +233,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
       numFragments += 1;
     }
     CHECK(fragID >= 0 && fragID < numFragments);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     CHECK(allReduce(fragID, SPHERAL_OP_SUM) == numProcs*fragID);
     CHECK(allReduce(numFragments, SPHERAL_OP_SUM) == numProcs*numFragments);
 #endif
@@ -314,7 +315,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
         rfrag[result[i]] += m(i)*r(i);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     for (int i = 0; i != numFragments - 1; ++i) {
       double mtmp = mfrag[i];
       Vector rtmp = rfrag[i];
