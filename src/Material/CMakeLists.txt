@@ -32,7 +32,7 @@ spheral_install_python_files(
   )
 
 # Helmholtz
-if (ENABLE_HELMHOLTZ)
+if (SPHERAL_ENABLE_HELMHOLTZ)
   message("-- Helmholtz equation of state enabled")
   list(APPEND Material_inst      HelmholtzEquationOfState)
   list(APPEND Material_headers   HelmholtzEquationOfState.hh)

@@ -15,14 +15,14 @@ set(CRKSPH_sources
     centerOfMass.cc
    )
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND CRKSPH_sources
        CRKSPHRZ.cc
        SolidCRKSPHRZ.cc
       )
 endif()
 
-if(ENABLE_3D)
+if(SPHERAL_ENABLE_3D)
   list(APPEND CRKSPH_sources
       )
 endif()

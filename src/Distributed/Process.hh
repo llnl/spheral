@@ -8,9 +8,8 @@
 // about the running process.  So far, most of these methods have to do with 
 // the number and rank of running processes in parallel runs.
 
-#ifndef PROCESS_HH
-#define PROCESS_HH
-
+#ifndef Process_HH
+#define Process_HH
 
 namespace Spheral {
 class Process
@@ -28,7 +27,7 @@ class Process
 
    private:
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
    // MPI rank of this process.
    static int sRank;
 

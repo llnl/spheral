@@ -13,7 +13,7 @@
 #include "Utilities/range.hh"
 #include "Utilities/Logger.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/packElement.hh"
@@ -494,7 +494,7 @@ operator()(const typename Dimension::Vector& position,
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // In parallel, we need to sum up the result across all processors.
   {
     int procID, numProcs;

@@ -1,10 +1,10 @@
 #include "Utilities/DomainNode.hh"
 #include "Communicator.hh"
 #include "Utilities/DBC.hh"
+#include "Process.hh"
 
 namespace Spheral {
 
-#ifdef USE_MPI
 //------------------------------------------------------------------------------
 // Get the domain ID.
 //------------------------------------------------------------------------------
@@ -12,8 +12,7 @@ template<typename Dimension>
 inline
 int
 RedistributeNodes<Dimension>::domainID() const {
-  int domainID;
-  MPI_Comm_rank(Communicator::communicator(), &domainID);
+  int domainID = Process::getRank();
   ENSURE(domainID >= 0 && domainID < numDomains());
   return domainID;
 }
@@ -25,11 +24,9 @@ template<typename Dimension>
 inline
 int
 RedistributeNodes<Dimension>::numDomains() const {
-  int nProcs;
-  MPI_Comm_size(Communicator::communicator(), &nProcs);
+  int nProcs = Process::getTotalNumberOfProcesses();
   return nProcs;
 }
-#endif // USE_MPI
 
 //------------------------------------------------------------------------------
 // Flag controlling how we compute the work.

@@ -8,10 +8,6 @@
 
 #include "silo.h"
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-
 #include <vector>
 #include <algorithm>
 using std::vector;
