@@ -59,7 +59,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('m-aneos@1.0')
 
-    depends_on('eigen@3.4.0', type='build')
+    depends_on('eigen@master', type='build')
 
     depends_on('hdf5 +hl', type='build')
 
@@ -96,16 +96,19 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
 
     # Forward CUDA/ROCM Variants
-    def set_gpu_variants(ctpl, cond=""):
+    def set_cuda_variants(ctpl, cond=""):
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} {cond}")
+    def set_rocm_variants(ctpl, cond=""):
         for val in ROCmPackage.amdgpu_targets:
             depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} {cond}")
 
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
-        set_gpu_variants(ctpl)
+        set_cuda_variants(ctpl)
+        set_rocm_variants(ctpl)
 
+    set_rocm_variants("eigen")
     # Forward debug variants
     debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak~shared"]
     for ctpl in debug_tpl_list:
