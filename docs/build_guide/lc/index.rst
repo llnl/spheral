@@ -6,7 +6,7 @@ This guide explains the process for setting up and running Spheral on LC (Liverm
 
 .. warning::
 
-   Do not run the provided terminal commands on login nodes. Instead, select the proper scheduler and do one of the two options below:
+   Do not run the provided terminal commands on login nodes. Instead, select the proper scheduler and do one of the two options below. This does not apply to the ``spheral-ats`` command, which interfaces with the scheduler itself:
 
    .. tab-set::
 
@@ -50,3 +50,7 @@ Running Tests
 =============
 
 .. include:: ../include/tests.rst.inc
+
+.. warning::
+
+   Unlike the other commands on this page, the ``spheral-ats`` command CANNOT be run with the ``srun`` or ``flux run``. The warning at the top of the page is not applicable to ``spheral-ats``.

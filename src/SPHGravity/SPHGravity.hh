@@ -110,16 +110,13 @@ public:
 
 private:
   
-  //! Information about the most recent linear solve.  This stuff is outside 
-  //! the GCCXML block because the associated accessors are inlined (so 
-  //!  GCCXML has to see it).
+  //! Information about the most recent linear solve.
   mutable double mResNorm;
   mutable int mNumIters;
 
   //! The gravitational constant.
   Scalar mG;
 
-#ifndef __GCCXML__
   //! SPH kernel.
   const TableKernel<Dimension>& mKernel;
   
@@ -183,7 +180,6 @@ private:
   void mComputeGravitationalPotential(
           const DataBase<Dimension>& dataBase,
           const State<Dimension>& state) const;
-#endif
   
   // Default constructor -- disabled.
   SPHGravity();

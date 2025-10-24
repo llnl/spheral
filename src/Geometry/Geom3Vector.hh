@@ -104,9 +104,7 @@ std::ostream& operator<<(std::ostream& os, const Geom3Vector& vec);
 }
 
 
-#ifndef __GCCXML__
 #include "Geom3VectorInline.hh"
-#endif
 
 #endif
 

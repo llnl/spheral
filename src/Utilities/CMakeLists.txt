@@ -68,6 +68,7 @@ set(Utilities_headers
     GeometricUtilities.hh
     Hashes.hh
     KeyTraits.hh
+    Logger.hh
     NodeCoupling.hh
     NodeListHashMap.hh
     OpenMP_wrapper.hh
@@ -127,6 +128,7 @@ set(Utilities_headers
     simpsonsIntegration.hh
     size_t_bits.hh
     sort_permutation.hh
+    span.hh
     StrideIterator.hh
     testBoxIntersection.hh
     timingUtilities.hh

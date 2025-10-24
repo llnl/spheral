@@ -20,7 +20,7 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }
@@ -29,13 +29,8 @@ extern "C" {
 #include <algorithm>
 #include <memory>
 using std::vector;
-using std::cout;
 using std::cerr;
 using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-using std::shared_ptr;
 
 namespace Spheral {
 
@@ -1868,8 +1863,8 @@ localSamplingBoundingVolume(typename Dimension::Vector& centroid,
       const Vector dr = xi - centroid;
       const double drMag = dr.magnitude();
       const double hi = (Hinv(nodeList, i)*dr).magnitude() * safeInv(drMag, 1.0e-20);
-      radiusNodes = max(radiusNodes, drMag);
-      radiusSample = max(radiusSample, drMag + 2.0*hi);
+      radiusNodes = std::max(radiusNodes, drMag);
+      radiusSample = std::max(radiusSample, drMag + 2.0*hi);
     }
   }
 
@@ -1903,7 +1898,7 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 				    xminNodes, xmaxNodes,
 				    xminSample, xmaxSample);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Now find the global bounds across all processors.
   {
     size_t nlocal = this->numInternalNodes();
@@ -1933,8 +1928,8 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 	  const Vector drUnit = dr.unitVector();
 	  const double drMag = dr.magnitude();
 	  const double hi = (Hinv(nodeList, i)*drUnit).magnitude();
-	  radiusNodes = max(radiusNodes, drMag);
-	  radiusSample = max(radiusSample, drMag + 2.0*hi);
+	  radiusNodes = std::max(radiusNodes, drMag);
+	  radiusSample = std::max(radiusSample, drMag + 2.0*hi);
 	}
       }
       radiusNodes = allReduce(radiusNodes, SPHERAL_OP_MAX);
@@ -2051,7 +2046,7 @@ globalSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
   // First get each domains local values.
   localSamplingBoundingBoxes(xminima, xmaxima);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel crap.
   const int procID = Process::getRank();
   const int numProcs = Process::getTotalNumberOfProcesses();

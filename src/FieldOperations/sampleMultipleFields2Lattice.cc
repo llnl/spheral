@@ -22,7 +22,7 @@
 
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Distributed/TreeDistributedBoundary.hh"
 #include "Distributed/Communicator.hh"
@@ -360,14 +360,14 @@ sampleMultipleFields2Lattice(const FieldListSet<Dimension>& fieldListSet,
   // Get the parallel geometry.
   int procID = 0;
   int numProcs = 1;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   MPI_Comm_rank(Communicator::communicator(), &procID);
   MPI_Comm_size(Communicator::communicator(), &numProcs);
 #endif
   CHECK(numProcs > 0);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   TreeDistributedBoundary<Dimension>& distributedBoundary = TreeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -417,7 +417,7 @@ sampleMultipleFields2Lattice(const FieldListSet<Dimension>& fieldListSet,
        ++nodeItr) {
 
     bool useNode = true;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     if (Process::getTotalNumberOfProcesses() > 1)
       useNode = count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                       distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -512,7 +512,7 @@ sampleMultipleFields2Lattice(const FieldListSet<Dimension>& fieldListSet,
   // In parallel we have to reduce the elements across processors.
 
   // Calculate the size of the packed data per position.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const int sizeOfElement = (numScalarFieldLists*DataTypeTraits<Scalar>::numElements(0.0)*sizeof(typename DataTypeTraits<Scalar>::ElementType) +
                              numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero)*sizeof(typename DataTypeTraits<Vector>::ElementType) +
                              numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero)*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
@@ -620,7 +620,7 @@ sampleMultipleFields2Lattice(const FieldListSet<Dimension>& fieldListSet,
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Send everyone all the information we have for them.
   vector<int> numSends(numProcs);
   vector<MPI_Request> sendRequests(3*(numProcs - 1));
