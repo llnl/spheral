@@ -1,4 +1,4 @@
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
 
   # Our runtime-requirements file needs to be configured with the ATS
   # submodule path.

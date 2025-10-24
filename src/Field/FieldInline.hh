@@ -17,7 +17,7 @@
 #include <sstream>
 #include <limits>
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }

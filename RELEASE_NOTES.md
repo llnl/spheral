@@ -25,19 +25,16 @@ Notable changes include:
       * Created `initMAView()`, a wrapper for chai::ManagedArray with proper checking.
       * Adds a few types to the state:
         * std::vector of boundary, for when you want to register the boundaries in the state.
-        * Option to enroll copies of items, without which enrolling a double or any other built-in
-          type from the python interface will fail (with the standard enroll, it will create a temporary double,
-          enroll the address of that temporary double, and then kill the temporary double).
+        * Option to enroll copies of items, without which enrolling a double or any other built-in type from the python interface will fail (with the standard enroll, it will create a temporary double, enroll the address of that temporary double, and then kill the temporary double).
       * Adds timing to a few high-cost functions.
       * Updates to FlatConnectivity:
         * Adds some missed variable initializations.
         * Adds unique index computation for global connectivity, without which indices would need to be summed directly.
         * Fixes non-functional python bindings.
-      * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if
-        a temporary variable is used elsewhere.
+      * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if a temporary variable is used elsewhere.
       * Field/FieldView reimplemented using our value/view inheritance pattern.
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
-        * New Cmake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray)
+        * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
 
   * Bug fixes
     * corrected rolling and torsional coefficient in DEM which were 2x the expected value
@@ -49,7 +46,20 @@ Notable changes include:
     * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
     * CMake directly handles all of the installation environment configuration and setup
       during the install stage.
-    * The `ENABLE_TIMER` CMake option has been changed to `SPHERAL_ENABLE_TIMERS`.
+    * CMake/build logic has been reconfigured:
+      * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
+      * The following CMake options now have the added `SPHERAL_` prefix:
+        * `ENABLE_TESTS`, `ENABLE_1D`, `ENABLE_2D`, `ENABLE_3D`, `ENABLE_SHARED`, `ENABLE_DOCS`.
+        * `ENABLE_ANEOS`, `ENABLE_LEOS`, `ENABLE_HELMHOLTZ`, `ENABLE_OPENSUBDIV`.
+        * `ENABLE_NAN_EXCEPTIONS`, `ENABLE_BOUNDCHECKING`, `DBC_MODE`.
+      * The CXXONLY variables have been removed and replaced with a `SPHERAL_ENABLE_PYTHON` variable.
+        C++ builds default to being static when this variable is disabled.
+      * `ENABLE_INSTATIATION` option has been removed.
+      * Compiler definitions and options are now applied directly to targets instead of using
+        `add_compile_definition` or `add_compile_options`.
+      * Compiler flags are set for HIP or CXX depending on the configuration.
+      * Update BLT to version 0.7.1.
+    * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
       * Increased the number of threads for certain memory intensive tests to prevent OOM error.
@@ -63,9 +73,9 @@ Notable changes include:
       * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
-    * Building with static C++ libraries is currently broken. CMake and Spack require `ENABLED_SHARED=ON`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * PolyClipper and PYB11Generator are updated.
     * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
 
 

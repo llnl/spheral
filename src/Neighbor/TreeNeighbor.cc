@@ -542,7 +542,7 @@ dumpTree(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {
@@ -624,7 +624,7 @@ dumpTreeStatistics(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {
