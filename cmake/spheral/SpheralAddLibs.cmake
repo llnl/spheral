@@ -124,15 +124,6 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
     # Add compile options
     target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
-
-    # The cmake export files have many repeating lines because of our use of object libs
-    # This cleans them up but not fully
-    set(_properties INTERFACE_COMPILE_OPTIONS)
-    foreach(_prop ${_properties})
-      get_target_property(temp_prop Spheral_${package_name} ${_prop})
-      list(REMOVE_DUPLICATES temp_prop)
-      set_target_properties(Spheral_${package_name} PROPERTIES ${_prop} "${temp_prop}")
-    endforeach()
   endif()
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
