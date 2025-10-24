@@ -33,8 +33,7 @@ macro(spheral_add_executable)
     NAME ${arg_NAME}
     SOURCES ${arg_SOURCES}
     DEPENDS_ON ${arg_DEPENDS_ON}
-    OUTPUT_DIR ${_output_dir}
-    )
+    OUTPUT_DIR ${_output_dir})
 
   target_include_directories(${arg_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
   target_include_directories(${arg_NAME} SYSTEM PRIVATE ${SPHERAL_ROOT_DIR}/src)
@@ -58,15 +57,17 @@ macro(spheral_add_test)
     message("Skipping ${original_test_name} : NOT compatible with ENABLE_DEV_BUILD.")
   else()
     get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
+    get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
+    get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
 
     blt_add_library(
       NAME ${original_test_name}_lib
-      SOURCES ${TEST_LIB_SOURCE}
-      SOURCES ${SPHERAL_ROOT_DIR}/src/spheralCXX.cc
+      SOURCES ${TEST_LIB_SOURCE} ${SPHERAL_ROOT_DIR}/src/spheralCXX.cc
+      DEFINES ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON ${SPHERAL_BLT_DEPENDS} ${original_deps}
-      SHARED False
-      )
+      SHARED False)
 
+    target_compile_options(${original_test_name}_lib PUBLIC ${SPHERAL_CXX_FLAGS})
     target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files")
 
     spheral_add_executable(

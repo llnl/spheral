@@ -25,7 +25,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-
+#include <mpi.h>
 namespace Spheral {
 
 

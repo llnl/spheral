@@ -247,8 +247,6 @@ template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomTensor<n
 
 }
 
-#ifndef __GCCXML__
 #include "GeomTensorInline_eigen.hh"
-#endif
 
 #endif

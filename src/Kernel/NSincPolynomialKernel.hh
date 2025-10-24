@@ -41,14 +41,12 @@ private:
   // Order of the polynomials.
   int mOrder;
 
-#ifndef __GCCXML__
   // The coefficients for each piecewise section.
   std::vector< std::vector<double> > mAij;
 
   // Private method to fill in the polynomial coefficients.
   void setPolynomialCoefficients(const int order, 
                                  std::vector< std::vector<double> >& Aij) const;
-#endif
 
 };
 

@@ -19,11 +19,11 @@ set(Hydro_sources
     HydroFieldNames.cc
     )
 
-if (ENABLE_2D)
+if (SPHERAL_ENABLE_2D)
   list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)
 endif()
 
-if (ENABLE_1D AND ENABLE_2D)
+if (SPHERAL_ENABLE_1D AND SPHERAL_ENABLE_2D)
   list(APPEND Hydro_sources SphericalPositionPolicy.cc)
 endif()
 

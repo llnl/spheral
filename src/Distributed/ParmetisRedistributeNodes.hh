@@ -14,8 +14,7 @@
 #include <vector>
 #include <map>
 
-#ifdef USE_MPI
-#include <mpi.h>
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include "parmetis.h"
 }

@@ -49,51 +49,23 @@ endif()
 include(${SPHERAL_BLT_DIR}/SetupBLT.cmake)
 
 #-------------------------------------------------------------------------------
-# Include standard build system logic and options / definitions
+# Set Spheral options
 #-------------------------------------------------------------------------------
-# TODO: Prefix Spheral options
-set(ENABLE_CXXONLY OFF CACHE BOOL "enable C++ only build without python bindings")
-set(ENABLE_1D ON CACHE BOOL "enable 1d")
-set(ENABLE_2D ON CACHE BOOL "enable 2d")
-set(ENABLE_3D ON CACHE BOOL "enable 3d")
-set(ENABLE_INSTANTIATIONS ON CACHE BOOL "enable instantiations")
-set(SPHERAL_COMBINE_INSTANTIATIONS ON CACHE BOOL "combine instantiations")
-set(SPHERAL_ENABLE_TIMERS OFF CACHE BOOL "enable timer")
-set(ENABLE_ANEOS ON CACHE BOOL "enable the ANEOS equation of state package")
-set(ENABLE_OPENSUBDIV ON CACHE BOOL "enable the Opensubdiv Pixar extension for refining polyhedra")
-set(ENABLE_HELMHOLTZ ON CACHE BOOL "enable the Helmholtz equation of state package")
 
-option(SPHERAL_ENABLE_ARTIFICIAL_CONDUCTION "Enable the artificial conduction package" ON)
-option(SPHERAL_ENABLE_EXTERNAL_FORCE "Enable the external force package" ON)
-option(SPHERAL_ENABLE_FSISPH "Enable the FSISPH package" ON)
-option(SPHERAL_ENABLE_GRAVITY "Enable the gravity package" ON)
-option(SPHERAL_ENABLE_GSPH "Enable the GSPH package" ON)
-option(SPHERAL_ENABLE_SVPH "Enable the SVPH package" ON)
-option(SPHERAL_ENABLE_GLOBALDT_REDUCTION "Enable global allreduce for the time step" ON)
-option(SPHERAL_ENABLE_LONGCSDT "Enable longitudinal sound speed time step constraint" ON)
+include(${SPHERAL_ROOT_DIR}/cmake/SpheralOptions.cmake)
 
-option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
-option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
-option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
-option(ENABLE_SHARED "Building C++ libs shared" ON)
-option(SPHERAL_UNIFIED_MEMORY "On GPU machines configure Spheral to use unified memory" OFF)
-
-if (SPHERAL_UNIFIED_MEMORY)
-  message("-- Enabling unified memory for GPU architectures")
-  add_definitions(-DSPHERAL_UNIFIED_MEMORY)
-else()
-  message("-- Assuming non-unified memory for GPU architectures")
-endif()
-
-if(ENABLE_STATIC_CXXONLY)
-  set(ENABLE_CXXONLY ON)
-  set(ENABLE_SHARED OFF)
-elseif(NOT ENABLE_SHARED AND NOT ENABLE_CXXONLY)
-  message(FATAL_ERROR "Python libraries with ENABLE_SHARED=OFF are currently broken")
+if(ENABLE_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_CXXONLY is deprecated. Use SPHERAL_ENABLE_PYTHON=OFF "
+    "and either SPHERAL_ENABLE_STATIC or SHARED.")
+elseif(ENABLE_STATIC_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_STATIC_CXXONLY is deprecated. Use -DSPHERAL_ENABLE_PYTHON=OFF -DSPHERAL_ENABLE_STATIC=ON.")
 endif()
 
 if(ENABLE_MPI)
-  set(BLT_MPI_COMPILE_FLAGS -DUSE_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DOMPI_SKIP_MPICXX)
+  set(SPHERAL_ENABLE_MPI ON)
+  set(BLT_MPI_COMPILE_FLAGS -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DOMPI_SKIP_MPICXX)
   list(APPEND SPHERAL_CXX_DEPENDS mpi)
 endif()
 
@@ -115,6 +87,12 @@ if(ENABLE_HIP)
   set(SPHERAL_ENABLE_HIP ON)
 endif()
 
+if(ENABLE_HIP OR ENABLE_CUDA)
+  set(SPHERAL_GPU_ENABLED ON CACHE BOOL "Whether CUDA or HIP is enabled")
+else()
+  set(SPHERAL_GPU_ENABLED OFF CACHE BOOL "Whether CUDA or HIP is enabled")
+endif()
+
 #-------------------------------------------------------------------------------#
 # Set a default build type if none was specified
 #-------------------------------------------------------------------------------#
@@ -130,15 +108,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 #-------------------------------------------------------------------------------
-# Should we build sphinx documentation
-#-------------------------------------------------------------------------------
-set(ENABLE_DOCS OFF CACHE BOOL "enable sphinx Spheral documentation")
-
-#-------------------------------------------------------------------------------
 # Locate third party libraries
 #-------------------------------------------------------------------------------
 include(${SPHERAL_ROOT_DIR}/cmake/InstallTPLs.cmake)
 
+#-------------------------------------------------------------------------------
+# Set CMake definitions
+#-------------------------------------------------------------------------------
 include(${SPHERAL_ROOT_DIR}/cmake/CMakeDefinitions.cmake)
 
 #-------------------------------------------------------------------------------
@@ -177,14 +153,14 @@ add_subdirectory(${SPHERAL_ROOT_DIR}/src)
 #-------------------------------------------------------------------------------
 # Add the documentation
 #-------------------------------------------------------------------------------
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_DOCS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/docs)
 endif()
 
 #-------------------------------------------------------------------------------
 # Build C++ tests and install tests to install directory
 #-------------------------------------------------------------------------------
-if (ENABLE_TESTS)
+if (SPHERAL_ENABLE_TESTS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/tests)
 
   include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralInstallPythonFiles.cmake)

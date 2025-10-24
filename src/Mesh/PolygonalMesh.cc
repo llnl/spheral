@@ -3,7 +3,7 @@
 //
 // Created by JMO, Tue Nov 16 14:18:20 PST 2010
 //----------------------------------------------------------------------------//
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
 
@@ -33,7 +33,7 @@ namespace Spheral {
 
 namespace {
 
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 //------------------------------------------------------------------------------
 // Internal worker method with common code for building from a 2D polytope
 // tessellation.
@@ -179,7 +179,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
 
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
   // Some useful typedefs.
   typedef Dim<2> Dimension;
 
@@ -221,7 +221,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<2, double> tessellation;
   {
-#if 0     //#ifdef USE_MPI                                // FIXME when parallel polytope working again!
+#if 0     //#ifdef SPHERAL_ENABLE_MPI                                // FIXME when parallel polytope working again!
     polytope::DistributedTessellator<2, double> tessellator
 #if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
       (new polytope::TriangleTessellator<double>(),
@@ -282,7 +282,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
                     const Dim<2>::FacetedVolume& boundary) {
   CONTRACT_VAR(generators);
   CONTRACT_VAR(boundary);
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 
   // Some useful typedefs.
   typedef Dim<2> Dimension;
@@ -346,7 +346,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<2, double> tessellation;
   {
-#if 0   //  #ifdef USE_MPI                                    // FIXME when polytope Distributed fixed
+#if 0   //  #ifdef SPHERAL_ENABLE_MPI                                    // FIXME when polytope Distributed fixed
     polytope::DistributedTessellator<2, double> tessellator
 #if defined USE_TRIANGLE && ( USE_TRIANGLE>0 )
       (new polytope::TriangleTessellator<double>(),
@@ -446,7 +446,7 @@ boundingSurface() const {
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // In the parallel case we have to construct the total surface and distribute
   // it to everyone.
   //const unsigned rank = Process::getRank();

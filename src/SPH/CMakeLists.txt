@@ -13,7 +13,7 @@ set(SPH_inst
 
 set(SPH_sources )
 
-if(ENABLE_1D)
+if(SPHERAL_ENABLE_1D)
   list(APPEND SPH_sources
        SphericalSPHInst.cc
        SphericalSPH.cc
@@ -21,14 +21,14 @@ if(ENABLE_1D)
       )
 endif()
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND SPH_sources
        SPHRZ.cc
        SolidSPHRZ.cc
       )
 endif()
 
-if(ENABLE_3D)
+if(SPHERAL_ENABLE_3D)
   list(APPEND SPH_sources
        computeHydrostaticEquilibriumPressure.cc
       )

@@ -21,10 +21,6 @@
 #include "Utilities/removeElements.hh"
 #include "Distributed/Communicator.hh"
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-
 #include <algorithm>
 #include <set>
 using std::vector;
