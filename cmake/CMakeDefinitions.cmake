@@ -7,9 +7,6 @@ set(SPHERAL_COMPILE_DEFS )
 # If we're building debug default DBC to All
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   message("-- building Debug")
-  list(APPEND SPHERAL_COMPILE_DEFS "DEBUG=1")
-else()
-  list(APPEND SPHERAL_COMPILE_DEFS "DEBUG=0")
 endif()
 
 # The DBC flag
