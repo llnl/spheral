@@ -53,6 +53,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # -------------------------------------------------------------------------
     # Depends
     # -------------------------------------------------------------------------
+    depends_on('python', when='+python')
+
     depends_on('mpi', when='+mpi')
 
     depends_on('cmake@3.21.0:', type='build')
@@ -73,7 +75,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('chai@develop+raja', type='build')
     depends_on('raja', type='build')
-    depends_on('umpire', type='build')
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
