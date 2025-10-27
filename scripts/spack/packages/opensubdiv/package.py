@@ -54,8 +54,8 @@ class Opensubdiv(CMakePackage, CudaPackage):
 
     def setup_build_environment(self, env: EnvironmentModifications) -> None:
         if '+pic' in self.spec:
-            env.append_flags('CFLAGS', self.pkg.compiler.cc_pic_flag)
-            env.append_flags('CXXFLAGS', self.pkg.compiler.cxx_pic_flag)
+            env.append_flags('CFLAGS', self.compiler.cc_pic_flag)
+            env.append_flags('CXXFLAGS', self.compiler.cxx_pic_flag)
 
     def cmake_args(self):
         spec = self.spec
