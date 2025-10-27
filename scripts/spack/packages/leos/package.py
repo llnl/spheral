@@ -49,6 +49,8 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant("rocm",    default=False, description="Build LIP using RAJA + ROCM GPU code")
     variant("silo",    default=True,  description="Use Silo instead of LEOSPACT")
 
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
     # FIXME: Add dependencies if this package requires them.
     depends_on("mpi", when="+mpi")
     depends_on("hdf5")

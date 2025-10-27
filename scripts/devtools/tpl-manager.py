@@ -64,6 +64,9 @@ class SpheralTPL:
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
                             help="ID string to postfix an initconfig file.")
+        parser.add_argument("--package-repo", type=str, default=None,
+                            help="Specify a location to put the spack-package repo. "+\
+                            "Defaults to spheral-spack-tpls/packages.")
         parser.add_argument("--dev-pkg", action="store_true",
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
@@ -79,13 +82,12 @@ class SpheralTPL:
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
 
-    def add_spack_paths(self, spack_dir):
+    def add_spack_paths(self, spack_dir, package_repo):
         "Append spack path to system to use spack python modules"
         spack_path = os.path.join(spack_dir, "lib", "spack")
         sys.path.append(spack_path)
-        spack_external_path = os.path.join(spack_path, "external")
-        sys.path.append(spack_external_path)
-        sys.path.append(os.path.join(spack_external_path, "_vendoring"))
+        sys.path.append(os.path.join(spack_path, "spack"))
+        sys.path.append(os.path.join(spack_path, "_vendoring"))
         global spack, SpackCommand
         try:
             import spack
@@ -93,6 +95,21 @@ class SpheralTPL:
             spack = spack
         except ImportError as e:
             raise ImportError("Failed to import Spack python module") from e
+        repo_yaml = os.path.join(spack_dir, "etc/spack/repos.yaml")
+        if (not os.path.exists(repo_yaml)):
+            print("Spack instance does not have a builtin package repo set.")
+            if package_repo:
+                builtin_package = package_repo
+                if not os.path.isabs(package_repo):
+                    builtin_package = os.path.join(spack_dir, package_repo)
+            else:
+                builtin_package = os.path.join(spack_dir, "../packages")
+            print(f"Creating a builtin package repo at {builtin_package}")
+            from spack.main import SpackCommand
+            repo_cmd = SpackCommand("repo")
+            repo_args = ["set", "--destination", os.path.abspath(builtin_package), "builtin"]
+            repo_cmd(*repo_args)
+            repo_cmd(*["update"])
 
     def clone_spack(self):
         "Clone Spack and add paths to use spack python"
@@ -111,7 +128,7 @@ class SpheralTPL:
             uber_env_trash = os.path.join(spack_dir, "etc/spack/defaults/upstreams.yaml")
             if (self.args.clean and os.path.exists(uber_env_trash)):
                 sexe(f"git -C {spack_dir} clean -df")
-        self.add_spack_paths(spack_dir)
+        self.add_spack_paths(spack_dir, self.args.package_repo)
 
     def check_lock_file(self):
         "Check if any files in scripts/spack are newer than the spack.lock file"
@@ -288,14 +305,13 @@ class SpheralTPL:
             if (self.args.add_spec):
                 add_cmd = SpackCommand("add")
                 add_cmd(self.args.spec)
-        conc_cmd = SpackCommand("concretize")
-        conc_args = []
+        force_conc = False
         if (self.args.clean):
-            conc_args.append("-f")
+            force_conc = True
             print("Cleaning and concretizing environment")
         else:
             print("Concretizing environment")
-        conc_cmd(*conc_args)
+        conc_spec = self.spack_env.concretize(force=force_conc)
         if (check_spec):
             matches = self.spack_env.matching_spec(self.spack_spec)
             if (not matches):
@@ -303,6 +319,7 @@ class SpheralTPL:
                                 "environment. Rerun with --add-spec to add it.")
             self.spack_spec = matches
             print(f"Found matching root spec for {self.args.spec}")
+        self.spack_env.write()
 
     def do_install(self, install_args, spec):
         install_cmd = SpackCommand("install")

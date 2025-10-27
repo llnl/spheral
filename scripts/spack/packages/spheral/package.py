@@ -16,6 +16,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("c", type="build")
     depends_on("cxx", type="build")
+    depends_on("fortran", type="build")
 
     homepage = "https://spheral.readthedocs.io/"
     git      = "https://github.com/llnl/spheral.git"
