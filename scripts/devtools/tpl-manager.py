@@ -312,6 +312,10 @@ class SpheralTPL:
         else:
             print("Concretizing environment")
         conc_spec = self.spack_env.concretize(force=force_conc)
+        if conc_spec:
+            print("Concretized specs")
+            for x in conc_spec:
+                print(x)
         if (check_spec):
             matches = self.spack_env.matching_spec(self.spack_spec)
             if (not matches):
