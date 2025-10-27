@@ -31,7 +31,7 @@ packages:
         compilers:
           c: /usr/tce/packages/clang/clang-14.0.6/bin/clang
           cxx: /usr/tce/packages/clang/clang-14.0.6/bin/clang++
-          fortran: /usr/tce/packages/clang/clang-14.0.6/bin/flang
+          fortran: /usr/tce/packages/clang/clang-14.0.6-magic/bin/flang
         flags: {}
         environment: {}
         extra_rpaths: []
