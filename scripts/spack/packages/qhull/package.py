@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 from spack.package import *
-from spack.pkg.builtin.qhull import Qhull as BuiltinQhull
+from spack_repo.builtin.packages.qhull.package import Qhull as BuiltinQhull
 
 
 class Qhull(BuiltinQhull):

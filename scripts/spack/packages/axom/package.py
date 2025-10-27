@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
+from spack_repo.builtin.build_systems.cached_cmake import cmake_cache_option, cmake_cache_path, cmake_cache_string
 from spack.package import *
-from spack.pkg.builtin.axom import Axom as BuiltinAxom
+from spack_repo.builtin.packages.axom.package import Axom as BuiltinAxom
 from spack.util.executable import which_string
 
 

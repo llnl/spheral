@@ -5,7 +5,7 @@
 
 
 from spack.package import *
-from spack.pkg.builtin.raja import Raja as BuiltinRaja
+from spack_repo.builtin.packages.raja.package import Raja as BuiltinRaja
 
 
 class Raja(BuiltinRaja):

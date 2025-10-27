@@ -13,7 +13,8 @@ def get_config_dir(base_dir):
 os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
 default_spack_url = "https://github.com/spack/spack.git"
-spack_commit = "5fe93fee1eec46a0750bd340198bffcb92ff9eec"
+# Spack version: v1.0.2
+spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
 # Current repo (either LLNLSpheral or Spheral)
 package_name = "spheral"
 
@@ -288,7 +289,7 @@ class SpheralTPL:
                 add_cmd = SpackCommand("add")
                 add_cmd(self.args.spec)
         conc_cmd = SpackCommand("concretize")
-        conc_args = ["-U"]
+        conc_args = []
         if (self.args.clean):
             conc_args.append("-f")
             print("Cleaning and concretizing environment")

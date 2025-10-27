@@ -5,7 +5,7 @@
 
 
 from spack.package import *
-from spack.pkg.builtin.camp import Camp as BuiltinCamp
+from spack_repo.builtin.packages.camp.package import Camp as BuiltinCamp
 
 
 class Camp(BuiltinCamp):

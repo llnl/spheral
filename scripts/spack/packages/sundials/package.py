@@ -7,7 +7,7 @@ import os
 import sys
 
 from spack.package import *
-from spack.pkg.builtin.sundials import Sundials as BuiltinSundials
+from spack_repo.builtin.packages.sundials.package import Sundials as BuiltinSundials
 
 class Sundials(BuiltinSundials):
 

@@ -5,7 +5,7 @@
 
 
 from spack.package import *
-from spack.pkg.builtin.umpire import Umpire as BuiltinUmpire
+from spack_repo.builtin.packages.umpire.package import Umpire as BuiltinUmpire
 
 
 class Umpire(BuiltinUmpire):

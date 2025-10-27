@@ -5,7 +5,7 @@
 
 
 from spack.package import *
-from spack.pkg.builtin.chai import Chai as BuiltinChai
+from spack_repo.builtin.packages.chai.package import Chai as BuiltinChai
 
 
 class Chai(BuiltinChai):

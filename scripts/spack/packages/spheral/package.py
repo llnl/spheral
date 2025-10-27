@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.cached_cmake import CachedCMakePackage, cmake_cache_option, cmake_cache_path, cmake_cache_string
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
 from spack.package import *
 import spack
 import socket
@@ -10,6 +13,9 @@ import os
 
 class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     """Spheral++ provides a steerable parallel environment for performing coupled hydrodynamical and gravitational numerical simulations."""
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
 
     homepage = "https://spheral.readthedocs.io/"
     git      = "https://github.com/llnl/spheral.git"
@@ -56,7 +62,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('qhull@2020.2 +pic', type='build')
 
-    depends_on('m-aneos@1.0')
+    depends_on('m_aneos@1.0')
 
     depends_on('eigen@3.4.0', type='build')
 
@@ -238,7 +244,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         entries.append(cmake_cache_path('qhull_DIR', spec['qhull'].prefix))
 
-        entries.append(cmake_cache_path('aneos_DIR', spec['m-aneos'].prefix))
+        entries.append(cmake_cache_path('aneos_DIR', spec['m_aneos'].prefix))
 
         entries.append(cmake_cache_path('hdf5_DIR', spec['hdf5'].prefix))
 

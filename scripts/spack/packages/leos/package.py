@@ -14,6 +14,9 @@
 # See the spack documentation for more information on building
 # packages.
 #
+from spack_repo.builtin.build_systems.cached_cmake import CachedCMakePackage, cmake_cache_option, cmake_cache_path
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
 from spack.package import *
 import os, re
 
