@@ -72,6 +72,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('silo +hdf5', type='build')
 
     depends_on('chai@develop+raja', type='build')
+    depends_on('raja', type='build')
+    depends_on('umpire', type='build')
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
