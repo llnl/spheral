@@ -1,13 +1,5 @@
 packages:
   all:
-    require:
-      - one_of: ["%gcc", "%clang"]
-        when: "%c"
-      - one_of: ["%gcc", "%clang"]
-        when: "%cxx"
-      - one_of: ["%gcc", "%clang"]
-        when: "%fortran"
-
     # This defaults us to machine specific flags of ivybridge which allows
     # us to run on broadwell as well
     target: [ivybridge]
@@ -71,9 +63,9 @@ packages:
   mvapich2:
     externals:
     - spec: mvapich2@2.3.6~cuda~debug~regcache~wrapperrpath ch3_rank_bits=32 file_systems=lustre,nfs,ufs process_managers=slurm %gcc@10.3.1
-      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1
+      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1-magic
     - spec: mvapich2@2.3.6~alloca~cuda~debug+regcache+wrapperrpath ch3_rank_bits=32 fabrics=mrail file_systems=auto process_managers=slurm %clang@14.0.6
-      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6
+      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6-magic
     buildable: false
 
 # ------ SYSTEM LIBS -------
