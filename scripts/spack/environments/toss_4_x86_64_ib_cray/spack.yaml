@@ -8,6 +8,7 @@ spack:
   view: false
   concretizer:
     unify: false
+    reuse: false
   develop:
     spheral:
       path: ../../../../
@@ -17,7 +18,8 @@ spack:
   - ../../configs/config.yaml
   - ../../configs/upstreams.yaml
   repos:
-    spheral: ../../
+    - ../../
+  packages:
     spheral:
       require:
       - spec: amdgpu_target=gfx90a
