@@ -1,6 +1,5 @@
 packages:
   all:
-    compiler: [rocmcc]
     providers:
       blas: [openblas]
       lapack: [openblas]
@@ -50,6 +49,18 @@ packages:
     externals:
     - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+  rocmcc:
+    externals:
+    - spec: rocmcc@=6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
+      extra_attributes:
+        compilers:
+          cc:      /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
+          cxx:     /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
+        flags: {}
+        environment: {}
+        extra_rpaths: []
   rocminfo:
     version: [6.2.0]
     buildable: false

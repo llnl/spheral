@@ -1,9 +1,9 @@
 spack:
   specs:
   - matrix:
-      - [spheral]
-      - ["+mpi", "~mpi"]
-      - ["+rocm", "~rocm"]
+    - [spheral]
+    - [+mpi, ~mpi]
+    - [+rocm, ~rocm]
   view: false
   concretizer:
     unify: false
@@ -12,16 +12,60 @@ spack:
       path: ../../../../
       spec: spheral@=develop
   include:
-    - ../../configs/toss_4_x86_64_ib_cray/packages.yaml
-    - ../../configs/toss_4_x86_64_ib_cray/compilers.yaml
-    - ../../configs/config.yaml
-    - ../../configs/upstreams.yaml
+  - ../../configs/toss_4_x86_64_ib_cray/packages.yaml
+  - ../../configs/config.yaml
+  - ../../configs/upstreams.yaml
   repos:
-    - ../../
+    spheral: ../../
   packages:
+    llvm:
+      externals:
+      - spec: llvm@19.1.7+clang~flang+lld+lldb
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/clang
+            cxx: /usr/bin/clang++
+      - spec: llvm@19.1.7+clang~flang~lld~lldb
+        prefix: /usr/lib64/ccache
+        extra_attributes:
+          compilers:
+            c: /usr/lib64/ccache/clang
+            cxx: /usr/lib64/ccache/clang++
+    gcc:
+      externals:
+      - spec: gcc@8.5.0 languages:='c,c++,fortran'
+        prefix: /usr
+        extra_attributes:
+          compilers:
+            c: /usr/bin/gcc
+            cxx: /usr/bin/g++
+            fortran: /usr/bin/gfortran
+      - spec: gcc@13.3.1 languages:='c,c++'
+        prefix: /usr/lib64/ccache
+        extra_attributes:
+          compilers:
+            c: /usr/lib64/ccache/gcc
+            cxx: /usr/lib64/ccache/g++
+      - spec: gcc@13.3.1 languages:='c,c++,fortran'
+        prefix: /usr/tce
+        extra_attributes:
+          compilers:
+            c: /usr/tce/bin/gcc
+            cxx: /usr/tce/bin/g++
+            fortran: /usr/tce/bin/gfortran
+    cce:
+      externals:
+      - spec: cce@20.0.0
+        prefix: /opt/cray/pe/cce/20.0.0
+        extra_attributes:
+          compilers:
+            c: /opt/cray/pe/cce/20.0.0/bin/craycc
+            cxx: /opt/cray/pe/cce/20.0.0/bin/crayCC
+            fortran: /opt/cray/pe/cce/20.0.0/bin/crayftn
     spheral:
       require:
-        - spec: "amdgpu_target=gfx90a"
-          when: "+rocm arch=linux-rhel8-zen3"
-        - spec: "amdgpu_target=gfx942"
-          when: "+rocm arch=linux-rhel8-zen4"
+      - spec: amdgpu_target=gfx90a
+        when: +rocm arch=linux-rhel8-zen3
+      - spec: amdgpu_target=gfx942
+        when: +rocm arch=linux-rhel8-zen4
