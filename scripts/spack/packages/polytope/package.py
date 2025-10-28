@@ -19,6 +19,9 @@ class Polytope(CMakePackage):
 
     variant('python', default=True, description='Enable Python Support.')
 
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+
     extends('python', when='+python')
     depends_on('python@3: +zlib +shared', type=('build', 'run'), when='+python')
     depends_on('py-decorator', type=('build', 'run'), when='+python')
