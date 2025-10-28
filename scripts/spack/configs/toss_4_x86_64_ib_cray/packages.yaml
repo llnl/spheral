@@ -1,3 +1,11 @@
+toolchains:
+  rocmcc:
+  - spec: '%c=llvm-amdgpu@6.2.0'
+    when: '%c'
+  - spec: '%cxx=llvm-amdgpu@6.2.0'
+    when: '%cxx'
+  - spec: '%fortran=llvm@6.2.0'
+    when: '%fortran'
 packages:
   all:
     providers:
@@ -6,6 +14,25 @@ packages:
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]
+  llvm-amdgpu:
+    externals:
+    - spec: llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
+          cxx: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
+  # This is a hack because Spack currently doesn't let llvm-amdgpu do fortran
+  llvm:
+    externals:
+    - spec: llvm@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
+          cxx: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
   cmake:
     version: [3.24.2]
     buildable: false
@@ -28,56 +55,38 @@ packages:
   cray-mpich:
     buildable: false
     externals:
-    - spec: cray-mpich@8.1.31%rocmcc@6.2.0
+    - spec: cray-mpich@8.1.31%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/cray-mpich/cray-mpich-8.1.31-rocmcc-6.2.0-magic
 
   hip:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: hip@6.2.0%rocmcc@6.2.0
+    - spec: hip@6.2.0%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/
-  llvm-amdgpu:
-    version: [6.2.0]
-    buildable: false
-    externals:
-    - spec: llvm-amdgpu@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/llvm
   hsa-rocr-dev:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
+    - spec: hsa-rocr-dev@6.2.0%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
-  rocmcc:
-    externals:
-    - spec: rocmcc@=6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
-      extra_attributes:
-        compilers:
-          cc:      /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
-          cxx:     /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
-          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
-        flags: {}
-        environment: {}
-        extra_rpaths: []
   rocminfo:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocminfo@6.2.0%rocmcc@6.2.0
+    - spec: rocminfo@6.2.0%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocm-device-libs:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocm-device-libs@6.2.0%rocmcc@6.2.0
+    - spec: rocm-device-libs@6.2.0%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocprim:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocprim@6.2.0%rocmcc@6.2.0
+    - spec: rocprim@6.2.0%llvm-amdgpu@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
 
 # ------ SYSTEM LIBS -------

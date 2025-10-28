@@ -4,6 +4,7 @@ spack:
     - [spheral]
     - [+mpi, ~mpi]
     - [+rocm, ~rocm]
+    - ['%rocmcc']
   view: false
   concretizer:
     unify: false
@@ -17,52 +18,6 @@ spack:
   - ../../configs/upstreams.yaml
   repos:
     spheral: ../../
-  packages:
-    llvm:
-      externals:
-      - spec: llvm@19.1.7+clang~flang+lld+lldb
-        prefix: /usr
-        extra_attributes:
-          compilers:
-            c: /usr/bin/clang
-            cxx: /usr/bin/clang++
-      - spec: llvm@19.1.7+clang~flang~lld~lldb
-        prefix: /usr/lib64/ccache
-        extra_attributes:
-          compilers:
-            c: /usr/lib64/ccache/clang
-            cxx: /usr/lib64/ccache/clang++
-    gcc:
-      externals:
-      - spec: gcc@8.5.0 languages:='c,c++,fortran'
-        prefix: /usr
-        extra_attributes:
-          compilers:
-            c: /usr/bin/gcc
-            cxx: /usr/bin/g++
-            fortran: /usr/bin/gfortran
-      - spec: gcc@13.3.1 languages:='c,c++'
-        prefix: /usr/lib64/ccache
-        extra_attributes:
-          compilers:
-            c: /usr/lib64/ccache/gcc
-            cxx: /usr/lib64/ccache/g++
-      - spec: gcc@13.3.1 languages:='c,c++,fortran'
-        prefix: /usr/tce
-        extra_attributes:
-          compilers:
-            c: /usr/tce/bin/gcc
-            cxx: /usr/tce/bin/g++
-            fortran: /usr/tce/bin/gfortran
-    cce:
-      externals:
-      - spec: cce@20.0.0
-        prefix: /opt/cray/pe/cce/20.0.0
-        extra_attributes:
-          compilers:
-            c: /opt/cray/pe/cce/20.0.0/bin/craycc
-            cxx: /opt/cray/pe/cce/20.0.0/bin/crayCC
-            fortran: /opt/cray/pe/cce/20.0.0/bin/crayftn
     spheral:
       require:
       - spec: amdgpu_target=gfx90a
