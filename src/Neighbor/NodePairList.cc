@@ -1,4 +1,5 @@
 #include "NodePairList.hh"
+#include "NodePairListView.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
