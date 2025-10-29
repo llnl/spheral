@@ -96,18 +96,6 @@ CubicHermiteInterpolator::initView() {
 }
 
 //------------------------------------------------------------------------------
-// Equivalence
-//------------------------------------------------------------------------------
-SPHERAL_HOST_DEVICE bool
-CHIView::operator==(const CHIView& rhs) const {
-  return ((mN == rhs.mN) and
-          (mXmin == rhs.mXmin) and
-          (mXmax == rhs.mXmax) and
-          (mXstep == rhs.mXstep) and
-          (mVals == rhs.mVals));
-}
-
-//------------------------------------------------------------------------------
 // Construct monotonic limiting for the gradient values. This is the
 // Fritch-Carlson method, as outlined at
 // https://en.wikipedia.org/wiki/Monotone_cubic_interpolation

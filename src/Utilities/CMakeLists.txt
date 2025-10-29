@@ -49,8 +49,12 @@ set(Utilities_headers
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
     QuadraticInterpolatorInline.hh
+    QIView.hh
+    QIViewInline.hh
     CubicHermiteInterpolator.hh
     CubicHermiteInterpolatorInline.hh
+    CHIView.hh
+    CHIViewInline.hh
     XYInterpolator.hh
     XYInterpolatorInline.hh
     BiLinearInterpolator.hh
