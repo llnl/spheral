@@ -104,4 +104,16 @@ CHIView::lowerBound(const double x) const {
   return result;
 }
 
+//------------------------------------------------------------------------------
+// Equivalence
+//------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE bool
+CHIView::operator==(const CHIView& rhs) const {
+  return ((mN == rhs.mN) and
+          (mXmin == rhs.mXmin) and
+          (mXmax == rhs.mXmax) and
+          (mXstep == rhs.mXstep) and
+          (mVals == rhs.mVals));
+}
+
 }
