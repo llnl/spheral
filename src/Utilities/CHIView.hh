@@ -40,10 +40,10 @@ public:
   SPHERAL_HOST_DEVICE size_t lowerBound(const double x) const;
 
   // Compute the Hermite basis functions
-  SPHERAL_HOST_DEVICE double h00(const double x) const { return (2.0*t - 3.0)*t*t + 1.0; }
-  SPHERAL_HOST_DEVICE double h10(const double x) const { return (t - 2.0)*t*t + t; }
-  SPHERAL_HOST_DEVICE double h01(const double x) const { return (3.0 - 2.0*t)*t*t; }
-  SPHERAL_HOST_DEVICE double h11(const double x) const { return (t - 1.0)*t*t; }
+  SPHERAL_HOST_DEVICE double h00(const double t) const { return (2.0*t - 3.0)*t*t + 1.0; }
+  SPHERAL_HOST_DEVICE double h10(const double t) const { return (t - 2.0)*t*t + t; }
+  SPHERAL_HOST_DEVICE double h01(const double t) const { return (3.0 - 2.0*t)*t*t; }
+  SPHERAL_HOST_DEVICE double h11(const double t) const { return (t - 1.0)*t*t; }
 
   // Allow read access the internal data representation
   SPHERAL_HOST_DEVICE size_t size() const              { return mN; }
