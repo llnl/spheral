@@ -1,5 +1,5 @@
 toolchains:
-  rocmcc:
+  rocm_6_2_0:
   - spec: '%c=llvm-amdgpu@6.2.0'
     when: '%c'
   - spec: '%cxx=llvm-amdgpu@6.2.0'

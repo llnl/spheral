@@ -4,7 +4,7 @@ spack:
     - [spheral]
     - [+mpi, ~mpi]
     - [+rocm, ~rocm]
-    - ['%rocmcc']
+    - ['%rocm_6_2_0']
   view: false
   concretizer:
     unify: false
