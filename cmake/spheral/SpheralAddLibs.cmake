@@ -251,7 +251,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
     INSTALL         OFF
-    VIRTUAL_ENV     python_build_env)
+    VIRTUAL_ENV     python_build_env
+    MULTIPLE_FILES  ON)
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
