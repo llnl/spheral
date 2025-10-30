@@ -107,7 +107,8 @@ CHIView::lowerBound(const double x) const {
 //------------------------------------------------------------------------------
 // Equivalence
 //------------------------------------------------------------------------------
-SPHERAL_HOST_DEVICE bool
+SPHERAL_HOST_DEVICE inline
+bool
 CHIView::operator==(const CHIView& rhs) const {
   return ((mN == rhs.mN) and
           (mXmin == rhs.mXmin) and
