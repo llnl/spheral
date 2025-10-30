@@ -97,6 +97,11 @@ class SpheralTPL:
             import spack
             from spack.main import SpackCommand
             spack = spack
+
+            #
+            # Workaround: Cause spack to set its internal working directory 
+            # state before we make any further spack API calls.
+            spack.paths.set_working_dir()
         except ImportError as e:
             raise ImportError("Failed to import Spack python module") from e
         repo_yaml = os.path.join(spack_dir, "etc/spack/repos.yaml")
