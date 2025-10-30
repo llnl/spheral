@@ -252,7 +252,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     EXTRA_SOURCE    ${${package_name}_SOURCES}
     INSTALL         OFF
     VIRTUAL_ENV     python_build_env
-    MULTIPLE_FILES  ON)
+    MULTIPLE_FILES  OFF)
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
