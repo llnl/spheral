@@ -145,7 +145,7 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 endfunction()
 
 #----------------------------------------------------------------------------------------
-#                                   spheral_add_pybin11_library_package
+#                                   spheral_add_pybind11_library_package
 #----------------------------------------------------------------------------------------
 # -------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
@@ -161,9 +161,10 @@ endfunction()
 # package_name     : REQUIRED : Desired package name
 # module_list_name : REQUIRED : The NAME of the global variable that is the list of
 #                               Spheral python modules (not the list itself)
-# INCLUDES : OPTIONAL : Target specific includes
-# DEPENDS : OPTIONAL : Target specific dependencies
-# SOURCE : OPTIONAL : Target specific sources
+# INCLUDES       : OPTIONAL : Target specific includes
+# DEPENDS        : OPTIONAL : Target specific dependencies
+# SOURCE         : OPTIONAL : Target specific sources
+# MULTIPLE_FILES : OPTIONAL : Generate multiple pybind11 output files to parallelize compilation
 # -----------------------
 # OUTPUT VARIABLES TO USE - Made available implicitly after function call
 # -----------------------
@@ -176,7 +177,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   # Define our arguments
   set(options )
-  set(oneValueArgs )
+  set(oneValueArgs MULTIPLE_FILES)
   set(multiValueArgs INCLUDES SOURCES DEPENDS)
   cmake_parse_arguments(${package_name} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   # message("** ${package_name}_INCLUDES: ${${package_name}_INCLUDES}")
@@ -252,7 +253,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     EXTRA_SOURCE    ${${package_name}_SOURCES}
     INSTALL         OFF
     VIRTUAL_ENV     python_build_env
-    MULTIPLE_FILES  OFF)
+    MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES})
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
