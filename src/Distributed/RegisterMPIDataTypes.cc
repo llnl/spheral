@@ -13,6 +13,16 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+RegisterMPIDataTypes&
+RegisterMPIDataTypes::
+instance() {
+  static RegisterMPIDataTypes theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Constructor (private).
 //------------------------------------------------------------------------------
 RegisterMPIDataTypes::
