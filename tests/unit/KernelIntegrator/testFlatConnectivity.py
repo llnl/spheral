@@ -241,8 +241,8 @@ class PythonFlatConnectivity:
             i += 1
         v4 = [globalMap[j] for j in v2]
         return [len(globalMap),
-                vector_of_unsigned(v1), vector_of_unsigned(v2),
-                vector_of_unsigned(v3), vector_of_unsigned(v4)]
+                v1, v2,
+                v3, v4]
     
     # # Cop out on these for now
     # def localToFlat(self, locali, localj):
