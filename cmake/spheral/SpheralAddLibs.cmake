@@ -257,6 +257,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
+  add_dependencies(${MODULE_NAME} generate_spheralDimensions)
+
   add_custom_command(TARGET ${MODULE_NAME}
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
