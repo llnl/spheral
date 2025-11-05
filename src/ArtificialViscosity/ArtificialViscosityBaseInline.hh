@@ -38,7 +38,7 @@ curlVelocityMagnitude(const Dim<3>::Tensor& DvDx) {
 // Calculate the curl of the velocity given the stress tensor.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
 ArtificialViscosityBase<Dimension>::
@@ -50,7 +50,7 @@ curlVelocityMagnitude(const Tensor& DvDx) const {
 // Compute the Balsara shear correction term
 //------------------------------------------------------------------------------
 template<typename Dimension>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
 ArtificialViscosityBase<Dimension>::

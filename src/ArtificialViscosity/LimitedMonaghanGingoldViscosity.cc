@@ -54,7 +54,7 @@ namespace {
 //  }
 //}
 
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 double limiterVL(const double x) {
   if (x > 0.0) {
     return 2.0/(1.0 + x)*2.0*x/(1.0 + x);                       // van Leer
@@ -133,7 +133,7 @@ LimitedMonaghanGingoldViscosity(const Scalar Clinear,
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 void
 LimitedMonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)

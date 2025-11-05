@@ -12,7 +12,11 @@ set(ArtificialViscosity_inst
   TensorCRKSPHViscosity)
 
 
-set(ArtificialViscosity_sources )
+set(ArtificialViscosity_sources
+  TensorMonaghanGingoldViscosity.cc
+  MonaghanGingoldViscosity.cc
+  LimitedMonaghanGingoldViscosity.cc
+  FiniteVolumeViscosity.cc)
 
 # if(ENABLE_2D)
 #   list(APPEND ArtificialViscosity_sources

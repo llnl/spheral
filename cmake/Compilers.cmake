@@ -1,7 +1,7 @@
 message("-- C++ Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
 
 #-------------------------------------------------------------------------------
-# Optionally suppress compiler warnings
+# Set compiler options
 #-------------------------------------------------------------------------------
 
 option(SPHERAL_ENABLE_WARNINGS "show compiler warnings" ON)
@@ -16,12 +16,12 @@ if (ENABLE_HIP)
   set(LANG_STR "HIP")
 endif()
 
-set(CXX_WARNING_FLAGS "")
+set(CXX_COMPILE_FLAGS "")
 if (SPHERAL_ENABLE_WARNINGS)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    list(APPEND CXX_WARNING_FLAGS -fdiagnostics-show-option -Wno-unused-command-line-argument -Wno-c++17-extensions)
+    list(APPEND CXX_COMPILE_FLAGS -fdiagnostics-show-option -Wno-unused-command-line-argument -Wno-c++17-extensions)
     if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 18.0.0)
-      list(APPEND CXX_WARNING_FLAGS -Wno-enum-constexpr-conversion -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
+      list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
     endif()
   endif()
 else()
@@ -31,36 +31,40 @@ message("-- Compiler warnings ${SPHERAL_ENABLE_WARNINGS}")
 
 if (SPHERAL_ENABLE_WARNINGS_AS_ERRORS)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    list(APPEND CXX_WARNING_FLAGS /W4 /WX)
+    list(APPEND CXX_COMPILE_FLAGS /W4 /WX)
   else()
-    list(APPEND CXX_WARNING_FLAGS -Wall -Wextra -pedantic -Werror -Wl,--fatal-warnings)
+    list(APPEND CXX_COMPILE_FLAGS -Wall -Wextra -pedantic -Werror -Wl,--fatal-warnings)
   endif()
   message("-- Treating warnings as errors")
 endif()
 
 
 if (NOT SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS)
-  list(APPEND CXX_WARNING_FLAGS -Wno-unused-variable)
+  list(APPEND CXX_COMPILE_FLAGS -Wno-unused-variable)
 endif()
 message("-- Compiler unused variable warnings ${SPHERAL_ENABLE_UNUSED_VARIABLE_WARNINGS}")
 
 
 if (NOT SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS)
-  list(APPEND CXX_WARNING_FLAGS -Wno-unused-parameter)
+  list(APPEND CXX_COMPILE_FLAGS -Wno-unused-parameter)
 endif()
 message("-- Compiler unused parameter warnings ${SPHERAL_ENABLE_UNUSED_PARAMETER_WARNINGS}")
 
 
 if (NOT ENABLE_MISSING_INCLUDE_DIR_WARNINGS)
-  list(APPEND CXX_WARNING_FLAGS -Wno-missing-include-dirs)
+  list(APPEND CXX_COMPILE_FLAGS -Wno-missing-include-dirs)
 endif()
 message("-- Compiler missing include dir warnings ${ENABLE_MISSING_INCLUDE_DIR_WARNINGS}")
 
 set(CUDA_WARNING_FLAGS -Xcudafe=\"--diag_suppress=esa_on_defaulted_function_ignored\")
 
-set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS
-  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_WARNING_FLAGS}>")
-message("-- Using CXX warning flags ${CXX_WARNING_FLAGS}")
+if (ENABLE_HIP)
+  list(APPEND CXX_COMPILE_FLAGS -fgpu-rdc)
+endif()
+
+set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS "${SPHERAL_CXX_FLAGS}"
+  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_COMPILE_FLAGS}>")
+message("-- Using CXX compile flags ${CXX_COMPILE_FLAGS}")
 
 # Currently unused
 set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
@@ -71,9 +75,22 @@ set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
 
 #-------------------------------------------------------------------------------
+# Set link options
+#-------------------------------------------------------------------------------
+
+set(CXX_LINK_FLAGS "")
+
+if (ENABLE_HIP)
+  list(APPEND CXX_LINK_FLAGS -fgpu-rdc)
+endif()
+
+set_property(GLOBAL PROPERTY SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")
+message("-- Using link flags ${CXX_LINK_FLAGS}")
+
+#-------------------------------------------------------------------------------
 # PYB11 Target Flags
 #-------------------------------------------------------------------------------
-set(SPHERAL_PYB11_FLAGS ${CXX_WARNING_FLAGS})
+set(SPHERAL_PYB11_FLAGS ${CXX_COMPILE_FLAGS})
 list(APPEND SPHERAL_PYB11_FLAGS
   -O1
   -Wno-unused-local-typedefs 

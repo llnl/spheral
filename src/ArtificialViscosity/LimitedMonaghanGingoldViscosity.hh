@@ -53,7 +53,7 @@ public:
   // Returns the pair values QPiij and QPiji by reference as the first two arguments.
   // Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered
   // by the ArtficialViscosity (particularly DvDx).
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   virtual void QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
                      const unsigned nodeListi, const unsigned i, 

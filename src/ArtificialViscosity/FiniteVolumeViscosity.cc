@@ -48,7 +48,7 @@ FiniteVolumeViscosity(const Scalar Clinear,
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 void
 FiniteVolumeViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)

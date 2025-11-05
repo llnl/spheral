@@ -2358,49 +2358,6 @@ GeomSymmetricTensor<3>::eigenValues() const {
 }
 
 //------------------------------------------------------------------------------
-// Return the eigen values and eigen vectors of a symmetric tensor
-//------------------------------------------------------------------------------
-// 1-D.
-template<>
-inline
-EigenStruct<1>
-GeomSymmetricTensor<1>::eigenVectors() const {
-  EigenStruct<1> result;
-  result.eigenValues.x(mxx);
-  result.eigenVectors.xx(1.0);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// 2-D.
-template<>
-inline
-EigenStruct<2>
-GeomSymmetricTensor<2>::eigenVectors() const {
-  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement()); 
-  CHECK(fscale > 0.0);
-  const double fscalei = 1.0/fscale;
-  const double axx = mxx*fscalei;
-  const double axy = mxy*fscalei;
-  const double ayy = myy*fscalei;
-  EigenStruct<2> result;
-  if (std::abs(axy) < 1.0e-50) {
-    result.eigenValues = diagonalElements();
-    result.eigenVectors = one;
-  } else {
-    const double theta = 0.5*atan2(2.0*axy, ayy - axx);
-    const double xhat = cos(theta);
-    const double yhat = sin(theta);
-    result.eigenValues.x(xhat*(axx*xhat - axy*yhat) - yhat*(axy*xhat - ayy*yhat));
-    result.eigenValues.y(yhat*(axx*yhat + axy*xhat) + xhat*(axy*yhat + ayy*xhat));
-    result.eigenValues *= fscale;
-    result.eigenVectors = GeomTensor<2>( xhat, yhat,
-                                        -yhat, xhat);
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
 // Compute the square root of the tensor.
 //------------------------------------------------------------------------------
 template <int nDim>
@@ -2488,6 +2445,7 @@ GeomSymmetricTensor<3>::eigen() const {
 // Multiplication by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 Spheral::GeomSymmetricTensor<nDim>
 operator*(double lhs, const Spheral::GeomSymmetricTensor<nDim>& rhs) {

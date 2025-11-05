@@ -8,8 +8,6 @@
 
 #include "GeomSymmetricTensor.hh"
 #include "EigenStruct.hh"
-#include "buildEigenVector.hh"
-#include "findEigenValues3.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/rotationMatrix.hh"
 
@@ -29,10 +27,50 @@ using std::abs;
 //------------------------------------------------------------------------------
 // Return the eigen values and eigen vectors of a symmetric tensor
 //------------------------------------------------------------------------------
+// 1-D.
+template<>
+SPHERAL_HOST_DEVICE
+EigenStruct<1>
+GeomSymmetricTensor<1>::eigenVectors() const {
+  EigenStruct<1> result;
+  result.eigenValues.x(mxx);
+  result.eigenVectors.xx(1.0);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// 2-D.
+template<>
+SPHERAL_HOST_DEVICE
+EigenStruct<2>
+GeomSymmetricTensor<2>::eigenVectors() const {
+  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
+  CHECK(fscale > 0.0);
+  const double fscalei = 1.0/fscale;
+  const double axx = mxx*fscalei;
+  const double axy = mxy*fscalei;
+  const double ayy = myy*fscalei;
+  EigenStruct<2> result;
+  if (std::abs(axy) < 1.0e-50) {
+    result.eigenValues = diagonalElements();
+    result.eigenVectors.Identity();
+  } else {
+    const double theta = 0.5*atan2(2.0*axy, ayy - axx);
+    const double xhat = cos(theta);
+    const double yhat = sin(theta);
+    result.eigenValues.x(xhat*(axx*xhat - axy*yhat) - yhat*(axy*xhat - ayy*yhat));
+    result.eigenValues.y(yhat*(axx*yhat + axy*xhat) + xhat*(axy*yhat + ayy*xhat));
+    result.eigenValues *= fscale;
+    result.eigenVectors = GeomTensor<2>( xhat, yhat,
+                                        -yhat, xhat);
+  }
+  return result;
+}
 
 //------------------------------------------------------------------------------
 // 3-D.
 template<>
+SPHERAL_HOST_DEVICE
 EigenStruct<3>
 GeomSymmetricTensor<3>::eigenVectors() const {
 
@@ -76,7 +114,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
   // Use the Eigen library to determine the eigen values/vectors.
   {
     Eigen::Matrix3d B;
-    B << 
+    B <<
       A.xx(), A.xy(), A.xz(),
       A.yx(), A.yy(), A.yz(),
       A.zx(), A.zy(), A.zz();
@@ -104,10 +142,10 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 //   result.eigenValues = fscale*lambdaVec;
 //   result.eigenVectors = SymTensor::one;
 
-//   // If any of the eigen-values result in a tensor that is not positive-rank 
+//   // If any of the eigen-values result in a tensor that is not positive-rank
 //   // (all zero elements), we assume the eigen-values are equal and punt
 //   // with the identity tensor for the eigen-vectors.
-//   // We simultaneously compute the row containing the maximum absolute value 
+//   // We simultaneously compute the row containing the maximum absolute value
 //   // element for each eigen-value.
 //   bool punt = false;
 //   double maxEVelement = -1.0;
@@ -140,16 +178,16 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 
 //     // We need two orthogonal unit vectors in the plane perpendicular to
 //     // the maximum row selected previously.  We can do this by finding the
-//     // rotational transformation wherein x' axis is aligned with this row, and 
+//     // rotational transformation wherein x' axis is aligned with this row, and
 //     // taking our two vectors as the other two rows of this transform.
 //     const Vector R = maxEVrow.unitVector();
 //     const Tensor Tr = rotationMatrix(R);
 //     const Vector U0 = Tr.getRow(1);
 //     const Vector U1 = Tr.getRow(2);
-    
+
 //     // Now we can compute the eigen-vector corresponding the first eigen-value
 //     // selected previously.
-//     const Vector V0 = buildUniqueEigenVector(A, 
+//     const Vector V0 = buildUniqueEigenVector(A,
 //                                              lambdaVec(iFirst),
 //                                              U0,
 //                                              U1);
@@ -165,7 +203,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 //                                              R,
 //                                              S);
 //     result.eigenVectors.setColumn(iSecond, V1);
-    
+
 //     // The last eigen-vector is orthogonal to the first two, so we can find it
 //     // simply by taking the cross-product of the previous eigen-vectors.
 //     const Vector V2 = V0.cross(V1);
@@ -190,8 +228,8 @@ GeomSymmetricTensor<3>::eigenVectors() const {
   CONTRACT_VAR(v1);
   CONTRACT_VAR(v2);
   CONTRACT_VAR(v3);
-  ENSURE2(fuzzyEqual(v1.dot(v2), 0.0, tolerance) and 
-          fuzzyEqual(v1.dot(v3), 0.0, tolerance) and 
+  ENSURE2(fuzzyEqual(v1.dot(v2), 0.0, tolerance) and
+          fuzzyEqual(v1.dot(v3), 0.0, tolerance) and
           fuzzyEqual(v2.dot(v3), 0.0, tolerance),
           v1 << " " << v2 << " " << v3 << " : " << *this);
   ENSURE2(fuzzyEqual(v1.magnitude2(), 1.0, tolerance) and
@@ -229,17 +267,14 @@ template class GeomSymmetricTensor<3>;
 //------------------------------------------------------------------------------
 // Set the static variables.
 //------------------------------------------------------------------------------
-template<> const unsigned GeomSymmetricTensor<1>::nDimensions = 1;
 template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::zero = GeomSymmetricTensor<1>(0.0);
 template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one = GeomSymmetricTensor<1>(1.0);
 
-template<> const unsigned GeomSymmetricTensor<2>::nDimensions = 2;
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::zero = GeomSymmetricTensor<2>(0.0, 0.0,
                                                                                               0.0, 0.0);
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one = GeomSymmetricTensor<2>(1.0, 0.0,
                                                                                              0.0, 1.0);
 
-template<> const unsigned GeomSymmetricTensor<3>::nDimensions = 3;
 template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::zero = GeomSymmetricTensor<3>(0.0, 0.0, 0.0,
                                                                                               0.0, 0.0, 0.0,
                                                                                               0.0, 0.0, 0.0);
@@ -247,13 +282,8 @@ template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one = GeomSymmet
                                                                                              0.0, 1.0, 0.0,
                                                                                              0.0, 0.0, 1.0);
 
-template<> const double GeomSymmetricTensor<1>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<2>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<3>::onethird = 1.0/3.0;
-
 template<> const double GeomSymmetricTensor<1>::sqrt3 = std::sqrt(3.0);
 template<> const double GeomSymmetricTensor<2>::sqrt3 = std::sqrt(3.0);
 template<> const double GeomSymmetricTensor<3>::sqrt3 = std::sqrt(3.0);
 
 }
-

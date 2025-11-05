@@ -13,6 +13,7 @@ namespace Spheral {
 // Based on the notes by David Eberly at www.geometrictools.com.
 //------------------------------------------------------------------------------
 template<typename TensorType>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 findEigenValues3(const TensorType& tin) {
@@ -39,7 +40,9 @@ findEigenValues3(const TensorType& tin) {
   const double Q = 0.25*b*b + onetwentyseventh*a*a*a;
 
   const double x = onethird*c2;
-  const TensorType diff = t - x*TensorType::one;
+  TensorType one;
+  one.Identity();
+  const TensorType diff = t - x*one;
   if (fuzzyEqual(sqrt(diff.doubledot(diff)), 0.0, tol)) {
 
     // Single root case.  The input should just be a scalar multiple of I.
@@ -65,8 +68,8 @@ findEigenValues3(const TensorType& tin) {
     const double thpt = rho13*std::cos(theta);
     const double bleah = rho13*std::sqrt(3.0)*std::sin(theta);
     return fscale*GeomVector<3>(ack + 2.0*thpt,
-                         ack - thpt - bleah,
-                         ack - thpt + bleah);
+                                ack - thpt - bleah,
+                                ack - thpt + bleah);
 
   }
 }

@@ -40,11 +40,11 @@ public:
   typedef EigenStruct<nDim> EigenStructType;
 
   // Useful static memeber data.
-  static const size_type nDimensions;
+  static constexpr size_type nDimensions = nDim;
   static constexpr size_type numElements = (nDim * (nDim+1)) / 2;
   static const GeomSymmetricTensor zero;
   static const GeomSymmetricTensor one;
-  static const double onethird;
+  static constexpr double onethird = 1.0/3.0;
   static const double sqrt3;
 
   // Constructors.
@@ -199,7 +199,7 @@ public:
   // We also provide a method to retrieve the eigenvectors as an EigenStruct.
   // Note that the eigen vectors are the columns of the full tensor in the resulting
   // struct.
-  EigenStructType eigenVectors() const;
+  SPHERAL_HOST_DEVICE EigenStructType eigenVectors() const;
 
   // Return the max absolute element.
   SPHERAL_HOST_DEVICE double maxAbsElement() const;
@@ -213,19 +213,14 @@ private:
 };
 
 // Declare specializations.
-#ifndef WIN32
-template<> const unsigned GeomSymmetricTensor<1>::nDimensions;
-template<> const unsigned GeomSymmetricTensor<2>::nDimensions;
-template<> const unsigned GeomSymmetricTensor<3>::nDimensions;
-#endif
 
 template<> SPHERAL_HOST_DEVICE GeomVector<1> GeomSymmetricTensor<1>::eigenValues() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<2> GeomSymmetricTensor<2>::eigenValues() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<3> GeomSymmetricTensor<3>::eigenValues() const;
 
-template<> EigenStruct<1> GeomSymmetricTensor<1>::eigenVectors() const;
-template<> EigenStruct<2> GeomSymmetricTensor<2>::eigenVectors() const;
-template<> EigenStruct<3> GeomSymmetricTensor<3>::eigenVectors() const;
+template<> SPHERAL_HOST_DEVICE EigenStruct<1> GeomSymmetricTensor<1>::eigenVectors() const;
+template<> SPHERAL_HOST_DEVICE EigenStruct<2> GeomSymmetricTensor<2>::eigenVectors() const;
+template<> SPHERAL_HOST_DEVICE EigenStruct<3> GeomSymmetricTensor<3>::eigenVectors() const;
 
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>::GeomSymmetricTensor(const double, const double,
                                                                            const double, const double);
@@ -382,16 +377,12 @@ template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one;
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one;
 template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one;
 
-template<> const double GeomSymmetricTensor<1>::onethird;
-template<> const double GeomSymmetricTensor<2>::onethird;
-template<> const double GeomSymmetricTensor<3>::onethird;
-
 template<> const double GeomSymmetricTensor<1>::sqrt3;
 template<> const double GeomSymmetricTensor<2>::sqrt3;
 template<> const double GeomSymmetricTensor<3>::sqrt3;
 
 // Forward declare the global functions.
-template<int nDim> GeomSymmetricTensor<nDim> operator*(double lhs, const GeomSymmetricTensor<nDim>& rhs);
+template<int nDim> SPHERAL_HOST_DEVICE GeomSymmetricTensor<nDim> operator*(double lhs, const GeomSymmetricTensor<nDim>& rhs);
 template<int nDim> ::std::istream& operator>>(::std::istream& is, GeomSymmetricTensor<nDim>& ten);
 template<int nDim> ::std::ostream& operator<<(::std::ostream& os, const GeomSymmetricTensor<nDim>& ten);
 

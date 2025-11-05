@@ -8,6 +8,8 @@
 #ifndef SpheralFunctions_HH
 #define SpheralFunctions_HH
 
+#include "config.hh"
+
 #include <cmath>
 #include <algorithm>
 #include <limits>
@@ -18,6 +20,7 @@ namespace Spheral {
 // Fuzzy comparisons.
 //------------------------------------------------------------------------------
 template<typename DataType>
+SPHERAL_HOST_DEVICE
 bool fuzzyEqual(const DataType& lhs, const DataType& rhs,
                 const double fuzz = 1.0e-15) {
   // return std::abs(lhs - rhs)/std::max(std::numeric_limits<DataType>::epsilon(), std::max(fuzz, std::max(std::abs(lhs), std::abs(rhs)))) < fuzz;
@@ -37,12 +40,14 @@ bool fuzzyEqual(const DataType& lhs, const DataType& rhs,
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
 bool fuzzyLessThanOrEqual(const DataType& lhs, const DataType& rhs,
                           const double fuzz = 1.0e-15) {
   return lhs < rhs || fuzzyEqual(lhs, rhs, fuzz);
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
 bool fuzzyGreaterThanOrEqual(const DataType& lhs, const DataType& rhs,
                              const double fuzz = 1.0e-15) {
   return lhs > rhs || fuzzyEqual(lhs, rhs, fuzz);
@@ -66,6 +71,7 @@ bool distinctlyGreaterThan(const DataType& lhs, const DataType& rhs,
 //    x >= 0 -> sgn(x) = 1
 //    x <  0 -> sgn(x) = -1
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE
 inline
 double
 sgn(const double x) {

@@ -1909,7 +1909,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::SkewSymmetric() const {
-  return zero;
+  return GeomTensor<1>(0.0);
 }
 
 template<>
@@ -2543,6 +2543,7 @@ GeomTensor<3>::eigen() const {
 // Multiplication by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 operator*(double lhs, const GeomTensor<nDim>& rhs) {

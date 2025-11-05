@@ -8,6 +8,7 @@
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
 # SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
+# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -32,6 +33,8 @@ function(spheral_add_obj_library package_name obj_list_name)
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
   # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
   get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
 
@@ -42,6 +45,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEFINES     ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} 
       SHARED      TRUE)
+    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
   else()
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
@@ -82,6 +86,7 @@ endfunction()
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
 # SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
+# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -104,6 +109,8 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
   # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
   get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
   # Convert package name to lower-case for export target name
@@ -124,6 +131,7 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
     # Add compile options
     target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
   endif()
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
@@ -265,6 +273,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
     DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
+  target_link_options(Spheral${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
   # Set the r-path of the C++ lib such that it is independent of the build dir when installed
   set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 

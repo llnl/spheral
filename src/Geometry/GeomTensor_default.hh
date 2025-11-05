@@ -40,7 +40,7 @@ public:
   typedef Eigen::Matrix<double, nDim, nDim> EigenType;
 
   // Useful static memeber data.
-  static const size_type nDimensions;
+  static constexpr size_type nDimensions = nDim;
   static constexpr size_type numElements = nDim * nDim;
   static const GeomTensor zero;
   static const GeomTensor one;
@@ -179,7 +179,7 @@ public:
   SPHERAL_HOST_DEVICE GeomTensor squareElements() const;
 
   // A simple method for returning the eigenvalues of a tensor.
-  GeomVector<nDim> eigenValues() const;
+  SPHERAL_HOST_DEVICE GeomVector<nDim> eigenValues() const;
   
   // Apply a rotational transform to this tensor ( R^-1 * (*this) * R ).
   SPHERAL_HOST_DEVICE void rotationalTransform(const GeomTensor& R);
@@ -196,19 +196,6 @@ private:
 };
 
 // Declare specializations.
-#ifndef WIN32
-template<> const unsigned      GeomTensor<1>::nDimensions;
-template<> const GeomTensor<1> GeomTensor<1>::zero;
-template<> const GeomTensor<1> GeomTensor<1>::one;
-
-template<> const unsigned      GeomTensor<2>::nDimensions;
-template<> const GeomTensor<2> GeomTensor<2>::zero;
-template<> const GeomTensor<2> GeomTensor<2>::one;
-
-template<> const unsigned      GeomTensor<3>::nDimensions;
-template<> const GeomTensor<3> GeomTensor<3>::zero;
-template<> const GeomTensor<3> GeomTensor<3>::one;
-#endif
 
 template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const double, const double,
                                                          const double, const double);
@@ -384,8 +371,12 @@ template<> const GeomTensor<1> GeomTensor<1>::zero;
 template<> const GeomTensor<2> GeomTensor<2>::zero;
 template<> const GeomTensor<3> GeomTensor<3>::zero;
 
+template<> const GeomTensor<1> GeomTensor<1>::one;
+template<> const GeomTensor<2> GeomTensor<2>::one;
+template<> const GeomTensor<3> GeomTensor<3>::one;
+
 // Forward declare the global functions.
-template<int nDim> GeomTensor<nDim> operator*(double lhs, const GeomTensor<nDim>& rhs);
+template<int nDim> SPHERAL_HOST_DEVICE GeomTensor<nDim> operator*(double lhs, const GeomTensor<nDim>& rhs);
 template<int nDim> ::std::istream& operator>>(std::istream& is, GeomTensor<nDim>& ten);
 template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomTensor<nDim>& ten);
 

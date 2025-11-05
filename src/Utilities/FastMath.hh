@@ -4,7 +4,7 @@
 //
 // Some of these methods are open-source things I found online, and include the
 // original authors comments and such.
-// Note I have modified the CubeRoot method from it's original in that I made 
+// Note I have modified the CubeRoot method from it's original in that I made
 // it sign safe, and handled incorrect answers for zero.
 //------------------------------------------------------------------------------
 #ifndef __Spheral_FastMath__
@@ -17,7 +17,7 @@ namespace Spheral {
 namespace FastMath {
 
 //------------------------------------------------------------------------------
-// A helpful local class for returning a small but non-zero number for each 
+// A helpful local class for returning a small but non-zero number for each
 // data type we support here (currently just floats and doubles).
 //------------------------------------------------------------------------------
 template<typename D> D tinyValue();
@@ -31,8 +31,8 @@ template<> inline double tinyValue<double>() { return 1.0e-100; }
 // Based on http://metamerist.com/cbrt/cbrt.htm
 //------------------------------------------------------------------------------
 template<int n>
-inline 
-float 
+SPHERAL_HOST_DEVICE inline
+float
 nth_root(float x) {
    const int ebits = 8;
    const int fbits = 23;
@@ -45,7 +45,7 @@ nth_root(float x) {
 }
 
 template<int n>
-inline 
+SPHERAL_HOST_DEVICE inline
 double
 nth_root(double x) {
    const int ebits = 11;
@@ -115,7 +115,7 @@ double Sqrt(const double y) {
 //   return f;
 // }
 
-// // cube root approximation using bit hack for 64-bit float 
+// // cube root approximation using bit hack for 64-bit float
 // // adapted from Kahan's cbrt
 // inline
 // double
@@ -145,7 +145,7 @@ cbrta_halley(const D a, const D R) {
 
 // Cube root approximation using 2 iterations of Halley's method
 template<typename D>
-inline
+SPHERAL_HOST_DEVICE inline
 D
 CubeRootHalley2(D d) {
 #ifdef __INTEL_COMPILER
@@ -190,8 +190,9 @@ SqrtHalley2(const D x) {
 // Square
 //------------------------------------------------------------------------------
 template<typename T>
+SPHERAL_HOST_DEVICE
 inline
-T 
+T
 square(const T& x) {
   return x*x;
 }
@@ -200,8 +201,9 @@ square(const T& x) {
 // Cube
 //------------------------------------------------------------------------------
 template<typename T>
+SPHERAL_HOST_DEVICE
 inline
-T 
+T
 cube(const T& x) {
   return x*x*x;
 }
@@ -227,7 +229,7 @@ constexpr T calcPower(T value, unsigned power) {
 }
 
 //------------------------------------------------------------------------------
-// The below CubeRoot method is not recommended for now -- just keeping here in 
+// The below CubeRoot method is not recommended for now -- just keeping here in
 // case we want to try it again sometime.
 //
 // CubeRoot
@@ -260,7 +262,7 @@ constexpr T calcPower(T value, unsigned power) {
 
 //   float fr, r;
 //   int ex, shx;
-	
+
 //   const float sgnx = sgn(x);
 //   x = std::abs(x);
 
@@ -280,7 +282,7 @@ constexpr T calcPower(T value, unsigned power) {
 //   /* Newton-Raphson iterations */
 //   r = (float)(2.0/3.0) * r + (float)(1.0/3.0) * x / (r * r);	/* 12 bits of precision */
 //   r = (float)(2.0/3.0) * r + (float)(1.0/3.0) * x / (r * r);	/* 24 bits of precision */
-// #else 
+// #else
 //   /* Use quadric rational polynomial with error < 2^(-24) */
 //   fr = ((((45.2548339756803022511987494 * fr + 192.2798368355061050458134625) * fr + 119.1654824285581628956914143) * fr + 13.43250139086239872172837314) * fr + 0.1636161226585754240958355063) /
 //     ((((14.80884093219134573786480845 * fr + 151.9714051044435648658557668) * fr + 168.5254414101568283957668343) * fr + 33.9905941350215598754191872) * fr + 1.0);

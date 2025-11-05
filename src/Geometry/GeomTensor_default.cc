@@ -17,6 +17,7 @@ namespace Spheral {
 // Find the eigenvalues of a tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 GeomVector<1>
 GeomTensor<1>::eigenValues() const {
   return GeomVector<1>(this->mxx);
@@ -24,6 +25,7 @@ GeomTensor<1>::eigenValues() const {
 
 //----------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 GeomVector<2>
 GeomTensor<2>::eigenValues() const {
   const double b = Trace();
@@ -35,6 +37,7 @@ GeomTensor<2>::eigenValues() const {
 
 //----------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 GeomVector<3>
 GeomTensor<3>::eigenValues() const {
   return findEigenValues3<GeomTensor<3> >(*this);
@@ -50,17 +53,14 @@ GeomTensor<3>::eigenValues() const {
 //------------------------------------------------------------------------------
 // Set the static variables.
 //------------------------------------------------------------------------------
-template<> const unsigned GeomTensor<1>::nDimensions = 1;
 template<> const GeomTensor<1> GeomTensor<1>::zero = GeomTensor<1>(0.0);
 template<> const GeomTensor<1> GeomTensor<1>::one = GeomTensor<1>(1.0);
 
-template<> const unsigned GeomTensor<2>::nDimensions = 2;
 template<> const GeomTensor<2> GeomTensor<2>::zero = GeomTensor<2>(0.0, 0.0,
                                                                    0.0, 0.0);
 template<> const GeomTensor<2> GeomTensor<2>::one = GeomTensor<2>(1.0, 0.0,
                                                                   0.0, 1.0);
 
-template<> const unsigned GeomTensor<3>::nDimensions = 3;
 template<> const GeomTensor<3> GeomTensor<3>::zero = GeomTensor<3>(0.0, 0.0, 0.0,
                                                                    0.0, 0.0, 0.0,
                                                                    0.0, 0.0, 0.0);

@@ -47,11 +47,11 @@ public:
   //...........................................................................
   // Methods
   // Calculate the curl of the velocity given the stress tensor.
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   Scalar curlVelocityMagnitude(const Tensor& DvDx) const;
 
   // Find the Balsara shear correction multiplier
-  //SPHERAL_HOST_DEVICE
+  SPHERAL_HOST_DEVICE
   Scalar calcBalsaraShearCorrection(const Tensor& DvDx,
                                     const SymTensor& H,
                                     const Scalar& cs) const;

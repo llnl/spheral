@@ -36,7 +36,7 @@ namespace {
 // Helper to remove any expansion terms from DvDx
 //------------------------------------------------------------------------------
 template<typename Tensor>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 inline
 void
 removeExpansion(Tensor& DvDx) {
@@ -67,7 +67,7 @@ TensorMonaghanGingoldViscosity(const Scalar Clinear,
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
-//SPHERAL_HOST_DEVICE
+SPHERAL_HOST_DEVICE
 void
 TensorMonaghanGingoldViscosityView<Dimension>::
 QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
@@ -159,8 +159,8 @@ QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
     Qij = rhoi*rhoi*(QPiij.diagonalElements().maxAbsElement());
     Qji = rhoj*rhoj*(QPiji.diagonalElements().maxAbsElement());
   } else {
-    QPiij = Tensor::zero;
-    QPiji = Tensor::zero;
+    QPiij.Zero();
+    QPiji.Zero();
     Qij = 0.0;
     Qji = 0.0;
   }
