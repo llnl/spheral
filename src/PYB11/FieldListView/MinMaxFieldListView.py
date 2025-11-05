@@ -1,6 +1,5 @@
 from PYB11Generator import *
-import FieldListView
-from ArithmeticFieldListView import *
+from ArithmeticFieldListView import ArithmeticFieldListView as __ArithmeticFieldListView
 
 #-------------------------------------------------------------------------------
 # Add min/max operations to a Field
@@ -30,4 +29,4 @@ class MinMaxFieldListView:
 #-------------------------------------------------------------------------------
 # Inject FieldListView
 #-------------------------------------------------------------------------------
-PYB11inject(ArithmeticFieldListView, MinMaxFieldListView)
+PYB11inject(__ArithmeticFieldListView, MinMaxFieldListView)
