@@ -301,7 +301,7 @@ GPU_TYPED_TEST_P(GeomTensorTypedTest, InPlaceAddSub) {
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
     Tensor T1(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
     Tensor T2(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0);
-    
+
     T1 += T2;
     SPHERAL_ASSERT_EQ(T1.xx(), 10.0);
     SPHERAL_ASSERT_EQ(T1.xy(), 10.0);
@@ -472,11 +472,30 @@ GPU_TYPED_TEST_P(GeomTensorTypedTest, SquareElements) {
   EXEC_IN_SPACE_END()
 }
 
+GPU_TYPED_TEST_P(GeomTensorTypedTest, EigenValues) {
+  using WORK_EXEC_POLICY = TypeParam;
+  const double inv_sqt = 1./std::sqrt(2.);
+  const Vector ref_vals(-3., -1., 1.);
+  EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
+    Tensor T1(0.0, 0.0, 1.0, 0.0, -3.0, 0.0, 1.0, 0.0, 0.0);
+    Vector vals = T1.eigenValues();
+    int found = 0;
+    for (auto& ref : ref_vals) {
+      for (auto& v : vals) {
+        if (std::abs(ref - v) < 1.E-12) {
+          found += 1;
+        }
+      }
+    }
+    SPHERAL_ASSERT_EQ(found, 3);
+  EXEC_IN_SPACE_END()
+}
+
 REGISTER_TYPED_TEST_SUITE_P(GeomTensorTypedTest, Ctor, Assignment, Accessors,
                             Setters, GetSetRowsColumns, ZeroIdentity, UnaryMinus, AddSub,
                             ScalarMulDiv, InPlaceAddSub, InPlaceScalarMulDiv, Comparison,
                             Transpose, TraceDeterminant, DotProduct, DoubleDotProduct,
-                            Square, SquareElements);
+                            Square, SquareElements, EigenValues);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(GeomTensor, GeomTensorTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

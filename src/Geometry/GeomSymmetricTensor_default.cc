@@ -53,7 +53,8 @@ GeomSymmetricTensor<2>::eigenVectors() const {
   EigenStruct<2> result;
   if (std::abs(axy) < 1.0e-50) {
     result.eigenValues = diagonalElements();
-    result.eigenVectors.Identity();
+    result.eigenVectors = GeomTensor<2>(1.0, 0.0,
+                                        0.0, 1.0);
   } else {
     const double theta = 0.5*atan2(2.0*axy, ayy - axx);
     const double xhat = cos(theta);
