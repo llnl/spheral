@@ -231,9 +231,9 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${CMAKE_BINARY_DIR}/src/SimulationControl"
       )
 
-  # Format list into a one line shell friendly format
-  string(JOIN ":" PYTHON_ENV_STR ${PYTHON_ENV})
-  string(JOIN ":" PYTHON_ENV_STR ${PYTHON_ENV_STR} ${SPACK_PYTHONPATH})
+  # Format python environment lists into a one line shell friendly format
+  list(APPEND PYTHON_ENV ${PYTHON_ENV} ${SPACK_PYTHONPATH})
+  list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Get the TPL dependencies
   get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
@@ -266,9 +266,10 @@ function(spheral_add_pybind11_library package_name module_list_name)
     ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
 
   install(TARGETS     ${MODULE_NAME}
-    DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
+          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
+
   # Set the r-path of the C++ lib such that it is independent of the build dir when installed
   set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
