@@ -204,7 +204,7 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   // phi *= (etaij2 < etaCrit2 ? 0.0 : 1.0);
   // phi *= min(1.0, etaij2*etaij2/(etaCrit2etaCrit2));
   if (etaij < etaCrit) {
-    phi *= std::exp(-std::pow((etaij - etaCrit)/etaFold, 2));
+    phi *= std::exp(-FastMath::square((etaij - etaCrit)/etaFold));
   }
 
   // Compute the corrected velocity difference.
@@ -223,9 +223,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
 
   // The artificial internal energy.
   const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : min(0.0, mui)) +
-    Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : std::pow(min(0.0, mui), 2));
+    Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(min(0.0, mui)));
   const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : min(0.0, muj)) +
-    Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : std::pow(min(0.0, muj), 2));
+    Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(min(0.0, muj)));
   CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
 

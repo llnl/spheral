@@ -27,9 +27,9 @@ SPHERAL_HOST_DEVICE
 inline
 Dim<3>::Scalar
 curlVelocityMagnitude(const Dim<3>::Tensor& DvDx) {
-  return sqrt(std::pow(DvDx.zy() - DvDx.yz(), 2) +
-              std::pow(DvDx.xz() - DvDx.zx(), 2) +
-              std::pow(DvDx.yx() - DvDx.xy(), 2));
+  return sqrt(FastMath::square(DvDx.zy() - DvDx.yz()) +
+              FastMath::square(DvDx.xz() - DvDx.zx()) +
+              FastMath::square(DvDx.yx() - DvDx.xy()));
 }
 
 }  // ArtificialViscosityDetail

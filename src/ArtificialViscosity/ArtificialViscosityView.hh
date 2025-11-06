@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// ArtificialViscosityView -- The view class for all ArtificialViscosities in 
+// ArtificialViscosityView -- The view class for all ArtificialViscosities in
 // Spheral++.
 //
 // This class contains the pure virtual function QPiij
@@ -62,7 +62,7 @@ public:
   SPHERAL_HOST_DEVICE
   virtual void QPiij(QPiType& QPiij, QPiType& QPiji,    // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const unsigned nodeListi, const unsigned i, 
+                     const unsigned nodeListi, const unsigned i,
                      const unsigned nodeListj, const unsigned j,
                      const Vector& xi,
                      const SymTensor& Hi,
