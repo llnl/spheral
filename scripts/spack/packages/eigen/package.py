@@ -12,7 +12,7 @@ class Eigen(BuiltinEigen, ROCmPackage):
 
     git = "https://gitlab.com/libeigen/eigen.git"
 
-    version("master", branch="master")
+    version("5.0.0", tag="5.0.0")
 
     # Older eigen releases haven't been tested with ROCm
     conflicts("+rocm @:3.4.0")

@@ -41,13 +41,14 @@ GPU_TYPED_TEST_P(TensorAVTypedTest, InitTests) {
   TensorArtVisc Q(Cl, Cq, t_kernel);
   // This grabs the dynamically casted view, used in the code
   chai::managed_ptr<ArtViscTensorView3D> Qview = Q.getTensorView();
-  // This grabs the view directly, only used for testing
-  chai::managed_ptr<TensorArtView> QAview = Q.getView();
 
   // Test if initialized variables are set properly
+  SPHERAL_ASSERT_FLOAT_EQ(Q.Cl(), Cl);
   SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+  SPHERAL_ASSERT_FLOAT_EQ(Qview->Cq(), Cq);
   EXEC_IN_SPACE_BEGIN(TypeParam)
     SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cq(), Cq);
   EXEC_IN_SPACE_END()
 
   // Modify variables in the value class
