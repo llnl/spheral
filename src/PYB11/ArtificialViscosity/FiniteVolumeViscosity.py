@@ -2,8 +2,7 @@
 # FiniteVolumeViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosityView import *
-from ArtificialViscosityAbstractMethods import *
+from ArtificialViscosity import *
 
 @PYB11template("Dimension")
 class FiniteVolumeViscosity(ArtificialViscosity):
@@ -47,6 +46,8 @@ class FiniteVolumeViscosity(ArtificialViscosity):
     def label(self):
         return "std::string"
 
+# from ArtificialViscosityView import *
+# from ArtificialViscosityAbstractMethods import *
 # @PYB11template("Dimension")
 # @PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
 # class FiniteVolumeViscosityView(ArtificialViscosityView):

@@ -2,8 +2,7 @@
 # MonaghanGingoldViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosityView import *
-from ArtificialViscosityAbstractMethods import *
+from ArtificialViscosity import *
 
 @PYB11template("Dimension")
 class MonaghanGingoldViscosity(ArtificialViscosity):
@@ -37,11 +36,12 @@ class MonaghanGingoldViscosity(ArtificialViscosity):
 
     #...........................................................................
     # Properties
-    linearInExpansion = PYB11property("bool", "linearInExpansion", "linearInExpansion", 
+    linearInExpansion = PYB11property("bool", "linearInExpansion", "linearInExpansion",
                                       doc="Toggle if the linearviscosity is active for expansion flows")
-    quadraticInExpansion = PYB11property("bool", "quadraticInExpansion", "quadraticInExpansion", 
+    quadraticInExpansion = PYB11property("bool", "quadraticInExpansion", "quadraticInExpansion",
                                          doc="Toggle if the quadratic viscosity is active for expansion flows")
-
+# from ArtificialViscosityView import *
+# from ArtificialViscosityAbstractMethods import *
 # @PYB11template("Dimension")
 # @PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
 # class MonaghanGingoldViscosityView(ArtificialViscosityView):
@@ -64,7 +64,7 @@ class MonaghanGingoldViscosity(ArtificialViscosity):
 #                Cquadratic = "const Scalar",
 #                linearInExpansion = ("bool", "false"),
 #                quadraticInExpansion = ("bool", "false")):
-#         "MonaghanGingoldViscosityView constructor"    
+#         "MonaghanGingoldViscosityView constructor"
 # #-------------------------------------------------------------------------------
 # # Inject abstract interface
 # #-------------------------------------------------------------------------------

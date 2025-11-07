@@ -12,11 +12,7 @@ set(ArtificialViscosity_inst
   TensorCRKSPHViscosity)
 
 
-set(ArtificialViscosity_sources
-  TensorMonaghanGingoldViscosity.cc
-  MonaghanGingoldViscosity.cc
-  LimitedMonaghanGingoldViscosity.cc
-  FiniteVolumeViscosity.cc)
+set(ArtificialViscosity_sources)
 
 # if(ENABLE_2D)
 #   list(APPEND ArtificialViscosity_sources
@@ -32,13 +28,17 @@ set(ArtificialViscosity_headers
   ArtificialViscosityBaseInline.hh
   ArtificialViscosityView.hh
   LimitedMonaghanGingoldViscosity.hh
+  LimitedMonaghanGingoldViscosityView.hh
   CullenDehnenViscosity.hh
   FiniteVolumeViscosity.hh
+  FiniteVolumeViscosityView.hh
   IncrementCullenMultipliers.hh
   MonaghanGingoldViscosity.hh
+  MonaghanGingoldViscosityView.hh
   MorrisMonaghanReducingViscosity.hh
   TensorCRKSPHViscosity.hh
   TensorMonaghanGingoldViscosity.hh
+  TensorMonaghanGingoldViscosityView.hh
   TensorSVPHViscosity.hh)
 
 # The following are currently not compiled

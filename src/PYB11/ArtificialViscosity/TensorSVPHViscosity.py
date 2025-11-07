@@ -2,8 +2,7 @@
 # TensorSVPHViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosityView import *
-from ArtificialViscosityAbstractMethods import *
+from ArtificialViscosity import *
 
 @PYB11template("Dimension")
 class TensorSVPHViscosity(ArtificialViscosity):
@@ -50,8 +49,4 @@ class TensorSVPHViscosity(ArtificialViscosity):
     DvDx = PYB11property("const std::vector<Tensor>&", "DvDx", returnpolicy="reference_internal")
     shearCorrection = PYB11property("const std::vector<Scalar>&", "shearCorrection", returnpolicy="reference_internal")
     Qface = PYB11property("const std::vector<Tensor>&", "Qface", returnpolicy="reference_internal")
-    
-#-------------------------------------------------------------------------------
-# Inject abstract interface
-#-------------------------------------------------------------------------------
-#PYB11inject(ArtificialViscosityAbstractMethods, TensorSVPHViscosity, virtual=True, pure_virtual=False)
+

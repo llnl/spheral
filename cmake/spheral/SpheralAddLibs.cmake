@@ -45,7 +45,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEFINES     ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} 
       SHARED      TRUE)
-    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
+    target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
   else()
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
@@ -54,7 +54,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
       OBJECT      TRUE)
   endif()
-  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+  target_compile_options(Spheral_${package_name} PUBLIC ${SPHERAL_CXX_FLAGS})
   target_include_directories(Spheral_${package_name} SYSTEM PUBLIC ${SPHERAL_SUBMOD_INCLUDES})
   # Install the headers
   install(FILES ${${package_name}_headers}
@@ -130,8 +130,8 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
       SHARED      ${SPHERAL_ENABLE_SHARED})
 
     # Add compile options
-    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
-    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
+    target_compile_options(Spheral_${package_name} PUBLIC ${SPHERAL_CXX_FLAGS})
+    target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
   endif()
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
@@ -274,7 +274,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
   get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
-  target_link_options(Spheral${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
+  target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
   # Set the r-path of the C++ lib such that it is independent of the build dir when installed
   set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 

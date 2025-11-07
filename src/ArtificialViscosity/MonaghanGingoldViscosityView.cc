@@ -2,48 +2,10 @@
 // A simple form for the artificial viscosity due to Monaghan & Gingold.
 //----------------------------------------------------------------------------//
 #include "MonaghanGingoldViscosity.hh"
-#include "DataOutput/Restart.hh"
 #include "Field/FieldList.hh"
 #include "DataBase/DataBase.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "NodeList/FluidNodeList.hh"
-#include "Neighbor/Neighbor.hh"
-#include "Material/EquationOfState.hh"
-#include "Boundary/Boundary.hh"
-#include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "Utilities/Timer.hh"
-
-using std::vector;
-using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MonaghanGingoldViscosity<Dimension>::
-MonaghanGingoldViscosity(const Scalar Clinear,
-                         const Scalar Cquadratic,
-                         const TableKernel<Dimension>& kernel,
-                         const bool linearInExpansion,
-                         const bool quadraticInExpansion):
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
-  mLinearInExpansion(linearInExpansion),
-  mQuadraticInExpansion(quadraticInExpansion) {
-  m_viewPtr = chai::make_managed<MonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                          Cquadratic,
-                                                                          linearInExpansion,
-                                                                          quadraticInExpansion);
-}
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
@@ -97,10 +59,10 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto muj = vij.dot(etaj)/(etaj.magnitude2() + mEpsilon2);
 
   // The artificial internal energy.
-  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : min(0.0, mui)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(min(0.0, mui)));
-  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : min(0.0, muj)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(min(0.0, muj)));
+  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : std::min(0.0, mui)) +
+                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(std::min(0.0, mui)));
+  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : std::min(0.0, muj)) +
+                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(std::min(0.0, muj)));
   CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
 

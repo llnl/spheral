@@ -5,31 +5,8 @@
 //
 // Created by JMO, Thu Nov 20 14:13:18 PST 2014
 //----------------------------------------------------------------------------//
-#include "LimitedMonaghanGingoldViscosity.hh"
-#include "Boundary/Boundary.hh"
-#include "DataOutput/Restart.hh"
+#include "LimitedMonaghanGingoldViscosityView.hh"
 #include "Field/FieldList.hh"
-#include "DataBase/DataBase.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "NodeList/FluidNodeList.hh"
-#include "Neighbor/Neighbor.hh"
-#include "Material/EquationOfState.hh"
-#include "Boundary/Boundary.hh"
-#include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "Utilities/Timer.hh"
-
-#include <cmath>
-
-using std::vector;
-using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -106,30 +83,6 @@ double limiterVL(const double x) {
 }
 
 //------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-LimitedMonaghanGingoldViscosity<Dimension>::
-LimitedMonaghanGingoldViscosity(const Scalar Clinear,
-                                const Scalar Cquadratic,
-                                const TableKernel<Dimension>& kernel,
-                                const bool linearInExpansion,
-                                const bool quadraticInExpansion,
-                                const Scalar etaCritFrac,
-                                const Scalar etaFoldFrac):
-  MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel, 
-                                      linearInExpansion, quadraticInExpansion),
-  mEtaCritFrac(etaCritFrac),
-  mEtaFoldFrac(etaFoldFrac) {
-  m_viewPtr = chai::make_managed<LimitedMonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                                 Cquadratic,
-                                                                                 linearInExpansion,
-                                                                                 quadraticInExpansion,
-                                                                                 etaCritFrac,
-                                                                                 etaFoldFrac);
-}
-
-//------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -190,17 +143,17 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto xij = 0.5*(xi - xj);  // midpoint distance
   const auto gradi = (DvDxi.dot(xij)).dot(xij);
   const auto gradj = (DvDxj.dot(xij)).dot(xij);
-  const auto ri = gradi/(sgn(gradj)*max(1.0e-30, abs(gradj)));
-  const auto rj = gradj/(sgn(gradi)*max(1.0e-30, abs(gradi)));
-  CHECK(min(ri, rj) <= 1.0);
+  const auto ri = gradi/(sgn(gradj)*std::max(1.0e-30, std::abs(gradj)));
+  const auto rj = gradj/(sgn(gradi)*std::max(1.0e-30, std::abs(gradi)));
+  CHECK(std::min(ri, rj) <= 1.0);
   // const Scalar phi = limiterMM(min(ri, rj));
-  auto phi =  limiterVL(min(ri, rj));
+  auto phi =  limiterVL(std::min(ri, rj));
   
   // const auto xjihat = -xij.unitVector();
   // auto phi = limiterConservative((vj - vi).dot(xjihat), (DvDxi*xjihat).dot(xjihat), (DvDxj*xjihat).dot(xjihat));
 
   // If the points are getting too close, we let the Q come back full force.
-  const auto etaij = min(etai.magnitude(), etaj.magnitude());
+  const auto etaij = std::min(etai.magnitude(), etaj.magnitude());
   // phi *= (etaij2 < etaCrit2 ? 0.0 : 1.0);
   // phi *= min(1.0, etaij2*etaij2/(etaCrit2etaCrit2));
   if (etaij < etaCrit) {
@@ -222,10 +175,10 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto muj = vij.dot(etaj)/(etaj.magnitude2() + mEpsilon2);
 
   // The artificial internal energy.
-  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : min(0.0, mui)) +
-    Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(min(0.0, mui)));
-  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : min(0.0, muj)) +
-    Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(min(0.0, muj)));
+  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : std::min(0.0, mui)) +
+    Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(std::min(0.0, mui)));
+  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : std::min(0.0, muj)) +
+    Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(std::min(0.0, muj)));
   CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
 

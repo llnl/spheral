@@ -3,7 +3,6 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from MonaghanGingoldViscosity import *
-from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
 class LimitedMonaghanGingoldViscosity(MonaghanGingoldViscosity):

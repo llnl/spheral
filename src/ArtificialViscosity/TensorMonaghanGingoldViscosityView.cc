@@ -2,31 +2,9 @@
 // A modified form of the Monaghan & Gingold viscosity, extended to tensor 
 // formalism.
 //----------------------------------------------------------------------------//
-#include "TensorMonaghanGingoldViscosity.hh"
-#include "DataOutput/Restart.hh"
-#include "Boundary/Boundary.hh"
-#include "Geometry/EigenStruct.hh"
-#include "Neighbor/ConnectivityMap.hh"
-#include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "NodeList/FluidNodeList.hh"
-#include "Kernel/TableKernel.hh"
+#include "TensorMonaghanGingoldViscosityView.hh"
 #include "Utilities/rotationMatrix.hh"
 #include "Utilities/GeometricUtilities.hh"
-#include "Utilities/Timer.hh"
-#include "Utilities/DBC.hh"
-
-using std::string;
-using std::pair;
-using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -48,19 +26,6 @@ removeExpansion(Tensor& DvDx) {
   DvDx += DvDx_a;
 }
 
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TensorMonaghanGingoldViscosity<Dimension>::
-TensorMonaghanGingoldViscosity(const Scalar Clinear,
-                               const Scalar Cquadratic,
-                               const TableKernel<Dimension>& kernel):
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
-  m_viewPtr = chai::make_managed<TensorMonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                                Cquadratic);
 }
 
 //------------------------------------------------------------------------------
