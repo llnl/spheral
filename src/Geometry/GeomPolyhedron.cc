@@ -329,7 +329,6 @@ operator=(const GeomPolyhedron& rhs) {
 //------------------------------------------------------------------------------
 GeomPolyhedron::
 ~GeomPolyhedron() {
-  if (mSurfaceMeshPtr != nullptr) delete mSurfaceMeshPtr;
   if (mSurfaceMeshQueryPtr != nullptr) delete mSurfaceMeshQueryPtr;
   if (mSignedDistancePtr != nullptr) delete mSignedDistancePtr;
 }
@@ -932,7 +931,6 @@ setBoundingBox() {
   TIME_END("Polyhedron_BB_R2");
 
   // Clear any existing Axom information, so it's reconstructed if needed
-  if (mSurfaceMeshPtr != nullptr) delete mSurfaceMeshPtr;
   if (mSurfaceMeshQueryPtr != nullptr) delete mSurfaceMeshQueryPtr;
   if (mSignedDistancePtr != nullptr) delete mSignedDistancePtr;
   mSurfaceMeshPtr = nullptr;
@@ -954,7 +952,7 @@ buildAxomData() const {
   using AxDistance = axom::quest::SignedDistance<3>;
 
   // Set the vertex positions
-  auto* meshPtr = new AxMesh(3, axom::mint::TRIANGLE);
+  auto meshPtr = std::make_shared<AxMesh>(3, axom::mint::TRIANGLE);
   for (const auto& v: mVertices) {
     meshPtr->appendNode(v.x(), v.y(), v.z());
   }
@@ -978,11 +976,11 @@ buildAxomData() const {
   Vector xmax = mXmax + 0.01*(mXmax - mXmin);
   bb.addPoint(AxPoint(&xmin[0]));
   bb.addPoint(AxPoint(&xmax[0]));
-  axom::mint::write_vtk(meshPtr, "blago.vtk");
+  axom::mint::write_vtk(meshPtr.get(), "blago.vtk");
   mSurfaceMeshPtr = meshPtr;
   mSurfaceMeshQueryPtr = new AxOctree(bb, mSurfaceMeshPtr);
   mSurfaceMeshQueryPtr->generateIndex();
-  mSignedDistancePtr = new AxDistance(mSurfaceMeshPtr,
+  mSignedDistancePtr = new AxDistance(mSurfaceMeshPtr.get(),
                                       true);               // is_watertight
 }
 
