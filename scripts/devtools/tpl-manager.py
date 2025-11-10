@@ -360,10 +360,9 @@ class SpheralTPL:
             # Avoid overwriting existing host config file
             shutil.copyfile(host_config_file, "orig"+host_config_file)
             mod_host_config = True
-        if (self.args.ci_run):
-            spec_cmd = SpackCommand("spec")
-            print(f"Running spack spec -IL {spec}")
-            spec_cmd("-IL", spec)
+        spec_cmd = SpackCommand("spec")
+        print(f"Running spack spec -IL {spec}")
+        spec_cmd("-IL", spec)
         install_args = ["-u", "initconfig", "--fail-fast"]
         if (self.args.dev_pkg):
             # Spec is provided so assumes we are building from a buildcache
