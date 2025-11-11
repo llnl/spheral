@@ -77,7 +77,9 @@ Notable changes include:
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
     * PolyClipper and PYB11Generator are updated.
     * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
-
+    * PYB11Generator has been updated to allow new features:
+      * Ouput multiple pybind11 C++ files for parallel compilation
+      * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
