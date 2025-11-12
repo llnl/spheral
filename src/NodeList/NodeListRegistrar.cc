@@ -14,6 +14,17 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+NodeListRegistrar<Dimension>&
+NodeListRegistrar<Dimension>::
+instance() {
+  static NodeListRegistrar theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // The (sorted) set of registered NodeList names.
 //------------------------------------------------------------------------------
 template<typename Dimension>

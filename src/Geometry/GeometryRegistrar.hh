@@ -41,6 +41,4 @@ private:
 
 }
 
-#include "GeometryRegistrarInline.hh"
-
 #endif
