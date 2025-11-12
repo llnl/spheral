@@ -2,17 +2,11 @@
 # UPDATE TPL JOBS
 
 toss_update_tpls:
-  extends: [.toss_resource2, .update_tpls, .merge_pr_rule]
+  extends: [.toss_resource2, .update_tpls]
 
 cray_update_tpls:
-  extends: [.cray_resource2, .update_tpls, .merge_pr_rule]
+  extends: [.cray_resource2, .update_tpls]
   needs: [toss_update_tpls]
-
-# ------------------------------------------------------------------------------
-# UPDATE PERM JOBS
-
-shared_tpls_update_permissions:
-  extends: [.toss_resource_general, .toss_update_permissions, .merge_pr_rule]
 
 # ------------------------------------------------------------------------------
 # PROD BUILD JOBS

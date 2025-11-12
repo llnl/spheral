@@ -1,3 +1,3 @@
 upstreams:
   spheral_shared:
-    install_tree: /usr/WS2/sduser/Spheral/spack_upstream/0.22/spack/opt/spack/__spack_path_placeholder__/__spack_path_placeholder__/__spack_path_p
+    install_tree: /usr/WS2/sduser/Spheral/spack_upstream/1.0.2

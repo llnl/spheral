@@ -118,16 +118,12 @@
 
 .update_tpls:
   stage: update_tpls
+  extends: [.merge_pr_rule]
+  # This allows us to update upstreams with an inactive scheduled pipeline
+  rules:
+    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
   script:
-    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
-
-.toss_update_permissions:
-  stage: update_permissions
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - ml load mpifileutils
-    - dchmod --mode go+rx $UPSTREAM_DIR
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
