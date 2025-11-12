@@ -1383,8 +1383,8 @@ assignDataSpan() {
   }
 #ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());
-  mDataSpan.registerTouch(chai::CPU);
 #endif
+  mDataSpan.registerTouch(chai::CPU);
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
