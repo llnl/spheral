@@ -33,7 +33,7 @@ cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified 
 
 # Default is to build shared when python is enabled and build static if python is disabled
 set(DEFAULT_STATIC ON)
-if(SPHERAL_ENABLE_PYTHON)
+if(SPHERAL_ENABLE_PYTHON AND NOT ENABLE_HIP)
   set(DEFAULT_STATIC OFF)
 endif()
 option(SPHERAL_ENABLE_STATIC "Building static C++ libraries" ${DEFAULT_STATIC})

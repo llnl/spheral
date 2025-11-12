@@ -54,7 +54,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
       OBJECT      TRUE)
   endif()
-  target_compile_options(Spheral_${package_name} PUBLIC ${SPHERAL_CXX_FLAGS})
+  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
   target_include_directories(Spheral_${package_name} SYSTEM PUBLIC ${SPHERAL_SUBMOD_INCLUDES})
   # Install the headers
   install(FILES ${${package_name}_headers}
@@ -130,8 +130,8 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
       SHARED      ${SPHERAL_ENABLE_SHARED})
 
     # Add compile options
-    target_compile_options(Spheral_${package_name} PUBLIC ${SPHERAL_CXX_FLAGS})
-    target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
+    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
   endif()
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})

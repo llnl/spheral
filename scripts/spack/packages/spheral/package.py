@@ -35,7 +35,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('mpi', default=True, description='Enable MPI Support.')
     variant('openmp', default=True, description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
-    variant('shared', default=True, description='Build C++ libs as shared.')
+    variant('shared', default=True, when="~rocm", description='Build C++ libs as shared.')
     variant('python', default=True, description='Enable Spheral python interface.')
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
