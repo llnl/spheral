@@ -9,6 +9,7 @@
 #include "Utilities/CHAI_MA_wrapper.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
+#include "chai/config.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -1296,7 +1297,7 @@ inline
 void
 Field<Dimension, DataType>::
 setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
-#ifndef SPHERAL_UNIFIED_MEMORY
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mChaiCallback = f;
   mDataSpan.setUserCallback(getCallback());
 #endif
@@ -1380,8 +1381,10 @@ assignDataSpan() {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     initMAView(mDataSpan, mDataArray);
   }
+#ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());
   mDataSpan.registerTouch(chai::CPU);
+#endif
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
