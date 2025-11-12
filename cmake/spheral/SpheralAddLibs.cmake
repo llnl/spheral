@@ -153,7 +153,7 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 endfunction()
 
 #----------------------------------------------------------------------------------------
-#                                   spheral_add_pybin11_library_package
+#                                   spheral_add_pybind11_library_package
 #----------------------------------------------------------------------------------------
 # -------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
@@ -169,9 +169,10 @@ endfunction()
 # package_name     : REQUIRED : Desired package name
 # module_list_name : REQUIRED : The NAME of the global variable that is the list of
 #                               Spheral python modules (not the list itself)
-# INCLUDES : OPTIONAL : Target specific includes
-# DEPENDS : OPTIONAL : Target specific dependencies
-# SOURCE : OPTIONAL : Target specific sources
+# INCLUDES       : OPTIONAL : Target specific includes
+# DEPENDS        : OPTIONAL : Target specific dependencies
+# SOURCE         : OPTIONAL : Target specific sources
+# MULTIPLE_FILES : OPTIONAL : Generate multiple pybind11 output files to parallelize compilation
 # -----------------------
 # OUTPUT VARIABLES TO USE - Made available implicitly after function call
 # -----------------------
@@ -184,7 +185,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   # Define our arguments
   set(options )
-  set(oneValueArgs )
+  set(oneValueArgs MULTIPLE_FILES)
   set(multiValueArgs INCLUDES SOURCES DEPENDS)
   cmake_parse_arguments(${package_name} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   # message("** ${package_name}_INCLUDES: ${${package_name}_INCLUDES}")
@@ -194,54 +195,53 @@ function(spheral_add_pybind11_library package_name module_list_name)
   # List directories in which spheral .py files can be found.
   set(PYTHON_ENV 
       ${EXTRA_PYB11_SPHERAL_ENV_VARS}
-      "${SPHERAL_ROOT_DIR}/src/PYB11:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/${PYB11_MODULE_NAME}:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/polytope:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Distributed:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/OpenMP:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/CXXTypes:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Geometry:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/PolyClipper:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Silo:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/DataOutput:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/NodeList:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldView:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldListView:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Field:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldList:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Kernel:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Neighbor:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Material:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FileIO:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/DataBase:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Boundary:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Physics:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Hydro:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/ExternalForce:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Gravity:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Integrator:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Utilities:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/NodeGenerators:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldOperations:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/SPH:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/RK:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/CRKSPH:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/ArtificialViscosity:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/SVPH:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Mesh:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Damage:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/SolidMaterial:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Strength:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/ArtificialConduction:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/KernelIntegrator:"
-      "${SPHERAL_ROOT_DIR}/src/PYB11/Solvers:"
+      "${SPHERAL_ROOT_DIR}/src/PYB11"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/${PYB11_MODULE_NAME}"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/polytope"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Distributed"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/OpenMP"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/CXXTypes"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Geometry"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/PolyClipper"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Silo"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/DataOutput"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/NodeList"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldView"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldListView"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Field"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldList"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Kernel"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Neighbor"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Material"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/FileIO"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/DataBase"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Boundary"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Physics"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Hydro"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/ExternalForce"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Gravity"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Integrator"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Utilities"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/NodeGenerators"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/FieldOperations"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/SPH"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/RK"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/CRKSPH"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/ArtificialViscosity"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/SVPH"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Mesh"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Damage"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/SolidMaterial"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Strength"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/ArtificialConduction"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/KernelIntegrator"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Solvers"
       "${CMAKE_BINARY_DIR}/src/SimulationControl"
       )
 
-  # Format list into a one line shell friendly format
-  STRING(REPLACE ";" "<->" PYTHON_ENV_STR ${PYTHON_ENV})
-
-  string(JOIN ":" PYTHON_ENV_STR ${PYTHON_ENV_STR} ${SPACK_PYTHONPATH})
+  # Format python environment lists into a one line shell friendly format
+  list(APPEND PYTHON_ENV ${PYTHON_ENV} ${SPACK_PYTHONPATH})
+  list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Get the TPL dependencies
   get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
@@ -259,9 +259,13 @@ function(spheral_add_pybind11_library package_name module_list_name)
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
     INSTALL         OFF
-    VIRTUAL_ENV     python_build_env)
+    VIRTUAL_ENV     python_build_env
+    MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
+    PYTHONPATH      ${PYTHON_ENV_STR})
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
+
+  add_dependencies(${MODULE_NAME} generate_spheralDimensions)
 
   add_custom_command(TARGET ${MODULE_NAME}
     POST_BUILD
@@ -270,11 +274,12 @@ function(spheral_add_pybind11_library package_name module_list_name)
     ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
 
   install(TARGETS     ${MODULE_NAME}
-    DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
+          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
   get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
+
   # Set the r-path of the C++ lib such that it is independent of the build dir when installed
   set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 

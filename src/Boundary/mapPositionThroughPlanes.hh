@@ -4,6 +4,9 @@
 //
 // Created by JMO, Fri Dec  6 13:48:48 PST 2002
 //----------------------------------------------------------------------------//
+#ifndef __Spheral_mapPositionThroughPlanes__
+#define __Spheral_mapPositionThroughPlanes__
+
 #include "Geometry/GeomPlane.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/DBC.hh"
@@ -25,3 +28,5 @@ mapPositionThroughPlanes(const typename Dimension::Vector& position,
   // return position - deltaExit - sign*deltaEnter.magnitude()*exitPlane.normal();
 }
 }
+
+#endif

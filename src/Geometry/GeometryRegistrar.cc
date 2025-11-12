@@ -13,6 +13,15 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Instance
+//------------------------------------------------------------------------------
+GeometryRegistrar&
+GeometryRegistrar::instance() {
+  static GeometryRegistrar theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Constructor (private)
 //------------------------------------------------------------------------------
 GeometryRegistrar::GeometryRegistrar(){
