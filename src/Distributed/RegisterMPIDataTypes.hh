@@ -41,7 +41,5 @@ private:
 
 }
 
-#include "RegisterMPIDataTypesInline.hh"
-
 #endif
 
