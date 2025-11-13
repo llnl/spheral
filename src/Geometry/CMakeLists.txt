@@ -26,7 +26,6 @@ instantiate(Geometry_inst Geometry_sources)
 
 set(Geometry_headers
     GeometryRegistrar.hh
-    GeometryRegistrarInline.hh
     Box1d.hh
     Box1dInline.hh
     CellFaceFlag.hh

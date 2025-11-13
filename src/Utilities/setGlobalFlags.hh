@@ -13,7 +13,7 @@
 #endif
 
 namespace Spheral {
-void setGlobalFlags() {
+inline void setGlobalFlags() {
 
 #ifdef __GNUC__
 #ifdef SPHERAL_ENABLE_NAN_EXCEPTIONS
