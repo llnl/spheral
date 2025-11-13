@@ -11,6 +11,8 @@ dims = spheralDimensions()
 
 from FieldListBase import *
 from FieldList import *
+from ArithmeticFieldList import *
+from MinMaxFieldList import *
 from FieldListSet import *
 
 #-------------------------------------------------------------------------------
@@ -39,6 +41,9 @@ for ndim in dims:
     Vector = f"{Dimension}::Vector"
     Tensor = f"{Dimension}::Tensor"
     SymTensor = f"{Dimension}::SymTensor"
+    ThirdRankTensor = f"{Dimension}::ThirdRankTensor"
+    FourthRankTensor = f"{Dimension}::FourthRankTensor"
+    FifthRankTensor = f"{Dimension}::FifthRankTensor"
     FacetedVolume = f"{Dimension}::FacetedVolume"
 
     #...........................................................................
@@ -63,6 +68,29 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
                            (f"RKCoefficients<{Dimension}>", "RKCoefficients")):
         exec(f'''
 {label}FieldList{ndim}d = PYB11TemplateClass(FieldList, template_parameters=("{Dimension}", "{value}"))
+''')
+
+    #...........................................................................
+    # arithmetic FieldLists
+    for (value, label) in (("int",            "Int"),
+                           ("unsigned",       "Unsigned"),
+                           ("uint64_t",       "ULL"),
+                           (Vector,           "Vector"),
+                           (Tensor,           "Tensor"),
+                           (SymTensor,        "SymTensor"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
+                           (FourthRankTensor, "FourthRankTensor"),
+                           (FifthRankTensor,  "FifthRankTensor")):
+        exec(f'''
+{label}FieldList{ndim}d = PYB11TemplateClass(ArithmeticFieldList, template_parameters=("{Dimension}", "{value}"))
+''')
+
+    #...........................................................................
+    # A few FieldLists types can apply the min/max with a scalar additionally
+    for (value, label) in (("double",   "Scalar"),
+                           (SymTensor,  "SymTensor")):
+        exec(f'''
+{label}FieldList{ndim}d = PYB11TemplateClass(MinMaxFieldList, template_parameters=("{Dimension}", "{value}"))
 ''')
 
     #...........................................................................
