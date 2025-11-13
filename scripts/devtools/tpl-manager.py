@@ -388,8 +388,7 @@ class SpheralTPL:
             self.concretize_spec(check_spec=False)
             if self.args.update_upstream:
                 upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
-                with spack.config.override("config:install_tree:root", upstream_dir) and \
-                     spack.config.override("config:install_tree:padded_length", 0):
+                with spack.config.override("config:install_tree", upstream_dir):
                     # Pass None so it installs TPLs for all specs
                     self.spack_env.install_specs(None,
                                                  install_deps=True,
