@@ -56,6 +56,12 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/spheralDimensions.py
   ${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py)
 
+# Add a custom target so other targets can depend on the availability of spheralDimensions
+add_custom_target(
+  generate_spheralDimensions
+  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py" "${CMAKE_CURRENT_BINARY_DIR}/SpheralConfigs.py"
+)
+
 spheral_install_python_files(
   Spheral.py
   Spheral1d.py

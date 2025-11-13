@@ -1,13 +1,13 @@
 from PYB11Generator import *
-from FieldList import FieldList
-from FieldListBase import FieldListBase
+from FieldList import FieldList as __FieldList
+from FieldListBase import FieldListBase as __FieldListBase
 
 #-------------------------------------------------------------------------------
 # FieldList with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldList")
-class ArithmeticFieldList(FieldListBase):
+class ArithmeticFieldList(__FieldListBase):
 
     PYB11typedefs = """
     using FieldListType = FieldList<%(Dimension)s, %(Value)s>;
@@ -146,4 +146,4 @@ class ArithmeticFieldList(FieldListBase):
 #-------------------------------------------------------------------------------
 # Inject FieldList
 #-------------------------------------------------------------------------------
-PYB11inject(FieldList, ArithmeticFieldList)
+PYB11inject(__FieldList, ArithmeticFieldList)

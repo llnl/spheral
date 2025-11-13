@@ -17,10 +17,12 @@ Notable changes include:
       * GeomVector and Geom3Vector have been converted for use on the GPU.
         * CPU & GPU unit testing of the public interface.
       * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
+      * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
       * Optimizations to RankTensor types:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
       * New Logging utility for runtime debug messages.
+      * Created `initMAView()`, a wrapper for chai::ManagedArray with proper checking.
       * Adds a few types to the state:
         * std::vector of boundary, for when you want to register the boundaries in the state.
         * Option to enroll copies of items, without which enrolling a double or any other built-in type from the python interface will fail (with the standard enroll, it will create a temporary double, enroll the address of that temporary double, and then kill the temporary double).
@@ -75,7 +77,9 @@ Notable changes include:
     * Packages associated with ROCM on Cray machines now have consistent prefixes.
     * PolyClipper and PYB11Generator are updated.
     * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
-
+    * PYB11Generator has been updated to allow new features:
+      * Ouput multiple pybind11 C++ files for parallel compilation
+      * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================

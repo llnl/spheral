@@ -1,11 +1,12 @@
 from PYB11Generator import *
-import FieldListView
+from FieldListView import FieldListView as __FieldListView  # Prevent importing into main module namespace
 
 #-------------------------------------------------------------------------------
 # FieldListView with numeric operations
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldListView")
+@PYB11module("SpheralFieldListView")
 class ArithmeticFieldListView:
 
     PYB11typedefs = """
@@ -105,4 +106,4 @@ class ArithmeticFieldListView:
 #-------------------------------------------------------------------------------
 # Inject FieldListView
 #-------------------------------------------------------------------------------
-PYB11inject(FieldListView.FieldListView, ArithmeticFieldListView)
+PYB11inject(__FieldListView, ArithmeticFieldListView)

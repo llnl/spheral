@@ -107,6 +107,4 @@ private:
 
 }
 
-#include "NestedGridDistributedBoundaryInline.hh"
-
 #endif
