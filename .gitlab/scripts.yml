@@ -9,6 +9,7 @@
   rules:
     - if: '$RUN_UPDATE_UPSTREAMS == "true"'
       when: never
+    - when: always
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
