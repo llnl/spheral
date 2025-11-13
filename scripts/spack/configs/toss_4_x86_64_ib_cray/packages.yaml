@@ -14,7 +14,7 @@ packages:
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]
-    permisssions:
+    permissions:
       read: group
       write: group
   llvm-amdgpu:
