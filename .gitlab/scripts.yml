@@ -261,6 +261,10 @@
       when: never
 
 .retry_rule:
+  rules:
+    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
+      when: never
+    - when: always
   retry:
     max: 2
     when: job_execution_timeout
