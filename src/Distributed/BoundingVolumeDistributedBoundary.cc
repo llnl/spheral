@@ -38,6 +38,17 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Singleton instance method.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+BoundingVolumeDistributedBoundary<Dimension>&
+BoundingVolumeDistributedBoundary<Dimension>::
+instance() {
+  static BoundingVolumeDistributedBoundary<Dimension> theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Constructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>

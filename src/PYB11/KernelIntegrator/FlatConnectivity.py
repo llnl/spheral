@@ -134,80 +134,80 @@ class FlatConnectivity:
                                const int locali) {
                                std::vector<int> result;
                                self.neighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def neighborIndices(self,
                         locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.overlapNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def overlapNeighborIndices(self,
                                locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.constNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def constNeighborIndices(self,
                              locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.overlapConstNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def overlapConstNeighborIndices(self,
                                     locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.nonConstNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def nonConstNeighborIndices(self,
                                 locali = "const int"):
-        return "std::vector<int>"
+        return "PYB11utils::to_list(result)"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.overlapNonConstNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def overlapNonConstNeighborIndices(self,
                                        locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.globalNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def globalNeighborIndices(self,
                               locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,
                                const int locali) {
                                std::vector<int> result;
                                self.globalOverlapNeighborIndices(locali, result);
-                               return result; }""")
+                               return PYB11utils::to_list(result); }""")
     def globalOverlapNeighborIndices(self,
                                      locali = "const int"):
-        return "std::vector<int>"
+        return "py::list"
 
     @PYB11const
     @PYB11implementation("""[](const FlatConnectivity<%(Dimension)s>& self,

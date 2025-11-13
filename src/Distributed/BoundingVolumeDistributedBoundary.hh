@@ -64,6 +64,4 @@ private:
 
 }
 
-#include "BoundingVolumeDistributedBoundaryInline.hh"
-
 #endif

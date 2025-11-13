@@ -27,6 +27,17 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Singleton instance method.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+NestedGridDistributedBoundary<Dimension>&
+NestedGridDistributedBoundary<Dimension>::
+instance() {
+  static NestedGridDistributedBoundary<Dimension> theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Default constructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>

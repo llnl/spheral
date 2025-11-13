@@ -3,6 +3,9 @@
 # ------------------------------------------------------------------------------
 
 .init:
+  variables:
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   stage: init
   script:
     - echo $USER
