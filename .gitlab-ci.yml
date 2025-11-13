@@ -2,8 +2,6 @@ workflow:
   auto_cancel:
     on_new_commit: interruptible
   rules:
-    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
-      when: never
     - if: $CI_MERGE_REQUEST_ID
       when: never
     - when: always

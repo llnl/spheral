@@ -5,8 +5,10 @@
 .init:
   variables:
     GIT_STRATEGY: clone
-    GIT_SUBMODULE_STRATEGY: recursive
   stage: init
+  rules:
+    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
+      when: never
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
@@ -121,12 +123,16 @@
 
 .update_tpls:
   stage: update_tpls
+  variables:
+    GIT_STRATEGY: clone
   extends: [.merge_pr_rule]
   # This allows us to update upstreams with an inactive scheduled pipeline
   rules:
-    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RUN_UPDATE_UPSTREAMS == "true"
+      when: always
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
+  dependencies: []
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
@@ -213,6 +219,9 @@
   stage: cleanup
   variables:
     GIT_STRATEGY: none
+  rules:
+    - if: $RUN_UPDATE_UPSTREAMS == "true"
+      when: never
   script:
     - cd $SPHERAL_BUILDS_DIR
 
