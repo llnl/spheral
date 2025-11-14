@@ -7,6 +7,7 @@
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
 #include "Utilities/CHAI_MA_wrapper.hh"
+#include "chai/config.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -88,10 +89,12 @@ public:
     initMAView(mData, mNodePairList);
   }
 
+#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
     mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
   }
+#endif
 
 protected:
   template<typename F>
