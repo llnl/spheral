@@ -88,11 +88,4 @@ else()
   message("-- Assuming non-unified memory for GPU architectures")
 endif()
 
-if(CHAI_DISABLE_RM)
-  message("-- Disabling CHAI RM")
-  list(APPEND SPHERAL_COMPILE_DEFS CHAI_DISABLE_RM)
-else()
-  message("-- Allowing CHAI RM")
-endif()
-
 set_property(GLOBAL PROPERTY SPHERAL_COMPILE_DEFS "${SPHERAL_COMPILE_DEFS}")

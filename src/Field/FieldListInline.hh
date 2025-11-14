@@ -44,7 +44,7 @@ FieldList<Dimension, DataType>::FieldList():
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList() : " << this;
-#ifndef CHAI_DISABLE_RM
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
 #endif
 }
@@ -67,7 +67,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList(aStorageType) : " << this;
-#ifndef CHAI_DISABLE_RM
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
 #endif
 }
@@ -1528,9 +1528,7 @@ buildDependentArrays() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mFieldViews.resize(nfields);
 #else
-#ifndef CHAI_DISABLE_RM
   mFieldViews.setUserCallback(getCallback());
-#endif
   if (mFieldViews.size() == 0u && !mFieldViews.data(chai::CPU, false)) {
     mFieldViews.allocate(nfields, chai::CPU);
   } else {
@@ -1565,7 +1563,7 @@ void
 FieldList<Dimension, DataType>::
 setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
   mChaiCallback = f;
-#ifndef CHAI_DISABLE_RM
+#ifndef SPHERAL_UNIFIED_MEMORY
   mFieldViews.setUserCallback(getCallback());
 #endif
 }

@@ -1298,9 +1298,7 @@ Field<Dimension, DataType>::
 setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
 #ifndef SPHERAL_UNIFIED_MEMORY
   mChaiCallback = f;
-#ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(getCallback());
-#endif
 #endif
 }
 
@@ -1382,9 +1380,7 @@ assignDataSpan() {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     initMAView(mDataSpan, mDataArray);
   }
-#ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());
-#endif
   mDataSpan.registerTouch(chai::CPU);
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
