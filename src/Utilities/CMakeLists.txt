@@ -140,7 +140,10 @@ set(Utilities_headers
     StrideIterator.hh
   )
 
-spheral_install_python_files(fitspline.py)
+spheral_install_python_files(
+    fitspline.py
+    RelaxNodes.py
+  )
 
 spheral_add_obj_library(Utilities SPHERAL_OBJ_LIBS)
 

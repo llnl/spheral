@@ -288,7 +288,8 @@ struct DBoptlist_wrapper {
 
   // Destructor.
   ~DBoptlist_wrapper() {
-    //ASSERT(DBFreeOptlist(mOptlistPtr) == 0);
+    // auto err = DBFreeOptlist(mOptlistPtr);
+    // VERIFY(err == 0);
   }
 
   // Generic functor definitions for adding and getting options.

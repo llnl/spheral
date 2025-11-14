@@ -6,62 +6,57 @@ text = """
 #include "Geometry/Dimension.hh"
 
 namespace Spheral {
+"""
 
-//============================== gradient() ==============================
+for Value in ("Scalar", "Vector"):
+    text += """
 template 
-FieldList<Dim< %(ndim)s >, MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>::GradientType> 
-gradient<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>(const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& fieldList,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& weight,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& mass,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& density,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                 const TableKernel< Dim< %(ndim)s > >& kernel);
-template 
-FieldList<Dim< %(ndim)s >, MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>::GradientType> 
-gradient<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>(const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& fieldList,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& weight,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& mass,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& density,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                 const TableKernel< Dim< %(ndim)s > >& kernel);
+FieldList<%%(Dim)s, MathTraits<%%(Dim)s, %(Value)s>::GradientType> 
+gradient<%%(Dim)s, %(Value)s>(const FieldList<%%(Dim)s, %(Value)s>& fieldList,
+                              const FieldList<%%(Dim)s, %%(Vector)s>& position,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& weight,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& mass,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& density,
+                              const FieldList<%%(Dim)s, %%(SymTensor)s>& Hfield,
+                              const TableKernel< %%(Dim)s >& kernel);
 
 template 
-FieldList<Dim< %(ndim)s >, std::vector<MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>::GradientType>>
-gradient<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>(const FieldList<Dim< %(ndim)s >, std::vector<Dim< %(ndim)s >::Scalar>>& fieldList,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& weight,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& mass,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& density,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                 const TableKernel< Dim< %(ndim)s > >& kernel);
+FieldList<%%(Dim)s, std::vector<MathTraits<%%(Dim)s, %(Value)s>::GradientType>>
+gradient<%%(Dim)s, %(Value)s>(const FieldList<%%(Dim)s, std::vector<%(Value)s>>& fieldList,
+                              const FieldList<%%(Dim)s, %%(Vector)s>& position,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& weight,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& mass,
+                              const FieldList<%%(Dim)s, %%(Scalar)s>& density,
+                              const FieldList<%%(Dim)s, %%(SymTensor)s>& Hfield,
+                              const TableKernel< %%(Dim)s >& kernel);
+
 template 
-FieldList<Dim< %(ndim)s >, std::vector<MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>::GradientType>> 
-gradient<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>(const FieldList<Dim< %(ndim)s >, std::vector<Dim< %(ndim)s >::Vector>>& fieldList,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& weight,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& mass,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& density,
-                                 const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                 const TableKernel< Dim< %(ndim)s > >& kernel);
+void
+gradientPairs<%%(Dim)s, %(Value)s>(FieldList<%%(Dim)s, MathTraits<%%(Dim)s, %(Value)s>::GradientType>& result,
+                                   const FieldList<%%(Dim)s, %(Value)s>& field,
+                                   const FieldList<%%(Dim)s, %%(Vector)s>& position,
+                                   const FieldList<%%(Dim)s, %%(Scalar)s>& weight,
+                                   const FieldList<%%(Dim)s, %%(SymTensor)s>& Hfield,
+                                   const ConnectivityMap<%%(Dim)s>& conn,
+                                   const TableKernel<%%(Dim)s>& kernel);
+""" % {"Value" : "%(" + Value + ")s"}
 
-
+text += """
 //============================== limiter() ==============================
 template 
-FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor> 
-limiter<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>(const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>& fieldList,
-                                const FieldList<Dim< %(ndim)s >, MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Scalar>::GradientType>& gradient,
-                                const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                const TableKernel< Dim< %(ndim)s > >& kernel);
+FieldList<%(Dim)s, %(SymTensor)s> 
+limiter<%(Dim)s, %(Scalar)s>(const FieldList<%(Dim)s, %(Scalar)s>& fieldList,
+                             const FieldList<%(Dim)s, MathTraits<%(Dim)s, %(Scalar)s>::GradientType>& gradient,
+                             const FieldList<%(Dim)s, %(Vector)s>& position,
+                             const FieldList<%(Dim)s, %(SymTensor)s>& Hfield,
+                             const TableKernel< %(Dim)s >& kernel);
 template 
-FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor> 
-limiter<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>(const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& fieldList,
-                                const FieldList<Dim< %(ndim)s >, MathTraits<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>::GradientType>& gradient,
-                                const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::Vector>& position,
-                                const FieldList<Dim< %(ndim)s >, Dim< %(ndim)s >::SymTensor>& Hfield,
-                                const TableKernel< Dim< %(ndim)s > >& kernel);
+FieldList<%(Dim)s, %(SymTensor)s> 
+limiter<%(Dim)s, %(Vector)s>(const FieldList<%(Dim)s, %(Vector)s>& fieldList,
+                             const FieldList<%(Dim)s, MathTraits<%(Dim)s, %(Vector)s>::GradientType>& gradient,
+                             const FieldList<%(Dim)s, %(Vector)s>& position,
+                             const FieldList<%(Dim)s, %(SymTensor)s>& Hfield,
+                             const TableKernel< %(Dim)s >& kernel);
 
 }
 """

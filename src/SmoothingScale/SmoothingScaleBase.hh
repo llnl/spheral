@@ -107,6 +107,10 @@ public:
   std::shared_ptr<RadialFunctorType> RadialFunctor() const                        { return mRadialFunctorPtr; }
   void RadialFunctor(std::shared_ptr<RadialFunctorType> functorPtr)               { mRadialFunctorPtr = functorPtr; }
 
+  // Exponent for damping smoothing scale iterations
+  double damping() const                                                          { return mDamping; }
+  void dampling(const double d)                                                   { mDamping = d; }
+
   // Our state fields
   const FieldList<Dimension, SymTensor>& Hideal() const                           { return mHideal; }
   const FieldList<Dimension, SymTensor>& DHDt() const                             { return mDHDt; }
@@ -121,6 +125,7 @@ public:
 protected:
   //--------------------------- Protected Interface ---------------------------//
   bool mFixShape, mRadialOnly;
+  double mDamping;
   HEvolutionType mHEvolution;
   FieldList<Dimension, SymTensor> mHideal, mDHDt;
   FieldList<Dimension, Scalar> mRadius0;

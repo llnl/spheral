@@ -377,6 +377,7 @@ finalize(const Scalar time,
 
     // Now we have the moments, so we can loop over the points and set our new H
     // const auto W0 = mWT.kernelValue(0.0, 1.0);
+    const auto damping = this->damping();
     for (auto k = 0u; k < numNodeLists; ++k) {
       const auto& nodeList = mass[k]->nodeList();
       const auto  hminInv = safeInvVar(nodeList.hmin());
@@ -408,6 +409,7 @@ finalize(const Scalar time,
                         0.4*(1.0 + s*s) :
                         0.4*(1.0 + 1.0/(s*s*s)));
         CHECK(1.0 - a + a*s > 0.0);
+        const auto f = std::pow(1.0 - a + a*s, damping);
 
         // Now a big branch if we're using the normal IdealH or one of the specialized cases.
         if (voronoi) {
@@ -426,7 +428,7 @@ finalize(const Scalar time,
           T /= Dimension::rootnu(Hi.Determinant());   // T in units of length, now with same volume as the old Hinverse
           CHECK(fuzzyEqual(T.Determinant(), 1.0/Hi.Determinant()));
       
-          // T *= std::min(4.0, std::max(0.25, 1.0 - a + a*s));
+          // T *= std::min(4.0, std::max(0.25, f));
           T *= s;
 
           // Build the new H tensor
@@ -440,7 +442,7 @@ finalize(const Scalar time,
         } else if (mFixShape) {
 
           // We're just scaling the fixed H tensor shape, so very close to the normal SPH IdealH algorithm
-          Hideali = Hi / (1.0 - a + a*s);
+          Hideali = Hi / f;
 
         } else {
 
@@ -448,7 +450,7 @@ finalize(const Scalar time,
           CHECK(mRadialOnly);
           const auto nhat = mRadialFunctorPtr->radialUnitVector(k, i, pos(k,i));
           const auto r1 = mRadialFunctorPtr->radialCoordinate(k, i, pos(k,i));
-          Hideali = SmoothingScaleDetail::radialEvolution(Hi, nhat, 1.0 - a + a*s, mRadius0(k,i), r1);
+          Hideali = SmoothingScaleDetail::radialEvolution(Hi, nhat, f, mRadius0(k,i), r1);
 
         }
 
