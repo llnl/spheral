@@ -90,9 +90,7 @@ public:
 
   template<typename F> inline
   void setUserCallback(F&& extension) {
-#ifndef CHAI_DISABLE_RM
     mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
-#endif
   }
 
 protected:
