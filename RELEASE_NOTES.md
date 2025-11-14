@@ -46,6 +46,7 @@ Notable changes include:
     * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
     * CMake directly handles all of the installation environment configuration and setup
       during the install stage.
+    * ManagedArray callback routines are guarded by CHAI_DISABLE_RM.
     * CMake/build logic has been reconfigured:
       * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
       * The following CMake options now have the added `SPHERAL_` prefix:
