@@ -389,13 +389,15 @@ class SpheralTPL:
             if self.args.update_upstream:
                 upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
                 with spack.config.override("config:install_tree", upstream_dir):
-                    # Pass None so it installs TPLs for all specs
-                    self.spack_env.install_specs(None,
-                                                 install_deps=True,
-                                                 install_package=False,
-                                                 fail_fast=True)
-                    # Equivalent of running spack reindex
-                    spack.store.STORE.reindex()
+                    spack.config.set("config", {"install_tree": {"padded_length": 0}})
+                    print("WARNING: Modifying local Spack files, do not commit these changes")
+                    with self.spack_env.manifest.use_config():
+                        print(spack.config.get("config:install_tree"))
+                        print(f"Installing to {upstream_dir}")
+                        # Pass None so it installs TPLs for all specs
+                        self.spack_env.install_all(install_deps=True, install_package=False, fail_fast=True)
+                        # Equivalent of running spack reindex
+                        spack.store.STORE.reindex()
                 chmod_cmd = chmod_run + f" {upstream_dir}"
                 os.system(chmod_cmd)
             else:
