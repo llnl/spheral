@@ -151,8 +151,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 
   if(this->densityUpdate() == MassDensityType::RigorousSumDensity){
     // plop into an intialize volume function
-    const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
           auto  volume = state.fields(HydroFieldNames::volume, 0.0);

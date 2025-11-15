@@ -155,8 +155,8 @@ QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
     Qij = rhoi*rhoi*(QPiij.diagonalElements().maxAbsElement());
     Qji = rhoj*rhoj*(QPiji.diagonalElements().maxAbsElement());
   } else {
-    QPiij = Tensor::zero;
-    QPiji = Tensor::zero;
+    QPiij = Tensor::zero();
+    QPiji = Tensor::zero();
     Qij = 0.0;
     Qji = 0.0;
   }

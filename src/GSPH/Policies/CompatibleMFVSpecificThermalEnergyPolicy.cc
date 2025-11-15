@@ -78,9 +78,9 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  DmassDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::mass, 0.0);
-  const auto  DmomentumDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero);
+  const auto  DmomentumDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   const auto& pairDepsDt = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   const auto& pairMassFlux = derivs.template get<PairMassFluxType>(GSPHFieldNames::pairMassFlux);

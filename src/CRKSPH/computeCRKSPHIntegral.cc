@@ -55,7 +55,7 @@ computeCRKSPHIntegral(const ConnectivityMap<Dimension>& connectivityMap,
   const Scalar wi = weight(nodeListi, i);
   const Scalar wj = weight(nodeListj, j);
 
-  //Vector dumvec=Vector::zero;//Dummy Variables
+  //Vector dumvec=Vector::zero();//Dummy Variables
   //Scalar dumscal=0.0;
   Vector temprmin=rmin;
   Vector temprmax=rmax;
@@ -67,8 +67,8 @@ computeCRKSPHIntegral(const ConnectivityMap<Dimension>& connectivityMap,
   vector< vector<Vector> > integ2(order, vector<Vector>(order));
   Scalar Wai=0.0; 
   Scalar Waj=0.0; 
-  Vector gradWai=Vector::zero; 
-  Vector gradWaj=Vector::zero; 
+  Vector gradWai=Vector::zero(); 
+  Vector gradWaj=Vector::zero(); 
   if(dim == mydim){//Lowest level perform 1d normal Romberg
 
     computeCRKSPHEvaluation(connectivityMap,W,weight,position,H,nodeListi, i, rmin,

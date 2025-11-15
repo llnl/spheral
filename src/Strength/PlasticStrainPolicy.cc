@@ -94,7 +94,7 @@ update(const KeyType& key,
   const auto& Y = state.field(buildKey(SolidFieldNames::yieldStrength), 0.0);
   const auto& ps0 = state.field(buildKey(SolidFieldNames::plasticStrain + "0"), 0.0);
   auto&       ps = state.field(key, 0.0);
-  auto&       deviatoricStress = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero);
+  auto&       deviatoricStress = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero());
   auto&       psr = derivs.field(buildKey(SolidFieldNames::plasticStrainRate), 0.0);
 
   // Iterate over the internal nodes.

@@ -582,7 +582,7 @@ FacetedVolumeBoundary<Dimension>::updateViolationNodes(NodeList<Dimension>& node
   const auto& vNodes = this->violationNodes(nodeList);
   const auto  numViolation = vNodes.size();
   auto&       violationOps = mViolationOperators[nodeList.name()];
-  violationOps = vector<Tensor>(vNodes.size(), Tensor::one);
+  violationOps = vector<Tensor>(vNodes.size(), Tensor::one());
   const auto& facets = mPoly.facets();
 
   // Find the longest scale in the FacetedVolume

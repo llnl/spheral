@@ -31,7 +31,6 @@ class GeomVectorBase<2> {
  protected:
   double mx = 0.0;
   double my = 0.0;
-  double mz = 0.0;
 };
 
 template<>

@@ -25,6 +25,33 @@ GeomTensor<nDim>::elementIndex(const typename GeomTensor<nDim>::size_type row,
 }
 
 //------------------------------------------------------------------------------
+// Unit tensor
+//------------------------------------------------------------------------------
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomTensor<1>
+// GeomTensor<1>::one() {
+//   return GeomTensor<1>(1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomTensor<2>
+// GeomTensor<2>::one() {
+//   return GeomTensor<2>(1.0, 0.0,
+//                        0.0, 1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomTensor<3>
+// GeomTensor<3>::one() {
+//   return GeomTensor<3>(1.0, 0.0, 0.0,
+//                        0.0, 1.0, 0.0,
+//                        0.0, 0.0, 1.0);
+// }
+
+//------------------------------------------------------------------------------
 // Construct with the given values for the elements.
 //------------------------------------------------------------------------------
 template<int nDim>
@@ -257,7 +284,7 @@ SPHERAL_HOST_DEVICE
 inline
 double
 GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) const {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -266,7 +293,7 @@ SPHERAL_HOST_DEVICE
 inline
 double&
 GeomTensor<nDim>::operator[](typename GeomTensor<nDim>::size_type index) {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -1909,7 +1936,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomTensor<1>::SkewSymmetric() const {
-  return zero;
+  return zero();
 }
 
 template<>

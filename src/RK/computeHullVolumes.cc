@@ -117,7 +117,7 @@ computeHullVolumes(const ConnectivityMap<Dimension>& connectivityMap,
            itr != vertsInv.end();
            ++itr) {
         if (itr->magnitude2() < 1.0e-30) {
-          eta.push_back(Vector::zero);
+          eta.push_back(Vector::zero());
         } else {
           eta.push_back(1.0/sqrt(itr->magnitude2()) * itr->unitVector());
         }

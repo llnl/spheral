@@ -46,7 +46,7 @@ medianPosition(vector<Vector>& positions) {
   vector<Vector> p(positions);
   Vector result;
   const size_t n = p.size()/2;
-  for (size_t idim = 0; idim != Vector::nDimensions; ++idim) {
+  for (size_t idim = 0; idim != Vector::nDimensions(); ++idim) {
     nth_element(p.begin(), p.begin() + n, p.end(), CompareVectorsByIndex<Vector>(idim));
     result(idim) = (*(p.begin() + n))(idim);
   }

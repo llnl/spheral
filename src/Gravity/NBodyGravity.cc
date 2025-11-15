@@ -130,12 +130,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Access to pertinent fields in the database.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
 
   // Get the acceleration and position change vectors we'll be modifying.
-  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Zero out the total gravitational potential energy.
   mExtraEnergy = 0.0;
@@ -279,7 +279,7 @@ preStepInitialize(const DataBase<Dimension>& /*dataBase*/,
     mPotential0.copyFields();
   
     // Take a snapshot of the starting velocity^2 (for KE0).
-    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero);
+    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero());
     const auto numNodeLists = vel.numFields();
     for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
       const auto n = vel[nodeListi]->numInternalElements();
@@ -309,9 +309,9 @@ finalize(const Scalar time,
 
     // Assume mPotential holds the correct end-of-step potential at this time.
     // Correct for Verlet integrator.
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       vel = state.fields(HydroFieldNames::velocity, Vector::zero);
+    auto       vel = state.fields(HydroFieldNames::velocity, Vector::zero());
     const auto numNodeLists = vel.numFields();
     for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
       const auto n = vel[nodeListi]->numInternalElements();

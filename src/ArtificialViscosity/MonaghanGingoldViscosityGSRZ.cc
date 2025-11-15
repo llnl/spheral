@@ -117,8 +117,8 @@ Piij(const unsigned nodeListi, const unsigned i,
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj << " " << murj);
 
   // Now compute the symmetrized artificial viscous pressure.
-  return make_pair(ei/rhoRZi*Tensor::one,
-                   ej/rhoRZj*Tensor::one);
+  return make_pair(ei/rhoRZi*Tensor::one(),
+                   ej/rhoRZj*Tensor::one());
 }
 
 }

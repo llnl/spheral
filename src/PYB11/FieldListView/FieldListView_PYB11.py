@@ -60,13 +60,7 @@ for ndim in dims:
 
     #...........................................................................
     # arithmetic FieldListViews
-    for (value, label) in (("int",            "Int"),
-                           ("unsigned",       "Unsigned"),
-                           ("uint64_t",       "ULL"),
-                           (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (SymTensor,        "SymTensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
+    for (value, label) in ((ThirdRankTensor,  "ThirdRankTensor"),
                            (FourthRankTensor, "FourthRankTensor"),
                            (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
@@ -75,8 +69,13 @@ for ndim in dims:
 
     #...........................................................................
     # A few FieldListView types can apply the min/max with a scalar additionally
-    for (value, label) in (("double",   "Scalar"),
-                           (SymTensor,  "SymTensor")):
+    for (value, label) in (("int",            "Int"),
+                           ("unsigned",       "Unsigned"),
+                           ("uint64_t",       "ULL"),
+                           ("double",          "Scalar"),
+                           (Vector,           "Vector"),
+                           (Tensor,           "Tensor"),
+                           (SymTensor,        "SymTensor")):
         exec(f'''
 {label}FieldListView{ndim}d = PYB11TemplateClass(MinMaxFieldListView, template_parameters=("{Dimension}", "{value}"))
 ''')

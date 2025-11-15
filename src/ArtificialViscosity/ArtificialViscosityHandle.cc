@@ -107,7 +107,7 @@ applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   if (this->requireVelocityGradient() or
       this->balsaraShearCorrection()) {
-    auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+    auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
     for (auto* bcPtr: range(this->boundaryBegin(), this->boundaryEnd())) {
       bcPtr->applyFieldListGhostBoundary(DvDx);
     }
@@ -124,7 +124,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   dataBase.resizeFluidFieldList(mMaxViscousPressure, 0.0, HydroFieldNames::maxViscousPressure, false);
   dataBase.resizeFluidFieldList(mEffViscousPressure, 0.0, HydroFieldNames::effectiveViscousPressure, false);
   if (this->requireVelocityGradient() or this->balsaraShearCorrection()) {
-    dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::ArtificialViscosityVelocityGradient, false);
+    dataBase.resizeFluidFieldList(mDvDx, Tensor::zero(), HydroFieldNames::ArtificialViscosityVelocityGradient, false);
   }
 }
 
@@ -140,8 +140,8 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   // Prepare the initial velocity gradient
   if (this->requireVelocityGradient() or
       this->balsaraShearCorrection()) {
-    dataBase.resizeFluidFieldList(mM, Tensor::zero, "AV M correction field", false);
-    dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::ArtificialViscosityVelocityGradient, false);
+    dataBase.resizeFluidFieldList(mM, Tensor::zero(), "AV M correction field", false);
+    dataBase.resizeFluidFieldList(mDvDx, Tensor::zero(), HydroFieldNames::ArtificialViscosityVelocityGradient, false);
     // this->updateVelocityGradient(dataBase, state, derivs);
   }
 }
@@ -180,8 +180,8 @@ postStateUpdate(const Scalar t,
   if ((not mRigorousVelocityGradient) and (this->requireVelocityGradient() or this->balsaraShearCorrection())) {
     // Just copy the hydro estimate for the velocity gradient. This option incurs being
     // a bit off in the time level of DvDx during an integration cycle but is cheaper.
-    auto       DvDx_Q = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
-    const auto DvDx   = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+    auto       DvDx_Q = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
+    const auto DvDx   = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
     DvDx_Q.assignFields(DvDx);
     for (auto* fptr: DvDx_Q) fptr->name(HydroFieldNames::ArtificialViscosityVelocityGradient);
   }
@@ -198,7 +198,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
                        const State<Dimension>& state,
                        const StateDerivatives<Dimension>& derivs) {
 
-  auto DvDx_Q = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto DvDx_Q = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
 
   // Measure a linearly corrected velocity gradient based on the corrected SPH form.
   // Same thing used in our SPH hydro measurement of DvDx.
@@ -210,10 +210,10 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
 
   // Grab the state we need
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
 
   // Clear our current estimate
   DvDx_Q.Zero();

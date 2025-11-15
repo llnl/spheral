@@ -7,7 +7,6 @@ set(Geometry_sources
     GeometryRegistrar.cc
     Dimension.cc
     EigenStruct.cc
-    Geom3Vector.cc
     GeomFacet2d.cc
     GeomFacet3d.cc
     GeomPlane.cc
@@ -34,8 +33,6 @@ set(Geometry_headers
     EigenStructInline.hh
     EigenStruct_fwd.hh
     FacetedVolumeUtilities.hh
-    Geom3Vector.hh
-    Geom3VectorInline.hh
     GeomFacet1d.hh
     GeomFacet1dInline.hh
     GeomFacet2d.hh

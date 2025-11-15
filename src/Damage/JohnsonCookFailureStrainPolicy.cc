@@ -89,7 +89,7 @@ update(const KeyType& key,
 
   const auto& P = state.field(PKey, 0.0);
   const auto& eps = state.field(epsKey, 0.0);
-  const auto& S = state.field(stressKey, SymTensor::zero);
+  const auto& S = state.field(stressKey, SymTensor::zero());
   const auto& psr = derivs.field(psrKey, 0.0);
   const auto& epsMelt = state.field(meltKey, 0.0);
 

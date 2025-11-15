@@ -99,7 +99,7 @@ computeScalarDDDt(const DataBase<Dimension>& /*dataBase*/,
     const auto  clKey = State<Dimension>::buildFieldKey(SolidFieldNames::longitudinalSoundSpeed, mNodeList.name());
     const auto  HKey = State<Dimension>::buildFieldKey(HydroFieldNames::H, mNodeList.name());
     const auto& cl = state.field(clKey, 0.0);
-    const auto& H = state.field(HKey, SymTensor::zero);
+    const auto& H = state.field(HKey, SymTensor::zero());
 
     // Constant multiplicative parameter for the crack growth.
     const auto A = mCrackGrowthMultiplier / mW.kernelExtent();
@@ -191,7 +191,7 @@ finalize(const Scalar /*time*/,
   // For 3pt damage, check if we should switch to using full intersection data
   // from the ConnectivityMap
   if (mDamageCouplingAlgorithm == DamageCouplingAlgorithm::ThreePointDamage) {
-    const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+    const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
     auto nD = 0u;
     const auto numNodeLists = D.numFields();
 #pragma omp parallel
@@ -239,8 +239,8 @@ maxResidual(const DataBase<Dimension>& dataBase,
 
   // Grab the state we're comparing
   const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, mNodeList.name()); };
-  const auto& D0 = state0.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
-  const auto& D1 = state1.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+  const auto& D0 = state0.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
+  const auto& D1 = state1.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
   
   // Walk the nodes
   const auto n = mNodeList.numInternalNodes();

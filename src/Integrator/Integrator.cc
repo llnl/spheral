@@ -680,10 +680,10 @@ template<typename Dimension>
 void
 Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
                                       State<Dimension>& state1) const {
-  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero);
-  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
+  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
   for (GhostNodeIterator<Dimension> itr = x0.ghostNodeBegin();
        itr != x0.ghostNodeEnd();
        ++itr) {

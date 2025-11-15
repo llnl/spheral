@@ -127,15 +127,15 @@ dt(const DataBase<Dimension>& dataBase,
 
   // Get some useful fluid variables from the DataBase.
   const auto  mask = state.fields(HydroFieldNames::timeStepMask, 1);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto  eps = state.fields(HydroFieldNames::specificThermalEnergy, Scalar());
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  cs = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
-  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
                                                          this->requireOverlapConnectivity(),
                                                          this->requireIntersectionConnectivity());
@@ -144,7 +144,7 @@ dt(const DataBase<Dimension>& dataBase,
   // Check for deviatoric stress.
   const auto haveDS = state.fieldNameRegistered(SolidFieldNames::deviatoricStress);
   FieldList<Dimension, SymTensor> S;
-  if (haveDS) S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
+  if (haveDS) S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
 
   // Check if the longitudinal sound speed is registered.
 #ifdef SPHERAL_ENABLE_LONGCSDT
@@ -404,11 +404,11 @@ dtImplicit(const DataBase<Dimension>& dataBase,
 
   // Get some useful fluid variables from the DataBase.
   const auto  mask = state.fields(HydroFieldNames::timeStepMask, 1);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
                                                          this->requireOverlapConnectivity(),
                                                          this->requireIntersectionConnectivity());
@@ -573,16 +573,16 @@ maxResidual(const DataBase<Dimension>& dataBase,
 
   // Grab the state we're comparing
   const auto& connectivityMap = dataBase.connectivityMap();
-  const auto  position0 = state0.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity0 = state0.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  position0 = state0.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity0 = state0.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  eps0 = state0.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   const auto  c0 = state0.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto  H0 = state0.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto  position1 = state1.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity1 = state1.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  position1 = state1.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity1 = state1.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  eps1 = state1.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   const auto  c1 = state1.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto  H1 = state1.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
 
   // Initialize the return value to some impossibly high value.
   auto result = ResidualType(-1.0, "You should not see me!");

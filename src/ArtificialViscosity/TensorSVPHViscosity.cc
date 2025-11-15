@@ -72,17 +72,17 @@ initialize(const Scalar t,
   // Grab the state we need.
   const Mesh<Dimension>& mesh = state.mesh();
   const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
 
   // Prepare the state we're going to compute.
   const unsigned numFaces = mesh.numFaces();
-  mDvDx = vector<Tensor>(numFaces, Tensor::zero);
+  mDvDx = vector<Tensor>(numFaces, Tensor::zero());
   mShearCorrection = vector<Scalar>(numFaces, 1.0);
-  mQface = vector<Tensor>(numFaces, Tensor::zero);
+  mQface = vector<Tensor>(numFaces, Tensor::zero());
 
   // Walk the faces.
   const Scalar Cl = this->Cl();
@@ -90,7 +90,7 @@ initialize(const Scalar t,
   const bool balsaraCorrection = this->balsaraShearCorrection();
   const Scalar csMin = this->negligibleSoundSpeed();
   const Scalar eps2 = this->epsilon2();
-  const SymTensor H0 = 1.0e100*SymTensor::one;
+  const SymTensor H0 = 1.0e100*SymTensor::one();
   for (unsigned iface = 0; iface != numFaces; ++iface) {
     const Face& face = mesh.face(iface);
     const Vector posFace = face.position();

@@ -48,7 +48,7 @@ double hullMassDensity(const std::vector<Dim<1>::Vector>& posInv,
 
   // Add up the masses.
   Scalar msum = 0.5*(stuff[0].second + stuff[n-1].second);
-  if (stuff[0].first != Vector::zero and stuff[n-1].first != Vector::zero) msum += mi;
+  if (stuff[0].first != Vector::zero() and stuff[n-1].first != Vector::zero()) msum += mi;
 
   // Figure out the volume.
   const Scalar vol = safeInv(stuff[n-1].first.x()) - safeInv(stuff[0].first.x());
@@ -89,7 +89,7 @@ double hullMassDensity(const std::vector<Dim<2>::Vector>& posInv,
     points_polytope.push_back((vec.y() - xmin.y())/fscale);
     const Scalar mag2 = vec.magnitude2();
     if (mag2 == 0.0) {
-      pos.push_back(Vector::zero);
+      pos.push_back(Vector::zero());
     } else {
       pos.push_back(vec/mag2);
     }
@@ -217,7 +217,7 @@ computeHullSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
         const vector<int>& connectivity = connectivityMap.connectivityForNode(nodeListi, i)[nodeListi];
 
         // Copy the neighbor positions & masses.
-        vector<Vector> positionsInv(1, Vector::zero);
+        vector<Vector> positionsInv(1, Vector::zero());
         vector<Scalar> masses(1, mi);
         positionsInv.reserve(connectivity.size() + 1);
         masses.reserve(connectivity.size() + 1);

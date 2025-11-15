@@ -78,7 +78,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Get the acceleration state we'll be modifying.
   const typename State<Dimension>::KeyType key = State<Dimension>::buildFieldKey(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity,
                                                                                  mNodeListPtr->name());
-  Field<Dimension, Vector>& DvDt = derivs.field(key, Vector::zero);
+  Field<Dimension, Vector>& DvDt = derivs.field(key, Vector::zero());
 
   // Increment the acceleration.
   const unsigned n = mNodeListPtr->numNodes();

@@ -142,7 +142,7 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
     pos.appendField(nodes.positions());
     H.appendField(nodes.Hfield());
     zerothMoment.appendNewField("zeroth moment", nodes, W0);
-    firstMoment.appendNewField("first moment", nodes, Vector::zero);
+    firstMoment.appendNewField("first moment", nodes, Vector::zero());
   }
 
   // Find the moment of the node distribution in eta coordinates.

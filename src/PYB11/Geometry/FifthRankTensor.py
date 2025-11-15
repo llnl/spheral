@@ -7,11 +7,11 @@ from PYB11Generator import *
 class FifthRankTensor:
     "Spheral fifth rank tensor (%(ndim)sx%(ndim)sx%(ndim)sx%(ndim)s) class"
 
-    # Static attributes
-    nrank = PYB11readonly(static=True, doc="Rank of the tensor", returnpolicy="copy")
-    nDimensions = PYB11readonly(static=True, doc="Number of dimensions", returnpolicy="copy")
-    numElements = PYB11readonly(static=True, doc="Number of elements stored in the type", returnpolicy="copy")
-    zero = PYB11readonly(static=True, doc="The zero value equivalent", returnpolicy="copy")
+    # constexpr attributes
+    nrank = PYB11property(doc="Rank of the tensor")
+    nDimensions = PYB11property(doc="Number of dimensions")
+    numElements = PYB11property(doc="Number of elements stored in the type")
+    zero = PYB11property(doc="The zero value equivalent")
 
     # Constructors
     def pyinit0(self):
@@ -26,16 +26,16 @@ class FifthRankTensor:
         "Construct setting the element values to a constant value."
 
     # Sequence methods
-    @PYB11implementation("[](const Dim<%(ndim)s>::FifthRankTensor&) { return Dim<%(ndim)s>::FifthRankTensor::numElements; }")
+    @PYB11implementation("[](const Dim<%(ndim)s>::FifthRankTensor&) { return Dim<%(ndim)s>::FifthRankTensor::numElements(); }")
     def __len__(self):
         "The size (number of elements) of the FifthRankTensor."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::FifthRankTensor &s, size_t i) { if (i >= Dim<%(ndim)s>::FifthRankTensor::numElements) throw py::index_error(); return s[i]; }") 
+    @PYB11implementation("[](const Dim<%(ndim)s>::FifthRankTensor &s, size_t i) { if (i >= Dim<%(ndim)s>::FifthRankTensor::numElements()) throw py::index_error(); return s[i]; }") 
     @PYB11returnpolicy("reference_internal")
     def __getitem__(self):
         "Python indexing to get an element."
 
-    @PYB11implementation("[](Dim<%(ndim)s>::FifthRankTensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::FifthRankTensor::numElements) throw py::index_error(); s[i] = v; }") 
+    @PYB11implementation("[](Dim<%(ndim)s>::FifthRankTensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::FifthRankTensor::numElements()) throw py::index_error(); s[i] = v; }") 
     def __setitem__(self):
         "Python indexing to set an element."
 
@@ -112,14 +112,6 @@ class FifthRankTensor:
     def __eq__(self):
         return
     def __ne__(self):
-        return
-    def __lt__(self):
-        return
-    def __gt__(self):
-        return
-    def __le__(self):
-        return
-    def __ge__(self):
         return
 
     # String representation

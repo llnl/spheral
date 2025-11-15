@@ -108,8 +108,8 @@ DEMBase(const DataBase<Dimension>& dataBase,
                                            &DEMBase<Dimension>::finalizeAfterRedistribution)){
     
     mTimeStepMask = dataBase.newDEMFieldList(int(0), "timeStepMask");
-    mDxDt = dataBase.newDEMFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
-    mDvDt = dataBase.newDEMFieldList(Vector::zero, HydroFieldNames::hydroAcceleration);
+    mDxDt = dataBase.newDEMFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
+    mDvDt = dataBase.newDEMFieldList(Vector::zero(), HydroFieldNames::hydroAcceleration);
     mOmega = dataBase.newDEMFieldList(DEMDimension<Dimension>::zero, DEMFieldNames::angularVelocity);
     mDomegaDt = dataBase.newDEMFieldList(DEMDimension<Dimension>::zero, IncrementState<Dimension, Scalar>::prefix() + DEMFieldNames::angularVelocity);
     
@@ -146,16 +146,16 @@ resizePairFieldLists() {
 
   // state
   this->addContactsToPairFieldList(mEquilibriumOverlap,0.0);
-  this->addContactsToPairFieldList(mShearDisplacement,Vector::zero);
-  this->addContactsToPairFieldList(mRollingDisplacement,Vector::zero);
+  this->addContactsToPairFieldList(mShearDisplacement,Vector::zero());
+  this->addContactsToPairFieldList(mRollingDisplacement,Vector::zero());
   this->addContactsToPairFieldList(mTorsionalDisplacement,0.0);
   this->addContactsToPairFieldList(mIsActiveContact,int(0));
 
   //derivatives
-  this->addContactsToPairFieldList(mDDtShearDisplacement,Vector::zero);
-  this->addContactsToPairFieldList(mNewShearDisplacement,Vector::zero);
-  this->addContactsToPairFieldList(mDDtRollingDisplacement,Vector::zero);
-  this->addContactsToPairFieldList(mNewRollingDisplacement,Vector::zero);
+  this->addContactsToPairFieldList(mDDtShearDisplacement,Vector::zero());
+  this->addContactsToPairFieldList(mNewShearDisplacement,Vector::zero());
+  this->addContactsToPairFieldList(mDDtRollingDisplacement,Vector::zero());
+  this->addContactsToPairFieldList(mNewRollingDisplacement,Vector::zero());
   this->addContactsToPairFieldList(mDDtTorsionalDisplacement,0.0);
   this->addContactsToPairFieldList(mNewTorsionalDisplacement,0.0);
 }
@@ -175,10 +175,10 @@ resizeDerivativePairFieldLists(StateDerivatives<Dimension>& derivs) const {
   auto DDtTorsionalDisp = derivs.fields(ReplaceAndIncrementPairFieldList<Dimension, std::vector<Scalar>>::incrementPrefix() + DEMFieldNames::torsionalDisplacement, std::vector<Scalar>());
   auto newTorsionalDisp = derivs.fields(ReplaceAndIncrementPairFieldList<Dimension, std::vector<Scalar>>::replacePrefix() + DEMFieldNames::torsionalDisplacement, std::vector<Scalar>());
   
-  this->addContactsToPairFieldList(DsDt,Vector::zero);
-  this->addContactsToPairFieldList(newShearDisp,Vector::zero);
-  this->addContactsToPairFieldList(DDtRollingDisp,Vector::zero);
-  this->addContactsToPairFieldList(newRollingDisp,Vector::zero);
+  this->addContactsToPairFieldList(DsDt,Vector::zero());
+  this->addContactsToPairFieldList(newShearDisp,Vector::zero());
+  this->addContactsToPairFieldList(DDtRollingDisp,Vector::zero());
+  this->addContactsToPairFieldList(newRollingDisp,Vector::zero());
   this->addContactsToPairFieldList(DDtTorsionalDisp,0.0);
   this->addContactsToPairFieldList(newTorsionalDisp,0.0);
 }
@@ -198,8 +198,8 @@ resizeStatePairFieldLists(State<Dimension>& state) const{
   auto isActive = state.fields(DEMFieldNames::isActiveContact, vector<int>());
 
   this->addContactsToPairFieldList(eqOverlap,0.0);
-  this->addContactsToPairFieldList(shearDisp,Vector::zero);
-  this->addContactsToPairFieldList(rollingDisplacement,Vector::zero);
+  this->addContactsToPairFieldList(shearDisp,Vector::zero());
+  this->addContactsToPairFieldList(rollingDisplacement,Vector::zero());
   this->addContactsToPairFieldList(torsionalDisplacement,0.0);
   this->addContactsToPairFieldList(isActive,int(0));
 }
@@ -406,8 +406,8 @@ registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("DEMregisterDerivs");
 
-  dataBase.resizeDEMFieldList(mDxDt, Vector::zero, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::position, false);
-  dataBase.resizeDEMFieldList(mDvDt, Vector::zero, HydroFieldNames::hydroAcceleration, false);
+  dataBase.resizeDEMFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::position, false);
+  dataBase.resizeDEMFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);
   dataBase.resizeDEMFieldList(mDomegaDt, DEMDimension<Dimension>::zero,  IncrementState<Dimension, Scalar>::prefix() + DEMFieldNames::angularVelocity , false);
   dataBase.resizeDEMFieldList(mDDtShearDisplacement, vector<Vector>(),  ReplaceAndIncrementPairFieldList<Dimension, std::vector<Vector>>::incrementPrefix()  + DEMFieldNames::shearDisplacement , false);
   dataBase.resizeDEMFieldList(mNewShearDisplacement, vector<Vector>(),  ReplaceAndIncrementPairFieldList<Dimension, std::vector<Vector>>::replacePrefix()  + DEMFieldNames::shearDisplacement , false);
@@ -520,7 +520,7 @@ applyGhostBoundaries(State<Dimension>& state,
   TIME_BEGIN("DEMghostBounds");
 
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto angularVelocity = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
   auto compositeParticleIndex = state.fields(DEMFieldNames::compositeParticleIndex,int(0));
@@ -550,7 +550,7 @@ enforceBoundaries(State<Dimension>& state,
   TIME_BEGIN("DEMenforceBounds");
 
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto angularVelocity = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
   auto compositeParticleIndex = state.fields(DEMFieldNames::compositeParticleIndex,int(0));

@@ -73,8 +73,8 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   const auto& pairDepsDt = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();

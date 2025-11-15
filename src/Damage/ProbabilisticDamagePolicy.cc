@@ -121,7 +121,7 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
 inline
 Dim<1>::Tensor
 effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one;
+  return Dim<1>::Tensor::one();
 }
 
 inline
@@ -180,7 +180,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   const auto Dtiny = 0.01;
   const auto Dtiny1 = 1.0/(FastMath::CubeRootHalley2(1.0 - Dtiny) - FastMath::CubeRootHalley2(Dtiny));
@@ -189,9 +189,9 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state fields.
-  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero);
+  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero());
   const auto& DDDt = derivs.field(buildKey(this->prefix() + SolidFieldNames::scalarDamage), 0.0);
-  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero);
+  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero());
   const auto& numFlaws = state.field(buildKey(SolidFieldNames::numFlaws), 0);
   const auto& minFlaw = state.field(buildKey(SolidFieldNames::minFlaw), 0.0);
   const auto& maxFlaw = state.field(buildKey(SolidFieldNames::maxFlaw), 0.0);

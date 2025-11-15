@@ -198,7 +198,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
   CHECK((int)sendRequests.size() == 2*(numProcs -1 ));
 
   // Compute the local H inverse for our box culling of send nodes.
-  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero, "H inverse");
+  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
   dataBase.globalHinverse(Hinverse);
 
   // Next walk the other domains, get their info, and figure out what nodes we need to send them.

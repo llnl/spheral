@@ -102,7 +102,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 
 //   // Assign the true eigen-values in the result.
 //   result.eigenValues = fscale*lambdaVec;
-//   result.eigenVectors = SymTensor::one;
+//   result.eigenVectors = SymTensor::one();
 
 //   // If any of the eigen-values result in a tensor that is not positive-rank 
 //   // (all zero elements), we assume the eigen-values are equal and punt
@@ -114,7 +114,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 //   Vector maxEVrow;
 //   int iFirst = -1;
 //   for (int ivalue = 0; ivalue != 3; ++ivalue) {
-//     const SymTensor M = A - lambdaVec(ivalue)*SymTensor::one;
+//     const SymTensor M = A - lambdaVec(ivalue)*SymTensor::one();
 //     if (M.maxAbsElement() < degenerate) punt = true;
 //     for (int irow = 0; irow != 3; ++irow) {
 //       const Vector Mvec = M.getRow(irow);
@@ -170,7 +170,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 //     // simply by taking the cross-product of the previous eigen-vectors.
 //     const Vector V2 = V0.cross(V1);
 //     CHECK(fuzzyEqual(V2.magnitude2(), 1.0, tolerance));
-//     CHECK(fuzzyEqual(((A - lambdaVec(iThird)*SymTensor::one)*V2).maxAbsElement(), 0.0, tolerance));
+//     CHECK(fuzzyEqual(((A - lambdaVec(iThird)*SymTensor::one())*V2).maxAbsElement(), 0.0, tolerance));
 //     result.eigenVectors.setColumn(iThird, V2);
 //   }
 
@@ -225,35 +225,6 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 template class GeomSymmetricTensor<1>;
 template class GeomSymmetricTensor<2>;
 template class GeomSymmetricTensor<3>;
-
-//------------------------------------------------------------------------------
-// Set the static variables.
-//------------------------------------------------------------------------------
-template<> const unsigned GeomSymmetricTensor<1>::nDimensions = 1;
-template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::zero = GeomSymmetricTensor<1>(0.0);
-template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one = GeomSymmetricTensor<1>(1.0);
-
-template<> const unsigned GeomSymmetricTensor<2>::nDimensions = 2;
-template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::zero = GeomSymmetricTensor<2>(0.0, 0.0,
-                                                                                              0.0, 0.0);
-template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one = GeomSymmetricTensor<2>(1.0, 0.0,
-                                                                                             0.0, 1.0);
-
-template<> const unsigned GeomSymmetricTensor<3>::nDimensions = 3;
-template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::zero = GeomSymmetricTensor<3>(0.0, 0.0, 0.0,
-                                                                                              0.0, 0.0, 0.0,
-                                                                                              0.0, 0.0, 0.0);
-template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one = GeomSymmetricTensor<3>(1.0, 0.0, 0.0,
-                                                                                             0.0, 1.0, 0.0,
-                                                                                             0.0, 0.0, 1.0);
-
-template<> const double GeomSymmetricTensor<1>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<2>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<3>::onethird = 1.0/3.0;
-
-template<> const double GeomSymmetricTensor<1>::sqrt3 = std::sqrt(3.0);
-template<> const double GeomSymmetricTensor<2>::sqrt3 = std::sqrt(3.0);
-template<> const double GeomSymmetricTensor<3>::sqrt3 = std::sqrt(3.0);
 
 }
 

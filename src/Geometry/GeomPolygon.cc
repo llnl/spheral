@@ -745,7 +745,7 @@ GeomPolygon::Vector
 GeomPolygon::
 centroid() const {
   const int n = mVertices.size();
-  if (n == 0) return Vector::zero;
+  if (n == 0) return Vector::zero();
   CHECK(n >= 3);
 
   Vector result;

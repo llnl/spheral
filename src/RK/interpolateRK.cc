@@ -271,7 +271,7 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
       // Get the state for node i.
       const auto& Hi = H(nodeListi, i);
       const auto& correctionsi = corrections(nodeListi, i);
-      const auto  Wj = WR.evaluateKernel(Vector::zero, Hi, correctionsi);
+      const auto  Wj = WR.evaluateKernel(Vector::zero(), Hi, correctionsi);
 
       // Add the self-contribution to each FieldList.
       for (auto k = 0u; k < numFieldLists; ++k) {

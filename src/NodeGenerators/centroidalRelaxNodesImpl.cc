@@ -55,8 +55,8 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
   auto D = db.solidDamage();
 
   // Prepare the storage for the point-wise fields.
-  auto gradRhof = db.newFluidFieldList(Vector::zero, "mass density gradient");
-  auto deltaCentroid = db.newFluidFieldList(Vector::zero, "delta centroid");
+  auto gradRhof = db.newFluidFieldList(Vector::zero(), "mass density gradient");
+  auto deltaCentroid = db.newFluidFieldList(Vector::zero(), "delta centroid");
   auto corrections0 = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections0");
   auto corrections = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections");
 
@@ -176,7 +176,7 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
         const auto deltai = delta.magnitude()/(Dimension::nDim/H(nodeListi, i).Trace());
         avgdelta += deltai;
         maxdelta = std::max(maxdelta, deltai);
-        // if (vol(nodeListi, i) > 0.0) H(nodeListi, i) = SymTensor::one / std::min(hmax, 2.0*Dimension::rootnu(vol(nodeListi, i)));  
+        // if (vol(nodeListi, i) > 0.0) H(nodeListi, i) = SymTensor::one() / std::min(hmax, 2.0*Dimension::rootnu(vol(nodeListi, i)));  
 // Not correct, but hopefully good enough for our iterative Voronoi purposes.
         pos(nodeListi, i) += delta;
         rhof(nodeListi, i) = rhofunc(pos(nodeListi, i));

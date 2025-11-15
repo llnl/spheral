@@ -44,7 +44,7 @@ computeSumVoronoiCellMassDensityFromFaces(const Mesh<Dimension>& mesh,
   const FieldList<Dimension, typename Dimension::SymTensor> H = dataBase.fluidHfield();
 
   const unsigned numFaces = mesh.numFaces();
-  const SymTensor H0 = 1.0e100*SymTensor::one;
+  const SymTensor H0 = 1.0e100*SymTensor::one();
   unsigned nodeListi = 0;
   for (typename DataBase<Dimension>::ConstFluidNodeListIterator itr = dataBase.fluidNodeListBegin();
        itr != dataBase.fluidNodeListEnd();
@@ -57,7 +57,7 @@ computeSumVoronoiCellMassDensityFromFaces(const Mesh<Dimension>& mesh,
 
     // Prepare the face fields for summing.
     vector<Scalar> massFace(numFaces, 0.0), volFace(numFaces, 0.0);
-    vector<Vector> posFace(numFaces, Vector::zero);
+    vector<Vector> posFace(numFaces, Vector::zero());
 
     // Walk the faces and sum the mass and volume properties to faces for this material.
     for (unsigned iface = 0; iface != numFaces; ++iface) {

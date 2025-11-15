@@ -65,7 +65,7 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
   const auto& E = state.field(buildKey(SolidFieldNames::YoungsModulus), 0.0);
   const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
-  const auto& S = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero);
+  const auto& S = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero());
 
   // Iterate over the internal nodes.
   const auto n = stateField.numInternalElements();
@@ -75,7 +75,7 @@ update(const KeyType& key,
     // Compute the maximum tensile stress.
 //     Scalar Pi = P(i);
 //     if (Pi < 0.0) Pi *= 1.0 - D(i);
-    const auto sigmai = S(i) - P(i)*SymTensor::one;
+    const auto sigmai = S(i) - P(i)*SymTensor::one();
     const auto sigmati = max(0.0, sigmai.eigenValues().maxElement());
     CHECK(sigmati >= 0.0);
 

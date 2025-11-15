@@ -705,7 +705,7 @@ computeCentroids(const vector<DomainNode<Dimension> >& nodes,
 
   // Initializations.
   const vector<Vector> generators0(generators);
-  generators = vector<Vector>(numGenerators, Vector::zero);
+  generators = vector<Vector>(numGenerators, Vector::zero());
 
   // Iterate over the nodes, assigning each to it's nearest generator.
   vector<double> normalization(numGenerators, 0.0);
@@ -725,7 +725,7 @@ computeCentroids(const vector<DomainNode<Dimension> >& nodes,
   for (size_t igen = 0; igen != numGenerators; ++igen) {
     packElement(generators[igen], localBuffer);
     packElement(normalization[igen], localBuffer);
-    generators[igen] = Vector::zero;
+    generators[igen] = Vector::zero();
     normalization[igen] = 0.0;
   }
   for (size_t sendProc = 0; (int)sendProc != numProcs; ++sendProc) {
@@ -938,7 +938,7 @@ findNeighborGenerators(const size_t igen,
       CHECK(rmag2 > 0.0);
       inverseDistance.push_back(delta * safeInv(rmag2, 1.0e-4));
     } else {
-      inverseDistance.push_back(Vector::zero);
+      inverseDistance.push_back(Vector::zero());
     }
   }
   typedef typename Dimension::ConvexHull ConvexHull;

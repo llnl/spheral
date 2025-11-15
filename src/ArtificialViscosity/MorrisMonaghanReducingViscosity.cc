@@ -120,12 +120,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
-  const auto Hsmooth = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto Hsmooth = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
   const auto reducingViscosityMultiplierL = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
     
   // Derivative FieldLists
-  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   auto DrvAlphaDtQ = derivs.fields(IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
   auto DrvAlphaDtL = derivs.fields(IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
     

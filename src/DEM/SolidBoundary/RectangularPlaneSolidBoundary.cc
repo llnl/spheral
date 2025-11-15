@@ -24,7 +24,7 @@ RectangularPlaneSolidBoundary(const Vector& point, const Vector& extent, const T
   mPoint(point),
   mBasis(basis),
   mExtent(extent),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>

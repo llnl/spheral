@@ -58,17 +58,17 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
   // Zero out the result.
   const unsigned nfaces = mesh.numFaces();
   A = vector<Scalar>(nfaces, 0.0);
-  B = vector<Vector>(nfaces, Vector::zero);
+  B = vector<Vector>(nfaces, Vector::zero());
 
   // We can derive everything in terms of the first and second moments 
   // of the local positions.
-  vector<Vector> m1(nfaces, Vector::zero);
-  vector<SymTensor> m2(nfaces, SymTensor::zero);
+  vector<Vector> m1(nfaces, Vector::zero());
+  vector<SymTensor> m2(nfaces, SymTensor::zero());
 
   // Walk the faces.
   unsigned iface, nodeListj, j;
   Vector posFace;
-  const SymTensor Hface = 1.0e100*SymTensor::one;
+  const SymTensor Hface = 1.0e100*SymTensor::one();
   for (iface = 0; iface != nfaces; ++iface) {
     const Face& face = mesh.face(iface);
     posFace = face.position();

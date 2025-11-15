@@ -98,8 +98,8 @@ gradientFieldListSVPH(const FieldList<Dimension, DataType>& fieldList,
     result.appendNewField("SVPH gradient of " + fieldList[nodeListi]->name(), nodeList, GradientType());
     volume.appendNewField("volume", nodeList, 0.0);
     A.appendNewField("SVPH normalization for " + fieldList[nodeListi]->name(), nodeList, 0.0);
-    B.appendNewField("SVPH linear correction for " + fieldList[nodeListi]->name(), nodeList, Vector::zero);
-    gradB.appendNewField("SVPH linear correction gradient for " + fieldList[nodeListi]->name(), nodeList, Tensor::zero);
+    B.appendNewField("SVPH linear correction for " + fieldList[nodeListi]->name(), nodeList, Vector::zero());
+    gradB.appendNewField("SVPH linear correction gradient for " + fieldList[nodeListi]->name(), nodeList, Tensor::zero());
   }
 
   // If we're enforcing first-order consistency, compute the correction fields.

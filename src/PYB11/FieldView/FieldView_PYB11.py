@@ -60,12 +60,7 @@ for ndim in dims:
 
     #...........................................................................
     # arithmetic fields
-    for (value, label) in (("int",            "Int"),
-                           ("unsigned",       "Unsigned"),
-                           ("uint64_t",       "ULL"),
-                           (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
+    for (value, label) in ((ThirdRankTensor,  "ThirdRankTensor"),
                            (FourthRankTensor, "FourthRankTensor"),
                            (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
@@ -74,8 +69,13 @@ for ndim in dims:
 
     #...........................................................................
     # A few fields can apply the min/max with a scalar addtionally
-    for (value, label) in ((Scalar,     "Scalar"),
-                           (SymTensor,  "SymTensor")):
+    for (value, label) in (("int",            "Int"),
+                           ("unsigned",       "Unsigned"),
+                           ("uint64_t",       "ULL"),
+                           (Scalar,           "Scalar"),
+                           (Vector,           "Vector"),
+                           (Tensor,           "Tensor"),
+                           (SymTensor,        "SymTensor")):
         exec(f'''
 {label}FieldView{ndim}d = PYB11TemplateClass(MinMaxFieldView, template_parameters=("{Dimension}", "{value}"))
 ''')

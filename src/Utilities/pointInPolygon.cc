@@ -88,7 +88,7 @@ bool pointInPolygon(const Dim<2>::Vector& p,
   // If there are multiple loops, we can still do them in one go, but we have to
   // insert (0,0) coordinates between loops.  See the discussion at the above
   // website source for all this for more information.
-  vector<Vector> verts(1, Vector::zero);
+  vector<Vector> verts(1, Vector::zero());
   verts.reserve(int(1.05*pverts.size()));
   unsigned ifacet = 0;
   while (ifacet < nfacets) {
@@ -99,7 +99,7 @@ bool pointInPolygon(const Dim<2>::Vector& p,
       ++ifacet;
     }
     verts.push_back(pverts[istart]);
-    verts.push_back(Vector::zero);
+    verts.push_back(Vector::zero());
     ++ifacet;
   }
   return pointInPolygon(p, verts);

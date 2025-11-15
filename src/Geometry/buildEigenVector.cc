@@ -132,7 +132,7 @@ buildUniqueEigenVector(const Dim<3>::SymTensor& A,
   const Vector V0 = c0*U0 + c1*U1;
   CONTRACT_VAR(tolerance);
   ENSURE(fuzzyEqual(V0.magnitude2(), 1.0, tolerance));
-  ENSURE(fuzzyEqual(((A - lambda*Dim<3>::SymTensor::one)*V0).maxAbsElement(), 0.0, tolerance));
+  ENSURE(fuzzyEqual(((A - lambda*Dim<3>::SymTensor::one())*V0).maxAbsElement(), 0.0, tolerance));
   return V0;
 }
 

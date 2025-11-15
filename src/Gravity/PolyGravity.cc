@@ -190,14 +190,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Access the pertinent fields in the database.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto numNodeLists = pos.numFields();
 
   // Get the acceleration and position change vectors we'll be modifying.
-  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Walk the points and compute the acceleration and potential
   mPotential = 0.0;

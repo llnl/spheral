@@ -34,16 +34,16 @@ class GeomTensor: public GeomTensorBase<nDim> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef const double* const_iterator;
-  typedef double* iterator;
-  typedef unsigned size_type;
-  typedef Eigen::Matrix<double, nDim, nDim> EigenType;
+  using const_iterator = const double*;
+  using iterator = double*;
+  using size_type = unsigned;
+  using EigenType = Eigen::Matrix<double, nDim, nDim>;
 
-  // Useful static memeber data.
-  static const size_type nDimensions;
-  static constexpr size_type numElements = nDim * nDim;
-  static const GeomTensor zero;
-  static const GeomTensor one;
+  // Useful stuff known at compile time
+  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return nDim * nDim; }
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor zero()                  { return GeomTensor(); }
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor one()                   { return GeomTensor(1.0); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomTensor() = default;
@@ -196,20 +196,6 @@ private:
 };
 
 // Declare specializations.
-#ifndef WIN32
-template<> const unsigned      GeomTensor<1>::nDimensions;
-template<> const GeomTensor<1> GeomTensor<1>::zero;
-template<> const GeomTensor<1> GeomTensor<1>::one;
-
-template<> const unsigned      GeomTensor<2>::nDimensions;
-template<> const GeomTensor<2> GeomTensor<2>::zero;
-template<> const GeomTensor<2> GeomTensor<2>::one;
-
-template<> const unsigned      GeomTensor<3>::nDimensions;
-template<> const GeomTensor<3> GeomTensor<3>::zero;
-template<> const GeomTensor<3> GeomTensor<3>::one;
-#endif
-
 template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const double, const double,
                                                          const double, const double);
 template<> SPHERAL_HOST_DEVICE GeomTensor<3>::GeomTensor(const double, const double, const double,
@@ -379,10 +365,6 @@ template<> SPHERAL_HOST_DEVICE void GeomTensor<3>::rotationalTransform(const Geo
 template<> SPHERAL_HOST_DEVICE double GeomTensor<1>::maxAbsElement() const;
 template<> SPHERAL_HOST_DEVICE double GeomTensor<2>::maxAbsElement() const;
 template<> SPHERAL_HOST_DEVICE double GeomTensor<3>::maxAbsElement() const;
-
-template<> const GeomTensor<1> GeomTensor<1>::zero;
-template<> const GeomTensor<2> GeomTensor<2>::zero;
-template<> const GeomTensor<3> GeomTensor<3>::zero;
 
 // Forward declare the global functions.
 template<int nDim> GeomTensor<nDim> operator*(double lhs, const GeomTensor<nDim>& rhs);

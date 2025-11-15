@@ -73,8 +73,8 @@ parallelSegmentIntersection(const Vector& a0,
                             const double tol) {
   REQUIRE(fuzzyEqual(abs((a1 - a0).dot(b1 - b0)), (a1 - a0).magnitude() * (b1 - b0).magnitude(), tol));
   if (not collinear(a0, a1, b0, tol)) {
-    result1 = Vector::zero;
-    result2 = Vector::zero;
+    result1 = Vector::zero();
+    result2 = Vector::zero();
     return '0';
   }
   const bool a0test = between(b0, b1, a0, tol);
@@ -89,8 +89,8 @@ parallelSegmentIntersection(const Vector& a0,
 
   // No intersection.
   if (num == 0) {
-    result1 = Vector::zero;
-    result2 = Vector::zero;
+    result1 = Vector::zero();
+    result2 = Vector::zero();
     return '0';
   }
 

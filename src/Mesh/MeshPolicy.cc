@@ -99,7 +99,7 @@ update(const KeyType& key,
   REQUIRE(key == HydroFieldNames::mesh);
 
   // Get the state.
-  const FieldList<Dimension, Vector> positions = state.fields(HydroFieldNames::position, Vector::zero);
+  const FieldList<Dimension, Vector> positions = state.fields(HydroFieldNames::position, Vector::zero());
   Mesh<Dimension>& mesh = state.mesh();
   mesh.clear();
 

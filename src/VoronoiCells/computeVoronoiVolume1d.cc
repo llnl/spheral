@@ -64,7 +64,7 @@ computeVoronoiVolume(const FieldList<Dim<1>, Dim<1>::Vector>& position,
   const auto returnCellFaceFlags = cellFaceFlags.size() == numNodeLists;
 
   // Zero out return fields.
-  deltaMedian = Vector::zero;
+  deltaMedian = Vector::zero();
   if (returnSurface) {
     surfacePoint = 0;
     etaVoidPoints = vector<Vector>();

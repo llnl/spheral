@@ -54,44 +54,6 @@ class ArithmeticFieldView:
         "Return the sum of the elements in the FieldView local to each processor."
         return "%(Value)s"
 
-    #...........................................................................
-    # Comparators
-    def __gt__(self):
-        return
-
-    def __lt__(self):
-        return
-
-    def __ge__(self):
-        return "bool"
-
-    def __le__(self):
-        return "bool"
-
-    def __gt__(self, rhs="%(Value)s()"):
-        "Greater than comparision with a %(Value)s"
-        return "bool"
-
-    def __lt__(self, rhs="%(Value)s()"):
-        "Less than comparision with a %(Value)s"
-        return "bool"
-
-    def __ge__(self, rhs="%(Value)s()"):
-        "Greater than or equal comparision with a %(Value)s"
-        return "bool"
-
-    def __le__(self, rhs="%(Value)s()"):
-        "Less than or equal comparision with a %(Value)s"
-        return "bool"
-
-    def applyMin(self):
-        "Enforce a floor on the values of the FieldView."
-        return
-
-    def applyMax(self):
-        "Enforce a ceiling on the values of the FieldView."
-        return
-
 #-------------------------------------------------------------------------------
 # Inject base FieldView methods
 #-------------------------------------------------------------------------------

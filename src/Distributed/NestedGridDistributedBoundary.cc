@@ -494,7 +494,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase) {
 
   // Iterate over the other domains, and examine their occupied grid cells
   // one at a time.
-  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero, "H inverse");
+  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
   dataBase.globalHinverse(Hinverse);
   for (int neighborProc = 0; neighborProc != numProcs; ++neighborProc) {
     CHECK((int)mOccupiedGridCells[neighborProc].size() == numGridLevels);

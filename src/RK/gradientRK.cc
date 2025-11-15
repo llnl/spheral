@@ -118,7 +118,7 @@ gradientRK(const FieldList<Dimension, DataType>& fieldList,
     for (auto i = 0u; i < n; ++i) {
       const auto& Hi = H(nodeListi, i);
       const auto& correctionsi = corrections(nodeListi, i);
-      result(nodeListi, i) += weight(nodeListi, i)*fieldList(nodeListi, i)*WR.evaluateGradient(Vector::zero, Hi, correctionsi);
+      result(nodeListi, i) += weight(nodeListi, i)*fieldList(nodeListi, i)*WR.evaluateGradient(Vector::zero(), Hi, correctionsi);
     }
   }
 
@@ -161,7 +161,7 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
        ++fieldItr) {
     result.appendField(Field<Dimension, std::vector<GradientType>>("grad ",
                                                                    (*fieldItr)->nodeList(),
-                                                                   std::vector<GradientType>(vectorSize, GradientType::zero)));
+                                                                   std::vector<GradientType>(vectorSize, GradientType::zero())));
   }
   
   // Walk all the interacting pairs.
@@ -242,7 +242,7 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
       const auto& Hi = H(nodeListi, i);
       const auto& correctionsi = corrections(nodeListi, i);
       const auto wi = weight(nodeListi, i);
-      const auto gradWi = WR.evaluateGradient(Vector::zero, Hi, correctionsi);
+      const auto gradWi = WR.evaluateGradient(Vector::zero(), Hi, correctionsi);
       const auto& Fi = fieldList(nodeListi, i);
       auto& gradFi = result(nodeListi, i);
       for (auto m = 0u; m < vectorSize; ++m) {

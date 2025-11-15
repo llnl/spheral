@@ -37,7 +37,7 @@ GeomSymmetricTensor<2>::elementIndex(const GeomSymmetricTensor<2>::size_type row
   int i = std::min(row, column);
   int j = std::max(row, column);
   int result = (5 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements);
+  ENSURE(result >= 0 and result < (int)numElements());
   return result;
 }
 
@@ -52,9 +52,36 @@ GeomSymmetricTensor<3>::elementIndex(const GeomSymmetricTensor<3>::size_type row
   int i = std::min(row, column);
   int j = std::max(row, column);
   int result = (7 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements);
+  ENSURE(result >= 0 and result < (int)numElements());
   return result;
 }
+
+//------------------------------------------------------------------------------
+// Unit tensor
+//------------------------------------------------------------------------------
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<1>
+// GeomSymmetricTensor<1>::one() {
+//   return GeomSymmetricTensor<1>(1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<2>
+// GeomSymmetricTensor<2>::one() {
+//   return GeomSymmetricTensor<2>(1.0, 0.0,
+//                                 0.0, 1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<3>
+// GeomSymmetricTensor<3>::one() {
+//   return GeomSymmetricTensor<3>(1.0, 0.0, 0.0,
+//                                 0.0, 1.0, 0.0,
+//                                 0.0, 0.0, 1.0);
+// }
 
 //------------------------------------------------------------------------------
 // Construct with the given values for the elements.
@@ -291,7 +318,7 @@ SPHERAL_HOST_DEVICE
 inline
 double
 GeomSymmetricTensor<nDim>::operator[](typename GeomSymmetricTensor<nDim>::size_type index) const {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -300,7 +327,7 @@ SPHERAL_HOST_DEVICE
 inline
 double&
 GeomSymmetricTensor<nDim>::operator[](typename GeomSymmetricTensor<nDim>::size_type index) {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -655,7 +682,7 @@ SPHERAL_HOST_DEVICE
 inline
 typename GeomSymmetricTensor<nDim>::iterator
 GeomSymmetricTensor<nDim>::end() {
-  return &(this->mxx) + numElements;
+  return &(this->mxx) + numElements();
 }
 
 template<int nDim>
@@ -671,7 +698,7 @@ SPHERAL_HOST_DEVICE
 inline
 typename GeomSymmetricTensor<nDim>::const_iterator
 GeomSymmetricTensor<nDim>::end() const {
-  return &(this->mxx) + numElements;
+  return &(this->mxx) + numElements();
 }
 
 //------------------------------------------------------------------------------
@@ -2342,19 +2369,19 @@ GeomSymmetricTensor<3>::eigenValues() const {
   const double c0 = a00*a11*a22 + 2.0*a01*a02*a12 - a00*a12*a12 - a11*a02*a02 - a22*a01*a01;
   const double c1 = a00*a11 - a01*a01 + a00*a22 - a02*a02 + a11*a22 - a12*a12;
   const double c2 = a00 + a11 + a22;
-  const double c2Div3 = c2*onethird;
-  const double aDiv3 = std::min(0.0, onethird*(c1 - c2*c2Div3));
+  const double c2Div3 = c2*onethird();
+  const double aDiv3 = std::min(0.0, onethird()*(c1 - c2*c2Div3));
   const double mbDiv2 = 0.5*(c0 + c2Div3*(2.0*c2Div3*c2Div3 - c1));
   const double q = std::min(0.0, mbDiv2*mbDiv2 + aDiv3*aDiv3*aDiv3);
   CHECK(-aDiv3 >= 0.0);
   CHECK(-q >= 0.0);
   const double mag = std::sqrt(-aDiv3);
-  const double angle = atan2(std::sqrt(-q), mbDiv2)*onethird;
+  const double angle = atan2(std::sqrt(-q), mbDiv2)*onethird();
   const double cs = cos(angle);
   const double sn = sin(angle);
   return GeomVector<3>(fscale*(c2Div3 + 2.0*mag*cs),
-                       fscale*(c2Div3 - mag*(cs + sqrt3*sn)),
-                       fscale*(c2Div3 - mag*(cs - sqrt3*sn)));
+                       fscale*(c2Div3 - mag*(cs + sqrt3()*sn)),
+                       fscale*(c2Div3 - mag*(cs - sqrt3()*sn)));
 }
 
 //------------------------------------------------------------------------------
@@ -2386,7 +2413,7 @@ GeomSymmetricTensor<2>::eigenVectors() const {
   EigenStruct<2> result;
   if (std::abs(axy) < 1.0e-50) {
     result.eigenValues = diagonalElements();
-    result.eigenVectors = one;
+    result.eigenVectors = one();
   } else {
     const double theta = 0.5*atan2(2.0*axy, ayy - axx);
     const double xhat = cos(theta);

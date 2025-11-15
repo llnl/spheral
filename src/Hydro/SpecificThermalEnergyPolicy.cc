@@ -70,10 +70,10 @@ update(const KeyType& key,
 
   // Get the state field lists
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector>>(HydroFieldNames::pairAccelerations);
-  const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero, true);
+  const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
   const auto& pairs = connectivityMap.nodePairList();
@@ -87,7 +87,7 @@ update(const KeyType& key,
 
   // Check that the partial accelerations sum to the total hydro acceleration, or this isn't going to conserve
   BEGIN_CONTRACT_SCOPE {
-    auto DvDt_check = mDataBasePtr->newFluidFieldList(Vector::zero, "hydro acceleration check");
+    auto DvDt_check = mDataBasePtr->newFluidFieldList(Vector::zero(), "hydro acceleration check");
     for (auto kk = 0u; kk < npairs; ++kk) {
       const auto i = pairs[kk].i_node;
       const auto j = pairs[kk].j_node;

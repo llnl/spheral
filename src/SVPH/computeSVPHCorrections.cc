@@ -105,8 +105,8 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 
   // Zero out the result.
   A = 0.0;
-  B = Vector::zero;
-  gradB = Tensor::zero;
+  B = Vector::zero();
+  gradB = Tensor::zero();
 
   // Figure out which NodeList we're working on.
   const size_t nodeListi = std::distance(volume.begin(), volume.fieldForNodeList(nodeList));
@@ -132,7 +132,7 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 
     // Self contribution.
     A(i) += Vi*W(0.0, Hdeti);
-    gradm1(i) += Vi*W(0.0, Hdeti) * Tensor::one;
+    gradm1(i) += Vi*W(0.0, Hdeti) * Tensor::one();
 
     // Neighbors!
     const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
@@ -171,20 +171,20 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 
       // First moment. 
       m1(i) += Vj*Wj * rij;
-      gradm1(i) += Vj*(Wj*Tensor::one + outerProduct<Dimension>(rij, gradWj));
+      gradm1(i) += Vj*(Wj*Tensor::one() + outerProduct<Dimension>(rij, gradWj));
 
       // Second moment.
       const SymTensor thpt = rij.selfdyad();
       m2(i) += Vj*Wj * thpt;
       // gradm2(i) += Vj*(outerProduct<Dimension>(gradWj, thpt) +
-      //                  Wj*(outerProduct<Dimension>(rij, Tensor::one) + outerProduct<Dimension>(Tensor::one, rij)));
+      //                  Wj*(outerProduct<Dimension>(rij, Tensor::one()) + outerProduct<Dimension>(Tensor::one(), rij)));
       gradm2(i) += Vj*(Wj*gradxij2(rij) + outerProduct<Dimension>(gradWj, thpt));
 
           // // First moment. 
           // m1(i) += Vj*Wj * rij;
           // m1(j) -= Vi*Wi * rij;
-          // gradm1(i) += Vj*( rij*gradWj + Tensor::one*Wj);
-          // gradm1(j) += Vi*(-rij*gradWi + Tensor::one*Wi);
+          // gradm1(i) += Vj*( rij*gradWj + Tensor::one()*Wj);
+          // gradm1(j) += Vi*(-rij*gradWi + Tensor::one()*Wi);
 
           // // Second moment.
           // const SymTensor thpt = rij.selfdyad();
@@ -291,8 +291,8 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 
 //   // Zero out the result.
 //   A = 0.0;
-//   B = Vector::zero;
-//   gradB = Tensor::zero;
+//   B = Vector::zero();
+//   gradB = Tensor::zero();
 
 //   // Walk the FluidNodeLists.
 //   for (size_t nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
@@ -364,7 +364,7 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 //           m1(i) += Vj*Wj * rij;
 //           gradm1(i) += Vj*Wj * Tensor(Wj + rij(0)*gradWj(0),      rij(0)*gradWj(1),
 //                                            rij(1)*gradWj(0), Wj + rij(1)*gradWj(1));
-//           // gradm1(i) += Vj*(Wj*Tensor::one + outerProduct<Dimension>(rij, gradWj));
+//           // gradm1(i) += Vj*(Wj*Tensor::one() + outerProduct<Dimension>(rij, gradWj));
 
 //           // Second moment.
 //           const SymTensor thpt = rij.selfdyad();

@@ -31,7 +31,7 @@ ClippedSphereSolidBoundary(const Vector& center,
   mClipPoint(clipPoint),
   mClipAxis(clipAxis),
   mClipIntersectionRadius(0.0),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
     this->setClipIntersectionRadius();
     mClipAxis = mClipAxis.unitVector();
 }

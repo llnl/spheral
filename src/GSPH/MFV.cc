@@ -118,12 +118,12 @@ MFV(DataBase<Dimension>& dataBase,
   mDvolumeDt(FieldStorageType::CopyFields),
   //mHStretchTensor(FieldStorageType::CopyFields),
   mPairMassFluxPtr() {
-    // mNodalVelocity = dataBase.newFluidFieldList(Vector::zero, GSPHFieldNames::nodalVelocity);
+    // mNodalVelocity = dataBase.newFluidFieldList(Vector::zero(), GSPHFieldNames::nodalVelocity);
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
-    mDmomentumDt = dataBase.newFluidFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
+    mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
     mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
-    //mHStretchTensor = dataBase.newFluidFieldList(SymTensor::zero, "HStretchTensor");
+    //mHStretchTensor = dataBase.newFluidFieldList(SymTensor::zero(), "HStretchTensor");
 }
 
 //------------------------------------------------------------------------------
@@ -147,11 +147,11 @@ registerState(DataBase<Dimension>& dataBase,
 
   GenericRiemannHydro<Dimension>::registerState(dataBase,state);
 
-  // dataBase.resizeFluidFieldList(mNodalVelocity, Vector::zero, GSPHFieldNames::nodalVelocity,false);
+  // dataBase.resizeFluidFieldList(mNodalVelocity, Vector::zero(), GSPHFieldNames::nodalVelocity,false);
 
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  auto position = state.fields(HydroFieldNames::position,Vector::zero);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto position = state.fields(HydroFieldNames::position,Vector::zero());
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto volume = state.fields(HydroFieldNames::volume, 0.0);
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
@@ -212,9 +212,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   GenericRiemannHydro<Dimension>::registerDerivatives(dataBase,derivs);
   dataBase.resizeFluidFieldList(mDmassDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, false);
   dataBase.resizeFluidFieldList(mDthermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, false);
-  dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
+  dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
   dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, false);
-  //dataBase.resizeFluidFieldList(mHStretchTensor,SymTensor::zero, "HStretchTensor", false);
+  //dataBase.resizeFluidFieldList(mHStretchTensor,SymTensor::zero(), "HStretchTensor", false);
   derivs.enroll(mDmassDt);
   derivs.enroll(mDthermalEnergyDt);
   derivs.enroll(mDmomentumDt);
@@ -238,8 +238,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 
   if(this->densityUpdate() == MassDensityType::RigorousSumDensity){
     
-    const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
           auto  volume = state.fields(HydroFieldNames::volume, 0.0);
@@ -286,7 +286,7 @@ finalizeDerivatives(const typename Dimension::Scalar time,
                     StateDerivatives<Dimension>& derivs) const {
   // hackish solution and I should be ashamed.
   if (this->compatibleEnergyEvolution()) {
-    auto DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero);
+    auto DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero());
     auto DmDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, 0.0);
     for (ConstBoundaryIterator boundaryItr = this->boundaryBegin();
          boundaryItr != this->boundaryEnd();
@@ -311,7 +311,7 @@ applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   GenericRiemannHydro<Dimension>::applyGhostBoundaries(state,derivs);
 
-  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
+  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero());
 
   // for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
   //      boundaryItr != this->boundaryEnd();
@@ -330,7 +330,7 @@ enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
   GenericRiemannHydro<Dimension>::enforceBoundaries(state,derivs);
 
-  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero);
+  // auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero());
 
   // for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
   //      boundaryItr != this->boundaryEnd();

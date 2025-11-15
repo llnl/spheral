@@ -31,16 +31,16 @@ class GeomVector: public GeomVectorBase<nDim> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef const double* const_iterator;
-  typedef double* iterator;
-  typedef unsigned size_type;
-  typedef Eigen::Matrix<double, nDim, 1> EigenType;
+  using const_iterator = const double*;
+  using iterator = double*;
+  using size_type = unsigned;
+  using EigenType = Eigen::Matrix<double, nDim, 1>;
 
-  // Useful static member data.
-  static const size_type nDimensions;
-  static const size_type numElements;
-  static const GeomVector zero;
-  static const GeomVector one;
+  // Useful stuff known at compile time
+  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return nDim; }
+  SPHERAL_HOST_DEVICE static constexpr GeomVector zero()                  { return GeomVector(); }
+  SPHERAL_HOST_DEVICE static constexpr GeomVector one()                   { return GeomVector(1.0); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE
@@ -54,11 +54,11 @@ public:
   template<typename Derived> GeomVector& operator=(const Eigen::MatrixBase<Derived>& vec);
 
   // Allow the elements by indicies.
-  SPHERAL_HOST_DEVICE double operator()(size_type index) const;
-  SPHERAL_HOST_DEVICE double& operator()(size_type index);
+  SPHERAL_HOST_DEVICE double  operator()(const size_type index) const;
+  SPHERAL_HOST_DEVICE double& operator()(const size_type index);
 
   // More C++ style indexing.
-  SPHERAL_HOST_DEVICE double operator[](size_type index) const;
+  SPHERAL_HOST_DEVICE double  operator[](size_type index) const;
   SPHERAL_HOST_DEVICE double& operator[](size_type index);
 
   // Access the individual elements by (x, y, z) notation.

@@ -110,12 +110,12 @@ evaluateDerivatives(const Scalar /*time*/,
   // Get the state fields.
   const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, mNodeList.name()); };
   const auto& rhoS = state.field(buildKey(SolidFieldNames::porositySolidDensity), 0.0);
-  const auto& DvDx = derivs.field(buildKey(HydroFieldNames::velocityGradient), Tensor::zero);
+  const auto& DvDx = derivs.field(buildKey(HydroFieldNames::velocityGradient), Tensor::zero());
   const auto& strain = state.field(buildKey(SolidFieldNames::porosityStrain), 0.0);
   const auto& alpha = state.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
   const auto& DuDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy), 0.0);
   // const auto& DrhoDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity), 0.0);
-  // const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero);
+  // const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero());
   auto&       DstrainDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityStrain), 0.0);
   auto&       DalphaDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   auto&       fDSnew = derivs.field(buildKey(ReplaceBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::fDSjutzi), 0.0);

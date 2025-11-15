@@ -514,9 +514,9 @@ sampleMultipleFields2Lattice(const FieldListSet<Dimension>& fieldListSet,
   // Calculate the size of the packed data per position.
 #ifdef SPHERAL_ENABLE_MPI
   const int sizeOfElement = (numScalarFieldLists*DataTypeTraits<Scalar>::numElements(0.0)*sizeof(typename DataTypeTraits<Scalar>::ElementType) +
-                             numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero)*sizeof(typename DataTypeTraits<Vector>::ElementType) +
-                             numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero)*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
-                             numSymTensorFieldLists*DataTypeTraits<SymTensor>::numElements(SymTensor::zero)*sizeof(typename DataTypeTraits<SymTensor>::ElementType));
+                             numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero())*sizeof(typename DataTypeTraits<Vector>::ElementType) +
+                             numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero())*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
+                             numSymTensorFieldLists*DataTypeTraits<SymTensor>::numElements(SymTensor::zero())*sizeof(typename DataTypeTraits<SymTensor>::ElementType));
 #endif
 
   // Figure out what we have to send to other processors.

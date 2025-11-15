@@ -168,7 +168,7 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
                            fieldList(fieldList.internalNodeBegin()).size() :
                            0);
   
- // Return FieldList.
+  // Return FieldList.
   FieldList<Dimension, std::vector<GradientType>> result;
   vector< vector<bool> > flagNodeDone(fieldList.numFields());
   result.copyFields();
@@ -178,7 +178,7 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
        ++fieldItr) {
     result.appendField(Field<Dimension, std::vector<GradientType>>("grad",
                                                                    (*fieldItr)->nodeList(),
-                                                                   std::vector<GradientType>(vectorSize, GradientType::zero)));
+                                                                   std::vector<GradientType>(vectorSize, GradientType::zero())));
     flagNodeDone[fieldItr - fieldList.begin()].resize((*fieldItr)->nodeListPtr()->numInternalNodes(), false);
   }
 
@@ -374,7 +374,7 @@ limiter(const FieldList<Dimension, DataType>& fieldList,
         const GradientType& gradi = gradient(masterItr);
 
         // Prepare the result for this node.
-        SymTensor phi = SymTensor::one;
+        SymTensor phi = SymTensor::one();
 
         // We iterate on the limiter.
         int iter = 0;
@@ -406,7 +406,7 @@ limiter(const FieldList<Dimension, DataType>& fieldList,
             const Scalar Wi = kernel(etai.magnitude(), 1.0)/W0;
             CHECK(Wi >= 0.0 and Wi <= 1.0);
             weightSum += Wi;
-            phii += Wi*phiij/(phiij*phiij + tiny) * SymTensor::one;
+            phii += Wi*phiij/(phiij*phiij + tiny) * SymTensor::one();
             phimin = min(phimin, Wi*phiij + (1.0 - Wi)*phimin);
           }
 

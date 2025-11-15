@@ -101,13 +101,13 @@ CRKSPHBase(DataBase<Dimension>& dataBase,
   mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
   mSoundSpeed = dataBase.newFluidFieldList(0.0, HydroFieldNames::soundSpeed);
   mEntropy = dataBase.newFluidFieldList(0.0, HydroFieldNames::entropy);
-  mXSPHDeltaV = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::XSPHDeltaV);
-  mDxDt = dataBase.newFluidFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
-  mDvDt = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::hydroAcceleration);
+  mXSPHDeltaV = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::XSPHDeltaV);
+  mDxDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
+  mDvDt = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::hydroAcceleration);
   mDmassDensityDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity);
   mDspecificThermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy);
-  mDvDx = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::velocityGradient);
-  mInternalDvDx = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::internalVelocityGradient);
+  mDvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::velocityGradient);
+  mInternalDvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::internalVelocityGradient);
 }
 
 //------------------------------------------------------------------------------
@@ -209,13 +209,13 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // Note we deliberately do not zero out the derivatives here!  This is because the previous step
   // info here may be used by other algorithms (like the CheapSynchronousRK2 integrator or
   // the ArtificialVisocisity::initialize step).
-  dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero, HydroFieldNames::XSPHDeltaV, false);
-  dataBase.resizeFluidFieldList(mDxDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
-  dataBase.resizeFluidFieldList(mDvDt, Vector::zero, HydroFieldNames::hydroAcceleration, false);
+  dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero(), HydroFieldNames::XSPHDeltaV, false);
+  dataBase.resizeFluidFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
+  dataBase.resizeFluidFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);
   dataBase.resizeFluidFieldList(mDmassDensityDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, false);
   dataBase.resizeFluidFieldList(mDspecificThermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, false);
-  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::velocityGradient, false);
-  dataBase.resizeFluidFieldList(mInternalDvDx, Tensor::zero, HydroFieldNames::internalVelocityGradient, false);
+  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero(), HydroFieldNames::velocityGradient, false);
+  dataBase.resizeFluidFieldList(mInternalDvDx, Tensor::zero(), HydroFieldNames::internalVelocityGradient, false);
 
   derivs.enroll(mXSPHDeltaV);
 
@@ -253,8 +253,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto& W = WR.kernel();
     const auto& connectivityMap = dataBase.connectivityMap();
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
-    const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+    const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
     const auto  vol = state.fields(HydroFieldNames::volume, 0.0);
     if (densityUpdate() == MassDensityType::RigorousSumDensity) {
       computeCRKSPHSumMassDensity(connectivityMap, W, position, mass, vol, H, massDensity);
@@ -283,7 +283,7 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
   // If we're using the compatible energy discretization, we need to enforce
   // boundary conditions on the accelerations.
   if (compatibleEnergyEvolution()) {
-    auto accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+    auto accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
     auto DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
     for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) {
       boundaryPtr->applyFieldListGhostBoundary(accelerations);
@@ -307,7 +307,7 @@ applyGhostBoundaries(State<Dimension>& state,
   // Apply boundary conditions to the basic fluid state Fields.
   // volume, mass, and massDensity handled by RKCorrections
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto entropy = state.fields(HydroFieldNames::entropy, 0.0);
@@ -335,7 +335,7 @@ enforceBoundaries(State<Dimension>& state,
   // Enforce boundary conditions on the fluid state Fields.
   // volume, mass, and massDensity handled by RKCorrections
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto entropy = state.fields(HydroFieldNames::entropy, 0.0);

@@ -65,7 +65,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::effectiveStrainTensor);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   const auto tiny = 1.0e-15;
 
@@ -73,16 +73,16 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state fields.
-  auto&       strain = state.field(buildKey(SolidFieldNames::strainTensor), SymTensor::zero);
+  auto&       strain = state.field(buildKey(SolidFieldNames::strainTensor), SymTensor::zero());
   const auto& E = state.field(buildKey(SolidFieldNames::YoungsModulus), 0.0);
   const auto& K = state.field(buildKey(SolidFieldNames::bulkModulus), 0.0);
   const auto& mu = state.field(buildKey(SolidFieldNames::shearModulus), 0.0);
   const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
   const auto& plasticStrain = state.field(buildKey(SolidFieldNames::plasticStrain), 0.0);
-  const auto& S = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero);
-  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
-  const auto& gradv = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero);
-  const auto& DSDt = derivs.field(buildKey(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress), SymTensor::zero);
+  const auto& S = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero());
+  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
+  const auto& gradv = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero());
+  const auto& DSDt = derivs.field(buildKey(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress), SymTensor::zero());
 
   // Check if a porosity model has registered a modifier for the deviatoric stress.
   // They should have added it as a dependency of this policy if so.
@@ -138,7 +138,7 @@ update(const KeyType& key,
 
       case(TensorStrainAlgorithm::BenzAsphaugStrain):
         CHECK2(E(i) >= 0.0, "Bad Youngs modulus for " << stateField.nodeList().name() << " " << i << " : " << E(i));
-        stateField(i) = (S(i) - P(i)*SymTensor::one)/(E(i) + tiny);
+        stateField(i) = (S(i) - P(i)*SymTensor::one())/(E(i) + tiny);
         break;
 
       case(TensorStrainAlgorithm::StrainHistory):
@@ -146,11 +146,11 @@ update(const KeyType& key,
         break;
 
       case(TensorStrainAlgorithm::MeloshRyanAsphaugStrain):
-        stateField(i) = ((K(i) - 2.0*mu(i)/Dimension::nDim)*volstrain*SymTensor::one + 2.0*mu(i)*strain(i))/(E(i) + tiny);
+        stateField(i) = ((K(i) - 2.0*mu(i)/Dimension::nDim)*volstrain*SymTensor::one() + 2.0*mu(i)*strain(i))/(E(i) + tiny);
         break;
 
       case(TensorStrainAlgorithm::PlasticStrain):
-        stateField(i) = plasticStrain(i)*SymTensor::one;
+        stateField(i) = plasticStrain(i)*SymTensor::one();
         break;
 
       default:

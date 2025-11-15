@@ -7,11 +7,11 @@ from PYB11Generator import *
 class Vector:
     "Spheral Geometric Vector class"
 
-    # Static attributes
-    nDimensions = PYB11readonly(static=True, returnpolicy="copy", doc="Number of dimensions")
-    numElements = PYB11readonly(static=True, returnpolicy="copy", doc="Number of elements stored in the type")
-    zero = PYB11readonly(static=True, returnpolicy="copy", doc="The zero value equivalent")
-    one = PYB11readonly(static=True, returnpolicy="copy", doc="The unit value equivalent")
+    # constexpr attributes
+    nDimensions = PYB11property(doc="Number of dimensions")
+    numElements = PYB11property(doc="Number of elements stored in the type")
+    zero = PYB11property(doc="The zero value equivalent")
+    one = PYB11property(doc="The one value equivalent")
 
     # Constructors
     def pyinit0(self):
@@ -111,13 +111,13 @@ class Vector:
     def __len__(self):
         "The size (in number of coordinates) of the Vector."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::Vector &s, size_t i) -> double { if (i >= Dim<%(ndim)s>::Vector::numElements) throw py::index_error(); return s[i]; }") 
+    @PYB11implementation("[](const Dim<%(ndim)s>::Vector &s, size_t i) -> double { if (i >= Dim<%(ndim)s>::Vector::numElements()) throw py::index_error(); return s[i]; }") 
     @PYB11returnpolicy("reference_internal")
     def __getitem__(self):
         "Python indexing to get a coordinate."
         return "double"
 
-    @PYB11implementation("[](Dim<%(ndim)s>::Vector &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::Vector::numElements) throw py::index_error(); s[i] = v; }") 
+    @PYB11implementation("[](Dim<%(ndim)s>::Vector &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::Vector::numElements()) throw py::index_error(); s[i] = v; }") 
     def __setitem__(self):
         "Python indexing to set a coordinate."
         return "void"
