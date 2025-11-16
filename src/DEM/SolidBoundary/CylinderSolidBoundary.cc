@@ -20,15 +20,17 @@ namespace Spheral {
 template<typename Dimension>
 CylinderSolidBoundary<Dimension>::
 CylinderSolidBoundary(const Vector& point, 
-               const Vector& axis, 
-               const Scalar radius, 
-               const Scalar length):
+                      const Vector& axis, 
+                      const Scalar radius, 
+                      const Scalar length,
+                      const RotationType& angularVelocity):
   SolidBoundaryBase<Dimension>(),
   mPoint(point),
   mAxis(axis),
   mRadius(radius),
   mLength(length),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero),
+  mAngularVelocity(angularVelocity){
 }
 
 template<typename Dimension>
@@ -52,7 +54,15 @@ template<typename Dimension>
 typename Dimension::Vector
 CylinderSolidBoundary<Dimension>::
 localVelocity(const Vector& position) const { 
-  return mVelocity;
+  // Calculate the vector from the axis of rotation to the position
+  const auto p = position - mPoint;
+  const auto pnMag = p.dot(mAxis);
+  const auto pn = pnMag * mAxis;
+  const auto r = p - pn; // Radial vector from the axis to the position
+
+  // Calculate the tangential velocity due to angular velocity
+  const auto tangentialVelocity = DEMDimension<Dimension>::cross(r,mAngularVelocity);
+  return mVelocity + tangentialVelocity;
 }
 
 template<typename Dimension>
@@ -62,11 +72,17 @@ registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {   
   const auto boundaryKey = "CylinderSolidBoundary_" + std::to_string(std::abs(this->uniqueIndex()));
   const auto pointKey = boundaryKey +"_point";
+  const auto axisKey = boundaryKey +"_axis";
+  const auto radiusKey = boundaryKey +"_radius";
+  const auto lengthKey = boundaryKey +"_length";
   const auto velocityKey = boundaryKey +"_velocity";
-  //const auto normalKey = boundaryKey +"_normal";
+  const auto angularVelocityKey = boundaryKey + "_angularVelocity"; // Key for angular velocity
   state.enroll(pointKey,mPoint);
-  state.enroll(pointKey,mVelocity);
-  //state.enroll(pointKey,mNormal);
+  state.enroll(axisKey,mAxis);
+  state.enroll(radiusKey,mRadius);
+  state.enroll(lengthKey,mLength);
+  state.enroll(velocityKey,mVelocity);
+  state.enroll(angularVelocityKey, mAngularVelocity); // Enroll angular velocity
 }
 
 template<typename Dimension>
@@ -74,6 +90,7 @@ void
 CylinderSolidBoundary<Dimension>::
 update(const double multiplier, const double t, const double dt) {   
   mPoint += multiplier*mVelocity;
+  // If we want more complex rotation we'll need more complex logic here.
 }
 
 //------------------------------------------------------------------------------
@@ -88,6 +105,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mRadius, pathName + "/radius");
   file.write(mLength, pathName + "/length");
   file.write(mVelocity, pathName + "/velocity");
+  file.write(mAngularVelocity, pathName + "/omega"); // Write angular velocity
 }
 
 
@@ -100,6 +118,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mRadius, pathName + "/radius");
   file.read(mLength, pathName + "/length");
   file.read(mVelocity, pathName + "/velocity");
+  file.read(mAngularVelocity, pathName + "/omega"); // Read angular velocity
 }
 
 

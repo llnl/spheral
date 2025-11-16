@@ -32,7 +32,15 @@ class GenerateDEMfromSPHGenerator1d(NodeGeneratorBase):
 
         # set up our initial radius
         #--------------------------------------------------
-        if type(particleRadius) in [float,int]:
+        if isinstance(particleRadius, list):
+            radii = list(particleRadius)
+            counter = {"i" : 0}
+            def radiusFunc(position):
+                r = radii[counter["i"]]
+                counter["i"] += 1
+                return r
+            self.particleRadiusFunc = radiusFunc
+        elif type(particleRadius) in [float,int]:
             self.particleRadiusFunc = constantRadiusFunc
         elif hasattr(particleRadius,"__call__"):
             self.particleRadiusFunc = particleRadius

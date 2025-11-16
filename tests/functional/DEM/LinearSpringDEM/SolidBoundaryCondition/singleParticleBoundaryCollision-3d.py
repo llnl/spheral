@@ -201,7 +201,9 @@ dem = DEM(db,
 
 packages = [dem]
 
-solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), Vector(  0.0, 0.0, 1.0))
+solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                       Vector(0.0, 0.0, 1.0),
+                                       Vector(0.0, 0.0, 0.0))
 dem.appendSolidBoundary(solidWall)
 
 #-------------------------------------------------------------------------------
