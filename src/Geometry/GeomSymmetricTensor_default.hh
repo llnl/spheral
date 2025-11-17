@@ -38,11 +38,11 @@ public:
   typedef EigenStruct<nDim> EigenStructType;
 
   // Useful static memeber data.
-  static constexpr size_type nDimensions = nDim;
+  static const size_type nDimensions;
   static constexpr size_type numElements = (nDim * (nDim+1)) / 2;
   static const GeomSymmetricTensor zero;
   static const GeomSymmetricTensor one;
-  static constexpr double onethird = 1.0/3.0;
+  static const double onethird;
   static const double sqrt3;
 
   // Constructors.
@@ -216,6 +216,12 @@ private:
 };
 
 // Declare specializations.
+#ifndef WIN32
+template<> const unsigned GeomSymmetricTensor<1>::nDimensions;
+template<> const unsigned GeomSymmetricTensor<2>::nDimensions;
+template<> const unsigned GeomSymmetricTensor<3>::nDimensions;
+#endif
+
 template<> GeomVector<1> GeomSymmetricTensor<1>::eigenValues() const;
 template<> GeomVector<2> GeomSymmetricTensor<2>::eigenValues() const;
 template<> GeomVector<3> GeomSymmetricTensor<3>::eigenValues() const;
@@ -382,6 +388,10 @@ template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::zero;
 template<> const GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one;
 template<> const GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one;
 template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one;
+
+template<> const double GeomSymmetricTensor<1>::onethird;
+template<> const double GeomSymmetricTensor<2>::onethird;
+template<> const double GeomSymmetricTensor<3>::onethird;
 
 template<> const double GeomSymmetricTensor<1>::sqrt3;
 template<> const double GeomSymmetricTensor<2>::sqrt3;
