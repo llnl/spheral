@@ -244,10 +244,6 @@ template<> const GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one = GeomSymmet
                                                                                              0.0, 1.0, 0.0,
                                                                                              0.0, 0.0, 1.0);
 
-template<> const double GeomSymmetricTensor<1>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<2>::onethird = 1.0/3.0;
-template<> const double GeomSymmetricTensor<3>::onethird = 1.0/3.0;
-
 template<> const double GeomSymmetricTensor<1>::sqrt3 = std::sqrt(3.0);
 template<> const double GeomSymmetricTensor<2>::sqrt3 = std::sqrt(3.0);
 template<> const double GeomSymmetricTensor<3>::sqrt3 = std::sqrt(3.0);
