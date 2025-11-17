@@ -8,10 +8,10 @@ class FourthRankTensor:
     "Spheral fourth rank tensor (%(ndim)sx%(ndim)sx%(ndim)sx%(ndim)s) class"
 
     # constexpr attributes
-    nrank = PYB11property(doc="Rank of the tensor")
-    nDimensions = PYB11property(doc="Number of dimensions")
-    numElements = PYB11property(doc="Number of elements stored in the type")
-    zero = PYB11property(doc="The zero value equivalent")
+    nrank = PYB11property(constexpr=True, static=True, doc="Rank of the tensor")
+    nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
+    numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
+    zero = PYB11property(constexpr=True, static=True, doc="The zero value equivalent")
 
     # Constructors
     def pyinit0(self):

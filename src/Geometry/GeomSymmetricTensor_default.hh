@@ -43,7 +43,7 @@ public:
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
   SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return (nDim * (nDim+1)) / 2; }
   SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor zero()         { return GeomSymmetricTensor(); }
-  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one()          { return GeomSymmetricTensor(1.0); }
+  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one();
   SPHERAL_HOST_DEVICE static constexpr double onethird()                  { return 1.0/3.0; }
   SPHERAL_HOST_DEVICE static constexpr double sqrt3()                     { return std::sqrt(3.0); }
 
@@ -211,6 +211,10 @@ private:
   //--------------------------- Private Interface ---------------------------//
   SPHERAL_HOST_DEVICE size_type elementIndex(const size_type row, const size_type column) const;
 };
+
+template<> SPHERAL_HOST_DEVICE constexpr GeomSymmetricTensor<1> GeomSymmetricTensor<1>::one() { GeomSymmetricTensor result; result.mxx = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomSymmetricTensor<2> GeomSymmetricTensor<2>::one() { GeomSymmetricTensor result; result.mxx = 1.0; result.myy = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomSymmetricTensor<3> GeomSymmetricTensor<3>::one() { GeomSymmetricTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; }
 
 template<> SPHERAL_HOST_DEVICE GeomVector<1> GeomSymmetricTensor<1>::eigenValues() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<2> GeomSymmetricTensor<2>::eigenValues() const;

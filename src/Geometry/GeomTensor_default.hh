@@ -43,16 +43,16 @@ public:
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
   SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return nDim * nDim; }
   SPHERAL_HOST_DEVICE static constexpr GeomTensor zero()                  { return GeomTensor(); }
-  SPHERAL_HOST_DEVICE static constexpr GeomTensor one()                   { return GeomTensor(1.0); }
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor one();
 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomTensor() = default;
   SPHERAL_HOST_DEVICE explicit GeomTensor(const double a11);
   SPHERAL_HOST_DEVICE GeomTensor(const double a11, const double a12,
-             const double a21, const double a22);
+                                 const double a21, const double a22);
   SPHERAL_HOST_DEVICE GeomTensor(const double a11, const double a12, const double a13,
-             const double a21, const double a22, const double a23,
-             const double a31, const double a32, const double a33);
+                                 const double a21, const double a22, const double a23,
+                                 const double a31, const double a32, const double a33);
   SPHERAL_HOST_DEVICE explicit GeomTensor(const GeomSymmetricTensor<nDim>& ten);
   GeomTensor(const EigenType& ten);
   template<typename Derived> GeomTensor(const Eigen::MatrixBase<Derived>& ten);
@@ -196,6 +196,10 @@ private:
 };
 
 // Declare specializations.
+template<> SPHERAL_HOST_DEVICE constexpr GeomTensor<1> GeomTensor<1>::one() { GeomTensor result; result.mxx = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomTensor<2> GeomTensor<2>::one() { GeomTensor result; result.mxx = 1.0; result.myy = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomTensor<3> GeomTensor<3>::one() { GeomTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; }
+
 template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const double, const double,
                                                          const double, const double);
 template<> SPHERAL_HOST_DEVICE GeomTensor<3>::GeomTensor(const double, const double, const double,

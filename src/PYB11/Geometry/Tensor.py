@@ -8,10 +8,10 @@ class Tensor:
     "Spheral geometric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
     # constexpr attributes
-    nDimensions = PYB11property(doc="Number of dimensions")
-    numElements = PYB11property(doc="Number of elements stored in the type")
-    zero = PYB11property(doc="The zero value equivalent")
-    one = PYB11property(doc="The one value equivalent")
+    nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
+    numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
+    zero = PYB11property(constexpr=True, static=True, doc="The zero value equivalent")
+    one = PYB11property(constexpr=True, static=True, doc="The one value equivalent")
 
     # Constructors
     def pyinit0(self):
