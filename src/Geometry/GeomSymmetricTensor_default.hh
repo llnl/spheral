@@ -40,7 +40,7 @@ public:
   typedef EigenStruct<nDim> EigenStructType;
 
   // Useful static memeber data.
-  static const size_type nDimensions;
+  static constexpr size_type nDimensions = nDim;
   static constexpr size_type numElements = (nDim * (nDim+1)) / 2;
   static const GeomSymmetricTensor zero;
   static const GeomSymmetricTensor one;
@@ -213,12 +213,6 @@ private:
 };
 
 // Declare specializations.
-#ifndef WIN32
-template<> const unsigned GeomSymmetricTensor<1>::nDimensions;
-template<> const unsigned GeomSymmetricTensor<2>::nDimensions;
-template<> const unsigned GeomSymmetricTensor<3>::nDimensions;
-#endif
-
 template<> SPHERAL_HOST_DEVICE GeomVector<1> GeomSymmetricTensor<1>::eigenValues() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<2> GeomSymmetricTensor<2>::eigenValues() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<3> GeomSymmetricTensor<3>::eigenValues() const;
