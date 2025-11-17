@@ -39,7 +39,7 @@ public:
 
   // Useful static memeber data.
   static constexpr size_type nDimensions = nDim;
-  static constexpr size_type numElements = (nDim == 1 ? 1 : (nDim == 2 ? 3 : (nDim == 3 ? 6 : 0)));
+  static constexpr size_type numElements = (nDim * (nDim+1)) / 2;
   static const GeomSymmetricTensor zero;
   static const GeomSymmetricTensor one;
   static constexpr double onethird = 1.0/3.0;
