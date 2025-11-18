@@ -266,7 +266,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
 
   install(TARGETS     ${MODULE_NAME}
-          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
+          DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
 
