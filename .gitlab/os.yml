@@ -4,7 +4,6 @@
 .sys_config:
   variables:
     LLNL_SERVICE_USER: sphapp
-    UPSTREAM_DIR: /usr/WS2/sduser/Spheral/spack_upstream/0.22
     DISPLAY: ':0.0'
 
 .on_toss_4_x86:

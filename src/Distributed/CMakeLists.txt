@@ -13,7 +13,6 @@ set(Distributed_headers
     Communicator.hh
     Process.hh
     RegisterMPIDataTypes.hh
-    RegisterMPIDataTypesInline.hh
     )
 
 if (ENABLE_MPI)
@@ -50,14 +49,12 @@ if (ENABLE_MPI)
 
  list(APPEND Distributed_headers
       BoundingVolumeDistributedBoundary.hh
-      BoundingVolumeDistributedBoundaryInline.hh
       CompareDomainNodesByPosition.hh
       DistributeByXPosition.hh
       DistributedBoundary.hh
       DistributedBoundaryInline.hh
       MortonOrderRedistributeNodes.hh
       NestedGridDistributedBoundary.hh
-      NestedGridDistributedBoundaryInline.hh
       NestedGridRedistributeNodes.hh
       NestedGridRedistributeNodesInline.hh
       NestedGridUtilities.hh
@@ -73,7 +70,6 @@ if (ENABLE_MPI)
       SortAndDivideRedistributeNodesInline.hh
       SpaceFillingCurveRedistributeNodes.hh
       TreeDistributedBoundary.hh
-      TreeDistributedBoundaryInline.hh
       VoronoiRedistributeNodes.hh
       waitAllWithDeadlockDetection.hh
       )

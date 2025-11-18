@@ -3,7 +3,10 @@
 # ------------------------------------------------------------------------------
 
 .init:
+  variables:
+    GIT_STRATEGY: clone
   stage: init
+  extends: [.no_update_sched]
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
@@ -83,7 +86,7 @@
 
 # Run the performance suite and move the resulting Caliper files into the benchmark location
 .run_perf:
-  extends: [.retry_rule]
+  extends: [.retry_rule, .perf_pr_rule]
   stage: run_perf
   variables:
     GIT_STRATEGY: none
@@ -102,6 +105,7 @@
 
 .cleanup_dir:
   stage: cleanup
+  extends: [.cleanup_rule]
   variables:
     GIT_STRATEGY: empty
   script:
@@ -118,16 +122,16 @@
 
 .update_tpls:
   stage: update_tpls
-  script:
-    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
-
-.toss_update_permissions:
-  stage: update_permissions
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
+  extends: [.merge_pr_rule]
+  # This allows us to update upstreams with an inactive scheduled pipeline
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $RUN_UPDATE_UPSTREAMS == "true"
+      when: always
   script:
-    - ml load mpifileutils
-    - dchmod --mode go+rx $UPSTREAM_DIR
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
+  dependencies: []
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
@@ -214,6 +218,7 @@
   stage: cleanup
   variables:
     GIT_STRATEGY: none
+  extends: [.no_update_sched]
   script:
     - cd $SPHERAL_BUILDS_DIR
 
@@ -223,6 +228,12 @@
 
     - ml load mpifileutils
     - if [[ $DIR_LIST ]]; then $RUN_CMD -n 20 drm $DIR_LIST; else echo "No directories to remove at this time."; fi
+
+.no_update_sched:
+  rules:
+    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
+      when: never
+    - when: always
 
 .merge_pr_rule:
   rules:
@@ -245,6 +256,7 @@
 
 # Must skip cleanup if running the performance stage
 .cleanup_rule:
+  extends: [.no_update_sched]
   rules:
     - if: '$CI_COMMIT_REF_NAME == "develop"'
       when: never
@@ -252,6 +264,7 @@
       when: never
 
 .retry_rule:
+  extends: [.no_update_sched]
   retry:
     max: 2
     when: job_execution_timeout

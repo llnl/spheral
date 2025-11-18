@@ -11,6 +11,9 @@ packages:
       pil: [py-pillow]
       jpeg: [libjpeg]
       zlib-api: [zlib]
+    permissions:
+      read: group
+      write: group
   gcc:
     externals:
     - spec: gcc@10.3.1 languages:='c,c++,fortran'

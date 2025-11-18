@@ -14,7 +14,8 @@ class Polytope(CMakePackage):
     git = "https://github.com/LLNL/polytope.git"
     url = "https://github.com/LLNL/polytope/archive/0.7.3.tar.gz"
     # DO NOT COMMIT, FOR TESTING ONLY
-    version('master', commit='2340f57683151e2fd862702f229792423e7bcf0b', submodules=True, preferred=True)
+    version('master', commit='f09d1b55162538330d592baa48f32bee75f136ec', submodules=True, preferred=True)
+    version('prior-master', commit='2340f57683151e2fd862702f229792423e7bcf0b', submodules=True)
     version('0.7.3', tag='0.7.3', submodules=True)
 
     variant('python', default=True, description='Enable Python Support.')
@@ -24,7 +25,6 @@ class Polytope(CMakePackage):
 
     extends('python', when='+python')
     depends_on('python@3: +zlib +shared', type=('build', 'run'), when='+python')
-    depends_on('py-decorator', type=('build', 'run'), when='+python')
     depends_on('boost', type=('build', 'run'))
     patch('polytope_cxx.patch', when='^boost@1.82:')
 
