@@ -1,0 +1,35 @@
+From 71fba7ae6af35c90ef0af27fe1627c77d237e4d5 Mon Sep 17 00:00:00 2001
+From: Marty McFadden <mcfadden8@llnl.gov>
+Date: Thu, 13 Nov 2025 16:09:54 -0800
+Subject: [PATCH] Fix LTO multiple definition issue with gcc13
+
+---
+ src/chai/ManagedArray.hpp | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/chai/ManagedArray.hpp b/src/chai/ManagedArray.hpp
+index 2cd84e7..e590db4 100644
+--- a/src/chai/ManagedArray.hpp
++++ b/src/chai/ManagedArray.hpp
+@@ -25,6 +25,8 @@ inline ExecutionSpace get_default_space() {
+   return ArrayManager::getInstance()->getDefaultAllocationSpace();
+ }
+ 
++inline void default_callback(const PointerRecord*, Action, ExecutionSpace) {}
++
+ }
+ 
+ 
+@@ -126,8 +128,7 @@ public:
+    */
+   CHAI_HOST void allocate(size_t elems,
+                           ExecutionSpace space = NONE,
+-                          const UserCallback& cback =
+-                          [] (const PointerRecord*, Action, ExecutionSpace) {});
++                          const UserCallback& cback = default_callback);
+ 
+ 
+ 
+-- 
+2.29.1
+

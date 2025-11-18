@@ -18,58 +18,50 @@
 #   sudo docker run -it (spheral-build-env/spheral)
 
 
+
 # -----------------------------------------------------------------------------
 # SPHERAL-BUILD-ENV
 # -----------------------------------------------------------------------------
-FROM ubuntu:24.04 AS spheral-build-env-local
+FROM ubuntu:22.04 AS spheral-build-env-local
 
 ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
 
+# Update Ubuntu and install necessary packages.
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y
 RUN apt-get upgrade -y
-RUN apt-get install -y ca-certificates gcc-9 g++-9 gfortran-9 make git autotools-dev autoconf sqlite3 pkg-config uuid gettext cmake libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python3 unzip libtool wget curl libcurl4-openssl-dev tk-dev flex
-RUN apt-get install -y python3-dev python3-venv python3-pip iputils-ping
-RUN apt-get remove -y gcc-13 g++-13 cpp-13 libstdc++-13-dev || true
-RUN apt-get autoremove -y
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gfortran gfortran /usr/bin/gfortran-9
-ENV CC=gcc-9
-ENV CXX=g++-9
-ENV FC=gfortran-9
-RUN cd /tmp && \
-    wget --no-check-certificate https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-5.0.6.tar.gz && \
-    tar -xzf openmpi-5.0.6.tar.gz && \
-    cd openmpi-5.0.6 && \
-    ./configure --prefix=/usr --enable-mpi-fortran=yes && \
-    make -j32 && \
-    make install && \
-    cd .. && \
-    rm -rf openmpi-5.0.6 openmpi-5.0.6.tar.gz
+RUN apt-get install -y build-essential git gfortran mpich autotools-dev autoconf sqlite3 pkg-config uuid gettext cmake libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python3 unzip libtool wget curl libcurl4-openssl-dev tk-dev
+RUN apt-get install -y python3-dev python3-venv python3-pip
+RUN apt-get install -y iputils-ping
+
+# Setup system locale for pip package encoding/decoding 
 RUN locale-gen en_US.UTF-8
 
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
-COPY scripts scripts
-
-RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
-
 COPY . .
 
+# COPY scripts scripts
+# RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
+# COPY . .
+
 # Configure Spheral with SPEC TPLs.
-RUN mv *.cmake $HOST_CONFIG.cmake
-RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cmake
+# RUN mv *.cmake $HOST_CONFIG.cmake
+# RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cmake
 
 # First time install of Spheral pip dependencies
-WORKDIR build_$HOST_CONFIG/build
-RUN make python_build_env
-RUN make python_runtime_env
+# WORKDIR build_$HOST_CONFIG/build
+# RUN make python_build_env
+# RUN make python_runtime_env
 
 # Clean workspace once dependencies are installed
-WORKDIR /home/spheral/workspace/
+# WORKDIR /home/spheral/workspace/
 
-RUN rm -rf /home/spheral/workspace/*
+# RUN rm -rf /home/spheral/workspace/*
 # -----------------------------------------------------------------------------
+
+
 
 # -----------------------------------------------------------------------------
 # SPHERAL BUILD & TEST
