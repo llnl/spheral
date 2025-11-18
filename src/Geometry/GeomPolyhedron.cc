@@ -342,7 +342,7 @@ contains(const GeomPolyhedron::Vector& point,
 
     // Experimental version using Axom
     using AxPoint = axom::quest::InOutOctree<3>::SpacePt;
-    if (mSurfaceMeshPtr) this->buildAxomData();
+    if (!mSurfaceMeshPtr) this->buildAxomData();
     const auto inside = mSurfaceMeshQueryPtr->within(AxPoint(&const_cast<Vector&>(point)[0]));
     if (not inside and countBoundary) {
       return this->distance(point) < tol;
@@ -742,7 +742,7 @@ distance(const GeomPolyhedron::Vector& p,
 
     // Experimental version using Axom
     using AxPoint = axom::quest::InOutOctree<3>::SpacePt;
-    if (mSurfaceMeshPtr) this->buildAxomData();
+    if (!mSurfaceMeshPtr) this->buildAxomData();
     return std::abs(mSignedDistancePtr->computeDistance(AxPoint(&const_cast<Vector&>(p)[0])));
 
   } else {
