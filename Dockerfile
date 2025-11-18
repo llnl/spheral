@@ -40,25 +40,24 @@ RUN locale-gen en_US.UTF-8
 
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
+
+COPY scripts scripts
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
 COPY . .
 
-# COPY scripts scripts
-# RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
-# COPY . .
-
 # Configure Spheral with SPEC TPLs.
-# RUN mv *.cmake $HOST_CONFIG.cmake
-# RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cmake
+RUN mv *.cmake $HOST_CONFIG.cmake
+RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cmake
 
 # First time install of Spheral pip dependencies
-# WORKDIR build_$HOST_CONFIG/build
-# RUN make python_build_env
-# RUN make python_runtime_env
+WORKDIR build_$HOST_CONFIG/build
+RUN make python_build_env
+RUN make python_runtime_env
 
 # Clean workspace once dependencies are installed
-# WORKDIR /home/spheral/workspace/
+WORKDIR /home/spheral/workspace/
 
-# RUN rm -rf /home/spheral/workspace/*
+RUN rm -rf /home/spheral/workspace/*
 # -----------------------------------------------------------------------------
 
 
