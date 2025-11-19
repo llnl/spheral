@@ -670,7 +670,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar /*time*/,
 
       // Symmetrized kernel weight and gradient.
       const auto etaii = Hi*ri;
-      const Vector etaQii = std::max(0.01, etaii[0]);
+      const Vector etaQii(std::max(0.01, etaii[0]));
       double Wii, gWii;
       Vector gradWii, gradWQii, gradWGii;
       W.kernelAndGrad(etaii, etaii, Hi, Wii, gradWii, gWii);
@@ -721,7 +721,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar /*time*/,
       // Self-interaction for momentum (cause curvilinear coordinates are weird)
       const auto sigmai = Si - Pi * SymTensor::one();
       const auto deltaDvDti = mi*safeOmegai/(rhoi*rhoi)*(2.0*sigmai*gradWii - Qi*gradWQii) +  // self-interaction because kernel is not symmetric
-                              3.0*Si.xx()/rhoi*riInv;                                         // hoop terms from theta & phi directions
+                              Vector(3.0*Si.xx()/rhoi*riInv);                                 // hoop terms from theta & phi directions
       DvDti += deltaDvDti;
       if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 

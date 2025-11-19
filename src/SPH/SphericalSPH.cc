@@ -575,7 +575,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
 
       // Symmetrized kernel weight and gradient.
       const auto etaii = Hi*ri;
-      const Vector etaQii = std::max(0.01, etaii[0]);
+      const Vector etaQii(std::max(0.01, etaii[0]));
       double Wii, gWii;
       Vector gradWii;
       W.kernelAndGrad(etaii, etaii, Hi, Wii, gradWii, gWii);
