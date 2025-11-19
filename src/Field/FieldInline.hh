@@ -1299,9 +1299,7 @@ Field<Dimension, DataType>::
 setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
 #if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mChaiCallback = f;
-#ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(getCallback());
-#endif
 #endif
 }
 

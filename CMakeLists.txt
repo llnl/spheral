@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.21)
 include(cmake/SpheralVersion.cmake)
-project(spheral LANGUAGES C CXX Fortran VERSION ${SPHERAL_VERSION})
+project(spheral LANGUAGES C CXX VERSION ${SPHERAL_VERSION})
 
 set(SPHERAL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Spheral source directory")
 set(SPHERAL_BINARY_DIR ${CMAKE_BINARY_DIR})
