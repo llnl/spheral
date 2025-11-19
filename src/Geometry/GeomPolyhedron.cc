@@ -57,7 +57,6 @@ GeomPolyhedron():
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(true),
-  mSurfaceMeshPtr(nullptr),
   mSurfaceMeshQueryPtr(nullptr),
   mSignedDistancePtr(nullptr) {
   if (mDevnull == NULL) mDevnull = fopen("/dev/null", "w");
@@ -78,7 +77,6 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(true),
-  mSurfaceMeshPtr(nullptr),
   mSurfaceMeshQueryPtr(nullptr),
   mSignedDistancePtr(nullptr) {
   TIME_BEGIN("Polyhedron_construct1");
@@ -255,7 +253,6 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points,
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(false),
-  mSurfaceMeshPtr(nullptr),
   mSurfaceMeshQueryPtr(nullptr),
   mSignedDistancePtr(nullptr) {
   TIME_BEGIN("Polyhedron_construct2");
@@ -290,7 +287,6 @@ GeomPolyhedron(const GeomPolyhedron& rhs):
   mCentroid(rhs.mCentroid),
   mRinterior2(rhs.mRinterior2),
   mConvex(rhs.mConvex),
-  mSurfaceMeshPtr(nullptr),
   mSurfaceMeshQueryPtr(nullptr),
   mSignedDistancePtr(nullptr) {
   for (Facet& facet: mFacets) facet.mVerticesPtr = &mVertices;
@@ -316,7 +312,7 @@ operator=(const GeomPolyhedron& rhs) {
     mCentroid = rhs.mCentroid;
     mRinterior2 = rhs.mRinterior2;
     mConvex = rhs.mConvex;
-    mSurfaceMeshPtr = nullptr;
+    mSurfaceMeshPtr.reset();
     mSurfaceMeshQueryPtr = nullptr;
     mSignedDistancePtr = nullptr;
   }
@@ -346,7 +342,7 @@ contains(const GeomPolyhedron::Vector& point,
 
     // Experimental version using Axom
     using AxPoint = axom::quest::InOutOctree<3>::SpacePt;
-    if (mSurfaceMeshPtr == nullptr) this->buildAxomData();
+    if (!mSurfaceMeshPtr) this->buildAxomData();
     const auto inside = mSurfaceMeshQueryPtr->within(AxPoint(&const_cast<Vector&>(point)[0]));
     if (not inside and countBoundary) {
       return this->distance(point) < tol;
@@ -746,7 +742,7 @@ distance(const GeomPolyhedron::Vector& p,
 
     // Experimental version using Axom
     using AxPoint = axom::quest::InOutOctree<3>::SpacePt;
-    if (mSurfaceMeshPtr == nullptr) this->buildAxomData();
+    if (!mSurfaceMeshPtr) this->buildAxomData();
     return std::abs(mSignedDistancePtr->computeDistance(AxPoint(&const_cast<Vector&>(p)[0])));
 
   } else {
@@ -933,7 +929,7 @@ setBoundingBox() {
   // Clear any existing Axom information, so it's reconstructed if needed
   if (mSurfaceMeshQueryPtr != nullptr) delete mSurfaceMeshQueryPtr;
   if (mSignedDistancePtr != nullptr) delete mSignedDistancePtr;
-  mSurfaceMeshPtr = nullptr;
+  mSurfaceMeshPtr.reset();
   mSurfaceMeshQueryPtr = nullptr;
   mSignedDistancePtr = nullptr;
   TIME_END("Polyhedron_BB");
@@ -976,8 +972,8 @@ buildAxomData() const {
   Vector xmax = mXmax + 0.01*(mXmax - mXmin);
   bb.addPoint(AxPoint(&xmin[0]));
   bb.addPoint(AxPoint(&xmax[0]));
-  axom::mint::write_vtk(meshPtr.get(), "blago.vtk");
-  mSurfaceMeshPtr = meshPtr;
+  axom::mint::write_vtk(meshPtr, "blago.vtk");
+  mSurfaceMeshPtr = std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh>(meshPtr);
   mSurfaceMeshQueryPtr = new AxOctree(bb, mSurfaceMeshPtr);
   mSurfaceMeshQueryPtr->generateIndex();
   mSignedDistancePtr = new AxDistance(mSurfaceMeshPtr.get(),
