@@ -18,7 +18,9 @@ os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2
-spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
+# spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
+# Spack version: v1.1.0
+spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"
 # Current repo (either LLNLSpheral or Spheral)
 package_name = "spheral"
 
