@@ -150,12 +150,12 @@ public:
   SPHERAL_HOST_DEVICE bool operator<=(const GeomSymmetricTensor<nDim>& rhs) const;
   SPHERAL_HOST_DEVICE bool operator>=(const GeomSymmetricTensor<nDim>& rhs) const;
 
-  // bool operator==(const double rhs) const;
-  // bool operator!=(const double rhs) const;
-  // bool operator<(const double rhs) const;
-  // bool operator>(const double rhs) const;
-  // bool operator<=(const double rhs) const;
-  // bool operator>=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>=(const double rhs) const;
 
   SPHERAL_HOST_DEVICE GeomSymmetricTensor<nDim> Symmetric() const;
   SPHERAL_HOST_DEVICE GeomTensor SkewSymmetric() const;

@@ -25,12 +25,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -176,7 +170,7 @@ update(const KeyType& key,
 
 
     // Apply limiting to the effective strain.
-    stateField(i) = max(1.0e-7*max(1.0, std::abs(stateField(i).Trace())/Dimension::nDim), stateField(i));
+    stateField(i) = max(stateField(i), 1.0e-7*max(1.0, std::abs(stateField(i).Trace())/Dimension::nDim));
     // ENSURE2(fuzzyGreaterThanOrEqual(stateField(i).eigenValues().minElement(), 0.0, 1.0e-5),
     //         "Effective strain bad eigenvalues!  " << stateField(i).eigenValues());
 

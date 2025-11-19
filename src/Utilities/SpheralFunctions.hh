@@ -11,8 +11,13 @@
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <iostream>
 
 namespace Spheral {
+
+// Put the std::min/max in the Spheral namespace
+using std::min;
+using std::max;
 
 //------------------------------------------------------------------------------
 // Fuzzy comparisons.
@@ -115,19 +120,21 @@ sgn0(const int x) {
           0);
 }
 
-//------------------------------------------------------------------------------
-// Generalized versions of min & max that work with Spheral data types.
-//------------------------------------------------------------------------------
-// template<typename T1>
-// T1
-// min(const T1& lhs, const T1& rhs) {
-//   return std::min(lhs, rhs);
+// //------------------------------------------------------------------------------
+// // Generalized versions of min & max that work with Spheral data types.
+// //------------------------------------------------------------------------------
+// template<typename T>
+// const T&
+// min(const T& lhs, const T& rhs) {
+//   using std::min;
+//   return min(lhs, rhs);
 // }
 
-// template<typename T1>
-// T1
-// max(const T1& lhs, const T1& rhs) {
-//   return std::max(lhs, rhs);
+// template<typename T>
+// const T&
+// max(const T& lhs, const T& rhs) {
+//   using std::max;
+//   return max(lhs, rhs);
 // }
 
 }

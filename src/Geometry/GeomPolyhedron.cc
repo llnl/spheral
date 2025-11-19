@@ -29,10 +29,6 @@ using std::vector;
 using std::map;
 using std::pair;
 using std::make_pair;
-using std::min;
-using std::max;
-using std::cerr;
-using std::endl;
 
 extern "C" {
 #include "libqhull/qhull_a.h"
@@ -923,7 +919,7 @@ setBoundingBox() {
   TIME_BEGIN("Polyhedron_BB_R2");
   if (pointInPolyhedron(mCentroid, *this, false, 1.0e-10)) {
     mRinterior2 = std::numeric_limits<double>::max();
-    for (const auto& facet: mFacets) mRinterior2 = min(mRinterior2, facet.distance(mCentroid));
+    for (const auto& facet: mFacets) mRinterior2 = std::min(mRinterior2, facet.distance(mCentroid));
     mRinterior2 = FastMath::square(mRinterior2);
   } else {
     mRinterior2 = -1.0;
@@ -995,7 +991,7 @@ convex(const double tol) const {
   TIME_BEGIN("Polyhedron_convex");
   // Do the convex comparison for each vertex.
   bool result = true;
-  const double reltol = tol*max(1.0, (mXmax - mXmin).maxAbsElement());
+  const double reltol = tol*std::max(1.0, (mXmax - mXmin).maxAbsElement());
   vector<Vector>::const_iterator vertexItr = mVertices.begin();
   while (vertexItr != mVertices.end() and result) {
     vector<Facet>::const_iterator facetItr = mFacets.begin();

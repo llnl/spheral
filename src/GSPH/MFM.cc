@@ -37,8 +37,6 @@
 #include <sstream>
 
 using std::string;
-using std::min;
-using std::max;
 
 namespace Spheral {
 

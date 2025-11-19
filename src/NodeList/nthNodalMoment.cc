@@ -24,9 +24,6 @@
 namespace Spheral {
 
 using std::vector;
-using std::abs;
-using std::min;
-using std::max;
 
 //------------------------------------------------------------------------------
 // Specialized method to compute the pair-wise contribution to the moment.

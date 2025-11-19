@@ -240,23 +240,23 @@ template<> SPHERAL_HOST_DEVICE double GeomVector<3>::sumElements() const;
 
 // Forward declare the global functions.
 template<int nDim> SPHERAL_HOST_DEVICE GeomVector<nDim> elementWiseMin(const GeomVector<nDim>& lhs,
-                                                   const GeomVector<nDim>& rhs);
+                                                                       const GeomVector<nDim>& rhs);
 template<int nDim> SPHERAL_HOST_DEVICE GeomVector<nDim> elementWiseMax(const GeomVector<nDim>& lhs,
-                                                   const GeomVector<nDim>& rhs);
+                                                                       const GeomVector<nDim>& rhs);
 
 template<> SPHERAL_HOST_DEVICE GeomVector<1> elementWiseMin(const GeomVector<1>& lhs,
-                                        const GeomVector<1>& rhs);
+                                                            const GeomVector<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomVector<2> elementWiseMin(const GeomVector<2>& lhs,
-                                        const GeomVector<2>& rhs);
+                                                            const GeomVector<2>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomVector<3> elementWiseMin(const GeomVector<3>& lhs,
-                                        const GeomVector<3>& rhs);
+                                                            const GeomVector<3>& rhs);
 
 template<> SPHERAL_HOST_DEVICE GeomVector<1> elementWiseMax(const GeomVector<1>& lhs,
-                                        const GeomVector<1>& rhs);
+                                                            const GeomVector<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomVector<2> elementWiseMax(const GeomVector<2>& lhs,
-                                        const GeomVector<2>& rhs);
+                                                            const GeomVector<2>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomVector<3> elementWiseMax(const GeomVector<3>& lhs,
-                                        const GeomVector<3>& rhs);
+                                                            const GeomVector<3>& rhs);
 
 template<int nDim> std::istream& operator>>(std::istream& is, GeomVector<nDim>& vec);
 template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomVector<nDim>& vec);

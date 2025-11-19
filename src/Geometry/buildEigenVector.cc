@@ -6,10 +6,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 //------------------------------------------------------------------------------
 // This version is the code cooked up by Doug Miller and JMO.
 //------------------------------------------------------------------------------

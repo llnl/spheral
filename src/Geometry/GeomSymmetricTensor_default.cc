@@ -18,9 +18,6 @@
 #include <Eigen/Dense>
 
 #include <cmath>
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -49,7 +46,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
   EigenStruct<3> result;
 
   // Create a scaled version of this tensor, with all elements in the range [-1,1].
-  const double fscale = max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
+  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
   CHECK(fscale > 0.0);
   const double fscalei = 1.0/fscale;
   SymTensor A = (*this)*fscalei;
@@ -198,7 +195,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
           fuzzyEqual(v2.magnitude2(), 1.0, tolerance) and
           fuzzyEqual(v3.magnitude2(), 1.0, tolerance),
           v1 << " " << v2 << " " << v3);
-  const double tol = tolerance*max(1.0, this->maxAbsElement());
+  const double tol = tolerance*std::max(1.0, this->maxAbsElement());
   CONTRACT_VAR(tol);
   ENSURE2(fuzzyEqual((SymTensor(xx() - lambda1, xy(), xz(),
                                 yx(), yy() - lambda1, yz(),

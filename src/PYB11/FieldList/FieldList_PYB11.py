@@ -72,7 +72,12 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
 
     #...........................................................................
     # arithmetic FieldLists
-    for (value, label) in ((ThirdRankTensor,  "ThirdRankTensor"),
+    for (value, label) in (("int",            "Int"),
+                           ("unsigned",       "Unsigned"),
+                           ("uint64_t",       "ULL"),
+                           (Vector,           "Vector"),
+                           (Tensor,           "Tensor"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
                            (FourthRankTensor, "FourthRankTensor"),
                            (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
@@ -81,12 +86,7 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
 
     #...........................................................................
     # A few FieldLists types can apply the min/max with a scalar additionally
-    for (value, label) in (("int",            "Int"),
-                           ("unsigned",       "Unsigned"),
-                           ("uint64_t",       "ULL"),
-                           ("double",         "Scalar"),
-                           (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
+    for (value, label) in (("double",         "Scalar"),
                            (SymTensor,        "SymTensor")):
         exec(f'''
 {label}FieldList{ndim}d = PYB11TemplateClass(MinMaxFieldList, template_parameters=("{Dimension}", "{value}"))

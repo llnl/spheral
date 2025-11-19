@@ -148,12 +148,12 @@ public:
   SPHERAL_HOST_DEVICE bool operator<=(const GeomSymmetricTensor& rhs) const;
   SPHERAL_HOST_DEVICE bool operator>=(const GeomSymmetricTensor& rhs) const;
 
-  // bool operator==(const double rhs) const;
-  // bool operator!=(const double rhs) const;
-  // bool operator<(const double rhs) const;
-  // bool operator>(const double rhs) const;
-  // bool operator<=(const double rhs) const;
-  // bool operator>=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator!=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator<=(const double rhs) const;
+  SPHERAL_HOST_DEVICE bool operator>=(const double rhs) const;
 
   SPHERAL_HOST_DEVICE GeomSymmetricTensor Symmetric() const;
   SPHERAL_HOST_DEVICE GeomTensor<nDim> SkewSymmetric() const;
@@ -203,6 +203,10 @@ public:
 
   // Return the max absolute element.
   SPHERAL_HOST_DEVICE double maxAbsElement() const;
+
+  // Enforce min/max eigenvalues
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMinEigenValue(const double& x) const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMaxEigenValue(const double& x) const;
 
   //  Convert to an Eigen Vector
   EigenType eigen() const;

@@ -32,12 +32,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -222,7 +216,7 @@ update(const KeyType& key,
     const auto spin = localDvDx(i).SkewSymmetric();
     const auto spinCorrection = (spin*Di - Di*spin).Symmetric();
     Di += multiplier*spinCorrection;
-    Di = max(1.0e-5, min(1.0 - 2.0e-5, Di));
+    Di = max(min(Di, 1.0 - 2.0e-5), 1.0e-5);
     {
       const auto maxValue = Di.eigenValues().maxElement();
       if (maxValue > 1.0) Di /= maxValue;

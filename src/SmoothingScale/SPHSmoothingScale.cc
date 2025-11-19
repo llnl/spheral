@@ -23,9 +23,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
 using std::vector;
 
 namespace {

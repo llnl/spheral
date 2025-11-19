@@ -1584,43 +1584,14 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
           this->mzz == rhs.zz());
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<1>::
-// operator==(const double rhs) const {
-//   return this->mxx == rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<2>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->myx == rhs and
-//           this->myy == rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<3>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->mxz == rhs and
-//           this->myx == rhs and
-//           this->myy == rhs and
-//           this->myz == rhs and
-//           this->mzx == rhs and
-//           this->mzy == rhs and
-//           this->mzz == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator==(const double rhs) const {
+  return *this == (one() * rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the not equivalence than comparitor.
@@ -1643,14 +1614,14 @@ operator!=(const GeomSymmetricTensor<nDim>& rhs) const {
   return !(*this == rhs);
 }
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<nDim>::
-// operator!=(const double rhs) const {
-//   return !(*this == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator!=(const double rhs) const {
+  return !(*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the less than operator.
@@ -1673,43 +1644,15 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() < rhs.Determinant();
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<1>::
-// operator<(const double rhs) const {
-//   return this->mxx < rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<2>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->myx < rhs and
-//           this->myy < rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<3>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->mxz < rhs and
-//           this->myx < rhs and
-//           this->myy < rhs and
-//           this->myz < rhs and
-//           this->mzx < rhs and
-//           this->mzy < rhs and
-//           this->mzz < rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator<(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.maxElement() < rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than operator.
@@ -1732,43 +1675,15 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() > rhs.Determinant();
 }
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<nDim>::
-// operator>(const double rhs) const {
-//   return this->mxx > rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<2>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->myx > rhs and
-//           this->myy > rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<3>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->mxz > rhs and
-//           this->myx > rhs and
-//           this->myy > rhs and
-//           this->myz > rhs and
-//           this->mzx > rhs and
-//           this->mzy > rhs and
-//           this->mzz > rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator>(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.minElement() > rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the less than or equal operator.
@@ -1791,43 +1706,14 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this < rhs) or (*this == rhs);
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<1>::
-// operator<=(const double rhs) const {
-//   return this->mxx <= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<2>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->myx <= rhs and
-//           this->myy <= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<3>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->mxz <= rhs and
-//           this->myx <= rhs and
-//           this->myy <= rhs and
-//           this->myz <= rhs and
-//           this->mzx <= rhs and
-//           this->mzy <= rhs and
-//           this->mzz <= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator<=(const double rhs) const {
+  return (*this < rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than or equal operator.
@@ -1850,43 +1736,14 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this > rhs) or (*this == rhs);
 }
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<nDim>::
-// operator>=(const double rhs) const {
-//   return this->mxx >= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<2>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->myx >= rhs and
-//           this->myy >= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomTensor<3>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->mxz >= rhs and
-//           this->myx >= rhs and
-//           this->myy >= rhs and
-//           this->myz >= rhs and
-//           this->mzx >= rhs and
-//           this->mzy >= rhs and
-//           this->mzz >= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomTensor<nDim>::
+operator>=(const double rhs) const {
+  return (*this > rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Return the symmetric part of a GeomTensor.

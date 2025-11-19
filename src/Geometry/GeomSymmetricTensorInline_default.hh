@@ -1422,44 +1422,17 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
           this->mxz == rhs.xz() and
           this->myy == rhs.yy() and
           this->myz == rhs.yz() and
-          this->mzz == rhs.zz() and 
-          this->mxy == rhs.yx());
+          this->mzz == rhs.zz());
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator==(const double rhs) const {
-//   return this->mxx == rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->myy == rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->mxz == rhs and
-//           this->myy == rhs and
-//           this->myz == rhs and
-//           this->mzz == rhs and 
-//           this->mxy == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator==(const double rhs) const {
+  return *this == (one() * rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the not equivalence than comparitor.
@@ -1482,14 +1455,14 @@ operator!=(const GeomSymmetricTensor<nDim>& rhs) const {
   return !(*this == rhs);
 }
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<nDim>::
-// operator!=(const double rhs) const {
-//   return !(*this == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator!=(const double rhs) const {
+  return !(*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the less than operator.
@@ -1512,40 +1485,15 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() < rhs.Determinant();
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator<(const double rhs) const {
-//   return this->mxx < rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->myy < rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->mxz < rhs and
-//           this->myy < rhs and
-//           this->myz < rhs and
-//           this->mzz < rhs and 
-//           this->mxy < rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator<(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.maxElement() < rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than operator.
@@ -1568,40 +1516,15 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() > rhs.Determinant();
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator>(const double rhs) const {
-//   return this->mxx > rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->myy > rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->mxz > rhs and
-//           this->myy > rhs and
-//           this->myz > rhs and
-//           this->mzz > rhs and 
-//           this->mxy > rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator>(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.minElement() > rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the less than or equal operator.
@@ -1624,40 +1547,14 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this < rhs) or (*this == rhs);
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator<=(const double rhs) const {
-//   return this->mxx <= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->myy <= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->mxz <= rhs and
-//           this->myy <= rhs and
-//           this->myz <= rhs and
-//           this->mzz <= rhs and 
-//           this->mxy <= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator<=(const double rhs) const {
+  return (*this < rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than or equal operator.
@@ -1680,40 +1577,14 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this > rhs) or (*this == rhs);
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator>=(const double rhs) const {
-//   return this->mxx >= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->myy >= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->mxz >= rhs and
-//           this->myy >= rhs and
-//           this->myz >= rhs and
-//           this->mzz >= rhs and 
-//           this->mxy >= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator>=(const double rhs) const {
+  return (*this > rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Return the symmetric part.  A no-op for this class.
@@ -2477,6 +2348,104 @@ pow(const double p) const {
 }
 
 //------------------------------------------------------------------------------
+// Enforce a minimum eigen value
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
+enforceMinEigenValue(const double& x) const {
+  return GeomSymmetricTensor(std::max(mxx, x));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+enforceMinEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::max(ev.eigenValues(0), x);
+    result(1,1) = std::max(ev.eigenValues(1), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+enforceMinEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::max(ev.eigenValues(0), x);
+    result(1,1) = std::max(ev.eigenValues(1), x);
+    result(2,2) = std::max(ev.eigenValues(2), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+//------------------------------------------------------------------------------
+// Enforce a maximum eigen value
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
+enforceMaxEigenValue(const double& x) const {
+  return GeomSymmetricTensor(std::min(mxx, x));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+enforceMaxEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.maxElement() > x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::min(ev.eigenValues(0), x);
+    result(1,1) = std::min(ev.eigenValues(1), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+enforceMaxEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.maxElement() > x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::min(ev.eigenValues(0), x);
+    result(1,1) = std::min(ev.eigenValues(1), x);
+    result(2,2) = std::min(ev.eigenValues(2), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+//------------------------------------------------------------------------------
 // Generate an Eigen Tensor.
 //------------------------------------------------------------------------------
 template<>
@@ -2555,73 +2524,117 @@ operator<<(std::ostream& os, const Spheral::GeomSymmetricTensor<nDim>& ten) {
   return os;
 }
 
-}
-
-namespace std {
 //------------------------------------------------------------------------------
-// Min a symmetric tensor with a scalar -- limit the eigenvalues.
+// Comparison with doubles as first argument
 //------------------------------------------------------------------------------
 template<int nDim>
 inline
-Spheral::GeomSymmetricTensor<nDim>
-min(const double minValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
-
-  typedef Spheral::GeomSymmetricTensor<nDim> SymTensor;
-
-  // Get the eigen values and eigen vectors.
-  Spheral::EigenStruct<nDim> eigen = tensor.eigenVectors();
-
-  // Limit the eigen values if necessary.
-  if (eigen.eigenValues.maxElement() < minValue) {
-    return tensor;
-  } else {
-    SymTensor result;
-    for (int i = 0; i != nDim; ++i) {
-      result(i,i) = std::min(minValue, eigen.eigenValues(i));
-    }
-    result.rotationalTransform(eigen.eigenVectors);
-    return result;
-  }
+bool
+operator<(const double& lhs, const GeomSymmetricTensor<nDim>& rhs) {
+  return rhs > lhs;
 }
 
 template<int nDim>
 inline
-Spheral::GeomSymmetricTensor<nDim>
-min(const Spheral::GeomSymmetricTensor<nDim>& tensor, const double minValue) {
-  return min(minValue, tensor);
+bool
+operator>(const double& lhs, const GeomSymmetricTensor<nDim>& rhs) {
+  return rhs < lhs;
 }
 
 //------------------------------------------------------------------------------
-// Max a symmetric tensor with a scalar -- limit the eigenvalues.
+// Symmetric tensor specializations for min/max
 //------------------------------------------------------------------------------
-template<int nDim>
-inline
-Spheral::GeomSymmetricTensor<nDim>
-max(const double maxValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
-
-  typedef Spheral::GeomSymmetricTensor<nDim> SymTensor;
-
-  // Get the eigen values and eigen vectors.
-  Spheral::EigenStruct<nDim> eigen = tensor.eigenVectors();
-
-  // Limit the eigen values if necessary.
-  if (eigen.eigenValues.minElement() > maxValue) {
-    return tensor;
-  } else {
-    SymTensor result;
-    for (int i = 0; i != nDim; ++i) {
-      result(i,i) = std::max(maxValue, eigen.eigenValues(i));
-    }
-    result.rotationalTransform(eigen.eigenVectors);
-    return result;
-  }
+template<int ndim>
+GeomSymmetricTensor<ndim>
+min(const double& lhs, const GeomSymmetricTensor<ndim>& rhs) {
+  return rhs.enforceMaxEigenValue(lhs);
 }
 
-template<int nDim>
-inline
-Spheral::GeomSymmetricTensor<nDim>
-max(const Spheral::GeomSymmetricTensor<nDim>& tensor, double const maxValue) {
-  return max(maxValue, tensor);
+template<int ndim>
+GeomSymmetricTensor<ndim>
+min(const GeomSymmetricTensor<ndim>& lhs, const double& rhs) {
+  return lhs.enforceMaxEigenValue(rhs);
+}
+
+template<int ndim>
+GeomSymmetricTensor<ndim>
+max(const double& lhs, const GeomSymmetricTensor<ndim>& rhs) {
+  return rhs.enforceMinEigenValue(lhs);
+}
+
+template<int ndim>
+GeomSymmetricTensor<ndim>
+max(const GeomSymmetricTensor<ndim>& lhs, const double& rhs) {
+  return lhs.enforceMinEigenValue(rhs);
 }
 
 }
+
+// namespace std {
+// //------------------------------------------------------------------------------
+// // Min a symmetric tensor with a scalar -- limit the eigenvalues.
+// //------------------------------------------------------------------------------
+// template<int nDim>
+// inline
+// Spheral::GeomSymmetricTensor<nDim>
+// min(const double minValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
+
+//   using SymTensor = Spheral::GeomSymmetricTensor<nDim>;
+
+//   // Get the eigen values and eigen vectors.
+//   auto eigen = tensor.eigenVectors();
+
+//   // Limit the eigen values if necessary.
+//   if (eigen.eigenValues.maxElement() < minValue) {
+//     return tensor;
+//   } else {
+//     SymTensor result;
+//     for (auto i = 0u; i < nDim; ++i) {
+//       result(i,i) = std::min(minValue, eigen.eigenValues(i));
+//     }
+//     result.rotationalTransform(eigen.eigenVectors);
+//     return result;
+//   }
+// }
+
+// template<int nDim>
+// inline
+// Spheral::GeomSymmetricTensor<nDim>
+// min(const Spheral::GeomSymmetricTensor<nDim>& tensor, const double minValue) {
+//   return min(minValue, tensor);
+// }
+
+// //------------------------------------------------------------------------------
+// // Max a symmetric tensor with a scalar -- limit the eigenvalues.
+// //------------------------------------------------------------------------------
+// template<int nDim>
+// inline
+// Spheral::GeomSymmetricTensor<nDim>
+// max(const double maxValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
+
+//   using SymTensor = Spheral::GeomSymmetricTensor<nDim>;
+
+//   // Get the eigen values and eigen vectors.
+//   auto eigen = tensor.eigenVectors();
+
+//   // Limit the eigen values if necessary.
+//   if (eigen.eigenValues.minElement() > maxValue) {
+//     return tensor;
+//   } else {
+//     SymTensor result;
+//     for (auto i = 0u; i < nDim; ++i) {
+//       result(i,i) = std::max(maxValue, eigen.eigenValues(i));
+//     }
+//     result.rotationalTransform(eigen.eigenVectors);
+//     return result;
+//   }
+// }
+
+// template<int nDim>
+// inline
+// Spheral::GeomSymmetricTensor<nDim>
+// max(const Spheral::GeomSymmetricTensor<nDim>& tensor, double const maxValue) {
+//   return max(maxValue, tensor);
+// }
+
+// }

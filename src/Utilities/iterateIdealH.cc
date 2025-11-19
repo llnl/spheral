@@ -15,18 +15,13 @@
 #include "Geometry/GeometryRegistrar.hh"
 #include "SmoothingScale/ASPHSmoothingScale.hh"
 #include "Utilities/Timer.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <ctime>
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -217,12 +212,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     maxDeltaH = allReduce(maxDeltaH, SPHERAL_OP_MAX);
 
     // Output the statitics.
-    if (Process::getRank() == 0 && maxIterations > 1)
-      cout << "iterateIdealH: (iteration, deltaH) = ("
-           << itr << ", "
-           << maxDeltaH << ")"
-           << endl;
-
+    if (maxIterations > 1) SpheralMessage("iterateIdealH: (iteration, deltaH) = (" << itr << ", " << maxDeltaH << ")");
   }
 
   // If we have rescaled the nodes per h, now we have to iterate the H determinant
@@ -274,11 +264,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 
   // Report the final timing.
   const auto t1 = clock();
-  if (Process::getRank() == 0 && maxIterations > 1)
-    cout << "iterateIdealH: required a total of "
-         << (t1 - t0)/CLOCKS_PER_SEC
-         << " seconds."
-         << endl;
+  if (maxIterations > 1) SpheralMessage("iterateIdealH: required a total of " << ((t1 - t0)/CLOCKS_PER_SEC) << " seconds.");
 }
 
 }

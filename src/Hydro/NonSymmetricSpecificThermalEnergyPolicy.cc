@@ -30,9 +30,6 @@
 #include <limits>
 using std::vector;
 using std::numeric_limits;
-using std::abs;
-using std::min;
-using std::max;
 
 namespace Spheral {
 
