@@ -69,10 +69,48 @@ class ArithmeticFieldList(__FieldListBase):
     def __itruediv__SFL(self, rhs="FieldList<%(Dimension)s, Scalar>()"):
         return
 
+    #...........................................................................
+    # Comparators
+    def __gt__(self):
+        return
+
+    def __lt__(self):
+        return
+
+    def __ge__(self):
+        return "bool"
+
+    def __le__(self):
+        return "bool"
+
+    def __gt__(self, rhs="%(Value)s()"):
+        "Greater than comparision with a %(Value)s"
+        return "bool"
+
+    def __lt__(self, rhs="%(Value)s()"):
+        "Less than comparision with a %(Value)s"
+        return "bool"
+
+    def __ge__(self, rhs="%(Value)s()"):
+        "Greater than or equal comparision with a %(Value)s"
+        return "bool"
+
+    def __le__(self, rhs="%(Value)s()"):
+        "Less than or equal comparision with a %(Value)s"
+        return "bool"
+
+    #...........................................................................
+    # Methods
     @PYB11const
-    def localSumElements(self,
-                         includeGhosts = ("bool", "false")):
-        "Return the sum of the elements in the FieldList local to each processor."
+    def min(self,
+            includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def max(self,
+            includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldList."
         return "%(Value)s"
 
     @PYB11const

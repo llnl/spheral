@@ -48,10 +48,30 @@ class ArithmeticFieldView:
     def __itruediv__S__(self, rhs="Scalar()"):
         return
 
+    def applyMin(self):
+        "Enforce a floor on the values of the FieldView."
+        return
+
+    def applyMax(self):
+        "Enforce a ceiling on the values of the FieldView."
+        return
+
     @PYB11const
     def localSumElements(self,
                           includeGhosts = ("bool", "false")):
         "Return the sum of the elements in the FieldView local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def localMin(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the mimimum value in the FieldView local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def localMax(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the maximum value in the FieldView local to each processor."
         return "%(Value)s"
 
 #-------------------------------------------------------------------------------

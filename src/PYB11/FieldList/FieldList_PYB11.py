@@ -65,7 +65,10 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
                            (f"std::vector<{SymTensor}>",    "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",   "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",     "DomainNode"),
-                           (f"RKCoefficients<{Dimension}>", "RKCoefficients")):
+                           (f"RKCoefficients<{Dimension}>", "RKCoefficients"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
+                           (FourthRankTensor, "FourthRankTensor"),
+                           (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
 {label}FieldList{ndim}d = PYB11TemplateClass(FieldList, template_parameters=("{Dimension}", "{value}"))
 ''')
@@ -76,10 +79,7 @@ FieldListSet{ndim}d = PYB11TemplateClass(FieldListSet, template_parameters="{Dim
                            ("unsigned",       "Unsigned"),
                            ("uint64_t",       "ULL"),
                            (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
-                           (FourthRankTensor, "FourthRankTensor"),
-                           (FifthRankTensor,  "FifthRankTensor")):
+                           (Tensor,           "Tensor")):
         exec(f'''
 {label}FieldList{ndim}d = PYB11TemplateClass(ArithmeticFieldList, template_parameters=("{Dimension}", "{value}"))
 ''')

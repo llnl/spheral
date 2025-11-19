@@ -46,14 +46,6 @@ class MinMaxFieldView:
         "Less than or equal comparision with a %(Value)s"
         return "bool"
 
-    def applyMin(self):
-        "Enforce a floor on the values of the FieldView."
-        return
-
-    def applyMax(self):
-        "Enforce a ceiling on the values of the FieldView."
-        return
-
     def applyScalarMin(self):
         "Enforce a double floor on the values of the FieldView."
         return
@@ -61,18 +53,6 @@ class MinMaxFieldView:
     def applyScalarMax(self):
         "Enforce a double ceiling on the values of the FieldView."
         return
-
-    @PYB11const
-    def localMin(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the mimimum value in the FieldView local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def localMax(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the maximum value in the FieldView local to each processor."
-        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject base field methods

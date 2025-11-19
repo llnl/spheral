@@ -53,7 +53,10 @@ for ndim in dims:
                            (f"std::vector<{SymTensor}>",    "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",   "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",     "DomainNode"),
-                           (f"RKCoefficients<{Dimension}>", "RKCoefficients")):
+                           (f"RKCoefficients<{Dimension}>", "RKCoefficients"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
+                           (FourthRankTensor, "FourthRankTensor"),
+                           (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
 {label}FieldListView{ndim}d = PYB11TemplateClass(FieldListView, template_parameters=("{Dimension}", "{value}"))
 ''')
@@ -64,10 +67,7 @@ for ndim in dims:
                            ("unsigned",       "Unsigned"),
                            ("uint64_t",       "ULL"),
                            (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
-                           (FourthRankTensor, "FourthRankTensor"),
-                           (FifthRankTensor,  "FifthRankTensor")):
+                           (Tensor,           "Tensor")):
         exec(f'''
 {label}FieldListView{ndim}d = PYB11TemplateClass(ArithmeticFieldListView, template_parameters=("{Dimension}", "{value}"))
 ''')

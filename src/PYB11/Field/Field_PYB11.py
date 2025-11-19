@@ -69,7 +69,10 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
                            (f"std::vector<{SymTensor}>",         "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",        "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",          "DomainNode"),
-                           (f"RKCoefficients<{Dimension}>",      "RKCoefficients")):
+                           (f"RKCoefficients<{Dimension}>",      "RKCoefficients"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
+                           (FourthRankTensor, "FourthRankTensor"),
+                           (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
 {label}Field{ndim}d = PYB11TemplateClass(Field, template_parameters=("{Dimension}", "{value}"))
 ''')
@@ -80,10 +83,7 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
                            ("unsigned",       "Unsigned"),
                            ("uint64_t",       "ULL"),
                            (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
-                           (FourthRankTensor, "FourthRankTensor"),
-                           (FifthRankTensor,  "FifthRankTensor")):
+                           (Tensor,           "Tensor")):
         exec(f'''
 {label}Field{ndim}d = PYB11TemplateClass(ArithmeticField, template_parameters=("{Dimension}", "{value}"))
 ''')
