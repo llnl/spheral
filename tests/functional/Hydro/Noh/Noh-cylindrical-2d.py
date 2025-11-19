@@ -118,7 +118,8 @@ commandLine(seed = "constantDTheta",
             volumeType = RKSumVolume,
 
             # MFV
-            nodeMotion = NodeMotionType.Lagrangian,
+            nodeMotion = NodeMotionType.Eulerian,
+            nodeMotionCoefficient = 0.15,
 
             # artificial viscosity
             Cl = None, 
@@ -265,7 +266,7 @@ mpi.barrier()
 #-------------------------------------------------------------------------------
 # Material properties.
 #-------------------------------------------------------------------------------
-eos = GammaLawGasMKS(gamma, mu)
+eos = GammaLawGasMKS(gamma, mu, minimumPressure=0.0)
 
 #-------------------------------------------------------------------------------
 # Interpolation kernels.
@@ -446,6 +447,7 @@ elif mfv:
                 W = WT,
                 cfl=cfl,
                 nodeMotionType=nodeMotion,
+                nodeMotionCoefficient=nodeMotionCoefficient,
                 specificThermalEnergyDiffusionCoefficient = 0.00,
                 compatibleEnergyEvolution = compatibleEnergy,
                 correctVelocityGradient= correctVelocityGradient,

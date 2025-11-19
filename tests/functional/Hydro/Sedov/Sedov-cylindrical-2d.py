@@ -62,7 +62,7 @@ commandLine(seed = "lattice",
             evolveTotalEnergy = False,    
             compatibleEnergy = True,
             gradhCorrection = True,
-            correctVelocityGradient = False,
+            correctVelocityGradient = True,
             densityUpdate = RigorousSumDensity, 
             filter = 0.0,
 
@@ -74,6 +74,7 @@ commandLine(seed = "lattice",
             RiemannGradientType = SPHSameTimeGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
             linearReconstruction = True,
             nodeMotionType = "eulerian",
+            nodeMotionCoefficient = 0.05,
 
             # Artifical Viscosity
             boolReduceViscosity = False,
@@ -169,17 +170,24 @@ elif mfm:
     hydroname = "MFM"
 elif mfv:
     hydroname = "MFV"
+    nodeMotionType = nodeMotionType.lower()
     if nodeMotionType == "eulerian":
         hydroname += "_{0}".format(nodeMotionType)
         nodeMotionType = NodeMotionType.Eulerian
     elif nodeMotionType == "lagrangian":
         hydroname += "_{0}".format(nodeMotionType)
         nodeMotionType = NodeMotionType.Lagrangian
-    elif nodeMotionType == "fician":
+    elif nodeMotionType == "fickian":
         hydroname += "_{0}".format(nodeMotionType)
-        nodeMotionType = NodeMotionType.Fician
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.Fickian
+    elif nodeMotionType == "eulerianfickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.EulerianFickian
     elif nodeMotionType == "xsph":
         hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
         nodeMotionType = NodeMotionType.XSPH
     else:
         raise ValueError ("WHAT DID YOU DO!!!???")
@@ -216,7 +224,7 @@ mpi.barrier()
 #-------------------------------------------------------------------------------
 # Material properties.
 #-------------------------------------------------------------------------------
-eos = GammaLawGasMKS(gamma, mu)
+eos = GammaLawGasMKS(gamma, mu, minimumPressure=0.0)
 
 #-------------------------------------------------------------------------------
 # Create our interpolation kernels -- one for normal hydro interactions, and
@@ -227,8 +235,8 @@ if kernelConstructor == NBSplineKernel:
 else:
     WT = TableKernel(kernelConstructor(), 1000)
 
-    output("WT")
-    kernelExtent = WT.kernelExtent
+output("WT")
+kernelExtent = WT.kernelExtent
 #-------------------------------------------------------------------------------
 # Create a NodeList and associated Neighbor object.
 #-------------------------------------------------------------------------------
@@ -343,6 +351,7 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 if crksph:
     hydro = CRKSPH(dataBase = db,
+                   W = WT,
                    order = correctionOrder,
                    filter = filter,
                    cfl = cfl,
@@ -405,11 +414,12 @@ elif mfv:
                 riemannSolver = solver,
                 W = WT,
                 cfl=cfl,
+                nodeMotionCoefficient = nodeMotionCoefficient,
                 specificThermalEnergyDiffusionCoefficient = 0.00,
                 compatibleEnergyEvolution = compatibleEnergy,
                 correctVelocityGradient= correctVelocityGradient,
                 evolveTotalEnergy = evolveTotalEnergy,
-                gradientType = RiemannGradientType,
+                gradientType = SPHSameTimeGradient,
                 nodeMotionType = nodeMotionType,
                 XSPH = XSPH,
                 ASPH = asph,

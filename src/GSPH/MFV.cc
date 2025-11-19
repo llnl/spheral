@@ -151,7 +151,7 @@ registerState(DataBase<Dimension>& dataBase,
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
 
  // We use the thermal energy to update the specific thermal energy
-  state.removePolicy(specificThermalEnergy,false);
+  //state.removePolicy(specificThermalEnergy,false);
 
   CHECK(position.numFields() == dataBase.numFluidNodeLists());
   CHECK(velocity.numFields() == dataBase.numFluidNodeLists());

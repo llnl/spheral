@@ -47,8 +47,8 @@ void
 HLLC<Dimension>::
 interfaceState(const typename Dimension::Vector& ri,
                const typename Dimension::Vector& rj,
-               const typename Dimension::SymTensor& Hi,
-               const typename Dimension::SymTensor& Hj,
+               const typename Dimension::SymTensor& /*Hi*/,
+               const typename Dimension::SymTensor& /*Hj*/,
                const typename Dimension::Scalar& rhoi,   
                const typename Dimension::Scalar& rhoj,
                const typename Dimension::Scalar& epsi,
@@ -100,16 +100,16 @@ interfaceState(const typename Dimension::Vector& ri,
     auto p1i = Pi;
     auto p1j = Pj;
 
-    // auto rho1i = rhoi;
-    // auto rho1j = rhoj;
+    //auto rho1i = rhoi;
+    //auto rho1j = rhoj;
 
-    // auto eps1i = epsi;
-    // auto eps1j = epsj;
+    //auto eps1i = epsi;
+    //auto eps1j = epsj;
 
     // linear reconstruction
     if(this->linearReconstruction()){
 
-      // gradients along line of action
+      //gradients along line of action
       // this->linearReconstruction(ri,rj, epsi,epsj,DepsDxi,DepsDxj, //inputs
       //                            eps1i,eps1j);                     //outputs
       // this->linearReconstruction(ri,rj, rhoi,rhoj,DrhoDxi,DrhoDxj, //inputs
@@ -119,6 +119,7 @@ interfaceState(const typename Dimension::Vector& ri,
       this->linearReconstruction(ri,rj, vi,vj,DvDxi,DvDxj,         //inputs
                                  v1i,v1j);                         //outputs
   
+      
     }
 
     const auto ui = v1i.dot(rhatij);
@@ -139,11 +140,17 @@ interfaceState(const typename Dimension::Vector& ri,
     const auto wstar = (rhoCi*wi - rhoCj*wj)*denom;
 
     vstar = ustar*rhatij + wstar;
-    Pstar = rhoCj * (ustar-uj) + p1j;
+    Pstar = rhoCj * (ustar-uj) + p1j; // b/c of ustar def Pstari=Pstarj
+    
+    
     //rhostari = rhoi;//rho1i * (Si - ui)*safeInv(Si-ustar);
     //rhostarj = rhoj;//rho1j * (Sj - uj)*safeInv(Sj-ustar);
     //epsstari = epsi;//eps1i * (Si - ui)*safeInv(Si-ustar);
     //epsstarj = epsj;//eps1j * (Sj - uj)*safeInv(Sj-ustar);
+    //if (Si < 0) rhostari = rho1i;
+    //if (Sj > 0) rhostarj = rho1j;
+    //if (Si < 0) epsstari = eps1i;
+    //if (Sj > 0) epsstarj = eps1j;
 
   }else{ // if ci & cj too small punt to normal av
     const auto uij = std::min((vi-vj).dot(rhatij),0.0);

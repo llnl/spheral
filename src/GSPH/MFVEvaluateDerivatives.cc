@@ -251,7 +251,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
                                    epsstarj); //output
 
       const auto fluxSwitch = (nodeListi==nodeListj ? 1.0 : 0.0);
-      const auto vframe = (DxDti+DxDtj)*0.5;
+      const auto vframe = (DxDti+DxDtj)*0.5; // EVENTUALLY ACCOUNT FOR Hi,Hj difference
       const auto vflux = vstar-vframe;
       const auto fluxTowardsNodei = vflux.dot(rhatij) > 0;
       const auto rhostar = (fluxTowardsNodei ? rhostarj : rhostari); // we'll need to fix these later
@@ -382,6 +382,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
   const auto xsphMotion = (nodeMotion == NodeMotionType::XSPH);
   const auto fickianMotion = (nodeMotion == NodeMotionType::Fickian or
                               nodeMotion == NodeMotionType::EulerianFickian);
+  const auto lagrangianMotion = nodeMotion == NodeMotionType::Lagrangian;
   const auto noMotion = (nodeMotion == NodeMotionType::Eulerian or
                          nodeMotion == NodeMotionType::EulerianFickian);
 
@@ -536,7 +537,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         newRiemannDvDxj -= (vi-vj).dyad(gradPsij);
       }
 
-      // node motion relative to fluid  
+      // node motion relative to fluid  (MAYBE REMOVE SOUND SPEEED CHECK)
       //-----------------------------------------------------------
       if (xsphMotion) {
         const auto cij = 0.5*(ci+cj);
@@ -566,7 +567,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
     const auto& nodeList = M[nodeListi]->nodeList();
     const auto  ni = nodeList.numInternalNodes();
     const auto& fluidNodeList = **(dataBase.fluidNodeListBegin() + nodeListi);
-    const auto  allowALE = fluidNodeList.allowALE();
+    const auto  allowALE = (fluidNodeList.allowALE() and !lagrangianMotion);
 
     // finish up spatial gradients
 #pragma omp parallel for
@@ -602,6 +603,10 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         newRiemannDpDxi = Mi.Transpose()*newRiemannDpDxi;
         newRiemannDvDxi = newRiemannDvDxi*Mi;
       }
+
+      // if we are pure lagrangian do it here
+      if (! allowALE) DxDti = vi;
+
     }
 
     // finish up the node motion
@@ -615,15 +620,9 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         const auto& normi = normalization(nodeListi, i);
         auto& DxDti = DxDt(nodeListi,i);
 
-        if (xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
-        if(fickianMotion){
-          //const auto& Hi = H(nodeListi, i);
-          //const auto  Hdeti = Hi.Determinant();
-          //const auto hinv = Dimension::rootnu(Hdeti);
-          DxDti *= nodeMotionCoeff * ci*ci*dt;//(kernelExtent * kernelExtent) /(dt * hinv * hinv);
-        }
-        const auto DxDtiMag = DxDti.magnitude();
-        DxDti *= min(cfl*ci*safeInv(DxDtiMag),1.0);
+        const auto nodeMotionLimiter = min(cfl*ci*safeInv(DxDti.magnitude()),1.0)
+        if(xsphMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff/max(tiny, normi);
+        if(fickianMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff*ci*ci*dt;
         if(!noMotion) DxDti += vi;
       }
     }

@@ -43,6 +43,7 @@ enum class NodeMotionType {
   Fickian = 2,
   XSPH = 3,
   EulerianFickian = 4,
+  MFM = 5,
 };
 
 template<typename Dimension> class State;

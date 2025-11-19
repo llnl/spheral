@@ -2,6 +2,13 @@
 // EinfeldtWaveSpeed 
 //   Einfeldt B., "On Godunov-Type Methods for Gas Dynamics," Siam. J. Numer.
 //   Anal., 25(2):294-318, 1988
+//   
+//   Nico Fleischmann, Stefan Adami, Nikolaus A. Adams, On an inconsistency of the 
+//   arithmetic-average signal speed estimate for HLL-type Riemann solvers, Journal of 
+//   Computational Physics: X, Volume 8, 2020.
+//
+//   Fleischmann reccomended modifying the Einfeldt wave speed with the min/max
+//   treatment like Davis. Also compared the accuracy of the two wave speeds.
 //
 // J.M. Pearl 2021
 //----------------------------------------------------------------------------//
@@ -54,8 +61,9 @@ waveSpeed(const typename Dimension::Scalar rhoi,
   const auto d = sqrt(d2);
   const auto utilde = (sRhoi * ui + sRhoj * uj)*denom;
 
-  Si = utilde + d;
-  Sj = utilde - d;
+  
+  Si = std::max(utilde + d, ui + ci);
+  Sj = std::min(utilde - d, uj - cj);
 }
 
 
