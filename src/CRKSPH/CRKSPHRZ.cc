@@ -319,7 +319,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
     Scalar Wi, Wj, Qi, Qj;
     QPiType QPiij, QPiji;
     Vector gradWi, gradWj;
-    Vector deltagrad, forceij, forceji;
+    Vector deltagrad;
     Vector xij, vij, etai, etaj;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
@@ -430,7 +430,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
       // Acceleration (CRKSPH form).
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto forceij  = 0.5*weighti*weightj*((Pi + Pj)*deltagrad + Qaccij); // <- Type III, with CRKSPH Q forces
+      const auto forceij = 0.5*weighti*weightj*((Pi + Pj)*deltagrad + Qaccij); // <- Type III, with CRKSPH Q forces
       DvDti -= forceij/mRZi; //CRK Acceleration
       DvDtj += forceij/mRZj; //CRK Acceleration
       if (compatibleEnergy) {

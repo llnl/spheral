@@ -103,7 +103,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
     Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj;
-    Vector gradPsii, gradPsij, Ai, Aj, vstar;
+    Vector gradPsii, gradPsij, vstar;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDt_thread = DvDt.threadCopy(threadStack);

@@ -211,7 +211,7 @@ update(const KeyType& key,
     // Walk the nodes of this NodeList
     unsigned i, k, n, nodeListi;
     Scalar DepsDti, duij;
-    Vector vi12, vj12, vji12, vface12;
+    Vector vi12, vj12, vji12;
     for (nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
       n = eps[nodeListi]->numInternalElements();
       for (i = 0; i != n; ++i) {

@@ -54,7 +54,6 @@ computeSolidCRKSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityM
   {
     // Some scratch variables.
     int i, j, nodeListi, nodeListj;
-    Vector rij, etai, etaj;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto massDensity_thread = massDensity.threadCopy(threadStack);

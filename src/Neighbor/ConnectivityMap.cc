@@ -1105,7 +1105,6 @@ computeConnectivity() {
 #pragma omp parallel
     {
       IntersectionConnectivityContainer intersection_private;
-      Vector b;
 #pragma omp for
       for (auto k = 0u; k < npairs; ++k) {
         const auto& pair = pairs[k];

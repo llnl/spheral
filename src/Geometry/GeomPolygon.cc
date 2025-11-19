@@ -477,7 +477,6 @@ GeomPolygon(const vector<GeomPolygon::Vector>& points,
   mConvex(false) {
 
   // Construct the facets.
-  Vector centroid;
   mFacets.reserve(facetIndices.size());
   for (const vector<unsigned>& indices: facetIndices) {
     VERIFY2(indices.size() == 2, "Need two points per facet : " << indices.size());

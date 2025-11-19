@@ -445,7 +445,9 @@ GeomPolyhedron::
 intersect(const std::pair<Vector, Vector>& rhs) const {
   if (not testBoxIntersection(mXmin, mXmax, rhs.first, rhs.second)) return false;
   
-  // Build a GeompPolygon representation of the box and use our generic intersection
+  //............................................................................
+  // This comment is no longer used, but keeping it for future reference
+  // Build a polyhedron of the box and use our generic intersection
   // method.
   // Create the piecewise linear complex representing the box. Note that 
   // the box consists of facets that are defined by their connections to 
@@ -462,6 +464,7 @@ intersect(const std::pair<Vector, Vector>& rhs) const {
   //     |.       |/
   //     0--------1             
   //
+  //............................................................................
 
   // Check if any of our vertices fall in the box.
   const double x1 = rhs.first.x(), y1 = rhs.first.y(), z1 = rhs.first.z(),
@@ -498,7 +501,6 @@ intersect(const Vector& s0, const Vector& s1) const {
   const auto q01 = (s1 - s0).magnitude();
 
   // Check each facet of the polyhedron.
-  Vector inter;
   const auto nf = mFacets.size();
   for (auto k = 0u; k < nf; ++k) {
     const auto& facet = mFacets[k];
@@ -537,7 +539,6 @@ intersections(const Vector& s0, const Vector& s1,
   vector<double> qvals;
 
   // Check each facet of the polyhedron.
-  Vector inter;
   const auto nf = mFacets.size();
   for (auto k = 0u; k < nf; ++k) {
     const auto& facet = mFacets[k];

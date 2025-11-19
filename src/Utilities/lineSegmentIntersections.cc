@@ -503,7 +503,7 @@ segmentSegmentDistance(const Dim<2>::Vector& a0,
   typedef bg::model::segment<Vector> segment2d;
 
   // Check if the segments intersect.
-  Vector p1, p2, p3, p4;
+  Vector p1, p2;
   if (segmentSegmentIntersection(a0, a1, b0, b1, p1, p2, 1.0e-10) == '1') return 0.0;
 
   // Otherwise check for the minimum distance of each segment from the end points
