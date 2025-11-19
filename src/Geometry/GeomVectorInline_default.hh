@@ -11,36 +11,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct with the given values for the elements.
-//------------------------------------------------------------------------------
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomVector<1>::GeomVector(const double x,
-                          const double /*y*/,
-                          const double /*z*/):
-  GeomVectorBase<1>(x) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomVector<2>::GeomVector(const double x,
-                          const double y,
-                          const double /*z*/):
-  GeomVectorBase<2>(x, y) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomVector<3>::GeomVector(const double x,
-                          const double y,
-                          const double z):
-  GeomVectorBase<3>(x, y, z) {
-}
-
-//------------------------------------------------------------------------------
 // Construct from an Eigen Vector.
 //------------------------------------------------------------------------------
 template<>

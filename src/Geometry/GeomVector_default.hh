@@ -40,13 +40,16 @@ public:
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
   SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return nDim; }
   SPHERAL_HOST_DEVICE static constexpr GeomVector zero()                  { return GeomVector(); }
-  SPHERAL_HOST_DEVICE static constexpr GeomVector one()                   { return GeomVector(1.0); }
+  SPHERAL_HOST_DEVICE static constexpr GeomVector one();
 
   // Constructors.
-  SPHERAL_HOST_DEVICE
-  GeomVector(const double x = 0.0,
-             const double y = 0.0,
-             const double z = 0.0);
+  SPHERAL_HOST_DEVICE GeomVector() = default;
+  SPHERAL_HOST_DEVICE explicit GeomVector(const double x): GeomVectorBase<nDim>(x) {}
+  SPHERAL_HOST_DEVICE GeomVector(const double x,
+                                 const double y): GeomVectorBase<nDim>(x, y) {}
+  SPHERAL_HOST_DEVICE GeomVector(const double x,
+                                 const double y,
+                                 const double z): GeomVectorBase<nDim>(x, y, z) {}
   template<typename Derived> GeomVector(const Eigen::MatrixBase<Derived>& vec);
 
   // Assignment.
@@ -133,9 +136,9 @@ public:
 };
 
 // Declare explicit specializations.
-template<> SPHERAL_HOST_DEVICE GeomVector<1>::GeomVector(const double, const double, const double);
-template<> SPHERAL_HOST_DEVICE GeomVector<2>::GeomVector(const double, const double, const double);
-template<> SPHERAL_HOST_DEVICE GeomVector<3>::GeomVector(const double, const double, const double);
+template<> SPHERAL_HOST_DEVICE constexpr GeomVector<1> GeomVector<1>::one() { GeomVector result; result.mx = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomVector<2> GeomVector<2>::one() { GeomVector result; result.mx = 1.0; result.my = 1.0; return result; }
+template<> SPHERAL_HOST_DEVICE constexpr GeomVector<3> GeomVector<3>::one() { GeomVector result; result.mx = 1.0; result.my = 1.0; result.mz = 1.0; return result; }
 
 template<> SPHERAL_HOST_DEVICE GeomVector<1>& GeomVector<1>::operator=(const double val);
 template<> SPHERAL_HOST_DEVICE GeomVector<2>& GeomVector<2>::operator=(const double val);
