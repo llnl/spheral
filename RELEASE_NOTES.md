@@ -46,6 +46,7 @@ Notable changes include:
     * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
     * CMake directly handles all of the installation environment configuration and setup
       during the install stage.
+    * ManagedArray callback routines are guarded by CHAI_DISABLE_RM.
     * CMake/build logic has been reconfigured:
       * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
       * The following CMake options now have the added `SPHERAL_` prefix:
@@ -71,6 +72,7 @@ Notable changes include:
     * LEOS interface changes:
       * LEOS spack recipe is simplified.
       * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
+    * Update Axom from 0.9.0 to 0.12.0.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
