@@ -233,7 +233,6 @@
   rules:
     - if: '$RUN_UPDATE_UPSTREAMS == "true"'
       when: never
-    - when: always
 
 .merge_pr_rule:
   rules:
