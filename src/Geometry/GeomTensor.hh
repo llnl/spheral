@@ -12,8 +12,8 @@
 //   2004-11-10: JMO, experimenting with replacing the double array with individual
 //               double elements, again for speed.
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_GeomTensor_default_hh__
-#define __Spheral_GeomTensor_default_hh__
+#ifndef __Spheral_GeomTensor__
+#define __Spheral_GeomTensor__
 
 #include "Geometry/GeomVector_fwd.hh"
 #include "Geometry/GeomTensor_fwd.hh"
@@ -386,6 +386,6 @@ template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomTensor<n
 
 }
 
-#include "GeomTensorInline_default.hh"
+#include "GeomTensorInline.hh"
 
 #endif

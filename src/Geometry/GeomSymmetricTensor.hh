@@ -391,6 +391,6 @@ template<int nDim> ::std::ostream& operator<<(::std::ostream& os, const GeomSymm
 
 }
 
-#include "GeomSymmetricTensorInline_default.hh"
+#include "GeomSymmetricTensorInline.hh"
 
 #endif

@@ -53,29 +53,19 @@ set(Geometry_headers
     GeomPolyhedronInline.hh
     GeomSymmetricTensor.hh
     GeomSymmetricTensorBase.hh
-    GeomSymmetricTensorInline_default.hh
-    GeomSymmetricTensorInline_eigen.hh
-    GeomSymmetricTensor_default.hh
-    GeomSymmetricTensor_eigen.hh
+    GeomSymmetricTensorInline.hh
     GeomSymmetricTensor_fwd.hh
     GeomTensor.hh
     GeomTensorBase.hh
-    GeomTensorInline_default.hh
-    GeomTensorInline_eigen.hh
-    GeomTensor_default.hh
-    GeomTensor_eigen.hh
+    GeomTensorInline.hh
     GeomTensor_fwd.hh
     GeomThirdRankTensor.hh
     GeomThirdRankTensorInline.hh
     GeomThirdRankTensor_fwd.hh
     GeomVector.hh
-    GeomVectorBase_default.hh
-    GeomVectorInline_array.hh
-    GeomVectorInline_default.hh
-    GeomVectorInline_eigen.hh
-    GeomVector_array.hh
-    GeomVector_default.hh
-    GeomVector_eigen.hh
+    GeomVectorBase.hh
+    GeomVectorInline.hh
+    GeomVector.hh
     GeomVector_fwd.hh
     Jacobi.hh
     Jacobi2.hh

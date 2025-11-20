@@ -5,11 +5,7 @@
 #define __Spheral_GeomVector_fwd_hh__
 
 namespace Spheral {
-#ifdef GEOMMEM
-  template<int nDim, bool ownMemory = true> class GeomVector;
-#else
   template<int nDim> class GeomVector;
-#endif
 }
 
 #endif

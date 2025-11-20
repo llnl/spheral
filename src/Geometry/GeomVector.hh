@@ -11,15 +11,15 @@
 //                internal data types in accordance with suggestions from
 //                Brian White
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_GeomVector_default_hh__
-#define __Spheral_GeomVector_default_hh__
+#ifndef __Spheral_GeomVector__
+#define __Spheral_GeomVector__
 
 #include "config.hh"
 
 #include "Geometry/GeomVector_fwd.hh"
 #include "Geometry/GeomTensor_fwd.hh"
 #include "Geometry/GeomSymmetricTensor_fwd.hh"
-#include "GeomVectorBase_default.hh"
+#include "GeomVectorBase.hh"
 
 #include <iostream>
 #include "Eigen/Dense"
@@ -266,7 +266,7 @@ template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomVector<n
 
 }
 
-#include "GeomVectorInline_default.hh"
+#include "GeomVectorInline.hh"
 
 #endif
 

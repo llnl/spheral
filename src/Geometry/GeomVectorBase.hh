@@ -3,8 +3,8 @@
 //
 // Created by JMO, Wed Nov 10 14:46:51 2004
 //----------------------------------------------------------------------------//
-#ifndef __Spheral__GeomVectorBase__
-#define __Spheral__GeomVectorBase__
+#ifndef __Spheral_GeomVectorBase__
+#define __Spheral_GeomVectorBase__
 
 namespace Spheral {
 
