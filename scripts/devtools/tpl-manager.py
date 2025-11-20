@@ -130,7 +130,7 @@ class SpheralTPL:
         if (type(specs) != list):
             specs = [specs]
         install_status = spack.spec.Spec.install_status
-        print(spack.spec.tree(specs, status_fn=install_status, hashes=True, hashlen=6))
+        print(spack.spec.tree(specs, format=spack.spec.DISPLAY_FORMAT, status_fn=install_status, hashes=True, hashlen=6))
 
     def clone_spack(self):
         "Clone Spack and add paths to use spack python"
