@@ -5,6 +5,7 @@ spack:
   concretizer:
     unify: false
     reuse: false
+    compiler_mixing: false
   develop:
     spheral:
       path: ../../../../
