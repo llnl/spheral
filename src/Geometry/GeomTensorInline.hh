@@ -2,8 +2,9 @@
 #include <limits.h>
 #include <string>
 
-#include "GeomVector.hh"
-#include "GeomSymmetricTensor.hh"
+#include "Geometry/GeomVector.hh"
+#include "Geometry/GeomSymmetricTensor.hh"
+#include "Geometry/findEigenValues3.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/FastMath.hh"
 #include "Utilities/DBC.hh"
@@ -2254,6 +2255,39 @@ squareElements() const {
                        (this->mzx)*(this->mzx),
                        (this->mzy)*(this->mzy),
                        (this->mzz)*(this->mzz));
+}
+
+//------------------------------------------------------------------------------
+// Find the eigenvalues of a tensor.
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<1>
+GeomTensor<1>::eigenValues() const {
+  return GeomVector<1>(this->mxx);
+}
+
+//----------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<2>
+GeomTensor<2>::eigenValues() const {
+  const double b = Trace();
+  const double c = Determinant();
+  const double q = 0.5*(b + sgn(b)*sqrt(std::max(0.0, b*b - 4.0*c))) + 1.0e-10*sgn(b);
+  CHECK(q != 0.0);
+  return GeomVector<2>(q, c/q);
+}
+
+//----------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomTensor<3>::eigenValues() const {
+  return findEigenValues3<GeomTensor<3>>(*this);
 }
 
 //------------------------------------------------------------------------------

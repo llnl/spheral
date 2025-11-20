@@ -179,7 +179,7 @@ public:
   SPHERAL_HOST_DEVICE GeomTensor squareElements() const;
 
   // A simple method for returning the eigenvalues of a tensor.
-  GeomVector<nDim> eigenValues() const;
+  SPHERAL_HOST_DEVICE GeomVector<nDim> eigenValues() const;
   
   // Apply a rotational transform to this tensor ( R^-1 * (*this) * R ).
   SPHERAL_HOST_DEVICE void rotationalTransform(const GeomTensor& R);
@@ -361,6 +361,10 @@ template<> SPHERAL_HOST_DEVICE GeomTensor<3> GeomTensor<3>::square() const;
 template<> SPHERAL_HOST_DEVICE GeomTensor<1> GeomTensor<1>::squareElements() const;
 template<> SPHERAL_HOST_DEVICE GeomTensor<2> GeomTensor<2>::squareElements() const;
 template<> SPHERAL_HOST_DEVICE GeomTensor<3> GeomTensor<3>::squareElements() const;
+
+template<> SPHERAL_HOST_DEVICE GeomVector<1> GeomTensor<1>::eigenValues() const;
+template<> SPHERAL_HOST_DEVICE GeomVector<2> GeomTensor<2>::eigenValues() const;
+template<> SPHERAL_HOST_DEVICE GeomVector<3> GeomTensor<3>::eigenValues() const;
 
 template<> SPHERAL_HOST_DEVICE void GeomTensor<1>::rotationalTransform(const GeomTensor<1>&);
 template<> SPHERAL_HOST_DEVICE void GeomTensor<2>::rotationalTransform(const GeomTensor<2>&);

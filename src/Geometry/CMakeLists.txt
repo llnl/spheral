@@ -13,7 +13,6 @@ set(Geometry_sources
     GeomPolygon.cc
     GeomPolyhedron.cc
     GeomSymmetricTensor.cc
-    GeomTensor.cc
     Jacobi.cc
     Jacobi2.cc
     buildEigenVector.cc

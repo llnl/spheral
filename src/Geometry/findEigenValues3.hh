@@ -13,6 +13,7 @@ namespace Spheral {
 // Based on the notes by David Eberly at www.geometrictools.com.
 //------------------------------------------------------------------------------
 template<typename TensorType>
+SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 findEigenValues3(const TensorType& tin) {
