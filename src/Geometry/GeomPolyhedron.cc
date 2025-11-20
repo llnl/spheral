@@ -972,7 +972,7 @@ buildAxomData() const {
   Vector xmax = mXmax + 0.01*(mXmax - mXmin);
   bb.addPoint(AxPoint(&xmin[0]));
   bb.addPoint(AxPoint(&xmax[0]));
-  axom::mint::write_vtk(meshPtr, "blago.vtk");
+  axom::mint::write_vtk(meshPtr.get(), "blago.vtk");
   mSurfaceMeshPtr = std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh>(meshPtr);
   mSurfaceMeshQueryPtr = new AxOctree(bb, mSurfaceMeshPtr);
   mSurfaceMeshQueryPtr->generateIndex();
