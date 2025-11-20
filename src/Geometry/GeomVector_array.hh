@@ -257,9 +257,7 @@ template<int nDim, bool ownMemory> std::ostream& operator<<(std::ostream& os, co
 
 }
 
-#ifndef __GCCXML__
 #include "GeomVectorInline_array.hh"
-#endif
 
 #endif
 

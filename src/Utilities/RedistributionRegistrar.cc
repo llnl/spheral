@@ -26,6 +26,16 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+RedistributionRegistrar&
+RedistributionRegistrar::
+instance() {
+  static RedistributionRegistrar theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Register a RedistributionNotificationHandle.
 //------------------------------------------------------------------------------
 void

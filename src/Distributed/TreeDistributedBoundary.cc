@@ -34,6 +34,17 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Singleton instance method.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+TreeDistributedBoundary<Dimension>&
+TreeDistributedBoundary<Dimension>::
+instance() {
+  static TreeDistributedBoundary<Dimension> theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Default constructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>

@@ -128,7 +128,7 @@ LEOS_bundle():
   // units through our interface.
   LEOS::LEOS_StartupOptions opts;
   opts.units(LEOS::LEOS_UNITS_CGS);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   opts.communicator(Communicator::communicator());
 #endif
 #ifdef ENABLE_HIP
