@@ -1,4 +1,4 @@
-if(ENABLE_DOCS)
+if(SPHERAL_ENABLE_DOCS)
 
   # configured documentation tools and intermediate build results
   set(BINARY_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/_build")

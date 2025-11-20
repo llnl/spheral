@@ -13,7 +13,7 @@
 #include "Utilities/range.hh"
 #include "Utilities/Logger.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/packElement.hh"
@@ -44,7 +44,7 @@ FieldList<Dimension, DataType>::FieldList():
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList() : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mFieldViews.setUserCallback(getCallback());
 #endif
 }
@@ -67,7 +67,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   reductionType(ThreadReduction::SUM),
   threadMasterPtr(nullptr) {
   DEBUG_LOG << "FieldList::FieldList(aStorageType) : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mFieldViews.setUserCallback(getCallback());
 #endif
 }
@@ -494,7 +494,7 @@ operator()(const typename Dimension::Vector& position,
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // In parallel, we need to sum up the result across all processors.
   {
     int procID, numProcs;
@@ -1528,7 +1528,9 @@ buildDependentArrays() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mFieldViews.resize(nfields);
 #else
+#ifndef CHAI_DISABLE_RM
   mFieldViews.setUserCallback(getCallback());
+#endif
   if (mFieldViews.size() == 0u && !mFieldViews.data(chai::CPU, false)) {
     mFieldViews.allocate(nfields, chai::CPU);
   } else {
@@ -1563,7 +1565,7 @@ void
 FieldList<Dimension, DataType>::
 setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f) {
   mChaiCallback = f;
-#ifndef SPHERAL_UNIFIED_MEMORY
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mFieldViews.setUserCallback(getCallback());
 #endif
 }

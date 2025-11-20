@@ -100,8 +100,6 @@ template<int nDim, int rank, typename Descendant> const typename RankNTensor<nDi
 
 }
 
-#ifndef __GCCXML__
 #include "RankNTensorInline.hh"
-#endif
 
 #endif

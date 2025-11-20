@@ -13,12 +13,22 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+RegisterMPIDataTypes&
+RegisterMPIDataTypes::
+instance() {
+  static RegisterMPIDataTypes theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Constructor (private).
 //------------------------------------------------------------------------------
 RegisterMPIDataTypes::
 RegisterMPIDataTypes() {
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Vectors.
   MPI_Type_contiguous(DataTypeTraits<Dim<1>::Vector>::numElements(Dim<1>::Vector::zero), MPI_DOUBLE, &MPI_Vector1d);
   MPI_Type_contiguous(DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero), MPI_DOUBLE, &MPI_Vector2d);

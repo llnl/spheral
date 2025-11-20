@@ -3,9 +3,6 @@
 //
 // Created by JMO, Sat May 20 22:50:20 PDT 2000
 //----------------------------------------------------------------------------//
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 #include "GenericHydro.hh"
 
@@ -150,7 +147,7 @@ dt(const DataBase<Dimension>& dataBase,
   if (haveDS) S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
 
   // Check if the longitudinal sound speed is registered.
-#ifdef LONGCSDT
+#ifdef SPHERAL_ENABLE_LONGCSDT
   const auto haveLongCs = state.fieldNameRegistered(SolidFieldNames::longitudinalSoundSpeed);
 #else
   const auto haveLongCs = false; // ignore longitudinal sound speed

@@ -26,7 +26,7 @@ set(RK_sources
     RKFieldNames.cc
     )
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND RK_sources
     ContinuityVolumePolicyRZ.cc
     )

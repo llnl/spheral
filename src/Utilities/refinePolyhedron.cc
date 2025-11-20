@@ -13,7 +13,7 @@
 #include "Geometry/Dimension.hh"
 
 // We use Pixar's opensubdiv package to do the refinement.
-#ifdef ENABLE_OPENSUBDIV
+#ifdef SPHERAL_ENABLE_OPENSUBDIV
 #include "opensubdiv/far/topologyDescriptor.h"
 #include "opensubdiv/far/primvarRefiner.h"
 #endif
@@ -90,11 +90,7 @@ GeomPolyhedron refinePolyhedron(const GeomPolyhedron& poly0,
   CONTRACT_VAR(poly0);
   CONTRACT_VAR(numLevels);
 
-#ifndef ENABLE_OPENSUBDIV
-  VERIFY2(false, "ERROR: attempt to call refinePolyhedron, but OpenSubdiv has not been compiled into Spheral.");
-  return GeomPolyhedron();
-
-#else
+#ifdef SPHERAL_ENABLE_OPENSUBDIV
 
   using namespace OpenSubdiv;
   typedef Dim<3>::Vector Vector;
@@ -217,6 +213,9 @@ GeomPolyhedron refinePolyhedron(const GeomPolyhedron& poly0,
 
   // That's it.
   return poly1;
+#else
+  VERIFY2(false, "ERROR: attempt to call refinePolyhedron, but OpenSubdiv has not been compiled into Spheral.");
+  return GeomPolyhedron();
 #endif
 }
 

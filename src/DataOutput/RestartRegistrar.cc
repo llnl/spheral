@@ -28,6 +28,16 @@ using std::abs;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+RestartRegistrar&
+RestartRegistrar::
+instance() {
+  static RestartRegistrar theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Register a RestartHandle.
 //------------------------------------------------------------------------------
 void

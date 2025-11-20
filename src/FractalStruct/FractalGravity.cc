@@ -24,6 +24,7 @@
 #include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
 #include "Material/PhysicalConstants.hh"
+#include "Distributed/Communicator.hh"
 
 #include "libs.hh"
 #include "classes.hh"
