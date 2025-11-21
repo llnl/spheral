@@ -6,7 +6,6 @@
   variables:
     GIT_STRATEGY: clone
   stage: init
-  extends: [.no_update_sched]
   script:
     - echo $USER
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID/project
@@ -125,9 +124,8 @@
   variables:
     GIT_STRATEGY: clone
   extends: [.merge_pr_rule]
-  # This allows us to update upstreams with an inactive scheduled pipeline
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $RUN_UPDATE_UPSTREAMS == "true"
+    - if: 'CI_COMMIT_MESSAGE =~ /update-upstream/'
       when: always
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
@@ -218,7 +216,6 @@
   stage: cleanup
   variables:
     GIT_STRATEGY: none
-  extends: [.no_update_sched]
   script:
     - cd $SPHERAL_BUILDS_DIR
 
@@ -228,11 +225,6 @@
 
     - ml load mpifileutils
     - if [[ $DIR_LIST ]]; then $RUN_CMD -n 20 drm $DIR_LIST; else echo "No directories to remove at this time."; fi
-
-.no_update_sched:
-  rules:
-    - if: '$RUN_UPDATE_UPSTREAMS == "true"'
-      when: never
 
 .merge_pr_rule:
   rules:
@@ -255,7 +247,6 @@
 
 # Must skip cleanup if running the performance stage
 .cleanup_rule:
-  extends: [.no_update_sched]
   rules:
     - if: '$CI_COMMIT_REF_NAME == "develop"'
       when: never
@@ -263,7 +254,6 @@
       when: never
 
 .retry_rule:
-  extends: [.no_update_sched]
   retry:
     max: 2
     when: job_execution_timeout
