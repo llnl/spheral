@@ -88,11 +88,6 @@ if (SPHERAL_ENABLE_PYTHON)
   configure_file(${MPIPY_FILE_NAME}
     ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/mpi.py
     COPYONLY)
-
-  install(FILES       ${MPIPY_FILE_NAME}
-          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
-          RENAME      mpi.py
-          )
 endif()
 instantiate(Distributed_inst Distributed_sources)
 

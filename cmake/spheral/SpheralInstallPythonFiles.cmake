@@ -22,16 +22,13 @@ function(spheral_install_python_files)
 
   if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${ARGV}
-      DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
-    install(CODE "execute_process( \
-    COMMAND ${PYTHON_EXE} -m compileall ${SPHERAL_SITE_PACKAGES_PATH}/Spheral \
-            WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})")
+      DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
   endif()
 
 endfunction()
 
 #----------------------------------------------------------------------------------------
-#                                   spheral_instalL_python_tests
+#                                   spheral_install_python_tests
 #----------------------------------------------------------------------------------------
 # ----------------------
 # INPUT VARIABLES
