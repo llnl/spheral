@@ -26,7 +26,7 @@ public:
   // Useful static member data.
   SPHERAL_HOST_DEVICE static constexpr size_type nrank()                      { return rank; }
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()                { return nDim; }
-  SPHERAL_HOST_DEVICE static constexpr size_type numElements()                { return FastMath::calcPower<nDim, rank>::value; }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()                { return FastMath::calcPower(nDim, rank); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE RankNTensor()                                           { for (auto i = 0u; i < numElements(); ++i) mElements[i] = 0.0; }

@@ -230,25 +230,21 @@ template<typename T> SPHERAL_HOST_DEVICE inline T pow9(const T& x) { return x*x*
 //-----------------------------------------------------------------------------
 // Compile time power function
 //-----------------------------------------------------------------------------
-// template<typename T>
-// SPHERAL_HOST_DEVICE 
-// constexpr T calcPower(T value, unsigned power) {
-//   if (power == 0u) return T(1);
-//   auto result = value;
-//   for (auto i = 1u; i < power; ++i) result *= value;
-//   return result;
-//   // return power == 0 ? 1 : value * calcPower(value, power - 1);
-// }
+template<typename T>
+SPHERAL_HOST_DEVICE 
+constexpr T calcPower(T value, unsigned power) {
+  return power == 0 ? 1 : value * calcPower(value, power - 1);
+}
 
-template <int Base, int Exp>
-struct calcPower {
-    static const int value = Base * calcPower<Base, Exp - 1>::value;
-};
+// template <int Base, int Exp>
+// struct calcPower {
+//     static const int value = Base * calcPower<Base, Exp - 1>::value;
+// };
 
-template <int Base>
-struct calcPower<Base, 0u> {
-    static const int value = 1;
-};
+// template <int Base>
+// struct calcPower<Base, 0u> {
+//     static const int value = 1;
+// };
 
 //------------------------------------------------------------------------------
 // The below CubeRoot method is not recommended for now -- just keeping here in 
