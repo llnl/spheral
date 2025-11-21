@@ -14,9 +14,7 @@ set(SVPH_inst
    )
 
 
-set(SVPH_sources 
-  SVPHFieldNames.cc
-  )
+set(SVPH_sources )
 
 instantiate(SVPH_inst SVPH_sources)
 

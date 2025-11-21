@@ -33,7 +33,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # VARIANTS
     # -------------------------------------------------------------------------
     variant('mpi', default=True, description='Enable MPI Support.')
-    variant('openmp', default=True, description='Enable OpenMP Support.')
+    variant('openmp', default=True, when="~rocm", description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
     variant('shared', default=True, when="~rocm", description='Build C++ libs as shared.')
     variant('python', default=True, description='Enable Spheral python interface.')
@@ -69,6 +69,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
     depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
+    depends_on('axom +openmp', type='build', when='+openmp')
+    depends_on('axom ~openmp', type='build', when='~openmp')
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 
@@ -123,6 +125,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Conflicts
     # -------------------------------------------------------------------------
     conflicts("+cuda", when="+rocm")
+    conflicts("+shared", when="+rocm")
+    conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
 
     def _get_sys_type(self, spec):

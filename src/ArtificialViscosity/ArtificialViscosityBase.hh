@@ -68,13 +68,13 @@ public:
   SPHERAL_HOST_DEVICE void negligibleSoundSpeed(Scalar x)   { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; }
 
 protected:
-  Scalar mClinear;
-  Scalar mCquadratic;
+  Scalar mClinear = 0.0;
+  Scalar mCquadratic = 0.0;
   // Switch for the Balsara shear correction.
-  bool mBalsaraShearCorrection;
+  bool mBalsaraShearCorrection = false;
   // Parameters for the Q limiter.
-  Scalar mEpsilon2;
-  Scalar mNegligibleSoundSpeed;
+  Scalar mEpsilon2 = 1.0E-2;
+  Scalar mNegligibleSoundSpeed = 1.0E-10;
 };
 
 }
