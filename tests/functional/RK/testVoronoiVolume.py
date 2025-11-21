@@ -20,7 +20,7 @@ commandLine(
     x0 = 0.0,
     x1 = 1.0,
     nPerh = 1.25,
-    hmin = 0.0001, 
+    hmin = 0.0001,
     hmax = 10.0,
 
     # Should we randomly perturb the positions?
@@ -117,7 +117,7 @@ elif testDim == "3d":
     distributeNodes3d((nodes1, gen))
 
 else:
-    raise ValueError("Only tests cases for 1d, 2d and 3d.") 
+    raise ValueError("Only tests cases for 1d, 2d and 3d.")
 
 output("nodes1.numNodes")
 
@@ -144,10 +144,10 @@ faceted_bounds = vector_of_FacetedVolume()
 if testDim == "1d":
     point_list = [Vector(x0), Vector(x1)]
 elif testDim == "2d":
-    point_list = [Vector(x0, x0), Vector(x1, x0), 
+    point_list = [Vector(x0, x0), Vector(x1, x0),
                   Vector(x0, x1), Vector(x1, x1)]
 else:
-    point_list = [Vector(x0, x0, x0), Vector(x0, x1, x0), Vector(x1, x0, x0), Vector(x1, x1, x0), 
+    point_list = [Vector(x0, x0, x0), Vector(x0, x1, x0), Vector(x1, x0, x0), Vector(x1, x1, x0),
                   Vector(x0, x0, x1), Vector(x0, x1, x1), Vector(x1, x0, x1), Vector(x1, x1, x1)]
 points = vector_of_Vector()
 for p in point_list:
@@ -195,7 +195,7 @@ cells = db.newFluidFacetedVolumeFieldList(FacetedVolume(), "cells")
 cellFaceFlags = db.newFluidvector_of_CellFaceFlagFieldList(vector_of_int(), "face flags")
 db.updateConnectivityMap(True)
 cm = db.connectivityMap()
-computeVoronoiVolume(db.fluidPosition, 
+computeVoronoiVolume(db.fluidPosition,
                      db.fluidHfield,
                      cm,
                      damage,
@@ -281,4 +281,4 @@ if ranfrac == 0.0:
         else:
             assert Vi == 0.0
 else:
-    print("random displacments -- no error check.")
+    print("random displacements -- no error check.")
