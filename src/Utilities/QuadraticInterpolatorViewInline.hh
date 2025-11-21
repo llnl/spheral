@@ -7,22 +7,22 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIView::operator()(const double x) const {
+QuadraticInterpolatorView::operator()(const double x) const {
   const auto i0 = lowerBound(x);
   return mcoeffs[i0] + (mcoeffs[i0 + 1] + mcoeffs[i0 + 2]*x)*x;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIView::operator()(const double x,
-                   const size_t i0) const {
+QuadraticInterpolatorView::operator()(const double x,
+                                      const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return mcoeffs[i0] + (mcoeffs[i0 + 1] + mcoeffs[i0 + 2]*x)*x;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIView::operator[](const size_t i) const {
+QuadraticInterpolatorView::operator[](const size_t i) const {
   REQUIRE(size() > 0);
   REQUIRE(i < size());
   return mcoeffs[i];
@@ -33,15 +33,15 @@ QIView::operator[](const size_t i) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIView::prime(const double x) const {
+QuadraticInterpolatorView::prime(const double x) const {
   const auto i0 = lowerBound(x);
   return mcoeffs[i0 + 1] + 2.0*mcoeffs[i0 + 2]*x;
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIView::prime(const double x,
-              const size_t i0) const {
+QuadraticInterpolatorView::prime(const double x,
+                                 const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return mcoeffs[i0 + 1] + 2.0*mcoeffs[i0 + 2]*x;
 }
@@ -52,15 +52,15 @@ QIView::prime(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-QIView::prime2(const double x) const {
+QuadraticInterpolatorView::prime2(const double x) const {
   const auto i0 = lowerBound(x);
   return 2.0*mcoeffs[i0 + 2];
 }
 
 SPHERAL_HOST_DEVICE inline
 double
-QIView::prime2(const double /*x*/,
-               const size_t i0) const {
+QuadraticInterpolatorView::prime2(const double /*x*/,
+                                  const size_t i0) const {
   REQUIRE(i0 <= 3u*mN1);
   return 2.0*mcoeffs[i0 + 2];
 }
@@ -70,7 +70,7 @@ QIView::prime2(const double /*x*/,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-QIView::lowerBound(const double x) const {
+QuadraticInterpolatorView::lowerBound(const double x) const {
   const auto result = 3u*std::min(mN1, size_t(std::max(0.0, x - mXmin)/mXstep));
   ENSURE(result <= 3u*mN1);
   return result;
@@ -81,7 +81,7 @@ QIView::lowerBound(const double x) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 bool
-QIView::operator==(const QIView& rhs) const {
+QuadraticInterpolatorView::operator==(const QuadraticInterpolatorView& rhs) const {
   return ((mN1 == rhs.mN1) and
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and

@@ -1,26 +1,26 @@
 //---------------------------------Spheral++----------------------------------//
-// QIView
+// QuadraticInterpolatorView
 //
 // View class for the QuadraticInterpolator class
 // Created by LDO, Wed Oct 29 15:00:00 PST 2025
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_QIView__
-#define __Spheral_QIView__
+#ifndef __Spheral_QuadraticInterpolatorView__
+#define __Spheral_QuadraticInterpolatorView__
 
 #include "chai/ManagedArray.hpp"
 #include "config.hh"
 
 namespace Spheral {
 
-class QIView {
+class QuadraticInterpolatorView {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
-  SPHERAL_HOST_DEVICE QIView() = default;
+  SPHERAL_HOST_DEVICE QuadraticInterpolatorView() = default;
 
   // Comparisons
-  SPHERAL_HOST_DEVICE bool operator==(const QIView& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const QuadraticInterpolatorView& rhs) const;
 
   // Interpolate for the y value
   SPHERAL_HOST_DEVICE double operator()(const double x) const;
@@ -57,6 +57,6 @@ protected:
 };
 }
 
-#include "QIViewInline.hh"
+#include "QuadraticInterpolatorViewInline.hh"
 
 #endif

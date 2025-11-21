@@ -12,6 +12,7 @@
 #include <functional>
 
 using CHI = Spheral::CubicHermiteInterpolator;
+using CHIView = Spheral::CubicHermiteInterpolatorView;
 
 class CubicHermiteInterpolatorTest : public ::testing::Test {
 public:
@@ -45,9 +46,9 @@ GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, CopyAssign) {
     SPHERAL_ASSERT_EQ(chi1.size(), chiref.size());
     CHI chi2 = chiref;
     SPHERAL_ASSERT_EQ(chi2.size(), chiref.size());
-    Spheral::CHIView chi1_view = chi1.view();
-    Spheral::CHIView chi2_view = chi2.view();
-    Spheral::CHIView chiref_view = chiref;
+    CHIView chi1_view = chi1.view();
+    CHIView chi2_view = chi2.view();
+    CHIView chiref_view = chiref;
     // Ensure the underlying data pointer is different from the initial CHI
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_NE(chi1_view.data(), chiref_view.data());
@@ -69,7 +70,7 @@ GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, FuncCtorTest) {
   CHI chih(xmin, xmax, NV, gpu_this->func);
   {
     size_t N = chih.size();
-    Spheral::CHIView chi = chih.view();
+    CHIView chi = chih.view();
     EXEC_IN_SPACE_BEGIN(TypeParam)
       SPHERAL_ASSERT_EQ(chi.size(), N);
     EXEC_IN_SPACE_END()
@@ -92,7 +93,7 @@ GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, VecCtorTest) {
   const double xmax = gpu_this->xmax;
   CHI chih(xmin, xmax, yvals);
   size_t N = chih.size();
-  Spheral::CHIView chi = chih.view();
+  CHIView chi = chih.view();
   EXEC_IN_SPACE_BEGIN(TypeParam)
     SPHERAL_ASSERT_EQ(chi.size(), N);
   EXEC_IN_SPACE_END()

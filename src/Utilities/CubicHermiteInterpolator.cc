@@ -21,7 +21,7 @@ namespace Spheral {
 // Copy constructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs) :
-  CHIView() {
+  CubicHermiteInterpolatorView() {
   mN = rhs.mN;
   mXmin = rhs.mXmin;
   mXmax = rhs.mXmax;
