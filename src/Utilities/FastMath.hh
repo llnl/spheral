@@ -31,8 +31,9 @@ template<> inline double tinyValue<double>() { return 1.0e-100; }
 // Based on http://metamerist.com/cbrt/cbrt.htm
 //------------------------------------------------------------------------------
 template<int n>
-SPHERAL_HOST_DEVICE inline
-float
+SPHERAL_HOST_DEVICE
+inline 
+float 
 nth_root(float x) {
    const int ebits = 8;
    const int fbits = 23;
@@ -45,7 +46,8 @@ nth_root(float x) {
 }
 
 template<int n>
-SPHERAL_HOST_DEVICE inline
+SPHERAL_HOST_DEVICE
+inline 
 double
 nth_root(double x) {
    const int ebits = 11;
@@ -85,6 +87,7 @@ nth_root(double x) {
 // to the Quake 3 idea.
 //------------------------------------------------------------------------------
 inline
+SPHERAL_HOST_DEVICE
 double Sqrt(const double y) {
   double x, z, tempf;
   tempf = y;
@@ -130,6 +133,7 @@ double Sqrt(const double y) {
 
 // iterative cube root approximation using Halley's method
 template<typename D>
+SPHERAL_HOST_DEVICE
 inline
 D
 cbrta_halley(const D a, const D R) {
@@ -145,7 +149,8 @@ cbrta_halley(const D a, const D R) {
 
 // Cube root approximation using 2 iterations of Halley's method
 template<typename D>
-SPHERAL_HOST_DEVICE inline
+SPHERAL_HOST_DEVICE
+inline
 D
 CubeRootHalley2(D d) {
 #ifdef __INTEL_COMPILER
@@ -162,6 +167,7 @@ CubeRootHalley2(D d) {
 //------------------------------------------------------------------------------
 // Single pass Halley iteration for sqrt.
 template<typename D>
+SPHERAL_HOST_DEVICE
 inline
 D
 sqrta_halley(const D a, const D R) {
@@ -176,6 +182,7 @@ sqrta_halley(const D a, const D R) {
 
 // Sqrt approximation using 2 iterations of Halley's method.
 template<typename D>
+SPHERAL_HOST_DEVICE
 inline
 D
 SqrtHalley2(const D x) {
@@ -211,22 +218,33 @@ cube(const T& x) {
 //------------------------------------------------------------------------------
 // powN versions of above.
 //------------------------------------------------------------------------------
-template<typename T> inline T pow2(const T& x) { return x*x; }
-template<typename T> inline T pow3(const T& x) { return x*x*x; }
-template<typename T> inline T pow4(const T& x) { return x*x*x*x; }
-template<typename T> inline T pow5(const T& x) { return x*x*x*x*x; }
-template<typename T> inline T pow6(const T& x) { return x*x*x*x*x*x; }
-template<typename T> inline T pow7(const T& x) { return x*x*x*x*x*x*x; }
-template<typename T> inline T pow8(const T& x) { return x*x*x*x*x*x*x*x; }
-template<typename T> inline T pow9(const T& x) { return x*x*x*x*x*x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow2(const T& x) { return x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow3(const T& x) { return x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow4(const T& x) { return x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow5(const T& x) { return x*x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow6(const T& x) { return x*x*x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow7(const T& x) { return x*x*x*x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow8(const T& x) { return x*x*x*x*x*x*x*x; }
+template<typename T> SPHERAL_HOST_DEVICE inline T pow9(const T& x) { return x*x*x*x*x*x*x*x*x; }
 
 //-----------------------------------------------------------------------------
 // Compile time power function
 //-----------------------------------------------------------------------------
 template<typename T>
+SPHERAL_HOST_DEVICE 
 constexpr T calcPower(T value, unsigned power) {
   return power == 0 ? 1 : value * calcPower(value, power - 1);
 }
+
+// template <int Base, int Exp>
+// struct calcPower {
+//     static const int value = Base * calcPower<Base, Exp - 1>::value;
+// };
+
+// template <int Base>
+// struct calcPower<Base, 0u> {
+//     static const int value = 1;
+// };
 
 //------------------------------------------------------------------------------
 // The below CubeRoot method is not recommended for now -- just keeping here in

@@ -65,7 +65,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
 
   // Build a fake NodeList with Neighbor to help selecting shapes that might be neighbors.
   const double length = (surface.xmax() - surface.xmin()).maxElement();
-  const Vector xghost = surface.xmax() + length*Vector::one;
+  const Vector xghost = surface.xmax() + length*Vector::one();
 
   // Make a temporary NodeList so we can use it's neighbor logic.
   PhysicalConstants constants(1.0, 1.0, 1.0);
@@ -92,7 +92,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     }
     double Ri = Dimension::rootnu(shapes[i].volume()/M_PI);
     radius[i] = Ri;
-    H[i] = SymTensor::one / (2.0*Ri);
+    H[i] = SymTensor::one() / (2.0*Ri);
   }
 
   // First iterate the requested number of iterations with surface repulsion.
@@ -302,7 +302,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     if (flags[i] == 3) {
       CHECK(maxoverlap > maxoverlapfrac);
       flags[i] = 0;
-      centers[i] = Vector::zero;
+      centers[i] = Vector::zero();
       // # # Make one last ditch attempt to randomly fit this shape in.
       // # centers[i] = self.randomCenter(i, centers)
       // # if centers[i]:

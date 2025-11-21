@@ -4,6 +4,8 @@
 #include "Geometry/GeomTensor.hh"
 #include "Geometry/GeomSymmetricTensor.hh"
 #include "Geometry/GeomVector.hh"
+#include "Utilities/rotationMatrix.hh"
+#include "Utilities/SpheralFunctions.hh"
 
 using Tensor = Spheral::GeomTensor<3>;
 using SymTensor = Spheral::GeomSymmetricTensor<3>;
@@ -423,18 +425,21 @@ GPU_TYPED_TEST_P(GeomTensorTypedTest, DotProduct) {
   EXEC_IN_SPACE_END()
 }
 
-// TODO: Check this w/ Mike Owen
 GPU_TYPED_TEST_P(GeomTensorTypedTest, DoubleDotProduct) {
-  //using WORK_EXEC_POLICY = TypeParam;
-  //EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
-  //  Tensor T1(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
-  //  Tensor T2(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0);
-  //  double ddot = T1.doubledot(T2);
-  //  // Expected value calculated manually
-  //  SPHERAL_ASSERT_EQ(ddot, 1.0*9.0 + 2.0*8.0 + 3.0*7.0 +
-  //                          4.0*6.0 + 5.0*5.0 + 6.0*4.0 +
-  //                          7.0*3.0 + 8.0*2.0 + 9.0*1.0);
-  //EXEC_IN_SPACE_END()
+  using WORK_EXEC_POLICY = TypeParam;
+  EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
+   Tensor T1(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+   Tensor T2(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0);
+   double ddot = T1.doubledot(T2);
+   // Expected value calculated manually
+   auto answer = 0.0;
+   for (auto i = 0u; i < 3; ++i) {
+     for (auto j = 0u; j < 3; ++j) {
+       answer += T1(i,j)*T2(j,i);
+     }
+   }
+   SPHERAL_ASSERT_EQ(ddot, answer);
+  EXEC_IN_SPACE_END()
 }
 
 GPU_TYPED_TEST_P(GeomTensorTypedTest, Square) {
@@ -474,19 +479,19 @@ GPU_TYPED_TEST_P(GeomTensorTypedTest, SquareElements) {
 
 GPU_TYPED_TEST_P(GeomTensorTypedTest, EigenValues) {
   using WORK_EXEC_POLICY = TypeParam;
-  const Vector ref_vals(-3., -1., 1.);
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
-    Tensor T1(0.0, 0.0, 1.0, 0.0, -3.0, 0.0, 1.0, 0.0, 0.0);
-    Vector vals = T1.eigenValues();
-    int found = 0;
-    for (auto& ref : ref_vals) {
-      for (auto& v : vals) {
-        if (std::abs(ref - v) < 1.E-12) {
-          found += 1;
-        }
-      }
-    }
-    SPHERAL_ASSERT_EQ(found, 3);
+    Tensor T1(1.0, 0.0, 0.0,
+              0.0, 2.0, 0.0,
+              0.0, 0.0, -3.0);
+    auto vhat = Vector(1.0, 1.0).unitVector();
+    auto R = rotationMatrix(vhat);
+    T1.rotationalTransform(R);
+    auto evals = T1.eigenValues();
+    SPHERAL_ASSERT_FLOAT_EQ(evals.minElement(), -3.0);
+    SPHERAL_ASSERT_FLOAT_EQ(evals.maxElement(), 2.0);
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(evals(0), 1.0) or
+                        Spheral::fuzzyEqual(evals(1), 1.0) or
+                        Spheral::fuzzyEqual(evals(2), 1.0));
   EXEC_IN_SPACE_END()
 }
 

@@ -6,6 +6,7 @@
 // Created by JMO, Mon Oct 29 22:01:30 PDT 2012
 //----------------------------------------------------------------------------//
 #include "Utilities/DBC.hh"
+#include "Utilities/SpheralFunctions.hh"
 
 #include "computeElementOwner.hh"
 #include <algorithm>
@@ -14,12 +15,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -42,7 +37,7 @@ computeElementOwner(const unsigned numElements,
       const unsigned neighbor = neighborDomains[idomain];
       for (const unsigned element: sharedElements[idomain]) {
         CHECK(element < numElements);
-        result[element] = min(result[element], neighbor);
+        result[element] = std::min(result[element], neighbor);
       }
     }
   }

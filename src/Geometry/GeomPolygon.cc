@@ -32,8 +32,6 @@
 #include <iterator>
 using std::vector;
 using std::pair;
-using std::min;
-using std::max;
 
 namespace bg = boost::geometry;
 // BOOST_GEOMETRY_REGISTER_POINT_2D(Spheral::GeomVector<2>, double, bg::cs::cartesian, x(), y());
@@ -174,7 +172,7 @@ namespace Spheral {
 // //------------------------------------------------------------------------------
 // template<typename RealType>
 // int zcross_sign(const Point2<RealType>& p1, const Point2<RealType>& p2, const Point2<RealType>& p3) {
-// //   double scale = 1.0/max(RealType(1), max(p1.x, max(p1.y, max(p2.x, max(p2.y, max(p3.x, p3.y))))));
+// //   double scale = 1.0/std::max(RealType(1), std::max(p1.x, std::max(p1.y, std::max(p2.x, std::max(p2.y, std::max(p3.x, p3.y))))));
 //   const double ztest = 
 //     (double(p2.x) - double(p1.x))*(double(p3.y) - double(p1.y)) -
 //     (double(p2.y) - double(p1.y))*(double(p3.x) - double(p1.x));
@@ -479,7 +477,6 @@ GeomPolygon(const vector<GeomPolygon::Vector>& points,
   mConvex(false) {
 
   // Construct the facets.
-  Vector centroid;
   mFacets.reserve(facetIndices.size());
   for (const vector<unsigned>& indices: facetIndices) {
     VERIFY2(indices.size() == 2, "Need two points per facet : " << indices.size());
@@ -745,7 +742,7 @@ GeomPolygon::Vector
 GeomPolygon::
 centroid() const {
   const int n = mVertices.size();
-  if (n == 0) return Vector::zero;
+  if (n == 0) return Vector::zero();
   CHECK(n >= 3);
 
   Vector result;
@@ -1013,7 +1010,7 @@ GeomPolygon::
 convex(const double tol) const {
   // Do the convex comparison for each vertex.
   bool result = true;
-  const double reltol = tol*max(1.0, (mXmax - mXmin).maxAbsElement());
+  const double reltol = tol*std::max(1.0, (mXmax - mXmin).maxAbsElement());
   vector<Vector>::const_iterator vertexItr = mVertices.begin();
   while (vertexItr != mVertices.end() and result) {
     vector<Facet>::const_iterator facetItr = mFacets.begin();

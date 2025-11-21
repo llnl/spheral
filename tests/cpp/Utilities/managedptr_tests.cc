@@ -9,7 +9,7 @@
 #include "chai/managed_ptr.hpp"
 
 #include <Utilities/Logger.hh>
-#include "Geometry/Geom3Vector.hh"
+#include "Geometry/GeomVector.hh"
 
 // Base class with a virtual function
 class Base {

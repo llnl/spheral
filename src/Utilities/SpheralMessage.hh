@@ -45,6 +45,11 @@
     std::cout << "INFO: " << msg << std::endl;                       \
   }
   
+#define SpheralError(msg)                                            \
+  if (Spheral::Process::getRank() == 0)  {                           \
+    std::cerr << "ERROR: " << msg << std::endl;                      \
+  }
+  
 #define DeprecationWarning(msg)                                      \
   if (Spheral::Process::getRank() == 0)  {                           \
     std::cerr << "DEPRECATION Warning: " << msg << std::endl;        \

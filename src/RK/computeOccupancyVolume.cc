@@ -7,10 +7,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 template<typename Dimension>
 void
 computeOccupancyVolume(const ConnectivityMap<Dimension>& connectivityMap,

@@ -5,6 +5,7 @@
 #ifndef rotationMatrix_HH
 #define rotationMatrix_HH
 
+#include "config.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/DBC.hh"

@@ -51,12 +51,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -321,13 +315,13 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // info here may be used by other algorithms (like the CheapSynchronousRK2 integrator or
   // the ArtificialVisocisity::initialize step).
   dataBase.resizeFluidFieldList(mMassDensitySum, 0.0, ReplaceState<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::massDensity, false);
-  dataBase.resizeFluidFieldList(mXSVPHDeltaV, Vector::zero, HydroFieldNames::XSPHDeltaV, false);
-  dataBase.resizeFluidFieldList(mDxDt, Vector::zero, IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, false);
-  dataBase.resizeFluidFieldList(mDvDt, Vector::zero, HydroFieldNames::hydroAcceleration, false);
+  dataBase.resizeFluidFieldList(mXSVPHDeltaV, Vector::zero(), HydroFieldNames::XSPHDeltaV, false);
+  dataBase.resizeFluidFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, false);
+  dataBase.resizeFluidFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);
   dataBase.resizeFluidFieldList(mDmassDensityDt, 0.0, IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::massDensity, false);
   dataBase.resizeFluidFieldList(mDspecificThermalEnergyDt, 0.0, IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, false);
-  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::velocityGradient, false);
-  dataBase.resizeFluidFieldList(mInternalDvDx, Tensor::zero, HydroFieldNames::internalVelocityGradient, false);
+  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero(), HydroFieldNames::velocityGradient, false);
+  dataBase.resizeFluidFieldList(mInternalDvDx, Tensor::zero(), HydroFieldNames::internalVelocityGradient, false);
   dataBase.resizeFluidFieldList(mFaceForce, vector<Vector>(), HydroFieldNames::faceForce, false);
   // dataBase.resizeFluidFieldList(mFaceAcceleration, vector<Vector>(), IncrementState<Dimension, Vector>::prefix() + "Face " + HydroFieldNames::velocity, false);
 
@@ -383,11 +377,11 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // State FieldLists.
   const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const FieldList<Dimension, Scalar> specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
@@ -405,14 +399,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Derivative FieldLists.
   FieldList<Dimension, Scalar> rhoSum = derivatives.fields(ReplaceState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::massDensity, 0.0);
-  FieldList<Dimension, Vector> DxDt = derivatives.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
+  FieldList<Dimension, Vector> DxDt = derivatives.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
   FieldList<Dimension, Scalar> DrhoDt = derivatives.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::massDensity, 0.0);
-  FieldList<Dimension, Vector> DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  FieldList<Dimension, Vector> DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   FieldList<Dimension, Scalar> DepsDt = derivatives.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  FieldList<Dimension, Tensor> DvDx = derivatives.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  FieldList<Dimension, Tensor> localDvDx = derivatives.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
+  FieldList<Dimension, Tensor> DvDx = derivatives.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  FieldList<Dimension, Tensor> localDvDx = derivatives.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
   FieldList<Dimension, Scalar> maxViscousPressure = derivatives.fields(HydroFieldNames::maxViscousPressure, 0.0);
-  FieldList<Dimension, Vector> XSVPHDeltaV = derivatives.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
+  FieldList<Dimension, Vector> XSVPHDeltaV = derivatives.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   FieldList<Dimension, vector<Vector> > faceForce = derivatives.fields(HydroFieldNames::faceForce, vector<Vector>());
   // FieldList<Dimension, vector<Vector> > faceAcceleration = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + "Face " + HydroFieldNames::velocity, vector<Vector>());
   CHECK(rhoSum.size() == numNodeLists);
@@ -430,9 +424,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Prepare working arrays of face properties.
   const unsigned numFaces = mesh.numFaces();
   vector<Scalar> rhoFace(numFaces, 0.0), csFace(numFaces, 0.0), Pface(numFaces, 0.0), PcellFace(numFaces, 0.0);
-  vector<Vector> dAface(numFaces, Vector::zero), posFace(numFaces, Vector::zero), velFace(numFaces, Vector::zero);
-  vector<Tensor> Qface(numFaces, Tensor::zero);
-  vector<SymTensor> Hface(numFaces, SymTensor::zero);
+  vector<Vector> dAface(numFaces, Vector::zero()), posFace(numFaces, Vector::zero()), velFace(numFaces, Vector::zero());
+  vector<Tensor> Qface(numFaces, Tensor::zero());
+  vector<SymTensor> Hface(numFaces, SymTensor::zero());
 
   Qface = Q.Qface();
 
@@ -444,12 +438,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
                                 this->boundaryBegin(),
                                 this->boundaryEnd(),
                                 A, B);
-  if (not mLinearConsistent) B = vector<Vector>(numFaces, Vector::zero);
+  if (not mLinearConsistent) B = vector<Vector>(numFaces, Vector::zero());
 
   // Walk the faces and sample their fluid properties.
   unsigned i, j, k, nodeListi, nodeListj, z1id, z2id;
   Scalar Hdetj;
-  const SymTensor H0 = 1.0e100*SymTensor::one;
+  const SymTensor H0 = 1.0e100*SymTensor::one();
   for (k = 0; k != numFaces; ++k) {
     const Face& face = mesh.face(k);
     const Vector& Bi = B[k];
@@ -668,7 +662,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   }
 
   // // We don't like high-frequency noise in the H field, so do a local filtering.
-  // FieldList<Dimension, SymTensor> Havg = dataBase.newFluidFieldList(SymTensor::zero, "Havg");
+  // FieldList<Dimension, SymTensor> Havg = dataBase.newFluidFieldList(SymTensor::zero(), "Havg");
   // for (nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
   //   const unsigned n = Hideal[nodeListi]->numInternalElements();
   //   for (i = 0; i != n; ++i) {
@@ -721,15 +715,15 @@ dt(const DataBase<Dimension>& dataBase,
   // Get some useful fluid variables from the DataBase.
   const FieldList<Dimension, Scalar> vol = state.fields(HydroFieldNames::volume, Scalar());
   const FieldList<Dimension, int> mask = state.fields(HydroFieldNames::timeStepMask, 1);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const FieldList<Dimension, Scalar> rho = state.fields(HydroFieldNames::massDensity, 0.0);
   const FieldList<Dimension, Scalar> eps = state.fields(HydroFieldNames::specificThermalEnergy, Scalar());
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const FieldList<Dimension, Scalar> maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
-  const FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
 
   // Initialize the return value to some impossibly high value.
   Scalar minDt = FLT_MAX;
@@ -881,7 +875,7 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
   // If we're using the compatible energy discretization, we need to enforce
   // boundary conditions on the accelerations.
   // if (compatibleEnergyEvolution()) {
-  //   FieldList<Dimension, Vector> accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  //   FieldList<Dimension, Vector> accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   //   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin();
   //        boundaryItr != this->boundaryEnd();
   //        ++boundaryItr) (*boundaryItr)->applyFieldListGhostBoundary(accelerations);
@@ -939,7 +933,7 @@ applyGhostBoundaries(State<Dimension>& state,
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
   FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   FieldList<Dimension, Scalar> specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
@@ -948,7 +942,7 @@ applyGhostBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> DvDt;
   if (compatibleEnergyEvolution()) {
     CHECK(derivs.fieldNameRegistered(HydroFieldNames::hydroAcceleration));
-    DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+    DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   }
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
@@ -981,7 +975,7 @@ enforceBoundaries(State<Dimension>& state,
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
   FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   FieldList<Dimension, Scalar> specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
@@ -990,7 +984,7 @@ enforceBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> DvDt;
   if (compatibleEnergyEvolution()) {
     CHECK(derivs.fieldNameRegistered(HydroFieldNames::hydroAcceleration));
-    DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+    DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   }
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 

@@ -28,7 +28,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
   using Face = typename Mesh<Dimension>::Face;
 
   // Grab the DvDx for updating
-  auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
   DvDx.Zero();
 
   // Make a finite-volume estimate of the local (to each Voronoi cell) velocity
@@ -36,7 +36,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
   unsigned nodeListj, j;
   Scalar Vi;
   const Mesh<Dimension>& mesh = state.mesh();
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const unsigned numNodeLists = velocity.numFields();
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = velocity[nodeListi]->numInternalElements();

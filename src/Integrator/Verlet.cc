@@ -24,12 +24,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -66,7 +60,7 @@ step(typename Dimension::Scalar maxTime,
 
   // Copy the beginning of step positions.
   TIME_BEGIN("VerletCopyPos0");
-  auto pos0 = state.fields(HydroFieldNames::position, Vector::zero);
+  auto pos0 = state.fields(HydroFieldNames::position, Vector::zero());
   pos0.copyFields();
   TIME_END("VerletCopyPos0");
 
@@ -131,13 +125,13 @@ step(typename Dimension::Scalar maxTime,
 
   // Advance the position to the end of step using the half-step velocity.
   TIME_BEGIN("VerletPredict2");
-  auto vel12 = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto vel12 = state.fields(HydroFieldNames::velocity, Vector::zero());
   pos0 += dt0*vel12;
 
   // Predict state at the end-point, but override the positions with our time-centered prediction.
   state.update(derivs, hdt0, t, dt0);
   {
-    auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     pos.assignFields(pos0);
   }
   this->enforceBoundaries(state, derivs);
@@ -177,7 +171,7 @@ step(typename Dimension::Scalar maxTime,
   // state.timeAdvanceOnly(false);
   state.update(derivs, hdt0, t + hdt0, dt0);
   {
-    auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     pos.assignFields(pos0);
   }
   this->enforceBoundaries(state, derivs);
