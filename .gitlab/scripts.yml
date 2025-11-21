@@ -125,7 +125,7 @@
     GIT_STRATEGY: clone
   extends: [.merge_pr_rule]
   rules:
-    - if: 'CI_COMMIT_MESSAGE =~ /update-upstream/'
+    - if: '$CI_COMMIT_MESSAGE =~ /update-upstream/'
       when: always
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
