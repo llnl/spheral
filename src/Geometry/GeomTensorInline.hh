@@ -2426,6 +2426,7 @@ maxAbsElement() const {
 // Generate an Eigen Tensor.
 //------------------------------------------------------------------------------
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>::EigenType
 GeomTensor<1>::eigen() const {
@@ -2433,6 +2434,7 @@ GeomTensor<1>::eigen() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>::EigenType
 GeomTensor<2>::eigen() const {
@@ -2443,6 +2445,7 @@ GeomTensor<2>::eigen() const {
 }
 
 template<>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>::EigenType
 GeomTensor<3>::eigen() const {
@@ -2461,6 +2464,7 @@ GeomTensor<3>::eigen() const {
 // Multiplication by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 operator*(double lhs, const GeomTensor<nDim>& rhs) {

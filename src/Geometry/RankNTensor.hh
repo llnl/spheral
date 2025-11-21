@@ -26,27 +26,27 @@ public:
   // Useful static member data.
   SPHERAL_HOST_DEVICE static constexpr size_type nrank()                      { return rank; }
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()                { return nDim; }
-  SPHERAL_HOST_DEVICE static constexpr size_type numElements()                { return FastMath::calcPower(nDim, rank); }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()                { return FastMath::calcPower<nDim, rank>::value; }
 
   // Constructors.
-  SPHERAL_HOST_DEVICE RankNTensor()                                           = default;
-  SPHERAL_HOST_DEVICE explicit RankNTensor(const double val): mElements()     { mElements.fill(val); }
-  SPHERAL_HOST_DEVICE RankNTensor(const RankNTensor& rhs)                     = default;
+  SPHERAL_HOST_DEVICE RankNTensor()                                           { for (auto i = 0u; i < numElements(); ++i) mElements[i] = 0.0; }
+  SPHERAL_HOST_DEVICE explicit RankNTensor(const double val)                  { for (auto i = 0u; i < numElements(); ++i) mElements[i] = val; }
+  SPHERAL_HOST_DEVICE RankNTensor(const RankNTensor& rhs)                     { for (auto i = 0u; i < numElements(); ++i) mElements[i] = rhs.mElements[i]; }
 
   // Assignment.
-  SPHERAL_HOST_DEVICE RankNTensor& operator=(const RankNTensor& rhs)          = default;
-  SPHERAL_HOST_DEVICE RankNTensor& operator=(const double rhs)                { for (auto i = 0u; i < numElements(); ++i) mElements[i] = rhs; }
+  SPHERAL_HOST_DEVICE RankNTensor& operator=(const RankNTensor& rhs)          { for (auto i = 0u; i < numElements(); ++i) mElements[i] = rhs.mElements[i]; return *this; }
+  SPHERAL_HOST_DEVICE RankNTensor& operator=(const double rhs)                { for (auto i = 0u; i < numElements(); ++i) mElements[i] = rhs; return *this; }
 
   // More C++ style indexing.
   SPHERAL_HOST_DEVICE double  operator[](size_type index) const               { REQUIRE(index < numElements()); return mElements[index]; }
   SPHERAL_HOST_DEVICE double& operator[](size_type index)                     { REQUIRE(index < numElements()); return mElements[index]; }
 
   // Iterator access to the raw data.
-  SPHERAL_HOST_DEVICE iterator begin()                                        { return mElements.begin(); }
-  SPHERAL_HOST_DEVICE iterator end()                                          { return mElements.end(); }
+  SPHERAL_HOST_DEVICE iterator begin()                                        { return mElements; }
+  SPHERAL_HOST_DEVICE iterator end()                                          { return mElements + numElements(); }
 
-  SPHERAL_HOST_DEVICE const_iterator begin() const                            { return mElements.begin(); }
-  SPHERAL_HOST_DEVICE const_iterator end() const                              { return mElements.end(); }
+  SPHERAL_HOST_DEVICE const_iterator begin() const                            { return mElements; }
+  SPHERAL_HOST_DEVICE const_iterator end() const                              { return mElements + numElements(); }
 
   // Zero out the tensor.
   SPHERAL_HOST_DEVICE constexpr void Zero()                                   { for (auto i = 0u; i < numElements(); ++i) mElements[i] = 0.0; }
@@ -66,7 +66,7 @@ public:
   SPHERAL_HOST_DEVICE Descendant operator*(const double rhs) const;
   SPHERAL_HOST_DEVICE Descendant operator/(const double rhs) const;
 
-  SPHERAL_HOST_DEVICE bool operator==(const RankNTensor& rhs) const          { return mElements == rhs.mElements; }
+  SPHERAL_HOST_DEVICE bool operator==(const RankNTensor& rhs) const;
   SPHERAL_HOST_DEVICE bool operator!=(const RankNTensor& rhs) const          { return !(*this == rhs); }
 
   SPHERAL_HOST_DEVICE bool operator==(const double rhs) const;
@@ -83,11 +83,12 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  std::array<double, numElements()>  mElements = {};
+  // std::array<double, numElements()>  mElements = {};
+  double mElements[numElements()];
 };
 
 // Forward declare the global functions.
-template<int nDim, int rank, typename Descendant> Descendant operator*(const double lhs, const RankNTensor<nDim, rank, Descendant>& rhs);
+template<int nDim, int rank, typename Descendant> SPHERAL_HOST_DEVICE Descendant operator*(const double lhs, const RankNTensor<nDim, rank, Descendant>& rhs);
 
 template<int nDim, int rank, typename Descendant> ::std::istream& operator>>(std::istream& is, RankNTensor<nDim, rank, Descendant>& ten);
 template<int nDim, int rank, typename Descendant> ::std::ostream& operator<<(std::ostream& os, const RankNTensor<nDim, rank, Descendant>& ten);

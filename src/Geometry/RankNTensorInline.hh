@@ -132,6 +132,24 @@ operator/(const double rhs) const {
 }
 
 //------------------------------------------------------------------------------
+// ==
+//------------------------------------------------------------------------------
+template<int nDim, int rank, typename Descendant>
+SPHERAL_HOST_DEVICE
+inline
+bool
+RankNTensor<nDim,rank, Descendant>::
+operator==(const RankNTensor<nDim, rank, Descendant>& rhs) const {
+  bool result = mElements[0u] == rhs.mElements[0u];
+  size_type i = 1u;
+  while (i != numElements() and result) {
+    result = result and (mElements[i] == rhs.mElements[i]);
+    ++i;
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // == (double)
 //------------------------------------------------------------------------------
 template<int nDim, int rank, typename Descendant>
@@ -199,6 +217,7 @@ maxAbsElement() const {
 // Multiplication with a double.
 //------------------------------------------------------------------------------
 template<int nDim, int rank, typename Descendant>
+SPHERAL_HOST_DEVICE
 inline
 Descendant
 operator*(const double lhs,

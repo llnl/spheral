@@ -188,7 +188,7 @@ public:
   SPHERAL_HOST_DEVICE double maxAbsElement() const;
 
   //  Convert to an Eigen Vector
-  EigenType eigen() const;
+  SPHERAL_HOST_DEVICE EigenType eigen() const;
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -375,7 +375,7 @@ template<> SPHERAL_HOST_DEVICE double GeomTensor<2>::maxAbsElement() const;
 template<> SPHERAL_HOST_DEVICE double GeomTensor<3>::maxAbsElement() const;
 
 // Forward declare the global functions.
-template<int nDim> GeomTensor<nDim> operator*(double lhs, const GeomTensor<nDim>& rhs);
+template<int nDim> SPHERAL_HOST_DEVICE GeomTensor<nDim> operator*(double lhs, const GeomTensor<nDim>& rhs);
 template<int nDim> ::std::istream& operator>>(std::istream& is, GeomTensor<nDim>& ten);
 template<int nDim> std::ostream& operator<<(std::ostream& os, const GeomTensor<nDim>& ten);
 
