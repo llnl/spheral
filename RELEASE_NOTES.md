@@ -18,6 +18,8 @@ Notable changes include:
         * CPU & GPU unit testing of the public interface.
       * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
       * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
+      * Created view classes for the Quadratic and CubicHermite interpolator classes, called QIView and CHIView, respectively.
+        * These follow the inheritance pattern used previously.
       * Optimizations to RankTensor types:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
