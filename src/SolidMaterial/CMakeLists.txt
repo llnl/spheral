@@ -11,6 +11,8 @@ set(SolidMaterial_inst
     JohnsonCookStrength
     CollinsStrength
     iSALEROCKStrength
+    SingularityEquationOfState
+    SingularityEquationOfStateModels
     PhysicsEvolvingMaterialLibrary
     )
 
@@ -35,6 +37,9 @@ set(SolidMaterial_headers
     PhysicsEvolvingMaterialLibrary.hh
     PolynomialFit.hh
     PolynomialFitInline.hh
+    SingularityEquationOfState.hh
+    SingularityEquationOfStateInline.hh
+    SingularityEquationOfStateModels.hh
     SolidEquationOfState.hh
     SolidEquationOfStateInline.hh
     SteinbergGuinanLundStrength.hh

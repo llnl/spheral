@@ -10,6 +10,7 @@
 //------------------------------------------------------------------------------
 #include "NodeListRegistrar.hh"
 #include "Geometry/Dimension.hh"
+#include "NodeList/FluidNodeList.hh"
 
 namespace Spheral {
 

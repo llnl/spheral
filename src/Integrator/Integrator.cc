@@ -54,6 +54,7 @@ Integrator(DataBase<Dimension>& dataBase,
   mCurrentTime(0.0),
   mCurrentCycle(0),
   mUpdateBoundaryFrequency(1),
+  mVerboseStep(1),
   mVerbose(false),
   mAllowDtCheck(false),
   mRequireConnectivity(true),
@@ -156,16 +157,16 @@ selectDt(const typename Dimension::Scalar dtMin,
 
   // In the parallel case we need to find the minimum timestep across all processors.
 #ifdef SPHERAL_ENABLE_GLOBALDT_REDUCTION
-  const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
+  const auto [globalDt, rank] = allReduceLoc(dt.first, SPHERAL_OP_MINLOC);
 #else
   const auto globalDt = dt.first;
+  const auto rank = Process::getRank();
 #endif
 
   // Are we verbose?
-  if (dt.first == globalDt and 
-      (verbose() or globalDt < mDtMin)) {
+  if (rank == Process::getRank() and (verbose() and currentCycle() % verboseStep() == 0)) {
     cout << "Selected timestep of "
-         << dt.first << endl
+         << dt.first << " on rank " << rank << endl
          << dt.second << endl;
   }
   cout.flush();
