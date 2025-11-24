@@ -7,7 +7,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::operator()(const double x) const {
+CubicHermiteInterpolatorView::operator()(const double x) const {
   if (x < mXmin) {
     return mVals[0] + mVals[mN]*(x - mXmin);
   } else if (x > mXmax) {
@@ -20,8 +20,8 @@ CHIView::operator()(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::operator()(const double x,
-                    const size_t i0) const {
+CubicHermiteInterpolatorView::operator()(const double x,
+                                         const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
   const auto t2 = t*t;
@@ -34,7 +34,7 @@ CHIView::operator()(const double x,
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::operator[](const size_t i) const {
+CubicHermiteInterpolatorView::operator[](const size_t i) const {
   REQUIRE(size() > 0);
   REQUIRE(i < size());
   return mVals[i];
@@ -45,7 +45,7 @@ CHIView::operator[](const size_t i) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::prime(const double x) const {
+CubicHermiteInterpolatorView::prime(const double x) const {
   if (x < mXmin) {
     return mVals[mN];
   } else if (x > mXmax) {
@@ -58,8 +58,8 @@ CHIView::prime(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::prime(const double x,
-               const size_t i0) const {
+CubicHermiteInterpolatorView::prime(const double x,
+                                    const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
   const auto t2 = t*t;
@@ -73,7 +73,7 @@ CHIView::prime(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::prime2(const double x) const {
+CubicHermiteInterpolatorView::prime2(const double x) const {
   if (x < mXmin or x > mXmax) {
     return 0.0;
   } else {
@@ -84,8 +84,8 @@ CHIView::prime2(const double x) const {
 
 SPHERAL_HOST_DEVICE inline
 double
-CHIView::prime2(const double x,
-                const size_t i0) const {
+CubicHermiteInterpolatorView::prime2(const double x,
+                                     const size_t i0) const {
   REQUIRE(i0 <= mN - 2u);
   const auto t = std::max(0.0, std::min(1.0, (x - mXmin - i0*mXstep)/mXstep));
   return 2.0*(3.0*(2.0*t - 1.0)*(mVals[i0] - mVals[i0 + 1u])/mXstep +
@@ -98,7 +98,7 @@ CHIView::prime2(const double x,
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 size_t
-CHIView::lowerBound(const double x) const {
+CubicHermiteInterpolatorView::lowerBound(const double x) const {
   const auto result = std::min(mN - 2u, size_t(std::max(0.0, x - mXmin)/mXstep));
   ENSURE(result <= mN - 2u);
   return result;
@@ -109,7 +109,7 @@ CHIView::lowerBound(const double x) const {
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE inline
 bool
-CHIView::operator==(const CHIView& rhs) const {
+CubicHermiteInterpolatorView::operator==(const CubicHermiteInterpolatorView& rhs) const {
   return ((mN == rhs.mN) and
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and

@@ -1,28 +1,25 @@
 //---------------------------------Spheral++----------------------------------//
-// CHIView
+// CubicHermiteInterpolatorView
 //
 // View class of the CubicHermiteInterpolator class
 //
 // Created by LDO, Wed Oct 29 15:18:00 PST 2025
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_CHIView__
-#define __Spheral_CHIView__
+#ifndef __Spheral_CubicHermiteInterpolatorView__
+#define __Spheral_CubicHermiteInterpolatorView__
 
 #include "chai/ManagedArray.hpp"
 #include "config.hh"
 
-#include <cstddef>
-#include <vector>
-
 namespace Spheral {
-class CHIView {
+class CubicHermiteInterpolatorView {
 public:
   using ContainerType = typename chai::ManagedArray<double>;
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
-  SPHERAL_HOST_DEVICE CHIView() = default;
+  SPHERAL_HOST_DEVICE CubicHermiteInterpolatorView() = default;
   // Comparisons
-  SPHERAL_HOST_DEVICE bool operator==(const CHIView& rhs) const;
+  SPHERAL_HOST_DEVICE bool operator==(const CubicHermiteInterpolatorView& rhs) const;
 
   // Interpolate for the y value
   SPHERAL_HOST_DEVICE double operator()(const double x) const;
@@ -64,6 +61,6 @@ protected:
   ContainerType mVals;
 };
 }
-#include "CHIViewInline.hh"
+#include "CubicHermiteInterpolatorViewInline.hh"
 
 #endif
