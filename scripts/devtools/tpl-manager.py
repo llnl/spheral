@@ -14,7 +14,6 @@ default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
 
 # Stay away from ~/.spack!
 os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
-os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2
@@ -105,7 +104,7 @@ class SpheralTPL:
             spack = spack
 
             #
-            # Workaround: Cause spack to set its internal working directory 
+            # Workaround: Cause spack to set its internal working directory
             # state before we make any further spack API calls.
             spack.paths.set_working_dir()
         except ImportError as e:

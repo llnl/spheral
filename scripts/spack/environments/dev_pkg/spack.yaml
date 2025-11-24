@@ -10,7 +10,7 @@ spack:
     spheral:
       path: ../../../../
       spec: spheral@=develop
-  include:
+  include::
     - ../../configs/toss_4_x86_64_ib/packages.yaml
     - ../../configs/config.yaml
     - ../../configs/upstreams.yaml
