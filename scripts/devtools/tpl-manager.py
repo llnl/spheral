@@ -228,7 +228,7 @@ class SpheralTPL:
         # Add the repos and develop paths to the spack environment
         for package, path in package_dirs.items():
             if (package+" " not in cur_repos):
-                repo_path = os.path.abspath(get_config_dir(path))
+                repo_path = os.path.abspath(os.path.join(get_config_dir(path), f"spack_repo/{package}")
                 repo_cmd("add", f"{repo_path}") # spack repo add <repo_path>
             dev_path = os.path.abspath(path)
             dev_cmd("-p", dev_path, f"{package}@=develop") # spack develop <package>@=develop
