@@ -4,7 +4,7 @@ toolchains:
     when: '%c'
   - spec: '%cxx=llvm-amdgpu@6.2.0'
     when: '%cxx'
-  - spec: '%fortran=llvm@6.2.0'
+  - spec: '%fortran=llvm-amdgpu@6.2.0'
     when: '%fortran'
 packages:
   all:
@@ -20,16 +20,6 @@ packages:
   llvm-amdgpu:
     externals:
     - spec: llvm-amdgpu@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
-      extra_attributes:
-        compilers:
-          c: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
-          cxx: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
-          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
-  # This is a hack because Spack currently doesn't let llvm-amdgpu do fortran
-  llvm:
-    externals:
-    - spec: llvm@6.2.0
       prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
       extra_attributes:
         compilers:
@@ -93,16 +83,6 @@ packages:
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
 
 # ------ SYSTEM LIBS -------
-  py-decorator:
-    externals:
-    - spec: py-decorator@5.1.1
-      prefix: /collab/usr/gapps/python/build/spack-toss4.1/var/spack/environments/python/._view/75prb56irmif5ejtirjthpx6kq3gqo52/lib/python3.9/site-packages
-    buildable: false
-  py-pip:
-    externals:
-    - spec: py-pip@22.0.4
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
   readline:
     externals:
     - spec: readline@7.0

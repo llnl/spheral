@@ -18,7 +18,7 @@ spack:
   - ../../configs/config.yaml
   - ../../configs/upstreams.yaml
   repos:
-    - ../../
+    - ../../spack_repo/spheral
   packages:
     spheral:
       require:
