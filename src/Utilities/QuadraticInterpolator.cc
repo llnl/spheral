@@ -19,7 +19,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
   :
-  QIView() {
+  QuadraticInterpolatorView() {
   mN1 = rhs.mN1;
   mXmin = rhs.mXmin;
   mXmax = rhs.mXmax;

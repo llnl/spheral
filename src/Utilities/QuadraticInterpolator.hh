@@ -9,7 +9,7 @@
 #ifndef __Spheral_QuadraticInterpolator__
 #define __Spheral_QuadraticInterpolator__
 
-#include "QIView.hh"
+#include "QuadraticInterpolatorView.hh"
 #include "chai/ManagedArray.hpp"
 #include "config.hh"
 
@@ -18,7 +18,7 @@
 
 namespace Spheral {
 
-class QuadraticInterpolator : public QIView {
+class QuadraticInterpolator : public QuadraticInterpolatorView {
 public:
   template<typename Func>
   QuadraticInterpolator(double xmin, double xmax, size_t n, const Func& F);
@@ -33,7 +33,7 @@ public:
   void initialize(double xmin, double xmax, size_t n, const Func& f);
   void initialize(double xmin, double xmax, const std::vector<double>& yvals);
 
-  QIView view() { return static_cast<QIView>(*this); }
+  QuadraticInterpolatorView view() { return static_cast<QuadraticInterpolatorView>(*this); }
 
   template<typename F> inline
   void setUserCallback(F&& extension) {

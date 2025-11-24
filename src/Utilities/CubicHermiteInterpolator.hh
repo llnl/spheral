@@ -8,7 +8,7 @@
 #ifndef __Spheral_CubicHermiteInterpolator__
 #define __Spheral_CubicHermiteInterpolator__
 
-#include "CHIView.hh"
+#include "CubicHermiteInterpolatorView.hh"
 #include "chai/ManagedArray.hpp"
 #include "config.hh"
 
@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace Spheral {
-class CubicHermiteInterpolator : public CHIView {
+class CubicHermiteInterpolator : public CubicHermiteInterpolatorView {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
@@ -58,7 +58,7 @@ public:
   // Force interpolation to be monotonic (may introduce structure between tabulated points)
   void makeMonotonic();
 
-  CHIView view() { return static_cast<CHIView>(*this); }
+  CubicHermiteInterpolatorView view() { return static_cast<CubicHermiteInterpolatorView>(*this); }
 
   template<typename F> inline
   void setUserCallback(F&& extension) {
