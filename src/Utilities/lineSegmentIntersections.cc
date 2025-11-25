@@ -27,12 +27,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -73,8 +67,8 @@ parallelSegmentIntersection(const Vector& a0,
                             const double tol) {
   REQUIRE(fuzzyEqual(abs((a1 - a0).dot(b1 - b0)), (a1 - a0).magnitude() * (b1 - b0).magnitude(), tol));
   if (not collinear(a0, a1, b0, tol)) {
-    result1 = Vector::zero;
-    result2 = Vector::zero;
+    result1 = Vector::zero();
+    result2 = Vector::zero();
     return '0';
   }
   const bool a0test = between(b0, b1, a0, tol);
@@ -89,8 +83,8 @@ parallelSegmentIntersection(const Vector& a0,
 
   // No intersection.
   if (num == 0) {
-    result1 = Vector::zero;
-    result2 = Vector::zero;
+    result1 = Vector::zero();
+    result2 = Vector::zero();
     return '0';
   }
 
@@ -509,7 +503,7 @@ segmentSegmentDistance(const Dim<2>::Vector& a0,
   typedef bg::model::segment<Vector> segment2d;
 
   // Check if the segments intersect.
-  Vector p1, p2, p3, p4;
+  Vector p1, p2;
   if (segmentSegmentIntersection(a0, a1, b0, b1, p1, p2, 1.0e-10) == '1') return 0.0;
 
   // Otherwise check for the minimum distance of each segment from the end points

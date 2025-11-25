@@ -19,12 +19,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -85,17 +79,17 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   for (Field<Dimension, Vector>* field: vectorAcceptorFields) {
     VERIFY2(acceptorNodeListPtr == NULL or acceptorNodeListPtr == field->nodeListPtr(), "overlayRemapFields ERROR: all acceptor fields must be on same NodeList.");
     acceptorNodeListPtr = field->nodeListPtr();
-    *field = Vector::zero;
+    *field = Vector::zero();
   }
   for (Field<Dimension, Tensor>* field: tensorAcceptorFields) {
     VERIFY2(acceptorNodeListPtr == NULL or acceptorNodeListPtr == field->nodeListPtr(), "overlayRemapFields ERROR: all acceptor fields must be on same NodeList.");
     acceptorNodeListPtr = field->nodeListPtr();
-    *field = Tensor::zero;
+    *field = Tensor::zero();
   }
   for (Field<Dimension, SymTensor>* field: symTensorAcceptorFields) {
     VERIFY2(acceptorNodeListPtr == NULL or acceptorNodeListPtr == field->nodeListPtr(), "overlayRemapFields ERROR: all acceptor fields must be on same NodeList.");
     acceptorNodeListPtr = field->nodeListPtr();
-    *field = SymTensor::zero;
+    *field = SymTensor::zero();
   }
   const unsigned nD = donorNodeListPtr->numInternalNodes();
   Neighbor<Dimension>& neighborD = donorNodeListPtr->neighbor();
@@ -119,7 +113,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     auto etaVoidPoints = db.newFluidFieldList(vector<Vector>(), "eta void points");
     auto surfacePoint = db.newFluidFieldList(0, "surface point");
     auto vol = db.newFluidFieldList(0.0, "volume");
-    auto deltaMedian = db.newFluidFieldList(Vector::zero, "displacement");
+    auto deltaMedian = db.newFluidFieldList(Vector::zero(), "displacement");
     FieldList<Dimension, FacetedVolume> cells_fl(FieldStorageType::ReferenceFields);
     cells_fl.appendField(localDonorCells);
     auto cellFaceFlags_fl = db.newFluidFieldList(vector<CellFaceFlag>(), "face flags");
@@ -148,7 +142,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     auto etaVoidPoints = db.newFluidFieldList(vector<Vector>(), "eta void points");
     auto surfacePoint = db.newFluidFieldList(0, "surface point");
     auto vol = db.newFluidFieldList(0.0, "volume");
-    auto deltaMedian = db.newFluidFieldList(Vector::zero, "displacement");
+    auto deltaMedian = db.newFluidFieldList(Vector::zero(), "displacement");
     FieldList<Dimension, FacetedVolume> cells_fl(FieldStorageType::ReferenceFields);
     cells_fl.appendField(localAcceptorCells);
     auto cellFaceFlags_fl = db.newFluidFieldList(vector<CellFaceFlag>(), "face flags");

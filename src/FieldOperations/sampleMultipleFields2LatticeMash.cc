@@ -30,14 +30,8 @@
 
 #include <algorithm>
 using std::vector;
-using std::tuple;
 using std::map;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
+using std::tuple;
 
 namespace Spheral {
 
@@ -453,9 +447,9 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
         // Do we have an entry for this point?
         if (localResult.find(j) == localResult.end()) {
           localResult[j] = LocalElement(vector<Scalar>(numScalarFieldLists, 0.0),
-                                        vector<Vector>(numVectorFieldLists, Vector::zero),
-                                        vector<Tensor>(numTensorFieldLists, Tensor::zero),
-                                        vector<SymTensor>(numSymTensorFieldLists, SymTensor::zero),
+                                        vector<Vector>(numVectorFieldLists, Vector::zero()),
+                                        vector<Tensor>(numTensorFieldLists, Tensor::zero()),
+                                        vector<SymTensor>(numSymTensorFieldLists, SymTensor::zero()),
                                         0.0);
         }
 
@@ -521,9 +515,9 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
   // Calculate the size of the packed data per position.
 #ifdef SPHERAL_ENABLE_MPI
   const int sizeOfElement = (numScalarFieldLists*DataTypeTraits<Scalar>::numElements(0.0)*sizeof(typename DataTypeTraits<Scalar>::ElementType) +
-                             numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero)*sizeof(typename DataTypeTraits<Vector>::ElementType) +
-                             numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero)*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
-                             numSymTensorFieldLists*DataTypeTraits<SymTensor>::numElements(SymTensor::zero)*sizeof(typename DataTypeTraits<SymTensor>::ElementType) +
+                             numVectorFieldLists*DataTypeTraits<Vector>::numElements(Vector::zero())*sizeof(typename DataTypeTraits<Vector>::ElementType) +
+                             numTensorFieldLists*DataTypeTraits<Tensor>::numElements(Tensor::zero())*sizeof(typename DataTypeTraits<Tensor>::ElementType) +
+                             numSymTensorFieldLists*DataTypeTraits<SymTensor>::numElements(SymTensor::zero())*sizeof(typename DataTypeTraits<SymTensor>::ElementType) +
                              DataTypeTraits<Scalar>::numElements(0.0)*sizeof(typename DataTypeTraits<Scalar>::ElementType));
 #endif
 

@@ -37,7 +37,7 @@ GeomSymmetricTensor<2>::elementIndex(const GeomSymmetricTensor<2>::size_type row
   int i = std::min(row, column);
   int j = std::max(row, column);
   int result = (5 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements);
+  ENSURE(result >= 0 and result < (int)numElements());
   return result;
 }
 
@@ -52,9 +52,36 @@ GeomSymmetricTensor<3>::elementIndex(const GeomSymmetricTensor<3>::size_type row
   int i = std::min(row, column);
   int j = std::max(row, column);
   int result = (7 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements);
+  ENSURE(result >= 0 and result < (int)numElements());
   return result;
 }
+
+//------------------------------------------------------------------------------
+// Unit tensor
+//------------------------------------------------------------------------------
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<1>
+// GeomSymmetricTensor<1>::one() {
+//   return GeomSymmetricTensor<1>(1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<2>
+// GeomSymmetricTensor<2>::one() {
+//   return GeomSymmetricTensor<2>(1.0, 0.0,
+//                                 0.0, 1.0);
+// }
+
+// template<>
+// SPHERAL_HOST_DEVICE constexpr
+// GeomSymmetricTensor<3>
+// GeomSymmetricTensor<3>::one() {
+//   return GeomSymmetricTensor<3>(1.0, 0.0, 0.0,
+//                                 0.0, 1.0, 0.0,
+//                                 0.0, 0.0, 1.0);
+// }
 
 //------------------------------------------------------------------------------
 // Construct with the given values for the elements.
@@ -291,7 +318,7 @@ SPHERAL_HOST_DEVICE
 inline
 double
 GeomSymmetricTensor<nDim>::operator[](typename GeomSymmetricTensor<nDim>::size_type index) const {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -300,7 +327,7 @@ SPHERAL_HOST_DEVICE
 inline
 double&
 GeomSymmetricTensor<nDim>::operator[](typename GeomSymmetricTensor<nDim>::size_type index) {
-  REQUIRE(index < numElements);
+  REQUIRE(index < numElements());
   return *(begin() + index);
 }
 
@@ -655,7 +682,7 @@ SPHERAL_HOST_DEVICE
 inline
 typename GeomSymmetricTensor<nDim>::iterator
 GeomSymmetricTensor<nDim>::end() {
-  return &(this->mxx) + numElements;
+  return &(this->mxx) + numElements();
 }
 
 template<int nDim>
@@ -671,7 +698,7 @@ SPHERAL_HOST_DEVICE
 inline
 typename GeomSymmetricTensor<nDim>::const_iterator
 GeomSymmetricTensor<nDim>::end() const {
-  return &(this->mxx) + numElements;
+  return &(this->mxx) + numElements();
 }
 
 //------------------------------------------------------------------------------
@@ -1395,44 +1422,17 @@ operator==(const GeomSymmetricTensor<3>& rhs) const {
           this->mxz == rhs.xz() and
           this->myy == rhs.yy() and
           this->myz == rhs.yz() and
-          this->mzz == rhs.zz() and 
-          this->mxy == rhs.yx());
+          this->mzz == rhs.zz());
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator==(const double rhs) const {
-//   return this->mxx == rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->myy == rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator==(const double rhs) const {
-//   return (this->mxx == rhs and
-//           this->mxy == rhs and
-//           this->mxz == rhs and
-//           this->myy == rhs and
-//           this->myz == rhs and
-//           this->mzz == rhs and 
-//           this->mxy == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator==(const double rhs) const {
+  return *this == (one() * rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the not equivalence than comparitor.
@@ -1455,14 +1455,14 @@ operator!=(const GeomSymmetricTensor<nDim>& rhs) const {
   return !(*this == rhs);
 }
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<nDim>::
-// operator!=(const double rhs) const {
-//   return !(*this == rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator!=(const double rhs) const {
+  return !(*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the less than operator.
@@ -1485,40 +1485,15 @@ operator<(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() < rhs.Determinant();
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator<(const double rhs) const {
-//   return this->mxx < rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->myy < rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator<(const double rhs) const {
-//   return (this->mxx < rhs and
-//           this->mxy < rhs and
-//           this->mxz < rhs and
-//           this->myy < rhs and
-//           this->myz < rhs and
-//           this->mzz < rhs and 
-//           this->mxy < rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator<(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.maxElement() < rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than operator.
@@ -1541,40 +1516,15 @@ operator>(const GeomSymmetricTensor<nDim>& rhs) const {
   return this->Determinant() > rhs.Determinant();
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator>(const double rhs) const {
-//   return this->mxx > rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->myy > rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator>(const double rhs) const {
-//   return (this->mxx > rhs and
-//           this->mxy > rhs and
-//           this->mxz > rhs and
-//           this->myy > rhs and
-//           this->myz > rhs and
-//           this->mzz > rhs and 
-//           this->mxy > rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator>(const double rhs) const {
+  const auto ev = this->eigenValues();
+  return ev.minElement() > rhs;
+}
 
 //------------------------------------------------------------------------------
 // Define the less than or equal operator.
@@ -1597,40 +1547,14 @@ operator<=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this < rhs) or (*this == rhs);
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator<=(const double rhs) const {
-//   return this->mxx <= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->myy <= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator<=(const double rhs) const {
-//   return (this->mxx <= rhs and
-//           this->mxy <= rhs and
-//           this->mxz <= rhs and
-//           this->myy <= rhs and
-//           this->myz <= rhs and
-//           this->mzz <= rhs and 
-//           this->mxy <= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator<=(const double rhs) const {
+  return (*this < rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Define the greater than or equal operator.
@@ -1653,40 +1577,14 @@ operator>=(const GeomSymmetricTensor<nDim>& rhs) const {
   return (*this > rhs) or (*this == rhs);
 }
 
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<1>::
-// operator>=(const double rhs) const {
-//   return this->mxx >= rhs;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<2>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->myy >= rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// bool
-// GeomSymmetricTensor<3>::
-// operator>=(const double rhs) const {
-//   return (this->mxx >= rhs and
-//           this->mxy >= rhs and
-//           this->mxz >= rhs and
-//           this->myy >= rhs and
-//           this->myz >= rhs and
-//           this->mzz >= rhs and 
-//           this->mxy >= rhs);
-// }
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+bool
+GeomSymmetricTensor<nDim>::
+operator>=(const double rhs) const {
+  return (*this > rhs) or (*this == rhs);
+}
 
 //------------------------------------------------------------------------------
 // Return the symmetric part.  A no-op for this class.
@@ -2342,19 +2240,19 @@ GeomSymmetricTensor<3>::eigenValues() const {
   const double c0 = a00*a11*a22 + 2.0*a01*a02*a12 - a00*a12*a12 - a11*a02*a02 - a22*a01*a01;
   const double c1 = a00*a11 - a01*a01 + a00*a22 - a02*a02 + a11*a22 - a12*a12;
   const double c2 = a00 + a11 + a22;
-  const double c2Div3 = c2*onethird;
-  const double aDiv3 = std::min(0.0, onethird*(c1 - c2*c2Div3));
+  const double c2Div3 = c2*onethird();
+  const double aDiv3 = std::min(0.0, onethird()*(c1 - c2*c2Div3));
   const double mbDiv2 = 0.5*(c0 + c2Div3*(2.0*c2Div3*c2Div3 - c1));
   const double q = std::min(0.0, mbDiv2*mbDiv2 + aDiv3*aDiv3*aDiv3);
   CHECK(-aDiv3 >= 0.0);
   CHECK(-q >= 0.0);
   const double mag = std::sqrt(-aDiv3);
-  const double angle = atan2(std::sqrt(-q), mbDiv2)*onethird;
+  const double angle = atan2(std::sqrt(-q), mbDiv2)*onethird();
   const double cs = cos(angle);
   const double sn = sin(angle);
   return GeomVector<3>(fscale*(c2Div3 + 2.0*mag*cs),
-                       fscale*(c2Div3 - mag*(cs + sqrt3*sn)),
-                       fscale*(c2Div3 - mag*(cs - sqrt3*sn)));
+                       fscale*(c2Div3 - mag*(cs + sqrt3()*sn)),
+                       fscale*(c2Div3 - mag*(cs - sqrt3()*sn)));
 }
 
 //------------------------------------------------------------------------------
@@ -2362,6 +2260,7 @@ GeomSymmetricTensor<3>::eigenValues() const {
 //------------------------------------------------------------------------------
 // 1-D.
 template<>
+SPHERAL_HOST_DEVICE
 inline
 EigenStruct<1>
 GeomSymmetricTensor<1>::eigenVectors() const {
@@ -2374,6 +2273,7 @@ GeomSymmetricTensor<1>::eigenVectors() const {
 //------------------------------------------------------------------------------
 // 2-D.
 template<>
+SPHERAL_HOST_DEVICE
 inline
 EigenStruct<2>
 GeomSymmetricTensor<2>::eigenVectors() const {
@@ -2386,7 +2286,7 @@ GeomSymmetricTensor<2>::eigenVectors() const {
   EigenStruct<2> result;
   if (std::abs(axy) < 1.0e-50) {
     result.eigenValues = diagonalElements();
-    result.eigenVectors = one;
+    result.eigenVectors = one();
   } else {
     const double theta = 0.5*atan2(2.0*axy, ayy - axx);
     const double xhat = cos(theta);
@@ -2401,9 +2301,201 @@ GeomSymmetricTensor<2>::eigenVectors() const {
 }
 
 //------------------------------------------------------------------------------
+// 3-D.
+template<>
+SPHERAL_HOST_DEVICE
+inline
+EigenStruct<3>
+GeomSymmetricTensor<3>::eigenVectors() const {
+
+  // Some useful typedefs.
+  typedef GeomVector<3> Vector;
+  typedef GeomTensor<3> Tensor;
+  typedef GeomSymmetricTensor<3> SymTensor;
+
+  // Tolerances for fuzzy math.
+  const double degenerate = 1.0e-20;
+  const double tolerance = 5.0e-5;
+
+  // Prepare the result.
+  EigenStruct<3> result;
+
+  // Create a scaled version of this tensor, with all elements in the range [-1,1].
+  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
+  CHECK(fscale > 0.0);
+  const double fscalei = 1.0/fscale;
+  SymTensor A = (*this)*fscalei;
+
+  // Check for any degenerate elements, and just zero 'em out.
+  A.xx(abs(A.xx()) < degenerate ? 0.0 : A.xx());
+  A.xy(abs(A.xy()) < degenerate ? 0.0 : A.xy());
+  A.xz(abs(A.xz()) < degenerate ? 0.0 : A.xz());
+  A.yy(abs(A.yy()) < degenerate ? 0.0 : A.yy());
+  A.yz(abs(A.yz()) < degenerate ? 0.0 : A.yz());
+  A.zz(abs(A.zz()) < degenerate ? 0.0 : A.zz());
+
+// #ifdef USEJACOBI
+
+//   // Use the Jacobi iterative diagonalization method to determine
+//   // the eigen values/vectors.
+//   const int nrot = jacobiDiagonalize<Dim<3> >(A,
+//                                               result.eigenVectors,
+//                                               result.eigenValues);
+//   result.eigenValues *= fscale;
+
+// #elif USEEIGEN
+
+  // Use the Eigen library to determine the eigen values/vectors.
+  {
+    Eigen::Matrix3d B;
+    B << 
+      A.xx(), A.xy(), A.xz(),
+      A.yx(), A.yy(), A.yz(),
+      A.zx(), A.zy(), A.zz();
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(B);
+    const Eigen::Vector3d& Bvals = eigensolver.eigenvalues();
+    const Eigen::Matrix3d& Bvecs = eigensolver.eigenvectors();
+    result.eigenValues = Vector(Bvals(0), Bvals(1), Bvals(2)) * fscale;
+    const double x1 = 1.0/std::sqrt(Bvecs(0,0)*Bvecs(0,0) + Bvecs(1,0)*Bvecs(1,0) + Bvecs(2,0)*Bvecs(2,0));
+    const double x2 = 1.0/std::sqrt(Bvecs(0,1)*Bvecs(0,1) + Bvecs(1,1)*Bvecs(1,1) + Bvecs(2,1)*Bvecs(2,1));
+    const double x3 = 1.0/std::sqrt(Bvecs(0,2)*Bvecs(0,2) + Bvecs(1,2)*Bvecs(1,2) + Bvecs(2,2)*Bvecs(2,2));
+    result.eigenVectors = Tensor(Bvecs(0,0)*x1, Bvecs(0,1)*x2, Bvecs(0,2)*x3,
+                                 Bvecs(1,0)*x1, Bvecs(1,1)*x2, Bvecs(1,2)*x3,
+                                 Bvecs(2,0)*x1, Bvecs(2,1)*x2, Bvecs(2,2)*x3);
+  }
+
+// #else
+
+//   // Compute the scaled eigen-values, and sort them.
+//   Vector lambdaVec = A.eigenValues();
+//   sort(lambdaVec.begin(), lambdaVec.end());
+//   CHECK(lambdaVec.x() <= lambdaVec.y() and
+//         lambdaVec.y() <= lambdaVec.z());
+
+//   // Assign the true eigen-values in the result.
+//   result.eigenValues = fscale*lambdaVec;
+//   result.eigenVectors = SymTensor::one();
+
+//   // If any of the eigen-values result in a tensor that is not positive-rank 
+//   // (all zero elements), we assume the eigen-values are equal and punt
+//   // with the identity tensor for the eigen-vectors.
+//   // We simultaneously compute the row containing the maximum absolute value 
+//   // element for each eigen-value.
+//   bool punt = false;
+//   double maxEVelement = -1.0;
+//   Vector maxEVrow;
+//   int iFirst = -1;
+//   for (int ivalue = 0; ivalue != 3; ++ivalue) {
+//     const SymTensor M = A - lambdaVec(ivalue)*SymTensor::one();
+//     if (M.maxAbsElement() < degenerate) punt = true;
+//     for (int irow = 0; irow != 3; ++irow) {
+//       const Vector Mvec = M.getRow(irow);
+//       const double thpt = Mvec.maxAbsElement();
+//       if (thpt > maxEVelement) {
+//         maxEVelement = thpt;
+//         maxEVrow = Mvec;
+//         iFirst = ivalue;
+//       }
+//     }
+//   }
+
+//   // If we found an all zero M (= A - lambda*I) matrix, we punt and accept the identity
+//   // tensor as our eigen-vectors.  Otherwise, continue the compuation.
+//   if (!punt) {
+//     CHECK(iFirst >= 0 and iFirst < 3);
+
+//     // Select the ordering we'll go through the eigen-values in, starting
+//     // with the row with the largest absolute value element.
+//     const int iSecond = (iFirst + 1) % 3;
+//     const int iThird = (iSecond + 1) % 3;
+//     CHECK(iFirst + iSecond + iThird == 3);
+
+//     // We need two orthogonal unit vectors in the plane perpendicular to
+//     // the maximum row selected previously.  We can do this by finding the
+//     // rotational transformation wherein x' axis is aligned with this row, and 
+//     // taking our two vectors as the other two rows of this transform.
+//     const Vector R = maxEVrow.unitVector();
+//     const Tensor Tr = rotationMatrix(R);
+//     const Vector U0 = Tr.getRow(1);
+//     const Vector U1 = Tr.getRow(2);
+    
+//     // Now we can compute the eigen-vector corresponding the first eigen-value
+//     // selected previously.
+//     const Vector V0 = buildUniqueEigenVector(A, 
+//                                              lambdaVec(iFirst),
+//                                              U0,
+//                                              U1);
+//     result.eigenVectors.setColumn(iFirst, V0);
+
+//     // Now we know the remaining eigen-vectors are in the plane perpendicular to
+//     // V0.  We know R is in that plane, and so is R x V0.  With that knowledge
+//     // we can basically repeat the same procedure for the next eigen-vector.
+//     Vector S = R.cross(V0);
+//     CHECK(fuzzyEqual(S.magnitude2(), 1.0, tolerance));
+//     const Vector V1 = buildUniqueEigenVector(A,
+//                                              lambdaVec(iSecond),
+//                                              R,
+//                                              S);
+//     result.eigenVectors.setColumn(iSecond, V1);
+    
+//     // The last eigen-vector is orthogonal to the first two, so we can find it
+//     // simply by taking the cross-product of the previous eigen-vectors.
+//     const Vector V2 = V0.cross(V1);
+//     CHECK(fuzzyEqual(V2.magnitude2(), 1.0, tolerance));
+//     CHECK(fuzzyEqual(((A - lambdaVec(iThird)*SymTensor::one())*V2).maxAbsElement(), 0.0, tolerance));
+//     result.eigenVectors.setColumn(iThird, V2);
+//   }
+
+// #endif
+
+  BEGIN_CONTRACT_SCOPE
+  // Check the result.
+  const double lambda1 = result.eigenValues.x();
+  const double lambda2 = result.eigenValues.y();
+  const double lambda3 = result.eigenValues.z();
+  CONTRACT_VAR(lambda1);
+  CONTRACT_VAR(lambda2);
+  CONTRACT_VAR(lambda3);
+  const Vector v1 = result.eigenVectors.getColumn(0);
+  const Vector v2 = result.eigenVectors.getColumn(1);
+  const Vector v3 = result.eigenVectors.getColumn(2);
+  CONTRACT_VAR(v1);
+  CONTRACT_VAR(v2);
+  CONTRACT_VAR(v3);
+  ENSURE2(fuzzyEqual(v1.dot(v2), 0.0, tolerance) and 
+          fuzzyEqual(v1.dot(v3), 0.0, tolerance) and 
+          fuzzyEqual(v2.dot(v3), 0.0, tolerance),
+          v1 << " " << v2 << " " << v3 << " : " << *this);
+  ENSURE2(fuzzyEqual(v1.magnitude2(), 1.0, tolerance) and
+          fuzzyEqual(v2.magnitude2(), 1.0, tolerance) and
+          fuzzyEqual(v3.magnitude2(), 1.0, tolerance),
+          v1 << " " << v2 << " " << v3);
+  const double tol = tolerance*std::max(1.0, this->maxAbsElement());
+  CONTRACT_VAR(tol);
+  ENSURE2(fuzzyEqual((SymTensor(xx() - lambda1, xy(), xz(),
+                                yx(), yy() - lambda1, yz(),
+                                zx(), zy(), zz() - lambda1)*v1).maxAbsElement(), 0.0, tol),
+          *this << " " << A << " " << lambda1 << " " << v1 << " " << tol << " "
+          << SymTensor(xx() - lambda1, xy(), xz(),
+                       yx(), yy() - lambda1, yz(),
+                       zx(), zy(), zz() - lambda1)*v1);
+  ENSURE(fuzzyEqual((SymTensor(xx() - lambda2, xy(), xz(),
+                               yx(), yy() - lambda2, yz(),
+                               zx(), zy(), zz() - lambda2)*v2).maxAbsElement(), 0.0, tol));
+  ENSURE(fuzzyEqual((SymTensor(xx() - lambda3, xy(), xz(),
+                               yx(), yy() - lambda3, yz(),
+                               zx(), zy(), zz() - lambda3)*v3).maxAbsElement(), 0.0, tol));
+  ENSURE(fuzzyEqual(abs(result.eigenVectors.Determinant()), 1.0, tolerance));
+  END_CONTRACT_SCOPE
+
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Compute the square root of the tensor.
 //------------------------------------------------------------------------------
 template <int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>
 GeomSymmetricTensor<nDim>::
@@ -2422,6 +2514,7 @@ sqrt() const {
 // Compute the cube root of the tensor.
 //------------------------------------------------------------------------------
 template <int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>
 GeomSymmetricTensor<nDim>::
@@ -2437,6 +2530,7 @@ cuberoot() const {
 // The general version, raise to an arbitrary power.
 //------------------------------------------------------------------------------
 template <int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>
 GeomSymmetricTensor<nDim>::
@@ -2447,6 +2541,104 @@ pow(const double p) const {
     result(i,i) = std::pow(std::abs(eigen.eigenValues(i)), p) * sgn(eigen.eigenValues(i));
   result.rotationalTransform(eigen.eigenVectors);
   return result;
+}
+
+//------------------------------------------------------------------------------
+// Enforce a minimum eigen value
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
+enforceMinEigenValue(const double& x) const {
+  return GeomSymmetricTensor(std::max(mxx, x));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+enforceMinEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::max(ev.eigenValues(0), x);
+    result(1,1) = std::max(ev.eigenValues(1), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+enforceMinEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::max(ev.eigenValues(0), x);
+    result(1,1) = std::max(ev.eigenValues(1), x);
+    result(2,2) = std::max(ev.eigenValues(2), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+//------------------------------------------------------------------------------
+// Enforce a maximum eigen value
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
+enforceMaxEigenValue(const double& x) const {
+  return GeomSymmetricTensor(std::min(mxx, x));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+enforceMaxEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.maxElement() > x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::min(ev.eigenValues(0), x);
+    result(1,1) = std::min(ev.eigenValues(1), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+enforceMaxEigenValue(const double& x) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.maxElement() > x) {
+    GeomSymmetricTensor result;
+    result(0,0) = std::min(ev.eigenValues(0), x);
+    result(1,1) = std::min(ev.eigenValues(1), x);
+    result(2,2) = std::min(ev.eigenValues(2), x);
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -2488,6 +2680,7 @@ GeomSymmetricTensor<3>::eigen() const {
 // Multiplication by a scalar
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 Spheral::GeomSymmetricTensor<nDim>
 operator*(double lhs, const Spheral::GeomSymmetricTensor<nDim>& rhs) {
@@ -2528,73 +2721,54 @@ operator<<(std::ostream& os, const Spheral::GeomSymmetricTensor<nDim>& ten) {
   return os;
 }
 
-}
-
-namespace std {
 //------------------------------------------------------------------------------
-// Min a symmetric tensor with a scalar -- limit the eigenvalues.
+// Comparison with doubles as first argument
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
-Spheral::GeomSymmetricTensor<nDim>
-min(const double minValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
-
-  typedef Spheral::GeomSymmetricTensor<nDim> SymTensor;
-
-  // Get the eigen values and eigen vectors.
-  Spheral::EigenStruct<nDim> eigen = tensor.eigenVectors();
-
-  // Limit the eigen values if necessary.
-  if (eigen.eigenValues.maxElement() < minValue) {
-    return tensor;
-  } else {
-    SymTensor result;
-    for (int i = 0; i != nDim; ++i) {
-      result(i,i) = std::min(minValue, eigen.eigenValues(i));
-    }
-    result.rotationalTransform(eigen.eigenVectors);
-    return result;
-  }
+bool
+operator<(const double& lhs, const GeomSymmetricTensor<nDim>& rhs) {
+  return rhs > lhs;
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
-Spheral::GeomSymmetricTensor<nDim>
-min(const Spheral::GeomSymmetricTensor<nDim>& tensor, const double minValue) {
-  return min(minValue, tensor);
+bool
+operator>(const double& lhs, const GeomSymmetricTensor<nDim>& rhs) {
+  return rhs < lhs;
 }
 
 //------------------------------------------------------------------------------
-// Max a symmetric tensor with a scalar -- limit the eigenvalues.
+// Symmetric tensor specializations for min/max
 //------------------------------------------------------------------------------
-template<int nDim>
-inline
-Spheral::GeomSymmetricTensor<nDim>
-max(const double maxValue, const Spheral::GeomSymmetricTensor<nDim>& tensor) {
-
-  typedef Spheral::GeomSymmetricTensor<nDim> SymTensor;
-
-  // Get the eigen values and eigen vectors.
-  Spheral::EigenStruct<nDim> eigen = tensor.eigenVectors();
-
-  // Limit the eigen values if necessary.
-  if (eigen.eigenValues.minElement() > maxValue) {
-    return tensor;
-  } else {
-    SymTensor result;
-    for (int i = 0; i != nDim; ++i) {
-      result(i,i) = std::max(maxValue, eigen.eigenValues(i));
-    }
-    result.rotationalTransform(eigen.eigenVectors);
-    return result;
-  }
+template<int ndim>
+SPHERAL_HOST_DEVICE
+GeomSymmetricTensor<ndim>
+min(const double& lhs, const GeomSymmetricTensor<ndim>& rhs) {
+  return rhs.enforceMaxEigenValue(lhs);
 }
 
-template<int nDim>
-inline
-Spheral::GeomSymmetricTensor<nDim>
-max(const Spheral::GeomSymmetricTensor<nDim>& tensor, double const maxValue) {
-  return max(maxValue, tensor);
+template<int ndim>
+SPHERAL_HOST_DEVICE
+GeomSymmetricTensor<ndim>
+min(const GeomSymmetricTensor<ndim>& lhs, const double& rhs) {
+  return lhs.enforceMaxEigenValue(rhs);
+}
+
+template<int ndim>
+SPHERAL_HOST_DEVICE
+GeomSymmetricTensor<ndim>
+max(const double& lhs, const GeomSymmetricTensor<ndim>& rhs) {
+  return rhs.enforceMinEigenValue(lhs);
+}
+
+template<int ndim>
+SPHERAL_HOST_DEVICE
+GeomSymmetricTensor<ndim>
+max(const GeomSymmetricTensor<ndim>& lhs, const double& rhs) {
+  return lhs.enforceMinEigenValue(rhs);
 }
 
 }

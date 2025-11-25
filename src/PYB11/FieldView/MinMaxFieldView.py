@@ -16,6 +16,36 @@ class MinMaxFieldView:
   using ScalarFieldView = FieldView<%(Dimension)s, Scalar>;
 """
 
+    #...........................................................................
+    # Comparators
+    def __gt__(self):
+        return
+
+    def __lt__(self):
+        return
+
+    def __ge__(self):
+        return "bool"
+
+    def __le__(self):
+        return "bool"
+
+    def __gt__(self, rhs="%(Value)s()"):
+        "Greater than comparision with a %(Value)s"
+        return "bool"
+
+    def __lt__(self, rhs="%(Value)s()"):
+        "Less than comparision with a %(Value)s"
+        return "bool"
+
+    def __ge__(self, rhs="%(Value)s()"):
+        "Greater than or equal comparision with a %(Value)s"
+        return "bool"
+
+    def __le__(self, rhs="%(Value)s()"):
+        "Less than or equal comparision with a %(Value)s"
+        return "bool"
+
     def applyScalarMin(self):
         "Enforce a double floor on the values of the FieldView."
         return
@@ -23,18 +53,6 @@ class MinMaxFieldView:
     def applyScalarMax(self):
         "Enforce a double ceiling on the values of the FieldView."
         return
-
-    @PYB11const
-    def localMin(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the mimimum value in the FieldView local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def localMax(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the maximum value in the FieldView local to each processor."
-        return "%(Value)s"
 
 #-------------------------------------------------------------------------------
 # Inject base field methods

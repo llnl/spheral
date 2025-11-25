@@ -14,6 +14,7 @@
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/packElement.hh"
 #include "Utilities/range.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/RedistributionRegistrar.hh"
 #include "Distributed/allReduce.hh"
@@ -32,12 +33,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -732,9 +727,7 @@ workPerNode(const DataBase<Dimension>& dataBase,
   // Output some statistics.
   const Scalar minWeight = result.min();
   const Scalar maxWeight = result.max();
-  if (Process::getRank() == 0) cout << "RedistributeNodes::workPerNode: min/max work : "
-                                    << minWeight << " "
-                                    << maxWeight << endl;
+  SpheralMessage("RedistributeNodes::workPerNode: min/max work : "<< minWeight << " " << maxWeight);
 
   // Return the result.
   return result;

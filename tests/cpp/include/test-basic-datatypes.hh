@@ -13,7 +13,6 @@ using TEST_FIELD_DATATYPES = camp::list<
   ,float
   ,double
   ,Spheral::Dim<3>::Vector
-  ,Spheral::Dim<3>::Vector3d
   ,Spheral::Dim<3>::Tensor
   ,Spheral::Dim<3>::SymTensor
   ,Spheral::Dim<3>::ThirdRankTensor

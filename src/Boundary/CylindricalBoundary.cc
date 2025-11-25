@@ -15,12 +15,6 @@
 
 using std::vector;
 using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -312,7 +306,7 @@ applyGhostBoundary(Field<Dim<3>, Dim<3>::ThirdRankTensor>& field) const {
     CHECK(*controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     const Tensor T = reflectOperator(position(*controlItr), position(*ghostItr));
-    val = ThirdRankTensor::zero;
+    val = ThirdRankTensor::zero();
     const ThirdRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -348,7 +342,7 @@ applyGhostBoundary(Field<Dim<3>, Dim<3>::FourthRankTensor>& field) const {
     CHECK(*controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     const Tensor T = reflectOperator(position(*controlItr), position(*ghostItr));
-    val = FourthRankTensor::zero;
+    val = FourthRankTensor::zero();
     const FourthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -388,7 +382,7 @@ applyGhostBoundary(Field<Dim<3>, Dim<3>::FifthRankTensor>& field) const {
     CHECK(*controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
     const Tensor T = reflectOperator(position(*controlItr), position(*ghostItr));
-    val = FifthRankTensor::zero;
+    val = FifthRankTensor::zero();
     const FifthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {

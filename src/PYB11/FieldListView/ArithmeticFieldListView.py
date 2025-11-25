@@ -47,12 +47,6 @@ class ArithmeticFieldListView:
     # def __itruediv__SFL(self, rhs="const FieldListView<%(Dimension)s, Scalar>&"):
     #     return
 
-    @PYB11const
-    def localSumElements(self,
-                         includeGhosts = ("bool", "false")):
-        "Return the sum of the elements in the FieldListView local to each processor."
-        return "%(Value)s"
-
     #...........................................................................
     # Comparators
     def __gt__(self):
@@ -83,6 +77,8 @@ class ArithmeticFieldListView:
         "Less than or equal comparision with a %(Value)s"
         return "bool"
 
+    #...........................................................................
+    # Methods
     def applyMin(self, rhs="const %(Value)s&"):
         "Enforce a %(Value)s floor on the values of the FieldList."
         return
@@ -101,6 +97,12 @@ class ArithmeticFieldListView:
     def localMax(self,
                  includeGhosts = ("bool", "false")):
         "Return the maximum value in the FieldList local to each processor."
+        return "%(Value)s"
+
+    @PYB11const
+    def localSumElements(self,
+                         includeGhosts = ("bool", "false")):
+        "Return the sum of the elements in the FieldListView local to each processor."
         return "%(Value)s"
 
 #-------------------------------------------------------------------------------
