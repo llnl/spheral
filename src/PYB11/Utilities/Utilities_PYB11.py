@@ -59,6 +59,7 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/BiCubicInterpolator.hh"',
                   '"Utilities/uniform_random.hh"',
                   '"Utilities/Timer.hh"',
+                  '"Utilities/initializeAxom.hh"',
                   '"Distributed/Communicator.hh"',
                   '"adiak.hpp"',
                   '<algorithm>']
@@ -823,3 +824,11 @@ for (value, label) in (("int", "Int"),
 adiak_value{label} = PYB11TemplateFunction(adiak_value, "{value}", pyname="adiak_value")
 adiak_value2{label} = PYB11TemplateFunction(adiak_value2, "{value}", pyname="adiak_value")
 """)
+
+#...............................................................................
+# Axom stuff
+def initializeAxom():
+    return "void"
+
+def finalizeAxom():
+    return "void"

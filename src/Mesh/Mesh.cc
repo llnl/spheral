@@ -9,9 +9,6 @@
 #include "boost/bimap.hpp"
 
 using std::unordered_map;
-using std::min;
-using std::max;
-using std::abs;
 
 #include "MeshConstructionUtilities.hh"
 #include "Utilities/removeElements.hh"

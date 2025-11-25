@@ -17,6 +17,7 @@
 #include "Neighbor/NestedGridNeighbor.hh"
 #include "Neighbor/GridCellIndex.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -110,8 +111,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cout << "NestedGridRedistributeNodes::redistributeNodes initial load balancing:" << endl
-                        << initialLoadStats << endl << endl;
+  SpheralMessage("NestedGridRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n");
 
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -240,8 +240,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cout << "NestedGridRedistributeNodes::redistributeNodes final load balancing:" << endl
-                        << finalLoadStats << endl << endl;
+  SpheralMessage("NestedGridRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
   MPI_Barrier(Communicator::communicator());
 
 }

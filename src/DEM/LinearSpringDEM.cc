@@ -202,8 +202,8 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
   
   // FieldLists we'll need for the timestep calc.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto r = state.fields(DEMFieldNames::particleRadius, 0.0);
 
   const auto& contacts = this->contactStorageIndices();
@@ -475,8 +475,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Get the state FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto momentOfInertia = state.fields(DEMFieldNames::momentOfInertia, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto omega = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   const auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
   const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (size_t)0);
@@ -504,8 +504,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   CHECK(neighborIds.size() == numNodeLists);
 
   // Get the deriv FieldLists
-  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto DomegaDt = derivatives.fields(IncrementState<Dimension, Scalar>::prefix() + DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   auto newMaximumOverlap = derivatives.fields(MaxReplaceState<Dimension,Scalar>::prefix() + DEMFieldNames::maximumOverlap, 0.0);
   

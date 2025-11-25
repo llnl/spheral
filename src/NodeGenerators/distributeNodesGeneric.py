@@ -53,7 +53,6 @@ def distributeNodesGeneric(listOfNodeTuples,
 
         # Find the maximum kernel extent for all NodeLists.
         kernelExtent = max(kernelExtent, nodes.neighbor().kernelExtent)
-        one = eval("Spheral.SymTensor%id.one" % db.nDim)
         hminInv = 1.0/nodes.hmin
         hmaxInv = 1.0/nodes.hmax
 

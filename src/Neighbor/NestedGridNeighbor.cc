@@ -25,12 +25,6 @@
 #include <sstream>
 using std::vector;
 using std::map;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -338,8 +332,8 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
           // Cheat a bit, and push these a little closer together to catch
           // the most typical case where rgcMinExit and rgcMaxExit actually
           // lie on the boundaries of the same gridcell.
-          rgcMinExit += 1e-4*dxgc * Vector::one;
-          rgcMaxExit -= 1e-4*dxgc * Vector::one;
+          rgcMinExit += 1e-4*dxgc * Vector::one();
+          rgcMaxExit -= 1e-4*dxgc * Vector::one();
           CHECK(rgcMinExit <= rgcMaxExit);
 
           // Determine the grid cells containing these mapped positions.
@@ -393,8 +387,8 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
           // Cheat a bit, and push these a little closer together to catch
           // the most typical case where rgcMinExit and rgcMaxExit actually
           // lie on the boundaries of the same gridcell.
-          rgcMinEnter += 1e-4*dxgc * Vector::one;
-          rgcMaxEnter -= 1e-4*dxgc * Vector::one;
+          rgcMinEnter += 1e-4*dxgc * Vector::one();
+          rgcMaxEnter -= 1e-4*dxgc * Vector::one();
           CHECK(rgcMinEnter <= rgcMaxEnter);
 
           // Determine the grid cells containing these mapped positions.

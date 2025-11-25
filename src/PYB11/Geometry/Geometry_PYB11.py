@@ -22,7 +22,6 @@ PYB11namespaces = ["Spheral", "PolyClipper"]
 # Include files
 PYB11includes = ['"Geometry/Dimension.hh"',
                  '"Geometry/GeomVector.hh"',
-                 '"Geometry/Geom3Vector.hh"',
                  '"Geometry/GeomTensor.hh"',
                  '"Geometry/GeomSymmetricTensor.hh"',
                  '"Geometry/GeomThirdRankTensor.hh"',

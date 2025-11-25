@@ -292,7 +292,14 @@ public:
                                             const bool copy = false);
 
   // Reduce the values in the FieldList with the passed thread-local values.
-  void threadReduce() const;
+  // Not all types support less than/greater than, so we have to distinguish here
+  template<typename U = DataType>
+  std::enable_if_t< TypeTraits::has_less_than<U, U>::value, void>
+  threadReduce() const;
+
+  template<typename U = DataType>
+  std::enable_if_t<!TypeTraits::has_less_than<U, U>::value, void>
+  threadReduce() const;
 
   //----------------------------------------------------------------------------
   // Return a view of the FieldList (appropriate for on accelerator devices)

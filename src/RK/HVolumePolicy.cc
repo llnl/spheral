@@ -46,7 +46,7 @@ update(const KeyType& key,
   FieldList<Dimension, Scalar> volume = state.fields(fieldKey, 0.0);
 
   // Get the H field from the state, and do the deed.
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   computeHVolumes(mKernelExtent, H, volume);
 }
 

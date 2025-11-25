@@ -21,12 +21,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
     
@@ -75,7 +69,7 @@ CullenDehnenViscosity<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
   mClMultiplier = dataBase.newFluidFieldList(0.0, HydroFieldNames::ArtificialViscousClMultiplier);
   mCqMultiplier = dataBase.newFluidFieldList(0.0, HydroFieldNames::ArtificialViscousCqMultiplier);
-  mPrevDvDt = dataBase.newFluidFieldList(Vector::zero, "mPrevDvDt");
+  mPrevDvDt = dataBase.newFluidFieldList(Vector::zero(), "mPrevDvDt");
   mPrevDivV = dataBase.newFluidFieldList(0.0, "mPrevDivV");
   mCullAlpha = dataBase.newFluidFieldList(1.0, "mCullAlpha");
   mPrevDivV2 = dataBase.newFluidFieldList(0.0, "mPrevDivV2");
@@ -165,14 +159,14 @@ finalizeDerivatives(const Scalar /*time*/,
   //State Fluid Lists
   const FieldList<Dimension, Scalar> reducingViscosityMultiplierQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
 
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   
-  FieldList<Dimension, Vector> prevDvDt = state.fields("mPrevDvDt", Vector::zero);
+  FieldList<Dimension, Vector> prevDvDt = state.fields("mPrevDvDt", Vector::zero());
 
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
@@ -190,8 +184,8 @@ finalizeDerivatives(const Scalar /*time*/,
   FieldList<Dimension, Scalar> vsig = derivs.fields("mVsig", 0.0);
 
   // We're using the hydro derivatives.
-  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-  FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
+  FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
 
   // Apply boundaries to DvDx.
   for (auto* bcPtr: range(this->boundaryBegin(), this->boundaryEnd())) bcPtr->applyFieldListGhostBoundary(DvDx);
@@ -296,7 +290,7 @@ finalizeDerivatives(const Scalar /*time*/,
       const Tensor DvDxi = DvDx(nodeListi, i);
       const Scalar divvi = DvDxi.Trace();
       const Scalar divai = (divvi - prevDivV(nodeListi, i))*safeInvVar(dt);
-      const Tensor Si = DvDxi.Symmetric() - divvi/Dimension::nDim * Tensor::one;
+      const Tensor Si = DvDxi.Symmetric() - divvi/Dimension::nDim * Tensor::one();
       const Scalar alphai = reducingViscosityMultiplierQ(nodeListi, i);
       Scalar& alpha_locali = alpha_local(nodeListi, i);
       if (mboolHopkins) {
@@ -335,11 +329,11 @@ finalize(const typename Dimension::Scalar /*time*/,
          DataBase<Dimension>& /*dataBase*/,
          State<Dimension>& state,
          StateDerivatives<Dimension>& derivs) {
-  FieldList<Dimension, Vector> prevDvDt = state.fields("mPrevDvDt", Vector::zero);
-  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  FieldList<Dimension, Vector> prevDvDt = state.fields("mPrevDvDt", Vector::zero());
+  const FieldList<Dimension, Vector> DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   prevDvDt.assignFields(DvDt);
   FieldList<Dimension, Scalar> prevDivV = state.fields("mPrevDivV", 0.0);
-  const FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+  const FieldList<Dimension, Tensor> DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   const unsigned numNodeLists = DvDx.numFields();
   CHECK(prevDivV.numFields() == numNodeLists);
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
@@ -396,7 +390,7 @@ applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   auto ClMult = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
   auto CqMult = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  auto prevDvDt = state.fields("mPrevDvDt", Vector::zero);
+  auto prevDvDt = state.fields("mPrevDvDt", Vector::zero());
   auto prevDivV = state.fields("mPrevDivV", 0.0);
   auto cullAlpha = state.fields("mCullAlpha", 0.0);
   auto prevDivV2 = derivs.fields("mPrevDivV2", 0.0);
@@ -419,7 +413,7 @@ enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
   auto ClMult = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
   auto CqMult = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  auto prevDvDt = state.fields("mPrevDvDt", Vector::zero);
+  auto prevDvDt = state.fields("mPrevDvDt", Vector::zero());
   auto prevDivV = state.fields("mPrevDivV", 0.0);
   auto cullAlpha = state.fields("mCullAlpha", 0.0);
   auto prevDivV2 = derivs.fields("mPrevDivV2", 0.0);
