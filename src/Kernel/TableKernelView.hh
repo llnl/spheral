@@ -8,8 +8,8 @@
 #define __Spheral_TableKernelView_hh__
 
 #include "Kernel.hh"
-#include "Utilities/QIView.hh"
-#include "Utilities/CHIView.hh"
+#include "Utilities/QuadraticInterpolatorView.hh"
+#include "Utilities/CubicHermiteInterpolatorView.hh"
 #include "config.hh"
 
 namespace Spheral {
@@ -23,8 +23,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using IView = QIView;
-  using NperhIView = CHIView;
+  using IView = QuadraticInterpolatorView;
+  using NperhIView = CubicHermiteInterpolatorView;
 
   SPHERAL_HOST_DEVICE TableKernelView() = default;
 
