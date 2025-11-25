@@ -737,7 +737,7 @@ FieldList<Dimension, DataType>::
 setMasterNodeLists(const typename Dimension::Vector& r,
                    std::vector<std::vector<int>>& masterLists,
                    std::vector<std::vector<int>>& coarseNeighbors) const {
-  this->setMasterNodeLists(r, 1e-30*SymTensor::one, masterLists, coarseNeighbors);
+  this->setMasterNodeLists(r, 1e-30*SymTensor::one(), masterLists, coarseNeighbors);
 }
 
 //------------------------------------------------------------------------------
@@ -768,7 +768,7 @@ FieldList<Dimension, DataType>::
 setRefineNodeLists(const typename Dimension::Vector& r,
                    const std::vector<std::vector<int>>& coarseNeighbors,
                    std::vector<std::vector<int>>& refineNeighbors) const {
-  this->setRefineNodeLists(r, 1e-30*SymTensor::one, coarseNeighbors, refineNeighbors);
+  this->setRefineNodeLists(r, 1e-30*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 //------------------------------------------------------------------------------
@@ -1443,8 +1443,9 @@ threadCopy(typename SpheralThreads<Dimension>::FieldListStack& stack,
 // Reduce the values in the FieldList with the passed thread-local values.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
+template<typename U>
 inline
-void
+std::enable_if_t< TypeTraits::has_less_than<U, U>::value, void>   // Types with operator<
 FieldList<Dimension, DataType>::
 threadReduce() const {
   REQUIRE(threadMasterPtr != NULL);
@@ -1470,6 +1471,26 @@ threadReduce() const {
           break;
 
         }
+      }
+    }
+  }
+}
+
+template<typename Dimension, typename DataType>
+template<typename U>
+inline
+std::enable_if_t<!TypeTraits::has_less_than<U, U>::value, void>   // Types without operator<
+FieldList<Dimension, DataType>::
+threadReduce() const {
+  REQUIRE(threadMasterPtr != NULL);
+  REQUIRE(threadMasterPtr->size() == this->size());
+  VERIFY2(reductionType == ThreadReduction::SUM, "FieldList::threadReduce ERROR : cannot perform min/max comparisons on " << typeid(DataType).name());
+  if (omp_get_num_threads() > 1) {
+    const auto numNL = this->size();
+    for (auto k = 0u; k < numNL; ++k) {
+      const auto n = mFieldPtrs[k]->numInternalElements();
+      for (auto i = 0u; i < n; ++i) {
+        (*threadMasterPtr)(k,i) += (*this)(k,i);
       }
     }
   }

@@ -222,7 +222,7 @@ public:
 
   // Many physics packages will also have their own representations of momentum in the
   // system (electromagnetic momentum flux density, etc.) 
-  virtual Vector extraMomentum() const                           { return Vector::zero; }
+  virtual Vector extraMomentum() const                           { return Vector::zero(); }
 
   // Register any additional state for visualization.
   virtual void registerAdditionalVisualizationState(DataBase<Dimension>& dataBase,

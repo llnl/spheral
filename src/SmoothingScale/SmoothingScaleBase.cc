@@ -42,8 +42,8 @@ void
 SmoothingScaleBase<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
   // Make sure our FieldLists are correctly sized.
-  dataBase.resizeFluidFieldList(mHideal, SymTensor::zero, ReplaceBoundedState<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, false);
-  dataBase.resizeFluidFieldList(mDHDt, SymTensor::zero, IncrementBoundedState<Dimension, Vector>::prefix() + HydroFieldNames::H, false);
+  dataBase.resizeFluidFieldList(mHideal, SymTensor::zero(), ReplaceBoundedState<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, false);
+  dataBase.resizeFluidFieldList(mDHDt, SymTensor::zero(), IncrementBoundedState<Dimension, Vector>::prefix() + HydroFieldNames::H, false);
   if (mRadialOnly) dataBase.resizeFluidFieldList(mRadius0, 0.0, "Start of step radius", false);
 }
 
@@ -108,7 +108,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   // If we're using the radial H scaling, take a snapshot of the initial radius of
   // each point.
   if (mRadialOnly) {
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     const auto numFields = pos.numFields();
     for (auto k = 0u; k < numFields; ++k) {
       const auto n = pos[k]->numInternalElements();

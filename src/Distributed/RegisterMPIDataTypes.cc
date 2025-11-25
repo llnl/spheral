@@ -30,9 +30,9 @@ RegisterMPIDataTypes() {
 
 #ifdef SPHERAL_ENABLE_MPI
   // Vectors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::Vector>::numElements(Dim<1>::Vector::zero), MPI_DOUBLE, &MPI_Vector1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero), MPI_DOUBLE, &MPI_Vector2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::Vector>::numElements(Dim<3>::Vector::zero), MPI_DOUBLE, &MPI_Vector3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::Vector>::numElements(Dim<1>::Vector::zero()), MPI_DOUBLE, &MPI_Vector1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero()), MPI_DOUBLE, &MPI_Vector2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::Vector>::numElements(Dim<3>::Vector::zero()), MPI_DOUBLE, &MPI_Vector3d);
   MPI_Type_commit(&MPI_Vector1d);
   MPI_Type_commit(&MPI_Vector2d);
   MPI_Type_commit(&MPI_Vector3d);
@@ -66,41 +66,41 @@ RegisterMPIDataTypes() {
 //   }
 
   // Tensors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::Tensor>::numElements(Dim<1>::Tensor::zero), MPI_DOUBLE, &MPI_Tensor1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::Tensor>::numElements(Dim<2>::Tensor::zero), MPI_DOUBLE, &MPI_Tensor2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::Tensor>::numElements(Dim<3>::Tensor::zero), MPI_DOUBLE, &MPI_Tensor3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::Tensor>::numElements(Dim<1>::Tensor::zero()), MPI_DOUBLE, &MPI_Tensor1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::Tensor>::numElements(Dim<2>::Tensor::zero()), MPI_DOUBLE, &MPI_Tensor2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::Tensor>::numElements(Dim<3>::Tensor::zero()), MPI_DOUBLE, &MPI_Tensor3d);
   MPI_Type_commit(&MPI_Tensor1d);
   MPI_Type_commit(&MPI_Tensor2d);
   MPI_Type_commit(&MPI_Tensor3d);
 
   // SymTensors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::SymTensor>::numElements(Dim<1>::SymTensor::zero), MPI_DOUBLE, &MPI_SymTensor1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::SymTensor>::numElements(Dim<2>::SymTensor::zero), MPI_DOUBLE, &MPI_SymTensor2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::SymTensor>::numElements(Dim<3>::SymTensor::zero), MPI_DOUBLE, &MPI_SymTensor3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::SymTensor>::numElements(Dim<1>::SymTensor::zero()), MPI_DOUBLE, &MPI_SymTensor1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::SymTensor>::numElements(Dim<2>::SymTensor::zero()), MPI_DOUBLE, &MPI_SymTensor2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::SymTensor>::numElements(Dim<3>::SymTensor::zero()), MPI_DOUBLE, &MPI_SymTensor3d);
   MPI_Type_commit(&MPI_SymTensor1d);
   MPI_Type_commit(&MPI_SymTensor2d);
   MPI_Type_commit(&MPI_SymTensor3d);
 
   // ThirdRankTensors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::ThirdRankTensor>::numElements(Dim<1>::ThirdRankTensor::zero), MPI_DOUBLE, &MPI_ThirdRankTensor1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::ThirdRankTensor>::numElements(Dim<2>::ThirdRankTensor::zero), MPI_DOUBLE, &MPI_ThirdRankTensor2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::ThirdRankTensor>::numElements(Dim<3>::ThirdRankTensor::zero), MPI_DOUBLE, &MPI_ThirdRankTensor3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::ThirdRankTensor>::numElements(Dim<1>::ThirdRankTensor::zero()), MPI_DOUBLE, &MPI_ThirdRankTensor1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::ThirdRankTensor>::numElements(Dim<2>::ThirdRankTensor::zero()), MPI_DOUBLE, &MPI_ThirdRankTensor2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::ThirdRankTensor>::numElements(Dim<3>::ThirdRankTensor::zero()), MPI_DOUBLE, &MPI_ThirdRankTensor3d);
   MPI_Type_commit(&MPI_ThirdRankTensor1d);
   MPI_Type_commit(&MPI_ThirdRankTensor2d);
   MPI_Type_commit(&MPI_ThirdRankTensor3d);
 
   // FourthRankTensors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::FourthRankTensor>::numElements(Dim<1>::FourthRankTensor::zero), MPI_DOUBLE, &MPI_FourthRankTensor1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::FourthRankTensor>::numElements(Dim<2>::FourthRankTensor::zero), MPI_DOUBLE, &MPI_FourthRankTensor2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::FourthRankTensor>::numElements(Dim<3>::FourthRankTensor::zero), MPI_DOUBLE, &MPI_FourthRankTensor3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::FourthRankTensor>::numElements(Dim<1>::FourthRankTensor::zero()), MPI_DOUBLE, &MPI_FourthRankTensor1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::FourthRankTensor>::numElements(Dim<2>::FourthRankTensor::zero()), MPI_DOUBLE, &MPI_FourthRankTensor2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::FourthRankTensor>::numElements(Dim<3>::FourthRankTensor::zero()), MPI_DOUBLE, &MPI_FourthRankTensor3d);
   MPI_Type_commit(&MPI_FourthRankTensor1d);
   MPI_Type_commit(&MPI_FourthRankTensor2d);
   MPI_Type_commit(&MPI_FourthRankTensor3d);
 
   // FifthRankTensors.
-  MPI_Type_contiguous(DataTypeTraits<Dim<1>::FifthRankTensor>::numElements(Dim<1>::FifthRankTensor::zero), MPI_DOUBLE, &MPI_FifthRankTensor1d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<2>::FifthRankTensor>::numElements(Dim<2>::FifthRankTensor::zero), MPI_DOUBLE, &MPI_FifthRankTensor2d);
-  MPI_Type_contiguous(DataTypeTraits<Dim<3>::FifthRankTensor>::numElements(Dim<3>::FifthRankTensor::zero), MPI_DOUBLE, &MPI_FifthRankTensor3d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<1>::FifthRankTensor>::numElements(Dim<1>::FifthRankTensor::zero()), MPI_DOUBLE, &MPI_FifthRankTensor1d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<2>::FifthRankTensor>::numElements(Dim<2>::FifthRankTensor::zero()), MPI_DOUBLE, &MPI_FifthRankTensor2d);
+  MPI_Type_contiguous(DataTypeTraits<Dim<3>::FifthRankTensor>::numElements(Dim<3>::FifthRankTensor::zero()), MPI_DOUBLE, &MPI_FifthRankTensor3d);
   MPI_Type_commit(&MPI_FifthRankTensor1d);
   MPI_Type_commit(&MPI_FifthRankTensor2d);
   MPI_Type_commit(&MPI_FifthRankTensor3d);

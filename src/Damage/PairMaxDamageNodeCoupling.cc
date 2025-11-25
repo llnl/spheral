@@ -32,7 +32,7 @@ double scalarDamage(const FieldListType& damage,
 // Vector unitVectorWithZero(const Vector& x,
 //                           const double fuzz = 0.01) const {
 //   if (x.magnitude2() < fuzz) {
-//     return Vector::zero;
+//     return Vector::zero();
 //   } else {
 //     return x.unitVector();
 //   }
@@ -54,8 +54,8 @@ PairMaxDamageNodeCoupling(const State<Dimension>& state,
                           NodePairList& pairs):
   NodeCoupling() {
   const auto n = pairs.size();
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(0));
 #pragma omp for
   for (auto k = 0u; k < n; ++k) {

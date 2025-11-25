@@ -17,12 +17,6 @@
 using std::vector;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -582,7 +576,7 @@ FacetedVolumeBoundary<Dimension>::updateViolationNodes(NodeList<Dimension>& node
   const auto& vNodes = this->violationNodes(nodeList);
   const auto  numViolation = vNodes.size();
   auto&       violationOps = mViolationOperators[nodeList.name()];
-  violationOps = vector<Tensor>(vNodes.size(), Tensor::one);
+  violationOps = vector<Tensor>(vNodes.size(), Tensor::one());
   const auto& facets = mPoly.facets();
 
   // Find the longest scale in the FacetedVolume

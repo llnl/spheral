@@ -42,14 +42,14 @@ template<typename Dimension>
 typename Dimension::Vector
 ManufacturedConstantFunction<Dimension>::
 evaluateSpatialGradient(const double t, const Vector& x) const {
-  return Vector::zero;
+  return Vector::zero();
 }
 
 template<typename Dimension>
 typename Dimension::SymTensor
 ManufacturedConstantFunction<Dimension>::
 evaluateSpatialHessian(const double t, const Vector& x) const {
-  return SymTensor::zero;
+  return SymTensor::zero();
 }
 
 template<typename Dimension>
@@ -123,7 +123,7 @@ template<typename Dimension>
 typename Dimension::Vector
 ManufacturedSinusoidalFunction<Dimension>::
 evaluateSpatialGradient(const double t, const Vector& x) const {
-  auto val = Vector::one;
+  auto val = Vector::one();
   for (auto d1 = 0; d1 < Dimension::nDim; ++d1) {
     for (auto d2 = 0; d2 < Dimension::nDim; ++d2) {
       if (d1 == d2) {
@@ -141,8 +141,8 @@ template<typename Dimension>
 typename Dimension::SymTensor
 ManufacturedSinusoidalFunction<Dimension>::
 evaluateSpatialHessian(const double t, const Vector& x) const {
-  auto sinVal = Vector::zero;
-  auto cosVal = Vector::zero;
+  auto sinVal = Vector::zero();
+  auto cosVal = Vector::zero();
   auto cosProd = 1.0;
   for (auto d = 0; d < Dimension::nDim; ++d) {
     const auto arg = mCoefficients[d + 2] * (x[d] + t);
@@ -152,7 +152,7 @@ evaluateSpatialHessian(const double t, const Vector& x) const {
   }
 
   // Initialize value
-  auto val = SymTensor::one;
+  auto val = SymTensor::one();
   
   // Diagonal terms
   for (auto d = 0; d < Dimension::nDim; ++d) {
@@ -219,7 +219,7 @@ evaluateSpatialGradient(const double t, const Vector& x) const {
   const auto tdist2 = tdist * tdist;
   const auto t2 = t * t;
   const auto t26 = 6. + t2;
-  auto val = Vector::zero;
+  auto val = Vector::zero();
   for (auto d = 0; d < Dimension::nDim; ++d) {
     val[d] = (-2*k0*k1*x[d]*(-t + dist))/(std::exp(k1*tdist2)*t26*dist);
   }
@@ -239,7 +239,7 @@ evaluateSpatialHessian(const double t, const Vector& x) const {
   const auto tdist2 = tdist * tdist;
   const auto t2 = t * t;
   const auto t26 = 6. + t2;
-  auto val = SymTensor::zero;
+  auto val = SymTensor::zero();
   for (auto d1 = 0; d1 < Dimension::nDim; ++d1) {
     for (auto d2 = d1; d2 < Dimension::nDim; ++d2) {
       if (d1 == d2) {

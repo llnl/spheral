@@ -24,13 +24,6 @@ using std::vector;
 using std::map;
 using std::string;
 using std::pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-
 
 namespace Spheral {
 
@@ -1112,7 +1105,6 @@ computeConnectivity() {
 #pragma omp parallel
     {
       IntersectionConnectivityContainer intersection_private;
-      Vector b;
 #pragma omp for
       for (auto k = 0u; k < npairs; ++k) {
         const auto& pair = pairs[k];

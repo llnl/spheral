@@ -24,12 +24,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -138,7 +132,7 @@ waitallWithDeadlockDetection(const string label,
       MPI_Comm_size(comm, &numProcs);
       for (int i = 0; i != numProcs; ++i) {
         if (rank == i) {
-          cout << report.str();
+          std::cout << report.str();
         } else {
           // Sleep for 1 ms (1000 us).
 #if WIN32

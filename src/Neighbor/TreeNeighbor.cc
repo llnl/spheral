@@ -29,12 +29,6 @@
 #include <algorithm>
 using std::vector;
 using std::map;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -246,7 +240,7 @@ setRefineNeighborList(const Vector& position,
                       const std::vector<int>& coarseNeighbors,
                       std::vector<int>& refineNeighbors) const {
   REQUIRE(H > 0.0);
-  this->setTreeRefineNeighborList(position, H*SymTensor::one, coarseNeighbors, refineNeighbors);
+  this->setTreeRefineNeighborList(position, H*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 template<typename Dimension>
@@ -266,7 +260,7 @@ TreeNeighbor<Dimension>::
 setRefineNeighborList(const Vector& position,
                       const std::vector<int>& coarseNeighbors,
                       std::vector<int>& refineNeighbors) const {
-  this->setTreeRefineNeighborList(position, 1.0e30*mBoxLength*SymTensor::one, coarseNeighbors, refineNeighbors);
+  this->setTreeRefineNeighborList(position, 1.0e30*mBoxLength*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 //------------------------------------------------------------------------------
@@ -824,7 +818,7 @@ typename TreeNeighbor<Dimension>::Vector
 TreeNeighbor<Dimension>::
 nearestCellCenter(const Vector& xi,
                   const double hi) const {
-  return this->nearestCellCenter(xi, SymTensor::one * 1.0/hi);
+  return this->nearestCellCenter(xi, SymTensor::one() * 1.0/hi);
 }
 
 //------------------------------------------------------------------------------
@@ -854,7 +848,7 @@ bool
 TreeNeighbor<Dimension>::
 occupied(const Vector& xi,
          const double hi) const {
-  return this->occupied(xi, SymTensor::one * 1.0/hi);
+  return this->occupied(xi, SymTensor::one() * 1.0/hi);
 }
 
 //------------------------------------------------------------------------------

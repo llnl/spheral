@@ -70,8 +70,8 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // careful here, and only create storage for those NodeLists that are
   // not already registered by someone else.  We also deliberately do not
   // zero out the fields at this stage!
-  dataBase.resizeGlobalFieldList(mDxDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
-  dataBase.resizeGlobalFieldList(mDvDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::velocity, false);
+  dataBase.resizeGlobalFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
+  dataBase.resizeGlobalFieldList(mDvDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::velocity, false);
   if (not derivs.registered(mDxDt)) derivs.enroll(mDxDt);
   if (not derivs.registered(mDvDt)) derivs.enroll(mDvDt);
 }

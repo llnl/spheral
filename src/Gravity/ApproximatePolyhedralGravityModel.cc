@@ -52,7 +52,7 @@ Dim<3>::Vector
 ApproximatePolyhedralGravityModel::
 acceleration(const Dim<3>::Vector& position) const {
   
-  Dim<3>::Vector acceleration = Vector::zero;
+  Dim<3>::Vector acceleration = Vector::zero();
 
   const std::vector<Vector>& GrhoAn = this-> values();
   const std::vector<Vector>& quadPoints = this->quadraturePoints();
