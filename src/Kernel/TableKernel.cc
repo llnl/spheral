@@ -14,12 +14,6 @@
 #include "Utilities/safeInv.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 

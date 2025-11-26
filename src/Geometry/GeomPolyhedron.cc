@@ -29,10 +29,6 @@ using std::vector;
 using std::map;
 using std::pair;
 using std::make_pair;
-using std::min;
-using std::max;
-using std::cerr;
-using std::endl;
 
 extern "C" {
 #include "libqhull/qhull_a.h"
@@ -57,8 +53,9 @@ GeomPolyhedron():
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(true),
-  mSurfaceMeshQueryPtr(nullptr),
-  mSignedDistancePtr(nullptr) {
+  mSurfaceMeshPtr(),
+  mSurfaceMeshQueryPtr(),
+  mSignedDistancePtr() {
   if (mDevnull == NULL) mDevnull = fopen("/dev/null", "w");
 }
 
@@ -77,8 +74,9 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(true),
-  mSurfaceMeshQueryPtr(nullptr),
-  mSignedDistancePtr(nullptr) {
+  mSurfaceMeshPtr(),
+  mSurfaceMeshQueryPtr(),
+  mSignedDistancePtr() {
   TIME_BEGIN("Polyhedron_construct1");
   if (mDevnull == NULL) mDevnull = fopen("/dev/null", "w");
 
@@ -253,8 +251,9 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points,
   mCentroid(),
   mRinterior2(-1.0),
   mConvex(false),
-  mSurfaceMeshQueryPtr(nullptr),
-  mSignedDistancePtr(nullptr) {
+  mSurfaceMeshPtr(),
+  mSurfaceMeshQueryPtr(),
+  mSignedDistancePtr() {
   TIME_BEGIN("Polyhedron_construct2");
 
   // Construct the facets.
@@ -287,8 +286,9 @@ GeomPolyhedron(const GeomPolyhedron& rhs):
   mCentroid(rhs.mCentroid),
   mRinterior2(rhs.mRinterior2),
   mConvex(rhs.mConvex),
-  mSurfaceMeshQueryPtr(nullptr),
-  mSignedDistancePtr(nullptr) {
+  mSurfaceMeshPtr(),
+  mSurfaceMeshQueryPtr(),
+  mSignedDistancePtr() {
   for (Facet& facet: mFacets) facet.mVerticesPtr = &mVertices;
 }
 
@@ -313,20 +313,11 @@ operator=(const GeomPolyhedron& rhs) {
     mRinterior2 = rhs.mRinterior2;
     mConvex = rhs.mConvex;
     mSurfaceMeshPtr.reset();
-    mSurfaceMeshQueryPtr = nullptr;
-    mSignedDistancePtr = nullptr;
+    mSurfaceMeshQueryPtr.reset();
+    mSignedDistancePtr.reset();
   }
   ENSURE(mFacets.size() == rhs.mFacets.size());
   return *this;
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-GeomPolyhedron::
-~GeomPolyhedron() {
-  if (mSurfaceMeshQueryPtr != nullptr) delete mSurfaceMeshQueryPtr;
-  if (mSignedDistancePtr != nullptr) delete mSignedDistancePtr;
 }
 
 //------------------------------------------------------------------------------
@@ -449,7 +440,9 @@ GeomPolyhedron::
 intersect(const std::pair<Vector, Vector>& rhs) const {
   if (not testBoxIntersection(mXmin, mXmax, rhs.first, rhs.second)) return false;
   
-  // Build a GeompPolygon representation of the box and use our generic intersection
+  //............................................................................
+  // This comment is no longer used, but keeping it for future reference
+  // Build a polyhedron of the box and use our generic intersection
   // method.
   // Create the piecewise linear complex representing the box. Note that 
   // the box consists of facets that are defined by their connections to 
@@ -466,6 +459,7 @@ intersect(const std::pair<Vector, Vector>& rhs) const {
   //     |.       |/
   //     0--------1             
   //
+  //............................................................................
 
   // Check if any of our vertices fall in the box.
   const double x1 = rhs.first.x(), y1 = rhs.first.y(), z1 = rhs.first.z(),
@@ -502,7 +496,6 @@ intersect(const Vector& s0, const Vector& s1) const {
   const auto q01 = (s1 - s0).magnitude();
 
   // Check each facet of the polyhedron.
-  Vector inter;
   const auto nf = mFacets.size();
   for (auto k = 0u; k < nf; ++k) {
     const auto& facet = mFacets[k];
@@ -541,7 +534,6 @@ intersections(const Vector& s0, const Vector& s1,
   vector<double> qvals;
 
   // Check each facet of the polyhedron.
-  Vector inter;
   const auto nf = mFacets.size();
   for (auto k = 0u; k < nf; ++k) {
     const auto& facet = mFacets[k];
@@ -918,7 +910,7 @@ setBoundingBox() {
   TIME_BEGIN("Polyhedron_BB_R2");
   if (pointInPolyhedron(mCentroid, *this, false, 1.0e-10)) {
     mRinterior2 = std::numeric_limits<double>::max();
-    for (const auto& facet: mFacets) mRinterior2 = min(mRinterior2, facet.distance(mCentroid));
+    for (const auto& facet: mFacets) mRinterior2 = std::min(mRinterior2, facet.distance(mCentroid));
     mRinterior2 = FastMath::square(mRinterior2);
   } else {
     mRinterior2 = -1.0;
@@ -927,11 +919,9 @@ setBoundingBox() {
   TIME_END("Polyhedron_BB_R2");
 
   // Clear any existing Axom information, so it's reconstructed if needed
-  if (mSurfaceMeshQueryPtr != nullptr) delete mSurfaceMeshQueryPtr;
-  if (mSignedDistancePtr != nullptr) delete mSignedDistancePtr;
   mSurfaceMeshPtr.reset();
-  mSurfaceMeshQueryPtr = nullptr;
-  mSignedDistancePtr = nullptr;
+  mSurfaceMeshQueryPtr.reset();
+  mSignedDistancePtr.reset();
   TIME_END("Polyhedron_BB");
 }
 
@@ -974,10 +964,10 @@ buildAxomData() const {
   bb.addPoint(AxPoint(&xmax[0]));
   axom::mint::write_vtk(meshPtr, "blago.vtk");
   mSurfaceMeshPtr = std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh>(meshPtr);
-  mSurfaceMeshQueryPtr = new AxOctree(bb, mSurfaceMeshPtr);
+  mSurfaceMeshQueryPtr = std::make_shared<AxOctree>(bb, mSurfaceMeshPtr);
   mSurfaceMeshQueryPtr->generateIndex();
-  mSignedDistancePtr = new AxDistance(mSurfaceMeshPtr.get(),
-                                      true);               // is_watertight
+  mSignedDistancePtr = std::make_shared<AxDistance>(mSurfaceMeshPtr.get(),
+                                                    true);               // is_watertight
 }
 
 //------------------------------------------------------------------------------
@@ -989,7 +979,7 @@ convex(const double tol) const {
   TIME_BEGIN("Polyhedron_convex");
   // Do the convex comparison for each vertex.
   bool result = true;
-  const double reltol = tol*max(1.0, (mXmax - mXmin).maxAbsElement());
+  const double reltol = tol*std::max(1.0, (mXmax - mXmin).maxAbsElement());
   vector<Vector>::const_iterator vertexItr = mVertices.begin();
   while (vertexItr != mVertices.end() and result) {
     vector<Facet>::const_iterator facetItr = mFacets.begin();

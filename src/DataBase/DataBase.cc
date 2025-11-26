@@ -1513,7 +1513,7 @@ void
 DataBase<Dimension>::
 globalHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
-  this->resizeGlobalFieldList(result, SymTensor::zero);
+  this->resizeGlobalFieldList(result, SymTensor::zero());
   size_t nodeListi = 0;
   for (ConstNodeListIterator nodeListItr = nodeListBegin();
        nodeListItr != nodeListEnd();
@@ -1530,7 +1530,7 @@ void
 DataBase<Dimension>::
 fluidHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
-  this->resizeFluidFieldList(result, SymTensor::zero);
+  this->resizeFluidFieldList(result, SymTensor::zero());
   size_t nodeListi = 0;
   for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
        nodeListItr != fluidNodeListEnd();
@@ -1657,7 +1657,7 @@ void
 DataBase<Dimension>::
 fluidLinearMomentum(FieldList<Dimension, typename Dimension::Vector>& result) const {
   REQUIRE(valid());
-  this->resizeFluidFieldList(result, Vector::zero, HydroFieldNames::linearMomentum);
+  this->resizeFluidFieldList(result, Vector::zero(), HydroFieldNames::linearMomentum);
   size_t nodeListi = 0;
   for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
        nodeListItr != fluidNodeListEnd();
@@ -1855,7 +1855,7 @@ localSamplingBoundingVolume(typename Dimension::Vector& centroid,
   // Find the maximal radial extent from the centroid.
   radiusNodes = 0.0;
   radiusSample = 0.0;
-  FieldList<Dimension, SymTensor> Hinv = newGlobalFieldList(SymTensor::zero);
+  FieldList<Dimension, SymTensor> Hinv = newGlobalFieldList(SymTensor::zero());
   this->globalHinverse(Hinv);
   for (auto nodeList = 0u; nodeList != positions.numFields(); ++nodeList) {
     for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {
@@ -1919,7 +1919,7 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
       radiusSample = 0.0;
       const FieldList<Dimension, Vector> positions = this->globalPosition();
       const FieldList<Dimension, Vector> extent = this->globalNodeExtent();
-      FieldList<Dimension, SymTensor> Hinv = this->newGlobalFieldList(SymTensor::zero, "H inverse");
+      FieldList<Dimension, SymTensor> Hinv = this->newGlobalFieldList(SymTensor::zero(), "H inverse");
       this->globalHinverse(Hinv);
       for (auto nodeList = 0u; nodeList != positions.numFields(); ++nodeList) {
 	for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {

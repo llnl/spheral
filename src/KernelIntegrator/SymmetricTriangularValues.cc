@@ -98,7 +98,7 @@ getQuadrature(const int numOrdinates,
   CHECK(values.size() == size_t(numOrdinates * dataLength));
   
   // Initialize the data
-  ordinates.assign(numOrdinates, Dim<3>::Vector::zero);
+  ordinates.assign(numOrdinates, Dim<3>::Vector::zero());
   weights.resize(numOrdinates);
   
   // Convert ordinates from x+y\in(-1,1) to x+y\in(0,1) and weights from 2 to 0.5

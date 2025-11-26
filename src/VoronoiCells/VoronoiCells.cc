@@ -64,7 +64,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
   mCells = dataBase.newFluidFieldList(FacetedVolume(), HydroFieldNames::cells);
   mCellFaceFlags = dataBase.newFluidFieldList(std::vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags);
-  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero, "delta centroid");
+  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero(), "delta centroid");
 }
 
 //------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mEtaVoidPoints, vector<Vector>(), HydroFieldNames::etaVoidPoints, false);
   dataBase.resizeFluidFieldList(mCells, FacetedVolume(), HydroFieldNames::cells, false);
   dataBase.resizeFluidFieldList(mCellFaceFlags, vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags, false);
-  dataBase.resizeFluidFieldList(mDeltaCentroid, Vector::zero, "delta centroid", false);
+  dataBase.resizeFluidFieldList(mDeltaCentroid, Vector::zero(), "delta centroid", false);
 
   // Use our finalize method to compute the cell geometry
   this->preStepInitialize(dataBase, state, derivs);
@@ -201,11 +201,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 
   // State we need to compute the Voronoi cells
   const auto& cm = state.connectivityMap();
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   // const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   // const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero, true);
+  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
   auto& boundaries = this->boundaryConditions();
 
 //   // Use m/rho to estimate our weighting to roughly match cell volumes

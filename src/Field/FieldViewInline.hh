@@ -2,6 +2,7 @@
 #include "Geometry/Dimension.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/DataTypeTraits.hh"
+#include "Utilities/SpheralFunctions.hh"
 #include "Utilities/Logger.hh"
 
 #include <cmath>
@@ -123,7 +124,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyScalarMin(const Scalar& dataMin) {
-  for (auto& x: *this) x = std::max(x, dataMin);
+  for (auto& x: *this) x = max(x, dataMin);
 }
 
 //------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 FieldView<Dimension, DataType>::applyScalarMax(const Scalar& dataMax) {
-  for (auto& x: *this) x = std::min(x, dataMax);
+  for (auto& x: *this) x = min(x, dataMax);
 }
 
 //------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ class QuadraticInterpolator:
 Assumes the results is interpolated as y_interp = a + b*x + c*x^2"""
 
     def pyinit(self):
-        "Default constuctor -- returns a non-functional interpolator until initialized"
+        "Default constructor -- returns a non-functional interpolator until initialized"
         return
 
     def pyinit_func(self,
@@ -47,6 +47,10 @@ Assumes the results is interpolated as y_interp = a + b*x + c*x^2"""
     def __call__(self,
                  x = "const double"):
         "Returns the interpolated value <y>(x)"
+        return "double"
+
+    @PYB11cppname("operator[]")
+    def __getitem__(self, index="size_t"):
         return "double"
 
     @PYB11const
@@ -96,4 +100,3 @@ Assumes the results is interpolated as y_interp = a + b*x + c*x^2"""
     xmin = PYB11property(doc="Minimum x coordinate for table")
     xmax = PYB11property(doc="Maximum x coordinate for table")
     xstep = PYB11property(doc="delta x between tabulated values")
-    coeffs = PYB11property(doc="the fitting coefficients")

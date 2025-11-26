@@ -68,7 +68,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('m-aneos@1.0')
 
-    depends_on('eigen@3.4.0', type='build')
+    depends_on('eigen@5.0.0', type='build')
 
     depends_on('hdf5 +hl', type='build')
 

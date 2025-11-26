@@ -21,12 +21,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -298,7 +292,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
         const auto& ri = position(nodeListi, i);
 
         // Build the set of inverse positions in eta space about this point (including itself as the origin)
-        vector<Vector> invPositions = {Vector::zero};
+        vector<Vector> invPositions = {Vector::zero()};
         const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
         CHECK(connectivity.size() == numNodeLists);
         for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
@@ -318,7 +312,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
         for (const auto& vinv: vertsInv) {
           const auto vimag2 = vinv.magnitude2();
           if (vimag2 < 1.0e-30) {
-            verts.push_back(Vector::zero);
+            verts.push_back(Vector::zero());
             surface = true;
           } else {
             verts.push_back(vinv/vimag2);
