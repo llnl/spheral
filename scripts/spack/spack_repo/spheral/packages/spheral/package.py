@@ -33,7 +33,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # -------------------------------------------------------------------------
     # Is LEOS available in a standard place?
     # -------------------------------------------------------------------------
-    from spack.pkg.spheral.leos import Leos
+
+    from spack_repo.spheral.packages.leos.package import Leos
     LEOSpresent = os.path.exists(Leos.fileLoc)
 
     # -------------------------------------------------------------------------
@@ -65,7 +66,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('qhull@2020.2 +pic', type='build')
 
-    depends_on('m_aneos@1.0')
+    depends_on('m-aneos@1.0')
 
     depends_on('eigen@3.4.0', type='build')
 
@@ -248,7 +249,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         entries.append(cmake_cache_path('qhull_DIR', spec['qhull'].prefix))
 
-        entries.append(cmake_cache_path('aneos_DIR', spec['m_aneos'].prefix))
+        entries.append(cmake_cache_path('aneos_DIR', spec['m-aneos'].prefix))
 
         entries.append(cmake_cache_path('hdf5_DIR', spec['hdf5'].prefix))
 

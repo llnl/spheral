@@ -328,10 +328,10 @@ class SpheralTPL:
         spec = self.args.spec
         # Load the spack package recipe python class
         if (package_name == "llnlspheral"):
-            from spack.pkg.llnlspheral.llnlspheral import Llnlspheral
+            from spack_repo.llnlspheral.packages.llnlspheral.package import Llnlspheral
             spack_spheral = Llnlspheral(self.spack_spec)
         else:
-            from spack.pkg.spheral.spheral import Spheral
+            from spack_repo.spheral.packages.spheral.package import Spheral
             spack_spheral = Spheral(self.spack_spec)
 
         # Get host config file name from spack package recipe

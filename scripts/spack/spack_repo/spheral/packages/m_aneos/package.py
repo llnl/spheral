@@ -8,7 +8,7 @@ from spack.package import *
 
 
 class MAneos(MakefilePackage):
-    """M-Aneos"""
+    """MAneos"""
 
     homepage = "https://github.com/isale-code/M-ANEOS"
     url      = "https://github.com/isale-code/M-ANEOS/releases/download/v1.0beta/M-ANEOS-v1.0.tar.gz"
