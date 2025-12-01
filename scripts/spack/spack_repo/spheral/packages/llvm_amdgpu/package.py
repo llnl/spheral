@@ -19,3 +19,9 @@ class LlvmAmdgpu(BuiltinLlvmAmdgpu):
     #     "cxx": "rocmcc/amdclang++",
     #     "fortran": "rocmcc/amdflang"
     # }
+
+    def setup_run_environment(self, env: EnvironmentModifications) -> None:
+        if self.spec.satisfies("+flang"):
+            env.set("FC", join_path(self.spec.prefix.bin, "flang"))
+            env.set("F77", join_path(self.spec.prefix.bin, "flang"))
+
