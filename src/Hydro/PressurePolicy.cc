@@ -99,7 +99,7 @@ update(const KeyType& key,
   // so we check if someone has registered damaged pressure as a field for this NodeList, in
   // which case we apply the damage to a new copy of the pressure.
   if (state.registered(buildKey(SolidFieldNames::tensorDamage))) {
-    const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+    const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
 
     // Check for the appropriate minimum pressure
     const auto* solidEOSptr = dynamic_cast<const SolidEquationOfState<Dimension>*>(&eos);

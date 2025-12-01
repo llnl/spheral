@@ -26,7 +26,7 @@ SphereSolidBoundary(const Vector& center,
   SolidBoundaryBase<Dimension>(),
   mCenter(center),
   mRadius(radius),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 

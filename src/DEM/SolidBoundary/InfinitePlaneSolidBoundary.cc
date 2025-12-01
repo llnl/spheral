@@ -23,7 +23,7 @@ InfinitePlaneSolidBoundary(const Vector& point, const Vector& normal):
   SolidBoundaryBase<Dimension>(),
   mPoint(point),
   mNormal(normal),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>

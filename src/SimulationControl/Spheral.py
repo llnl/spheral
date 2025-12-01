@@ -125,6 +125,13 @@ for shadowedthing in ("TillotsonEquationOfState",
     for dim in dims:
         exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
 
+#-------------------------------------------------------------------------------
+# Set up Axom
+#-------------------------------------------------------------------------------
+import atexit
+initializeAxom()
+atexit.register(finalizeAxom)
+
 # ------------------------------------------------------------------------------
 # Output some useful Spheral configuration info to stdout
 # ------------------------------------------------------------------------------

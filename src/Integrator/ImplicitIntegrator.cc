@@ -15,7 +15,6 @@ namespace Spheral {
 
 using std::cout;
 using std::endl;
-using std::min;
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.

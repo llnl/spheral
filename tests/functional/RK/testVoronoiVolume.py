@@ -281,4 +281,4 @@ if ranfrac == 0.0:
         else:
             assert Vi == 0.0
 else:
-    print("random displacments -- no error check.")
+    print("random displacements -- no error check.")

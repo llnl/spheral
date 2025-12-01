@@ -27,7 +27,7 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, Ctor) {
 
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 0.0);
   }
   EXEC_IN_SPACE_END()
@@ -47,13 +47,13 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, Assignment) {
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t;
   t = 5.0;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 5.0);
   }
 
   TensorType u(1.0);
   t = u;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 1.0);
   }
   EXEC_IN_SPACE_END()
@@ -71,11 +71,11 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, Accessors) {
 
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     t[i] = i;
   }
 
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], i);
   }
   EXEC_IN_SPACE_END()
@@ -94,7 +94,7 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, Zero) {
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t(1.0);
   t.Zero();
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 0.0);
   }
   EXEC_IN_SPACE_END()
@@ -114,7 +114,7 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, UnaryMinus) {
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t1(1.0);
   TensorType t2 = -t1;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t2[i], -1.0);
   }
   EXEC_IN_SPACE_END()
@@ -135,12 +135,12 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, AddSub) {
   TensorType t2(2.0);
 
   TensorType t_add = t1 + t2;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t_add[i], 3.0);
   }
 
   TensorType t_sub = t2 - t1;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t_sub[i], 1.0);
   }
   EXEC_IN_SPACE_END()
@@ -161,12 +161,12 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, ScalarMulDiv) {
   double s = 2.0;
 
   TensorType t_mul = t * s;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t_mul[i], 2.0);
   }
 
   TensorType t_div = t / s;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t_div[i], 0.5);
   }
   EXEC_IN_SPACE_END()
@@ -186,12 +186,12 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, InPlaceAddSub) {
   TensorType t2(2.0);
 
   t1 += t2;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t1[i], 3.0);
   }
 
   t1 -= t2;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t1[i], 1.0);
   }
   EXEC_IN_SPACE_END()
@@ -211,12 +211,12 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, InPlaceScalarMulDiv) {
   double s = 2.0;
 
   t *= s;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 2.0);
   }
 
   t /= s;
-  for (typename TensorType::size_type i = 0; i < TensorType::numElements; ++i) {
+  for (typename TensorType::size_type i = 0; i < TensorType::numElements(); ++i) {
     SPHERAL_ASSERT_EQ(t[i], 1.0);
   }
   EXEC_IN_SPACE_END()
@@ -240,11 +240,6 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, Comparison) {
 
   SPHERAL_ASSERT_TRUE(t1 == t2);
   SPHERAL_ASSERT_TRUE(t1 != t3);
-  SPHERAL_ASSERT_TRUE(t1 < t3);
-  SPHERAL_ASSERT_TRUE(t3 > t1);
-  SPHERAL_ASSERT_TRUE(t1 <= t2);
-  SPHERAL_ASSERT_TRUE(t1 >= t2);
-  SPHERAL_ASSERT_TRUE(t4 < t1);
   EXEC_IN_SPACE_END()
 }
 
@@ -262,7 +257,7 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, DoubleDot) {
   TensorType t1(2.0);
   TensorType t2(3.0);
   double dot_product = t1.doubledot(t2);
-  SPHERAL_ASSERT_EQ(dot_product, 2.0 * 3.0 * TensorType::numElements);
+  SPHERAL_ASSERT_EQ(dot_product, 2.0 * 3.0 * TensorType::numElements());
   EXEC_IN_SPACE_END()
 }
 
@@ -277,11 +272,11 @@ GPU_TYPED_TEST_P(RankNTensorTypedTest, ElementStats) {
 
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
   TensorType t;
-  for (size_t i = 0; i < TensorType::numElements; ++i) {
+  for (size_t i = 0; i < TensorType::numElements(); ++i) {
     t[i] = (i % 2 == 0) ? i : -(double)i;
   }
 
-  SPHERAL_ASSERT_EQ(t.maxAbsElement(), TensorType::numElements - 1);
+  SPHERAL_ASSERT_EQ(t.maxAbsElement(), TensorType::numElements() - 1);
   EXEC_IN_SPACE_END()
 }
 

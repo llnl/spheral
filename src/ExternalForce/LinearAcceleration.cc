@@ -48,8 +48,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
                     StateDerivatives<Dimension>& derivs) const {
 
   // Get the state.
-  const FieldList<Dimension, Vector> r = state.fields(HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> r = state.fields(HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Increment the acceleration.
   for (InternalNodeIterator<Dimension> itr = DvDt.internalNodeBegin();

@@ -53,7 +53,7 @@ getQuadrature(const int numOrdinates,
               std::vector<Dim<1>::Vector>& ordinates) {
   if (numOrdinates == 1) {
     weights = {2.0};
-    ordinates = {Dim<1>::Vector::zero};
+    ordinates = {Dim<1>::Vector::zero()};
   }
   else {
     // Get the quadrature values
@@ -96,7 +96,7 @@ getQuadrature(const int numOrdinates,
               std::vector<Dim<2>::Vector>& ordinates) {
   if (numOrdinates == 1) {
     weights = {2.0};
-    ordinates = {Dim<2>::Vector::zero};
+    ordinates = {Dim<2>::Vector::zero()};
   }
   else {
     // Get the quadrature values

@@ -23,9 +23,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
 using std::vector;
 
 namespace {
@@ -81,7 +78,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   // Make sure our FieldLists are correctly sized.
   SmoothingScaleBase<Dimension>::initializeProblemStartup(dataBase);
   dataBase.resizeFluidFieldList(mZerothMoment, 0.0, HydroFieldNames::massZerothMoment, false);
-  dataBase.resizeFluidFieldList(mFirstMoment, Vector::zero, HydroFieldNames::massFirstMoment, false);
+  dataBase.resizeFluidFieldList(mFirstMoment, Vector::zero(), HydroFieldNames::massFirstMoment, false);
 }
 
 //------------------------------------------------------------------------------
@@ -118,11 +115,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   CHECK(position.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
   CHECK(mass.size() == numNodeLists);
@@ -130,10 +127,10 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(DvDx.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
-  auto  Hideal = derivs.fields(ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
+  auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
+  auto  Hideal = derivs.fields(ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
   auto  massZerothMoment = derivs.fields(HydroFieldNames::massZerothMoment, 0.0);
-  auto  massFirstMoment = derivs.fields(HydroFieldNames::massFirstMoment, Vector::zero);
+  auto  massFirstMoment = derivs.fields(HydroFieldNames::massFirstMoment, Vector::zero());
   CHECK(DHDt.size() == numNodeLists);
   CHECK(Hideal.size() == numNodeLists);
   CHECK(massZerothMoment.size() == numNodeLists);
@@ -271,7 +268,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto hi0 = 1.0/Hi.xx();
       const auto hi1 = std::min(hmax, std::max(hmin, hi0*(1.0 - a + a*s)));
       CHECK(hi1 > 0.0);
-      Hideal(nodeListi, i) = 1.0/hi1 * SymTensor::one;
+      Hideal(nodeListi, i) = 1.0/hi1 * SymTensor::one();
     }
   }
   TIME_END("SPHSmoothingScaleDerivs");

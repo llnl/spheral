@@ -13,12 +13,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -46,7 +40,7 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
   FieldList<Dimension, Vector> position = dataBase.fluidPosition();
   FieldList<Dimension, Scalar> rho = dataBase.fluidMassDensity();
   FieldList<Dimension, SymTensor> H = dataBase.fluidHfield();
-  FieldList<Dimension, Vector> delta = dataBase.newFluidFieldList(Vector::zero, "delta");
+  FieldList<Dimension, Vector> delta = dataBase.newFluidFieldList(Vector::zero(), "delta");
   const Vector& xmin = boundary.xmin();
   const Vector& xmax = boundary.xmax();
   const double stopTol = tolerance*((xmax - xmin).maxAbsElement());
@@ -59,7 +53,7 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
   int iter = 0;
   while (iter < maxIterations and maxDelta > stopTol) {
     ++iter;
-    delta = Vector::zero;
+    delta = Vector::zero();
     maxDelta = 0.0;
 
     // Read out the node positions to a flat list.

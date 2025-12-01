@@ -12,10 +12,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 //------------------------------------------------------------------------------
 // Functor for use looking up the thermal yeild via our Newton-Raphson function.
 //------------------------------------------------------------------------------

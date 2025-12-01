@@ -103,10 +103,10 @@ update(const KeyType& key,
 
   // We depend on velocity information.  If there is no velocity there's nothing to do.
   if (state.fieldNameRegistered(HydroFieldNames::velocity)) {
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero);
-    // const auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-    const auto DvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero());
+    // const auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
+    const auto DvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
 
     const auto numNodeLists = cells.numFields();
     for (auto k = 0u; k < numNodeLists; ++k) {
