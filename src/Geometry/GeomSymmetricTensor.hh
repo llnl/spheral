@@ -178,13 +178,13 @@ public:
 
   // Compute the "square root" of the tensor: the tensor that, 
   // when squared, equals this tensor.
-  GeomSymmetricTensor sqrt() const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor sqrt() const;
 
   // Similarly, compute the cube root.
-  GeomSymmetricTensor cuberoot() const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor cuberoot() const;
 
   // The general version, raise to an arbitrary power.
-  GeomSymmetricTensor pow(const double p) const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor pow(const double p) const;
 
   // Return a tensor where each element is the square of the corresponding 
   // element of this tensor.
@@ -376,7 +376,7 @@ template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<2>::maxAbsElement() co
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<3>::maxAbsElement() const;
 
 // Forward declare the global functions.
-template<int nDim> GeomSymmetricTensor<nDim> operator*(double lhs, const GeomSymmetricTensor<nDim>& rhs);
+template<int nDim> SPHERAL_HOST_DEVICE GeomSymmetricTensor<nDim> operator*(double lhs, const GeomSymmetricTensor<nDim>& rhs);
 template<int nDim> ::std::istream& operator>>(::std::istream& is, GeomSymmetricTensor<nDim>& ten);
 template<int nDim> ::std::ostream& operator<<(::std::ostream& os, const GeomSymmetricTensor<nDim>& ten);
 

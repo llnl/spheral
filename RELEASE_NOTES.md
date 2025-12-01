@@ -20,6 +20,8 @@ Notable changes include:
       * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
       * Created view classes for the Quadratic and CubicHermite interpolator classes.
         * These follow the inheritance pattern used previously.
+      * Updated Kernels to be device ready.
+      * Created a TableKernelView class for use on device.
       * Optimizations to RankTensor types:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
@@ -37,6 +39,7 @@ Notable changes include:
       * Field/FieldView reimplemented using our value/view inheritance pattern.
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
+      * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
 
   * Bug fixes
     * corrected rolling and torsional coefficient in DEM which were 2x the expected value
@@ -84,6 +87,7 @@ Notable changes include:
     * PYB11Generator has been updated to allow new features:
       * Ouput multiple pybind11 C++ files for parallel compilation
       * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
+    * Cleaned up the comparison operators for Geometry types, and removed lots of "using std::*" from implementations.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================

@@ -4,12 +4,56 @@
 #include "Geometry/GeomSymmetricTensor.hh"
 #include "Geometry/GeomTensor.hh"
 #include "Geometry/GeomVector.hh"
+#include "Utilities/rotationMatrix.hh"
+#include "Utilities/SpheralFunctions.hh"
+
+#include <tuple>
 
 using SymTensor = Spheral::GeomSymmetricTensor<3>;
 using Tensor = Spheral::GeomTensor<3>;
 using Vector = Spheral::GeomVector<3>;
 
 class GeomSymmetricTensorTest : public ::testing::Test {};
+
+// Figure out which elements of a 3 vector (b) correspond to the elements in another (a)
+// This is terrible with the C like restrictions of device code...
+SPHERAL_HOST_DEVICE
+inline
+void matchVectorElements(const Vector& a, const Vector& b, unsigned (&indices)[3]) {
+  unsigned permutations[6][3] = {{0,1,2},
+                                 {0,2,1},
+                                 {1,0,2},
+                                 {2,0,1},
+                                 {1,2,0},
+                                 {2,1,0}};
+  Vector bpermutations[6];
+  for (auto i = 0u; i < 6u; ++i) {
+    for (auto j = 0u; j < 3u; ++j) {
+      bpermutations[i][j] = b(permutations[i][j]);
+    }
+  }
+  const auto m0 = (bpermutations[0] - a).magnitude2(),
+             m1 = (bpermutations[1] - a).magnitude2(),
+             m2 = (bpermutations[2] - a).magnitude2(),
+             m3 = (bpermutations[3] - a).magnitude2(),
+             m4 = (bpermutations[4] - a).magnitude2(),
+             m5 = (bpermutations[5] - a).magnitude2();
+  const auto mmin = std::min({m0, m1, m2, m3, m4, m5});
+  if (m0 == mmin) {
+    memcpy(indices, permutations[0], sizeof(permutations[0]));
+  } else if (m1 == mmin) {
+    memcpy(indices, permutations[1], sizeof(permutations[1]));
+  } else if (m2 == mmin) {
+    memcpy(indices, permutations[2], sizeof(permutations[2]));
+  } else if (m3 == mmin) {
+    memcpy(indices, permutations[3], sizeof(permutations[3]));
+  } else if (m4 == mmin) {
+    memcpy(indices, permutations[4], sizeof(permutations[4]));
+  } else {
+    SPHERAL_ASSERT_EQ(m5, mmin);
+    memcpy(indices, permutations[5], sizeof(permutations[5]));
+  }
+}
 
 // Setting up Typed Test Suite for GeomSymmetricTensor
 TYPED_TEST_SUITE_P(GeomSymmetricTensorTypedTest);
@@ -405,22 +449,53 @@ GPU_TYPED_TEST_P(GeomSymmetricTensorTypedTest, SquareElements) {
   EXEC_IN_SPACE_END()
 }
 
-GPU_TYPED_TEST_P(GeomSymmetricTensorTypedTest, EigenVector) {
+GPU_TYPED_TEST_P(GeomSymmetricTensorTypedTest, EigenValues) {
   using WORK_EXEC_POLICY = TypeParam;
-  const Vector ref_vals(-3., -1., 1.);
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
-    SymTensor T1(0.0, 0.0, 1.0, 0.0, -3.0, 0.0, 1.0, 0.0, 0.0);
-    Spheral::EigenStruct<3> result = T1.eigenVectors();
-    Vector vals = result.eigenValues;
-    int found = 0;
-    for (auto& ref : ref_vals) {
-      for (auto& v : vals) {
-        if (std::abs(ref - v) < 1.E-12) {
-          found += 1;
-        }
-      }
-    }
-    SPHERAL_ASSERT_EQ(found, 3);
+    SymTensor T1(1.0, 0.0, 0.0,
+                 0.0, 2.0, 0.0,
+                 0.0, 0.0, -3.0);
+    auto vhat = Vector(1.0, 1.0).unitVector();
+    auto R = rotationMatrix(vhat);
+    T1.rotationalTransform(R);
+    auto evals = T1.eigenValues();
+    SPHERAL_ASSERT_FLOAT_EQ(evals.minElement(), -3.0);
+    SPHERAL_ASSERT_FLOAT_EQ(evals.maxElement(), 2.0);
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(evals(0), 1.0) or
+                        Spheral::fuzzyEqual(evals(1), 1.0) or
+                        Spheral::fuzzyEqual(evals(2), 1.0));
+  EXEC_IN_SPACE_END()
+}
+
+GPU_TYPED_TEST_P(GeomSymmetricTensorTypedTest, EigenVectors) {
+  using WORK_EXEC_POLICY = TypeParam;
+  EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
+    SymTensor T1(1.0, 0.0, 0.0,
+                 0.0, 2.0, 0.0,
+                 0.0, 0.0, -3.0);
+    auto vhat = Vector(1.0, 1.0).unitVector();
+    auto R = rotationMatrix(vhat);
+    T1.rotationalTransform(R);
+    auto estruct = T1.eigenVectors();
+    unsigned indices[3];
+    matchVectorElements(Vector(1, 2, -3), estruct.eigenValues, indices);
+    SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[0]), 1.0);
+    SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[1]), 2.0);
+    SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[2]), -3.0);
+    Tensor R1;
+    R1.setColumn(0, estruct.eigenVectors.getColumn(indices[0]));
+    R1.setColumn(1, estruct.eigenVectors.getColumn(indices[1]));
+    R1.setColumn(2, estruct.eigenVectors.getColumn(indices[2]));
+    const auto Tcheck = R*(R1.Transpose());
+    SPHERAL_ASSERT_FLOAT_EQ(std::abs(Tcheck(0,0)), 1.0);
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(0,1), 0.0));
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(0,2), 0.0));
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(1,0), 0.0));
+    SPHERAL_ASSERT_FLOAT_EQ(std::abs(Tcheck(1,1)), 1.0);
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(1,2), 0.0));
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(2,0), 0.0));
+    SPHERAL_ASSERT_TRUE(Spheral::fuzzyEqual(Tcheck(2,1), 0.0));
+    SPHERAL_ASSERT_FLOAT_EQ(std::abs(Tcheck(2,2)), 1.0);
   EXEC_IN_SPACE_END()
 }
 
@@ -428,7 +503,7 @@ REGISTER_TYPED_TEST_SUITE_P(GeomSymmetricTensorTypedTest, Ctor, Assignment, Acce
                             Setters, GetSetRowsColumns, ZeroIdentity, UnaryMinus, AddSub,
                             ScalarMulDiv, InPlaceAddSub, InPlaceScalarMulDiv, Comparison,
                             Transpose, TraceDeterminant, DotProduct, DoubleDotProduct,
-                            Square, SquareElements, EigenVector);
+                            Square, SquareElements, EigenValues, EigenVectors);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(GeomSymmetricTensor, GeomSymmetricTensorTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
