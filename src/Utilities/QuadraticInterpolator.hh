@@ -11,6 +11,7 @@
 
 #include "QuadraticInterpolatorView.hh"
 #include "chai/ManagedArray.hpp"
+#include "chai/config.hpp"
 #include "config.hh"
 
 #include <cstddef>
@@ -35,10 +36,12 @@ public:
 
   QuadraticInterpolatorView view() { return static_cast<QuadraticInterpolatorView>(*this); }
 
+#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
     mcoeffs.setUserCallback(getNPLCallback(std::forward<F>(extension)));
   }
+#endif
 
 protected:
   template<typename F>
