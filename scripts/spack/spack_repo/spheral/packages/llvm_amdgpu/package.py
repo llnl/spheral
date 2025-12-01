@@ -12,16 +12,8 @@ class LlvmAmdgpu(BuiltinLlvmAmdgpu):
     # PR that adds this change is pending: https://github.com/spack/spack-packages/pull/1557
     provides("fortran")
 
-    # Fix from slack: 
-    # https://spackpm.slack.com/archives/C08Q62S7XEX/p1751072888930439?thread_ts=1750704656.170759&cid=C08Q62S7XEX
-    # compiler_wrapper_link_paths = {
-    #     "c": "rocmcc/amdclang",
-    #     "cxx": "rocmcc/amdclang++",
-    #     "fortran": "rocmcc/amdflang"
-    # }
-
     def setup_run_environment(self, env: EnvironmentModifications) -> None:
-        if self.spec.satisfies("+flang"):
-            env.set("FC", join_path(self.spec.prefix.bin, "flang"))
-            env.set("F77", join_path(self.spec.prefix.bin, "flang"))
-
+        env.set("CC", join_path(self.spec.prefix.bin, "amdclang"))
+        env.set("CXX", join_path(self.spec.prefix.bin, "amdclang++"))
+        env.set("FC", join_path(self.spec.prefix.bin, "amdflang"))
+        env.set("F77", join_path(self.spec.prefix.bin, "amdflang"))

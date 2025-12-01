@@ -4,11 +4,12 @@ spack:
     - [spheral]
     - [+mpi, ~mpi]
     - [+rocm, ~rocm]
-    - ['%rocm_6_2_0']
+    - ['%rocmcc']
   view: false
   concretizer:
     unify: false
     reuse: false
+    compiler_mixing: false
   develop:
     spheral:
       path: ../../../../

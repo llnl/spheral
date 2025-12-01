@@ -1,11 +1,3 @@
-toolchains:
-  rocm_6_2_0:
-  - spec: '%c=llvm-amdgpu@6.2.0'
-    when: '%c'
-  - spec: '%cxx=llvm-amdgpu@6.2.0'
-    when: '%cxx'
-  - spec: '%fortran=llvm-amdgpu@6.2.0'
-    when: '%fortran'
 packages:
   all:
     providers:
