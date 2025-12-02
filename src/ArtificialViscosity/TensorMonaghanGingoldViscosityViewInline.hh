@@ -2,7 +2,6 @@
 // A modified form of the Monaghan & Gingold viscosity, extended to tensor 
 // formalism.
 //----------------------------------------------------------------------------//
-#include "TensorMonaghanGingoldViscosityView.hh"
 #include "Utilities/rotationMatrix.hh"
 #include "Utilities/GeometricUtilities.hh"
 

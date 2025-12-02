@@ -58,7 +58,7 @@ message("-- Compiler missing include dir warnings ${ENABLE_MISSING_INCLUDE_DIR_W
 
 set(CUDA_WARNING_FLAGS -Xcudafe=\"--diag_suppress=esa_on_defaulted_function_ignored\")
 
-if (ENABLE_HIP)
+if (SPHERAL_ENABLE_RDC AND ENABLE_HIP)
   list(APPEND CXX_COMPILE_FLAGS -fgpu-rdc)
 endif()
 
@@ -80,7 +80,7 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
 
 set(CXX_LINK_FLAGS "")
 
-if (ENABLE_HIP)
+if (SPHERAL_ENABLE_RDC AND ENABLE_HIP)
   list(APPEND CXX_LINK_FLAGS -fgpu-rdc)
 endif()
 

@@ -65,4 +65,6 @@ protected:
 
 }
 
+#include "FiniteVolumeViscosityViewInline.hh"
+
 #endif

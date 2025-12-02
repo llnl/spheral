@@ -1,9 +1,9 @@
 //---------------------------------Spheral++----------------------------------//
-// A simple form for the artificial viscosity due to Monaghan & Gingold.
+// A finite-volume based viscosity.  Assumes you have constructred the 
+// tessellation in the state.
+//
+// Created by JMO, Tue Aug 13 09:43:37 PDT 2013
 //----------------------------------------------------------------------------//
-#include "MonaghanGingoldViscosity.hh"
-#include "Field/FieldList.hh"
-#include "DataBase/DataBase.hh"
 
 namespace Spheral {
 
@@ -13,10 +13,10 @@ namespace Spheral {
 template<typename Dimension>
 SPHERAL_HOST_DEVICE
 void
-MonaghanGingoldViscosityView<Dimension>::
+FiniteVolumeViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-      const unsigned nodeListi, const unsigned i,
+      const unsigned nodeListi, const unsigned i, 
       const unsigned nodeListj, const unsigned j,
       const Vector& xi,
       const SymTensor& Hi,
@@ -53,24 +53,17 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto Clij = 0.5*(fCli + fClj)*fshear * mClinear;
   const auto Cqij = 0.5*(fCqi + fCqj)*fshear * mCquadratic;
 
-  // Compute mu.
-  const auto vij = vi - vj;
-  const auto mui = vij.dot(etai)/(etai.magnitude2() + mEpsilon2);
-  const auto muj = vij.dot(etaj)/(etaj.magnitude2() + mEpsilon2);
-
-  // The artificial internal energy.
-  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : std::min(0.0, mui)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(std::min(0.0, mui)));
-  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : std::min(0.0, muj)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(std::min(0.0, muj)));
-  CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
-  CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
-
-  // Set the return values
-  QPiij = ei/rhoi;
-  QPiji = ej/rhoj;
-  Qij = rhoi*ei;
-  Qji = rhoj*ej;
+  // Compute the pair QPi
+  const auto xji = xj - xi;
+  const auto xjihat = xji.unitVector();
+  const auto hi = 1.0/(Hi*xjihat).magnitude();
+  const auto hj = 1.0/(Hj*xjihat).magnitude();
+  const auto DvDxi = std::min(0.0, DvDx(nodeListi, i).Trace());
+  const auto DvDxj = std::min(0.0, DvDx(nodeListj, j).Trace());
+  QPiij = (-Clij*csi*DvDxi + Cqij*hi*DvDxi*DvDxi)*hi/rhoi;
+  QPiji = (-Clij*csj*DvDxj + Cqij*hj*DvDxj*DvDxj)*hj/rhoj;
+  Qij = rhoi*rhoi*QPiij;
+  Qji = rhoi*rhoi*QPiji;
 }
 
 }

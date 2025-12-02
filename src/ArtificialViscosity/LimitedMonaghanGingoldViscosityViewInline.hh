@@ -5,7 +5,6 @@
 //
 // Created by JMO, Thu Nov 20 14:13:18 PST 2014
 //----------------------------------------------------------------------------//
-#include "LimitedMonaghanGingoldViscosityView.hh"
 #include "Field/FieldList.hh"
 
 namespace Spheral {

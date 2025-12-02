@@ -89,4 +89,6 @@ protected:
 
 }
 
+#include "LimitedMonaghanGingoldViscosityViewInline.hh"
+
 #endif

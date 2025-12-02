@@ -64,4 +64,6 @@ protected:
 
 }
 
+#include "TensorMonaghanGingoldViscosityViewInline.hh"
+
 #endif

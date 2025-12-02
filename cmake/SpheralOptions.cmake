@@ -33,11 +33,21 @@ cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified 
 
 # Default is to build shared when python is enabled and build static if python is disabled
 set(DEFAULT_STATIC ON)
-if(SPHERAL_ENABLE_PYTHON AND NOT ENABLE_HIP)
+if(SPHERAL_ENABLE_PYTHON)
   set(DEFAULT_STATIC OFF)
 endif()
 option(SPHERAL_ENABLE_STATIC "Building static C++ libraries" ${DEFAULT_STATIC})
 cmake_dependent_option(SPHERAL_ENABLE_SHARED "Building shared C++ libraries" ON "NOT SPHERAL_ENABLE_STATIC" OFF)
+
+#-------------------------------------------------------------------------------
+# Experimental/unused options
+#-------------------------------------------------------------------------------
+
+cmake_dependent_option(SPHERAL_ENABLE_RDC "Build using the RDC flag. Currently broken (DO NOT USE)" OFF SPHERAL_GPU_ENABLED OFF)
+
+if (SPHERAL_ENABLE_RDC AND SPHERAL_ENABLE_SHARED)
+  message(FATAL_ERROR "Must use SPHERAL_ENABLE_STATIC if enabling SPHERAL_ENABLE_RDC (once it is working)")
+endif()
 
 #-------------------------------------------------------------------------------
 # Should we build sphinx documentation

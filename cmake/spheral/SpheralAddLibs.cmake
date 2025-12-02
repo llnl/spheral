@@ -136,7 +136,7 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
 
-  if(ENABLE_CUDA)
+  if(ENABLE_CUDA AND SPHERAL_ENABLE_RDC)
     set_target_properties(Spheral_${package_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   endif()
 
