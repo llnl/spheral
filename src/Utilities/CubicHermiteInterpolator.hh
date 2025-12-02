@@ -10,6 +10,7 @@
 
 #include "CubicHermiteInterpolatorView.hh"
 #include "chai/ManagedArray.hpp"
+#include "chai/config.hpp"
 #include "config.hh"
 
 #include <cstddef>
@@ -60,12 +61,14 @@ public:
 
   CubicHermiteInterpolatorView view() { return static_cast<CubicHermiteInterpolatorView>(*this); }
 
+#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
 #ifndef CHAI_DISABLE_RM
     mVals.setUserCallback(getNPLCallback(std::forward<F>(extension)));
 #endif
   }
+#endif
 
 protected:
   template<typename F>
