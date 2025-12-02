@@ -12,7 +12,13 @@ class LlvmAmdgpu(BuiltinLlvmAmdgpu):
     # PR that adds this change is pending: https://github.com/spack/spack-packages/pull/1557
     provides("fortran")
 
+    @property
+    def supported_languages(self):
+        languages = ["c", "cxx", "fortran"]
+        return languages
+
     def setup_run_environment(self, env: EnvironmentModifications) -> None:
+        env.prepend_path("LD_LIBRARY_PATH", self.prefix.lib)
         env.set("CC", join_path(self.spec.prefix.bin, "amdclang"))
         env.set("CXX", join_path(self.spec.prefix.bin, "amdclang++"))
         env.set("FC", join_path(self.spec.prefix.bin, "amdflang"))
