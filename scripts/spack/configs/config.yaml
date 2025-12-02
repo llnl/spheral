@@ -5,4 +5,10 @@
 config:
   install_tree:
     padded_length: 128
-
+  misc_cache: $spack/../misc_cache
+  test_stage: $spack/../test_stage
+  build_stage:
+    - $spack/../build_stage
+repos:
+  builtin:
+    destination: $spack/../packages

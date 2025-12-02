@@ -14,10 +14,6 @@ import os
 class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     """Spheral++ provides a steerable parallel environment for performing coupled hydrodynamical and gravitational numerical simulations."""
 
-    depends_on("c", type="build")
-    depends_on("cxx", type="build")
-    depends_on("fortran", type="build")
-
     homepage = "https://spheral.readthedocs.io/"
     git      = "https://github.com/llnl/spheral.git"
     tags     = ['radiuss', 'simulations', 'hydrodynamics']
@@ -54,6 +50,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # -------------------------------------------------------------------------
     # Depends
     # -------------------------------------------------------------------------
+    depends_on("c")
+    depends_on("cxx")
+    depends_on("fortran")
     depends_on('python', when='+python')
 
     depends_on('mpi', when='+mpi')
@@ -72,7 +71,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo +hdf5', type='build')
+    depends_on('silo +hdf5~fortran', type='build')
 
     depends_on('chai@develop+raja', type='build')
     depends_on('raja', type='build')

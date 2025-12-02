@@ -12,9 +12,6 @@ def get_config_dir(base_dir):
 # Spack instance info
 default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
 
-# Stay away from ~/.spack!
-os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
-
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2
 # spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
@@ -109,21 +106,6 @@ class SpheralTPL:
             spack.paths.set_working_dir()
         except ImportError as e:
             raise ImportError("Failed to import Spack python module") from e
-        repo_yaml = os.path.join(spack_dir, "etc/spack/repos.yaml")
-        if (not os.path.exists(repo_yaml)):
-            print("Spack instance does not have a builtin package repo set.")
-            if package_repo:
-                builtin_package = package_repo
-                if not os.path.isabs(package_repo):
-                    builtin_package = os.path.join(spack_dir, package_repo)
-            else:
-                builtin_package = os.path.join(spack_dir, "../packages")
-            print(f"Creating a builtin package repo at {builtin_package}")
-            from spack.main import SpackCommand
-            repo_cmd = SpackCommand("repo")
-            repo_args = ["set", "--destination", os.path.abspath(builtin_package), "builtin"]
-            repo_cmd(*repo_args)
-            repo_cmd(*["update"])
 
     def print_specs(self, specs):
         if (type(specs) != list):
