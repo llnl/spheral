@@ -37,7 +37,7 @@ public:
   NodePairList(const NodePairList& rhs);
   NodePairList& operator=(const NodePairList& rhs);
 
-  ~NodePairList()                                            { mData.free(); }
+  virtual ~NodePairList()                                    { mData.free(); }
 
   void fill(const ContainerType& vals);
   void clear();
