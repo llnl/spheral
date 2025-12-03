@@ -39,9 +39,7 @@ public:
 #ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
-#ifndef CHAI_DISABLE_RM
     mcoeffs.setUserCallback(getNPLCallback(std::forward<F>(extension)));
-#endif
   }
 #endif
 
