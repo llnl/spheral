@@ -27,9 +27,8 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors, destructors.
+  // Constructor.
   HatKernel(double eta0, double W0);
-  ~HatKernel();
 
   // Return the kernel weight for a given normalized distance or position.
   double kernelValue(double etaij, const double Hdet) const;

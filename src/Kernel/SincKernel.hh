@@ -20,9 +20,8 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors, destructors.
+  // Constructors.
   SincKernel(const double extent);
-  ~SincKernel();
 
   // Return the kernel weight for a given normalized distance or position.
   double kernelValue(double etaij, const double Hdet) const;
