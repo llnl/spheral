@@ -12,6 +12,8 @@ def get_config_dir(base_dir):
 # Spack instance info
 default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
 
+os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
+
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2
 # spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
