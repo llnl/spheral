@@ -27,6 +27,7 @@ public:
   QuadraticInterpolator() = default;
   QuadraticInterpolator(const QuadraticInterpolator& rhs);
   QuadraticInterpolator& operator=(const QuadraticInterpolator& rhs);
+  ~QuadraticInterpolator();  
 
   // Initialize after construction, either with a function or tabulated values
   template<typename Func>
