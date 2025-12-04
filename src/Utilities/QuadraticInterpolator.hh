@@ -25,7 +25,6 @@ public:
   QuadraticInterpolator(double xmin, double xmax, size_t n, const Func& F);
   QuadraticInterpolator(double xmin, double xmax, const std::vector<double>& yvals);
   QuadraticInterpolator() = default;
-  virtual ~QuadraticInterpolator();
   QuadraticInterpolator(const QuadraticInterpolator& rhs);
   QuadraticInterpolator& operator=(const QuadraticInterpolator& rhs);
 

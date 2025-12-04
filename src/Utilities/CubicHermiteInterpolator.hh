@@ -38,7 +38,6 @@ public:
   CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs);
   CubicHermiteInterpolator& operator=(const CubicHermiteInterpolator& rhs);
   CubicHermiteInterpolator() = default;
-  virtual ~CubicHermiteInterpolator();
 
   // (Re)initialize after construction, same options as construction
   template<typename Func>
