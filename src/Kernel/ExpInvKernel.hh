@@ -28,7 +28,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors, destructors.
+  // Constructor.
   SPHERAL_HOST_DEVICE ExpInvKernel();
 
   // Return the kernel weight for a given normalized distance or position.

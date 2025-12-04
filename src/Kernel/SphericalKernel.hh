@@ -38,9 +38,6 @@ public:
                   const bool useInterpolation = true);
   SphericalKernel(const SphericalKernel& rhs);
 
-  // Destructor.
-  ~SphericalKernel();
-
   // Assignment.
   SphericalKernel& operator=(const SphericalKernel& rhs);
 

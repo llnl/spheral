@@ -18,6 +18,7 @@ public:
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
   SPHERAL_HOST_DEVICE QuadraticInterpolatorView() = default;
+  SPHERAL_HOST_DEVICE virtual ~QuadraticInterpolatorView() = default;
 
   // Comparisons
   SPHERAL_HOST_DEVICE bool operator==(const QuadraticInterpolatorView& rhs) const;

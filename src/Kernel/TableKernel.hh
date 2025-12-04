@@ -37,9 +37,6 @@ public:
               const Scalar maxNperh = 64.0);
   TableKernel(const TableKernel<Dimension>& rhs);
 
-  // Destructor.
-  ~TableKernel();
-
   // Assignment.
   TableKernel& operator=(const TableKernel& rhs);
 

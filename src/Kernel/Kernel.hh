@@ -20,6 +20,8 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
+  SPHERAL_HOST_DEVICE virtual ~Kernel() = default;
+
   // Cast as the descendent type.
   SPHERAL_HOST_DEVICE Descendant& asDescendant() const;
 
@@ -67,8 +69,6 @@ protected:
   SPHERAL_HOST_DEVICE void setKernelExtent(double extent);
   SPHERAL_HOST_DEVICE void setInflectionPoint(double x);
 
-// private:
-//   //--------------------------- Private Interface ---------------------------//
   double mVolumeNormalization = 0.0;
   double mKernelExtent = 0.0;
   double mInflectionPoint = 0.0;
