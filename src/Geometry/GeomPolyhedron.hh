@@ -14,6 +14,7 @@
 
 #include "axom/quest.hpp"
 
+#include <memory>
 #include <vector>
 #include <utility>
 
