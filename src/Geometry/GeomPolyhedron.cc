@@ -938,7 +938,7 @@ buildAxomData() const {
   using AxDistance = axom::quest::SignedDistance<3>;
 
   // Set the vertex positions
-  auto* meshPtr = new AxMesh(3, axom::mint::TRIANGLE);
+  auto meshPtr = std::make_shared<AxMesh>(3, axom::mint::TRIANGLE);
   for (const auto& v: mVertices) {
     meshPtr->appendNode(v.x(), v.y(), v.z());
   }
@@ -962,7 +962,7 @@ buildAxomData() const {
   Vector xmax = mXmax + 0.01*(mXmax - mXmin);
   bb.addPoint(AxPoint(&xmin[0]));
   bb.addPoint(AxPoint(&xmax[0]));
-  axom::mint::write_vtk(meshPtr, "blago.vtk");
+  axom::mint::write_vtk(meshPtr.get(), "blago.vtk");
   mSurfaceMeshPtr = std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh>(meshPtr);
   mSurfaceMeshQueryPtr = std::make_shared<AxOctree>(bb, mSurfaceMeshPtr);
   mSurfaceMeshQueryPtr->generateIndex();
