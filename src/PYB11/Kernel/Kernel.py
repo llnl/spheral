@@ -121,7 +121,8 @@ The full gradient can be constructed from the result as \vec{grad} = H * \vec{et
 #-------------------------------------------------------------------------------
 # BSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "BSplineKernel<%(Dimension)s>"})
 class BSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -131,7 +132,8 @@ class BSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # W4Spline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "W4SplineKernel<%(Dimension)s>"})
 class W4SplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -141,7 +143,8 @@ class W4SplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Gaussian
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "GaussianKernel<%(Dimension)s>"})
 class GaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -152,7 +155,8 @@ class GaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # SuperGaussian
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "SuperGaussianKernel<%(Dimension)s>"})
 class SuperGaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -162,7 +166,8 @@ class SuperGaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # PiGaussianSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "PiGaussianKernel<%(Dimension)s>"})
 class PiGaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -178,7 +183,8 @@ class PiGaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Hat
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "HatKernel<%(Dimension)s>"})
 class HatKernel(Kernel):
     PYB11typedefs=""
 
@@ -193,7 +199,8 @@ class HatKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Sinc
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "SincKernel<%(Dimension)s>"})
 class SincKernel(Kernel):
     PYB11typedefs=""
 
@@ -203,7 +210,8 @@ class SincKernel(Kernel):
 #-------------------------------------------------------------------------------
 # NSincPolynomial
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "NSincPolynomialKernel<%(Dimension)s>"})
 class NSincPolynomialKernel(Kernel):
     PYB11typedefs=""
 
@@ -213,7 +221,8 @@ class NSincPolynomialKernel(Kernel):
 #-------------------------------------------------------------------------------
 # NBSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "NBSplineKernel<%(Dimension)s>"})
 class NBSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -239,8 +248,16 @@ class NBSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Table
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
-class TableKernel(Kernel):
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "TableKernelView<%(Dimension)s>"})
+class TableKernelView(Kernel):
+    PYB11typedefs=""
+
+    def pyinit(self):
+        "Default constructor"
+
+@PYB11template("Dimension")
+class TableKernel(TableKernelView):
     PYB11typedefs="""
     using Scalar = typename %(Dimension)s::Scalar;
     using Vector = typename %(Dimension)s::Vector;
@@ -421,7 +438,8 @@ class TableKernel(Kernel):
 #-------------------------------------------------------------------------------
 # WendlandC2
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC2Kernel<%(Dimension)s>"})
 class WendlandC2Kernel(Kernel):
     PYB11typedefs=""
 
@@ -431,7 +449,8 @@ class WendlandC2Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # WendlandC4
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC4Kernel<%(Dimension)s>"})
 class WendlandC4Kernel(Kernel):
     PYB11typedefs=""
 
@@ -441,7 +460,8 @@ class WendlandC4Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # WendlandC6
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC6Kernel<%(Dimension)s>"})
 class WendlandC6Kernel(Kernel):
     PYB11typedefs=""
 
@@ -451,7 +471,8 @@ class WendlandC6Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # QuarticSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "QuarticSplineKernel<%(Dimension)s>"})
 class QuarticSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -461,7 +482,8 @@ class QuarticSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # QuinticSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "QuinticSplineKernel<%(Dimension)s>"})
 class QuinticSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -471,7 +493,8 @@ class QuinticSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # ExpInv
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "ExpInvKernel<%(Dimension)s>"})
 class ExpInvKernel(Kernel):
     PYB11typedefs=""
 
