@@ -33,7 +33,7 @@ inline
 void
 LinearGradStdVector<Dimension>::
 initialize(const FlatConnectivity<Dimension>& flatConnectivity) {
-  std::vector<typename Dimension::Vector> zero(mSize, Dimension::Vector::zero);
+  std::vector<typename Dimension::Vector> zero(mSize, Dimension::Vector::zero());
   this->mValues.assign(flatConnectivity.numNodes(), zero);
 }
 
@@ -112,7 +112,7 @@ inline
 void
 LinearSurfaceNormalKernelStdVector<Dimension>::
 initialize(const FlatConnectivity<Dimension>& flatConnectivity) {
-  std::vector<typename Dimension::Vector> zero(mSize, Dimension::Vector::zero);
+  std::vector<typename Dimension::Vector> zero(mSize, Dimension::Vector::zero());
   const auto numNodes = flatConnectivity.numNodes();
   this->mValues.resize(numNodes);
   for (auto i = 0; i < numNodes; ++i) {

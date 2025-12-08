@@ -65,8 +65,6 @@
 #include <sstream>
 
 using std::string;
-using std::min;
-using std::max;
 
 namespace Spheral {
 
@@ -118,7 +116,7 @@ MFV(DataBase<Dimension>& dataBase,
   mPairMassFluxPtr() {
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
-    mDmomentumDt = dataBase.newFluidFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
+    mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
     mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
 }
 
@@ -144,8 +142,8 @@ registerState(DataBase<Dimension>& dataBase,
   GenericRiemannHydro<Dimension>::registerState(dataBase,state);
 
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  auto position = state.fields(HydroFieldNames::position,Vector::zero);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto position = state.fields(HydroFieldNames::position,Vector::zero());
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto volume = state.fields(HydroFieldNames::volume, 0.0);
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
@@ -206,7 +204,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   GenericRiemannHydro<Dimension>::registerDerivatives(dataBase,derivs);
   dataBase.resizeFluidFieldList(mDmassDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, false);
   dataBase.resizeFluidFieldList(mDthermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, false);
-  dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
+  dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
   dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, false);
   
   derivs.enroll(mDmassDt);
@@ -232,8 +230,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 
   if(this->densityUpdate() == MassDensityType::RigorousSumDensity){
     
-    const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+    const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
           auto  volume = state.fields(HydroFieldNames::volume, 0.0);
@@ -280,7 +278,7 @@ finalizeDerivatives(const typename Dimension::Scalar time,
                     StateDerivatives<Dimension>& derivs) const {
   // hackish solution and I should be ashamed.
   if (this->compatibleEnergyEvolution()) {
-    auto DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero);
+    auto DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero());
     auto DmDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, 0.0);
     for (ConstBoundaryIterator boundaryItr = this->boundaryBegin();
          boundaryItr != this->boundaryEnd();

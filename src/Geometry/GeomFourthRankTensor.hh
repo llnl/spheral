@@ -17,16 +17,14 @@
 namespace Spheral {
 
 template<int nDim>
-class GeomFourthRankTensor : public RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> > {
+class GeomFourthRankTensor : public RankNTensor<nDim, 4, GeomFourthRankTensor<nDim>> {
   using BaseType = RankNTensor<nDim, 4, GeomFourthRankTensor<nDim>>;
 
 public:
   //--------------------------- Public Interface ---------------------------//
   using size_type = typename BaseType::size_type;
-  static constexpr size_type numElements = BaseType::numElements;
 
-  // Useful static member data.
-  static const GeomFourthRankTensor zero;
+  SPHERAL_HOST_DEVICE static constexpr GeomFourthRankTensor zero() { return GeomFourthRankTensor<nDim>(); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomFourthRankTensor() = default;
@@ -45,8 +43,6 @@ private:
   //--------------------------- Private Interface ---------------------------//
   using RankNTensor<nDim, 4, GeomFourthRankTensor>::mElements;
 };
-
-template<int nDims> const GeomFourthRankTensor<nDims> GeomFourthRankTensor<nDims>::zero = GeomFourthRankTensor<nDims>(0.0);
 
 }
 

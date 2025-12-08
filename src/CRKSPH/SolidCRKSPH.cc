@@ -46,12 +46,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -131,7 +125,7 @@ SolidCRKSPH(DataBase<Dimension>& dataBase,
   mPlasticStrain0(FieldStorageType::CopyFields) {
 
   // Create storage for the state we're holding.
-  mDdeviatoricStressDt = dataBase.newSolidFieldList(SymTensor::zero, IncrementState<Dimension, Vector>::prefix() + SolidFieldNames::deviatoricStress);
+  mDdeviatoricStressDt = dataBase.newSolidFieldList(SymTensor::zero(), IncrementState<Dimension, Vector>::prefix() + SolidFieldNames::deviatoricStress);
   mBulkModulus = dataBase.newSolidFieldList(0.0, SolidFieldNames::bulkModulus);
   mShearModulus = dataBase.newSolidFieldList(0.0, SolidFieldNames::shearModulus);
   mYieldStrength = dataBase.newSolidFieldList(0.0, SolidFieldNames::yieldStrength);
@@ -228,7 +222,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // info here may be used by other algorithms (like the CheapSynchronousRK2 integrator or
   // the ArtificialVisocisity::initialize step).
   const auto DSDtName = IncrementState<Dimension, Vector>::prefix() + SolidFieldNames::deviatoricStress;
-  dataBase.resizeFluidFieldList(mDdeviatoricStressDt, SymTensor::zero, DSDtName, false);
+  dataBase.resizeFluidFieldList(mDdeviatoricStressDt, SymTensor::zero(), DSDtName, false);
   derivs.enroll(mDdeviatoricStressDt);
 
   auto psr = dataBase.solidPlasticStrainRate();
@@ -300,23 +294,23 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
+  const auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
   const auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
-  const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
   const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -337,16 +331,16 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto  DrhoDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
-  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
+  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
-  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
-  auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
+  auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
   auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
@@ -490,11 +484,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
       // Compute the stress tensors.
       if (sameMatij) {
-        sigmai = fDij*Si - Pi * SymTensor::one;
-        sigmaj = fDij*Sj - Pj * SymTensor::one;
+        sigmai = fDij*Si - Pi * SymTensor::one();
+        sigmaj = fDij*Sj - Pj * SymTensor::one();
       } else {
-        sigmai = -Pi * SymTensor::one;
-        sigmaj = -Pj * SymTensor::one;
+        sigmai = -Pi * SymTensor::one();
+        sigmaj = -Pj * SymTensor::one();
       }
 
       // We decide between RK and CRK for the momentum and energy equations based on the surface condition.
@@ -563,7 +557,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       DrhoDti = -rhoi*localDvDxi.Trace();
 
       // For a surface point, add the RK thermal energy evolution.
-      // if (surfacePoint(nodeListi, i) > 1) DepsDti += (Si - Pi*SymTensor::one).doubledot(DvDxi)/rhoi;
+      // if (surfacePoint(nodeListi, i) > 1) DepsDti += (Si - Pi*SymTensor::one()).doubledot(DvDxi)/rhoi;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
@@ -578,7 +572,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one;
+      const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one();
       const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
@@ -603,7 +597,7 @@ applyGhostBoundaries(State<Dimension>& state,
   CRKSPH<Dimension>::applyGhostBoundaries(state, derivs);
 
   // Apply boundary conditions to our extra strength variables.
-  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
   auto K = state.fields(SolidFieldNames::bulkModulus, 0.0);
   auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
   auto Y = state.fields(SolidFieldNames::yieldStrength, 0.0);
@@ -635,7 +629,7 @@ enforceBoundaries(State<Dimension>& state,
   CRKSPH<Dimension>::enforceBoundaries(state, derivs);
 
   // Enforce boundary conditions on the extra strength variables.
-  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
   auto K = state.fields(SolidFieldNames::bulkModulus, 0.0);
   auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
   auto Y = state.fields(SolidFieldNames::yieldStrength, 0.0);

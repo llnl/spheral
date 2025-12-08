@@ -51,9 +51,9 @@ update(const KeyType& key,
           nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
 
   // Get the state we're updating.
-  auto       H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto DHDt = derivs.fields(prefix() + HydroFieldNames::H, SymTensor::zero);
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);  // Only needed if we're using radial scaling
+  auto       H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto DHDt = derivs.fields(prefix() + HydroFieldNames::H, SymTensor::zero());
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());  // Only needed if we're using radial scaling
   const auto numFields = H.numFields();
   CHECK(DHDt.numFields() == numFields);
   CHECK(pos.numFields() == numFields);

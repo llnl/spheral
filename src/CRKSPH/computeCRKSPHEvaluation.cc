@@ -16,12 +16,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -62,25 +56,25 @@ computeCRKSPHEvaluation(const ConnectivityMap<Dimension>& connectivityMap,
   W.kernelAndGradValue(etai.magnitude(), Hdeti, Wi, gradWSPH);
   if(abs(WWi.first) < 1.0e-16 and abs(WWi.first) < 1.0e-16){//If SPH kernel and gradient are zero, no point in calculating corrected kernel
     WCRKSPH = 0.0;
-    gradWCRKSPH = Vector::zero;
+    gradWCRKSPH = Vector::zero();
     return;
   }
 
   // Zero out the result.
   Scalar m0 = 0.0;
-  Vector m1 = Vector::zero;
-  SymTensor m2 = SymTensor::zero;
-  Vector gradm0 = Vector::zero;
-  Tensor gradm1 = Tensor::zero;
-  ThirdRankTensor gradm2 = ThirdRankTensor::zero;
+  Vector m1 = Vector::zero();
+  SymTensor m2 = SymTensor::zero();
+  Vector gradm0 = Vector::zero();
+  Tensor gradm1 = Tensor::zero();
+  ThirdRankTensor gradm2 = ThirdRankTensor::zero();
   Scalar A0 = 0.0;
   Scalar A = 0.0;
-  Vector B = Vector::zero;
-  Vector C = Vector::zero;
-  Tensor D = Tensor::zero;
-  Vector gradA0 = Vector::zero;
-  Vector gradA = Vector::zero;
-  Tensor gradB = Tensor::zero;
+  Vector B = Vector::zero();
+  Vector C = Vector::zero();
+  Tensor D = Tensor::zero();
+  Vector gradA0 = Vector::zero();
+  Vector gradA = Vector::zero();
+  Tensor gradB = Tensor::zero();
 
   // Neighbors!
   bool first_time=true;//Used as a flag to include self contribution
@@ -123,7 +117,7 @@ computeCRKSPHEvaluation(const ConnectivityMap<Dimension>& connectivityMap,
 
           // First moment. 
           m1 += wwj * rej;
-          gradm1 += wj*(outerProduct<Dimension>( rej, gradWj) + Tensor::one*Wj);
+          gradm1 += wj*(outerProduct<Dimension>( rej, gradWj) + Tensor::one()*Wj);
 
           // Second moment.
           const SymTensor thpt = rej.selfdyad();
@@ -175,9 +169,9 @@ computeCRKSPHEvaluation(const ConnectivityMap<Dimension>& connectivityMap,
   // // BLAGO!
   // // Force only zeroth corrections.
   // A = A0;
-  // B = Vector::zero;
+  // B = Vector::zero();
   // gradA = -FastMath::square(A)*gradm0;
-  // gradB = Tensor::zero;
+  // gradB = Tensor::zero();
   // // BLAGO!
 
   //}

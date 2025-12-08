@@ -15,18 +15,13 @@
 #include "Geometry/GeometryRegistrar.hh"
 #include "SmoothingScale/ASPHSmoothingScale.hh"
 #include "Utilities/Timer.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <ctime>
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -99,7 +94,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
          itr != dataBase.internalNodeEnd();
          ++itr) {
       const auto Hdeti = H(itr).Determinant();
-      const auto Hi = Dimension::rootnu(Hdeti) * SymTensor::one;
+      const auto Hi = Dimension::rootnu(Hdeti) * SymTensor::one();
       H(itr) = Hi;
     }
   }
@@ -122,10 +117,10 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 
   // Since we don't have a hydro there are a few other fields we need registered.
   auto zerothMoment = dataBase.newFluidFieldList(0.0, HydroFieldNames::massZerothMoment);
-  auto firstMoment = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::massFirstMoment);
-  auto DvDx = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::velocityGradient);
-  auto DHDt = dataBase.newFluidFieldList(SymTensor::zero, IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
-  auto H1 = dataBase.newFluidFieldList(SymTensor::zero, ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
+  auto firstMoment = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::massFirstMoment);
+  auto DvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::velocityGradient);
+  auto DHDt = dataBase.newFluidFieldList(SymTensor::zero(), IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
+  auto H1 = dataBase.newFluidFieldList(SymTensor::zero(), ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
 
   // Iterate until we either hit the max iterations or the H's achieve convergence.
   auto maxDeltaH = 2.0*tolerance;
@@ -217,12 +212,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     maxDeltaH = allReduce(maxDeltaH, SPHERAL_OP_MAX);
 
     // Output the statitics.
-    if (Process::getRank() == 0 && maxIterations > 1)
-      cout << "iterateIdealH: (iteration, deltaH) = ("
-           << itr << ", "
-           << maxDeltaH << ")"
-           << endl;
-
+    if (maxIterations > 1) SpheralMessage("iterateIdealH: (iteration, deltaH) = (" << itr << ", " << maxDeltaH << ")");
   }
 
   // If we have rescaled the nodes per h, now we have to iterate the H determinant
@@ -274,11 +264,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 
   // Report the final timing.
   const auto t1 = clock();
-  if (Process::getRank() == 0 && maxIterations > 1)
-    cout << "iterateIdealH: required a total of "
-         << (t1 - t0)/CLOCKS_PER_SEC
-         << " seconds."
-         << endl;
+  if (maxIterations > 1) SpheralMessage("iterateIdealH: required a total of " << ((t1 - t0)/CLOCKS_PER_SEC) << " seconds.");
 }
 
 }

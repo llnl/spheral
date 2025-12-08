@@ -29,12 +29,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -164,11 +158,11 @@ selectDt(const typename Dimension::Scalar dtMin,
   // Are we verbose?
   if (dt.first == globalDt and 
       (verbose() or globalDt < mDtMin)) {
-    cout << "Selected timestep of "
-         << dt.first << endl
-         << dt.second << endl;
+    std::cout << "Selected timestep of "
+              << dt.first << std::endl
+              << dt.second << std::endl;
   }
-  cout.flush();
+  std::cout.flush();
   dt.first = globalDt;
 
   return dt.first;
@@ -680,10 +674,10 @@ template<typename Dimension>
 void
 Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
                                       State<Dimension>& state1) const {
-  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero);
-  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
+  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
   for (GhostNodeIterator<Dimension> itr = x0.ghostNodeBegin();
        itr != x0.ghostNodeEnd();
        ++itr) {

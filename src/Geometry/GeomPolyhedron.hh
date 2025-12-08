@@ -14,6 +14,7 @@
 
 #include "axom/quest.hpp"
 
+#include <memory>
 #include <vector>
 #include <utility>
 
@@ -43,7 +44,7 @@ public:
 
   GeomPolyhedron(const GeomPolyhedron& rhs);
   GeomPolyhedron& operator=(const GeomPolyhedron& rhs);
-  ~GeomPolyhedron();
+  ~GeomPolyhedron() = default;
 
   // Test if the given point is internal to the polyhedron.
   bool contains(const Vector& point,
@@ -155,8 +156,8 @@ private:
   double mRinterior2;
   bool mConvex;
   mutable std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh> mSurfaceMeshPtr;
-  mutable axom::quest::InOutOctree<3>* mSurfaceMeshQueryPtr;
-  mutable axom::quest::SignedDistance<3>* mSignedDistancePtr;
+  mutable std::shared_ptr<axom::quest::InOutOctree<3>> mSurfaceMeshQueryPtr;
+  mutable std::shared_ptr<axom::quest::SignedDistance<3>> mSignedDistancePtr;
 
   static FILE* mDevnull;
 

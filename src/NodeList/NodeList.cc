@@ -69,7 +69,7 @@ NodeList<Dimension>::NodeList(std::string name,
   mWork.setNodeList(*this);
   mDummyList.push_back(this);
   // It's never valid to have zero H's.
-  mH = SymTensor::one;
+  mH = SymTensor::one();
 }
 
 //------------------------------------------------------------------------------

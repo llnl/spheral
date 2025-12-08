@@ -69,18 +69,6 @@ class ArithmeticFieldList(__FieldListBase):
     def __itruediv__SFL(self, rhs="FieldList<%(Dimension)s, Scalar>()"):
         return
 
-    @PYB11const
-    def localSumElements(self,
-                         includeGhosts = ("bool", "false")):
-        "Return the sum of the elements in the FieldList local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def sumElements(self,
-                    includeGhosts = ("bool", "false")):
-        "Return the sum of the elements in the Field."
-        return "%(Value)s"
-
     #...........................................................................
     # Comparators
     def __gt__(self):
@@ -111,26 +99,8 @@ class ArithmeticFieldList(__FieldListBase):
         "Less than or equal comparision with a %(Value)s"
         return "bool"
 
-    def applyMin(self, rhs="const %(Value)s&"):
-        "Enforce a %(Value)s floor on the values of the FieldList."
-        return
-
-    def applyMax(self, rhs="const %(Value)s&"):
-        "Enforce a %(Value)s ceiling on the values of the FieldList."
-        return
-
-    @PYB11const
-    def localMin(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the mimimum value in the FieldList local to each processor."
-        return "%(Value)s"
-
-    @PYB11const
-    def localMax(self,
-                 includeGhosts = ("bool", "false")):
-        "Return the maximum value in the FieldList local to each processor."
-        return "%(Value)s"
-
+    #...........................................................................
+    # Methods
     @PYB11const
     def min(self,
             includeGhosts = ("bool", "false")):
@@ -141,6 +111,12 @@ class ArithmeticFieldList(__FieldListBase):
     def max(self,
             includeGhosts = ("bool", "false")):
         "Return the maximum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def sumElements(self,
+                    includeGhosts = ("bool", "false")):
+        "Return the sum of the elements in the Field."
         return "%(Value)s"
 
 #-------------------------------------------------------------------------------

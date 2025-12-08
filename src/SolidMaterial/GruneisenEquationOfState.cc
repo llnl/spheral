@@ -11,10 +11,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 //------------------------------------------------------------------------------
 // Construct with the given Gruneisen constants.
 //------------------------------------------------------------------------------

@@ -25,7 +25,7 @@ CircularPlaneSolidBoundary(const Vector& point, const Vector& normal, const Scal
   mPoint(point),
   mNormal(normal),
   mExtent(extent),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>

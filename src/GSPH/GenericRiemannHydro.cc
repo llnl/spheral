@@ -134,10 +134,10 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
   mSoundSpeed = dataBase.newFluidFieldList(0.0, HydroFieldNames::soundSpeed);
   mNormalization = dataBase.newFluidFieldList(0.0, HydroFieldNames::normalization);
   mXSPHWeightSum = dataBase.newFluidFieldList(0.0, HydroFieldNames::XSPHWeightSum);
-  mXSPHDeltaV = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::XSPHDeltaV);
-  mM = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::M_SPHCorrection);
-  mDxDt = dataBase.newFluidFieldList(Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
-  mDvDt = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::hydroAcceleration);
+  mXSPHDeltaV = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::XSPHDeltaV);
+  mM = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::M_SPHCorrection);
+  mDxDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
+  mDvDt = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::hydroAcceleration);
   mDspecificThermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy);
   mDrhoDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::densityGradient);
   mDepsDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::specificThermalEnergyGradient);
@@ -210,8 +210,8 @@ registerState(DataBase<Dimension>& dataBase,
           "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
 
   dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
-  dataBase.resizeFluidFieldList(mRiemannDpDx, Vector::zero, GSPHFieldNames::RiemannPressureGradient, false);
-  dataBase.resizeFluidFieldList(mRiemannDvDx, Tensor::zero, GSPHFieldNames::RiemannVelocityGradient, false);
+  dataBase.resizeFluidFieldList(mRiemannDpDx, Vector::zero(), GSPHFieldNames::RiemannPressureGradient, false);
+  dataBase.resizeFluidFieldList(mRiemannDvDx, Tensor::zero(), GSPHFieldNames::RiemannVelocityGradient, false);
 
   auto mass = dataBase.fluidMass();
   auto massDensity = dataBase.fluidMassDensity();
@@ -268,12 +268,12 @@ registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   
   // Create the scratch fields.
-  dataBase.resizeFluidFieldList(mNewRiemannDpDx, Vector::zero, ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient, false);
-  dataBase.resizeFluidFieldList(mNewRiemannDvDx, Tensor::zero, ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient, false);
+  dataBase.resizeFluidFieldList(mNewRiemannDpDx, Vector::zero(), ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient, false);
+  dataBase.resizeFluidFieldList(mNewRiemannDvDx, Tensor::zero(), ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient, false);
   dataBase.resizeFluidFieldList(mNormalization, 0.0, HydroFieldNames::normalization, false);
   dataBase.resizeFluidFieldList(mXSPHWeightSum, 0.0, HydroFieldNames::XSPHWeightSum, false);
-  dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero, HydroFieldNames::XSPHDeltaV, false);
-  dataBase.resizeFluidFieldList(mDvDt, Vector::zero, HydroFieldNames::hydroAcceleration, false);
+  dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero(), HydroFieldNames::XSPHDeltaV, false);
+  dataBase.resizeFluidFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);
   dataBase.resizeFluidFieldList(mDspecificThermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, false);
   dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::velocityGradient, false);
   dataBase.resizeFluidFieldList(mDrhoDx, Vector::zero, GSPHFieldNames::densityGradient, false);
@@ -282,7 +282,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   
   // Check if someone already registered DxDt.
   if (not derivs.registered(mDxDt)) {
-    dataBase.resizeFluidFieldList(mDxDt, Vector::zero, IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
+    dataBase.resizeFluidFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
     derivs.enroll(mDxDt);
   }
   // Check that no-one else is trying to control the hydro vote for DvDt.
@@ -323,14 +323,14 @@ dt(const DataBase<Dimension>& dataBase,
 
   // Get some useful fluid variables from the DataBase.
   const auto  mask = state.fields(HydroFieldNames::timeStepMask, 1);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto  eps = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  cs = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
                                                          this->requireOverlapConnectivity(),
                                                          this->requireIntersectionConnectivity());
@@ -517,7 +517,7 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
   // If we're using the compatible energy discretization, we need to enforce
   // boundary conditions on the accelerations.
   if (compatibleEnergyEvolution()) {
-    auto accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+    auto accelerations = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
     for (ConstBoundaryIterator boundaryItr = this->boundaryBegin();
          boundaryItr != this->boundaryEnd();
          ++boundaryItr) (*boundaryItr)->applyFieldListGhostBoundary(accelerations);
@@ -541,7 +541,7 @@ applyGhostBoundaries(State<Dimension>& state,
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero); 
@@ -580,7 +580,7 @@ enforceBoundaries(State<Dimension>& state,
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero);

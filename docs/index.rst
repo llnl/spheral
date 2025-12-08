@@ -14,7 +14,7 @@ Spheral++ provides a steerable parallel environment for performing coupled hydro
    Useful Spheral features:
    ^^^^
    - Total energy conserving compatible hydro mode.
-   - ASPH (Adapative Smoothed Particle Hydrodynamics) algorithm.
+   - ASPH (Adaptive Smoothed Particle Hydrodynamics) algorithm.
    - CRKSPH (Conservative Reproducing Kernel Hydrodyamics) is also available.
    - Oct-tree based N-Body gravity.
    - Fluid and solid material modeling.

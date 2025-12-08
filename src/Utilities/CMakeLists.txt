@@ -34,6 +34,7 @@ set(Utilities_sources
     coarsenBinnedValuesInst.cc
     clipFacetedVolume.cc
     uniform_random.cc
+    initializeAxom.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -49,8 +50,12 @@ set(Utilities_headers
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
     QuadraticInterpolatorInline.hh
+    QuadraticInterpolatorView.hh
+    QuadraticInterpolatorViewInline.hh
     CubicHermiteInterpolator.hh
     CubicHermiteInterpolatorInline.hh
+    CubicHermiteInterpolatorView.hh
+    CubicHermiteInterpolatorViewInline.hh
     XYInterpolator.hh
     XYInterpolatorInline.hh
     BiLinearInterpolator.hh
@@ -138,6 +143,7 @@ set(Utilities_headers
     AnyVisitor.hh
     SpheralMessage.hh
     StrideIterator.hh
+    initializeAxom.hh
   )
 
 spheral_install_python_files(fitspline.py)
