@@ -6,14 +6,15 @@ spack:
   view: false
   concretizer:
     unify: false
+    reuse: false
+    compiler_mixing: false
   develop:
     spheral:
       path: ../../../../
       spec: spheral@=develop
-  include:
+  include::
     - ../../configs/toss_4_x86_64_ib/packages.yaml
-    - ../../configs/toss_4_x86_64_ib/compilers.yaml
     - ../../configs/config.yaml
     - ../../configs/upstreams.yaml
   repos:
-    - ../../
+    - ../../spack_repo/spheral

@@ -3,7 +3,6 @@ packages:
     # This defaults us to machine specific flags of ivybridge which allows
     # us to run on broadwell as well
     target: [ivybridge]
-    compiler: [gcc, clang]
     providers:
       blas: [openblas]
       lapack: [openblas]
@@ -12,6 +11,33 @@ packages:
       pil: [py-pillow]
       jpeg: [libjpeg]
       zlib-api: [zlib]
+    permissions:
+      read: group
+      write: group
+  gcc:
+    externals:
+    - spec: gcc@10.3.1 languages:='c,c++,fortran'
+      prefix: /usr/tce/packages/gcc/gcc-10.3.1
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/gcc/gcc-10.3.1/bin/gcc
+          cxx: /usr/tce/packages/gcc/gcc-10.3.1/bin/g++
+          fortran: /usr/tce/packages/gcc/gcc-10.3.1/bin/gfortran
+        flags: {}
+        environment: {}
+        extra_rpaths: []
+  llvm:
+    externals:
+    - spec: llvm@14.0.6+clang+flang~lld~lldb
+      prefix: /usr/tce/packages/clang/clang-14.0.6
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/clang/clang-14.0.6/bin/clang
+          cxx: /usr/tce/packages/clang/clang-14.0.6/bin/clang++
+          fortran: /usr/tce/packages/clang/clang-14.0.6-magic/bin/flang
+        flags: {}
+        environment: {}
+        extra_rpaths: []
   cmake:
     version: [3.23.1]
     buildable: false
@@ -39,12 +65,10 @@ packages:
 
   mvapich2:
     externals:
-    - spec: mvapich2@2.3.6%gcc@10.3.1~cuda~debug~regcache~wrapperrpath ch3_rank_bits=32
-        file_systems=lustre,nfs,ufs process_managers=slurm
-      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1
-    - spec: mvapich2@2.3.6%clang@14.0.6~alloca~cuda~debug+regcache+wrapperrpath ch3_rank_bits=32
-        fabrics=mrail file_systems=auto process_managers=slurm
-      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6
+    - spec: mvapich2@2.3.6~cuda~debug~regcache~wrapperrpath ch3_rank_bits=32 file_systems=lustre,nfs,ufs process_managers=slurm %gcc@10.3.1
+      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1-magic
+    - spec: mvapich2@2.3.6~alloca~cuda~debug+regcache+wrapperrpath ch3_rank_bits=32 fabrics=mrail file_systems=auto process_managers=slurm %clang@14.0.6
+      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6-magic
     buildable: false
 
 # ------ SYSTEM LIBS -------
