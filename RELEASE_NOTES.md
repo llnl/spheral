@@ -43,6 +43,7 @@ Notable changes include:
 
   * Bug fixes
     * corrected rolling and torsional coefficient in DEM which were 2x the expected value
+    * Updated ATS to bring in fix for python 3.12+.
     
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
