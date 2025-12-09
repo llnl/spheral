@@ -79,14 +79,6 @@ PiGaussianKernel< Dim<3> >::PiGaussianKernel(double K):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-PiGaussianKernel<Dimension>::~PiGaussianKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

@@ -36,14 +36,6 @@ W4SplineKernel< Dim<3> >::W4SplineKernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-W4SplineKernel<Dimension>::~W4SplineKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

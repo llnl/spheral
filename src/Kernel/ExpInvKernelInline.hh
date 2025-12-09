@@ -7,7 +7,7 @@ namespace Spheral {
 // Empty constructor
 //------------------------------------------------------------------------------
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 ExpInvKernel< Dim<1> >::ExpInvKernel():
   Kernel<Dim<1>, ExpInvKernel< Dim<1> > >() {
   setVolumeNormalization(12.570510753090891498);
@@ -17,7 +17,7 @@ ExpInvKernel< Dim<1> >::ExpInvKernel():
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 ExpInvKernel< Dim<2> >::ExpInvKernel():
   Kernel<Dim<2>, ExpInvKernel< Dim<2> > >() {
   setVolumeNormalization(14.453960393997373757*M_PI);
@@ -27,7 +27,7 @@ ExpInvKernel< Dim<2> >::ExpInvKernel():
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 ExpInvKernel< Dim<3> >::ExpInvKernel():
   Kernel<Dim<3>, ExpInvKernel< Dim<3> > >() {
   setVolumeNormalization(17.824612984468913623*M_PI);
@@ -37,18 +37,10 @@ ExpInvKernel< Dim<3> >::ExpInvKernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-ExpInvKernel<Dimension>::~ExpInvKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 ExpInvKernel<Dimension>::kernelValue(double etaij, const double Hdet) const {
   const double A = this->volumeNormalization();
@@ -60,7 +52,7 @@ ExpInvKernel<Dimension>::kernelValue(double etaij, const double Hdet) const {
 // Return the gradient value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 ExpInvKernel<Dimension>::gradValue(double etaij, const double Hdet) const {
   const double A = this->volumeNormalization();
@@ -72,7 +64,7 @@ ExpInvKernel<Dimension>::gradValue(double etaij, const double Hdet) const {
 // Return the second derivative for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 ExpInvKernel<Dimension>::grad2Value(double etaij, const double Hdet) const {
   const double A = this->volumeNormalization();

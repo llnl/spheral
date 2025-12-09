@@ -124,12 +124,6 @@ SphericalBiCubicSplineKernel::SphericalBiCubicSplineKernel(const SphericalBiCubi
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-SphericalBiCubicSplineKernel::~SphericalBiCubicSplineKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Assignment
 //------------------------------------------------------------------------------
 SphericalBiCubicSplineKernel&
