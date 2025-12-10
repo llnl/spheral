@@ -8,7 +8,7 @@ Notable changes include:
     * GPU Porting Effort:
       * Spheral::FieldView allows for implicit data migration of Spheral::Field data.
         * Implements FieldView datatypes as handles to be used for migrating data to and from the GPU.
-        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common pattens.
+        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common patterns.
         * Unit testing to ensure implicitly copyable Spheral data types can be copied to and from the device correctly.
       * Spheral::FieldListView enables GPU access to field data while maintaining Field->FieldList associations across
         execution spaces.
@@ -40,9 +40,15 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * ArtificialViscosity has been refactored for use on the GPU.
+        * ArtificialViscosity is now ArtificialViscosityView.
+        * ArtificialViscosityHandle is now ArtificialViscosity.
+        * Both inherit from ArtificialViscosityBase.
+        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+      * FieldNames are inlined for easier use on device.
 
   * Bug fixes
-    * corrected rolling and torsional coefficient in DEM which were 2x the expected value
+    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value
     
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
@@ -65,6 +71,7 @@ Notable changes include:
         `add_compile_definition` or `add_compile_options`.
       * Compiler flags are set for HIP or CXX depending on the configuration.
       * Update BLT to version 0.7.1.
+      * Added `CXX_LINK_FLAGS`.
     * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
