@@ -53,6 +53,8 @@ set(Kernel_headers
     SuperGaussianKernelInline.hh
     TableKernel.hh
     TableKernelInline.hh
+    TableKernelView.hh
+    TableKernelViewInline.hh
     SphericalKernel.hh
     SphericalKernelInline.hh
     SphericalBiCubicSplineKernel.hh

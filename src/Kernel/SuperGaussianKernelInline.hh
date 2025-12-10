@@ -38,14 +38,6 @@ SuperGaussianKernel< Dim<3> >::SuperGaussianKernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-SuperGaussianKernel<Dimension>::~SuperGaussianKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
