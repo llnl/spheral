@@ -8,7 +8,7 @@ Notable changes include:
     * GPU Porting Effort:
       * Spheral::FieldView allows for implicit data migration of Spheral::Field data.
         * Implements FieldView datatypes as handles to be used for migrating data to and from the GPU.
-        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common pattens.
+        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common patterns.
         * Unit testing to ensure implicitly copyable Spheral data types can be copied to and from the device correctly.
       * Spheral::FieldListView enables GPU access to field data while maintaining Field->FieldList associations across
         execution spaces.
@@ -42,9 +42,10 @@ Notable changes include:
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
 
   * Bug fixes
-    * corrected rolling and torsional coefficient in DEM which were 2x the expected value
+    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value.
     * Updated ATS to bring in fix for python 3.12+.
-    
+    * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
+
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
     * A python virtual environment is installed in the spheral build dir, removing the
