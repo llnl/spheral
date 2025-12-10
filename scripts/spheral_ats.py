@@ -120,14 +120,10 @@ def main():
                                      Must provide an ATS file (either python or .ats).
                                      Any unrecognized arguments are passed as inputs to the ATS file.
                                      """)
-    parser.add_argument("--numNodes", "-N", type=int,
-                        default=None,
-                        help="Number of nodes to allocate.")
-    parser.add_argument("--timeLimit", type=int,
-                        default=None,
+    parser.add_argument("--numNodes", "-N", type=int, default=None, help="Number of nodes to allocate.")
+    parser.add_argument("--timeLimit", type=int, default=None,
                         help="Time limit for allocation.")
-    parser.add_argument("--ciRun", action="store_true",
-                        help="Option to only be used by the CI")
+    parser.add_argument("--ciRun", action="store_true", help="Option to only be used by the CI")
     parser.add_argument("--atsHelp", action="store_true",
                         help="Print the help output for ATS. Useful for seeing ATS options.")
     parser.add_argument("--threads", type=int, default=None,
@@ -220,7 +216,7 @@ def main():
         try:
             subprocess.run(run_command, shell=True, check=True, text=True)
         except Exception as e:
-            print(e)
+            raise e
 
 if __name__ == "__main__":
     main()
