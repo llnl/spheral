@@ -44,3 +44,5 @@ toss_*.cmake
 blueos_*.cmake
 
 /build-*
+src/*/*.2.cc
+src/*/*.3.cc
