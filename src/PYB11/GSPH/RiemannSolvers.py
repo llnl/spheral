@@ -4,7 +4,7 @@ from PYB11Generator import *
 # Base class for riemann solver wave speeds
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class RiemannSolverBase:
 
     PYB11typedefs = """

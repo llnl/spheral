@@ -6,7 +6,7 @@ from SolidEquationOfState import *
 from EOSAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSolidMaterial")
+@PYB11module("SpheralCompiledModules.SpheralSolidMaterial")
 class MurnaghanEquationOfState(SolidEquationOfState):
     """MurnaghanEquationOfState -- Murnaghan  equation of state.
 

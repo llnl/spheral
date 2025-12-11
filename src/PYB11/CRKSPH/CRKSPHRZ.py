@@ -6,7 +6,7 @@ from CRKSPHBase import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPHRZ(CRKSPHBase):
     "An area weighted RZ specialization of CRKSPH for cylindrical coordinates"

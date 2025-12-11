@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPorosity")
+@PYB11module("SpheralCompiledModules.SpheralPorosity")
 class PalphaPorosity(PorosityModel):
     """An implementation of the P-alpha porosity model described in
 

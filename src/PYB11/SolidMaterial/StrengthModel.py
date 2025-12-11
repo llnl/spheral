@@ -5,7 +5,7 @@ from PYB11Generator import *
 from StrengthModelAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSolidMaterial")
+@PYB11module("SpheralCompiledModules.SpheralSolidMaterial")
 class StrengthModel:
     "Abstract base for strength models"
 

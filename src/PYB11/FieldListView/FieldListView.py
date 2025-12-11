@@ -4,7 +4,7 @@ from PYB11Generator import *
 # FieldListView
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralFieldListView")
+@PYB11module("SpheralCompiledModules.SpheralFieldListView")
 class FieldListView:
 
     PYB11typedefs = """

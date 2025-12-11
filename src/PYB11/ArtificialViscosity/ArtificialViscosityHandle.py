@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralArtificialViscosity")
+@PYB11module("SpheralCompiledModules.SpheralArtificialViscosity")
 class ArtificialViscosityHandle(Physics):
 
     PYB11typedefs = """
