@@ -5,7 +5,7 @@ import sys, os, gc, warnings, mpi
 
 from SpheralCompiledPackages import *
 from SpheralTimer import SpheralTimer
-from SpheralUtilities import adiak_value, TimerMgr
+from SpheralCompiledPackages import adiak_value, TimerMgr
 from SpheralConservation import SpheralConservation
 from GzipFileIO import GzipFileIO
 from SpheralTestUtilities import globalFrame

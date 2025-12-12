@@ -15,11 +15,11 @@ set (_python_packages
   Material
   FileIO
   Utilities
+  Physics
   RK
   VoronoiCells
   DataBase
   Boundary
-  Physics
   Hydro
   Integrator
   NodeGenerators
