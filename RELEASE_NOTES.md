@@ -48,8 +48,10 @@ Notable changes include:
       * FieldNames are inlined for easier use on device.
 
   * Bug fixes
-    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value
-    
+    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value.
+    * Updated ATS to bring in fix for python 3.12+.
+    * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
+
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
     * A python virtual environment is installed in the spheral build dir, removing the
