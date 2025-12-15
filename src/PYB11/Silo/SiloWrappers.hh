@@ -282,7 +282,7 @@ struct DBoptlist_wrapper {
   std::vector<std::shared_ptr<void> > mCache;
 
   // Constructors.
-  DBoptlist_wrapper(const int maxopts=1024):
+  DBoptlist_wrapper(const int maxopts=10):
     mOptlistPtr(DBMakeOptlist(maxopts)),
     mCache() {}
 

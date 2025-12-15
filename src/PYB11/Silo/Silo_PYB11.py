@@ -38,7 +38,7 @@ class DBoptlist:
 
     # Constructor
     def pyinit(self,
-               maxopts = ("int", "1024")):
+               maxopts = ("int", "10")):
         "Construct with the given number of avilable option slots."
 
     #...........................................................................
