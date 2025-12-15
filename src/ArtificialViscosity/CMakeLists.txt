@@ -29,16 +29,20 @@ set(ArtificialViscosity_headers
   ArtificialViscosityView.hh
   LimitedMonaghanGingoldViscosity.hh
   LimitedMonaghanGingoldViscosityView.hh
+  LimitedMonaghanGingoldViscosityViewInline.hh
   CullenDehnenViscosity.hh
   FiniteVolumeViscosity.hh
   FiniteVolumeViscosityView.hh
+  FiniteVolumeViscosityViewInline.hh
   IncrementCullenMultipliers.hh
   MonaghanGingoldViscosity.hh
   MonaghanGingoldViscosityView.hh
+  MonaghanGingoldViscosityViewInline.hh
   MorrisMonaghanReducingViscosity.hh
   TensorCRKSPHViscosity.hh
   TensorMonaghanGingoldViscosity.hh
   TensorMonaghanGingoldViscosityView.hh
+  TensorMonaghanGingoldViscosityViewInline.hh
   TensorSVPHViscosity.hh)
 
 # The following are currently not compiled
