@@ -816,8 +816,6 @@ def clippedVolume(poly = "const Dim<3>::FacetedVolume&",
 
 #...............................................................................
 for (value, label) in (("int", "Int"),
-                       ("unsigned", "Unsigned"),
-                       ("long", "Long"),
                        ("double", "Scalar"),
                        ("std::string", "String")):
     exec(f"""
