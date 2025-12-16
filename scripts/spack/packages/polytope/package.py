@@ -11,10 +11,10 @@ class Polytope(CMakePackage):
     """Polytope is a C++ library for generating polygonal and polyhedral meshes."""
 
     git = "https://github.com/LLNL/polytope.git"
-    url = "https://github.com/LLNL/polytope/archive/0.7.3.tar.gz"
+    url = "https://github.com/LLNL/polytope/archive/v0.7.5.tar.gz"
     # DO NOT COMMIT, FOR TESTING ONLY
+    version('v0.7.5', tag='v0.7.5', submodules=True)
     version('master', commit='f09d1b55162538330d592baa48f32bee75f136ec', submodules=True, preferred=True)
-    version('prior-master', commit='2340f57683151e2fd862702f229792423e7bcf0b', submodules=True)
     version('0.7.3', tag='0.7.3', submodules=True)
 
     variant('python', default=True, description='Enable Python Support.')
