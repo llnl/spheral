@@ -84,8 +84,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('opensubdiv@3.4.3+pic', type='build', when="+opensubdiv")
 
-    depends_on('polytope +python', type='build', when="+python")
-    depends_on('polytope ~python', type='build', when="~python")
+    depends_on('polytope@v0.7.5 +python', type='build', when="+python")
+    depends_on('polytope@v0.7.5 ~python', type='build', when="~python")
 
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')

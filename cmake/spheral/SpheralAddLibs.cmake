@@ -241,6 +241,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   # Format python environment lists into a one line shell friendly format
   list(APPEND PYTHON_ENV ${PYTHON_ENV} ${SPACK_PYTHONPATH})
+  blt_list_remove_duplicates(TO PYTHON_ENV)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Get the TPL dependencies
@@ -253,7 +254,6 @@ function(spheral_add_pybind11_library package_name module_list_name)
     MODULE          ${MODULE_NAME}
     SOURCE          ${package_name}_PYB11.py
     DEPENDS         ${SPHERAL_CXX_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
-    PYTHONPATH      ${PYTHON_ENV_STR}
     INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
