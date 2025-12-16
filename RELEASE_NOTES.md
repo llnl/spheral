@@ -90,6 +90,7 @@ Notable changes include:
       * Ouput multiple pybind11 C++ files for parallel compilation
       * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
     * Cleaned up the comparison operators for Geometry types, and removed lots of "using std::*" from implementations.
+    * Updated to PYB11Generator v2025.12.0 for full pybind11 v3 support
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
