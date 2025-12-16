@@ -137,7 +137,7 @@ class DBmrgtree:
                mesh_type = ("int", "DB_POINTMESH"),
                info_bits = ("int", "0"),
                max_children = ("int", "1024"),
-               optlist = ("silo::DBoptlist_wrapper", "silo::DBoptlist_wrapper(1024)")):
+               optlist = ("silo::DBoptlist_wrapper", "silo::DBoptlist_wrapper(10)")):
         "Constructor"
 
     # Methods for defining properties

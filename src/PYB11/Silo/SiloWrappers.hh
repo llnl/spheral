@@ -288,7 +288,8 @@ struct DBoptlist_wrapper {
 
   // Destructor.
   ~DBoptlist_wrapper() {
-    //ASSERT(DBFreeOptlist(mOptlistPtr) == 0);
+    // FIXME: This should not be commented out but causes a double free during python exit
+    // DBFreeOptlist(mOptlistPtr);
   }
 
   // Generic functor definitions for adding and getting options.
