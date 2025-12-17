@@ -147,9 +147,6 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
   # Export Spheral target
   install(EXPORT ${export_target_name} DESTINATION lib/cmake)
-
-  # Set the r-path of the C++ lib such that it is independent of the build dir when installed
-  set_target_properties(Spheral_${package_name} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endfunction()
 
 #----------------------------------------------------------------------------------------
@@ -279,8 +276,5 @@ function(spheral_add_pybind11_library package_name module_list_name)
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
   get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
-
-  # Set the r-path of the C++ lib such that it is independent of the build dir when installed
-  set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 endfunction()
