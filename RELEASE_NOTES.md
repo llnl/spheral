@@ -40,11 +40,13 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 
   * Bug fixes
     * Corrected rolling and torsional coefficient in DEM which were 2x the expected value.
     * Updated ATS to bring in fix for python 3.12+.
     * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
+    * Silo memory leak is not fixed but the memory impact is 100x smaller.
 
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
@@ -87,10 +89,10 @@ Notable changes include:
     * PolyClipper and PYB11Generator are updated.
     * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
     * PYB11Generator has been updated to allow new features:
-      * Ouput multiple pybind11 C++ files for parallel compilation
-      * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
+      * Ouput multiple pybind11 C++ files for parallel compilation.
+      * Optionally mark generated C++ files to not be regenerated (dangerous developer option).
     * Cleaned up the comparison operators for Geometry types, and removed lots of "using std::*" from implementations.
-    * Updated to PYB11Generator v2025.12.0 for full pybind11 v3 support
+    * Updated to PYB11Generator v2025.12.0 for full pybind11 v3 support.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
