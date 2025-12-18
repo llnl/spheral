@@ -69,8 +69,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
     depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
-    depends_on('axom +openmp', type='build', when='+openmp')
-    depends_on('axom ~openmp', type='build', when='~openmp')
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 
@@ -95,6 +93,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
+
+    openmp_tpl_list = ["axom", "raja", "chai", "umpire"]
+    for ctpl in openmp_tpl_list:
+        for variant in ["+openmp", "~openmp"]:
+            depends_on(f"{ctpl} {variant}", type='build', when=f"{variant}")
 
     # Forward CUDA/ROCM Variants
     def set_cuda_variants(ctpl, cond=""):
