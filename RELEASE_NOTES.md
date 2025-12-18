@@ -47,6 +47,7 @@ Notable changes include:
     * Updated ATS to bring in fix for python 3.12+.
     * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
     * Silo memory leak is not fixed but the memory impact is 100x smaller.
+    * Cleaned up some variable types and trapping error conditions in generateCylDistributionFromRZ for generating rotated problems
 
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
