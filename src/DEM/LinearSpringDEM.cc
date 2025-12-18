@@ -202,8 +202,8 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
   
   // FieldLists we'll need for the timestep calc.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto r = state.fields(DEMFieldNames::particleRadius, 0.0);
 
   const auto& contacts = this->contactStorageIndices();
@@ -453,15 +453,15 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // spring constants
   const auto kn = this->normalSpringConstant();        // normal
   const auto ks = this->tangentialSpringConstant();    // sliding
-  const auto kt = 0.50 * ks * shapeFactor2;
-  const auto kr = 0.25 * kn * shapeFactor2;
+  const auto kt = 2.0 * ks * shapeFactor2;
+  const auto kr = kn * shapeFactor2;
 
   const auto invKs = 1.0/max(ks,tiny);
   const auto invKt = 1.0/max(kt,tiny);
   const auto invKr = 1.0/max(kr,tiny);
   
-  const auto normalDampingTerms = 2.0*kn/(1.0+mNormalBeta*mNormalBeta);
-  const auto tangentialDampingTerms = 2.0*ks/(1.0+mTangentialBeta*mTangentialBeta);
+  const auto normalDampingTerms = 4.0*kn/(1.0+mNormalBeta*mNormalBeta);
+  const auto tangentialDampingTerms = 4.0*ks/(1.0+mTangentialBeta*mTangentialBeta);
  
   // The connectivity.
   const auto& nodeLists = dataBase.DEMNodeListPtrs();
@@ -475,11 +475,11 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Get the state FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto momentOfInertia = state.fields(DEMFieldNames::momentOfInertia, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto omega = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   const auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
-  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (int)0);
+  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (size_t)0);
   const auto compositeIndex = state.fields(DEMFieldNames::compositeParticleIndex, (int)0);
   
   CHECK(mass.size() == numNodeLists);
@@ -495,7 +495,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto shearDisplacement = state.fields(DEMFieldNames::shearDisplacement, std::vector<Vector>());
   const auto rollingDisplacement = state.fields(DEMFieldNames::rollingDisplacement, std::vector<Vector>());
   const auto torsionalDisplacement = state.fields(DEMFieldNames::torsionalDisplacement, std::vector<Scalar>());
-  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<int>());
+  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<size_t>());
 
   CHECK(equilibriumOverlap.size() == numNodeLists);
   CHECK(shearDisplacement.size() == numNodeLists);
@@ -504,8 +504,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   CHECK(neighborIds.size() == numNodeLists);
 
   // Get the deriv FieldLists
-  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto DomegaDt = derivatives.fields(IncrementState<Dimension, Scalar>::prefix() + DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   auto newMaximumOverlap = derivatives.fields(MaxReplaceState<Dimension,Scalar>::prefix() + DEMFieldNames::maximumOverlap, 0.0);
   
@@ -636,14 +636,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto lj = rijMag-li;
 
         // effective quantities (mass, reduced radius) respectively, mij->mi for mi=mj
-        const auto mij = 2.0*(mi*mj)/(mi+mj);
-        const auto lij = 2.0*(li*lj)/(li+lj);
+        const auto mij = mi*mj/(mi+mj);
+        const auto lij = li*lj/(li+lj);
 
         // damping constants -- ct and cr derived quantities ala Zhang 2017
         const auto Cn = std::sqrt(mij*normalDampingTerms);
         const auto Cs = std::sqrt(mij*tangentialDampingTerms);
-        const auto Ct = 0.50 * Cs * shapeFactor2;
-        const auto Cr = 0.25 * Cn * shapeFactor2;
+        const auto Ct = 2.0 * Cs * shapeFactor2;
+        const auto Cr = Cn * shapeFactor2;
 
         // our velocities
         const Vector vroti = -DEMDimension<Dimension>::cross(omegai,rhatij);
@@ -658,9 +658,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         // normal forces 
         //------------------------------------------------------------
-        const Vector fn = (kn*delta - Cn*vn)*rhatij;        // normal spring
-        const Vector fc = Cc*shapeFactor2*lij*lij*rhatij;   // normal cohesion
-        const Scalar fnMag = fn.magnitude();                // magnitude of normal spring force
+        const Vector fn = (kn*delta - Cn*vn)*rhatij;          // normal spring
+        const Vector fc = 4.0*Cc*shapeFactor2*lij*lij*rhatij; // normal cohesion
+        const Scalar fnMag = fn.magnitude();                  // magnitude of normal spring force
 
         // sliding
         //------------------------------------------------------------
@@ -771,14 +771,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto li = rib.magnitude();
 
         // effective quantities
-        const auto mib = 2*mi;
-        const auto lib = 2*li;
+        const auto mib = mi;
+        const auto lib = li;
 
         // damping coefficients
         const auto Cn = std::sqrt(mib*normalDampingTerms);
         const auto Cs = std::sqrt(mib*tangentialDampingTerms);
-        const auto Ct = 0.50 * Cs * shapeFactor2;
-        const auto Cr = 0.25 * Cn * shapeFactor2;
+        const auto Ct = 2.0 * Cs * shapeFactor2;
+        const auto Cr = Cn * shapeFactor2;
 
         // velocities
         const Vector vroti = -DEMDimension<Dimension>::cross(omegai,rhatib);
@@ -792,9 +792,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         // normal forces 
         //------------------------------------------------------------
-        const Vector fn = (kn*delta - Cn*vn)*rhatib;        // normal spring
-        const Vector fc = Cc*shapeFactor2*lib*lib*rhatib;     // normal cohesion
-        const Scalar fnMag = fn.magnitude();                // magnitude of normal spring force
+        const Vector fn = (kn*delta - Cn*vn)*rhatib;          // normal spring
+        const Vector fc = 4.0*Cc*shapeFactor2*lib*lib*rhatib; // normal cohesion
+        const Scalar fnMag = fn.magnitude();                  // magnitude of normal spring force
 
         // sliding
         //------------------------------------------------------------

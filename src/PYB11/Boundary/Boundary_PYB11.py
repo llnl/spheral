@@ -68,7 +68,7 @@ def findNodesTouchingThroughPlanes(nodeList = "const NodeList<%(Dimension)s>&",
                                    exitPlane = "const GeomPlane<%(Dimension)s>&",
                                    hmultiplier = ("double", "1.0")):
     "Find the set of nodes that see through a pair of planes."
-    return "std::vector<int>"
+    return "std::vector<size_t>"
 
 #-------------------------------------------------------------------------------
 # Do our dimension dependent instantiations.

@@ -16,12 +16,6 @@
 #include "PlanarBoundary.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -109,7 +103,7 @@ PlanarBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
 
   // Remember which node list we are setting the ghost nodes for.
   this->addNodeList(nodeList);
-  typename Boundary<Dimension>::BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
+  auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
   boundaryNodes.controlNodes = findNodesTouchingThroughPlanes(nodeList, mEnterPlane, mExitPlane);
 
   // std::sort(controlNodes.begin(), controlNodes.end());
@@ -130,7 +124,7 @@ template<typename Dimension>
 void
 PlanarBoundary<Dimension>::
 setGhostNodes(NodeList<Dimension>& nodeList, 
-              const vector<int>& presetControlNodes) {
+              const vector<size_t>& presetControlNodes) {
 
   typedef typename Boundary<Dimension>::BoundaryNodes BoundaryNodes;
 
@@ -139,7 +133,7 @@ setGhostNodes(NodeList<Dimension>& nodeList,
 
   // Set the list of control nodes.
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& controlNodes = boundaryNodes.controlNodes;
+  auto& controlNodes = boundaryNodes.controlNodes;
   controlNodes = presetControlNodes;
 
   // Set the ghost node indices to correspond to these control nodes.
@@ -162,7 +156,7 @@ PlanarBoundary<Dimension>::setViolationNodes(NodeList<Dimension>& nodeList) {
   typedef typename Boundary<Dimension>::BoundaryNodes BoundaryNodes;
   this->addNodeList(nodeList);
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& vNodes = boundaryNodes.violationNodes;
+  auto& vNodes = boundaryNodes.violationNodes;
   vNodes.resize(0);
 
   // Loop over all the internal nodes in the NodeList, and put any that are 
@@ -185,22 +179,20 @@ void
 PlanarBoundary<Dimension>::updateViolationNodes(NodeList<Dimension>& nodeList) {
 
   // Get the set of violation nodes for this NodeList.
-  const vector<int>& vNodes = this->violationNodes(nodeList);
+  const auto& vNodes = this->violationNodes(nodeList);
 
   // Loop over these nodes, and reset their positions to valid values.
   Field<Dimension, Vector>& positions = nodeList.positions();
-  for (vector<int>::const_iterator itr = vNodes.begin();
-       itr < vNodes.end();
-       ++itr) {
-    CHECK(positions(*itr) <= enterPlane());
-    positions(*itr) = mapPosition(positions(*itr), mEnterPlane, mExitPlane);
+  for (auto i: vNodes) {
+    CHECK(positions(i) <= enterPlane());
+    positions(i) = mapPosition(positions(i), mEnterPlane, mExitPlane);
     // CHECK2((positions(*itr) >= enterPlane()) and
     //        (positions(*itr) >= exitPlane()),
     //        "Bad position mapping: " << *itr << " " << nodeList.firstGhostNode() << " " << positions(*itr));
   }
 
   // Set the Hfield.
-  Field<Dimension, SymTensor>& Hfield = nodeList.Hfield();
+  auto& Hfield = nodeList.Hfield();
   this->enforceBoundary(Hfield);
 
 //   // Update the neighbor information.
@@ -270,12 +262,12 @@ PlanarBoundary<Dimension>::setGhostNodeIndices(NodeList<Dimension>& nodeList) {
 
   // Get the sets of control and ghost nodes.
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& controlNodes = boundaryNodes.controlNodes;
-  vector<int>& ghostNodes = boundaryNodes.ghostNodes;
+  auto& controlNodes = boundaryNodes.controlNodes;
+  auto& ghostNodes = boundaryNodes.ghostNodes;
 
   // Create the ghosts of the control nodes.
-  int currentNumGhostNodes = nodeList.numGhostNodes();
-  int firstNewGhostNode = nodeList.numNodes();
+  auto currentNumGhostNodes = nodeList.numGhostNodes();
+  auto firstNewGhostNode = nodeList.numNodes();
   nodeList.numGhostNodes(currentNumGhostNodes + controlNodes.size());
   CHECK(nodeList.numNodes() == firstNewGhostNode + controlNodes.size());
 
@@ -285,8 +277,8 @@ PlanarBoundary<Dimension>::setGhostNodeIndices(NodeList<Dimension>& nodeList) {
     CHECK(i < controlNodes.size());
     CHECK(i < ghostNodes.size());
     ghostNodes[i] = firstNewGhostNode + i;
-    CHECK(ghostNodes[i] >= (int)nodeList.numInternalNodes() and
-          ghostNodes[i] < (int)nodeList.numNodes());
+    CHECK(ghostNodes[i] >= nodeList.numInternalNodes() and
+          ghostNodes[i] < nodeList.numNodes());
   }
 }
 
@@ -301,17 +293,17 @@ PlanarBoundary<Dimension>::updateGhostNodes(NodeList<Dimension>& nodeList) {
 
   // Get the control and ghost node indices.
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& controlNodes = boundaryNodes.controlNodes;
-  vector<int>& ghostNodes = boundaryNodes.ghostNodes;
+  auto& controlNodes = boundaryNodes.controlNodes;
+  auto& ghostNodes = boundaryNodes.ghostNodes;
   CHECK(controlNodes.size() == ghostNodes.size());
 
   // Loop over the control/ghost node pairs, and set the ghost positions.
   Field<Dimension, Vector>& positions = nodeList.positions();
-  typename vector<int>::const_iterator controlItr = controlNodes.begin();
-  typename vector<int>::const_iterator ghostItr = ghostNodes.begin();
+  auto controlItr = controlNodes.begin();
+  auto ghostItr = ghostNodes.begin();
   for (;controlItr < controlNodes.end(); ++controlItr, ++ghostItr) {
-    CHECK(*controlItr >= 0 and *controlItr < (int)nodeList.numNodes());
-    CHECK2(*ghostItr >= (int)nodeList.firstGhostNode() and *ghostItr < (int)nodeList.numNodes(),
+    CHECK(*controlItr >= 0 and *controlItr < nodeList.numNodes());
+    CHECK2(*ghostItr >= nodeList.firstGhostNode() and *ghostItr < nodeList.numNodes(),
            "Ghost node index out of bounds:  " << *ghostItr << " " << nodeList.firstGhostNode() << " " << nodeList.numNodes());
 
 //     if (!(positions(*controlItr) >= mEnterPlane and

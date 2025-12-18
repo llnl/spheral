@@ -78,12 +78,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Get the node positions from the state.
   const FieldList<Dimension, Scalar> mnode = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
 
   // Get the acceleration and position change vectors we'll be modifying.
-  FieldList<Dimension, Vector> DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  FieldList<Dimension, Vector> DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Loop over the internal nodes.
   mPotentialEnergy = 0.0;
@@ -119,14 +119,13 @@ dt(const DataBase<Dimension>& dataBase,
   // dt = (Delta phi)/phi (r^2 + rc^2) / v
   Scalar mindt = FLT_MAX;
   Scalar minr, minv;
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   for (InternalNodeIterator<Dimension> nodeItr = dataBase.internalNodeBegin();
        nodeItr < dataBase.internalNodeEnd();
        ++nodeItr) {
     const Vector r = position(nodeItr) - mOrigin;
     const Scalar v = velocity(nodeItr).magnitude() + 1.0e-10;
-    const Vector runit = r.unitVector();
     const Scalar rsoft2 = r.magnitude2() + 1.0e-10;
     const Scalar rsoft = sqrt(rsoft2);
     const Scalar rsoft3 = rsoft*rsoft2;

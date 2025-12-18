@@ -1,8 +1,8 @@
 from Spheral import *
 from SpheralTestUtilities import *
-import Gnuplot
+#import Gnuplot
 import numpy
-from SpheralGnuPlotUtilities import *
+from SpheralPlotUtilities import *
 
 ################################################################################
 def plotW(plot, W, xmin=0.0, xmax=2.0, numPnts=200, Hdet=1.0, title='',

@@ -80,7 +80,6 @@ interfaceState(const typename Dimension::Vector& ri,
   const auto tiny = std::numeric_limits<Scalar>::epsilon();
 
   const Vector rij = ri - rj;
-  const Vector rhatij = rij.unitVector();
   const Vector etaij = 0.5*(Hi+Hj)*rij;
 
   // default to nodal values

@@ -20,6 +20,7 @@
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/bisectSearch.hh"
 #include "Utilities/RedistributionRegistrar.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "allReduce.hh"
 #include "Communicator.hh"
 
@@ -35,12 +36,6 @@ using std::pair;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -93,7 +88,6 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // The usual parallel info.
   const int numProcs = this->numDomains();
-  const int procID = this->domainID();
 
   // The min and max range of nodes we want per domain.
   const int totalNumNodes = dataBase.globalNumInternalNodes();
@@ -104,27 +98,21 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   if (double(totalNumNodes)/double(Process::getTotalNumberOfProcesses()) >= 1.0) {
 
     // Get the global IDs.
-    const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+    const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
     // Compute the work per node.
     FieldList<Dimension, Scalar> workField(FieldStorageType::CopyFields);
     if (this->workBalance()) {
 
       // Enforce boundary conditions for the work computation.
-      for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-           nodeListItr != dataBase.nodeListEnd();
-           ++nodeListItr) {
-        (*nodeListItr)->numGhostNodes(0);
-        (*nodeListItr)->neighbor().updateNodes();
+      for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+        nodeListPtr->numGhostNodes(0);
+        nodeListPtr->neighbor().updateNodes();
       }
-      for (typename vector<Boundary<Dimension>*>::iterator boundaryItr = boundaries.begin(); 
-           boundaryItr != boundaries.end();
-           ++boundaryItr) {
-        (*boundaryItr)->setAllGhostNodes(dataBase);
-        (*boundaryItr)->finalizeGhostBoundary();
-        for (typename DataBase<Dimension>::FluidNodeListIterator nodeListItr = dataBase.fluidNodeListBegin();
-             nodeListItr != dataBase.fluidNodeListEnd(); 
-             ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
+      for (auto* boundaryPtr: boundaries) {
+        boundaryPtr->setAllGhostNodes(dataBase);
+        boundaryPtr->finalizeGhostBoundary();
+        for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) nodeListPtr->neighbor().updateNodes();
       }
 
       // Get the local description of the domain distribution, with the work per node filled in.
@@ -140,8 +128,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // Print the beginning statistics.
     std::string stats0 = this->gatherDomainDistributionStatistics(workField);
-    if (Process::getRank() == 0) cout << "SpaceFillingCurveRedistributeNodes: INITIAL node distribution statistics:" << endl
-                                      << stats0 << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: INITIAL node distribution statistics:\n" << stats0);
 
     // Now we can get the node distribution description.
     vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, workField);
@@ -149,35 +136,31 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     // Clear out any ghost nodes.
     // We won't bother to update the neighbor info at this point -- we don't need 
     // it for this algorithm, so we just update it when we're done.
-    for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) {
-      (*nodeListItr)->numGhostNodes(0);
-    }
+    for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
 
     // Compute the target work per domain.
     const Scalar targetWork = workField.sumElements()/numProcs;
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: Target work per process " << targetWork << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: Target work per process " << targetWork);
 
     // Compute the Key indices for each point on this processor.
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: Hashing indices" << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: Hashing indices");
     FieldList<Dimension, Key> indices = computeHashedIndices(dataBase);
 
     // Find the range of hashed indices.
     const Key indexMin = indices.min();
     const Key indexMax = indices.max();
     CHECK(indexMax < indexMax + indexMax);
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: Index min/max : " << indexMin << " " << indexMax << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: Index min/max : " << indexMin << " " << indexMax);
 
     // Build the array of (hashed index, DomainNode) pairs.
     // Note this comes back locally sorted.
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: sorting indices" << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: sorting indices");
     vector<pair<Key, DomainNode<Dimension> > > sortedIndices = buildIndex2IDPairs(indices,
                                                                                   nodeDistribution);
     const int numLocalNodes = nodeDistribution.size();
 
     // Build our set of unique indices and their count.
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: Counting uniques and such" << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: Counting uniques and such");
     vector<Key> uniqueIndices;
     vector<int> count;
     vector<Scalar> work;
@@ -209,7 +192,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       CHECK(work.size() == uniqueIndices.size());
     }
     maxCount = allReduce(maxCount, SPHERAL_OP_MAX);
-    if (procID == 0) cout << "SpaceFillingCurveRedistributeNodes: max redundancy is " << maxCount << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: max redundancy is " << maxCount);
 
     //   // DEBUG
     //   {
@@ -260,12 +243,10 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // We now know the target index range for each domain.
     // Go through our local DomainNode set and assign them appropriately.
-    nodeDistribution = vector<DomainNode<Dimension> >();
-    for (typename vector<pair<Key, DomainNode<Dimension> > >::iterator itr = sortedIndices.begin();
-         itr != sortedIndices.end();
-         ++itr) {
-      nodeDistribution.push_back(itr->second);
-      nodeDistribution.back().domainID = domainForIndex(itr->first, indexRanges);
+    nodeDistribution = vector<DomainNode<Dimension>>();
+    for (auto [key, dnode]: sortedIndices) {
+      nodeDistribution.push_back(dnode);
+      nodeDistribution.back().domainID = domainForIndex(key, indexRanges);
       CHECK(nodeDistribution.back().domainID >= 0 and
             nodeDistribution.back().domainID < numProcs);
     }
@@ -283,7 +264,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       vector<pair<Key, int>> orderedkeys(n);
       for (auto i = 0u; i < n; ++i) orderedkeys[i] = make_pair(keys(i), i);
       sort(orderedkeys.begin(), orderedkeys.end(), SortNodesByHashedIndex<int>());  // [](const pair<Key, int>& lhs, const pair<Key, int>& rhs) { return lhs.first < rhs.first; });
-      vector<int> ordering(n);
+      vector<size_t> ordering(n);
       for (auto i = 0u; i < n; ++i) ordering[orderedkeys[i].second] = i;
       nodeListPtr->reorderNodes(ordering);
       nodeListPtr->neighbor().updateNodes();
@@ -294,19 +275,17 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // Print the final statistics.
     std::string stats1 = this->gatherDomainDistributionStatistics(workField);
-    if (Process::getRank() == 0) cout << "SpaceFillingCurveRedistributeNodes: FINAL node distribution statistics:" << endl
-                                      << stats1 << endl;
+    SpheralMessage("SpaceFillingCurveRedistributeNodes: FINAL node distribution statistics:\n" << stats1);
 
     // Post-conditions.
     // Make sure the nodes are now sorted by the index keys.
     BEGIN_CONTRACT_SCOPE
       {
-        for (typename DataBase<Dimension>::ConstNodeListIterator nodeListItr = dataBase.nodeListBegin();
-             nodeListItr != dataBase.nodeListEnd();
-             ++nodeListItr) {
-          const Field<Dimension, Key> keyField = **indices.fieldForNodeList(**nodeListItr);
-          for (int i = 1; i < (int)(*nodeListItr)->numInternalNodes(); ++i) {
-            ENSURE2(keyField(i) >= keyField(i - 1), (**nodeListItr).name()
+        for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+          const Field<Dimension, Key>& keyField = **indices.fieldForNodeList(*nodeListPtr);
+          CONTRACT_VAR(keyField);
+          for (auto i = 1u; i < nodeListPtr->numInternalNodes(); ++i) {
+            ENSURE2(keyField(i) >= keyField(i - 1), nodeListPtr->name()
                     << " (" << (i - 1) << " " << i << ") (" 
                     << keyField(i-1) << " " << keyField(i) << ")");
           }

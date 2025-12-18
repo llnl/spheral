@@ -20,7 +20,7 @@
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }
@@ -29,13 +29,8 @@ extern "C" {
 #include <algorithm>
 #include <memory>
 using std::vector;
-using std::cout;
 using std::cerr;
 using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-using std::shared_ptr;
 
 namespace Spheral {
 
@@ -579,8 +574,8 @@ updateConnectivityMap(const bool computeGhostConnectivity,
 template<typename Dimension>
 void
 DataBase<Dimension>::
-patchConnectivityMap(const FieldList<Dimension, int>& flags,
-                     const FieldList<Dimension, int>& old2new) const {
+patchConnectivityMap(const FieldList<Dimension, size_t>& flags,
+                     const FieldList<Dimension, size_t>& old2new) const {
   REQUIRE(mConnectivityMapPtr);
   mConnectivityMapPtr->patchConnectivity(flags, old2new);
 }
@@ -1401,14 +1396,11 @@ DataBase<Dimension>::DEMParticleRadius() const {
 // Return the DEM unique particle index
 //------------------------------------------------------------------------------
 template<typename Dimension>
-FieldList<Dimension, int>
+FieldList<Dimension, size_t>
 DataBase<Dimension>::DEMUniqueIndex() const {
   REQUIRE(valid());
-  FieldList<Dimension, int> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->uniqueIndex());
-  }
+  FieldList<Dimension, size_t> result;
+  for (auto* nodeListPtr: mDEMNodeListPtrs) result.appendField(nodeListPtr->uniqueIndex());
   return result;
 }
 
@@ -1442,14 +1434,14 @@ DataBase<Dimension>::setDEMHfieldFromParticleRadius(const int startUniqueIndex) 
 }
 
 //------------------------------------------------------------------------------
-// calculated appropriates H from a given radius for each nodelist
+// Set the DEM particle global indices
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 DataBase<Dimension>::setDEMUniqueIndices() {
   REQUIRE(valid());
-    auto uniqueIndices = this->DEMUniqueIndex();
-    uniqueIndices += globalNodeIDs<Dimension>(this->nodeListBegin(),this->nodeListEnd());
+  auto uniqueIndices = this->DEMUniqueIndex();
+  uniqueIndices += globalNodeIDs<Dimension>(this->nodeListBegin(),this->nodeListEnd());
 }
 
 
@@ -1521,7 +1513,7 @@ void
 DataBase<Dimension>::
 globalHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
-  this->resizeGlobalFieldList(result, SymTensor::zero);
+  this->resizeGlobalFieldList(result, SymTensor::zero());
   size_t nodeListi = 0;
   for (ConstNodeListIterator nodeListItr = nodeListBegin();
        nodeListItr != nodeListEnd();
@@ -1538,7 +1530,7 @@ void
 DataBase<Dimension>::
 fluidHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
-  this->resizeFluidFieldList(result, SymTensor::zero);
+  this->resizeFluidFieldList(result, SymTensor::zero());
   size_t nodeListi = 0;
   for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
        nodeListItr != fluidNodeListEnd();
@@ -1665,7 +1657,7 @@ void
 DataBase<Dimension>::
 fluidLinearMomentum(FieldList<Dimension, typename Dimension::Vector>& result) const {
   REQUIRE(valid());
-  this->resizeFluidFieldList(result, Vector::zero, HydroFieldNames::linearMomentum);
+  this->resizeFluidFieldList(result, Vector::zero(), HydroFieldNames::linearMomentum);
   size_t nodeListi = 0;
   for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
        nodeListItr != fluidNodeListEnd();
@@ -1863,7 +1855,7 @@ localSamplingBoundingVolume(typename Dimension::Vector& centroid,
   // Find the maximal radial extent from the centroid.
   radiusNodes = 0.0;
   radiusSample = 0.0;
-  FieldList<Dimension, SymTensor> Hinv = newGlobalFieldList(SymTensor::zero);
+  FieldList<Dimension, SymTensor> Hinv = newGlobalFieldList(SymTensor::zero());
   this->globalHinverse(Hinv);
   for (auto nodeList = 0u; nodeList != positions.numFields(); ++nodeList) {
     for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {
@@ -1871,8 +1863,8 @@ localSamplingBoundingVolume(typename Dimension::Vector& centroid,
       const Vector dr = xi - centroid;
       const double drMag = dr.magnitude();
       const double hi = (Hinv(nodeList, i)*dr).magnitude() * safeInv(drMag, 1.0e-20);
-      radiusNodes = max(radiusNodes, drMag);
-      radiusSample = max(radiusSample, drMag + 2.0*hi);
+      radiusNodes = std::max(radiusNodes, drMag);
+      radiusSample = std::max(radiusSample, drMag + 2.0*hi);
     }
   }
 
@@ -1906,7 +1898,7 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 				    xminNodes, xmaxNodes,
 				    xminSample, xmaxSample);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Now find the global bounds across all processors.
   {
     size_t nlocal = this->numInternalNodes();
@@ -1927,7 +1919,7 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
       radiusSample = 0.0;
       const FieldList<Dimension, Vector> positions = this->globalPosition();
       const FieldList<Dimension, Vector> extent = this->globalNodeExtent();
-      FieldList<Dimension, SymTensor> Hinv = this->newGlobalFieldList(SymTensor::zero, "H inverse");
+      FieldList<Dimension, SymTensor> Hinv = this->newGlobalFieldList(SymTensor::zero(), "H inverse");
       this->globalHinverse(Hinv);
       for (auto nodeList = 0u; nodeList != positions.numFields(); ++nodeList) {
 	for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {
@@ -1936,13 +1928,12 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 	  const Vector drUnit = dr.unitVector();
 	  const double drMag = dr.magnitude();
 	  const double hi = (Hinv(nodeList, i)*drUnit).magnitude();
-	  radiusNodes = max(radiusNodes, drMag);
-	  radiusSample = max(radiusSample, drMag + 2.0*hi);
+	  radiusNodes = std::max(radiusNodes, drMag);
+	  radiusSample = std::max(radiusSample, drMag + 2.0*hi);
 	}
       }
       radiusNodes = allReduce(radiusNodes, SPHERAL_OP_MAX);
       radiusSample = allReduce(radiusSample, SPHERAL_OP_MAX);
-      const Vector delta = 0.001*(xmaxSample - xminSample);
       radiusNodes *= 1.001;
       radiusSample *= 1.001;
     }
@@ -2055,7 +2046,7 @@ globalSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
   // First get each domains local values.
   localSamplingBoundingBoxes(xminima, xmaxima);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel crap.
   const int procID = Process::getRank();
   const int numProcs = Process::getTotalNumberOfProcesses();

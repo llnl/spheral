@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
 # Adding -B to prevent byte-compiling
-@CMAKE_INSTALL_PREFIX@/.venv/bin/python -B "$@"
+@SPHERAL_EXEC_DIR@/.venv/bin/python -B "$@"
 exit_result=$?
 exit $exit_result

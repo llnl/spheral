@@ -13,7 +13,6 @@ set(Distributed_headers
     Communicator.hh
     Process.hh
     RegisterMPIDataTypes.hh
-    RegisterMPIDataTypesInline.hh
     )
 
 if (ENABLE_MPI)
@@ -22,15 +21,15 @@ if (ENABLE_MPI)
   #----------------------------------------------------------------------------
   list(APPEND Distributed_sources waitAllWithDeadlockDetection.cc)
 
-  if (ENABLE_1D)
+  if (SPHERAL_ENABLE_1D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes1d.cc)
   endif()
 
-  if (ENABLE_2D)
+  if (SPHERAL_ENABLE_2D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes2d.cc)
   endif()
 
-  if (ENABLE_3D)
+  if (SPHERAL_ENABLE_3D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes3d.cc)
   endif()
 
@@ -50,14 +49,12 @@ if (ENABLE_MPI)
 
  list(APPEND Distributed_headers
       BoundingVolumeDistributedBoundary.hh
-      BoundingVolumeDistributedBoundaryInline.hh
       CompareDomainNodesByPosition.hh
       DistributeByXPosition.hh
       DistributedBoundary.hh
       DistributedBoundaryInline.hh
       MortonOrderRedistributeNodes.hh
       NestedGridDistributedBoundary.hh
-      NestedGridDistributedBoundaryInline.hh
       NestedGridRedistributeNodes.hh
       NestedGridRedistributeNodesInline.hh
       NestedGridUtilities.hh
@@ -73,7 +70,6 @@ if (ENABLE_MPI)
       SortAndDivideRedistributeNodesInline.hh
       SpaceFillingCurveRedistributeNodes.hh
       TreeDistributedBoundary.hh
-      TreeDistributedBoundaryInline.hh
       VoronoiRedistributeNodes.hh
       waitAllWithDeadlockDetection.hh
       )
@@ -88,7 +84,11 @@ else()
 
 endif()
 
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
+  configure_file(${MPIPY_FILE_NAME}
+    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/mpi.py
+    COPYONLY)
+
   install(FILES       ${MPIPY_FILE_NAME}
           DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
           RENAME      mpi.py

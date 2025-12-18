@@ -18,6 +18,7 @@ class StateBase:
     using KeyType = typename StateBase<%(Dimension)s>::KeyType;
     using FieldName = typename StateBase<%(Dimension)s>::FieldName;
     using MeshPtr = typename StateBase<%(Dimension)s>::MeshPtr;
+    using BoundaryType = Boundary<%(Dimension)s>;
 """
 
     #...........................................................................
@@ -181,7 +182,8 @@ class StateBase:
     @PYB11const
     def fields(self,
                name = "const KeyType&",
-               dummy = ("const %(Value)s&", "%(Value)s()")):
+               dummy = ("const %(Value)s&", "%(Value)s()"),
+               allowNone = ("bool", "false")):
         "Return the %(Value)s FieldList based on the name"
         return "FieldList<%(Dimension)s, %(Value)s>"
 
@@ -240,22 +242,35 @@ class StateBase:
     #...........................................................................
     # enroll/get
     @PYB11template("Value")
-    def enroll(self,
+    @PYB11cppname("enroll")
+    def enrollAny(self,
                   key = "const KeyType&",
                   thing = "%(Value)s&"):
         "Enroll a type of %(Value)s."
         return "void"
 
     @PYB11template("Value")
+    def enrollCopy(self,
+                   key = "const KeyType&",
+                   thing = "%(Value)s&"):
+        "Enroll a copied type of %(Value)s."
+        return "void"
+    
+    @PYB11template("Value")
     @PYB11const
     @PYB11returnpolicy("reference_internal")
     def get(self,
-               key = "const KeyType&"):
+            key = "const KeyType&"):
         "Return a stored type of %(Value)s"
         return "%(Value)s&"
 
-    enrollVectorVector = PYB11TemplateMethod(enroll, "std::vector<Vector>", pyname="enroll")
+    enrollDouble = PYB11TemplateMethod(enrollCopy, "double")
+    enrollVectorVector = PYB11TemplateMethod(enrollAny, "std::vector<Vector>", pyname="enroll")
+    enrollVectorBoundary = PYB11TemplateMethod(enrollCopy, "std::vector<BoundaryType*>")
+    
+    getDouble = PYB11TemplateMethod(get, "double")
     getVectorVector = PYB11TemplateMethod(get, "std::vector<Vector>", pyname="get")
+    getVectorBoundary = PYB11TemplateMethod(get, "std::vector<BoundaryType*>")
 
     #...........................................................................
     # assignFields

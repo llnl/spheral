@@ -13,12 +13,6 @@
 #include "Utilities/DBC.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -50,7 +44,7 @@ AxisBoundaryRZ::setViolationNodes(NodeList<Dim<2>>& nodeList) {
   typedef Boundary<Dimension>::BoundaryNodes BoundaryNodes;
   this->addNodeList(nodeList);
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& vNodes = boundaryNodes.violationNodes;
+  auto& vNodes = boundaryNodes.violationNodes;
   vNodes.resize(0);
 
   // Loop over all the internal nodes in the NodeList, and put any that are
@@ -79,17 +73,15 @@ AxisBoundaryRZ::updateViolationNodes(NodeList<Dim<2> >& nodeList) {
   GeomPlane<Dim<2> > plane(Vector(0.0, mEtaMin), Vector(0.0, 1.0));
 
   // Get the set of violation nodes for this NodeList.
-  const vector<int>& vNodes = this->violationNodes(nodeList);
+  const auto& vNodes = this->violationNodes(nodeList);
 
   // Loop over these nodes, and reset their positions to valid values.
   const Vector runit(0.0, 1.0);
   Field<Dimension, Vector>& positions = nodeList.positions();
   Field<Dimension, SymTensor>& H = nodeList.Hfield();
-  for (vector<int>::const_iterator itr = vNodes.begin();
-       itr < vNodes.end();
-       ++itr) {
-    Vector& posi = positions(*itr);
-    const double Hri = (H(*itr)*runit).y();
+  for (auto i: vNodes) {
+    Vector& posi = positions(i);
+    const double Hri = (H(i)*runit).y();
     double etari = Hri*posi.y();
     CHECK(etari <= mEtaMin);
     etari = 2.0*mEtaMin - etari;

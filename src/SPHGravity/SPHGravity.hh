@@ -13,7 +13,6 @@
 #include "Physics/Physics.hh"
 #include "Field/FieldList.hh"
 #include "Kernel/TableKernel.hh"
-#include "boost/python/handle.hpp"
 
 #include "petsc.h"
 #include "petscksp.h"
@@ -90,12 +89,6 @@ public:
                           State<Dimension>& state,
                           StateDerivatives<Dimension>& derivs);
 
-  //! Return the Laplacian matrix for inspection.
-  boost::python::handle<PyObject> matrix() const;
-
-  //! Return the right-hand-side vector for inspection.
-  boost::python::handle<PyObject> RHS() const;
-
   //! Return the norm of the residual vector after the most recently converged
   //! linear solve.
   double residualNorm() const { return mResNorm; }
@@ -117,16 +110,13 @@ public:
 
 private:
   
-  //! Information about the most recent linear solve.  This stuff is outside 
-  //! the GCCXML block because the associated accessors are inlined (so 
-  //!  GCCXML has to see it).
+  //! Information about the most recent linear solve.
   mutable double mResNorm;
   mutable int mNumIters;
 
   //! The gravitational constant.
   Scalar mG;
 
-#ifndef __GCCXML__
   //! SPH kernel.
   const TableKernel<Dimension>& mKernel;
   
@@ -190,7 +180,6 @@ private:
   void mComputeGravitationalPotential(
           const DataBase<Dimension>& dataBase,
           const State<Dimension>& state) const;
-#endif
   
   // Default constructor -- disabled.
   SPHGravity();

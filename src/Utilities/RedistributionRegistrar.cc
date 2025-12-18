@@ -16,14 +16,18 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Get the instance.
+//------------------------------------------------------------------------------
+RedistributionRegistrar&
+RedistributionRegistrar::
+instance() {
+  static RedistributionRegistrar theInstance;
+  return theInstance;
+}
 
 //------------------------------------------------------------------------------
 // Register a RedistributionNotificationHandle.
@@ -45,11 +49,11 @@ RedistributionRegistrar::
 unregisterRedistributionNotificationHandle(std::shared_ptr<RedistributionNotificationHandle> redistributionHandlePtr) {
   std::weak_ptr<RedistributionNotificationHandle> wptr(redistributionHandlePtr);
   VERIFY(haveRedistributionNotificationHandle(wptr));
-  iterator itr = find_if(this->begin(), this->end(),
-                         [wptr] (const std::weak_ptr<RedistributionNotificationHandle> val) {
-                           // Weak pointers don't have operator==, so we have to provide something.
-                           return val.lock() == wptr.lock();
-                         });
+  iterator itr = std::find_if(this->begin(), this->end(),
+                              [wptr] (const std::weak_ptr<RedistributionNotificationHandle> val) {
+                                // Weak pointers don't have operator==, so we have to provide something.
+                                return val.lock() == wptr.lock();
+                              });
   CHECK(itr != this->end());
   mRedistributionNotificationHandles.erase(itr);
   ENSURE(not haveRedistributionNotificationHandle(wptr));

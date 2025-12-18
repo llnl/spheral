@@ -9,16 +9,9 @@
 
 #include <vector>
 #include <algorithm>
+
 using std::vector;
 using std::string;
-using std::pair;
-using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -45,7 +38,7 @@ globalReduceToUniqueElements(vector<int>& x) {
   // Begin by making the local copy unique.
   reduceToUniqueElements(x);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // If we're parallel, collect the unique set across all processors.
   int procID;
   int numProcs;
@@ -95,7 +88,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   REQUIRE(damage.nodeListPtr() == &nodes);
   const auto haveMask = mask.numInternalElements() == nodes.numInternalNodes();
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Get the rank and total number of processors.
   int procID = 0;
   int numProcs = 1;
@@ -114,18 +107,18 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   Neighbor<Dimension>& neighbor = nodes.neighbor();
 
   // Get the total number of nodes, and the global IDs on this domain.
-  int numGlobalNodesRemaining = numGlobalNodes(nodes);
-  vector<int> gIDs;
+  auto numGlobalNodesRemaining = numGlobalNodes(nodes);
+  vector<size_t> gIDs;
   {
-    Field<Dimension, int> globalNodeField = globalNodeIDs(nodes);
+    Field<Dimension, size_t> globalNodeField = globalNodeIDs(nodes);
     copy(globalNodeField.begin(), 
          globalNodeField.begin() + nodes.numInternalNodes(),
          back_inserter(gIDs));
   }
-  vector<int> globalNodesRemaining(gIDs);
-  const vector<int>::iterator maxGlobalItr = max_element(gIDs.begin(), 
-                                                         gIDs.end());
-  int maxGlobalID = 0;
+  vector<size_t> globalNodesRemaining(gIDs);
+  const auto maxGlobalItr = max_element(gIDs.begin(), 
+                                        gIDs.end());
+  size_t maxGlobalID = 0u;
   if (maxGlobalItr != gIDs.end()) maxGlobalID = *maxGlobalItr;
   maxGlobalID = allReduce(maxGlobalID, SPHERAL_OP_MAX);
   maxGlobalID += 1;
@@ -137,15 +130,15 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
   // Flag any nodes above the damage threshold or below the density threshold as dust.
   // Simultaneously remove them from the set of globalNodesRemaining.
-  int numDustNodes = 0;
+  size_t numDustNodes = 0u;
   for (auto i = 0u; i != nodes.numInternalNodes(); ++i) {
     int maski = haveMask ? mask(i) : -1;
     if (damage(i).Trace() > damageThreshold || density(i) < densityThreshold || maski > 0) {
       result(i) = maxGlobalID + 1;
       ++numDustNodes;
-      vector<int>::iterator removeItr = find(globalNodesRemaining.begin(),
-                                             globalNodesRemaining.end(),
-                                             gIDs[i]);
+      auto removeItr = find(globalNodesRemaining.begin(),
+                            globalNodesRemaining.end(),
+                            gIDs[i]);
       CHECK(removeItr != globalNodesRemaining.end());
       globalNodesRemaining.erase(removeItr);
     }
@@ -153,7 +146,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
   // Reduce the count of remaining nodes by the number of dust nodes.
   numDustNodes = allReduce(numDustNodes, SPHERAL_OP_SUM);
-  CHECK(numDustNodes >= 0 && numDustNodes <= numGlobalNodesRemaining);
+  CHECK(numDustNodes <= numGlobalNodesRemaining);
   numGlobalNodesRemaining -= numDustNodes;
   CHECK(numGlobalNodesRemaining >= 0);
 
@@ -166,29 +159,29 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   while (numGlobalNodesRemaining > 0) {
 
     // Find the minimum unassigned node ID.
-    const vector<int>::iterator globalMinItr = min_element(globalNodesRemaining.begin(),
-                                                           globalNodesRemaining.end());
-    int globalMinID = maxGlobalID;
+    const auto globalMinItr = std::min_element(globalNodesRemaining.begin(),
+                                               globalNodesRemaining.end());
+    auto globalMinID = maxGlobalID;
     if (globalMinItr != globalNodesRemaining.end()) globalMinID = *globalMinItr;
     globalMinID = allReduce(globalMinID, SPHERAL_OP_MIN);
     CHECK(globalMinID < maxGlobalID);
 
     // Is this node on this domain?
-    int ilocal = globalMinID;
+    auto ilocal = globalMinID;
     bool localNode = true;
-#ifdef USE_MPI
-    int nodeDomain = procID;
-    const vector<int>::iterator ilocalItr = find(gIDs.begin(),
-                                                 gIDs.end(),
-                                                 globalMinID);
+#ifdef SPHERAL_ENABLE_MPI
+    auto nodeDomain = procID;
+    const auto ilocalItr = find(gIDs.begin(),
+                                gIDs.end(),
+                                globalMinID);
     localNode = (ilocalItr != gIDs.end());
     CHECK(allReduce(localNode ? 1 : 0, SPHERAL_OP_SUM) == 1);
-    int tmp = numProcs;
+    auto tmp = numProcs;
     if (localNode) {
       CHECK(ilocalItr != gIDs.end());
       ilocal = distance(gIDs.begin(), ilocalItr);
       tmp = procID;
-      CHECK(result(ilocal) == maxGlobalID);
+      CHECK(result(ilocal) == int(maxGlobalID));
     }
     nodeDomain = allReduce(tmp, SPHERAL_OP_MIN);
     CHECK(nodeDomain >= 0 && nodeDomain < numProcs);
@@ -202,7 +195,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
       ri = r(ilocal);
       Hi = H(ilocal);
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     MPI_Bcast(&(*ri.begin()), Dimension::nDim, MPI_DOUBLE, nodeDomain, Communicator::communicator());
     MPI_Bcast(&(*Hi.begin()), Hsize, MPI_DOUBLE, nodeDomain, Communicator::communicator());
 #endif
@@ -221,7 +214,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
       const Vector rij = ri - rj;
       const double etai = (Hi*rij).magnitude();
       const double etaj = (Hj*rij).magnitude();
-      if (result(*itr) <= maxGlobalID && 
+      if (result(*itr) <= int(maxGlobalID) && 
           (etai <= linkRadius || etaj <= linkRadius)) {
         significantNeighbors.push_back(*itr);
         fragIDs.push_back(result(*itr));
@@ -234,34 +227,28 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
     // Find the minimum fragment ID currently assigned to any of these nodes.
     // If there are no fragments assigned yet, then we'll make this a new fragment ID.
-    int fragID = *min_element(fragIDs.begin(), fragIDs.end());
-    if (fragID == maxGlobalID) {
+    int fragID = *std::min_element(fragIDs.begin(), fragIDs.end());
+    if (fragID == int(maxGlobalID)) {
       fragID = numFragments;
       numFragments += 1;
     }
     CHECK(fragID >= 0 && fragID < numFragments);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     CHECK(allReduce(fragID, SPHERAL_OP_SUM) == numProcs*fragID);
     CHECK(allReduce(numFragments, SPHERAL_OP_SUM) == numProcs*numFragments);
 #endif
 
     // Remove the known maxGlobalID from the stack of fragment IDs.
-    CHECK(fragIDs.back() == maxGlobalID);
+    CHECK(fragIDs.back() == int(maxGlobalID));
     fragIDs.pop_back();
 
     // Assign the current set of neighbors this fragment ID.
-    for (typename vector<int>::const_iterator itr = significantNeighbors.begin();
-         itr != significantNeighbors.end();
-         ++itr) result(*itr) = fragID;
+    for (auto j: significantNeighbors) result(j) = fragID;
 
     // Now assign any nodes that have one of the old fragment IDs to this fragment.
-    for (vector<int>::const_iterator fragItr = fragIDs.begin();
-         fragItr != fragIDs.end();
-         ++fragItr) {
-      for (typename Field<Dimension, int>::iterator resultItr = result.begin();
-           resultItr != result.end();
-           ++resultItr) {
-        if (*resultItr == *fragItr) *resultItr = fragID;
+    for (auto ifrag: fragIDs) {
+      for (auto k = 0u; k < result.numInternalElements(); ++k) {
+        if (result[k] == ifrag) result[k] = fragID;
       }
     }
 
@@ -272,9 +259,9 @@ computeFragmentField(const NodeList<Dimension>& nodes,
     for (typename vector<int>::iterator itr = significantNeighbors.begin();
          itr != significantNeighbors.end();
          ++itr) {
-      vector<int>::iterator removeItr = find(globalNodesRemaining.begin(),
-                                             globalNodesRemaining.end(),
-                                             gIDs[*itr]);
+      auto removeItr = find(globalNodesRemaining.begin(),
+                            globalNodesRemaining.end(),
+                            gIDs[*itr]);
       if (removeItr != globalNodesRemaining.end())
         globalNodesRemaining.erase(removeItr);
     }
@@ -282,12 +269,11 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
     BEGIN_CONTRACT_SCOPE
     {
-      for (typename vector<int>::iterator itr = significantNeighbors.begin();
-           itr != significantNeighbors.end();
-           ++itr) {
+      for (auto j: significantNeighbors) {
+        CONTRACT_VAR(j) ;
         CHECK(find(globalNodesRemaining.begin(),
                    globalNodesRemaining.end(),
-                   gIDs[*itr]) == globalNodesRemaining.end());
+                   gIDs[j]) == globalNodesRemaining.end());
       }
     }
     END_CONTRACT_SCOPE
@@ -296,7 +282,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 
   // Make sure all nodes have been assigned to a valid fragment.
   CHECK(nodes.numInternalNodes() == 0 ||
-        *min_element(result.begin(), result.end()) >= 0);
+        *std::min_element(result.begin(), result.end()) >= 0);
 
 //   // Assign the dust nodes a fragment index of -1.
 //   for (int i = 0; i != nodes.numInternalNodes(); ++i) {
@@ -329,7 +315,7 @@ computeFragmentField(const NodeList<Dimension>& nodes,
         rfrag[result[i]] += m(i)*r(i);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     for (int i = 0; i != numFragments - 1; ++i) {
       double mtmp = mfrag[i];
       Vector rtmp = rfrag[i];

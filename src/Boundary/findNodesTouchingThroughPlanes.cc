@@ -9,12 +9,12 @@ namespace Spheral {
 using std::vector;
 
 template<typename Dimension>
-std::vector<int>
+std::vector<size_t>
 findNodesTouchingThroughPlanes(const NodeList<Dimension>& nodeList,
                                const GeomPlane<Dimension>& enterPlane,
                                const GeomPlane<Dimension>& exitPlane,
                                const double hmultiplier) {
-  vector<int> result;
+  vector<size_t> result;
 
   // Get the Neighbor object associated with the node list.
   auto& neighbor = nodeList.neighbor();
@@ -59,9 +59,9 @@ findNodesTouchingThroughPlanes(const NodeList<Dimension>& nodeList,
         const auto  disti = exitPlane.signedDistance(ri)/hmax;
         // const GeomPlane<Dimension> exitPlanePrime(Hi*(exitPlane.point() - ri),
         //                                           (Hi*exitPlane.normal()).unitVector());
-        // const Scalar disti = exitPlanePrime.signedDistance(Vector::zero);
+        // const Scalar disti = exitPlanePrime.signedDistance(Vector::zero());
         if (disti >= 0.0 and disti <= kernelExtent) result.push_back(i);
-        // cerr << " --> " << i << " " << ri << " " << enterPlanePrime.minimumDistance(Vector::zero) << " " << exitPlanePrime.minimumDistance(Vector::zero) << endl;
+        // cerr << " --> " << i << " " << ri << " " << enterPlanePrime.minimumDistance(Vector::zero()) << " " << exitPlanePrime.minimumDistance(Vector::zero()) << endl;
       }
     }
 

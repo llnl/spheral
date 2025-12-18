@@ -15,6 +15,8 @@
 #include "Utilities/uniform_random.hh"
 #include "RK/RKCorrectionParams.hh"
 #include "RK/RKCoefficients.hh"
+#include "Distributed/Process.hh"
+#include "Distributed/Communicator.hh"
 
 #include <stdint.h>
 #include <vector>
@@ -23,11 +25,6 @@
 #include <iterator>
 #include <string>
 #include <tuple>
-
-#ifdef USE_MPI
-#include <mpi.h>
-#include "Distributed/Communicator.hh"
-#endif
 
 namespace Spheral {
 
@@ -735,7 +732,7 @@ template<typename Dimension, typename DataType>
 inline
 int
 computeBufferSize(const Field<Dimension, DataType>& /*field*/,
-                  const std::vector<int>& packIndices,
+                  const std::vector<size_t>& packIndices,
                   const int /*sendProc*/,
                   const int /*recvProc*/) {
   return (packIndices.size() * 
@@ -748,7 +745,7 @@ template<typename Dimension, typename DataType>
 inline
 int
 computeBufferSize(const Field<Dimension, std::vector<DataType> >& field,
-                  const std::vector<int>& packIndices,
+                  const std::vector<size_t>& packIndices,
                   const int sendProc,
                   const int recvProc) {
 
@@ -757,33 +754,28 @@ computeBufferSize(const Field<Dimension, std::vector<DataType> >& field,
                            sizeof(typename DataTypeTraits<DataType>::ElementType));
 
   // Find the rank of this processor.
-  int rank = 0;
-#ifdef USE_MPI
-  MPI_Comm_rank(Communicator::communicator(), &rank);
-#else
-  CONTRACT_VAR(recvProc);
-#endif
+  int rank = Process::getRank();
   REQUIRE(rank == sendProc || rank == recvProc);
 
   // The send proc can compute the necessary size.
   int bufSize = 0;
   if (rank == sendProc) {
-    for (std::vector<int>::const_iterator itr = packIndices.begin();
-         itr != packIndices.end();
-         ++itr) {
-      bufSize += field(*itr).size();
+    for (auto i: packIndices) {
+      bufSize += field(i).size();
     }
     bufSize *= elementSize;
   }
 
   // Communicate the result to the receiving processor.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (rank == recvProc) {
     MPI_Status status;
     MPI_Recv(&bufSize, 1, MPI_INT, sendProc, 103, Communicator::communicator(), &status);
   } else if (rank == sendProc) {
     MPI_Send(&bufSize, 1, MPI_INT, recvProc, 103, Communicator::communicator());
   }
+#else
+  CONTRACT_VAR(recvProc);
 #endif
   return bufSize;
 }
@@ -795,18 +787,16 @@ template<typename Dimension, typename DataType>
 inline
 std::vector<char>
 packFieldValues(const Field<Dimension, DataType>& field,
-                const std::vector<int>& packIndices) {
+                const std::vector<size_t>& packIndices) {
 
   // Prepare the return vector.
   std::vector<char> result;
 
   // Loop over the elements of the Field we are packing, and push the 
   // packed elements onto the result.
-  for (std::vector<int>::const_iterator elementItr = packIndices.begin();
-       elementItr != packIndices.end();
-       ++elementItr) {
-    CHECK(*elementItr >= 0 && *elementItr < (int)field.numElements());
-    packElement(field(*elementItr), result);
+  for (auto i: packIndices) {
+    CHECK(i < field.numElements());
+    packElement(field(i), result);
   }
 
   return result;
@@ -831,17 +821,15 @@ template<typename Dimension, typename DataType>
 inline
 void
 unpackFieldValues(Field<Dimension, DataType>& field,
-                  const std::vector<int>& packIndices,
+                  const std::vector<size_t>& packIndices,
                   const std::vector<char>& packedValues) {
 
   // Loop over the elements of the Field we are unpacking.
-  typename std::vector<char>::const_iterator bufItr = packedValues.begin();
-  for (std::vector<int>::const_iterator elementItr = packIndices.begin();
-       elementItr != packIndices.end();
-       ++elementItr) {
-    CHECK(*elementItr >= 0 && *elementItr < (int)field.numElements());
+  auto bufItr = packedValues.begin();
+  for (auto i: packIndices) {
+    CHECK(i < field.numElements());
     CHECK(bufItr < packedValues.end());
-    unpackElement(field(*elementItr), bufItr, packedValues.end());
+    unpackElement(field(i), bufItr, packedValues.end());
     CHECK(bufItr <= packedValues.end());
   }
 

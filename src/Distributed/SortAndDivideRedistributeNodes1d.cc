@@ -13,6 +13,7 @@
 #include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -27,12 +28,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -60,7 +55,6 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
                   vector<Boundary<Dim<1> >*> boundaries) {
 
   // Number of processors.
-  const int procID = this->domainID();
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
@@ -102,7 +96,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
   }
 
   // Build the set of global node IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Get the local description of the domain distribution.
   vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, work);
@@ -114,8 +108,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cout << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:" << endl
-                        << initialLoadStats << endl << endl;
+  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n");
 
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -183,8 +176,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cout << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:" << endl
-                        << finalLoadStats << endl << endl;
+  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
   MPI_Barrier(Communicator::communicator());
 
 }

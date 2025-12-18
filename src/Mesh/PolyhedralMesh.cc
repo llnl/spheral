@@ -3,7 +3,7 @@
 //
 // Created by JMO, Wed Jan  5 21:09:11 PST 2011
 //----------------------------------------------------------------------------//
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 #include "polytope/polytope.hh"
 #endif
 
@@ -12,8 +12,6 @@
 #include "Utilities/DBC.hh"
 #include "Utilities/timingUtilities.hh"
 #include "Distributed/Communicator.hh"
-
-using namespace boost;
 
 #include <limits>
 #include <set>
@@ -24,12 +22,6 @@ using std::set;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -55,7 +47,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
   CONTRACT_VAR(generators);
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
-#ifndef NOPOLYTOPE
+#ifdef USE_POLYTOPE
 
   // Some useful typedefs.
   typedef Dim<3> Dimension;
@@ -108,7 +100,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
   Timing::Time t0 = Timing::currentTime();
   polytope::Tessellation<3, double> tessellation;
 //   {
-// #ifdef USE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //     polytope::SerialDistributedTessellator<3, double> tessellator
 // #if defined USE_TETGEN && ( USE_TETGEN>0 )
 //         (new polytope::TetgenTessellator(),
@@ -117,13 +109,13 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
 // #endif
 //          true,     // Manage memory for serial tessellator
 //          true);    // Build parallel connectivity
-// #else  // not USE_MPI
+// #else  // not ENABLE_MPI
 // #if defined USE_TETGEN && ( USE_TETGEN>0 )
 //     polytope::TetgenTessellator tessellator ;
 // #else
 //     polytope::VoroPP_3d<double> tessellator ;
 // #endif
-// #endif  // USE_MPI
+// #endif  // ENABLE_MPI
 
 //     // Bounded Voronoi tessellation
 //     tessellator.tessellate(gens, 
@@ -206,7 +198,7 @@ reconstructInternal(const vector<Dim<3>::Vector>& generators,
                                     << Timing::difference(t0, Timing::currentTime())
                                     << " seconds to construct mesh elements." << endl;
 
-#endif
+#endif // USE_POLYTOPE
 }
 
 //------------------------------------------------------------------------------
@@ -273,7 +265,7 @@ boundingSurface() const {
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // In the parallel case we have to construct the total surface and distribute
   // it to everyone.
   //const unsigned rank = Process::getRank();

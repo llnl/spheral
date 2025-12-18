@@ -11,10 +11,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 template<typename Dimension>
 void
 computeSPHOmegaGradhCorrection(const ConnectivityMap<Dimension>& connectivityMap,

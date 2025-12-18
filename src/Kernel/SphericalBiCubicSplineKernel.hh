@@ -31,9 +31,6 @@ public:
   SphericalBiCubicSplineKernel(const unsigned numKernel = 200u);
   SphericalBiCubicSplineKernel(const SphericalBiCubicSplineKernel& rhs);
 
-  // Destructor.
-  virtual ~SphericalBiCubicSplineKernel();
-
   // Assignment.
   SphericalBiCubicSplineKernel& operator=(const SphericalBiCubicSplineKernel& rhs);
 

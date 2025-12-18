@@ -77,30 +77,30 @@ public:
           
   // Some of the following methods are disabled
   virtual Scalar pressure(const Scalar /*massDensity*/,
-                          const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                          const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar temperature(const Scalar /*massDensity*/,
-                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar specificThermalEnergy(const Scalar /*massDensity*/,
-                                       const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                                       const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar specificHeat(const Scalar /*massDensity*/,
-                              const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                              const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar soundSpeed(const Scalar /*massDensity*/,
-                            const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                            const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   // Get the effective gamma (ratio of specific heats) for this eos.
   virtual Scalar gamma(const Scalar /*massDensity*/,
-                       const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                       const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   // Get the bulk modulus.
   virtual Scalar bulkModulus(const Scalar /*massDensity*/,
-                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar entropy(const Scalar /*massDensity*/,
-                         const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                         const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
 
           
   const Field<Dimension, Scalar>& abar() const;

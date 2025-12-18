@@ -48,12 +48,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -220,7 +214,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero, HydroFieldNames::selfAccelerations, false);
+    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
     derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
     derivs.enroll(HydroFieldNames::selfAccelerations, mSelfAccelerations);
   }
@@ -237,7 +231,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 
   // Convert the mass to mass per unit length first.
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
   const unsigned numNodeLists = mass.numFields();
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = mass[nodeListi]->numElements();
@@ -329,23 +323,23 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero);
+  const auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
   const auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
-  const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -366,18 +360,18 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto  DrhoDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
-  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
+  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
-  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero);
-  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
-  auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero);
+  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
+  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
+  auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
   CHECK(DvDt.size() == numNodeLists);
@@ -405,7 +399,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
     Vector gradWi, gradWj;
     Vector deltagrad, forceij, forceji;
     Vector xij, vij, etai, etaj;
-    SymTensor sigmai, sigmaj, xijdyad;
+    SymTensor sigmai, sigmaj;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDt_thread = DvDt.threadCopy(threadStack);
@@ -525,11 +519,11 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
 
       // Compute the stress tensors.
       if (sameMatij) {
-        sigmai = fDij*Si - Pi * SymTensor::one;
-        sigmaj = fDij*Sj - Pj * SymTensor::one;
+        sigmai = fDij*Si - Pi * SymTensor::one();
+        sigmaj = fDij*Sj - Pj * SymTensor::one();
       } else {
-        sigmai = -Pi * SymTensor::one;
-        sigmaj = -Pj * SymTensor::one;
+        sigmai = -Pi * SymTensor::one();
+        sigmaj = -Pj * SymTensor::one();
       }
 
       // We decide between RK and CRK for the momentum and energy equations based on the surface condition.
@@ -630,7 +624,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
       DrhoDti = -rhoi*(localDvDxi.Trace() + vri*riInv);
 
       // For a surface point, add the RK thermal energy evolution.
-      // if (surfacePoint(nodeListi, i) > 1) DepsDti += (Si - Pi*SymTensor::one).doubledot(DvDxi)/rhoi;
+      // if (surfacePoint(nodeListi, i) > 1) DepsDti += (Si - Pi*SymTensor::one()).doubledot(DvDxi)/rhoi;
 
       // Finish the specific thermal energy evolution.
       DepsDti += (STTi - Pi)/rhoi*vri*riInv;
@@ -652,7 +646,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
       const auto deformation = localDvDxi.Symmetric();
       const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one;
+      const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
       const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
@@ -672,7 +666,7 @@ applyGhostBoundaries(State<Dimension>& state,
 
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero);
+  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
   const unsigned numNodeLists = mass.numFields();
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = mass[nodeListi]->numElements();
@@ -716,7 +710,7 @@ enforceBoundaries(State<Dimension>& state,
 
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero);
+  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
   const unsigned numNodeLists = mass.numFields();
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = mass[nodeListi]->numInternalElements();
@@ -736,7 +730,7 @@ enforceBoundaries(State<Dimension>& state,
 
   // Scale back to mass.
   // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = mass[nodeListi]->numInternalElements();
     //const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();

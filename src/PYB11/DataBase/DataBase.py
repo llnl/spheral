@@ -42,8 +42,8 @@ class DataBase:
 
     @PYB11const
     def patchConnectivityMap(self,
-                             flags = "const FieldList<%(Dimension)s, int>&",
-                             old2new = "const FieldList<%(Dimension)s, int>&"):
+                             flags = "const FieldList<%(Dimension)s, size_t>&",
+                             old2new = "const FieldList<%(Dimension)s, size_t>&"):
         "Update the internal connectivity map."
         return "void"
 
@@ -78,6 +78,9 @@ class DataBase:
         "Add a NodeList"
         return "void"
 
+    # Bug: if you change this to a unique name, then when adding a DEM NodeList,
+    # it will call the base NodeList function instead of this one. Voodoo?
+    # It is probably overwriting the above function for standard NodeList.
     @PYB11pycppname("appendNodeList")
     def appendNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Add a DEMNodeList"
@@ -97,6 +100,7 @@ class DataBase:
         "Remove a NodeList"
         return "void"
 
+    # See the comment above for appendNodeList2
     @PYB11pycppname("deleteNodeList")
     def deleteNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Remove a DEMNodeList"
@@ -739,7 +743,7 @@ will get the new value regardless of resetValues."""
     DEMParticleRadius = PYB11property("FieldList<%(Dimension)s, Scalar>")
     DEMHfield = PYB11property("FieldList<%(Dimension)s, SymTensor>")
     DEMCompositeParticleIndex = PYB11property("FieldList<%(Dimension)s, int>")
-    DEMUniqueIndex = PYB11property("FieldList<%(Dimension)s, int>") 
+    DEMUniqueIndex = PYB11property("FieldList<%(Dimension)s, size_t>") 
 
     globalNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")
     fluidNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")

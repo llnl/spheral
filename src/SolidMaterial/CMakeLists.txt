@@ -59,7 +59,7 @@ spheral_install_python_files(
     )
 
 # ANEOS
-if (ENABLE_ANEOS)
+if (SPHERAL_ENABLE_ANEOS)
   message("-- ANEOS enabled")
   list(APPEND SolidMaterial_inst      ANEOS)
   list(APPEND SolidMaterial_headers   ANEOS.hh)

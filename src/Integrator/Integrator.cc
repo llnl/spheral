@@ -29,12 +29,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -155,7 +149,7 @@ selectDt(const typename Dimension::Scalar dtMin,
         dt.first >= dtMin and dt.first <= dtMax);
 
   // In the parallel case we need to find the minimum timestep across all processors.
-#ifdef GLOBALDT_REDUCTION
+#ifdef SPHERAL_ENABLE_GLOBALDT_REDUCTION
   const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
 #else
   const auto globalDt = dt.first;
@@ -164,11 +158,11 @@ selectDt(const typename Dimension::Scalar dtMin,
   // Are we verbose?
   if (dt.first == globalDt and 
       (verbose() or globalDt < mDtMin)) {
-    cout << "Selected timestep of "
-         << dt.first << endl
-         << dt.second << endl;
+    std::cout << "Selected timestep of "
+              << dt.first << std::endl
+              << dt.second << std::endl;
   }
-  cout.flush();
+  std::cout.flush();
   dt.first = globalDt;
 
   return dt.first;
@@ -201,9 +195,8 @@ Integrator<Dimension>::initializeDerivatives(const double t,
 
   // Initialize the work fields.
   auto& db = mDataBase.get();
-  for (auto* nodeListPtr: range(db.nodeListBegin(), db.nodeListEnd())) {
-    nodeListPtr->work() = 0.0;
-  }
+  auto work = db.globalWork();
+  work = 0.0;
 
   // Loop over the physics packages and perform any necessary initializations.
   auto updateBoundaries = false;
@@ -460,7 +453,7 @@ Integrator<Dimension>::setGhostNodes() const {
       const auto& cm = db.connectivityMap();
 
       // First build the set of flags indicating which nodes are used.
-      FieldList<Dimension, int> flags = db.newGlobalFieldList(0, "active nodes");
+      FieldList<Dimension, size_t> flags = db.newGlobalFieldList(size_t(0u), "active nodes");
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto& nodeList = *nodeListPtr;
         for (auto i = 0u; i < nodeList.numInternalNodes(); ++i) {
@@ -481,7 +474,7 @@ Integrator<Dimension>::setGhostNodes() const {
           const auto& ghostNodes = boundary.ghostNodes(nodeList);
           // CHECK(controlNodes.size() == ghostNodes.size());  // Not true if this is a DistributedBoundary!
           for (auto i: controlNodes) {
-            if (i >= (int)firstGhostNode) flags(nodeListi, i) = 1;
+            if (i >= firstGhostNode) flags(nodeListi, i) = 1;
           }
 
           // Boundary conditions are allowed to opt out of culling entirely.
@@ -492,14 +485,14 @@ Integrator<Dimension>::setGhostNodes() const {
       }
 
       // Create the index mapping from old to new node orderings.
-      FieldList<Dimension, int> old2newIndexMap = db.newGlobalFieldList(int(0), "index map");
+      FieldList<Dimension, size_t> old2newIndexMap = db.newGlobalFieldList(size_t(0u), "index map");
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto numNodes = nodeListPtr->numNodes();
         for (auto i = 0u; i < numNodes; ++i) old2newIndexMap(nodeListi, i) = i;
       }
 
       // Now use these flags to cull the boundary conditions.
-      vector<int> numNodesRemoved(numNodeLists, 0);
+      vector<size_t> numNodesRemoved(numNodeLists, 0);
       for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
         boundaryPtr->cullGhostNodes(flags, old2newIndexMap, numNodesRemoved);
       }
@@ -511,7 +504,7 @@ Integrator<Dimension>::setGhostNodes() const {
       // the ghost nodes themselves from the NodeLists.
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         auto& nodeList = *nodeListPtr;
-        vector<int> nodesToRemove;
+        vector<size_t> nodesToRemove;
         for (auto i = nodeList.firstGhostNode(); i < nodeList.numNodes(); ++i) {
           if (flags(nodeListi, i) == 0) nodesToRemove.push_back(i);
         }
@@ -524,7 +517,7 @@ Integrator<Dimension>::setGhostNodes() const {
       {
         for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
           ENSURE(flags[nodeListi]->numElements() == 0 or
-                 *min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
+                 *std::min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
         }
       }
       END_CONTRACT_SCOPE
@@ -681,10 +674,10 @@ template<typename Dimension>
 void
 Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
                                       State<Dimension>& state1) const {
-  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero);
-  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
+  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
   for (GhostNodeIterator<Dimension> itr = x0.ghostNodeBegin();
        itr != x0.ghostNodeEnd();
        ++itr) {

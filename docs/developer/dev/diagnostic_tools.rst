@@ -14,10 +14,10 @@ When using Valgrind to check Spheral, be sure to use the provided suppression fi
 Using Caliper
 =============
 
-Spheral uses Caliper to perform code diagnostics, such as timing. To enable this functionality in the code, Spheral needs to be configured with ``ENABLE_TIMER=ON``. Otherwise, the timing regions are no-ops for improved performance.
+Spheral uses Caliper to perform code diagnostics, such as timing. To enable this functionality in the code, Spheral needs to be configured with ``SPHERAL_ENABLE_TIMERS=ON``. Otherwise, the timing regions are no-ops for improved performance.
 ::
 
-  ./scripts/devtools/host-config-build.py <sys_type>-<spec>.cmake -DENABLE_TIMER=ON
+  ./scripts/devtools/host-config-build.py <sys_type>-<spec>.cmake -DSPHERAL_ENABLE_TIMERS=ON
 
 Caliper is configured and started through the ``cali::ConfigManager``.
 The ``cali::ConfigManager`` is wrapped in a ``TimerMgr`` singleton class, which has a python interface.

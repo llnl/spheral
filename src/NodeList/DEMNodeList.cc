@@ -25,27 +25,19 @@ namespace Spheral {
 template<typename Dimension>
 DEMNodeList<Dimension>::
 DEMNodeList(string name,
-              const int numInternal,
-              const int numGhost,
-              const Scalar hmin,
-              const Scalar hmax,
-              const Scalar hminratio,
-              const Scalar nPerh,
-              const Scalar neighborSearchBuffer,
-              const int maxNumNeighbors):
+            const size_t numInternal,
+            const size_t numGhost,
+            const Scalar hmin,
+            const Scalar hmax,
+            const Scalar hminratio,
+            const Scalar nPerh,
+            const Scalar neighborSearchBuffer,
+            const size_t maxNumNeighbors):
   NodeList<Dimension>(name, numInternal, numGhost, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
   mNeighborSearchBuffer(neighborSearchBuffer),
   mParticleRadius(DEMFieldNames::particleRadius, *this),
   mCompositeParticleIndex(DEMFieldNames::compositeParticleIndex, *this),
   mUniqueIndex(DEMFieldNames::uniqueIndices, *this){
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-DEMNodeList<Dimension>::
-~DEMNodeList() {
 }
 
 //------------------------------------------------------------------------------
@@ -76,7 +68,7 @@ compositeParticleIndex(const Field<Dimension, int>& ids) {
 template<typename Dimension>
 void
 DEMNodeList<Dimension>::
-uniqueIndex(const Field<Dimension, int>& ids) {
+uniqueIndex(const Field<Dimension, size_t>& ids) {
   mUniqueIndex = ids;
   mUniqueIndex.name(DEMFieldNames::uniqueIndices);
 }
@@ -131,7 +123,7 @@ uniqueIndex(const Field<Dimension, int>& ids) {
 template<typename Dimension>
 void
 DEMNodeList<Dimension>::
-setHfieldFromParticleRadius(const int startUniqueIndex){
+setHfieldFromParticleRadius(const size_t startUniqueIndex){
   
   const auto kernelExtent = this->neighbor().kernelExtent();
   const auto& radius = this->particleRadius();
@@ -142,11 +134,11 @@ setHfieldFromParticleRadius(const int startUniqueIndex){
 #pragma omp parallel for
   for (auto i = 0u; i < ni; ++i) {
     const auto ui = uniqId[i];
-    if(ui >= startUniqueIndex){
+    if(ui >= startUniqueIndex) {
       const auto Ri = radius[i];
       auto& Hi = Hfield[i];
       const auto hInv = safeInv(2.0 * Ri * (1.0+mNeighborSearchBuffer)/kernelExtent);
-      Hi = SymTensor::one * hInv;
+      Hi = SymTensor::one() * hInv;
     }
   }
 }

@@ -82,11 +82,11 @@ def PSPH(dataBase,
     if smoothingScaleMethod is None:
         if ASPH:
             if isinstance(ASPH, str) and ASPH.upper() == "CLASSIC":
-                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d({HUpdate}, W)")
+                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d(HUpdate, W)")
             else:
-                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d({HUpdate}, W)")
+                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d(HUpdate, W)")
         else:
-            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d({HUpdate}, W)")
+            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d(HUpdate, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
     result.appendSubPackage(smoothingScaleMethod)
 

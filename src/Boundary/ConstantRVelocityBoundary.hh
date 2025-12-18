@@ -36,7 +36,7 @@ public:
 
   // Constructors and destructors.
   ConstantRVelocityBoundary(const NodeList<Dimension>& nodeList,
-                            const std::vector<int>& nodeIndicies);
+                            const std::vector<size_t>& nodeIndices);
   virtual ~ConstantRVelocityBoundary();
 
   //**********************************************************************

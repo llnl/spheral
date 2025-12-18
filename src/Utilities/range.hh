@@ -7,8 +7,6 @@
 #ifndef __Spheral_range_iterations__
 #define __Spheral_range_iterations__
 
-// #include <boost/range.hpp>
-// #include <boost/range/iterator.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <utility>
 #include <tuple>

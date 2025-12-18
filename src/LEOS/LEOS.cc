@@ -14,17 +14,9 @@
 
 #include <LEOS.h>
 
-#include <boost/filesystem.hpp>
-
 #include <algorithm>
+#include <filesystem>
 #include <sstream>
-
-using std::min;
-using std::max;
-using std::abs;
-using std::cout;
-using std::cerr;
-using std::endl;
 
 using namespace LEOS;   // This namespace being the same as our class name causes confusion without this
 
@@ -297,7 +289,7 @@ LEOS(const int materialNumber,
 
   // Add this material and its functions to the LEOS data base
   VERIFY2(dbname == "leos" or
-          boost::filesystem::exists(dbname),
+          std::filesystem::exists(dbname),
           "LEOS Error: unable to access data base file " << dbname);
   auto matPtr = LEOS_bundle::materialPtr(materialNumber, dbname, dbformat);
 

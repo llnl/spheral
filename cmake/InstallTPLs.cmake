@@ -17,7 +17,7 @@ include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralPRT.cmake)
 # Submodules
 #-----------------------------------------------------------------------------------
 
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
   # Find the appropriate Python
   find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
   set(SPHERAL_SITE_PACKAGES_PATH "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" )
@@ -40,12 +40,16 @@ if (NOT ENABLE_CXXONLY)
   set_target_properties(pybind11_headers PROPERTIES EXPORT_NAME spheral::pybind11_headers)
 
   # Install Spheral Python Build Dependencies to a python virtual env in the build tree.
+
+  # Need to set up the build env here so the python library targets can depend on
+  # python_build_env.
   set(BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/build-requirements.txt)
-  if(ENABLE_DOCS)
+  list(APPEND BUILD_REQ_LIST ${SPHERAL_BINARY_DIR}/scripts/runtime-requirements.txt)
+  if(SPHERAL_ENABLE_DOCS)
     list(APPEND BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/docs-requirements.txt)
   endif()
 
-  Spheral_Python_Env(python_build_env 
+  Spheral_Python_Env(python_build_env
     REQUIREMENTS ${BUILD_REQ_LIST}
     PREFIX ${CMAKE_BINARY_DIR}
   )
@@ -59,18 +63,19 @@ if (NOT polyclipper_DIR)
   # If no PolyClipper is specified, build it as an internal target
   set(polyclipper_DIR "${SPHERAL_ROOT_DIR}/extern/PolyClipper")
   # Must set this so PolyClipper doesn't include unnecessary python scripts
+  if(NOT SPHERAL_ENABLE_PYTHON)
+    set(POLYCLIPPER_ENABLE_PYTHON OFF)
+  endif()
   set(POLYCLIPPER_MODULE_GEN OFF)
   set(POLYCLIPPER_ENABLE_DOCS OFF)
   set(POLYCLIPPER_INSTALL_DIR "PolyClipper/include")
   add_subdirectory(${polyclipper_DIR} ${CMAKE_CURRENT_BINARY_DIR}/PolyClipper)
-  # Treat includes as system to prevent warnings
-  blt_convert_to_system_includes(TARGET PolyClipperAPI)
   list(APPEND SPHERAL_BLT_DEPENDS PolyClipperAPI)
   install(TARGETS PolyClipperAPI
     EXPORT spheral_cxx-targets
     DESTINATION lib/cmake)
   set_target_properties(PolyClipperAPI PROPERTIES EXPORT_NAME spheral::PolyClipperAPI)
-  message("Found PolyClipper External Package")
+  message("Found PolyClipper External Package.")
 else()
   list(APPEND SPHERAL_EXTERN_LIBS polyclipper)
 endif()
@@ -85,7 +90,7 @@ set(SPHERAL_FP_DIRS )
 
 # Use find_package to get axom (which brings in fmt) and patch fmt
 find_package(axom REQUIRED NO_DEFAULT_PATH PATHS ${axom_DIR}/lib/cmake)
-list(APPEND SPHERAL_BLT_DEPENDS axom )
+list(APPEND SPHERAL_BLT_DEPENDS axom)
 list(APPEND SPHERAL_FP_TPLS axom)
 list(APPEND SPHERAL_FP_DIRS ${axom_DIR}/lib/cmake)
 
@@ -96,7 +101,6 @@ foreach(_comp ${AXOM_COMPONENTS_ENABLED})
   # strip cuda out so we have control over when cuda is enabled
   list(REMOVE_DUPLICATES axom_deps)
   list(REMOVE_ITEM axom_deps cuda)
-  blt_convert_to_system_includes(TARGET ${axom_deps})
   list(APPEND SPHERAL_BLT_DEPENDS ${axom_deps})
 endforeach()
 
@@ -107,7 +111,7 @@ if(adiak_FOUND)
   list(APPEND SPHERAL_BLT_DEPENDS adiak::adiak)
   list(APPEND SPHERAL_FP_TPLS adiak)
   list(APPEND SPHERAL_FP_DIRS ${adiak_DIR})
-  message("Found Adiak External Package")
+  message("Found Adiak External Package.")
 endif()
 
 message("-----------------------------------------------------------------------------")
@@ -117,9 +121,8 @@ if(POLYTOPE_FOUND)
   list(APPEND SPHERAL_BLT_DEPENDS polytope)
   list(APPEND SPHERAL_FP_TPLS polytope)
   list(APPEND SPHERAL_FP_DIRS ${polytope_DIR})
-  blt_convert_to_system_includes(TARGET polytope)
   # Install Polytope python library to our site-packages
-  if (NOT ENABLE_CXXONLY)
+  if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
       DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
     )
@@ -128,14 +131,14 @@ if(POLYTOPE_FOUND)
         "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
     endif()
   endif()
-  message("Found Polytope External Package")
+  message("Found Polytope External Package.")
 else()
   list(APPEND SPHERAL_EXTERN_LIBS polytope)
 endif()
 
 message("-----------------------------------------------------------------------------")
 # Use find_package to get caliper
-if (ENABLE_TIMER)
+if (SPHERAL_ENABLE_TIMERS)
   # Save caliper_DIR because it gets overwritten by find_package
   if(NOT CONFIG_CALIPER_DIR)
     # Only save if it does not exists already
@@ -146,80 +149,111 @@ if (ENABLE_TIMER)
     list(APPEND SPHERAL_BLT_DEPENDS caliper)
     list(APPEND SPHERAL_FP_TPLS caliper)
     list(APPEND SPHERAL_FP_DIRS ${caliper_DIR})
-    message("Found Caliper External Package")
+    message("Found Caliper External Package.")
   endif()
+endif()
+
+message("-----------------------------------------------------------------------------")
+# HDF5
+# This is a hack to allow other codes to use old versions of hdf5
+# Ideally, if(NOT ENABLE_STATIC_TPL) would be replaced and the
+# find_package call would be moved outside of the if statement:
+#
+# find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+# if (hdf5_FOUND)
+
+
+if(NOT ENABLE_STATIC_TPL)
+  find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
+  message("Found HDF5 External Package.")
+  list(APPEND SPHERAL_FP_TPLS hdf5)
+  list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
+  if(ENABLE_STATIC_TPL)
+    list(APPEND SPHERAL_BLT_DEPENDS hdf5-static hdf5_hl-static)
+  else()
+    list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
+  endif()
+else()
+  list(APPEND SPHERAL_EXTERN_LIBS hdf5)
 endif()
 
 message("-----------------------------------------------------------------------------")
 find_package(RAJA REQUIRED NO_DEFAULT_PATH PATHS ${raja_DIR})
-if (RAJA_FOUND) 
+if (RAJA_FOUND)
   message("Found RAJA External Package.")
-  blt_convert_to_system_includes(TARGET RAJA)
 endif()
 
 message("-----------------------------------------------------------------------------")
 find_package(umpire REQUIRED NO_DEFAULT_PATH PATHS ${umpire_DIR})
-if (umpire_FOUND) 
+if (umpire_FOUND)
   message("Found umpire External Package.")
-  blt_convert_to_system_includes(TARGET umpire)
 endif()
 
 message("-----------------------------------------------------------------------------")
 # Chai
-if(chai_DIR AND USE_EXTERNAL_CHAI)
-  find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
-  if (chai_FOUND) 
-    message("Found chai External Package.")
-  endif()
-  list(APPEND SPHERAL_FP_TPLS chai)
-  list(APPEND SPHERAL_FP_DIRS ${chai_DIR})
-else()
-  message("Using chai Submodule.")
-  set(chai_DIR "${SPHERAL_ROOT_DIR}/extern/chai")
-  set(CHAI_ENABLE_RAJA_PLUGIN On CACHE BOOL "")
-  add_subdirectory(${chai_DIR})
+find_package(chai REQUIRED NO_DEFAULT_PATH PATHS ${chai_DIR})
+if(chai_FOUND)
+  message("Found chai External Package.")
 endif()
 
 list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
-list(APPEND SPHERAL_FP_TPLS RAJA umpire)
-list(APPEND SPHERAL_FP_DIRS ${raja_DIR} ${umpire_DIR})
+list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
+list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
+
+message("-----------------------------------------------------------------------------")
+# Use find_package to get Sundials
+if (SPHERAL_ENABLE_SUNDIALS)
+  set(SUNDIALS_DIR "${sundials_DIR}")
+  find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
+    COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial
+    PATHS ${sundials_DIR}/lib64/cmake/sundials ${sundials_DIR}/lib/cmake/sundials)
+  if(SUNDIALS_FOUND)
+    set(SUNDIAL_LIBS kinsol nvecparallel nvecmpiplusx nvecserial)
+    foreach(_lib ${SUNDIAL_LIBS})
+      list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::${_lib}_static)
+    endforeach()
+    list(APPEND SPHERAL_FP_TPLS SUNDIALS)
+    list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
+    message("Found SUNDIALS External Package.")
+  endif()
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
-# Use find_package to get Sundials
-if (ENABLE_SUNDIALS)
-  set(SUNDIALS_DIR "${sundials_DIR}")
-  find_package(SUNDIALS REQUIRED NO_DEFAULT_PATH
-    COMPONENTS kinsol nvecparallel nvecmpiplusx nvecserial 
-    PATHS ${sundials_DIR}/lib64/cmake/sundials ${sundials_DIR}/lib/cmake/sundials)
-  if(SUNDIALS_FOUND)
-    list(APPEND SPHERAL_BLT_DEPENDS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
-    list(APPEND SPHERAL_FP_TPLS SUNDIALS::kinsol_static SUNDIALS::nvecparallel_static SUNDIALS::nvecmpiplusx_static SUNDIALS::nvecserial_static)
-    list(APPEND SPHERAL_FP_DIRS ${sundials_DIR})
-    message("Found SUNDIALS External Package")
-  endif()
-endif()
-
-message("-----------------------------------------------------------------------------")
+# In case we start using find_package on Silo, we should save the silo_DIR path
+set(CONFIG_SILO_DIR "${silo_DIR}" CACHE PATH "Configuration Silo directory")
 # TPLs that must be imported
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo hdf5)
+list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
 
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF ENABLE_LEOS)
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF ENABLE_ANEOS)
-blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF ENABLE_OPENSUBDIV)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF SPHERAL_ENABLE_LEOS)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF SPHERAL_ENABLE_ANEOS)
+blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS opensubdiv IF SPHERAL_ENABLE_OPENSUBDIV)
 
 # Create and install target library for each external library
 foreach(lib ${SPHERAL_EXTERN_LIBS})
   if(NOT TARGET ${lib})
     Spheral_Handle_TPL(${lib} ${TPL_SPHERAL_CMAKE_DIR})
-    blt_convert_to_system_includes(TARGET ${lib})
   endif()
   list(APPEND SPHERAL_BLT_DEPENDS ${lib})
 endforeach()
+blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
 # Note: SPHERAL_BLT_DEPENDS is made global after this in SetupSpheral.cmake
 
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
   include(${EXTERNAL_SPHERAL_TPL_CMAKE})
+endif()
+
+if (SPHERAL_ENABLE_PYTHON)
+  configure_file(
+    ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    COPYONLY)
+
+  install(FILES ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+  )
 endif()

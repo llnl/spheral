@@ -14,7 +14,7 @@ This will run the Spheral python process and import the Spheral modules.  If suc
 ATS Testing Suite
 -----------------
 
-Spheral uses ATS (Automated Testing System) to execute a suite of parallel tests. During install, a script ``spheral-ats`` is created. This script handles launching allocations and setting appropriate ATS and hardware flags for running the testing suite.
+Spheral uses ATS (Automated Testing System) to execute a suite of parallel tests. During install, a script ``spheral-ats`` is created. This script handles launching allocations and setting appropriate ATS and hardware flags for running the testing suite (so do not use ``srun`` or ``flux run``).
 
 From the install directory run:
 ::

@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// A finite-volume based viscosity.  Assumes you have constructred the 
+// A finite-volume based viscosity.  Assumes you have constructed the
 // tessellation in the state.
 //
 // Created by JMO, Tue Aug 13 09:43:37 PDT 2013

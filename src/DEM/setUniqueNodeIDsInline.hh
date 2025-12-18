@@ -9,7 +9,7 @@
 #include <vector>
 #include <tuple>
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Distributed/Communicator.hh"
 #endif
@@ -24,44 +24,44 @@ namespace Spheral {
 template<typename Dimension>
 // inline
 void
-setUniqueNodeIDs(FieldList<Dimension,int>& uniqueIndex) {
+setUniqueNodeIDs(FieldList<Dimension,size_t>& uniqueIndex) {
 
   // Prepare the result.
   const auto numFields = uniqueIndex.numFields();
   const auto maxUnique = uniqueIndex.max();
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 
   // This processors domain id.
   const int procID = Process::getRank();
   const int numProcs = Process::getTotalNumberOfProcesses();
 
   // Count up how many nodes have uninitialized unique indices
-  int numDomainNodes = 0;
-  for (auto fieldi = 0u; fieldi < numFields; ++fieldi){
-      const auto& nodeList = uniqueIndex[fieldi]->nodeList();
-      const auto ni = nodeList.numInternalNodes();
+  size_t numDomainNodes = 0u;
+  for (auto fieldi = 0u; fieldi < numFields; ++fieldi) {
+    const auto& nodeList = uniqueIndex[fieldi]->nodeList();
+    const auto ni = nodeList.numInternalNodes();
     for (auto i = 0u; i < ni; ++i) {
-      if(uniqueIndex(fieldi,i)==0) numDomainNodes += 1;
-    }  
+      if(uniqueIndex(fieldi,i)==0u) ++numDomainNodes;
+    }
   }
   
   // loop processors and send cumulative number to the next
-  int beginID = maxUnique;
-  for (int sendProc = 0; sendProc < numProcs - 1; ++sendProc) {
-    int sendProcDomainNodes = numDomainNodes;
-    MPI_Bcast(&sendProcDomainNodes, 1, MPI_INT, sendProc, Communicator::communicator());
+  auto beginID = maxUnique;
+  for (auto sendProc = 0; sendProc < numProcs - 1; ++sendProc) {
+    size_t sendProcDomainNodes = numDomainNodes;
+    MPI_Bcast(&sendProcDomainNodes, 1, DataTypeTraits<size_t>::MpiDataType(), sendProc, Communicator::communicator());
     if (procID > sendProc) beginID += sendProcDomainNodes;
   }
 
   // initialize the previously uninitialized
-  int k = 1;
+  size_t k = 1u;
   for (auto fieldi = 0u; fieldi < numFields; ++fieldi) {
     const auto& nodeList = uniqueIndex[fieldi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
 
-    for (auto i = 0u; i != ni; ++i){
-      if(uniqueIndex(fieldi,i)==0){
+    for (auto i = 0u; i < ni; ++i){
+      if(uniqueIndex(fieldi,i)==0u){
         uniqueIndex(fieldi,i) = beginID + k;
         k++;
       }
@@ -70,13 +70,13 @@ setUniqueNodeIDs(FieldList<Dimension,int>& uniqueIndex) {
 
 #else
 
-  int k = 1;
+  size_t k = 1u;
   for (auto fieldi = 0u; fieldi < numFields; ++fieldi) {
     const auto& nodeList = uniqueIndex[fieldi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
 
-    for (auto i = 0u; i != ni; ++i){
-      if(uniqueIndex(fieldi,i)==0){
+    for (auto i = 0u; i < ni; ++i){
+      if(uniqueIndex(fieldi,i)==0u){
         uniqueIndex(fieldi,i) = maxUnique + k;
         k++;
       }

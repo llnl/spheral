@@ -53,7 +53,7 @@ getQuadrature(const int numOrdinates,
               std::vector<Dim<1>::Vector>& ordinates) {
   if (numOrdinates == 1) {
     weights = {2.0};
-    ordinates = {Dim<1>::Vector::zero};
+    ordinates = {Dim<1>::Vector::zero()};
   }
   else {
     // Get the quadrature values
@@ -96,7 +96,7 @@ getQuadrature(const int numOrdinates,
               std::vector<Dim<2>::Vector>& ordinates) {
   if (numOrdinates == 1) {
     weights = {2.0};
-    ordinates = {Dim<2>::Vector::zero};
+    ordinates = {Dim<2>::Vector::zero()};
   }
   else {
     // Get the quadrature values
@@ -129,6 +129,21 @@ getQuadrature(const int numOrdinates,
     // Make sure the ordinates got put in correctly
     CHECK(ordinates.size() == size_t(numOrdinates));
     CHECK(weights.size() == size_t(numOrdinates));
+  }
+}
+
+void
+GaussLegendreValues::
+getQuadrature(const int numOrdinates,
+              std::vector<double>& weights,
+              std::vector<double>& ordinates) {
+  std::vector<Dim<1>::Vector> ordinatesVec;
+  getQuadrature(numOrdinates, weights, ordinatesVec);
+  REQUIRE(weights.size() == static_cast<size_t>(numOrdinates) &&
+          ordinatesVec.size() == static_cast<size_t>(numOrdinates));
+  ordinates.resize(numOrdinates);
+  for (auto i = 0; i < numOrdinates; ++i) {
+    ordinates[i] = ordinatesVec[i].x();
   }
 }
 

@@ -13,9 +13,12 @@
 #include "Field/NodeIterators.hh"
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/packElement.hh"
+#include "Utilities/range.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/RedistributionRegistrar.hh"
-#include "Communicator.hh"
+#include "Distributed/allReduce.hh"
+#include "Distributed/Communicator.hh"
 
 #include "Utilities/DBC.hh"
 
@@ -30,12 +33,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -79,10 +76,10 @@ numGlobalNodes(const DataBase<Dimension>& dataBase) const {
 // DomainNode identifiers.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-vector<DomainNode<Dimension> >
+vector<DomainNode<Dimension>>
 RedistributeNodes<Dimension>::
 currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                           const FieldList<Dimension, int>& globalNodeIDs) const {
+                           const FieldList<Dimension, size_t>& globalNodeIDs) const {
   FieldList<Dimension, Scalar> dummyWork = dataBase.newGlobalFieldList(Scalar());
   return currentDomainDecomposition(dataBase, globalNodeIDs, dummyWork);
 }
@@ -95,34 +92,34 @@ template<typename Dimension>
 vector<DomainNode<Dimension> >
 RedistributeNodes<Dimension>::
 currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                           const FieldList<Dimension, int>& globalNodeIDs,
+                           const FieldList<Dimension, size_t>& globalNodeIDs,
                            const FieldList<Dimension, Scalar>& workPerNode) const {
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
   REQUIRE(dataBase.numNodeLists() == globalNodeIDs.numFields());
   REQUIRE(dataBase.numNodeLists() == workPerNode.numFields());
-  for (typename FieldList<Dimension, int>::const_iterator itr = globalNodeIDs.begin();
-       itr != globalNodeIDs.end();
-       ++itr) REQUIRE(dataBase.haveNodeList((*itr)->nodeList()));
-  for (typename FieldList<Dimension, Scalar>::const_iterator itr = workPerNode.begin();
-       itr != workPerNode.end();
-       ++itr) REQUIRE(dataBase.haveNodeList((*itr)->nodeList()));
+  for (auto* fptr: globalNodeIDs) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
+  for (auto* fptr: workPerNode) {
+    CONTRACT_VAR(fptr) ;
+    REQUIRE(dataBase.haveNodeList(fptr->nodeList()));
+  }
   END_CONTRACT_SCOPE
 
   // Prepare the result.
-  vector<DomainNode<Dimension> > result;
+  vector<DomainNode<Dimension>> result;
 
   // Loop over each NodeList in the DataBase.
   int nodeListID = 0;
   const int proc = domainID();
   int offset = 0;
-  for (typename DataBase<Dimension>::ConstNodeListIterator itr = dataBase.nodeListBegin();
-       itr != dataBase.nodeListEnd();
-       ++itr, ++nodeListID) {
-    const NodeList<Dimension>& nodeList = **itr;
-    const Field<Dimension, int>& globalNodeListIDs = **(globalNodeIDs.fieldForNodeList(nodeList));
-    const Field<Dimension, Scalar>& work = **(workPerNode.fieldForNodeList(nodeList));
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+    const auto& nodeList = *nodeListPtr;
+    const auto& globalNodeListIDs = **(globalNodeIDs.fieldForNodeList(nodeList));
+    const auto& work = **(workPerNode.fieldForNodeList(nodeList));
 
     // Loop over the nodes in the NodeList, and add their info to the 
     // result.
@@ -138,6 +135,7 @@ currentDomainDecomposition(const DataBase<Dimension>& dataBase,
       result.back().position = nodeList.positions()(localID);
     }
     offset += nodeList.numInternalNodes();
+    ++nodeListID;
   }
   CHECK(nodeListID == (int)dataBase.numNodeLists());
 
@@ -182,7 +180,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
   CHECK((int)numRecvNodeRequests.size() == numProcs - 1);
 
   // Find the nodes on this domain that have to be reassigned to new domains.
-  vector< vector< vector<int> > > sendNodes(numProcs); // [sendDomain][nodeList][node]
+  vector< vector< vector<size_t> > > sendNodes(numProcs); // [sendDomain][nodeList][node]
   for (int i = 0; i != numProcs; ++i) sendNodes[i].resize(numNodeLists);
   for (typename vector<DomainNode<Dimension> >::const_iterator distItr = nodeDistribution.begin();
        distItr != nodeDistribution.end();
@@ -328,18 +326,16 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
   CHECK(numSendBuffers >= numSendDomains);
       
   // Determine the maximum number of fields defined on a NodeList.
-  int maxNumFields = 0;
-  for (NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    maxNumFields = max(maxNumFields, (**nodeListItr).numFields());
+  size_t maxNumFields = 0u;
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
+    maxNumFields = std::max(maxNumFields, nodeListPtr->numFields());
 
     // This is a somewhat expensive contract because of the all reduce,
     // but it is critical all processors agree about the fields defined
     // on each NodeList.
     BEGIN_CONTRACT_SCOPE
     {
-      int localNumFields = (**nodeListItr).numFields();
+      int localNumFields = nodeListPtr->numFields();
       int globalNumFields;
       MPI_Allreduce(&localNumFields, &globalNumFields, 1, MPI_INT, MPI_MAX, Communicator::communicator());
       CHECK(localNumFields == globalNumFields);
@@ -379,7 +375,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
             MPI_Irecv(&(*bufs.back().begin()), *itr, MPI_CHAR, recvProc, (2 + numNodeLists) + maxNumFields*nodeListID + i, Communicator::communicator(), &(recvBufferRequests.back()));
           }
           ++bufSizeItr;
-          CHECK((int)i <= maxNumFields);
+          CHECK(i <= maxNumFields);
         }
       }
       CHECK(bufSizeItr == outerBufSizeItr->end());
@@ -408,7 +404,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
             sendBufferRequests.push_back(MPI_Request());
             MPI_Isend(&(*buf.begin()), buf.size(), MPI_CHAR, sendProc, (2 + numNodeLists) + maxNumFields*nodeListID + i, Communicator::communicator(), &(sendBufferRequests.back()));
           }
-          CHECK((int)i <= maxNumFields);
+          CHECK(i <= maxNumFields);
         }
       }
     }
@@ -434,15 +430,13 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
       // Build the complete list of local IDs we're removing from this NodeList.
       // You have to do this, 'cause if you delete just some nodes from the 
       // NodeList, then the remaining sendNode localIDs are not valid.
-      vector<int> deleteNodes;
+      vector<size_t> deleteNodes;
       for (int sendProc = 0; sendProc != numProcs; ++sendProc) {
         CHECK(sendProc < (int)sendNodes.size());
         CHECK(nodeListID < (int)sendNodes[sendProc].size());
         deleteNodes.reserve(deleteNodes.size() + 
                             sendNodes[sendProc][nodeListID].size());
-        for (vector<int>::const_iterator itr = sendNodes[sendProc][nodeListID].begin();
-             itr < sendNodes[sendProc][nodeListID].end();
-             ++itr) deleteNodes.push_back(*itr);
+        for (auto i: sendNodes[sendProc][nodeListID]) deleteNodes.push_back(i);
       }
 
       // Delete these nodes from the NodeList.
@@ -693,13 +687,11 @@ workPerNode(const DataBase<Dimension>& dataBase,
 
     // The work per node is just the number of neighbors.
     dataBase.updateConnectivityMap(false, false, false);
-    const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap();
-    const vector<const NodeList<Dimension>*>& nodeLists = connectivityMap.nodeLists();
-    for (auto iNodeList = 0u; iNodeList != nodeLists.size(); ++iNodeList) {
-      const NodeList<Dimension>* nodeListPtr = nodeLists[iNodeList];
-      for (auto i = 0u; i != nodeListPtr->numInternalNodes(); ++i) {
-        result(iNodeList, i) = connectivityMap.numNeighborsForNode(nodeListPtr, i);
-      }
+    const auto& connectivityMap = dataBase.connectivityMap();
+    const auto& nodeLists = connectivityMap.nodeLists();
+    for (auto [k, nodeListPtr]: enumerate(nodeLists)) {
+      const auto n = nodeListPtr->numInternalNodes();
+      for (auto i = 0u; i < n; ++i) result(k, i) = connectivityMap.numNeighborsForNode(nodeListPtr, i);
     }
 
   } else {
@@ -715,19 +707,18 @@ workPerNode(const DataBase<Dimension>& dataBase,
   if (globalMax == 0.0) {
     result = 1.0;
   } else {
-    for (auto iNodeList = 0u; iNodeList != result.size(); ++iNodeList) {
-      Field<Dimension, Scalar>& worki = *(result[iNodeList]);
+    for (auto* workiPtr: result) {
+      auto& worki = *workiPtr;
       if (worki.max() == 0.0) {
         worki = globalMax;
       } else {
         if (worki.min() == 0.0) {
-          double localMin = std::numeric_limits<double>::max();
-          for (auto i = 0u; i != worki.numInternalElements(); ++i) {
+          auto localMin = std::numeric_limits<double>::max();
+          for (auto i = 0u; i < worki.numInternalElements(); ++i) {
             if (worki(i) > 0.0) localMin = std::min(localMin, worki(i));
           }
-          double globalMin;
-          MPI_Allreduce(&localMin, &globalMin, 1, MPI_DOUBLE, MPI_MIN, Communicator::communicator());
-          worki.applyMin(globalMin);
+          const auto globalMin = allReduce(localMin, SPHERAL_OP_MIN);
+          worki.applyMin(globalMin == std::numeric_limits<double>::max() ? 1.0 : globalMin);
         }
       }
     }
@@ -736,9 +727,7 @@ workPerNode(const DataBase<Dimension>& dataBase,
   // Output some statistics.
   const Scalar minWeight = result.min();
   const Scalar maxWeight = result.max();
-  if (Process::getRank() == 0) cout << "RedistributeNodes::workPerNode: min/max work : "
-                                    << minWeight << " "
-                                    << maxWeight << endl;
+  SpheralMessage("RedistributeNodes::workPerNode: min/max work : "<< minWeight << " " << maxWeight);
 
   // Return the result.
   return result;
@@ -807,28 +796,27 @@ gatherDomainDistributionStatistics(const FieldList<Dimension, typename Dimension
 
   // Each domain computes it's total work and number of nodes.
   int localNumNodes = 0;
-  Scalar localWork = 0.0;
-  for (InternalNodeIterator<Dimension> nodeItr = work.internalNodeBegin();
-       nodeItr != work.internalNodeEnd();
-       ++nodeItr) {
-    ++localNumNodes;
-    localWork += work(nodeItr);
-  }
+  for (auto* fieldPtr: work) localNumNodes += fieldPtr->numInternalElements();
+  const auto localWork = work.localSumElements();
+
+  // for (InternalNodeIterator<Dimension> nodeItr = work.internalNodeBegin();
+  //      nodeItr != work.internalNodeEnd();
+  //      ++nodeItr) {
+  //   ++localNumNodes;
+  //   localWork += work(nodeItr);
+  // }
 
   // Now gather up some statistics about the distribution.
-  const int numProcs = this->numDomains();
+  const auto numProcs = this->numDomains();
   CHECK(numProcs > 0);
-  int globalMinNodes, globalMaxNodes, globalAvgNodes;
-  MPI_Allreduce(&localNumNodes, &globalMinNodes, 1, MPI_INT, MPI_MIN, Communicator::communicator());
-  MPI_Allreduce(&localNumNodes, &globalMaxNodes, 1, MPI_INT, MPI_MAX, Communicator::communicator());
-  MPI_Allreduce(&localNumNodes, &globalAvgNodes, 1, MPI_INT, MPI_SUM, Communicator::communicator());
-  globalAvgNodes /= numProcs;
 
-  Scalar globalMinWork, globalMaxWork, globalAvgWork;
-  MPI_Allreduce(&localWork, &globalMinWork, 1, MPI_DOUBLE, MPI_MIN, Communicator::communicator());
-  MPI_Allreduce(&localWork, &globalMaxWork, 1, MPI_DOUBLE, MPI_MAX, Communicator::communicator());
-  MPI_Allreduce(&localWork, &globalAvgWork, 1, MPI_DOUBLE, MPI_SUM, Communicator::communicator());
-  globalAvgWork /= numProcs;
+  const auto globalMinNodes = allReduce(localNumNodes, SPHERAL_OP_MIN);
+  const auto globalMaxNodes = allReduce(localNumNodes, SPHERAL_OP_MAX);
+  const auto globalAvgNodes = allReduce(localNumNodes, SPHERAL_OP_SUM) / numProcs;
+
+  const auto globalMinWork = allReduce(localWork, SPHERAL_OP_MIN);
+  const auto globalMaxWork = allReduce(localWork, SPHERAL_OP_MAX);
+  const auto globalAvgWork = allReduce(localWork, SPHERAL_OP_SUM) / numProcs;
 
   // Build a string with the result.
   std::stringstream result;

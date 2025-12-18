@@ -48,9 +48,9 @@ public:
   virtual void setExitPlane(const GeomPlane<Dimension>& exitPlane) override;
 
   // Override the culling of ghost nodes.
-  virtual void cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-                              FieldList<Dimension, int>& old2newIndexMap,
-                              std::vector<int>& numNodesRemoved) override;
+  virtual void cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+                              FieldList<Dimension, size_t>& old2newIndexMap,
+                              std::vector<size_t>& numNodesRemoved) override;
 
   // Apply the boundary condition to the ghost nodes in the given Field.
   virtual void applyGhostBoundary(FieldBase<Dimension>& fieldBase) const override;

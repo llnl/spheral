@@ -21,10 +21,6 @@
 #include "Utilities/removeElements.hh"
 #include "Distributed/Communicator.hh"
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-
 #include <algorithm>
 #include <set>
 using std::vector;
@@ -32,12 +28,6 @@ using std::set;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -84,8 +74,8 @@ computeGenerators(NodeListIterator nodeListBegin,
            bcItr != boundaryEnd;
            ++bcItr) {
         if ((*bcItr)->meshGhostNodes() and (*bcItr)->haveNodeList(**nodeListItr)) {
-          const vector<int>& ghostNodes = (*bcItr)->ghostNodes(**nodeListItr);
-          for (k = 0; k != ghostNodes.size(); ++k) {
+          const auto& ghostNodes = (*bcItr)->ghostNodes(**nodeListItr);
+          for (k = 0; k < ghostNodes.size(); ++k) {
             i = ghostNodes[k];
             //           if (!(i < pos.numElements())) {
             //             cerr << "Blago!  " << ghostNodes.size() << endl << "  ---> ";

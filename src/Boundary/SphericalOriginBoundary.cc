@@ -12,12 +12,6 @@
 #include "Utilities/DBC.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -61,7 +55,7 @@ SphericalOriginBoundary::setViolationNodes(NodeList<Dim<1>>& nodeList) {
   // Get the BoundaryNodes.violationNodes for this NodeList.
   this->addNodeList(nodeList);
   auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  vector<int>& vNodes = boundaryNodes.violationNodes;
+  auto& vNodes = boundaryNodes.violationNodes;
   vNodes.resize(0);
 
   // Loop over all the internal nodes in the NodeList, and put any that are
@@ -87,7 +81,7 @@ SphericalOriginBoundary::updateViolationNodes(NodeList<Dim<1>>& nodeList) {
   GeomPlane<Dim<1>> plane(Vector(0.0), Vector(1.0));
 
   // Get the set of violation nodes for this NodeList.
-  const vector<int>& vNodes = this->violationNodes(nodeList);
+  const auto& vNodes = this->violationNodes(nodeList);
 
   // Loop over these nodes, and reset their positions to valid values.
   auto& pos = nodeList.positions();

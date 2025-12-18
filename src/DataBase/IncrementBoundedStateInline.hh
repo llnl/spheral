@@ -63,6 +63,7 @@ update(const KeyType& key,
   const auto allkeys = derivs.keys();
   KeyType dfKey, dfNodeListKey;
   auto numDeltaFields = 0u;
+  CONTRACT_VAR(numDeltaFields);
   for (const auto& dkey: allkeys) {
     StateBase<Dimension>::splitFieldKey(dkey, dfKey, dfNodeListKey);
     if (dfNodeListKey == nodeListKey and
@@ -74,7 +75,7 @@ update(const KeyType& key,
       const auto  n = f.numInternalElements();
 #pragma omp parallel for
       for (auto i = 0u; i < n; ++i) {
-        f(i) = std::min(mMaxValue, std::max(mMinValue, f(i) + multiplier*(df(i))));
+        f(i) = min(mMaxValue, max(mMinValue, f(i) + multiplier*(df(i))));
       }
     }
   }

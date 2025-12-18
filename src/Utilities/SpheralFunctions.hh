@@ -8,16 +8,25 @@
 #ifndef SpheralFunctions_HH
 #define SpheralFunctions_HH
 
+#include "config.hh"
+
 #include <cmath>
 #include <algorithm>
 #include <limits>
+#include <iostream>
 
 namespace Spheral {
+
+// Put the std::min/max in the Spheral namespace
+using std::min;
+using std::max;
 
 //------------------------------------------------------------------------------
 // Fuzzy comparisons.
 //------------------------------------------------------------------------------
 template<typename DataType>
+SPHERAL_HOST_DEVICE
+inline
 bool fuzzyEqual(const DataType& lhs, const DataType& rhs,
                 const double fuzz = 1.0e-15) {
   // return std::abs(lhs - rhs)/std::max(std::numeric_limits<DataType>::epsilon(), std::max(fuzz, std::max(std::abs(lhs), std::abs(rhs)))) < fuzz;
@@ -37,24 +46,32 @@ bool fuzzyEqual(const DataType& lhs, const DataType& rhs,
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
+inline
 bool fuzzyLessThanOrEqual(const DataType& lhs, const DataType& rhs,
                           const double fuzz = 1.0e-15) {
   return lhs < rhs || fuzzyEqual(lhs, rhs, fuzz);
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
+inline
 bool fuzzyGreaterThanOrEqual(const DataType& lhs, const DataType& rhs,
                              const double fuzz = 1.0e-15) {
   return lhs > rhs || fuzzyEqual(lhs, rhs, fuzz);
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
+inline
 bool distinctlyLessThan(const DataType& lhs, const DataType& rhs,
                         const double fuzz = 1.0e-15) {
   return lhs < rhs && !fuzzyEqual(lhs, rhs, fuzz);
 }
 
 template<typename DataType>
+SPHERAL_HOST_DEVICE
+inline
 bool distinctlyGreaterThan(const DataType& lhs, const DataType& rhs,
                            const double fuzz = 1.0e-15) {
   return lhs > rhs && !fuzzyEqual(lhs, rhs, fuzz);
@@ -66,18 +83,21 @@ bool distinctlyGreaterThan(const DataType& lhs, const DataType& rhs,
 //    x >= 0 -> sgn(x) = 1
 //    x <  0 -> sgn(x) = -1
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE
 inline
 double
 sgn(const double x) {
   return x < 0.0 ? -1.0 : 1.0;
 }
 
+SPHERAL_HOST_DEVICE
 inline
 int
 isgn(const double x) {
   return x < 0.0 ? -1 : 1;
 }
 
+SPHERAL_HOST_DEVICE
 inline
 int
 sgn(const int x) {
@@ -91,6 +111,7 @@ sgn(const int x) {
 //    x = 0 -> sgn0(x) =  0
 //    x < 0 -> sgn0(x) = -1
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE
 inline
 double
 sgn0(const double x) {
@@ -99,6 +120,7 @@ sgn0(const double x) {
           0.0);
 }
 
+SPHERAL_HOST_DEVICE
 inline
 int
 isgn0(const double x) {
@@ -107,6 +129,7 @@ isgn0(const double x) {
           0);
 }
 
+SPHERAL_HOST_DEVICE
 inline
 int
 sgn0(const int x) {
@@ -115,19 +138,21 @@ sgn0(const int x) {
           0);
 }
 
-//------------------------------------------------------------------------------
-// Generalized versions of min & max that work with Spheral data types.
-//------------------------------------------------------------------------------
-// template<typename T1>
-// T1
-// min(const T1& lhs, const T1& rhs) {
-//   return std::min(lhs, rhs);
+// //------------------------------------------------------------------------------
+// // Generalized versions of min & max that work with Spheral data types.
+// //------------------------------------------------------------------------------
+// template<typename T>
+// const T&
+// min(const T& lhs, const T& rhs) {
+//   using std::min;
+//   return min(lhs, rhs);
 // }
 
-// template<typename T1>
-// T1
-// max(const T1& lhs, const T1& rhs) {
-//   return std::max(lhs, rhs);
+// template<typename T>
+// const T&
+// max(const T& lhs, const T& rhs) {
+//   using std::max;
+//   return max(lhs, rhs);
 // }
 
 }

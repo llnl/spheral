@@ -23,12 +23,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -89,7 +83,6 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto Cqij = 0.5*(fCqi + fCqj)*fshear * mCquadratic;
 
   // Compute the pair QPi
-  const auto vij = vi - vj;
   const auto xji = xj - xi;
   const auto xjihat = xji.unitVector();
   const auto hi = 1.0/(Hi*xjihat).magnitude();
@@ -118,7 +111,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
   using Face = typename Mesh<Dimension>::Face;
 
   // Grab the DvDx for updating
-  auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto DvDx = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
   DvDx.Zero();
 
   // Make a finite-volume estimate of the local (to each Voronoi cell) velocity
@@ -126,7 +119,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
   unsigned nodeListj, j;
   Scalar Vi;
   const Mesh<Dimension>& mesh = state.mesh();
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const unsigned numNodeLists = velocity.numFields();
   for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     const unsigned n = velocity[nodeListi]->numInternalElements();

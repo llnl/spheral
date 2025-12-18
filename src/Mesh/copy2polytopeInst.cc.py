@@ -1,6 +1,4 @@
-text = ""
-if ndim != "1":
-    text = """
+text = """
 //------------------------------------------------------------------------------
 // Explicit instantiation.
 //------------------------------------------------------------------------------
@@ -11,3 +9,6 @@ namespace Spheral {
                               polytope::Tessellation<%(ndim)s, double>& mesh);
 }
 """
+
+# Only supports 2D and 3D
+dimensions = [2, 3]

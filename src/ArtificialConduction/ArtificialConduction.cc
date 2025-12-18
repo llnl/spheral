@@ -21,9 +21,6 @@
 namespace Spheral {
 
 using std::vector;
-using std::min;
-using std::max;
-using std::abs;
 using std::string;
 
 //------------------------------------------------------------------------------
@@ -72,7 +69,7 @@ template<typename Dimension>
 void
 ArtificialConduction<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
-  mGradP = dataBase.newFluidFieldList(Vector::zero, "Pressure Gradient");
+  mGradP = dataBase.newFluidFieldList(Vector::zero(), "Pressure Gradient");
   mDepsDtArty = dataBase.newFluidFieldList(0.0, "Artificial Cond DepsDt");
   mVsigMax = dataBase.newFluidFieldList(0.0, "Maximum Artificial Cond Signal Speed");
 }
@@ -137,10 +134,10 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // The relevant fields
   const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const FieldList<Dimension, Scalar> specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> vsigMax = state.fields("Maximum Artificial Cond Signal Speed", 0.0);
   CONTRACT_VAR(numNodeLists);
@@ -153,7 +150,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // The relevant derivatives
   FieldList<Dimension, Scalar> DepsDt = derivatives.fields("Artificial Cond DepsDt", 0.0);
-  FieldList<Dimension, Vector> gradP = derivatives.fields("Pressure Gradient", Vector::zero);
+  FieldList<Dimension, Vector> gradP = derivatives.fields("Pressure Gradient", Vector::zero());
   CHECK(DepsDt.size() == numNodeLists);
   CHECK(gradP.size() == numNodeLists);
 
@@ -242,7 +239,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
               // get some differentials
               const Vector rij        = ri - rj; /* this is sign flipped but it's ok! */
-              const Vector rji        = rj - ri;
+              //const Vector rji        = rj - ri;
               const Vector etai       = Hi*rij;
               const Vector etaj       = Hj*rij;
               const Vector etaiNorm   = etai.unitVector();
@@ -299,7 +296,7 @@ dt(const DataBase<Dimension>& dataBase,
   // Get some useful fluid variables from the DataBase.
   const FieldList<Dimension, int> mask = state.fields(HydroFieldNames::timeStepMask, 1);
   const FieldList<Dimension, Scalar> rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> eps = state.fields(HydroFieldNames::specificThermalEnergy, Scalar());
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const FieldList<Dimension, Scalar> vsigMax = state.fields("Maximum Artificial Cond Signal Speed", 0.0);

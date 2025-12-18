@@ -16,6 +16,7 @@
 #include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -25,7 +26,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-
+#include <mpi.h>
 namespace Spheral {
 
 
@@ -669,12 +670,9 @@ printConnectivityStatistics(const map<int, vector<pair<int, double> > >& neighbo
 
     CHECK(navgNeighbor > 0);
     avgNeighbor /= navgNeighbor;
-    cout << "ParmetisRedistributeNodes:: min connections = "
-         << minNeighbor << endl
-         << "                            max connections = "
-         << maxNeighbor << endl
-         << "                            avg connections = "
-         << avgNeighbor << endl;
+    SpheralMessage("ParmetisRedistributeNodes:: min connections = " << minNeighbor << "\n" <<
+                   "                            max connections = " << maxNeighbor << "\n" <<
+                   "                            avg connections = "<< avgNeighbor);
    
   } else {
     MPI_Send(&minNeighbor, 1, MPI_INT, 0, 10, Communicator::communicator());

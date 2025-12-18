@@ -17,39 +17,32 @@
 namespace Spheral {
 
 template<int nDim>
-class GeomFourthRankTensor : public RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> > {
+class GeomFourthRankTensor : public RankNTensor<nDim, 4, GeomFourthRankTensor<nDim>> {
+  using BaseType = RankNTensor<nDim, 4, GeomFourthRankTensor<nDim>>;
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename RankNTensor<nDim, 4, GeomFourthRankTensor>::size_type size_type;
-  static const size_type numElements;
+  using size_type = typename BaseType::size_type;
 
-  // Useful static member data.
-  static const GeomFourthRankTensor zero;
+  SPHERAL_HOST_DEVICE static constexpr GeomFourthRankTensor zero() { return GeomFourthRankTensor<nDim>(); }
 
   // Constructors.
-  GeomFourthRankTensor();
-  explicit GeomFourthRankTensor(const double val);
-  GeomFourthRankTensor(const GeomFourthRankTensor& rhs);
-
-  // Destructor.
-  ~GeomFourthRankTensor();
+  SPHERAL_HOST_DEVICE GeomFourthRankTensor() = default;
+  SPHERAL_HOST_DEVICE explicit GeomFourthRankTensor(const double val);
+  SPHERAL_HOST_DEVICE GeomFourthRankTensor(const GeomFourthRankTensor& rhs) = default;
 
   // Assignment.
-  GeomFourthRankTensor& operator=(const GeomFourthRankTensor& rhs);
-  GeomFourthRankTensor& operator=(const double rhs);
+  SPHERAL_HOST_DEVICE GeomFourthRankTensor& operator=(const GeomFourthRankTensor& rhs) = default;
+  SPHERAL_HOST_DEVICE GeomFourthRankTensor& operator=(const double rhs);
 
   // Access the elements by indicies.
-  double operator()(const size_type i, const size_type j, const size_type k, const size_type m) const;
-  double& operator()(const size_type i, const size_type j, const size_type k, const size_type m);
+  SPHERAL_HOST_DEVICE double operator()(const size_type i, const size_type j, const size_type k, const size_type m) const;
+  SPHERAL_HOST_DEVICE double& operator()(const size_type i, const size_type j, const size_type k, const size_type m);
 
 private:
   //--------------------------- Private Interface ---------------------------//
   using RankNTensor<nDim, 4, GeomFourthRankTensor>::mElements;
 };
-
-template<int nDims> const typename GeomFourthRankTensor<nDims>::size_type GeomFourthRankTensor<nDims>::numElements = calcNumNRankElements<nDims, 4>();
-template<int nDims> const GeomFourthRankTensor<nDims> GeomFourthRankTensor<nDims>::zero = GeomFourthRankTensor<nDims>(0.0);
 
 }
 

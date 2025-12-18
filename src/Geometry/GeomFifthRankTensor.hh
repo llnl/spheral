@@ -17,39 +17,32 @@
 namespace Spheral {
 
 template<int nDim>
-class GeomFifthRankTensor : public RankNTensor<nDim, 5, GeomFifthRankTensor<nDim> > {
+class GeomFifthRankTensor : public RankNTensor<nDim, 5, GeomFifthRankTensor<nDim>> {
+  using BaseType = RankNTensor<nDim, 5, GeomFifthRankTensor<nDim>>;
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename RankNTensor<nDim, 5, GeomFifthRankTensor>::size_type size_type;
-  static const size_type numElements;
+  using size_type = typename BaseType::size_type;
 
-  // Useful static member data.
-  static const GeomFifthRankTensor zero;
+  SPHERAL_HOST_DEVICE static constexpr GeomFifthRankTensor zero() { return GeomFifthRankTensor<nDim>(); }
 
   // Constructors.
-  GeomFifthRankTensor();
-  explicit GeomFifthRankTensor(const double val);
-  GeomFifthRankTensor(const GeomFifthRankTensor& rhs);
-
-  // Destructor.
-  ~GeomFifthRankTensor();
+  SPHERAL_HOST_DEVICE GeomFifthRankTensor() = default;
+  SPHERAL_HOST_DEVICE explicit GeomFifthRankTensor(const double val);
+  SPHERAL_HOST_DEVICE GeomFifthRankTensor(const GeomFifthRankTensor& rhs) = default;
 
   // Assignment.
-  GeomFifthRankTensor& operator=(const GeomFifthRankTensor& rhs);
-  GeomFifthRankTensor& operator=(const double rhs);
+  SPHERAL_HOST_DEVICE GeomFifthRankTensor& operator=(const GeomFifthRankTensor& rhs) = default;
+  SPHERAL_HOST_DEVICE GeomFifthRankTensor& operator=(const double rhs);
 
   // Access the elements by indicies.
-  double operator()(const size_type i, const size_type j, const size_type k, const size_type m, const size_type n) const;
-  double& operator()(const size_type i, const size_type j, const size_type k, const size_type m, const size_type n);
+  SPHERAL_HOST_DEVICE double operator()(const size_type i, const size_type j, const size_type k, const size_type m, const size_type n) const;
+  SPHERAL_HOST_DEVICE double& operator()(const size_type i, const size_type j, const size_type k, const size_type m, const size_type n);
 
 private:
   //--------------------------- Private Interface ---------------------------//
   using RankNTensor<nDim, 5, GeomFifthRankTensor>::mElements;
 };
-
-template<int nDims> const typename GeomFifthRankTensor<nDims>::size_type GeomFifthRankTensor<nDims>::numElements = calcNumNRankElements<nDims, 5>();
-template<int nDims> const GeomFifthRankTensor<nDims> GeomFifthRankTensor<nDims>::zero = GeomFifthRankTensor<nDims>(0.0);
 
 }
 

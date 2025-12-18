@@ -25,7 +25,7 @@ class NestedGridNeighbor(Neighbor):
                searchType = ("const NeighborSearchType", "NeighborSearchType::GatherScatter"),
                numGridLevels = ("int", "31"),
                topGridCellSize = ("double", "100.0"),
-               origin = ("Vector", "Vector::zero"),
+               origin = ("Vector", "Vector::zero()"),
                kernelExtent = ("const double", "2.0"),
                gridCellInfluenceRadius = ("int", "1")):
         "Construct a NestedGridNeighbor"

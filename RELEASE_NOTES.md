@@ -1,3 +1,101 @@
+Version v2025.12.0 -- Release date 2025-12-19
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+    * GPU Porting Effort:
+      * Spheral::FieldView allows for implicit data migration of Spheral::Field data.
+        * Implements FieldView datatypes as handles to be used for migrating data to and from the GPU.
+        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common patterns.
+        * Unit testing to ensure implicitly copyable Spheral data types can be copied to and from the device correctly.
+      * Spheral::FieldListView enables GPU access to field data while maintaining Field->FieldList associations across
+        execution spaces.
+        * Adds addition functionality to FieldView to expose chai api calls.
+        * Host/Device unit testing for a range of expected patterns and behaviours seen in Spheral.
+      * GeomVector and Geom3Vector have been converted for use on the GPU.
+        * CPU & GPU unit testing of the public interface.
+      * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
+      * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
+      * Created view classes for the Quadratic and CubicHermite interpolator classes.
+        * These follow the inheritance pattern used previously.
+      * Updated Kernels to be device ready.
+      * Created a TableKernelView class for use on device.
+      * Optimizations to RankTensor types:
+        * Stack allocation of tensor data; Static casting for CRTP implementation.
+      * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
+      * New Logging utility for runtime debug messages.
+      * Created `initMAView()`, a wrapper for chai::ManagedArray with proper checking.
+      * Adds a few types to the state:
+        * std::vector of boundary, for when you want to register the boundaries in the state.
+        * Option to enroll copies of items, without which enrolling a double or any other built-in type from the python interface will fail (with the standard enroll, it will create a temporary double, enroll the address of that temporary double, and then kill the temporary double).
+      * Adds timing to a few high-cost functions.
+      * Updates to FlatConnectivity:
+        * Adds some missed variable initializations.
+        * Adds unique index computation for global connectivity, without which indices would need to be summed directly.
+        * Fixes non-functional python bindings.
+      * (Python) Fixes particularly awful bug where variables from an exec statement won't be loaded into globals() if a temporary variable is used elsewhere.
+      * Field/FieldView reimplemented using our value/view inheritance pattern.
+      * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
+        * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
+      * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
+
+  * Bug fixes
+    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value.
+    * Updated ATS to bring in fix for python 3.12+.
+    * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
+    * Silo memory leak is not fixed but the memory impact is 100x smaller.
+    * Cleaned up some variable types and trapping error conditions in generateCylDistributionFromRZ for generating rotated problems.
+    * Fixed the git strategy for the update TPLs and build caches CI stages.
+
+  * Build changes / improvements:
+    * Changed `int` to `size_t` for Field and FieldList.
+    * A python virtual environment is installed in the spheral build dir, removing the
+      need to build the `install` target during regular development.
+    * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
+    * CMake directly handles all of the installation environment configuration and setup
+      during the install stage.
+    * ManagedArray callback routines are guarded by CHAI_DISABLE_RM.
+    * CMake/build logic has been reconfigured:
+      * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
+      * The following CMake options now have the added `SPHERAL_` prefix:
+        * `ENABLE_TESTS`, `ENABLE_1D`, `ENABLE_2D`, `ENABLE_3D`, `ENABLE_SHARED`, `ENABLE_DOCS`.
+        * `ENABLE_ANEOS`, `ENABLE_LEOS`, `ENABLE_HELMHOLTZ`, `ENABLE_OPENSUBDIV`.
+        * `ENABLE_NAN_EXCEPTIONS`, `ENABLE_BOUNDCHECKING`, `DBC_MODE`.
+      * The CXXONLY variables have been removed and replaced with a `SPHERAL_ENABLE_PYTHON` variable.
+        C++ builds default to being static when this variable is disabled.
+      * `ENABLE_INSTATIATION` option has been removed.
+      * Compiler definitions and options are now applied directly to targets instead of using
+        `add_compile_definition` or `add_compile_options`.
+      * Compiler flags are set for HIP or CXX depending on the configuration.
+      * Update BLT to version 0.7.1.
+    * Target exporting is now being tested in the CI on the RZ.
+    * Updating boost function calls to std library implementations where possible.
+    * Switched the CZ CI to use Dane instead of Ruby.
+      * Increased the number of threads for certain memory intensive tests to prevent OOM error.
+    * Updated GitHub actions since GitLab mirror changed.
+    * CHAI is no longer a submodule.
+      * CHAI, RAJA, Umpire, and Camp are all brought in through Spack as external TPLs now.
+      * Umpire is updated to version 2025.03.1.
+      * RAJA is updated to version 2025.03.0.
+    * LEOS interface changes:
+      * LEOS spack recipe is simplified.
+      * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
+    * Update Axom from 0.9.0 to 0.12.0.
+    * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
+      by adding `build_type=Debug`.
+    * HDF5 is now brought in using `find_package` instead of being brought in manually.
+    * Packages associated with ROCM on Cray machines now have consistent prefixes.
+    * PolyClipper and PYB11Generator are updated.
+    * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
+    * PYB11Generator has been updated to allow new features:
+      * Ouput multiple pybind11 C++ files for parallel compilation.
+      * Optionally mark generated C++ files to not be regenerated (dangerous developer option).
+    * Cleaned up the comparison operators for Geometry types, and removed lots of "using std::*" from implementations.
+    * Updated to PYB11Generator v2025.12.0 for full pybind11 v3 support.
+
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================
   * Important Notes:

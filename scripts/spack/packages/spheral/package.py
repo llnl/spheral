@@ -36,11 +36,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('openmp', default=True, description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
     variant('shared', default=True, description='Build C++ libs as shared.')
-    variant('python', default=True, description='Build Python Dependencies.')
+    variant('python', default=True, description='Enable Spheral python interface.')
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
-    variant('sundials', default=True, when="+mpi", description='Build Sundials package.')
+    variant('sundials', default=True, when="+mpi", description='Enable use of SUNDIALS solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
 
     # -------------------------------------------------------------------------
@@ -50,7 +50,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cmake@3.21.0:', type='build')
 
-    depends_on('boost@1.74.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
+    depends_on('boost@1.85.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
 
@@ -58,15 +58,17 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('m-aneos@1.0')
 
-    depends_on('eigen@3.4.0', type='build')
+    depends_on('eigen@5.0.0', type='build')
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo +hdf5', type='build')
+    depends_on('silo+python +hdf5', type='build')
+
+    depends_on('chai@develop+raja', type='build')
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
-    depends_on('axom@0.9.0 +hdf5 -lua -examples -python -fortran', type='build')
+    depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 
@@ -78,30 +80,41 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('caliper+mpi', type='build', when='+mpi')
         depends_on('caliper~mpi', type='build', when='~mpi')
 
-    depends_on('raja@2024.02.0', type='build')
-
     depends_on('opensubdiv@3.4.3+pic', type='build', when="+opensubdiv")
 
-    depends_on('polytope +python', type='build', when="+python")
-    depends_on('polytope ~python', type='build', when="~python")
+    depends_on('polytope@v0.7.5 +python', type='build', when="+python")
+    depends_on('polytope@v0.7.5 ~python', type='build', when="~python")
 
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
-
-    depends_on('leos@8.4.2', type='build', when='+leos')
+    depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
 
     # Forward CUDA/ROCM Variants
-    gpu_tpl_list = ["raja", "umpire", "axom"]
-    for ctpl in gpu_tpl_list:
+    def set_gpu_variants(ctpl, cond=""):
         for val in CudaPackage.cuda_arch_values:
-            depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val}")
+            depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} {cond}")
         for val in ROCmPackage.amdgpu_targets:
-            depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val}")
+            depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} {cond}")
+
+    gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
+    for ctpl in gpu_tpl_list:
+        set_gpu_variants(ctpl)
+
+    # Forward debug variants
+    debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak~shared"]
+    for ctpl in debug_tpl_list:
+        depends_on(f"{ctpl} build_type=Debug", when="build_type=Debug")
+
+    depends_on('leos@8.4.2+filters+yaml~xml+silo', type='build', when='+leos')
+    depends_on('leos build_type=Debug', when='+leos build_type=Debug')
+    # TODO: Get leos working with +rocm variant using 8.5.2
+    # if LEOSpresent:
+    #     set_gpu_variants("leos", "+leos")
 
     # -------------------------------------------------------------------------
     # Conflicts
@@ -155,17 +168,19 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
                 cache_spec += "+cuda"
             if spec.satisfies("+rocm"):
                 cache_spec += "+rocm"
+            if spec.satisfies("build_type=Debug"):
+                cache_spec += "_debug"
         return f"{self._get_sys_type(spec)}-{cache_spec.replace(' ', '_')}.cmake"
 
     def initconfig_compiler_entries(self):
         spec = self.spec
         entries = super(Spheral, self).initconfig_compiler_entries()
         return entries
-    
+
     def initconfig_mpi_entries(self):
         spec = self.spec
         entries = []
-        if "+mpi" in spec:
+        if spec.satisfies("+mpi"):
           entries = super(Spheral, self).initconfig_mpi_entries()
           # When on cray / flux systems we need to tell CMAKE the mpi flag explicitly
           if "cray-mpich" in spec:
@@ -179,11 +194,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = super(Spheral, self).initconfig_hardware_entries()
 
-        if '+rocm' in spec:
+        if spec.satisfies('+rocm'):
             entries.append(cmake_cache_option("ENABLE_HIP", True))
             entries.append(cmake_cache_string("ROCM_PATH", spec["hip"].prefix))
 
-        if '+cuda' in spec:
+        if spec.satisfies('+cuda'):
             entries.append(cmake_cache_option("ENABLE_CUDA", True))
 
             if not spec.satisfies('cuda_arch=none'):
@@ -207,16 +222,14 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         entries = []
 
-        entries.append(cmake_cache_option('ENABLE_CXXONLY', not spec.satisfies("+python")))
-        entries.append(cmake_cache_option('TPL_VERBOSE', False))
-        entries.append(cmake_cache_option('BUILD_TPL', True))
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_PYTHON', spec.satisfies("+python")))
 
         entries.append(cmake_cache_string('SPHERAL_SYS_ARCH', self._get_sys_type(spec)))
         entries.append(cmake_cache_string('SPHERAL_CONFIGURATION', self._get_config_name(spec)))
         entries.append(cmake_cache_string('SPHERAL_SPEC', self._get_short_spec(spec)))
 
         # TPL locations
-        if (spec.satisfies("+caliper")):
+        if spec.satisfies("+caliper"):
             entries.append(cmake_cache_path('caliper_DIR', spec['caliper'].prefix))
 
         entries.append(cmake_cache_path('adiak_DIR', spec['adiak'].prefix))
@@ -228,12 +241,14 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('aneos_DIR', spec['m-aneos'].prefix))
 
         entries.append(cmake_cache_path('hdf5_DIR', spec['hdf5'].prefix))
-    
+
         entries.append(cmake_cache_path('conduit_DIR', spec['conduit'].prefix))
 
         entries.append(cmake_cache_path('raja_DIR', spec['raja'].prefix))
 
         entries.append(cmake_cache_path('umpire_DIR', spec['umpire'].prefix))
+
+        entries.append(cmake_cache_path('chai_DIR', spec['chai'].prefix))
 
         entries.append(cmake_cache_path('axom_DIR', spec['axom'].prefix))
 
@@ -242,36 +257,38 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('eigen_DIR', spec['eigen'].prefix))
         entries.append(cmake_cache_path('eigen_INCLUDES',spec['eigen'].prefix.include.eigen3))
 
-        if (spec.satisfies("+opensubdiv")):
-            entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
-            entries.append(cmake_cache_option('ENABLE_OPENSUBDIV', True))
-
-        if (spec.satisfies("~network")):
-            entries.append(cmake_cache_option('SPHERAL_NETWORK_CONNECTED', False))
-
         entries.append(cmake_cache_path('polytope_DIR', spec['polytope'].prefix))
 
+        # opensubdiv
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_OPENSUBDIV', '+opensubdiv' in spec))
+        if spec.satisfies("+opensubdiv"):
+            entries.append(cmake_cache_path('opensubdiv_DIR', spec['opensubdiv'].prefix))
+
+        # network
+        if spec.satisfies("~network"):
+            entries.append(cmake_cache_option('SPHERAL_NETWORK_CONNECTED', False))
+
+        # MPI
         entries.append(cmake_cache_option('ENABLE_MPI', '+mpi' in spec))
-        if "+mpi" in spec:
-            entries.append(cmake_cache_path('-DMPI_C_COMPILER', spec['mpi'].mpicc) )
-            entries.append(cmake_cache_path('-DMPI_CXX_COMPILER', spec['mpi'].mpicxx) )
 
-        if "~shared" in spec and "~cuda" in spec:
-            entries.append(cmake_cache_option('ENABLE_SHARED', False))
-
+        # OpenMP
         entries.append(cmake_cache_option('ENABLE_OPENMP', '+openmp' in spec))
-        entries.append(cmake_cache_option('ENABLE_DOCS', '+docs' in spec))
 
-        if "+python" in spec:
+        # Shared build
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_SHARED', '+shared' in spec))
+
+        if spec.satisfies("+python"):
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_DOCS', '+docs' in spec))
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
 
+        # SUNDIALS
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_SUNDIALS', '+sundials' in spec))
         if spec.satisfies("+sundials"):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
-            entries.append(cmake_cache_option('ENABLE_SUNDIALS', True))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
-            entries.append(cmake_cache_option('ENABLE_LEOS', True))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_LEOS', True))
 
         return entries
 
@@ -295,4 +312,3 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             return os.path.join(self.pkg.stage.source_path, dev_build_dirname)
         else:
             return os.path.join(self.pkg.stage.path, self.build_dirname)
-

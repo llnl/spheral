@@ -282,13 +282,14 @@ struct DBoptlist_wrapper {
   std::vector<std::shared_ptr<void> > mCache;
 
   // Constructors.
-  DBoptlist_wrapper(const int maxopts=1024):
+  DBoptlist_wrapper(const int maxopts=10):
     mOptlistPtr(DBMakeOptlist(maxopts)),
     mCache() {}
 
   // Destructor.
   ~DBoptlist_wrapper() {
-    //ASSERT(DBFreeOptlist(mOptlistPtr) == 0);
+    // FIXME: This should not be commented out but causes a double free during python exit
+    // DBFreeOptlist(mOptlistPtr);
   }
 
   // Generic functor definitions for adding and getting options.
@@ -547,6 +548,7 @@ std::string
 DBGetDir(DBfile& file) {
   char result[256];
   auto valid = DBGetDir(&file, result);
+  CONTRACT_VAR(valid);
   VERIFY2(valid == 0, "Silo ERROR: unable to fetch directory name.");
   return std::string(result);
 }
@@ -893,7 +895,10 @@ DBPutUcdmesh(DBfile& file,
   const unsigned ndims = coords.size();
   VERIFY(ndims == 2 or ndims == 3);
   const unsigned nnodes = coords[0].size();
-  for (unsigned idim = 0; idim != ndims; ++idim) VERIFY(coords[idim].size() == nnodes);
+  for (unsigned idim = 0; idim != ndims; ++idim) {
+    CONTRACT_VAR(idim);
+    VERIFY(coords[idim].size() == nnodes);
+  }
   VERIFY(nzones > 0);
 
   // We need the C-stylish pointers to the coordinates.

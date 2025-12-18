@@ -12,8 +12,10 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/packElement.hh"
 #include "Utilities/removeElements.hh"
+#include "Utilities/range.hh"
 #include "Utilities/DBC.hh"
 #include "waitAllWithDeadlockDetection.hh"
+#include "Process.hh"
 
 #include <sstream>
 #include <list>
@@ -23,12 +25,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -44,7 +40,7 @@ DistributedBoundary<Dimension>::DistributedBoundary():
   mMPIFieldTag(0),
   mSendRequests(),
   mRecvRequests(),
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
   mSendProcIDs(),
   mRecvProcIDs(),
 #endif
@@ -52,7 +48,7 @@ DistributedBoundary<Dimension>::DistributedBoundary():
   mRecvBuffers() {
   
   // Get the number of processor and this one's rank.
-  MPI_Comm_rank(Communicator::communicator(), &mDomainID);
+  mDomainID = Process::getRank();
   CHECK(mDomainID >= 0 && mDomainID < numDomains());
 
   // Reserve space in the request buffers.
@@ -691,7 +687,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
         MPI_Irecv(&(*recvValues.begin()), bufSize, MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mRecvRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
         mRecvProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -731,7 +727,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
         MPI_Isend(&(*sendValues.begin()), sendValues.size(), MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mSendRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
         mSendProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -887,7 +883,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
         MPI_Isend(&(*sendValues.begin()), sendValues.size(), MPI_CHAR, neighborDomainID, mMPIFieldTag, 
                   Communicator::communicator(), &(mSendRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
         mSendProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -934,7 +930,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
         MPI_Irecv(&(*recvValues.begin()), bufSize, MPI_CHAR,
                   neighborDomainID, mMPIFieldTag, Communicator::communicator(), &(mRecvRequests.back()));
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
         mRecvProcIDs.push_back(neighborDomainID);
 #endif
 
@@ -1031,9 +1027,9 @@ applyGhostBoundary(FieldBase<Dimension>& field) const {
 template<typename Dimension>
 void
 DistributedBoundary<Dimension>::
-cullGhostNodes(const FieldList<Dimension, int>& flagSet,
-               FieldList<Dimension, int>& old2newIndexMap,
-               vector<int>& numNodesRemoved) {
+cullGhostNodes(const FieldList<Dimension, size_t>& flagSet,
+               FieldList<Dimension, size_t>& old2newIndexMap,
+               vector<size_t>& numNodesRemoved) {
 
   typedef typename Boundary<Dimension>::BoundaryNodes BoundaryNodes;
   const int procID = domainID();
@@ -1043,7 +1039,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
   // CONTRACT_VAR(registrar);
   // REQUIRE((int)numNodesRemoved.size() == registrar.numNodeLists());
 
-  const vector<int> numNodesRemovedPreviously(numNodesRemoved);
+  const vector<size_t> numNodesRemovedPreviously(numNodesRemoved);
 
   // Count how many messages we're going to be communicating.
   // Note we are reversing the normal communication directions here, since the
@@ -1054,16 +1050,11 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
   // for use in this routine.
   size_t numSendMsgs = 0;
   size_t numRecvMsgs = 0;
-  for (typename FieldList<Dimension, int>::const_iterator flagSetItr = flagSet.begin();
-       flagSetItr != flagSet.end();
-       ++flagSetItr) {
-    const NodeList<Dimension>& nodeList = (**flagSetItr).nodeList();
+  for (auto* fPtr: flagSet) {
+    const auto& nodeList = fPtr->nodeList();
     if (communicatedNodeList(nodeList)) {
-      const DomainBoundaryNodeMap& domainBoundaryNodes = this->accessDomainBoundaryNodeMap(nodeList);
-      for (typename DomainBoundaryNodeMap::const_iterator innerItr = domainBoundaryNodes.begin();
-           innerItr != domainBoundaryNodes.end();
-           ++innerItr) {
-        const DomainBoundaryNodes& domainNodes = innerItr->second;
+      const auto& domainBoundaryNodes = this->accessDomainBoundaryNodeMap(nodeList);
+      for (auto& [proc, domainNodes]: domainBoundaryNodes) {
         if (domainNodes.receiveNodes.size() > 0) ++numSendMsgs;
         if (domainNodes.sendNodes.size() > 0) ++numRecvMsgs;
       }
@@ -1075,17 +1066,13 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
   vector<MPI_Request> recvRequests;
   recvRequests.reserve(numRecvMsgs);
   int nodeListOff = 0;
-  for (typename FieldList<Dimension, int>::const_iterator flagSetItr = flagSet.begin();
+  for (auto flagSetItr = flagSet.begin();
        flagSetItr != flagSet.end();
        ++flagSetItr, ++nodeListOff) {
     const NodeList<Dimension>& nodeList = (**flagSetItr).nodeList();
     if (communicatedNodeList(nodeList)) {
       const DomainBoundaryNodeMap& domainBoundaryNodes = this->accessDomainBoundaryNodeMap(nodeList);
-      for (typename DomainBoundaryNodeMap::const_iterator innerItr = domainBoundaryNodes.begin();
-           innerItr != domainBoundaryNodes.end();
-           ++innerItr) {
-        const int neighborDomain = innerItr->first;
-        const DomainBoundaryNodes& domainNodes = innerItr->second;
+      for (auto& [neighborDomain, domainNodes]: domainBoundaryNodes) {
         if (domainNodes.sendNodes.size() > 0) {
           recvBuffers.push_back(vector<int>(domainNodes.sendNodes.size(), -1));
           recvRequests.push_back(MPI_Request());
@@ -1105,7 +1092,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
   vector<MPI_Request> sendRequests;
   sendRequests.reserve(numSendMsgs);
   nodeListOff = 0;
-  for (typename FieldList<Dimension, int>::const_iterator flagSetItr = flagSet.begin();
+  for (auto flagSetItr = flagSet.begin();
        flagSetItr != flagSet.end();
        ++flagSetItr, ++nodeListOff) {
     const NodeList<Dimension>& nodeList = (**flagSetItr).nodeList();
@@ -1114,17 +1101,13 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
 
       // Grab the flags for this NodeList.
       CHECK(flagSet.haveNodeList(nodeList));
-      const Field<Dimension, int>& flags = **flagSet.fieldForNodeList(nodeList);
+      const auto& flags = **flagSet.fieldForNodeList(nodeList);
 
       // Go over each domain this NodeList is communicating with.
       const BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(const_cast<NodeList<Dimension>&>(nodeList));
       const size_t myFirstGhostNode = (boundaryNodes.ghostNodes.size() > 0 ? boundaryNodes.ghostNodes[0] : nodeList.numNodes()) - numNodesRemoved[nodeListOff];
       size_t newGhostIndex = myFirstGhostNode;
-      for (typename DomainBoundaryNodeMap::iterator innerItr = domainBoundaryNodes.begin();
-           innerItr != domainBoundaryNodes.end();
-           ++innerItr) {
-        const int neighborDomain = innerItr->first;
-        DomainBoundaryNodes& domainNodes = innerItr->second;
+      for (auto& [neighborDomain, domainNodes]: domainBoundaryNodes) {
 
         // We only care if we're receiving from this domain.
         if (domainNodes.receiveNodes.size() > 0) {
@@ -1133,9 +1116,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
           sendBuffers.push_back(vector<int>());
           vector<int>& buf = sendBuffers.back();
           buf.reserve(domainNodes.receiveNodes.size());
-          for (vector<int>::const_iterator itr = domainNodes.receiveNodes.begin();
-               itr != domainNodes.receiveNodes.end();
-               ++itr) buf.push_back(flags(*itr));
+          for (auto j: domainNodes.receiveNodes) buf.push_back(flags(j));
 
           // Send the flags for the nodes we're receiving from this domain.
           CHECK(buf.size() == domainNodes.receiveNodes.size());
@@ -1145,7 +1126,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
 
           // Cull the receive nodes.
           {
-            vector<int> newReceiveNodes;
+            vector<size_t> newReceiveNodes;
             for (size_t k = 0; k != domainNodes.receiveNodes.size(); ++k) {
               if (flags(domainNodes.receiveNodes[k]) == 1) {
                 newReceiveNodes.push_back(newGhostIndex);
@@ -1173,7 +1154,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
   // Now go through and remove any send nodes that are no longer needed.
   list<vector<int> >::const_iterator bufItr = recvBuffers.begin();
   nodeListOff = 0;
-  for (typename FieldList<Dimension, int>::const_iterator flagSetItr = flagSet.begin();
+  for (auto flagSetItr = flagSet.begin();
        flagSetItr != flagSet.end();
        ++flagSetItr, ++nodeListOff) {
     const NodeList<Dimension>& nodeList = (**flagSetItr).nodeList();
@@ -1181,10 +1162,7 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
       const BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(const_cast<NodeList<Dimension>&>(nodeList));
       const size_t myFirstGhostNode = (boundaryNodes.ghostNodes.size() > 0 ? boundaryNodes.ghostNodes[0] : nodeList.numNodes()) - numNodesRemovedPreviously[nodeListOff];
       DomainBoundaryNodeMap& domainBoundaryNodes = this->accessDomainBoundaryNodeMap(nodeList);
-      for (typename DomainBoundaryNodeMap::iterator innerItr = domainBoundaryNodes.begin();
-           innerItr != domainBoundaryNodes.end();
-           ++innerItr) {
-        DomainBoundaryNodes& domainNodes = innerItr->second;
+      for (auto& [neighborDomain, domainNodes]: domainBoundaryNodes) {
 
         // If there are nodes we're sending to this domain, then we should have some flags
         // waiting for us.
@@ -1196,11 +1174,11 @@ cullGhostNodes(const FieldList<Dimension, int>& flagSet,
           // Remove the send nodes we don't need.
           {
             CHECK(flags.size() == domainNodes.sendNodes.size());
-            vector<int> newSendNodes;
+            vector<size_t> newSendNodes;
             for (size_t k = 0; k != domainNodes.sendNodes.size(); ++k) {
               if (flags[k] == 1) {
                 CONTRACT_VAR(myFirstGhostNode);
-                CHECK(old2newIndexMap(nodeListOff, domainNodes.sendNodes[k]) < (int)myFirstGhostNode);
+                CHECK(old2newIndexMap(nodeListOff, domainNodes.sendNodes[k]) < myFirstGhostNode);
                 newSendNodes.push_back(old2newIndexMap(nodeListOff, domainNodes.sendNodes[k]));
               }
             }
@@ -1304,7 +1282,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
   }
   END_CONTRACT_SCOPE
 
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
   vector<int> dummyInts;
   vector<MPI_Request> dummyRequests;
   vector<MPI_Status> dummyStatus;
@@ -1315,7 +1293,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
 
     // Wait until all of our receives have been satisfied.
     vector<MPI_Status> recvStatus(mRecvRequests.size());
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
     waitallWithDeadlockDetection("DistributedBoundary::finalizeExchanges -- RECEIVE waitall",
                                  dummyInts, mRecvProcIDs, dummyRequests, mRecvRequests, dummyStatus, recvStatus, Communicator::communicator());
 #else
@@ -1335,7 +1313,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
 
     // Wait until all of our sends have been satisfied.
     vector<MPI_Status> sendStatus(mSendRequests.size());
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
     waitallWithDeadlockDetection("DistributedBoundary::finalizeExchanges -- RECEIVE waitall",
                                  mSendProcIDs, dummyInts, mSendRequests, dummyRequests, sendStatus, dummyStatus, Communicator::communicator());
 #else
@@ -1351,7 +1329,7 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
   mMPIFieldTag = 0;
   mSendRequests = vector<MPI_Request>();
   mRecvRequests = vector<MPI_Request>();
-#ifdef USE_MPI_DEADLOCK_DETECTION
+#ifdef SPHERAL_ENABLE_MPI_DEADLOCK_DETECTION
   mSendProcIDs = vector<int>();
   mRecvProcIDs = vector<int>();
 #endif
@@ -1383,45 +1361,33 @@ void
 DistributedBoundary<Dimension>::
 setControlAndGhostNodes() {
 
-  typedef typename Boundary<Dimension>::BoundaryNodes BoundaryNodes;
-  typedef typename DistributedBoundary<Dimension>::DomainBoundaryNodeMap DomainBoundaryNodeMap;
-
-  const NodeListRegistrar<Dimension>& registrar = NodeListRegistrar<Dimension>::instance();
-  for (typename NodeListRegistrar<Dimension>::const_iterator nodeListItr = registrar.begin();
-       nodeListItr != registrar.end();
-       ++nodeListItr) {
+  const auto& registrar = NodeListRegistrar<Dimension>::instance();
+  for (auto* nodeListPtr: range(registrar.begin(), registrar.end())) {
 
     // Add an entry for this NodeList.
-    this->addNodeList(**nodeListItr);
-    BoundaryNodes& boundNodes = this->accessBoundaryNodes(**nodeListItr);
-    vector<int>& controlNodes = boundNodes.controlNodes;
-    vector<int>& ghostNodes = boundNodes.ghostNodes;
-    controlNodes = vector<int>();
-    ghostNodes = vector<int>();
+    this->addNodeList(*nodeListPtr);
+    auto& boundNodes = this->accessBoundaryNodes(*nodeListPtr);
+    auto& controlNodes = boundNodes.controlNodes;
+    auto& ghostNodes = boundNodes.ghostNodes;
+    controlNodes.clear();
+    ghostNodes.clear();
 
     // Loop over all the domains this NodeList communicates with.
-    if (communicatedNodeList(**nodeListItr)) {
-      const DomainBoundaryNodeMap& domBoundaryNodeMap = domainBoundaryNodeMap(**nodeListItr);
-      for (typename DomainBoundaryNodeMap::const_iterator domItr = domBoundaryNodeMap.begin();
-           domItr != domBoundaryNodeMap.end();
-           ++domItr) {
-        const typename DistributedBoundary<Dimension>::DomainBoundaryNodes& domainNodes = domItr->second;
+    if (communicatedNodeList(*nodeListPtr)) {
+      const auto& domainBoundaryNodes = domainBoundaryNodeMap(*nodeListPtr);
+      for (auto& [neighborDomain, domainNodes]: domainBoundaryNodes) {
 
         // Add the send nodes for this domain to the control node list.
-        const vector<int>& sendNodes = domainNodes.sendNodes;
+        const vector<size_t>& sendNodes = domainNodes.sendNodes;
         CHECK(controlNodes.size() + sendNodes.size() < 10000000);
         controlNodes.reserve(controlNodes.size() + sendNodes.size());
-        for (vector<int>::const_iterator sendItr = sendNodes.begin();
-             sendItr < sendNodes.end();
-             ++sendItr) controlNodes.push_back(*sendItr);
+        for (auto j: sendNodes) controlNodes.push_back(j);
 
         // Add the receive nodes to the ghost node list.
-        const vector<int>& recvNodes = domainNodes.receiveNodes;
+        const vector<size_t>& recvNodes = domainNodes.receiveNodes;
         CHECK(ghostNodes.size() + sendNodes.size() < 10000000);
         ghostNodes.reserve(ghostNodes.size() + sendNodes.size());
-        for (vector<int>::const_iterator recvItr = recvNodes.begin();
-             recvItr < recvNodes.end();
-             ++recvItr) ghostNodes.push_back(*recvItr);
+        for (auto j: recvNodes) ghostNodes.push_back(j);
       }      
     }
   }
@@ -1572,7 +1538,7 @@ buildReceiveAndGhostNodes(const DataBase<Dimension>& dataBase) {
              nodeListItr != dataBase.nodeListEnd();
              ++nodeListItr, ++nodeListID) {
           if (this->nodeListSharedWithDomain(**nodeListItr, neighborProc)) {
-            const vector<int>& sendNodes = this->accessDomainBoundaryNodes(**nodeListItr, neighborProc).sendNodes;
+            const vector<size_t>& sendNodes = this->accessDomainBoundaryNodes(**nodeListItr, neighborProc).sendNodes;
             CHECK(sendNodes.size() > 0);
             numSendNodes[neighborProc][nodeListID] = sendNodes.size();
           }
@@ -1627,7 +1593,7 @@ buildReceiveAndGhostNodes(const DataBase<Dimension>& dataBase) {
              ++nodeListItr, ++nodeListID) {
           if (numRecvNodes[neighborProc][nodeListID] > 0) {
             DomainBoundaryNodes& domainNodes = openDomainBoundaryNodes(&(**nodeListItr), neighborProc);
-            vector<int>& recvNodes = domainNodes.receiveNodes;
+            vector<size_t>& recvNodes = domainNodes.receiveNodes;
             recvNodes.reserve(numRecvNodes[neighborProc][nodeListID]);
             for (int i = firstNewGhostNode[nodeListID]; 
                  i != firstNewGhostNode[nodeListID] + numRecvNodes[neighborProc][nodeListID];

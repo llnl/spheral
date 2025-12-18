@@ -4,13 +4,23 @@
 #
 # The list of python files should be passed as the arguments
 #
-# Note, if ENABLE_CXXONLY is set, this function does nothing
+# Note, if SPHERAL_ENABLE_PYTHON is set to OFF, this function does nothing
 #-----------------------------------------------------------------------------------
 
 
 function(spheral_install_python_files)
 
-  if (NOT ENABLE_CXXONLY)
+  #  file(COPY ${_file} DESTINATION ${CMAKE_BINARY_DIR}/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/)
+  foreach(_file ${ARGV})
+    get_filename_component(_filename ${_file} NAME)
+    configure_file(
+      ${_file}
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${_filename}
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    COPYONLY)
+  endforeach()
+
+  if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${ARGV}
       DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
     install(CODE "execute_process( \

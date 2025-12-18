@@ -106,6 +106,7 @@ public:
 
   // Access the list of boundary conditions.
   const std::vector<Boundary<Dimension>*>& boundaryConditions()     const { return mBoundaryConditions; }
+  std::vector<Boundary<Dimension>*>& boundaryConditionsNonConst()         { return mBoundaryConditions; }
 
   // Apply boundary conditions to the physics specific fields.
   virtual void applyGhostBoundaries(State<Dimension>& state,
@@ -221,7 +222,7 @@ public:
 
   // Many physics packages will also have their own representations of momentum in the
   // system (electromagnetic momentum flux density, etc.) 
-  virtual Vector extraMomentum() const                           { return Vector::zero; }
+  virtual Vector extraMomentum() const                           { return Vector::zero(); }
 
   // Register any additional state for visualization.
   virtual void registerAdditionalVisualizationState(DataBase<Dimension>& dataBase,

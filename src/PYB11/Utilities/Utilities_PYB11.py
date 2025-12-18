@@ -59,6 +59,7 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/BiCubicInterpolator.hh"',
                   '"Utilities/uniform_random.hh"',
                   '"Utilities/Timer.hh"',
+                  '"Utilities/initializeAxom.hh"',
                   '"Distributed/Communicator.hh"',
                   '"adiak.hpp"',
                   '<algorithm>']
@@ -203,27 +204,27 @@ Based on stuff from "Computational Geometry in C", Joseph O'Rourke"""
 @PYB11cppname("numGlobalNodes")
 def numGlobalNodesNL(nodes = "const NodeList<%(Dimension)s>&"):
     "Total number of nodes in the NodeList across all domains"
-    return "int"
+    return "size_t"
 
 @PYB11template("Dimension")
 @PYB11cppname("numGlobalNodes")
 def numGlobalNodesDB(dataBase = "const DataBase<%(Dimension)s>&"):
     "Total number of nodes in the DataBase across all domains"
-    return "int"
+    return "size_t"
 
 @PYB11template("Dimension")
 @PYB11cppname("globalNodeIDs")
 def globalNodeIDsNL(dataBase = "const NodeList<%(Dimension)s>&"):
     """Compute a unique set of global node IDs for the given NodeList, and return
 the set of them on this process."""
-    return "Field<%(Dimension)s, int>"
+    return "Field<%(Dimension)s, size_t>"
 
 @PYB11template("Dimension")
 @PYB11cppname("globalNodeIDs")
 def globalNodeIDsDB(dataBase = "const DataBase<%(Dimension)s>&"):
     """Compute a unique set of global node IDs for all nodes across all NodeLists in
 a DataBase, returning the result as a FieldList<int>."""
-    return "FieldList<%(Dimension)s, int>"
+    return "FieldList<%(Dimension)s, size_t>"
 
 @PYB11template("Dimension")
 def iterateIdealH(dataBase = "DataBase<%(Dimension)s>&",
@@ -815,11 +816,17 @@ def clippedVolume(poly = "const Dim<3>::FacetedVolume&",
 
 #...............................................................................
 for (value, label) in (("int", "Int"),
-                       ("unsigned", "Unsigned"),
-                       ("long", "Long"),
                        ("double", "Scalar"),
                        ("std::string", "String")):
     exec(f"""
 adiak_value{label} = PYB11TemplateFunction(adiak_value, "{value}", pyname="adiak_value")
 adiak_value2{label} = PYB11TemplateFunction(adiak_value2, "{value}", pyname="adiak_value")
 """)
+
+#...............................................................................
+# Axom stuff
+def initializeAxom():
+    return "void"
+
+def finalizeAxom():
+    return "void"

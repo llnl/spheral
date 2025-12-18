@@ -15,17 +15,9 @@
 #include "Boundary/ConstantBoundary.hh"
 #include "Boundary/ConstantBoundaryUtilities.hh"
 
-#include "boost/algorithm/string.hpp"
-
 using std::vector;
 using std::map;
 using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -36,13 +28,13 @@ template<typename Dimension>
 ConstantBoundary<Dimension>::
 ConstantBoundary(DataBase<Dimension>& dataBase,
                  NodeList<Dimension>& nodeList,
-                 const vector<int>& nodeIDs,
+                 const vector<size_t>& nodeIDs,
                  const GeomPlane<Dimension>& denialPlane):
   Boundary<Dimension>(),
   mDataBase(dataBase),
   mNodeListPtr(&nodeList),
   mBoundaryCount(nodeList.numFields()),
-  mNodeFlags("ConstantBoundaryNodeFlags" + std::to_string(mBoundaryCount), nodeList, 0),
+  mNodeFlags("ConstantBoundaryNodeFlags" + std::to_string(mBoundaryCount), nodeList, 0u),
   mNumConstantNodes(nodeIDs.size()),
   mDenialPlane(denialPlane),
   mReflectOperator(planarReflectingOperator(denialPlane)),
@@ -54,20 +46,13 @@ ConstantBoundary(DataBase<Dimension>& dataBase,
                                              &ConstantBoundary<Dimension>::notifyAfterRedistribution)) {
 
   // Store the ids of the nodes we're watching.
-  for (auto itr = nodeIDs.begin(); itr < nodeIDs.end(); ++itr) {
-    REQUIRE(*itr >= 0.0 && *itr < (int)nodeList.numInternalNodes());
-    mNodeFlags[*itr] = 1;
+  for (auto i: nodeIDs) {
+    REQUIRE(i < nodeList.numInternalNodes());
+    mNodeFlags[i] = 1u;
   }
 
   // Issue a big old warning!
   // if (Process::getRank() == 0) cerr << "WARNING: ConstantBoundary is currently not compatible with redistributing nodes!\nMake sure you don't allow redistribution with this Boundary condition." << endl;
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ConstantBoundary<Dimension>::~ConstantBoundary() {
 }
 
 //------------------------------------------------------------------------------
@@ -89,9 +74,9 @@ setGhostNodes(NodeList<Dimension>& nodeList) {
     nodeList.numGhostNodes(currentNumGhostNodes + mNumConstantNodes);
     cNodes.resize(mNumConstantNodes);
     gNodes.resize(mNumConstantNodes);
-    for (auto i = 0; i < mNumConstantNodes; ++i) {
+    for (auto i = 0u; i < mNumConstantNodes; ++i) {
       const auto j = firstNewGhostNode + i;
-      mNodeFlags(j) = 1;
+      mNodeFlags(j) = 1u;
       cNodes[i] = j;
       gNodes[i] = j;
     }
@@ -224,10 +209,10 @@ ConstantBoundary<Dimension>::initializeProblemStartup(const bool final) {
 // Return the set of node IDs we're controlling.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-std::vector<int>
+std::vector<size_t>
 ConstantBoundary<Dimension>::
 nodeIndices() const {
-  std::vector<int> result;
+  std::vector<size_t> result;
   if (mActive) {
     for (const auto& bnitr: this->accessBoundaryNodes()) {
       const auto& ghosts = bnitr.second.ghostNodes;
@@ -235,7 +220,7 @@ nodeIndices() const {
     }
   } else {
     for (auto i = 0u; i != mNodeListPtr->numNodes(); ++i) {
-      if (mNodeFlags(i) == 1) result.push_back(i);
+      if (mNodeFlags(i) == 1u) result.push_back(i);
     }
   }
   return result;

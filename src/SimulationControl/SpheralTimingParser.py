@@ -64,7 +64,7 @@ def init_timer(args):
         if (args.caliperConfig or args.caliperFilename or args.caliperConfigJSON):
             print("WARNING: Caliper command line inputs provided for "+\
                   "non-timer install. Reconfigure the install with "+\
-                  "-DENABLE_TIMER=ON to be able to use Caliper timers.")
+                  "-DSPHERAL_ENABLE_TIMERS=ON to be able to use Caliper timers.")
     if(args.caliperConfigJSON):
         TimerMgr.load(args.caliperConfigJSON)
         if(not args.caliperConfig):

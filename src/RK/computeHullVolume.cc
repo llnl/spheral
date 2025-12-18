@@ -21,12 +21,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -279,7 +273,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
   // using Plane = typename ClippingType<Dimension>::Plane;
   // using PolyVolume = typename ClippingType<Dimension>::PolyVolume;
 
-  const auto numGens = position.numNodes();
+  const auto numGens = position.numElements();
   const auto numNodeLists = position.size();
   const auto numGensGlobal = allReduce(numGens, SPHERAL_OP_SUM);
   const auto returnSurface = surfacePoint.size() == numNodeLists;
@@ -296,11 +290,9 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
 #pragma omp parallel for
       for (auto i = 0u; i < n; ++i) {
         const auto& ri = position(nodeListi, i);
-        const auto& Hi = H(nodeListi, i);
-        const auto  Hinv = Hi.Inverse();
 
         // Build the set of inverse positions in eta space about this point (including itself as the origin)
-        vector<Vector> invPositions = {Vector::zero};
+        vector<Vector> invPositions = {Vector::zero()};
         const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
         CHECK(connectivity.size() == numNodeLists);
         for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
@@ -320,7 +312,7 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
         for (const auto& vinv: vertsInv) {
           const auto vimag2 = vinv.magnitude2();
           if (vimag2 < 1.0e-30) {
-            verts.push_back(Vector::zero);
+            verts.push_back(Vector::zero());
             surface = true;
           } else {
             verts.push_back(vinv/vimag2);

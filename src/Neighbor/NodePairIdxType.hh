@@ -1,13 +1,11 @@
-#ifndef _Spheral_NodePairIdxType_hh_
-#define _Spheral_NodePairIdxType_hh_
+#ifndef Spheral_NodePairIdxType_hh
+#define Spheral_NodePairIdxType_hh
 
 #include "Utilities/size_t_bits.hh"
 #include "Utilities/DBC.hh"
+#include "config.hh"
 
 #include <iostream>
-#include <iostream>
-#include <functional>   // hash
-// #include <boost/container_hash/hash.hpp>
 
 // These are based on what we get from size_t_bits
 #define MAX_NODE_INDEX (size_t(1u) << ((SIZE_T_BITS - 10)/2))
@@ -18,16 +16,22 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 struct NodePairIdxType {
   using HashType = size_t;
-  size_t i_node, i_list, j_node, j_list;
-  double f_couple;                       // An arbitrary fraction in [0,1] to hold the effective coupling of the pair
+  size_t i_node = 0u;
+  size_t i_list = 0u;
+  size_t j_node = 0u;
+  size_t j_list = 0u;
+  double f_couple = 0.0; // An arbitrary fraction in [0,1] to hold the effective coupling of the pair
 
-  NodePairIdxType(size_t i_n,
-                  size_t i_l,
-                  size_t j_n,
-                  size_t j_l,
-                  double f = 1.0): i_node(i_n), i_list(i_l), j_node(j_n), j_list(j_l), f_couple(f) {}
+  SPHERAL_HOST_DEVICE NodePairIdxType() = default;
+  SPHERAL_HOST_DEVICE ~NodePairIdxType() = default;
+  SPHERAL_HOST_DEVICE NodePairIdxType(size_t i_n,
+                                      size_t i_l,
+                                      size_t j_n,
+                                      size_t j_l,
+                                      double f = 1.0)
+    : i_node(i_n), i_list(i_l), j_node(j_n), j_list(j_l), f_couple(f) {}
 
-  HashType hash() const {
+  SPHERAL_HOST_DEVICE HashType hash() const {
     // We do this with simple bit shifting, requiring max values for the integer
     // components.  We assume the
     //    i_list, j_list < 32 (2^5)
@@ -49,8 +53,9 @@ struct NodePairIdxType {
   }
 
   // Comparisons
-  bool operator==(const NodePairIdxType& val) const { return (this->hash() == val.hash()); }
-  bool operator< (const NodePairIdxType& val) const { return (this->hash() <  val.hash()); }
+  SPHERAL_HOST_DEVICE bool operator==(const NodePairIdxType& val) const { return (hash() == val.hash()); }
+  SPHERAL_HOST_DEVICE bool operator!=(const NodePairIdxType& val) const { return (hash() != val.hash()); }
+  SPHERAL_HOST_DEVICE bool operator< (const NodePairIdxType& val) const { return (hash() <  val.hash()); }
 };
 
 //------------------------------------------------------------------------------
@@ -70,10 +75,8 @@ namespace std {
   struct hash<Spheral::NodePairIdxType> {
     size_t operator()(const Spheral::NodePairIdxType& x) const {
       return x.hash();
-      // boost::hash<std::tuple<size_t, size_t, size_t, size_t>> hasher;
-      // return hasher(std::make_tuple(x.i_node, x.i_list, x.j_node, x.j_list));
     }
   };
 } // namespace std
 
-#endif // _Spheral_NodePairIdxType_hh_
+#endif // Spheral_NodePairIdxType_hh

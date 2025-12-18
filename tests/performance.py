@@ -11,7 +11,7 @@ from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
 
 if (not TimerMgr.timers_usable()):
-    log("WARNING: Timers not enabled, skipping performance tests", echo=True)
+    log("WARNING: Timers not enabled, skipping performance tests. Configure Spheral w/ -DSPHERAL_ENABLE_TIMERS=On", echo=True)
     sys.exit(0)
 
 # Get options from ats
@@ -44,7 +44,7 @@ mpi_enabled = SpheralConfigs.enable_mpi()
 # Retrieve the host name and remove any numbers
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")
-mac_procs = {"rzhound": 112, "rzwhippet": 112, "ruby": 56,
+mac_procs = {"rzhound": 112, "rzwhippet": 112, "dane": 112,
              "rzadams": 84, "rzvernal": 64, "tioga": 64,
              "rzansel": 40, "lassen": 40, "rzgenie": 36}
 # Find out how many nodes our allocation has grabbed
