@@ -1,4 +1,4 @@
-Version vYYYY.MM.p -- Release date YYYY-MM-DD
+Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
   * Important Notes:
 
@@ -47,7 +47,8 @@ Notable changes include:
     * Updated ATS to bring in fix for python 3.12+.
     * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
     * Silo memory leak is not fixed but the memory impact is 100x smaller.
-    * Cleaned up some variable types and trapping error conditions in generateCylDistributionFromRZ for generating rotated problems
+    * Cleaned up some variable types and trapping error conditions in generateCylDistributionFromRZ for generating rotated problems.
+    * Fixed the git strategy for the update TPLs and build caches CI stages.
 
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
