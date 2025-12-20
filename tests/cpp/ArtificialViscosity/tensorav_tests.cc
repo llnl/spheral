@@ -65,5 +65,5 @@ GPU_TYPED_TEST_P(TensorAVTypedTest, InitTests) {
 
 REGISTER_TYPED_TEST_SUITE_P(TensorAVTypedTest, InitTests);
 
-INSTANTIATE_TYPED_TEST_SUITE_P(ArtificialViscosity, TensorAVTypedTest,
+INSTANTIATE_TYPED_TEST_SUITE_P(TensorArtificialViscosity, TensorAVTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
