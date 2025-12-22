@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class ContactIndex:
     def pyinit(self):
       "Constructor"

@@ -5,7 +5,7 @@ from PYB11Generator import *
 from PhysicsAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPhysics")
+@PYB11module("SpheralCompiledModules.SpheralPhysics")
 class Physics:
 
     PYB11typedefs = """

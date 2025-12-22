@@ -9,7 +9,7 @@
 import Spheral
 from SpheralTestUtilities import *
 from SpheralOptionParser import *
-from SpheralUtilities import *
+from SpheralCompiledModules.SpheralUtilities import *
 import mpi
 import SpheralConfigs
 

@@ -8,7 +8,7 @@ from FileIOTemplateMethods import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
-@PYB11module("SpheralFileIO")
+@PYB11module("SpheralCompiledModules.SpheralFileIO")
 class PyFileIO(FileIO):
     "PyFileIO -- A python friendly version of the FileIO interface, for use creating python FileIO objects."
 

@@ -3,6 +3,7 @@ include(CMakeDependentOption)
 # Set Spheral CMake options
 #-------------------------------------------------------------------------------
 option(SPHERAL_ENABLE_PYTHON "Build Spheral python libraries" ON)
+option(SPHERAL_BUILD_MAIN_PYTHON_MODULE "Build SpheralCompiledModules pybind11 module" ON)
 
 option(SPHERAL_ENABLE_1D "Enable 1D" ON)
 option(SPHERAL_ENABLE_2D "Enable 2D" ON)

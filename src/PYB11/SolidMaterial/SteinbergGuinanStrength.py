@@ -6,7 +6,7 @@ from StrengthModel import *
 from StrengthModelAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSolidMaterial")
+@PYB11module("SpheralCompiledModules.SpheralSolidMaterial")
 class SteinbergGuinanStrength(StrengthModel):
     """SteinbergGuinanStrength -- An implentation of StrengthModel returning constant
 values for the shear modulus and yield strength."""

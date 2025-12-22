@@ -5,7 +5,7 @@ from PYB11Generator import *
 from BoundaryAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralBoundary")
+@PYB11module("SpheralCompiledModules.SpheralBoundary")
 class Boundary:
 
     PYB11typedefs = """

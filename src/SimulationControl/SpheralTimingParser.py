@@ -5,9 +5,8 @@
 
 import argparse, mpi
 import SpheralConfigs
-from SpheralUtilities import TimerMgr
-from SpheralUtilities import adiak_value
-import SpheralOpenMP
+from SpheralCompiledPackages import adiak_value, TimerMgr
+from SpheralCompiledModules import SpheralOpenMP
 
 cali_args = ["caliperConfig", "caliperFilename", "caliperConfigJSON"]
 

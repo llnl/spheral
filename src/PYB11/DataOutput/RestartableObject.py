@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 
-@PYB11module("SpheralDataOutput")
+@PYB11module("SpheralCompiledModules.SpheralDataOutput")
 class RestartableObject:
     "The base class for building restartable python objects in Spheral."
 
