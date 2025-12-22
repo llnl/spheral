@@ -91,10 +91,12 @@ get_property(SPHERAL_MODULE_LIST GLOBAL PROPERTY SPHERAL_MODULE_LIST)
 set(CXX_MODULE_LIBS ${SPHERAL_MODULE_LIST})
 list(TRANSFORM CXX_MODULE_LIBS PREPEND "Spheral")
 
-spheral_add_pybind11_library(CompiledModules DUMMY_MODULE_LIST
-  DEPENDS        ${CXX_MODULE_LIBS}
-  IS_SUBMODULE   OFF
-  SUBMODULES     ${CXX_MODULE_LIBS})
+if (SPHERAL_BUILD_MAIN_PYTHON_MODULE)
+  spheral_add_pybind11_library(CompiledModules DUMMY_MODULE_LIST
+    DEPENDS        ${CXX_MODULE_LIBS}
+    IS_SUBMODULE   OFF
+    SUBMODULES     ${CXX_MODULE_LIBS})
+endif()
 
 # This global list is filled in each spheral_add_pybind11_library call
 string(REPLACE ";" " " PYTHONPKGS "${SPHERAL_MODULE_LIST}")
