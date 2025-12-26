@@ -21,7 +21,7 @@ class GenericHydro(Physics):
     #...........................................................................
     # Constructors
     def pyinit(self,
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool"):
         "GenericHydro constructor"
@@ -80,7 +80,7 @@ class GenericHydro(Physics):
 
     #...........................................................................
     # Attributes
-    artificialViscosity = PYB11property("ArtificialViscosityHandle<%(Dimension)s>&", "artificialViscosity", doc="The artificial viscosity object")
+    artificialViscosity = PYB11property("ArtificialViscosity<%(Dimension)s>&", "artificialViscosity", doc="The artificial viscosity object")
     cfl = PYB11property("Scalar", "cfl", "cfl", doc="The Courant-Friedrichs-Lewy timestep limit multiplier")
     useVelocityMagnitudeForDt = PYB11property("bool", "useVelocityMagnitudeForDt", "useVelocityMagnitudeForDt", doc="Should the pointwise velocity magnitude be used to limit the timestep?")
     minMasterNeighbor = PYB11property("int", "minMasterNeighbor", doc="minimum number of master neighbors found")

@@ -9,8 +9,7 @@ set(FSISPH_inst
     )
 
 
-set(FSISPH_sources
-    FSIFieldNames.cc )
+set(FSISPH_sources )
 
 
 instantiate(FSISPH_inst FSISPH_sources)

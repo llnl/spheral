@@ -1,49 +1,21 @@
 //---------------------------------Spheral++----------------------------------//
 // A simple form for the artificial viscosity due to Monaghan & Gingold.
 //----------------------------------------------------------------------------//
-#include "MonaghanGingoldViscosity.hh"
-#include "DataOutput/Restart.hh"
 #include "Field/FieldList.hh"
 #include "DataBase/DataBase.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "NodeList/FluidNodeList.hh"
-#include "Neighbor/Neighbor.hh"
-#include "Material/EquationOfState.hh"
-#include "Boundary/Boundary.hh"
-#include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "Utilities/Timer.hh"
-
-using std::vector;
-using std::string;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MonaghanGingoldViscosity<Dimension>::
-MonaghanGingoldViscosity(const Scalar Clinear,
-                         const Scalar Cquadratic,
-                         const TableKernel<Dimension>& kernel,
-                         const bool linearInExpansion,
-                         const bool quadraticInExpansion):
-  ArtificialViscosity<Dimension, Scalar>(Clinear, Cquadratic, kernel),
-  mLinearInExpansion(linearInExpansion),
-  mQuadraticInExpansion(quadraticInExpansion) {
-}
 
 //------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE
 void
-MonaghanGingoldViscosity<Dimension>::
+MonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-      const unsigned nodeListi, const unsigned i, 
+      const unsigned nodeListi, const unsigned i,
       const unsigned nodeListj, const unsigned j,
       const Vector& xi,
       const SymTensor& Hi,
@@ -57,9 +29,9 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       const Vector& vj,
       const Scalar rhoj,
       const Scalar csj,
-      const FieldList<Dimension, Scalar>& fCl,
-      const FieldList<Dimension, Scalar>& fCq,
-      const FieldList<Dimension, Tensor>& DvDx) const {
+      const FieldListView<Dimension, Scalar>& fCl,
+      const FieldListView<Dimension, Scalar>& fCq,
+      const FieldListView<Dimension, Tensor>& DvDx) const {
 
   // Preconditions
   REQUIRE(fCl.size() == fCq.size());
@@ -86,10 +58,10 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
   const auto muj = vij.dot(etaj)/(etaj.magnitude2() + mEpsilon2);
 
   // The artificial internal energy.
-  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : min(0.0, mui)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(min(0.0, mui)));
-  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : min(0.0, muj)) +
-                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(min(0.0, muj)));
+  const auto ei = -Clij*csi*(mLinearInExpansion    ? mui                : std::min(0.0, mui)) +
+                   Cqij    *(mQuadraticInExpansion ? -sgn(mui)*mui*mui  : FastMath::square(std::min(0.0, mui)));
+  const auto ej = -Clij*csj*(mLinearInExpansion    ? muj                : std::min(0.0, muj)) +
+                   Cqij    *(mQuadraticInExpansion ? -sgn(muj)*muj*muj  : FastMath::square(std::min(0.0, muj)));
   CHECK2(ei >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ei << " " << csi << " " << mui);
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj);
 

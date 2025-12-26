@@ -21,7 +21,7 @@ class SolidSphericalSPH(SolidSPH):
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const SphericalKernel&",
                WPi = "const SphericalKernel&",
                WGrad = "const SphericalKernel&",

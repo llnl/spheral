@@ -7,5 +7,6 @@ text = """
 
 namespace Spheral {
   template class FiniteVolumeViscosity< Dim< %(ndim)s > >;
+  template class FiniteVolumeViscosityView< Dim< %(ndim)s > >;
 }
 """

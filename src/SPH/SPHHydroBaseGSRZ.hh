@@ -37,7 +37,7 @@ public:
   // Constructors.
   SPHHydroBaseGSRZ(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
                    DataBase<Dimension>& dataBase,
-                   ArtificialViscosity<Dimension>& Q,
+                   ArtificialViscosityView<Dimension>& Q,
                    const TableKernel<Dimension>& W,
                    const TableKernel<Dimension>& WPi,
                    const double filter,

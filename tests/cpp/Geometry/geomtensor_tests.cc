@@ -303,7 +303,7 @@ GPU_TYPED_TEST_P(GeomTensorTypedTest, InPlaceAddSub) {
   EXEC_IN_SPACE_BEGIN(WORK_EXEC_POLICY)
     Tensor T1(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
     Tensor T2(9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0);
-    
+
     T1 += T2;
     SPHERAL_ASSERT_EQ(T1.xx(), 10.0);
     SPHERAL_ASSERT_EQ(T1.xy(), 10.0);

@@ -59,7 +59,7 @@ namespace Spheral {
 template<typename Dimension>
 CRKSPHBase<Dimension>::
 CRKSPHBase(DataBase<Dimension>& dataBase,
-           ArtificialViscosityHandle<Dimension>& Q,
+           ArtificialViscosity<Dimension>& Q,
            const RKOrder order,
            const double cfl,
            const bool useVelocityMagnitudeForDt,
@@ -202,7 +202,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   // Create the scratch fields.
   // Note we deliberately do not zero out the derivatives here!  This is because the previous step
   // info here may be used by other algorithms (like the CheapSynchronousRK2 integrator or
-  // the ArtificialVisocisity::initialize step).
+  // the ArtificialViscosity::initialize step).
   dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero(), HydroFieldNames::XSPHDeltaV, false);
   dataBase.resizeFluidFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
   dataBase.resizeFluidFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);

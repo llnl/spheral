@@ -3,18 +3,18 @@
 //
 // Created by JMO, Wed Dec 16 20:52:02 PST 2015
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_PSPHHydroBase_hh__
-#define __Spheral_PSPHHydroBase_hh__
-
-#include <string>
+#ifndef __Spheral_PSPH_hh__
+#define __Spheral_PSPH_hh__
 
 #include "SPH.hh"
+
+#include <string>
 
 namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
@@ -36,7 +36,7 @@ public:
 
   // Constructors.
   PSPH(DataBase<Dimension>& dataBase,
-       ArtificialViscosityHandle<Dimension>& Q,
+       ArtificialViscosity<Dimension>& Q,
        const TableKernel<Dimension>& W,
        const TableKernel<Dimension>& WPi,
        const double cfl,
@@ -93,7 +93,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Post-state update. For PSPH this is where we recompute the PSPH pressure and corrections.
   virtual 

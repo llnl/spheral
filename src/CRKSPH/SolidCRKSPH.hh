@@ -30,7 +30,7 @@ public:
 
   // Constructors.
   SolidCRKSPH(DataBase<Dimension>& dataBase,
-              ArtificialViscosityHandle<Dimension>& Q,
+              ArtificialViscosity<Dimension>& Q,
               const RKOrder order,
               const double cfl,
               const bool useVelocityMagnitudeForDt,
@@ -80,7 +80,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Apply boundary conditions to the physics specific fields.
   virtual

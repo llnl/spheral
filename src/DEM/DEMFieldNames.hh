@@ -12,20 +12,20 @@
 namespace Spheral {
 
 struct DEMFieldNames {
-  static const std::string momentOfInertia;
-  static const std::string particleRadius;
-  static const std::string compositeParticleIndex;
-  static const std::string angularVelocity;
-  static const std::string uniqueIndices;
-  static const std::string isActiveContact;
-  static const std::string neighborIndices;
-  static const std::string shearDisplacement;
-  static const std::string rollingDisplacement;
-  static const std::string torsionalDisplacement;
-  static const std::string equilibriumOverlap;
-  static const std::string maximumOverlap;
-  static const std::string solidBoundaries;
-  static const std::string solidBoundaryPolicy;
+  static inline const std::string momentOfInertia = "moment of inertia";
+  static inline const std::string particleRadius = "particle radius";
+  static inline const std::string compositeParticleIndex = "composite particle flags";
+  static inline const std::string angularVelocity = "angular velocity";
+  static inline const std::string uniqueIndices = "unique indices";
+  static inline const std::string isActiveContact = "bool indentifying active contacts";
+  static inline const std::string neighborIndices = "unique neighbor indices";
+  static inline const std::string shearDisplacement = "shear displacement";
+  static inline const std::string rollingDisplacement = "rolling displacement";
+  static inline const std::string torsionalDisplacement = "torsional displacement";
+  static inline const std::string equilibriumOverlap = "equilibrium overlap";
+  static inline const std::string maximumOverlap = "maximum overlap";
+  static inline const std::string solidBoundaries = "solid boundaries";
+  static inline const std::string solidBoundaryPolicy = "solid boundary policy";
 };
 
 }

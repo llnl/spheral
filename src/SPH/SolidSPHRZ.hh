@@ -36,7 +36,7 @@ public:
 
   // Constructors.
   SolidSPHRZ(DataBase<Dimension>& dataBase,
-             ArtificialViscosityHandle<Dimension>& Q,
+             ArtificialViscosity<Dimension>& Q,
              const TableKernel<Dimension>& W,
              const TableKernel<Dimension>& WPi,
              const TableKernel<Dimension>& WGrad,
@@ -93,7 +93,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Apply boundary conditions to the physics specific fields.
   virtual

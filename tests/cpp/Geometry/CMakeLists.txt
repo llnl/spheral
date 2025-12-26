@@ -8,14 +8,14 @@ spheral_add_test(
 spheral_add_test(
   NAME geomsymmetrictensor_test
   SOURCES geomsymmetrictensor_tests.cc
-  DEPENDS_ON Spheral_Utilities
+  DEPENDS_ON Spheral_Utilities Spheral_Geometry
   #DEBUG_LINKER
 )
 
 spheral_add_test(
   NAME geomtensor_test
   SOURCES geomtensor_tests.cc
-  DEPENDS_ON Spheral_Utilities
+  DEPENDS_ON Spheral_Utilities Spheral_Geometry
   #DEBUG_LINKER
 )
 

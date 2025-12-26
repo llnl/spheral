@@ -2,10 +2,10 @@ text = """
 //------------------------------------------------------------------------------
 // Explicit instantiation.
 //------------------------------------------------------------------------------
-#include "ArtificialViscosity/ArtificialViscosityHandle.cc"
+#include "ArtificialViscosity/ArtificialViscosity.cc"
 #include "Geometry/Dimension.hh"
 
 namespace Spheral {
-  template class ArtificialViscosityHandle<Dim<%(ndim)s>>;
+  template class ArtificialViscosity<Dim<%(ndim)s>>;
 }
 """
