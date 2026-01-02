@@ -3,7 +3,6 @@ text = """
 // Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "Kernel/VolumeIntegrationFunctions.cc"
-#include "Kernel/TableKernel.hh"
 #include "Kernel/GaussianKernel.hh"
 #include "Kernel/SincKernel.hh"
 #include "Kernel/NSincPolynomialKernel.hh"
@@ -12,8 +11,7 @@ text = """
 namespace Spheral {
 """
 
-for Wname in ("TableKernel",
-              "GaussianKernel",
+for Wname in ("GaussianKernel",
               "SincKernel",
               "NSincPolynomialKernel",
               "NBSplineKernel"):

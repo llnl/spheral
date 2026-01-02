@@ -59,17 +59,17 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('m-aneos@1.0')
 
-    depends_on('eigen@3.4.0', type='build')
+    depends_on('eigen@5.0.0', type='build')
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo +hdf5', type='build')
+    depends_on('silo+python +hdf5', type='build')
 
     depends_on('chai@develop+raja', type='build')
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
-    depends_on('axom@0.9.0 +hdf5 -lua -examples -python -fortran', type='build')
+    depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 
@@ -83,8 +83,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('opensubdiv@3.4.3+pic', type='build', when="+opensubdiv")
 
-    depends_on('polytope +python', type='build', when="+python")
-    depends_on('polytope ~python', type='build', when="~python")
+    depends_on('polytope@v0.7.5 +python', type='build', when="+python")
+    depends_on('polytope@v0.7.5 ~python', type='build', when="~python")
 
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')

@@ -285,6 +285,8 @@ if (singularity_eos_DIR)
 endif()
 
 message("-----------------------------------------------------------------------------")
+# In case we start using find_package on Silo, we should save the silo_DIR path
+set(CONFIG_SILO_DIR "${silo_DIR}" CACHE PATH "Configuration Silo directory")
 # TPLs that must be imported
 list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
 

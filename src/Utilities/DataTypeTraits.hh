@@ -52,10 +52,20 @@ namespace Spheral {
 
 template<typename DataType> struct DataTypeTraits {using AxomType = double;};
 
-template <typename T> struct is_rank_n_tensor : std::false_type {};
-template <int U> struct is_rank_n_tensor<GeomThirdRankTensor<U>> : std::true_type {};
-template <int U> struct is_rank_n_tensor<GeomFourthRankTensor<U>> : std::true_type {};
-template <int U> struct is_rank_n_tensor<GeomFifthRankTensor<U>> : std::true_type {};
+// template <typename T> struct is_rank_n_tensor : std::false_type {};
+// template <int U> struct is_rank_n_tensor<GeomThirdRankTensor<U>> : std::true_type {};
+// template <int U> struct is_rank_n_tensor<GeomFourthRankTensor<U>> : std::true_type {};
+// template <int U> struct is_rank_n_tensor<GeomFifthRankTensor<U>> : std::true_type {};
+
+//------------------------------------------------------------------------------
+// Provide a trait test if type provides operator<
+namespace TypeTraits {
+  template<typename T1, typename T2, typename = void>
+  struct has_less_than : std::false_type {};
+
+  template<typename T1, typename T2>
+  struct has_less_than<T1, T2, std::void_t<decltype(std::declval<T1>() < std::declval<T2>())>> : std::true_type {};
+}
 
 //------------------------------------------------------------------------------
 template<>
@@ -301,23 +311,10 @@ template<>
 struct DataTypeTraits<Dim<1>::Vector> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::Vector&) { return Dim<1>::Vector::numElements; }
-  static Dim<1>::Vector zero() { return Dim<1>::Vector::zero; }
+  static int numElements(const Dim<1>::Vector&) { return Dim<1>::Vector::numElements(); }
+  static Dim<1>::Vector zero() { return Dim<1>::Vector::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Vector1d; }
-#endif
-  static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::DOUBLE_ID; }
-  using AxomType = double;
-};
-
-template<>
-struct DataTypeTraits<Dim<1>::Vector3d> {
-  typedef double ElementType;
-  static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::Vector3d&) { return Dim<1>::Vector3d::numElements; }
-  static Dim<1>::Vector3d zero() { return Dim<1>::Vector3d::zero; }
-#ifdef SPHERAL_ENABLE_MPI
-  static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Vector3d; }
 #endif
   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::DOUBLE_ID; }
   using AxomType = double;
@@ -327,8 +324,8 @@ template<>
 struct DataTypeTraits<Dim<1>::Tensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::Tensor&) { return Dim<1>::Tensor::numElements; }
-  static Dim<1>::Tensor zero() { return Dim<1>::Tensor::zero; }
+  static int numElements(const Dim<1>::Tensor&) { return Dim<1>::Tensor::numElements(); }
+  static Dim<1>::Tensor zero() { return Dim<1>::Tensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Tensor1d; }
 #endif
@@ -340,8 +337,8 @@ template<>
 struct DataTypeTraits<Dim<1>::SymTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::SymTensor&) { return Dim<1>::SymTensor::numElements; }
-  static Dim<1>::SymTensor zero() { return Dim<1>::SymTensor::zero; }
+  static int numElements(const Dim<1>::SymTensor&) { return Dim<1>::SymTensor::numElements(); }
+  static Dim<1>::SymTensor zero() { return Dim<1>::SymTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_SymTensor1d; }
 #endif
@@ -353,8 +350,8 @@ template<>
 struct DataTypeTraits<Dim<1>::ThirdRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::ThirdRankTensor&) { return Dim<1>::ThirdRankTensor::numElements; }
-  static Dim<1>::ThirdRankTensor zero() { return Dim<1>::ThirdRankTensor::zero; }
+  static int numElements(const Dim<1>::ThirdRankTensor&) { return Dim<1>::ThirdRankTensor::numElements(); }
+  static Dim<1>::ThirdRankTensor zero() { return Dim<1>::ThirdRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_ThirdRankTensor1d; }
 #endif
@@ -366,8 +363,8 @@ template<>
 struct DataTypeTraits<Dim<1>::FourthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::FourthRankTensor&) { return Dim<1>::FourthRankTensor::numElements; }
-  static Dim<1>::FourthRankTensor zero() { return Dim<1>::FourthRankTensor::zero; }
+  static int numElements(const Dim<1>::FourthRankTensor&) { return Dim<1>::FourthRankTensor::numElements(); }
+  static Dim<1>::FourthRankTensor zero() { return Dim<1>::FourthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FourthRankTensor1d; }
 #endif
@@ -379,8 +376,8 @@ template<>
 struct DataTypeTraits<Dim<1>::FifthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<1>::FifthRankTensor&) { return Dim<1>::FifthRankTensor::numElements; }
-  static Dim<1>::FifthRankTensor zero() { return Dim<1>::FifthRankTensor::zero; }
+  static int numElements(const Dim<1>::FifthRankTensor&) { return Dim<1>::FifthRankTensor::numElements(); }
+  static Dim<1>::FifthRankTensor zero() { return Dim<1>::FifthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FifthRankTensor1d; }
 #endif
@@ -404,8 +401,8 @@ template<>
 struct DataTypeTraits<Dim<2>::Vector> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::Vector&) { return Dim<2>::Vector::numElements; }
-  static Dim<2>::Vector zero() { return Dim<2>::Vector::zero; }
+  static int numElements(const Dim<2>::Vector&) { return Dim<2>::Vector::numElements(); }
+  static Dim<2>::Vector zero() { return Dim<2>::Vector::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Vector2d; }
 #endif
@@ -417,8 +414,8 @@ template<>
 struct DataTypeTraits<Dim<2>::Tensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::Tensor&) { return Dim<2>::Tensor::numElements; }
-  static Dim<2>::Tensor zero() { return Dim<2>::Tensor::zero; }
+  static int numElements(const Dim<2>::Tensor&) { return Dim<2>::Tensor::numElements(); }
+  static Dim<2>::Tensor zero() { return Dim<2>::Tensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Tensor2d; }
 #endif
@@ -430,8 +427,8 @@ template<>
 struct DataTypeTraits<Dim<2>::SymTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::SymTensor&) { return Dim<2>::SymTensor::numElements; }
-  static Dim<2>::SymTensor zero() { return Dim<2>::SymTensor::zero; }
+  static int numElements(const Dim<2>::SymTensor&) { return Dim<2>::SymTensor::numElements(); }
+  static Dim<2>::SymTensor zero() { return Dim<2>::SymTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_SymTensor2d; }
 #endif
@@ -443,8 +440,8 @@ template<>
 struct DataTypeTraits<Dim<2>::ThirdRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::ThirdRankTensor&) { return Dim<2>::ThirdRankTensor::numElements; }
-  static Dim<2>::ThirdRankTensor zero() { return Dim<2>::ThirdRankTensor::zero; }
+  static int numElements(const Dim<2>::ThirdRankTensor&) { return Dim<2>::ThirdRankTensor::numElements(); }
+  static Dim<2>::ThirdRankTensor zero() { return Dim<2>::ThirdRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_ThirdRankTensor2d; }
 #endif
@@ -456,8 +453,8 @@ template<>
 struct DataTypeTraits<Dim<2>::FourthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::FourthRankTensor&) { return Dim<2>::FourthRankTensor::numElements; }
-  static Dim<2>::FourthRankTensor zero() { return Dim<2>::FourthRankTensor::zero; }
+  static int numElements(const Dim<2>::FourthRankTensor&) { return Dim<2>::FourthRankTensor::numElements(); }
+  static Dim<2>::FourthRankTensor zero() { return Dim<2>::FourthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FourthRankTensor2d; }
 #endif
@@ -469,8 +466,8 @@ template<>
 struct DataTypeTraits<Dim<2>::FifthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<2>::FifthRankTensor&) { return Dim<2>::FifthRankTensor::numElements; }
-  static Dim<2>::FifthRankTensor zero() { return Dim<2>::FifthRankTensor::zero; }
+  static int numElements(const Dim<2>::FifthRankTensor&) { return Dim<2>::FifthRankTensor::numElements(); }
+  static Dim<2>::FifthRankTensor zero() { return Dim<2>::FifthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FifthRankTensor2d; }
 #endif
@@ -492,8 +489,8 @@ template<>
 struct DataTypeTraits<Dim<3>::Vector> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::Vector&) { return Dim<3>::Vector::numElements; }
-  static Dim<3>::Vector zero() { return Dim<3>::Vector::zero; }
+  static int numElements(const Dim<3>::Vector&) { return Dim<3>::Vector::numElements(); }
+  static Dim<3>::Vector zero() { return Dim<3>::Vector::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Vector3d; }
 #endif
@@ -505,8 +502,8 @@ template<>
 struct DataTypeTraits<Dim<3>::Tensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::Tensor&) { return Dim<3>::Tensor::numElements; }
-  static Dim<3>::Tensor zero() { return Dim<3>::Tensor::zero; }
+  static int numElements(const Dim<3>::Tensor&) { return Dim<3>::Tensor::numElements(); }
+  static Dim<3>::Tensor zero() { return Dim<3>::Tensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_Tensor3d; }
 #endif
@@ -518,8 +515,8 @@ template<>
 struct DataTypeTraits<Dim<3>::SymTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::SymTensor&) { return Dim<3>::SymTensor::numElements; }
-  static Dim<3>::SymTensor zero() { return Dim<3>::SymTensor::zero; }
+  static int numElements(const Dim<3>::SymTensor&) { return Dim<3>::SymTensor::numElements(); }
+  static Dim<3>::SymTensor zero() { return Dim<3>::SymTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_SymTensor3d; }
 #endif
@@ -531,8 +528,8 @@ template<>
 struct DataTypeTraits<Dim<3>::ThirdRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::ThirdRankTensor&) { return Dim<3>::ThirdRankTensor::numElements; }
-  static Dim<3>::ThirdRankTensor zero() { return Dim<3>::ThirdRankTensor::zero; }
+  static int numElements(const Dim<3>::ThirdRankTensor&) { return Dim<3>::ThirdRankTensor::numElements(); }
+  static Dim<3>::ThirdRankTensor zero() { return Dim<3>::ThirdRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_ThirdRankTensor3d; }
 #endif
@@ -544,8 +541,8 @@ template<>
 struct DataTypeTraits<Dim<3>::FourthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::FourthRankTensor&) { return Dim<3>::FourthRankTensor::numElements; }
-  static Dim<3>::FourthRankTensor zero() { return Dim<3>::FourthRankTensor::zero; }
+  static int numElements(const Dim<3>::FourthRankTensor&) { return Dim<3>::FourthRankTensor::numElements(); }
+  static Dim<3>::FourthRankTensor zero() { return Dim<3>::FourthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FourthRankTensor3d; }
 #endif
@@ -557,8 +554,8 @@ template<>
 struct DataTypeTraits<Dim<3>::FifthRankTensor> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
-  static int numElements(const Dim<3>::FifthRankTensor&) { return Dim<3>::FifthRankTensor::numElements; }
-  static Dim<3>::FifthRankTensor zero() { return Dim<3>::FifthRankTensor::zero; }
+  static int numElements(const Dim<3>::FifthRankTensor&) { return Dim<3>::FifthRankTensor::numElements(); }
+  static Dim<3>::FifthRankTensor zero() { return Dim<3>::FifthRankTensor::zero(); }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return RegisterMPIDataTypes::instance().MPI_FifthRankTensor3d; }
 #endif
@@ -580,7 +577,7 @@ template<>
 struct DataTypeTraits<PolyClipperVertex2d> {
   typedef PolyClipperVertex2d ElementType;
   static bool fixedSize() { return false; }
-  static int numElements(const ElementType& x) { return (DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero) +
+  static int numElements(const ElementType& x) { return (DataTypeTraits<Dim<2>::Vector>::numElements(Dim<2>::Vector::zero()) +
                                                          2u + 
                                                          2u +
                                                          x.clips.size()); }
@@ -592,7 +589,7 @@ template<>
 struct DataTypeTraits<PolyClipperVertex3d> {
   typedef PolyClipperVertex3d ElementType;
   static bool fixedSize() { return false; }
-  static int numElements(const ElementType& x) { return (DataTypeTraits<Dim<3>::Vector>::numElements(Dim<3>::Vector::zero) +
+  static int numElements(const ElementType& x) { return (DataTypeTraits<Dim<3>::Vector>::numElements(Dim<3>::Vector::zero()) +
                                                          x.neighbors.size() + 
                                                          2u +
                                                          x.clips.size()); }
@@ -625,7 +622,7 @@ struct DataTypeTraits<DomainNode<Dim<ndim>>> {
   typedef double ElementType;
   static bool fixedSize() { return true; }
   static int numElements(const DomainNode<Dim<ndim>>&) { return DomainNode<Dim<ndim>>::packSize(); }
-  static DomainNode<Dim<ndim>> zero() { return DomainNode<Dim<ndim>>({0, 0, 0, 0, 0, 0.0, Dim<ndim>::Vector::zero}); }
+  static DomainNode<Dim<ndim>> zero() { return DomainNode<Dim<ndim>>({0, 0, 0, 0, 0, 0.0, Dim<ndim>::Vector::zero()}); }
   using AxomType = double;
 };
 

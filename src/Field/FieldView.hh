@@ -43,7 +43,7 @@ public:
   SPHERAL_HOST_DEVICE FieldView() = default;
   SPHERAL_HOST_DEVICE FieldView(const FieldView& rhs) = default;
   SPHERAL_HOST_DEVICE FieldView(FieldView&& rhs) = default;
-  SPHERAL_HOST_DEVICE ~FieldView() = default;
+  SPHERAL_HOST_DEVICE virtual ~FieldView() = default;
 
   // Assignment
   SPHERAL_HOST_DEVICE FieldView& operator=(FieldView& rhs) = default;

@@ -10,8 +10,7 @@
 #include "Mesh.hh"
 #include "Utilities/DBC.hh"
 #include "Distributed/Communicator.hh"
-
-#include "Utilities/timingUtilities.hh"
+#include "Utilities/Timer.hh"
 
 #include <limits>
 #include <set>
@@ -22,12 +21,6 @@ using std::set;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -61,7 +54,7 @@ void buildFromPolytope(polytope::Tessellation<2, double>& tessellation,
   const unsigned UNSETID = MeshType::UNSETID;
 
   // Read out and construct the Mesh node positions.
-  Timing::Time t0 = Timing::currentTime();
+  TIME_FUNCTION
   int i, j, k, igen, jgen;
   const unsigned numGens = generators.size();
   const unsigned numNodes = tessellation.nodes.size()/2;
@@ -148,10 +141,6 @@ void buildFromPolytope(polytope::Tessellation<2, double>& tessellation,
   }
   END_CONTRACT_SCOPE
 
-  // Report our final timing and we're done.
-  if (Process::getRank() == 0) cerr << "PolygonalMesh:: required " 
-                                    << Timing::difference(t0, Timing::currentTime())
-                                    << " seconds to construct mesh elements." << endl;
 }
 #endif
 
@@ -218,7 +207,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   CHECK(gens.size() == 2*numGens);
 
   // Do the polytope tessellation.
-  Timing::Time t0 = Timing::currentTime();
+  TIME_FUNCTION
   polytope::Tessellation<2, double> tessellation;
   {
 #if 0     //#ifdef SPHERAL_ENABLE_MPI                                // FIXME when parallel polytope working again!
@@ -241,9 +230,6 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
     tessellator.tessellate(gens, const_cast<double*>(xmin.begin()), const_cast<double*>(xmax.begin()), tessellation);
   }
   CHECK(tessellation.cells.size() == numGens);
-  if (Process::getRank() == 0) cerr << "PolygonalMesh:: required " 
-                                    << Timing::difference(t0, Timing::currentTime())
-                                    << " seconds to construct polytope tessellation." << endl;
 
   // // Blago!
   // {
@@ -343,7 +329,7 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
   }
 
   // Do the polytope tessellation.
-  Timing::Time t0 = Timing::currentTime();
+  TIME_FUNCTION
   polytope::Tessellation<2, double> tessellation;
   {
 #if 0   //  #ifdef SPHERAL_ENABLE_MPI                                    // FIXME when polytope Distributed fixed
@@ -366,9 +352,6 @@ reconstructInternal(const vector<Dim<2>::Vector>& generators,
     tessellator.tessellate(gens, plcBoundary.points, plcBoundary, tessellation);
   }
   CHECK(tessellation.cells.size() == numGens);
-  if (Process::getRank() == 0) cerr << "PolygonalMesh:: required " 
-                                    << Timing::difference(t0, Timing::currentTime())
-                                    << " seconds to construct polytope tessellation." << endl;
 
   // // Blago!
   // {

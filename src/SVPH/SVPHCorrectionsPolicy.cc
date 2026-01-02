@@ -44,8 +44,8 @@ update(const KeyType& key,
        const double /*dt*/) {
 
   const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
 
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
@@ -54,8 +54,8 @@ update(const KeyType& key,
   const KeyType gradBkey = StateBase<Dimension>::buildFieldKey(SVPHFieldNames::gradB_SVPH, nodeListKey);
 
   Field<Dimension, Scalar>& A = state.field(Akey, 0.0);
-  Field<Dimension, Vector>& B = state.field(Bkey, Vector::zero);
-  Field<Dimension, Tensor>& gradB = state.field(gradBkey, Tensor::zero);
+  Field<Dimension, Vector>& B = state.field(Bkey, Vector::zero());
+  Field<Dimension, Tensor>& gradB = state.field(gradBkey, Tensor::zero());
 
   computeSVPHCorrections<Dimension>(mDataBase.connectivityMap(),
                                                mKernel,

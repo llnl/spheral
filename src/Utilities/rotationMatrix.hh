@@ -5,12 +5,14 @@
 #ifndef rotationMatrix_HH
 #define rotationMatrix_HH
 
+#include "config.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
 
+SPHERAL_HOST_DEVICE
 inline
 Dim<1>::Tensor
 rotationMatrix(const Dim<1>::Vector& runit) {
@@ -22,6 +24,7 @@ rotationMatrix(const Dim<1>::Vector& runit) {
   }
 }
 
+SPHERAL_HOST_DEVICE
 inline
 Dim<2>::Tensor
 rotationMatrix(const Dim<2>::Vector& runit) {
@@ -33,6 +36,7 @@ rotationMatrix(const Dim<2>::Vector& runit) {
                 -y, x);
 }
 
+SPHERAL_HOST_DEVICE
 inline
 Dim<3>::Tensor
 rotationMatrix(const Dim<3>::Vector& runit) {

@@ -13,9 +13,6 @@ glue(nt = 1)
 # Fail test to make sure tests are working
 source("unit/Utilities/testFails.py")
 
-# Fail test to make sure tests are working
-source("unit/Utilities/testFails.py")
-
 # Geometry unit tests
 source("unit/Geometry/testVector.py")
 source("unit/Geometry/testTensor.py")

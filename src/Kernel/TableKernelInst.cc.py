@@ -23,6 +23,7 @@ text = """
 
 namespace Spheral {
   template class TableKernel< Dim< %(ndim)s > >;
+  template class TableKernelView< Dim< %(ndim)s > >;
 """
 
 for Wname in ("BSplineKernel",

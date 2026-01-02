@@ -1,4 +1,4 @@
-Version vYYYY.MM.p -- Release date YYYY-MM-DD
+Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
   * Important Notes:
 
@@ -8,7 +8,7 @@ Notable changes include:
     * GPU Porting Effort:
       * Spheral::FieldView allows for implicit data migration of Spheral::Field data.
         * Implements FieldView datatypes as handles to be used for migrating data to and from the GPU.
-        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common pattens.
+        * Unit testing for semantic behaviour, H/D copy, and allocation / deallocaiton across a range of common patterns.
         * Unit testing to ensure implicitly copyable Spheral data types can be copied to and from the device correctly.
       * Spheral::FieldListView enables GPU access to field data while maintaining Field->FieldList associations across
         execution spaces.
@@ -18,6 +18,10 @@ Notable changes include:
         * CPU & GPU unit testing of the public interface.
       * RankNTensor (Third, Fourth, Fifth) have been refactored to execute on the GPU.
       * Spheral::NodePairListView allows for implicit data migration of Spheral::NodePairList data.
+      * Created view classes for the Quadratic and CubicHermite interpolator classes.
+        * These follow the inheritance pattern used previously.
+      * Updated Kernels to be device ready.
+      * Created a TableKernelView class for use on device.
       * Optimizations to RankTensor types:
         * Stack allocation of tensor data; Static casting for CRTP implementation.
       * GeomTensor & GeomSymmetricTensor have been refactored for use on the GPU.
@@ -35,10 +39,17 @@ Notable changes include:
       * Field/FieldView reimplemented using our value/view inheritance pattern.
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
+      * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 
   * Bug fixes
-    * corrected rolling and torsional coefficient in DEM which were 2x the expected value
-    
+    * Corrected rolling and torsional coefficient in DEM which were 2x the expected value.
+    * Updated ATS to bring in fix for python 3.12+.
+    * Fixed bug where failing ATS tests were not properly reporting back for docker builds.
+    * Silo memory leak is not fixed but the memory impact is 100x smaller.
+    * Cleaned up some variable types and trapping error conditions in generateCylDistributionFromRZ for generating rotated problems.
+    * Fixed the git strategy for the update TPLs and build caches CI stages.
+
   * Build changes / improvements:
     * Changed `int` to `size_t` for Field and FieldList.
     * A python virtual environment is installed in the spheral build dir, removing the
@@ -46,6 +57,7 @@ Notable changes include:
     * `./spheral` and `./spheral-ats` have been moved to `/bin` for both build and installs.
     * CMake directly handles all of the installation environment configuration and setup
       during the install stage.
+    * ManagedArray callback routines are guarded by CHAI_DISABLE_RM.
     * CMake/build logic has been reconfigured:
       * `ENABLE_TIMER` is now `SPHERAL_ENABLE_TIMERS`.
       * The following CMake options now have the added `SPHERAL_` prefix:
@@ -71,6 +83,7 @@ Notable changes include:
     * LEOS interface changes:
       * LEOS spack recipe is simplified.
       * Memory space and exec spaces are set to CPU for when we update to using LEOS+rocm.
+    * Update Axom from 0.9.0 to 0.12.0.
     * Added spack logic to build TPLs that use CMake as debug when debug is turned on in the spec
       by adding `build_type=Debug`.
     * HDF5 is now brought in using `find_package` instead of being brought in manually.
@@ -78,8 +91,10 @@ Notable changes include:
     * PolyClipper and PYB11Generator are updated.
     * Added option for combining 1D, 2D, and 3D explicit instantiations, which significantly reduces the size of Spheral static libraries. To use, configure with `SPHERAL_COMBINE_INSTANTIATIONS=ON`.
     * PYB11Generator has been updated to allow new features:
-      * Ouput multiple pybind11 C++ files for parallel compilation
-      * Optionally mark generated C++ files to not be regenerated (dangerous developer option)
+      * Ouput multiple pybind11 C++ files for parallel compilation.
+      * Optionally mark generated C++ files to not be regenerated (dangerous developer option).
+    * Cleaned up the comparison operators for Geometry types, and removed lots of "using std::*" from implementations.
+    * Updated to PYB11Generator v2025.12.0 for full pybind11 v3 support.
 
 Version v2025.06.1 -- Release date 2025-07-21
 ==============================================

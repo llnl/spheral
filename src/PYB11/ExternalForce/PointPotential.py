@@ -25,7 +25,7 @@ class PointPotential(GenericBodyForce):
                mass = "double",
                coreRadius = "double",
                origin = "const Vector",
-               metric = ("const Tensor", "Tensor::one")):
+               metric = ("const Tensor", "Tensor::one()")):
         "PointPotential constructor"
 
     #...........................................................................

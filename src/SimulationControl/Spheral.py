@@ -10,11 +10,10 @@ import mpi
 
 import SpheralConfigs
 from SpheralUtilities import BuildData
-if SpheralConfigs.enable_shared() and \
-   not BuildData.cxx_compiler_id == "GNU":
+if not BuildData.cxx_compiler_id == "GNU":
     try:
-        import sys, ctypes
-        sys.setdlopenflags(sys.getdlopenflags() | ctypes.RTLD_GLOBAL)
+        import sys, os
+        sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_NOW | os.RTLD_GLOBAL)
     except:
         print("WARNING: unable to set python dl flags on Spheral import.")
         pass
@@ -135,6 +134,13 @@ for shadowedthing in ("TillotsonEquationOfState",
                       "ANEOS"):
     for dim in dims:
         exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
+
+#-------------------------------------------------------------------------------
+# Set up Axom
+#-------------------------------------------------------------------------------
+import atexit
+initializeAxom()
+atexit.register(finalizeAxom)
 
 # ------------------------------------------------------------------------------
 # Output some useful Spheral configuration info to stdout

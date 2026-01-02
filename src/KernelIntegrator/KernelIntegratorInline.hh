@@ -24,8 +24,8 @@ coefficientsToValue(const FieldList<Dimension, DataType>& coeffs,
   CHECK(coeffs.size() == value.size());
   
   const auto numInternalNodes = mFlatConnectivity.numInternalNodes();
-  const auto position = mState->fields(HydroFieldNames::position, Vector::zero);
-  const auto H = mState->fields(HydroFieldNames::H, SymTensor::zero);
+  const auto position = mState->fields(HydroFieldNames::position, Vector::zero());
+  const auto H = mState->fields(HydroFieldNames::H, SymTensor::zero());
   const auto volume = mState->fields(HydroFieldNames::volume, 0.0);
   auto& kvals = mScratchData.values;
   auto& dkvals = mScratchData.dvalues;
@@ -329,7 +329,7 @@ getQuadrature(const FacetedVolume& region,
   const auto Jdet = std::abs(J.Determinant());
   for (auto i = 0; i < mNumOrdinates; ++i) {
     weights[i] = mBaseWeights[i] * Jdet;
-    ordinates[i] = p0 + J * (mBaseOrdinates[i] + Vector::one);
+    ordinates[i] = p0 + J * (mBaseOrdinates[i] + Vector::one());
   }
 }
 

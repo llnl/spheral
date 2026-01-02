@@ -13,7 +13,7 @@ class FieldListSet:
         "Default constructor"
 
     # Attributes
-    ScalarFieldLists = PYB11readwrite(doc="The FieldList<Dim, double> set")
-    VectorFieldLists = PYB11readwrite(doc="The FieldList<Dim, Vector> set")
-    TensorFieldLists = PYB11readwrite(doc="The FieldList<Dim, Tensor> set")
-    SymTensorFieldLists = PYB11readwrite(doc="The FieldList<Dim, SymTensor> set")
+    ScalarFieldLists = PYB11readwrite(doc="The FieldList<Dim, double> set", returnpolicy="reference_internal")
+    VectorFieldLists = PYB11readwrite(doc="The FieldList<Dim, Vector> set", returnpolicy="reference_internal")
+    TensorFieldLists = PYB11readwrite(doc="The FieldList<Dim, Tensor> set", returnpolicy="reference_internal")
+    SymTensorFieldLists = PYB11readwrite(doc="The FieldList<Dim, SymTensor> set", returnpolicy="reference_internal")
