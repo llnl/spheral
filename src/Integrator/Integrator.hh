@@ -192,6 +192,10 @@ public:
   bool verbose() const                                                              { return mVerbose; }
   void verbose(const bool x)                                                        { mVerbose = x; }
 
+  // Select whether the integrator is verbose or not during a cycle.
+  int verboseStep() const                                                              { return mVerboseStep; }
+  void verboseStep(const int x)                                                        { mVerboseStep = x; }
+  
   // Should the integrator check interim timestep votes and abort steps?
   bool allowDtCheck() const                                                         { return mAllowDtCheck; }
   void allowDtCheck(const bool x)                                                   { mAllowDtCheck = x; }
@@ -235,7 +239,7 @@ protected:
 private:
   //--------------------------- Private Interface ---------------------------//
   Scalar mDtMin, mDtMax, mDtGrowth, mLastDt, mDtCheckFrac, mCurrentTime;
-  int mCurrentCycle, mUpdateBoundaryFrequency;
+  int mCurrentCycle, mUpdateBoundaryFrequency, mVerboseStep;
   bool mVerbose, mAllowDtCheck, mRequireConnectivity, mRequireGhostConnectivity, mRequireOverlapConnectivity, mRequireIntersectionConnectivity;
   std::reference_wrapper<DataBase<Dimension>> mDataBase;
   std::vector<Physics<Dimension>*> mPhysicsPackages;

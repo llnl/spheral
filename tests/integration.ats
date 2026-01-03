@@ -55,7 +55,9 @@ source("unit/Distributed/distributedUnitTests.py")
 source("unit/Material/testEOS.py")
 source("unit/SolidMaterial/testTillotsonEquationOfState.py")
 source("unit/SolidMaterial/testANEOS.py")
-source("functional/Material/UnitConversion.py")
+source("unit/SolidMaterial/testSingularityEOS.py")
+source("unit/Material/testConstants.py")
+source("unit/Material/testUnitConversion.py")
 
 # LEOS tests
 source("functional/LEOS/testLEOSFieldvsSingle.py")

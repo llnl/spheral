@@ -236,6 +236,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     const auto  nPerh = nodeList.nodesPerSmoothingScale();
 
     const auto ni = nodeList.numInternalNodes();
+    const auto damping = this->damping();
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
 
@@ -264,9 +265,10 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto a = (s < 1.0 ? 
                       0.4*(1.0 + s*s) :
                       0.4*(1.0 + 1.0/(s*s*s)));
-      CHECK(1.0 - a + a*s > 0.0);
+      CHECK(1.0 - a + a * s > 0.0);
+      const auto f = std::pow(1.0 - a + a*s, damping);
       const auto hi0 = 1.0/Hi.xx();
-      const auto hi1 = std::min(hmax, std::max(hmin, hi0*(1.0 - a + a*s)));
+      const auto hi1 = std::min(hmax, std::max(hmin, hi0*f));
       CHECK(hi1 > 0.0);
       Hideal(nodeListi, i) = 1.0/hi1 * SymTensor::one();
     }

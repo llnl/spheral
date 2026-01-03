@@ -44,6 +44,7 @@ computeRKVolumes(const ConnectivityMap<Dimension>& connectivityMap,
   
   switch(volumeType) {
   case RKVolumeType::RKMassOverDensity:
+    CHECK(mass.size() == massDensity.size());
     volume.assignFields(mass/massDensity);
     break;
     
