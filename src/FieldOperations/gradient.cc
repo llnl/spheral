@@ -291,7 +291,7 @@ gradientPairs(FieldList<Dimension, typename MathTraits<Dimension, DataType>::Gra
               const ConnectivityMap<Dimension>& conn,
               const TableKernel<Dimension>& kernel) {
   typedef typename MathTraits<Dimension, DataType>::GradientType GradientType;
-  result = GradientType::zero;
+  result = GradientType::zero();
   
   const auto& pairs = conn.nodePairList();
   const auto  npairs = pairs.size();
