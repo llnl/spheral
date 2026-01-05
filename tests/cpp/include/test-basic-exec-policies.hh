@@ -11,7 +11,7 @@ using SEQ_EXEC_POLICY = RAJA::seq_exec;
 using EXEC_TYPES = camp::list<
   RAJA::seq_exec
 #ifdef SPHERAL_ENABLE_OPENMP
-  ,RAJA::omp_parallel_exec
+  ,RAJA::omp_parallel_for_exec
 #endif
 #ifdef SPHERAL_ENABLE_CUDA
   ,RAJA::cuda_exec<256>
@@ -25,7 +25,7 @@ using EXEC_TYPES = camp::list<
 using EXEC_RESOURCE_TYPES =
   ::testing::Types<camp::list<RAJA::seq_exec, camp::resources::Host>
 #ifdef SPHERAL_ENABLE_OPENMP
-  ,camp::list<RAJA::omp_parallel_exec, camp::resources::Host>
+  ,camp::list<RAJA::omp_parallel_for_exec, camp::resources::Host>
 #endif
 #ifdef SPHERAL_ENABLE_CUDA
   ,camp::list<RAJA::cuda_exec<256>, camp::resources::Cuda>
@@ -34,6 +34,15 @@ using EXEC_RESOURCE_TYPES =
   ,camp::list<RAJA::hip_exec<256>, camp::resources::Hip>
 #endif
   >;
+
+using GPU_TEST_TYPE =
+#ifdef SPHERAL_ENABLE_CUDA
+  RAJA::cuda_exec<256>;
+#elif defined(SPHERAL_ENABLE_HIP)
+  RAJA::hip_exec<256>;
+#else
+  std::nullptr_t;
+#endif
 // clang-format on
 
 #endif // SPHERAL_BASIC_EXEC_POL_HH

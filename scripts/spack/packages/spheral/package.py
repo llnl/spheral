@@ -128,6 +128,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Conflicts
     # -------------------------------------------------------------------------
     conflicts("+cuda", when="+rocm")
+    # This conflict comes from Axom and can be removed if removed from Axom.
     conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
 

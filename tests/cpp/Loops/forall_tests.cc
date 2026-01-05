@@ -11,6 +11,7 @@
 
 #include "NodeList/FluidNodeList.hh"
 #include "Neighbor/TreeNeighbor.hh"
+#include "Neighbor/NodePairList.hh"
 #include "Material/GammaLawGas.hh"
 #include "Kernel/TableKernel.hh"
 #include "Kernel/BSplineKernel.hh"
@@ -39,7 +40,7 @@ using NPL = Spheral::NodePairList;
 using NPLV = Spheral::NodePairListView;
 
 // Default Testing Size.
-static constexpr size_t Nx = 10;
+static constexpr size_t Nx = 20;
 static constexpr size_t N = Nx*Nx*Nx;
 static constexpr size_t N_table = 100;
 static constexpr double hmin = 1.0e-20;
@@ -51,8 +52,8 @@ static constexpr double rhoMin = 1.0e-10;
 static constexpr double rhoMax = 1.0e10;
 static constexpr double kernelExtents = 2.0;
 static Spheral::PhysicalConstants units(1.0, 1.0, 1.0);
-static constexpr double L = 3.0;
-static constexpr double dx = L/(Nx - 1);
+static constexpr double dx = 0.1;
+static constexpr double L = dx*(Nx - 1);
 
 class LoopTest : public ::testing::Test {
 public:
@@ -98,6 +99,15 @@ public:
 // Setting up G Test for Loops
 TYPED_TEST_SUITE_P(LoopTypedTest);
 template <typename T> class LoopTypedTest : public LoopTest {};
+
+//------------------------------------------------------------------------------
+// Start for utilizing hardware
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(LoopTypedTest, Start) {
+  EXEC_IN_SPACE_BEGIN(TypeParam)
+    Vector vec(1., 2., 3.);
+  EXEC_IN_SPACE_END()
+}
 
 //------------------------------------------------------------------------------
 // Basic forall
@@ -149,11 +159,13 @@ GPU_TYPED_TEST_P(LoopTypedTest, BasicForAll) {
     ref_count[j] += 1;
   }
   for (auto kk = 0u; kk < N; ++kk) {
+    // Make sure the node pair list is reasonable
+    SPHERAL_ASSERT_TRUE(ref_count[kk] >= 7);
     SPHERAL_ASSERT_EQ(ref_count[kk], field_list(0, kk));
   }
 }
 
-REGISTER_TYPED_TEST_SUITE_P(LoopTypedTest, BasicForAll);
+REGISTER_TYPED_TEST_SUITE_P(LoopTypedTest, Start, BasicForAll);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(ForAllTests, LoopTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
