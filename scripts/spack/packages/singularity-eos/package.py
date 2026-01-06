@@ -5,7 +5,7 @@
 
 
 from spack.package import *
-from spack.pkg.builtin.singularityeos import SingularityEos as BuiltinSingularityEos
+from spack.pkg.builtin.singularity_eos import SingularityEos as BuiltinSingularityEos
 
 
 class SingularityEos(BuiltinSingularityEos):
