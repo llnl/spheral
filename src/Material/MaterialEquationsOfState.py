@@ -73,7 +73,6 @@ class IsothermalEquationOfState%(units)s%(dim)id(IsothermalEquationOfState%(dim)
                                                    maximumPressure)
         return
 
-
 #-------------------------------------------------------------------------------
 # Stiffened Gas EOS
 #-------------------------------------------------------------------------------
@@ -91,16 +90,34 @@ class StiffenedGas%(units)s%(dim)id(StiffenedGas%(dim)id):
                                       P0,
                                       Cv,
                                       self._units,
+                                      minimumPressure,
+                                      maximumPressure)
+        return
+"""
+
+NullFactoryString = """
+#-------------------------------------------------------------------------------
+# Null EOS
+#-------------------------------------------------------------------------------
+class NullEquationOfState%(dim)id(IsothermalEquationOfState%(dim)id):
+    def __init__(self,
+                 constants = "PhysicalConstants&",
+                 minimumPressure = 0.0,
+                 maximumPressure =  0.0):
+        IsothermalEquationOfState%(dim)id.__init__(self,
+                                                   1.0e-80,
+                                                   1.0,
+                                                   constants,
                                                    minimumPressure,
                                                    maximumPressure)
         return
-
 """
 
 #-------------------------------------------------------------------------------
 # Create the different instantiations.
 #-------------------------------------------------------------------------------
 for dim in dims:
+    exec(NullFactoryString % {"dim" : dim})
     for units in ("MKS", "CGS", "Cosmological", "Solar"):
         exec(EOSFactoryString % {"dim"   : dim,
                                  "units" : units})

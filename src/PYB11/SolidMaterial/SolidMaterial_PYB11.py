@@ -16,6 +16,8 @@ from GruneisenEquationOfState import *
 from OsborneEquationOfState import *
 from TillotsonEquationOfState import *
 from MurnaghanEquationOfState import *
+from SingularityEquationOfState import *
+from SingularityEquationOfStateModels import *
 
 from StrengthModel import *
 from NullStrength import *
@@ -46,6 +48,8 @@ PYB11includes += ['"SolidMaterial/SolidEquationOfState.hh"',
                   '"SolidMaterial/CollinsStrength.hh"',
                   '"SolidMaterial/iSALEROCKStrength.hh"',
                   '"SolidMaterial/PhysicsEvolvingMaterialLibrary.hh"',
+                  '"SolidMaterial/SingularityEquationOfState.hh"',
+                  '"SolidMaterial/SingularityEquationOfStateModels.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
@@ -92,6 +96,13 @@ OsborneEquationOfState%(ndim)id = PYB11TemplateClass(OsborneEquationOfState, tem
 TillotsonEquationOfState%(ndim)id = PYB11TemplateClass(TillotsonEquationOfState, template_parameters="%(Dimension)s")
 MurnaghanEquationOfState%(ndim)id = PYB11TemplateClass(MurnaghanEquationOfState, template_parameters="%(Dimension)s")
 
+SingularityEquationOfState%(ndim)id = PYB11TemplateClass(SingularityEquationOfState, template_parameters="Dim<%(ndim)i>")
+SingularityGammaLawGas%(ndim)id = PYB11TemplateClass(SingularityGammaLawGas, template_parameters="Dim<%(ndim)i>")
+SingularityExtendedVinet%(ndim)id = PYB11TemplateClass(SingularityExtendedVinet, template_parameters="Dim<%(ndim)i>")
+SingularitySpiner%(ndim)id = PYB11TemplateClass(SingularitySpiner, template_parameters="Dim<%(ndim)i>")
+SingularitySpinerT%(ndim)id = PYB11TemplateClass(SingularitySpinerT, template_parameters="Dim<%(ndim)i>")
+SingularityEOSPAC%(ndim)id = PYB11TemplateClass(SingularityEOSPAC, template_parameters="Dim<%(ndim)i>")
+    
 NullStrength%(ndim)id = PYB11TemplateClass(NullStrength, template_parameters="%(Dimension)s")
 ConstantStrength%(ndim)id = PYB11TemplateClass(ConstantStrength, template_parameters="%(Dimension)s")
 SteinbergGuinanStrength%(ndim)id = PYB11TemplateClass(SteinbergGuinanStrength, template_parameters="%(Dimension)s")

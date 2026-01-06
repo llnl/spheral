@@ -113,15 +113,6 @@ temperature or pressure."""
         return "void"
 
     #...........................................................................
-    # Methods
-    @PYB11const
-    def updateVolume(state = "State<%(Dimension)s>&",
-                     boundaries = "const bool"):
-        """A method to fill in the volume in the State, optionally enforcing
-boundary conditions."""
-        return "void"
-
-    #...........................................................................
     # Properties
     kernel = PYB11property("const TableKernel<%(Dimension)s>&", "kernel", doc="The interpolation kernel")
     PiKernel = PYB11property("const TableKernel<%(Dimension)s>&", "PiKernel", doc="The interpolation kernel for the artificial viscosity")
@@ -153,7 +144,6 @@ boundary conditions."""
     timeStepMask =                 PYB11property("const FieldList<%(Dimension)s, int>&",      "timeStepMask",         returnpolicy="reference_internal")
     pressure =                     PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "pressure",             returnpolicy="reference_internal")
     soundSpeed =                   PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "soundSpeed",           returnpolicy="reference_internal")
-    volume =                       PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "volume",               returnpolicy="reference_internal")
     omegaGradh =                   PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "omegaGradh",           returnpolicy="reference_internal")
     entropy =                      PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "entropy",              returnpolicy="reference_internal")
     massDensityCorrection =        PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "massDensityCorrection",returnpolicy="reference_internal")

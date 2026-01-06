@@ -126,5 +126,6 @@ call Physics::registerState for instance to create full populated State objects.
     radius0 = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "radius0", doc="The radius of a point at the beginning of a timestep (if using radialOnly=True)")
     HidealFilter = PYB11property("std::shared_ptr<HidealFilterType>", "HidealFilter", "HidealFilter", doc="Optional functor to manipulate the Hideal calculation")
     RadialFunctor = PYB11property("std::shared_ptr<RadialFunctorType>", "RadialFunctor", "RadialFunctor", doc="Optional functor to manipulate the radial normal and radius are computed when using radialOnly")
+    damping = PYB11property("double", "damping", "damping", doc="exponent on the change in smoothing parameter, e.g. 0.5 / dim, for use in iterateIdealH")
     fixShape = PYB11property("bool", "fixShape", "fixShape", doc="Force the H tensor shape to be fixed -- only adjust volume")
     radialOnly = PYB11property("bool", "radialOnly", "radialOnly", doc="Force the H tensor to evolve solely in the radial direction")

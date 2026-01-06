@@ -71,6 +71,16 @@ from PorousEquationOfState import *
 from PorousStrengthModel import *
 
 # ------------------------------------------------------------------------------
+# Initial particle functions
+# ------------------------------------------------------------------------------
+for dim in dims:
+    exec(f"from RelaxNodes import RelaxNodes{dim}d")
+    if dim == 1:
+        from RelaxNodes import SphericalRelaxNodes
+    elif dim == 2:
+        from RelaxNodes import RelaxNodesRZ
+
+# ------------------------------------------------------------------------------
 # Helpful things with strings.
 # ------------------------------------------------------------------------------
 ## import CXXTypes
