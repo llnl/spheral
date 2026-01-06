@@ -90,12 +90,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
     # Doing all these explicitly to avoid linker issues
-    depends_on('singularity-eos@1.8.0 +spiner +hdf5 ~fortran cppflags="-fPIC" cflags="-FPIC"', type='build', when="+singularity-eos")
-    depends_on('spiner@1.6.2 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
-    depends_on('kokkos@4.3.00 +pic cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
-    depends_on('kokkos-kernels@4.3.00 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
-    depends_on('eospac@6.5.9 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
-    depends_on('ports-of-call@1.5.2 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
+    depends_on('singularity-eos@1.8.0 +spiner +hdf5 ~fortran cppflags="-fPIC" cflags="-fPIC"', type='build', when="+singularity-eos")
+    # depends_on('spiner@1.6.2 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
+    # depends_on('kokkos@4.3.00 +pic cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
+    # depends_on('kokkos-kernels@4.3.00 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
+    # depends_on('eospac@6.5.9 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
+    # depends_on('ports-of-call@1.5.2 cppflags="-fPIC" cflags="-fPIC"', when='+singularity-eos')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
@@ -296,17 +296,17 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
 
         if spec.satisfies("+singularity-eos"):
-            entries.append(cmake_cache_path('ports_of_call_DIR', spec['ports-of-call'].prefix))
-            entries.append(cmake_cache_path('mpark_variant_DIR', spec['mpark-variant'].prefix))
-            entries.append(cmake_cache_path('kokkos_DIR', spec['kokkos'].prefix))
-            entries.append(cmake_cache_path('kokkos_kernels_DIR', spec['kokkos-kernels'].prefix))
-            entries.append(cmake_cache_path('spiner_DIR', spec['spiner'].prefix))
+            # entries.append(cmake_cache_path('ports_of_call_DIR', spec['ports-of-call'].prefix))
+            # entries.append(cmake_cache_path('mpark_variant_DIR', spec['mpark-variant'].prefix))
+            # entries.append(cmake_cache_path('kokkos_DIR', spec['kokkos'].prefix))
+            # entries.append(cmake_cache_path('kokkos_kernels_DIR', spec['kokkos-kernels'].prefix))
+            # entries.append(cmake_cache_path('spiner_DIR', spec['spiner'].prefix))
             entries.append(cmake_cache_path('singularity_eos_DIR', spec['singularity-eos'].prefix))
-            entries.append(cmake_cache_path('eospac_DIR', spec['eospac'].prefix))
+            #entries.append(cmake_cache_path('eospac_DIR', spec['eospac'].prefix))
 
             # These are needed for singularity to work correctly
-            entries.append(cmake_cache_path('EOSPAC_INCLUDE_DIR', spec['eospac'].prefix.include))
-            entries.append(cmake_cache_path('EOSPAC_LIBRARY', spec['eospac'].prefix.lib.join('libeospac6.a')))
+            # entries.append(cmake_cache_path('EOSPAC_INCLUDE_DIR', spec['eospac'].prefix.include))
+            # entries.append(cmake_cache_path('EOSPAC_LIBRARY', spec['eospac'].prefix.lib.join('libeospac6.a')))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
