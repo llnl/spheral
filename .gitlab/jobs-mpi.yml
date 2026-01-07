@@ -1,76 +1,76 @@
 # ------------------------------------------------------------------------------
 # BUILD JOBS
 
-toss_gcc_mvapich2_cxxonly_init:
-  extends: [.toss_shell1, .gcc_mvapich2_cxxonly, .init]
+toss_gcc_mpi_cxxonly_init:
+  extends: [.toss_shell1, .gcc_mpi_cxxonly, .init]
 
-toss_gcc_mvapich2_cxxonly_tpls:
-  extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .tpls]
-  needs: [toss_gcc_mvapich2_cxxonly_init]
+toss_gcc_mpi_cxxonly_tpls:
+  extends: [.toss_resource1, .gcc_mpi_cxxonly, .tpls]
+  needs: [toss_gcc_mpi_cxxonly_init]
 
-toss_gcc_mvapich2_cxxonly_build:
-  extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .build]
-  needs: [toss_gcc_mvapich2_cxxonly_tpls]
+toss_gcc_mpi_cxxonly_build:
+  extends: [.toss_resource1, .gcc_mpi_cxxonly, .build]
+  needs: [toss_gcc_mpi_cxxonly_tpls]
 
-toss_gcc_mvapich2_cxxonly_cleanup:
-  extends: [.toss_resource1, .gcc_mvapich2_cxxonly, .cleanup_dir]
+toss_gcc_mpi_cxxonly_cleanup:
+  extends: [.toss_resource1, .gcc_mpi_cxxonly, .cleanup_dir]
   needs:
     - job: export_test
       optional: true
-    - job: toss_gcc_mvapich2_cxxonly_build
+    - job: toss_gcc_mpi_cxxonly_build
 
 
 
-toss_gcc_mvapich2_init:
-  extends: [.toss_shell1, .gcc_mvapich2, .init]
+toss_gcc_mpi_init:
+  extends: [.toss_shell1, .gcc_mpi, .init]
 
-toss_gcc_mvapich2_tpls:
-  extends: [.toss_resource2, .gcc_mvapich2, .tpls]
-  needs: [toss_gcc_mvapich2_init]
+toss_gcc_mpi_tpls:
+  extends: [.toss_resource2, .gcc_mpi, .tpls]
+  needs: [toss_gcc_mpi_init]
 
-toss_gcc_mvapich2_build:
-  extends: [.toss_resource2, .gcc_mvapich2, .build_and_test]
-  needs: [toss_gcc_mvapich2_tpls]
+toss_gcc_mpi_build:
+  extends: [.toss_resource2, .gcc_mpi, .build_and_test]
+  needs: [toss_gcc_mpi_tpls]
 
-toss_gcc_mvapich2_test:
-  extends: [.toss_resource2, .gcc_mvapich2, .run_ats]
-  needs: [toss_gcc_mvapich2_build]
+toss_gcc_mpi_test:
+  extends: [.toss_resource2, .gcc_mpi, .run_ats]
+  needs: [toss_gcc_mpi_build]
 
-toss_gcc_mvapich2_perf:
-  extends: [.toss_shell1, .gcc_mvapich2, .run_perf, .perf_pr_rule]
-  needs: [toss_gcc_mvapich2_build]
+toss_gcc_mpi_perf:
+  extends: [.toss_shell1, .gcc_mpi, .run_perf, .perf_pr_rule]
+  needs: [toss_gcc_mpi_build]
 
-toss_gcc_mvapich2_cleanup:
-  extends: [.toss_resource2, .gcc_mvapich2, .cleanup_dir, .cleanup_rule]
-
-
-
-toss_clang_mvapich2_init:
-  extends: [.toss_shell1, .clang_mvapich2, .init]
-
-toss_clang_mvapich2_tpls:
-  extends: [.toss_resource3, .clang_mvapich2, .tpls]
-  needs: [toss_clang_mvapich2_init]
-
-toss_clang_mvapich2_build:
-  extends: [.toss_resource3, .clang_mvapich2, .build_and_test]
-  needs: [toss_clang_mvapich2_tpls]
-
-toss_clang_mvapich2_test:
-  extends: [.toss_resource3, .clang_mvapich2, .run_ats]
-  needs: [toss_clang_mvapich2_build]
-
-toss_clang_mvapich2_perf:
-  extends: [.toss_shell2, .clang_mvapich2, .run_perf, .perf_pr_rule]
-  needs: [toss_clang_mvapich2_build]
-
-toss_clang_mvapich2_cleanup:
-  extends: [.toss_resource3, .clang_mvapich2, .cleanup_dir, .cleanup_rule]
+toss_gcc_mpi_cleanup:
+  extends: [.toss_resource2, .gcc_mpi, .cleanup_dir, .cleanup_rule]
 
 
 
-#toss_oneapi_2022_1_mvapich2:
-#  extends: [.oneapi_2022_1_mvapich2, .build_and_test, .toss_resource]
+toss_clang_mpi_dev_build_init:
+  extends: [.toss_shell1, .clang_mpi_dev_build, .init]
+
+toss_clang_mpi_dev_build_tpls:
+  extends: [.toss_resource3, .clang_mpi_dev_build, .tpls]
+  needs: [toss_clang_mpi_dev_build_init]
+
+toss_clang_mpi_dev_build_build:
+  extends: [.toss_resource3, .clang_mpi_dev_build, .build_and_test]
+  needs: [toss_clang_mpi_dev_build_tpls]
+
+toss_clang_mpi_dev_build_test:
+  extends: [.toss_resource3, .clang_mpi_dev_build, .run_ats]
+  needs: [toss_clang_mpi_dev_build_build]
+
+toss_clang_mpi_dev_build_perf:
+  extends: [.toss_shell2, .clang_mpi_dev_build, .run_perf, .perf_pr_rule]
+  needs: [toss_clang_mpi_dev_build_build]
+
+toss_clang_mpi_dev_build_cleanup:
+  extends: [.toss_resource3, .clang_mpi_dev_build, .cleanup_dir, .cleanup_rule]
+
+
+
+#toss_oneapi_2022_1_mpi:
+#  extends: [.oneapi_2022_1_mpi, .build_and_test, .toss_resource]
 
 
 cray_rocm_mpich_init:
