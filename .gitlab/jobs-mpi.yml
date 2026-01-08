@@ -73,48 +73,48 @@ toss_clang_mpi_dev_build_cleanup:
 #  extends: [.oneapi_2022_1_mpi, .build_and_test, .toss_resource]
 
 
-cray_rocm_mpich_init:
-  extends: [.cray_shell1, .rocm_mpich, .init]
+cray_rocm_mpi_init:
+  extends: [.cray_shell1, .rocm_mpi, .init]
 
-cray_rocm_mpich_tpls:
-  extends: [.cray_resource1, .rocm_mpich, .tpls]
-  needs: [cray_rocm_mpich_init]
+cray_rocm_mpi_tpls:
+  extends: [.cray_resource1, .rocm_mpi, .tpls]
+  needs: [cray_rocm_mpi_init]
 
-cray_rocm_mpich_build:
-  extends: [.cray_resource1, .rocm_mpich, .build_and_test]
-  needs: [cray_rocm_mpich_tpls]
+cray_rocm_mpi_build:
+  extends: [.cray_resource1, .rocm_mpi, .build_and_test]
+  needs: [cray_rocm_mpi_tpls]
 
-cray_rocm_mpich_test:
-  extends: [.cray_resource1, .rocm_mpich, .run_ats]
-  needs: [cray_rocm_mpich_build]
+cray_rocm_mpi_test:
+  extends: [.cray_resource1, .rocm_mpi, .run_ats]
+  needs: [cray_rocm_mpi_build]
 
-cray_rocm_mpich_perf:
-  extends: [.cray_shell1, .rocm_mpich, .run_perf, .perf_pr_rule]
-  needs: [cray_rocm_mpich_build]
+cray_rocm_mpi_perf:
+  extends: [.cray_shell1, .rocm_mpi, .run_perf, .perf_pr_rule]
+  needs: [cray_rocm_mpi_build]
 
-cray_rocm_mpich_cleanup:
-  extends: [.cray_resource1, .rocm_mpich, .cleanup_dir, .cleanup_rule]
+cray_rocm_mpi_cleanup:
+  extends: [.cray_resource1, .rocm_mpi, .cleanup_dir, .cleanup_rule]
 
 
 
-cray_hip_rocm_mpich_init:
-  extends: [.cray_shell1, .hip_rocm_mpich, .init]
+cray_hip_rocm_mpi_init:
+  extends: [.cray_shell1, .hip_rocm_mpi, .init]
 
-cray_hip_rocm_mpich_tpls:
-  extends: [.cray_resource2, .hip_rocm_mpich, .tpls]
-  needs: [cray_hip_rocm_mpich_init]
+cray_hip_rocm_mpi_tpls:
+  extends: [.cray_resource2, .hip_rocm_mpi, .tpls]
+  needs: [cray_hip_rocm_mpi_init]
 
-cray_hip_rocm_mpich_build:
-  extends: [.cray_resource2, .hip_rocm_mpich, .build_and_test]
-  needs: [cray_hip_rocm_mpich_tpls]
+cray_hip_rocm_mpi_build:
+  extends: [.cray_resource2, .hip_rocm_mpi, .build_and_test]
+  needs: [cray_hip_rocm_mpi_tpls]
 
-cray_hip_rocm_mpich_test:
-  extends: [.cray_resource2, .hip_rocm_mpich, .run_ats]
-  needs: [cray_hip_rocm_mpich_build]
+cray_hip_rocm_mpi_test:
+  extends: [.cray_resource2, .hip_rocm_mpi, .run_ats]
+  needs: [cray_hip_rocm_mpi_build]
 
-cray_hip_rocm_mpich_perf:
-  extends: [.cray_shell2, .hip_rocm_mpich, .run_perf, .perf_pr_rule]
-  needs: [cray_hip_rocm_mpich_build]
+cray_hip_rocm_mpi_perf:
+  extends: [.cray_shell2, .hip_rocm_mpi, .run_perf, .perf_pr_rule]
+  needs: [cray_hip_rocm_mpi_build]
 
-cray_hip_rocm_mpich_cleanup:
-  extends: [.cray_resource2, .hip_rocm_mpich, .cleanup_dir, .cleanup_rule]
+cray_hip_rocm_mpi_cleanup:
+  extends: [.cray_resource2, .hip_rocm_mpi, .cleanup_dir, .cleanup_rule]
