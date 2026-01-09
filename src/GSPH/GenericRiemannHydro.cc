@@ -139,13 +139,13 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
   mDxDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
   mDvDt = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::hydroAcceleration);
   mDspecificThermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy);
-  mDrhoDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::densityGradient);
-  mDepsDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::specificThermalEnergyGradient);
-  mDvDx = dataBase.newFluidFieldList(Tensor::zero, HydroFieldNames::velocityGradient);
-  mRiemannDpDx = dataBase.newFluidFieldList(Vector::zero,GSPHFieldNames::RiemannPressureGradient);
-  mRiemannDvDx = dataBase.newFluidFieldList(Tensor::zero,GSPHFieldNames::RiemannVelocityGradient);
-  mNewRiemannDpDx = dataBase.newFluidFieldList(Vector::zero,ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient);
-  mNewRiemannDvDx = dataBase.newFluidFieldList(Tensor::zero,ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient);
+  mDrhoDx = dataBase.newFluidFieldList(Vector::zero(),GSPHFieldNames::densityGradient);
+  mDepsDx = dataBase.newFluidFieldList(Vector::zero(),GSPHFieldNames::specificThermalEnergyGradient);
+  mDvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::velocityGradient);
+  mRiemannDpDx = dataBase.newFluidFieldList(Vector::zero(),GSPHFieldNames::RiemannPressureGradient);
+  mRiemannDvDx = dataBase.newFluidFieldList(Tensor::zero(),GSPHFieldNames::RiemannVelocityGradient);
+  mNewRiemannDpDx = dataBase.newFluidFieldList(Vector::zero(),ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient);
+  mNewRiemannDvDx = dataBase.newFluidFieldList(Tensor::zero(),ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient);
 }
 
 //------------------------------------------------------------------------------
@@ -275,10 +275,10 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mXSPHDeltaV, Vector::zero(), HydroFieldNames::XSPHDeltaV, false);
   dataBase.resizeFluidFieldList(mDvDt, Vector::zero(), HydroFieldNames::hydroAcceleration, false);
   dataBase.resizeFluidFieldList(mDspecificThermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, false);
-  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero, HydroFieldNames::velocityGradient, false);
-  dataBase.resizeFluidFieldList(mDrhoDx, Vector::zero, GSPHFieldNames::densityGradient, false);
-  dataBase.resizeFluidFieldList(mDepsDx, Vector::zero, GSPHFieldNames::specificThermalEnergyGradient, false);
-  dataBase.resizeFluidFieldList(mM, Tensor::zero, HydroFieldNames::M_SPHCorrection, false);
+  dataBase.resizeFluidFieldList(mDvDx, Tensor::zero(), HydroFieldNames::velocityGradient, false);
+  dataBase.resizeFluidFieldList(mDrhoDx, Vector::zero(), GSPHFieldNames::densityGradient, false);
+  dataBase.resizeFluidFieldList(mDepsDx, Vector::zero(), GSPHFieldNames::specificThermalEnergyGradient, false);
+  dataBase.resizeFluidFieldList(mM, Tensor::zero(), HydroFieldNames::M_SPHCorrection, false);
   
   // Check if someone already registered DxDt.
   if (not derivs.registered(mDxDt)) {
@@ -544,10 +544,10 @@ applyGhostBoundaries(State<Dimension>& state,
   auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero); 
-  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero); 
-  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero);
-  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero);
+  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero()); 
+  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero()); 
+  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero());
+  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero());
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
        boundaryItr != this->boundaryEnd();
@@ -583,10 +583,10 @@ enforceBoundaries(State<Dimension>& state,
   auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
-  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero);
-  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero);
+  auto DpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  auto DvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
+  auto DrhoDx = state.fields(GSPHFieldNames::densityGradient,Vector::zero());
+  auto DepsDx = state.fields(GSPHFieldNames::specificThermalEnergyGradient,Vector::zero());
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
        boundaryItr != this->boundaryEnd();

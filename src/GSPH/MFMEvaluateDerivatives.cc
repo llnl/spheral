@@ -63,9 +63,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   CHECK(riemannDvDx.size() == numNodeLists);
 
   // Derivative FieldLists.
-  const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
-  const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero);
-  //const auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero);
+  const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
+  //const auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero());
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto  DvolDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, 0.0);

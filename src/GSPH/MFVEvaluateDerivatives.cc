@@ -36,8 +36,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   // Get the state and derivative FieldLists.
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
@@ -60,18 +60,18 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   CHECK(riemannDvDx.size() == numNodeLists);
 
   // Derivative FieldLists.
-  const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
-  const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero);
-  const auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero);
+  const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
+  const auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero());
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto  DvolDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, 0.0);
   auto  DmDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, 0.0);
   auto  DEDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, 0.0);
-  auto  DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero);
-  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  auto  DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero());
+  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
   auto* pairAccelerationsPtr = (compatibleEnergy ?
                                 &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
                                 nullptr);
@@ -418,12 +418,12 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
   CHECK(position.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
 
-  auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
-  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero);
-  auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero);
-  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
+  auto  DepsDx = derivs.fields(GSPHFieldNames::specificThermalEnergyGradient, Vector::zero());
+  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
   
   CHECK(M.size() == numNodeLists);
@@ -575,13 +575,14 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
       
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       
-      
+      const auto& vi = velocity(nodeListi,i);
       const auto& voli = volume(nodeListi,i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
 
       auto& Mi = M(nodeListi, i);
       auto& normi = normalization(nodeListi, i);
+      auto& DxDti = DxDt(nodeListi,i);
       const auto Mdeti = std::abs(Mi.Determinant());
 
       normi += voli*Hdeti*W0;
@@ -620,7 +621,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         const auto& normi = normalization(nodeListi, i);
         auto& DxDti = DxDt(nodeListi,i);
 
-        const auto nodeMotionLimiter = min(cfl*ci*safeInv(DxDti.magnitude()),1.0)
+        const auto nodeMotionLimiter = min(cfl*ci*safeInv(DxDti.magnitude()),1.0);
         if(xsphMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff/max(tiny, normi);
         if(fickianMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff*ci*ci*dt;
         if(!noMotion) DxDti += vi;
