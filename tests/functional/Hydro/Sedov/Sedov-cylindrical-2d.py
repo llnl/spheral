@@ -4,13 +4,13 @@
 import os, sys, shutil, mpi
 from Spheral2d import *
 from SpheralTestUtilities import *
-#from SpheralGnuPlotUtilities import *
 from GenerateNodeDistribution2d import *
-from CubicNodeGenerator import GenerateSquareNodeDistribution
+
+import SedovAnalyticSolution
 
 if mpi.procs > 1:
-    from VoronoiDistributeNodes import distributeNodes2d
-    #from PeanoHilbertDistributeNodes import distributeNodes2d
+    #from VoronoiDistributeNodes import distributeNodes2d
+    from PeanoHilbertDistributeNodes import distributeNodes2d
 else:
     from DistributeNodes import distributeNodes2d
 
@@ -131,10 +131,10 @@ assert not(boolReduceViscosity and boolCullenViscosity)
 assert thetaFactor in (0.5, 1.0, 2.0)
 assert not((gsph or mfm or mfv) and (boolReduceViscosity or boolCullenViscosity))
 assert not(fsisph and not solid)
+
 theta = thetaFactor * pi
 
 # Figure out what our goal time should be.
-import SedovAnalyticSolution
 h0 = 1.0/nRadial*nPerh
 answer = SedovAnalyticSolution.SedovSolution(nDim = 2,
                                              gamma = gamma,
@@ -154,6 +154,10 @@ if thetaFactor == 0.5:
     Espike *= 0.25
 elif thetaFactor == 1.0:
     Espike *= 0.5
+
+# overwrite for backwards compat.
+if seed == "square":
+    seed = "lattice"
 
 #-------------------------------------------------------------------------------
 # Path names.
@@ -190,7 +194,7 @@ elif mfv:
         hydroname += "_{0}".format(nodeMotionCoefficient)
         nodeMotionType = NodeMotionType.XSPH
     else:
-        raise ValueError ("WHAT DID YOU DO!!!???")
+        raise ValueError ("Invalid node motion type for MFV")
 else:
     hydroname = "SPH"
 if asph:
@@ -250,7 +254,7 @@ nodes1 = nodeListConstructor("nodes1", eos,
                            kernelExtent = kernelExtent,
                            nPerh = nPerh,
                            rhoMin = rhomin)
-
+nodes1.allowALE=True
 #-------------------------------------------------------------------------------
 # Set the node properties.
 #-------------------------------------------------------------------------------
@@ -269,26 +273,18 @@ else:
     xmin = (-1.0, -1.0)
     xmax = (1.0, 1.0)
 
-if seed == "square":
-    generator = GenerateNodeDistribution2d(nRadial, nTheta, rho0, "lattice",
-                                           rmin = rmin,
-                                           rmax = rmax,
-                                           xmin = xmin,
-                                           xmax = xmax,
-                                           theta = theta,
-                                           #azimuthalOffsetFraction = azimuthalOffsetFraction,
-                                           nNodePerh = nPerh,
-                                           SPH = (not ASPH))
-else:
-    generator = GenerateNodeDistribution2d(nRadial, nTheta, rho0, seed,
-                                           rmin = rmin,
-                                           rmax = rmax,
-                                           xmin = xmin,
-                                           xmax = xmax,
-                                           theta = theta,
-                                           azimuthalOffsetFraction = azimuthalOffsetFraction,
-                                           nNodePerh = nPerh,
-                                           SPH = (not ASPH))
+generator = GenerateNodeDistribution2d(nRadial, 
+                                        nTheta,
+                                        rho0,
+                                        seed,
+                                        rmin = rmin,
+                                        rmax = rmax,
+                                        xmin = xmin,
+                                        xmax = xmax,
+                                        theta = theta,
+                                        azimuthalOffsetFraction = azimuthalOffsetFraction,
+                                        nNodePerh = nPerh,
+                                        SPH = (not ASPH))
 
 distributeNodes2d((nodes1, generator))
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MIN)")
@@ -457,7 +453,6 @@ output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
-#output("hydro.HEvolution")
 
 if not (gsph or mfm or mfv):
     q = hydro.Q
@@ -485,16 +480,22 @@ if not (gsph or mfm or mfv):
 #-------------------------------------------------------------------------------
 # Create boundary conditions.
 #-------------------------------------------------------------------------------
-xPlane0 = Plane(Vector(0.0, 0.0), Vector(1.0, 0.0))
-yPlane0 = Plane(Vector(0.0, 0.0), Vector(0.0, 1.0))
+
+xPlane0 = Plane(Vector(xmin[0], xmin[1]), Vector(1.0, 0.0))
+yPlane0 = Plane(Vector(xmin[0], xmin[1]), Vector(0.0, 1.0))
+xPlane1 = Plane(Vector(xmax[0], xmax[1]), Vector(-1.0, 0.0))
+yPlane1 = Plane(Vector(xmax[0], xmax[1]), Vector(0.0, -1.0))
+
 xbc0 = ReflectingBoundary(xPlane0)
 ybc0 = ReflectingBoundary(yPlane0)
+xbc1 = ReflectingBoundary(xPlane1)
+ybc1 = ReflectingBoundary(yPlane1)
 
 for p in packages:
-    if thetaFactor in (0.5, ):
-        p.appendBoundary(xbc0)
-    if thetaFactor in (0.5, 1.0):
-        p.appendBoundary(ybc0)
+    p.appendBoundary(xbc0)
+    p.appendBoundary(ybc0)
+    p.appendBoundary(xbc1)
+    p.appendBoundary(ybc1)
 
 #-------------------------------------------------------------------------------
 # Construct a time integrator, and add the one physics package.
