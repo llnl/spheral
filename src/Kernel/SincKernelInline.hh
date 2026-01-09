@@ -22,14 +22,6 @@ SincKernel<Dimension>::SincKernel(const double extent):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-SincKernel<Dimension>::~SincKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

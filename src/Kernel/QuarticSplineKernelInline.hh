@@ -33,14 +33,6 @@ QuarticSplineKernel< Dim<3> >::QuarticSplineKernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-QuarticSplineKernel<Dimension>::~QuarticSplineKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>
