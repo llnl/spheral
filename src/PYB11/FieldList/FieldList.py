@@ -5,7 +5,7 @@ from FieldListBase import *
 # FieldList
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralFieldList")
+@PYB11module("SpheralCompiledModules.SpheralFieldList")
 class FieldList(FieldListBase):
 
     PYB11typedefs = """

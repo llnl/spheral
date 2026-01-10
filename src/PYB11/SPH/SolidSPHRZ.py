@@ -7,7 +7,7 @@ from RestartMethods import *
 
 @PYB11template()            # Override the fact SolidSPH is templated
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-@PYB11module("SpheralSPH")
+@PYB11module("SpheralCompiledModules.SpheralSPH")
 @PYB11dynamic_attr
 class SolidSPHRZ(SolidSPH):
 

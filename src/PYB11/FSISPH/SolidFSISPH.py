@@ -6,7 +6,7 @@ from GenericHydro import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralFSISPH")
+@PYB11module("SpheralCompiledModules.SpheralFSISPH")
 @PYB11dynamic_attr
 class SolidFSISPH(GenericHydro):
     "SolidFSISPH -- SolidSPHHydro modified for large density discontinuities"

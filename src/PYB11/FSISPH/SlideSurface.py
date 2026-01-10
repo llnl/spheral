@@ -4,7 +4,7 @@
 from PYB11Generator import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralFSISPH")
+@PYB11module("SpheralCompiledModules.SpheralFSISPH")
 class SlideSurface:
     "SlideSurface -- some helper methods for to implement SPH slidelines"
 

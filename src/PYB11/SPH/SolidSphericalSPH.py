@@ -6,7 +6,7 @@ from SolidSPH import *
 
 @PYB11template()            # Override the fact SolidSPH is templated
 @PYB11template_dict({"Dimension" : "Dim<1>"})
-@PYB11module("SpheralSPH")
+@PYB11module("SpheralCompiledModules.SpheralSPH")
 @PYB11dynamic_attr
 class SolidSphericalSPH(SolidSPH):
 

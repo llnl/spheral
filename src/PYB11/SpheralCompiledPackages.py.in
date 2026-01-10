@@ -1,10 +1,12 @@
 # ------------------------------------------------------------------------------
 # Import the compiled packages.
 # ------------------------------------------------------------------------------
-pkgs = "@PYTHONPKGS@"
-for package in pkgs.split():
-    if not package in ("PolyClipper", "Silo"):
-        exec("from Spheral%s import *" % package)
+#pkgs = "@PYTHONPKGS@"
+import SpheralCompiledModules
+pkgs = [x for x in dir(SpheralCompiledModules) if "Spheral" in x]
+for pkg in pkgs:
+    if not pkg in ("SpheralPolyClipper", "SpheralSilo"):
+        exec(f"from SpheralCompiledModules.{pkg} import *")
 
-if "Silo" in pkgs:
-    import SpheralSilo as silo
+if "SpheralSilo" in pkgs:
+    import SpheralCompiledModules.SpheralSilo as silo

@@ -5,7 +5,7 @@ from PYB11Generator import *
 from EquationOfState import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSolidMaterial")
+@PYB11module("SpheralCompiledModules.SpheralSolidMaterial")
 class SolidEquationOfState(EquationOfState):
     "Abstract base for equations of state for solids"
 

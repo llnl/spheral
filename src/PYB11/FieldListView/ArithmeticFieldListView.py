@@ -6,7 +6,7 @@ from FieldListView import FieldListView as __FieldListView  # Prevent importing 
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
 @PYB11pycppname("FieldListView")
-@PYB11module("SpheralFieldListView")
+@PYB11module("SpheralCompiledModules.SpheralFieldListView")
 class ArithmeticFieldListView:
 
     PYB11typedefs = """

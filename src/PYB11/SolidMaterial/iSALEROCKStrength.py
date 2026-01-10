@@ -6,7 +6,7 @@ from StrengthModel import *
 from StrengthModelAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSolidMaterial")
+@PYB11module("SpheralCompiledModules.SpheralSolidMaterial")
 class iSALEROCKStrength(StrengthModel):
     """iSALEROCKStrength -- Implements a pressure dependent yield strength
 model appropriate for geological materials.
