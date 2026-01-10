@@ -254,12 +254,12 @@ function(spheral_add_pybind11_library package_name module_list_name)
   PYB11Generator_add_module(${package_name}
     MODULE          ${MODULE_NAME}
     SOURCE          ${package_name}_PYB11.py
-    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
+    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
     INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
-    INSTALL         OFF
+    INSTALL         ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
     VIRTUAL_ENV     python_build_env
     MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
     PYTHONPATH      ${PYTHON_ENV_STR}
@@ -278,8 +278,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
       ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
   endif()
 
-  install(TARGETS     ${MODULE_NAME}
-          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
+  # install(TARGETS     ${MODULE_NAME}
+  #         DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
 
