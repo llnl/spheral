@@ -47,8 +47,8 @@ MonaghanGingoldViscosityGSRZ::
 pair<Dim<2>::Tensor,
      Dim<2>::Tensor>
 MonaghanGingoldViscosityGSRZ::
-Piij(const unsigned nodeListi, const unsigned i, 
-     const unsigned nodeListj, const unsigned j,
+Piij(const size_t nodeListi, const size_t i, 
+     const size_t nodeListj, const size_t j,
      const Vector& xi,
      const Vector& etai,
      const Vector& vi,

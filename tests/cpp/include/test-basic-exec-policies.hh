@@ -14,10 +14,10 @@ using EXEC_TYPES = camp::list<
   ,RAJA::omp_parallel_for_exec
 #endif
 #ifdef SPHERAL_ENABLE_CUDA
-  ,RAJA::cuda_exec<256>
+  ,RAJA::cuda_exec<512>
 #endif
 #ifdef SPHERAL_ENABLE_HIP
-  ,RAJA::hip_exec<256>
+  ,RAJA::hip_exec<512>
 #endif
   >;
 
@@ -28,18 +28,18 @@ using EXEC_RESOURCE_TYPES =
   ,camp::list<RAJA::omp_parallel_for_exec, camp::resources::Host>
 #endif
 #ifdef SPHERAL_ENABLE_CUDA
-  ,camp::list<RAJA::cuda_exec<256>, camp::resources::Cuda>
+  ,camp::list<RAJA::cuda_exec<512>, camp::resources::Cuda>
 #endif
 #ifdef SPHERAL_ENABLE_HIP
-  ,camp::list<RAJA::hip_exec<256>, camp::resources::Hip>
+  ,camp::list<RAJA::hip_exec<512>, camp::resources::Hip>
 #endif
   >;
 
 using GPU_TEST_TYPE =
 #ifdef SPHERAL_ENABLE_CUDA
-  RAJA::cuda_exec<256>;
+  RAJA::cuda_exec<512>;
 #elif defined(SPHERAL_ENABLE_HIP)
-  RAJA::hip_exec<256>;
+  RAJA::hip_exec<512>;
 #else
   std::nullptr_t;
 #endif

@@ -39,8 +39,8 @@ public:
   // required method is a no-op for this specialization.
   // virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
   //                    Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-  //                    const unsigned nodeListi, const unsigned i, 
-  //                    const unsigned nodeListj, const unsigned j,
+  //                    const size_t nodeListi, const size_t i, 
+  //                    const size_t nodeListj, const size_t j,
   //                    const Vector& xi,
   //                    const SymTensor& Hi,
   //                    const Vector& etai,

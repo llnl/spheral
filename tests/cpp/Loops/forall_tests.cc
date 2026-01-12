@@ -23,10 +23,12 @@
 
 using DIM3 = Spheral::Dim<3>;
 using Vector = Spheral::GeomVector<3>;
-using FieldBase = Spheral::FieldBase<DIM3>;
-using FieldDouble = Spheral::Field<DIM3, double>;
-using FieldViewDouble = Spheral::FieldView<DIM3, double>;
-using FieldListDouble = Spheral::FieldList<DIM3, double>;
+using FieldInt = Spheral::Field<DIM3, int>;
+using FieldViewInt = Spheral::FieldView<DIM3, int>;
+using FieldListInt = Spheral::FieldList<DIM3, int>;
+using FieldVector = Spheral::Field<DIM3, Vector>;
+using FieldViewVector = Spheral::FieldView<DIM3, Vector>;
+using FieldListVector = Spheral::FieldList<DIM3, Vector>;
 using NodeList_t = Spheral::NodeList<DIM3>;
 using FluidNodeList_t = Spheral::FluidNodeList<DIM3>;
 using TreeNeighbor_t = Spheral::TreeNeighbor<DIM3>;
@@ -40,7 +42,7 @@ using NPL = Spheral::NodePairList;
 using NPLV = Spheral::NodePairListView;
 
 // Default Testing Size.
-static constexpr size_t Nx = 20;
+static constexpr size_t Nx = 6;
 static constexpr size_t N = Nx*Nx*Nx;
 static constexpr size_t N_table = 100;
 static constexpr double hmin = 1.0e-20;
@@ -72,6 +74,30 @@ public:
                   Spheral::NeighborSearchType::GatherScatter,
                   kernelExtents, xmin, xmax) {
     fluid_node_list.registerNeighbor(tree_neighbor);
+  }
+
+  template<typename TypeParam>
+  void initialize() {
+    // Initialize the positions and H values
+    auto& pos = fluid_node_list.positions();
+    auto& H = fluid_node_list.Hfield();
+    auto pos_v = pos.view();
+    auto H_v = H.view();
+    const int mx = Nx;
+    RAJA::forall<TypeParam>(TRS_UINT(0, pos.numElements()),
+      [=] SPHERAL_HOST_DEVICE (int i) {
+        int idx = i;
+        double x = int(idx%mx)*dx;
+        idx /= mx;
+        double y = int(idx%mx)*dx;
+        idx /= mx;
+        double z= int(idx)*dx;
+        pos_v[i] = Vector(x, y, z);
+        H_v[i] = SymTensor::one();
+      });
+    pos.move(chai::CPU);
+    H.move(chai::CPU);
+    fluid_node_list.neighbor().updateNodes();
   }
 
   NPL findNeighbors(double r2) {
@@ -113,31 +139,12 @@ GPU_TYPED_TEST_P(LoopTypedTest, Start) {
 // Basic forall
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(LoopTypedTest, BasicForAll) {
-  auto& pos = gpu_this->fluid_node_list.positions();
-  auto pos_v = pos.view();
-  auto& H = gpu_this->fluid_node_list.Hfield();
-  auto H_v = H.view();
-  FieldDouble field("test", gpu_this->fluid_node_list, 0.0);
-  FieldListDouble field_list;
+  gpu_this->template initialize<TypeParam>();
+  FieldInt field("test", gpu_this->fluid_node_list, 0);
+  FieldListInt field_list;
   field_list.appendField(field);
-  const int mx = Nx;
-  RAJA::forall<TypeParam>(TRS_UINT(0, pos.numElements()),
-     [=] SPHERAL_HOST_DEVICE (int i) {
-       int idx = i;
-       double x = int(idx%mx)*dx;
-       idx /= mx;
-       double y = int(idx%mx)*dx;
-       idx /= mx;
-       double z= int(idx)*dx;
-       pos_v[i] = Vector(x, y, z);
-       H_v[i] = SymTensor::one();
-     });
-  pos.move(chai::CPU);
-  H.move(chai::CPU);
-  gpu_this->fluid_node_list.neighbor().updateNodes();
   // Make a radius large enough to encompass diagonal nodes
   const double r2 = 3.*std::pow(1.01*dx, 2);
-  auto field_v = field.view();
   auto pairs = gpu_this->findNeighbors(r2);
   auto pairs_v = pairs.view();
   auto fl_v = field_list.view();
@@ -147,8 +154,10 @@ GPU_TYPED_TEST_P(LoopTypedTest, BasicForAll) {
        auto j = pairs_v[kk].j_node;
        auto nli = pairs_v[kk].i_list;
        auto nlj = pairs_v[kk].j_list;
-       RAJA::atomicAdd<RAJA::auto_atomic>(&fl_v(nli, i), 1.);
-       RAJA::atomicAdd<RAJA::auto_atomic>(&fl_v(nlj, j), 1.);
+       auto& vali = fl_v(nli, i);
+       auto& valj = fl_v(nlj, j);
+       RAJA::atomicAdd<RAJA::auto_atomic>(&vali, 1);
+       RAJA::atomicAdd<RAJA::auto_atomic>(&valj, 1);
      });
   fl_v.move(chai::CPU);
   std::vector<int> ref_count(N, 0);
@@ -161,11 +170,53 @@ GPU_TYPED_TEST_P(LoopTypedTest, BasicForAll) {
   for (auto kk = 0u; kk < N; ++kk) {
     // Make sure the node pair list is reasonable
     SPHERAL_ASSERT_TRUE(ref_count[kk] >= 7);
+    // Make sure the values are correct
     SPHERAL_ASSERT_EQ(ref_count[kk], field_list(0, kk));
   }
 }
 
-REGISTER_TYPED_TEST_SUITE_P(LoopTypedTest, Start, BasicForAll);
+//------------------------------------------------------------------------------
+// Basic forall with Vector atomics
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(LoopTypedTest, VectorAtomics) {
+  gpu_this->template initialize<TypeParam>();
+  FieldVector field("test", gpu_this->fluid_node_list, Vector::zero());
+  FieldListVector field_list;
+  field_list.appendField(field);
+  // Make a radius large enough to encompass diagonal nodes
+  const double r2 = 3.*std::pow(1.01*dx, 2);
+  auto pairs = gpu_this->findNeighbors(r2);
+  auto pairs_v = pairs.view();
+  auto fl_v = field_list.view();
+  auto one = Vector::one();
+  RAJA::forall<TypeParam>(TRS_UINT(0, pairs.size()),
+     [=] SPHERAL_HOST_DEVICE (int kk) {
+       auto i = pairs_v[kk].i_node;
+       auto j = pairs_v[kk].j_node;
+       auto nli = pairs_v[kk].i_list;
+       auto nlj = pairs_v[kk].j_list;
+       auto& vali = fl_v(nli, i);
+       auto& valj = fl_v(nlj, j);
+       vali.atomicAdd(one);
+       valj.atomicAdd(one);
+     });
+  fl_v.move(chai::CPU);
+  std::vector<int> ref_count(N, 0);
+  for (auto kk = 0u; kk < pairs.size(); ++kk) {
+    auto i = pairs[kk].i_node;
+    auto j = pairs[kk].j_node;
+    ref_count[i] += 1;
+    ref_count[j] += 1;
+  }
+  for (auto kk = 0u; kk < N; ++kk) {
+    // Make sure the node pair list is reasonable
+    SPHERAL_ASSERT_TRUE(ref_count[kk] >= 7);
+    // Make sure the values are correct
+    SPHERAL_ASSERT_EQ(ref_count[kk], field_list(0, kk)[0]);
+  }
+}
+
+REGISTER_TYPED_TEST_SUITE_P(LoopTypedTest, Start, BasicForAll, VectorAtomics);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(ForAllTests, LoopTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
