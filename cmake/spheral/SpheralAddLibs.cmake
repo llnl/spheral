@@ -259,7 +259,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
-    INSTALL         ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
+    INSTALL         OFF # ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
     VIRTUAL_ENV     python_build_env
     MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
     PYTHONPATH      ${PYTHON_ENV_STR}
@@ -278,8 +278,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
       ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
   endif()
 
-  # install(TARGETS     ${MODULE_NAME}
-  #         DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
+  install(TARGETS     ${MODULE_NAME}
+          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
 
