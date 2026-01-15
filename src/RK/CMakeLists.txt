@@ -22,9 +22,7 @@ set(RK_inst
     hessianRK
     )
 
-set(RK_sources
-    RKFieldNames.cc
-    )
+set(RK_sources )
 
 if(SPHERAL_ENABLE_2D)
   list(APPEND RK_sources

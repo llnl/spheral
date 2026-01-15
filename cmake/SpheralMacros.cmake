@@ -59,20 +59,22 @@ macro(spheral_add_test)
     get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
     get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
     get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+    get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
 
     blt_add_library(
       NAME ${original_test_name}_lib
       SOURCES ${TEST_LIB_SOURCE} ${SPHERAL_ROOT_DIR}/src/spheralCXX.cc
       DEFINES ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON ${SPHERAL_BLT_DEPENDS} ${original_deps}
-      SHARED False)
+      SHARED FALSE)
 
     target_compile_options(${original_test_name}_lib PUBLIC ${SPHERAL_CXX_FLAGS})
-    target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files")
+    target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files" ${SPHERAL_LINK_FLAGS})
 
     spheral_add_executable(
       NAME ${original_test_name}
       SOURCES ${original_src}
+      DEFINES ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON gtest ${CMAKE_THREAD_LIBS_INIT} ${original_test_name}_lib
       TEST On)
 
@@ -81,11 +83,12 @@ macro(spheral_add_test)
       COMMAND ${TEST_DRIVER} ${original_test_name})
 
     target_include_directories(${original_test_name} SYSTEM PRIVATE ${SPHERAL_ROOT_DIR}/tests/cpp/include)
+    target_compile_options(${original_test_name} PUBLIC ${SPHERAL_CXX_FLAGS})
 
     if (${arg_DEBUG_LINKER})
-      target_link_options(${original_test_name} PUBLIC "-Wl,--warn-unresolved-symbols")
+      target_link_options(${original_test_name} PUBLIC "-Wl,--warn-unresolved-symbols" ${SPHERAL_LINK_FLAGS})
     else()
-      target_link_options(${original_test_name} PUBLIC "-Wl,--unresolved-symbols=ignore-all")
+      target_link_options(${original_test_name} PUBLIC "-Wl,--unresolved-symbols=ignore-all" ${SPHERAL_LINK_FLAGS})
     endif()
   endif()
 

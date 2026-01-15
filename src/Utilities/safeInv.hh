@@ -7,10 +7,12 @@
 #define __Spheral_safevInv__
 
 #include "SpheralFunctions.hh"
+#include "config.hh"
 
 namespace Spheral {
 
 template<typename Value>
+SPHERAL_HOST_DEVICE
 inline
 Value
 safeInv(const Value& x,
@@ -19,6 +21,7 @@ safeInv(const Value& x,
 }
 
 template<typename Value>
+SPHERAL_HOST_DEVICE
 inline
 Value
 safeInvVar(const Value& x,

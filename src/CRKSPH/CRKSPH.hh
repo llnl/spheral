@@ -9,13 +9,14 @@
 #include "CRKSPH/CRKSPHBase.hh"
 #include "Geometry/CellFaceFlag.hh"
 #include "RK/RKCorrectionParams.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <memory>
 
 namespace Spheral {
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
@@ -45,7 +46,7 @@ public:
 
   // Constructors.
   CRKSPH(DataBase<Dimension>& dataBase,
-                  ArtificialViscosityHandle<Dimension>& Q,
+                  ArtificialViscosity<Dimension>& Q,
                   const RKOrder order,
                   const double cfl,
                   const bool useVelocityMagnitudeForDt,
@@ -88,7 +89,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
     
   // The state field lists we're maintaining.
   const PairAccelerationsType& pairAccelerations() const { VERIFY2(mPairAccelerationsPtr, "CRKSPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }

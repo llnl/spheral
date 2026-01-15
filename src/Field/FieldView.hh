@@ -61,9 +61,10 @@ public:
   SPHERAL_HOST_DEVICE DataType& operator[](const size_t index) const;
 
   // The number of elements in the field.
-  SPHERAL_HOST_DEVICE size_t numElements()         const { return mDataSpan.size(); }
-  SPHERAL_HOST_DEVICE size_t numInternalElements() const { return mNumInternalElements; }
-  SPHERAL_HOST_DEVICE size_t numGhostElements()    const { return mNumGhostElements; }
+  SPHERAL_HOST_DEVICE size_t numElements()            const { return mDataSpan.size(); }
+  SPHERAL_HOST_DEVICE size_t numInternalElements()    const { return mNumInternalElements; }
+  SPHERAL_HOST_DEVICE size_t numGhostElements()       const { return mNumGhostElements; }
+  SPHERAL_HOST_DEVICE Scalar nodesPerSmoothingScale() const { return mNodesPerSmoothingScale; }
 
   // Methods to apply limits to Field data members.
   SPHERAL_HOST_DEVICE void applyMin(const DataType& dataMin);
@@ -148,6 +149,7 @@ protected:
   //--------------------------- Protected Interface ---------------------------//
   ContainerType mDataSpan;
   size_t mNumInternalElements, mNumGhostElements;
+  Scalar mNodesPerSmoothingScale = 0.0;
 };
 
 } // namespace Spheral

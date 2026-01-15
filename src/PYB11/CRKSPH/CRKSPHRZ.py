@@ -26,7 +26,7 @@ class CRKSPHRZ(CRKSPHBase):
 
     def pyinit(self,
                dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",

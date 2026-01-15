@@ -12,9 +12,9 @@
 namespace Spheral {
 
 struct SVPHFieldNames {
-  static const std::string A_SVPH;
-  static const std::string B_SVPH;
-  static const std::string gradB_SVPH;
+  const inline static std::string A_SVPH = "A SVPH correction";
+  const inline static std::string B_SVPH = "B SVPH correction";
+  const inline static std::string gradB_SVPH = "gradB SVPH correction";
 };
 
 }

@@ -15,9 +15,7 @@ set(Hydro_inst
    )
 
 
-set(Hydro_sources
-    HydroFieldNames.cc
-    )
+set(Hydro_sources )
 
 if (SPHERAL_ENABLE_2D)
   list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)

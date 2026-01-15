@@ -49,7 +49,7 @@ public:
   typedef GeomFacet1d Facet;
   static const int nDim = 1;
 
-  static double rootnu(const double& x) { return x; }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return x; }
   static double pownu(const double& x) { return x; }
   static double pownu1(const double& /*x*/) { return 1.0; }
   static double pownu12(const double& /*x*/) { return 1.0; }
@@ -70,7 +70,7 @@ public:
   typedef GeomFacet2d Facet;
   static const int nDim = 2;
 
-  static double rootnu(const double& x) { return std::sqrt(x); }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return std::sqrt(x); }
   static double pownu(const double& x) { return x*x; }
   static double pownu1(const double& x) { return x; }
   static double pownu12(const double& x) { return std::sqrt(x); }
@@ -91,7 +91,7 @@ public:
   typedef GeomFacet3d Facet;
   static const int nDim = 3;
 
-  static double rootnu(const double& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
   static double pownu(const double& x) { return x*x*x; }
   static double pownu1(const double& x) { return x*x; }
   static double pownu12(const double& x) { return x; }
