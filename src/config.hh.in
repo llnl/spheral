@@ -21,10 +21,12 @@
 #define SPHERAL_HOST RAJA_HOST
 #define SPHERAL_DEVICE RAJA_DEVICE
 
+#define GPU_BLOCK_SIZE 256
+
 #if defined(SPHERAL_ENABLE_HIP)
-using EXEC_POLICY = RAJA::hip_exec<512>;
+using EXEC_POLICY = RAJA::hip_exec<GPU_BLOCK_SIZE>;
 #elif defined(SPHERAL_ENABLE_CUDA)
-using EXEC_POLICY = RAJA::cuda_exec<512>;
+using EXEC_POLICY = RAJA::cuda_exec<GPU_BLOCK_SIZE>;
 #elif defined(SPHERAL_ENABLE_OPENMP)
 using EXEC_POLICY = RAJA::omp_parallel_for_exec;
 #else

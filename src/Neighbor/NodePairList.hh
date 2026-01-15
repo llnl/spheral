@@ -85,6 +85,10 @@ public:
     return static_cast<NodePairListView>(*this);
   }
 
+  NodePairListView view() const {
+    return static_cast<NodePairListView>(*this);
+  }
+
   void initView() {
     initMAView(mData, mNodePairList);
   }

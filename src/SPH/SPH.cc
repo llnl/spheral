@@ -201,14 +201,13 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const auto numNodeLists = nodeLists.size();
 
   // The set of interacting node pairs.
-  auto pairs_v = connectivityMap.nodePairList();
-  auto pairs = pairs_v.view();
-  const auto npairs = pairs.size();
+  const auto& pairs_v = connectivityMap.nodePairList();
+  const auto  pairs = pairs_v.view();
+  const auto  npairs = pairs.size();
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
   auto mass_v = state.fields(HydroFieldNames::mass, 0.0);
-  auto mass = mass_v.view();
   auto position_v = state.fields(HydroFieldNames::position, Vector::zero());
   auto velocity_v = state.fields(HydroFieldNames::velocity, Vector::zero());
   auto massDensity_v = state.fields(HydroFieldNames::massDensity, 0.0);
@@ -216,6 +215,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto pressure_v = state.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed_v = state.fields(HydroFieldNames::soundSpeed, 0.0);
   auto omega_v = state.fields(HydroFieldNames::omegaGradh, 0.0);
+  auto mass = mass_v.view();
   auto position = position_v.view();
   auto velocity = velocity_v.view();
   auto massDensity = massDensity_v.view();
@@ -229,14 +229,14 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto DvDxQView = DvDxQ.view();
   auto fClQView = fClQ.view();
   auto fCqQView = fCqQ.view();
-  CHECK(mass.size() == numNodeLists);
-  CHECK(position.size() == numNodeLists);
-  CHECK(velocity.size() == numNodeLists);
-  CHECK(massDensity.size() == numNodeLists);
-  CHECK(H.size() == numNodeLists);
-  CHECK(pressure.size() == numNodeLists);
-  CHECK(soundSpeed.size() == numNodeLists);
-  CHECK(omega.size() == numNodeLists);
+  CHECK(mass_v.size() == numNodeLists);
+  CHECK(position_v.size() == numNodeLists);
+  CHECK(velocity_v.size() == numNodeLists);
+  CHECK(massDensity_v.size() == numNodeLists);
+  CHECK(H_v.size() == numNodeLists);
+  CHECK(pressure_v.size() == numNodeLists);
+  CHECK(soundSpeed_v.size() == numNodeLists);
+  CHECK(omega_v.size() == numNodeLists);
   CHECK(fClQ.size() == 0 or fClQ.size() == numNodeLists);
   CHECK(fCqQ.size() == 0 or fCqQ.size() == numNodeLists);
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
@@ -273,21 +273,21 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto effViscousPressure = effViscousPressure_v.view();
   auto XSPHWeightSum = XSPHWeightSum_v.view();
   auto XSPHDeltaV = XSPHDeltaV_v.view();
-  CHECK(rhoSum.size() == numNodeLists);
-  CHECK(normalization.size() == numNodeLists);
-  CHECK(DxDt.size() == numNodeLists);
-  CHECK(DrhoDt.size() == numNodeLists);
-  CHECK(DvDt.size() == numNodeLists);
-  CHECK(DepsDt.size() == numNodeLists);
-  CHECK(DvDx.size() == numNodeLists);
-  CHECK(localDvDx.size() == numNodeLists);
-  CHECK(gradRho.size() == numNodeLists);
-  CHECK(M.size() == numNodeLists);
-  CHECK(localM.size() == numNodeLists);
-  CHECK(maxViscousPressure.size() == numNodeLists);
-  CHECK(effViscousPressure.size() == numNodeLists);
-  CHECK(XSPHWeightSum.size() == numNodeLists);
-  CHECK(XSPHDeltaV.size() == numNodeLists);
+  CHECK(rhoSum_v.size() == numNodeLists);
+  CHECK(normalization_v.size() == numNodeLists);
+  CHECK(DxDt_v.size() == numNodeLists);
+  CHECK(DrhoDt_v.size() == numNodeLists);
+  CHECK(DvDt_v.size() == numNodeLists);
+  CHECK(DepsDt_v.size() == numNodeLists);
+  CHECK(DvDx_v.size() == numNodeLists);
+  CHECK(localDvDx_v.size() == numNodeLists);
+  CHECK(gradRho_v.size() == numNodeLists);
+  CHECK(M_v.size() == numNodeLists);
+  CHECK(localM_v.size() == numNodeLists);
+  CHECK(maxViscousPressure_v.size() == numNodeLists);
+  CHECK(effViscousPressure_v.size() == numNodeLists);
+  CHECK(XSPHWeightSum_v.size() == numNodeLists);
+  CHECK(XSPHDeltaV_v.size() == numNodeLists);
   //CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
@@ -327,24 +327,23 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 //     for (auto kk = 0u; kk < npairs; ++kk) {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
-      size_t i, j, nodeListi, nodeListj;
       Vector gradWi, gradWj, gradWQi, gradWQj;
       Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj, Qi, Qj;
       QPiType QPiij, QPiji;
-      i = pairs[kk].i_node;
-      j = pairs[kk].j_node;
-      nodeListi = pairs[kk].i_list;
-      nodeListj = pairs[kk].j_list;
+      size_t i = pairs[kk].i_node;
+      size_t j = pairs[kk].j_node;
+      size_t nodeListi = pairs[kk].i_list;
+      size_t nodeListj = pairs[kk].j_list;
 
       // Get the state for node i.
       const auto& ri = position(nodeListi, i);
-      const auto& mi = mass(nodeListi, i);
+      const auto  mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
-      const auto& rhoi = massDensity(nodeListi, i);
-      const auto& Pi = pressure(nodeListi, i);
+      const auto  rhoi = massDensity(nodeListi, i);
+      const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
-      const auto& ci = soundSpeed(nodeListi, i);
-      const auto& omegai = omega(nodeListi, i);
+      const auto  ci = soundSpeed(nodeListi, i);
+      const auto  omegai = omega(nodeListi, i);
       const auto  safeOmegai = safeInv(omegai, tiny);
       const auto  Hdeti = Hi.Determinant();
       CHECK(mi > 0.0);
@@ -367,13 +366,13 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
       // Get the state for node j
       const auto& rj = position(nodeListj, j);
-      const auto& mj = mass(nodeListj, j);
+      const auto  mj = mass(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
-      const auto& rhoj = massDensity(nodeListj, j);
-      const auto& Pj = pressure(nodeListj, j);
+      const auto  rhoj = massDensity(nodeListj, j);
+      const auto  Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
-      const auto& cj = soundSpeed(nodeListj, j);
-      const auto& omegaj = omega(nodeListj, j);
+      const auto  cj = soundSpeed(nodeListj, j);
+      const auto  omegaj = omega(nodeListj, j);
       const auto  safeOmegaj = safeInv(omegaj, tiny);
       const auto  Hdetj = Hj.Determinant();
       CHECK(mj > 0.0);
@@ -513,7 +512,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
   }   // OpenMP parallel region
   TIME_END("SPHevalDerivs_pairs");
-
   // Finish up the derivatives for each point.
   TIME_BEGIN("SPHevalDerivs_final");
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {

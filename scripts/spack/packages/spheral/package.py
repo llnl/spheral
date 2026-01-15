@@ -62,7 +62,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo+python +hdf5', type='build')
+    depends_on('silo~fortran+python +hdf5', type='build')
 
     depends_on('chai@develop+raja', type='build')
 
@@ -89,7 +89,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire", "silo"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
