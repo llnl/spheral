@@ -250,11 +250,14 @@ function(spheral_add_pybind11_library package_name module_list_name)
   get_property(SPHERAL_PYB11_TARGET_FLAGS GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS)
   list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
 
+  get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
+
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}
     MODULE          ${MODULE_NAME}
     SOURCE          ${package_name}_PYB11.py
     DEPENDS         ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
+    DEFINES         ${SPHERAL_COMPILE_DEFS}
     INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
@@ -264,7 +267,8 @@ function(spheral_add_pybind11_library package_name module_list_name)
     MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
     PYTHONPATH      ${PYTHON_ENV_STR}
     IS_SUBMODULE    ${${package_name}_IS_SUBMODULE}
-    SUBMODULES      ${${package_name}_SUBMODULES})
+    SUBMODULES      ${${package_name}_SUBMODULES}
+    BUILD_OBJECT_LIB ON)
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
