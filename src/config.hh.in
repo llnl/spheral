@@ -7,7 +7,7 @@
 
 #if defined(SPHERAL_ENABLE_HIP) && defined(__HIP_DEVICE_COMPILE__)
 #define SPHERAL_GPU_ACTIVE
-#endif // SPHERAL_ENABLE_CUDA && __CUDACC__
+#endif
 
 #if defined(SPHERAL_ENABLE_CUDA) && defined(__CUDA_ARCH__)
 #define SPHERAL_GPU_ACTIVE
@@ -21,4 +21,17 @@
 #define SPHERAL_HOST RAJA_HOST
 #define SPHERAL_DEVICE RAJA_DEVICE
 
+#define GPU_BLOCK_SIZE 256
+
+#if defined(SPHERAL_ENABLE_HIP)
+using EXEC_POLICY = RAJA::hip_exec<GPU_BLOCK_SIZE>;
+#elif defined(SPHERAL_ENABLE_CUDA)
+using EXEC_POLICY = RAJA::cuda_exec<GPU_BLOCK_SIZE>;
+#elif defined(SPHERAL_ENABLE_OPENMP)
+using EXEC_POLICY = RAJA::omp_parallel_for_exec;
+#else
+using EXEC_POLICY = RAJA::seq_exec;
+#endif
+using TRS_UINT = RAJA::TypedRangeSegment<unsigned>;
+enum class AtomicOp { Add, Sub, Max, Min };
 #endif //  SPHERAL_config_HPP

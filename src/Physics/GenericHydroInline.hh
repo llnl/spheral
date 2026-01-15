@@ -10,7 +10,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-ArtificialViscosityHandle<Dimension>&
+ArtificialViscosity<Dimension>&
 GenericHydro<Dimension>::artificialViscosity() const {
   return mArtificialViscosity;
 }

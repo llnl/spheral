@@ -25,7 +25,7 @@ class SVPHFacetedHydroBase(GenericHydro):
 
     def pyinit(self,
                W = "const TableKernel<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",

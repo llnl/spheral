@@ -56,7 +56,6 @@ template <typename T> class FieldViewTypedTest : public FieldViewTest {};
 // the host to the device, and a deallocation when the Field Dtor is triggered.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
-  using WORK_EXEC_POLICY = TypeParam;
   {
     FieldDouble field("ExecSpaceCapture", gpu_this->nl, 4.0);
     field.setCallback(gpu_this->callback());
@@ -65,7 +64,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
     auto field_v = field.view();
     SPHERAL_ASSERT_EQ(field_v.numElements(), N);
 
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    RAJA::forall<TypeParam>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (size_t i) {
          SPHERAL_ASSERT_EQ(field_v[i], 4.0);
        });
@@ -73,7 +72,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
   } // field and any GPU allocation should be released here.
 
   GPUCounters ref_count;
-  if (typeid(WORK_EXEC_POLICY) != typeid(SEQ_EXEC_POLICY)) {
+  if (typeid(TypeParam) == typeid(GPU_TEST_TYPE)) {
     ref_count.HToDCopies = 1;
     ref_count.DNumAlloc = 1;
     ref_count.DNumFree = 1;
@@ -87,7 +86,6 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ExecutionSpaceCapture) {
 // RAJA execution spaces through implicit capture.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
-  using WORK_EXEC_POLICY = TypeParam;
   {
     FieldDouble field("MultiSpaceCapture", gpu_this->nl, 4.0);
     field.setCallback(gpu_this->callback());
@@ -100,7 +98,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
     auto field_v = field.view();
 
     // Execute in working execution space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    RAJA::forall<TypeParam>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          field_v[i] *= 2;
        });
@@ -115,7 +113,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
   } // field and any GPU allocation should be released here.
 
   GPUCounters ref_count;
-  if (typeid(WORK_EXEC_POLICY) != typeid(SEQ_EXEC_POLICY)) {
+  if (typeid(TypeParam) == typeid(GPU_TEST_TYPE)) {
     ref_count.HToDCopies = 1;
     ref_count.DToHCopies = 1;
     ref_count.DNumAlloc = 1;
@@ -132,7 +130,6 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiSpaceCapture) {
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
   const double val = 4.;
-  using WORK_EXEC_POLICY = TypeParam;
   {
     FieldDouble field("MultiViewSemantics", gpu_this->nl, val);
     field.setCallback(gpu_this->callback());
@@ -151,7 +148,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
     auto field_v9 = field.view();
 
     // Capture and execute on all FieldView objs in the working space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    RAJA::forall<TypeParam>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          SPHERAL_ASSERT_EQ(field_v0[i], val);
          SPHERAL_ASSERT_EQ(field_v1[i], val);
@@ -168,7 +165,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
   } // field and any GPU allocation should be released here.
 
   GPUCounters ref_count;
-  if (typeid(WORK_EXEC_POLICY) != typeid(SEQ_EXEC_POLICY)) {
+  if (typeid(TypeParam) == typeid(GPU_TEST_TYPE)) {
     ref_count.HToDCopies = 1;
     ref_count.DNumAlloc = 1;
     ref_count.DNumFree = 1;
@@ -186,7 +183,6 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, MultiViewSemantics) {
 // device.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
-  using WORK_EXEC_POLICY = TypeParam;
   {
     const double val = 4.0;
     FieldDouble field("ResizeField", gpu_this->nl, val);
@@ -197,7 +193,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
     SPHERAL_ASSERT_EQ(field_v.numElements(), N);
 
     // Capture the FieldView in the working execution space.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    RAJA::forall<TypeParam>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE (int i) {
          SPHERAL_ASSERT_EQ(field_v[i], val);
        });
@@ -215,7 +211,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
 
     // Capture field_v in the working execution space again. This should trigger
     // a new copy to the Device if executing on the GPU.
-    RAJA::forall<WORK_EXEC_POLICY>(TRS_UINT(0, field.numElements()),
+    RAJA::forall<TypeParam>(TRS_UINT(0, field.numElements()),
        [=] SPHERAL_HOST_DEVICE(int i) {
          if (i < N) {SPHERAL_ASSERT_EQ(field_v[i], val);}
          else { SPHERAL_ASSERT_EQ(field_v[i], 0); }
@@ -226,7 +222,7 @@ GPU_TYPED_TEST_P(FieldViewTypedTest, ResizeField) {
   } // field and any GPU allocation should be released here.
 
   GPUCounters ref_count;
-  if (typeid(WORK_EXEC_POLICY) != typeid(SEQ_EXEC_POLICY)) {
+  if (typeid(TypeParam) == typeid(GPU_TEST_TYPE)) {
     ref_count.HToDCopies = 2;
     ref_count.DNumAlloc = 2;
     ref_count.DNumFree = 2;

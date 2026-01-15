@@ -1069,6 +1069,85 @@ GeomTensor<3>::operator+=(const GeomSymmetricTensor<3>& rhs) {
 }
 
 //------------------------------------------------------------------------------
+// Atomic operations
+//------------------------------------------------------------------------------
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<1>::atomicOp(const GeomTensor<1>& rhs) {
+  Op::apply(&this->mxx, rhs.mxx);
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<1>::atomicOp(const GeomSymmetricTensor<1>& rhs) {
+  Op::apply(&this->mxx, rhs.xx());
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<2>::atomicOp(const GeomTensor<2>& rhs) {
+  Op::apply(&this->mxx, rhs.mxx);
+  Op::apply(&this->mxy, rhs.mxy);
+  Op::apply(&this->myx, rhs.myx);
+  Op::apply(&this->myy, rhs.myy);
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<2>::atomicOp(const GeomSymmetricTensor<2>& rhs) {
+  Op::apply(&this->mxx, rhs.xx());
+  Op::apply(&this->mxy, rhs.xy());
+  Op::apply(&this->myx, rhs.yx());
+  Op::apply(&this->myy, rhs.yy());
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<3>::atomicOp(const GeomTensor<3>& rhs) {
+  Op::apply(&this->mxx, rhs.mxx);
+  Op::apply(&this->mxy, rhs.mxy);
+  Op::apply(&this->mxz, rhs.mxz);
+  Op::apply(&this->myx, rhs.myx);
+  Op::apply(&this->myy, rhs.myy);
+  Op::apply(&this->myz, rhs.myz);
+  Op::apply(&this->mzx, rhs.mzx);
+  Op::apply(&this->mzy, rhs.mzy);
+  Op::apply(&this->mzz, rhs.mzz);
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomTensor<3>::atomicOp(const GeomSymmetricTensor<3>& rhs) {
+  Op::apply(&this->mxx, rhs.xx());
+  Op::apply(&this->mxy, rhs.xy());
+  Op::apply(&this->mxz, rhs.xz());
+  Op::apply(&this->myx, rhs.yx());
+  Op::apply(&this->myy, rhs.yy());
+  Op::apply(&this->myz, rhs.yz());
+  Op::apply(&this->mzx, rhs.zx());
+  Op::apply(&this->mzy, rhs.zy());
+  Op::apply(&this->mzz, rhs.zz());
+}
+
+//------------------------------------------------------------------------------
 // += eigen tensor
 //------------------------------------------------------------------------------
 template<>

@@ -31,7 +31,7 @@ PYB11includes += ['"CRKSPH/CRKSPHBase.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"ArtificialViscosity/ArtificialViscosity.hh"',
-                  '"ArtificialViscosity/ArtificialViscosityHandle.hh"',
+                  '"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"Neighbor/PairwiseField.hh"',
                   '"FileIO/FileIO.hh"',
                   '<iterator>']

@@ -33,7 +33,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # VARIANTS
     # -------------------------------------------------------------------------
     variant('mpi', default=True, description='Enable MPI Support.')
-    variant('openmp', default=True, description='Enable OpenMP Support.')
+    variant('openmp', default=True, when="~rocm", description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
     variant('shared', default=True, description='Build C++ libs as shared.')
     variant('python', default=True, description='Enable Spheral python interface.')
@@ -62,7 +62,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo+python +hdf5', type='build')
+    depends_on('silo~fortran+python +hdf5', type='build')
 
     depends_on('chai@develop+raja', type='build')
 
@@ -89,22 +89,30 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire", "silo"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
 
+    openmp_tpl_list = ["axom", "raja", "chai", "umpire"]
+    for ctpl in openmp_tpl_list:
+        for variant in ["+openmp", "~openmp"]:
+            depends_on(f"{ctpl} {variant}", type='build', when=f"{variant}")
+
     # Forward CUDA/ROCM Variants
-    def set_gpu_variants(ctpl, cond=""):
+    def set_cuda_variants(ctpl, cond=""):
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} {cond}")
+    def set_rocm_variants(ctpl, cond=""):
         for val in ROCmPackage.amdgpu_targets:
             depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} {cond}")
 
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
-        set_gpu_variants(ctpl)
+        set_cuda_variants(ctpl)
+        set_rocm_variants(ctpl)
 
+    set_rocm_variants("eigen")
     # Forward debug variants
     debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak~shared"]
     for ctpl in debug_tpl_list:
@@ -120,6 +128,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Conflicts
     # -------------------------------------------------------------------------
     conflicts("+cuda", when="+rocm")
+    # This conflict comes from Axom and can be removed if removed from Axom.
+    conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
 
     def _get_sys_type(self, spec):

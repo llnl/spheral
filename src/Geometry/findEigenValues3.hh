@@ -66,8 +66,8 @@ findEigenValues3(const TensorType& tin) {
     const double thpt = rho13*std::cos(theta);
     const double bleah = rho13*std::sqrt(3.0)*std::sin(theta);
     return fscale*GeomVector<3>(ack + 2.0*thpt,
-                         ack - thpt - bleah,
-                         ack - thpt + bleah);
+                                ack - thpt - bleah,
+                                ack - thpt + bleah);
 
   }
 }

@@ -16,15 +16,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 
   this->firstDerivativesLoop(time,dt,dataBase,state,derivatives);
 
-  // Depending on the type of the ArtificialViscosity, dispatch the call to
+  // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
-      this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
   }
 
@@ -43,7 +43,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
                       const DataBase<Dimension>& dataBase,
                       const State<Dimension>& state,
                       StateDerivatives<Dimension>& derivs,
-                      const QType& Q) const { 
+                      chai::managed_ptr<QType> Q) const { 
 
   using QPiType = typename QType::ReturnType;
 
@@ -117,9 +117,12 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
 
   //const auto yield = state.fields(SolidFieldNames::yieldStrength, 0.0);
   //const auto invJ2 = state.fields(FSIFieldNames::inverseEquivalentDeviatoricStress, 0.0);
@@ -481,11 +484,11 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         const auto cij = 0.5*(ci+cj); 
 
         // raw AV
-        Q.QPiij(QPiij, QPiji, Qi, Qj,
-                nodeListi, i, nodeListj, j,
-                ri, Hij, etaij, vi, rhoij, cij,  
-                rj, Hij, etaij, vj, rhoij, cij,
-                fClQ, fCqQ, DvDxQ); 
+        Q->QPiij(QPiij, QPiji, Qi, Qj,
+                 nodeListi, i, nodeListj, j,
+                 ri, Hij, etaij, vi, rhoij, cij,  
+                 rj, Hij, etaij, vj, rhoij, cij,
+                 fClQView, fCqQView, DvDxQView);
 
         // slide correction
         if (slides.isSlideSurface(nodeListi,nodeListj)){

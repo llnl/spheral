@@ -7,6 +7,7 @@ spack:
   view: false
   concretizer:
     unify: false
+    reuse: false
   develop:
     spheral:
       path: ../../../../

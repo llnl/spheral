@@ -863,6 +863,39 @@ GeomVector<nDim>::operator>=(const double val) const {
 }
 
 //------------------------------------------------------------------------------
+// Atomic operations.
+//------------------------------------------------------------------------------
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomVector<1>::atomicOp(const GeomVector<1>& vec) {
+  Op::apply(&this->mx, vec.mx);
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomVector<2>::atomicOp(const GeomVector<2>& vec) {
+  Op::apply(&this->mx, vec.mx);
+  Op::apply(&this->my, vec.my);
+}
+
+template<>
+template<typename Op>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomVector<3>::atomicOp(const GeomVector<3>& vec) {
+  Op::apply(&this->mx, vec.mx);
+  Op::apply(&this->my, vec.my);
+  Op::apply(&this->mz, vec.mz);
+}
+
+//------------------------------------------------------------------------------
 // Dot two vectors.
 //------------------------------------------------------------------------------
 template<>

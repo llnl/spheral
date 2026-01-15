@@ -7,6 +7,8 @@
 // This form specialized for use with the area-weighted RZ formalism.
 // 
 // Created by JMO, Sat May 21 16:15:44 PDT 2016
+//
+// CURRENTLY UNUSABLE
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_MonaghanGingoldViscosityRZ_hh__
 #define __Spheral_MonaghanGingoldViscosityRZ_hh__
@@ -34,8 +36,8 @@ public:
   virtual ~MonaghanGingoldViscosityRZ();
 
   // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
+  virtual std::pair<Tensor, Tensor> Piij(const size_t nodeListi, const size_t i, 
+                                         const size_t nodeListj, const size_t j,
                                          const Vector& xi,
                                          const Vector& etai,
                                          const Vector& vi,

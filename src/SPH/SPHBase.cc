@@ -57,7 +57,7 @@ namespace Spheral {
 template<typename Dimension>
 SPHBase<Dimension>::
 SPHBase(DataBase<Dimension>& dataBase,
-        ArtificialViscosityHandle<Dimension>& Q,
+        ArtificialViscosity<Dimension>& Q,
         const TableKernel<Dimension>& W,
         const TableKernel<Dimension>& WPi,
         const double cfl,

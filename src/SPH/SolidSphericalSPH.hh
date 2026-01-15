@@ -38,7 +38,7 @@ public:
 
   // Constructors.
   SolidSphericalSPH(DataBase<Dimension>& dataBase,
-                    ArtificialViscosityHandle<Dimension>& Q,
+                    ArtificialViscosity<Dimension>& Q,
                     const SphericalKernel& W,
                     const SphericalKernel& WPi,
                     const SphericalKernel& WGrad,
@@ -95,7 +95,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Apply boundary conditions to the physics specific fields.
   virtual

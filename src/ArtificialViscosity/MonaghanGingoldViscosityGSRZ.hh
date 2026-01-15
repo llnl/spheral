@@ -11,6 +11,8 @@
 //   http://doi.org/10.1111/j.1365-2966.2008.14058.x
 // 
 // Created by JMO, Mon Nov 20 15:50:29 PST 2006
+//
+// CURRENTLY UNUSABLE
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_MonaghanGingoldViscosityGSRZ_hh__
 #define __Spheral_MonaghanGingoldViscosityGSRZ_hh__
@@ -38,8 +40,8 @@ public:
   virtual ~MonaghanGingoldViscosityGSRZ();
 
   // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
+  virtual std::pair<Tensor, Tensor> Piij(const size_t nodeListi, const size_t i, 
+                                         const size_t nodeListj, const size_t j,
                                          const Vector& xi,
                                          const Vector& etai,
                                          const Vector& vi,
