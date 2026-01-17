@@ -267,8 +267,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
     PYTHONPATH      ${PYTHON_ENV_STR}
     IS_SUBMODULE    ${${package_name}_IS_SUBMODULE}
-    SUBMODULES      ${${package_name}_SUBMODULES}
-    BUILD_OBJECT_LIB ON)
+    SUBMODULES      ${${package_name}_SUBMODULES})
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
