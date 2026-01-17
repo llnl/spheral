@@ -6,7 +6,7 @@ from IntegratorAbstractMethods import *
 from Integrator import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralIntegrator")
+@PYB11module("SpheralCompiledModules.SpheralIntegrator")
 class ImplicitIntegrator(Integrator):
     "Base class for all Spheral implicit in time integration algorithms"
 

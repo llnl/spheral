@@ -4,7 +4,7 @@ from PYB11Generator import *
 # PairwiseField
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value", "size_t numElements")
-@PYB11module("SpheralNeighbor")
+@PYB11module("SpheralCompiledModules.SpheralNeighbor")
 class PairwiseField:
 
     PYB11typedefs = """

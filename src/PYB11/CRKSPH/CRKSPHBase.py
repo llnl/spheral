@@ -6,7 +6,7 @@ from GenericHydro import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPHBase(GenericHydro):
     "CRKSPHBase -- Base class for the CRKSPH/ACRKSPH hydrodynamic packages"

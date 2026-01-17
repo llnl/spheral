@@ -1,7 +1,7 @@
 from PYB11Generator import *
 from UpdatePolicyBase import *
 
-@PYB11module("SpheralHydro")
+@PYB11module("SpheralCompiledModules.SpheralHydro")
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
 class RZNonSymmetricSpecificThermalEnergyPolicy(UpdatePolicyBase):

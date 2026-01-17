@@ -6,7 +6,7 @@ from RestartMethods import *
 # FluidNodeList template
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralNodeList")
+@PYB11module("SpheralCompiledModules.SpheralNodeList")
 @PYB11dynamic_attr
 class DEMNodeList(NodeList):
     "Spheral DEMNodeList base class in %(Dimension)s, i.e.,  the NodeList for Discrete Element Modelling."

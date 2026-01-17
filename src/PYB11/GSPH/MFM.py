@@ -6,7 +6,7 @@ from GenericRiemannHydro import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 @PYB11dynamic_attr
 class MFM(GenericRiemannHydro):
 
