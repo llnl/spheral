@@ -71,6 +71,13 @@ DvolumeDt() const {
 }
 template<typename Dimension>
 inline
+const FieldList<Dimension, typename Dimension::Scalar>&
+MFV<Dimension>::
+maxFluxSpeed() const {
+  return mMaxFluxSpeed;
+}
+template<typename Dimension>
+inline
 const typename MFV<Dimension>::PairMassFluxType&
 MFV<Dimension>::
 pairMassFlux() const {

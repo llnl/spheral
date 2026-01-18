@@ -124,6 +124,7 @@ mass density, velocity, and specific thermal energy."""
     DmassDt = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "DmassDt", returnpolicy="reference_internal")
     DmomentumDt = PYB11property("const FieldList<%(Dimension)s, Vector>&", "DmomentumDt", returnpolicy="reference_internal")
     DthermalEnergyDt = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "DthermalEnergyDt", returnpolicy="reference_internal")
+    maxFluxSpeed = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "maxFluxSpeed", returnpolicy="reference_internal")
     
     nodeMotionCoefficient = PYB11property("double", "nodeMotionCoefficient", "nodeMotionCoefficient",doc="multiplier for XSPH and Fickian node motion schemes.")
     nodeMotionType = PYB11property("NodeMotionType","nodeMotionType","nodeMotionType")

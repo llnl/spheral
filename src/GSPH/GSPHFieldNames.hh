@@ -23,6 +23,7 @@ struct GSPHFieldNames {
   static const std::string RiemannVelocityGradient;
   static const std::string RiemannDeviatoricStressTensorGradient;
   static const std::string pairMassFlux;
+  static const std::string maxFluxSpeed;
 };
 
 }

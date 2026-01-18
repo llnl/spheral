@@ -176,6 +176,7 @@ public:
   const FieldList<Dimension,Scalar>& DthermalEnergyDt() const;
   const FieldList<Dimension,Vector>& DmomentumDt() const;
   const FieldList<Dimension,Scalar>& DvolumeDt() const;
+  const FieldList<Dimension,Scalar>& maxFluxSpeed() const;
 
   const PairMassFluxType& pairMassFlux() const;
   
@@ -195,6 +196,7 @@ private:
   FieldList<Dimension, Scalar> mDthermalEnergyDt;
   FieldList<Dimension, Vector> mDmomentumDt;
   FieldList<Dimension, Scalar> mDvolumeDt;
+  FieldList<Dimension, Scalar> mMaxFluxSpeed;
 
   std::unique_ptr<PairMassFluxType> mPairMassFluxPtr;
 };

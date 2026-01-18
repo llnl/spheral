@@ -113,11 +113,13 @@ MFV(DataBase<Dimension>& dataBase,
   mDthermalEnergyDt(FieldStorageType::CopyFields),
   mDmomentumDt(FieldStorageType::CopyFields),
   mDvolumeDt(FieldStorageType::CopyFields),
+  mMaxFluxSpeed(FieldStorageType::CopyFields),
   mPairMassFluxPtr() {
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
     mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
     mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
+    mMaxFluxSpeed = dataBase.newFluidFieldList(0.0, GSPHFieldNames::maxFluxSpeed);
 }
 
 //------------------------------------------------------------------------------
@@ -201,16 +203,20 @@ void
 MFV<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
+                      
   GenericRiemannHydro<Dimension>::registerDerivatives(dataBase,derivs);
+
   dataBase.resizeFluidFieldList(mDmassDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, false);
   dataBase.resizeFluidFieldList(mDthermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, false);
   dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
   dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, false);
+  dataBase.resizeFluidFieldList(mMaxFluxSpeed, 0.0, GSPHFieldNames::maxFluxSpeed, false);
   
   derivs.enroll(mDmassDt);
   derivs.enroll(mDthermalEnergyDt);
   derivs.enroll(mDmomentumDt);
   derivs.enroll(mDvolumeDt);
+  derivs.enroll(mMaxFluxSpeed);
 
   const auto& connectivityMap = dataBase.connectivityMap();
   mPairMassFluxPtr = std::make_unique<PairMassFluxType>(connectivityMap);

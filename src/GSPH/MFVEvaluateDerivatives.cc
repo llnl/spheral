@@ -72,6 +72,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
   auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
+  auto  maxFluxSpeed = derivs.fields(GSPHFieldNames::maxFluxSpeed,0.0);
   auto* pairAccelerationsPtr = (compatibleEnergy ?
                                 &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
                                 nullptr);
@@ -93,6 +94,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   CHECK(DvDx.size() == numNodeLists);
   CHECK(newRiemannDpDx.size() == numNodeLists);
   CHECK(newRiemannDvDx.size() == numNodeLists);
+  CHECK(maxFluxSpeed.size() == numNodeLists);
   CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
   CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
   CHECK(not compatibleEnergy or pairMassFluxPtr->size() == npairs);
@@ -113,6 +115,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
     auto DvDx_thread = DvDx.threadCopy(threadStack);
     auto newRiemannDpDx_thread = newRiemannDpDx.threadCopy(threadStack);
     auto newRiemannDvDx_thread = newRiemannDvDx.threadCopy(threadStack);
+    auto maxFluxSpeed_thread = maxFluxSpeed.threadCopy(threadStack, ThreadReduction::MAX);
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -153,6 +156,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto& gradRhoi = DrhoDx(nodeListi, i);
       const auto& gradEpsi = DepsDx(nodeListi, i);
       const auto& Mi = M(nodeListi,i);
+      auto& maxFluxSpeedi = maxFluxSpeed_thread(nodeListi,i);
 
       // Get the state for node j
       const auto& riemannDpDxj = riemannDpDx(nodeListj, j);
@@ -181,6 +185,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto& gradRhoj = DrhoDx(nodeListj, j);
       const auto& gradEpsj = DepsDx(nodeListj, j);
       const auto& Mj = M(nodeListj,j);
+      auto& maxFluxSpeedj = maxFluxSpeed_thread(nodeListj,j);
 
       // Node displacement.
       const auto rij = ri - rj;
@@ -260,6 +265,10 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto massFlux = fluxSwitch * rhostar * vflux.dot(Astar);
       const auto momentumFlux = massFlux * vstar;
       const auto energyFlux = massFlux * epsstar;
+
+      const auto fluxSpeedij = abs(vflux.dot(rhatij));
+      maxFluxSpeedi = max(maxFluxSpeedi,fluxSpeedij);
+      maxFluxSpeedj = max(maxFluxSpeedj,fluxSpeedij);
 
       // mass
       //------------------------------------------------------
@@ -621,9 +630,9 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         const auto& normi = normalization(nodeListi, i);
         auto& DxDti = DxDt(nodeListi,i);
 
-        const auto nodeMotionLimiter = min(cfl*ci*safeInv(DxDti.magnitude()),1.0);
-        if(xsphMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff/max(tiny, normi);
-        if(fickianMotion) DxDti *= nodeMotionLimiter*nodeMotionCoeff*ci*ci*dt;
+        if(xsphMotion) DxDti *= nodeMotionCoeff/max(tiny, normi);
+        if(fickianMotion) DxDti *= nodeMotionCoeff*ci*ci*dt;
+        if (xsphMotion or fickianMotion) DxDti *=  min(cfl*ci*safeInv(DxDti.magnitude()),1.0);
         if(!noMotion) DxDti += vi;
       }
     }
