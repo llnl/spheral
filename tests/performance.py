@@ -6,7 +6,7 @@
 import sys, shutil, os, time, stat
 import numpy as np
 import SpheralConfigs
-from SpheralUtilities import TimerMgr
+from Spheral import TimerMgr
 from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
 
