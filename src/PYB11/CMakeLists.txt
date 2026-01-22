@@ -98,16 +98,10 @@ if (SPHERAL_BUILD_MAIN_PYTHON_MODULE)
     SUBMODULES     ${CXX_MODULE_LIBS})
 endif()
 
-# This global list is filled in each spheral_add_pybind11_library call
-string(REPLACE ";" " " PYTHONPKGS "${SPHERAL_MODULE_LIST}")
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/SpheralCompiledPackages.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/SpheralCompiledPackages.py)
-
 set(PYB11_python_targets
   SpheralPickle.py
   PolyhedronFileUtilities.py
-  ${CMAKE_CURRENT_BINARY_DIR}/SpheralCompiledPackages.py)
+  SpheralCompiledPackages.py)
 
 spheral_install_python_files(${PYB11_python_targets})
 

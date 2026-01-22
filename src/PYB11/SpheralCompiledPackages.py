@@ -1,7 +1,6 @@
 # ------------------------------------------------------------------------------
 # Import the compiled packages.
 # ------------------------------------------------------------------------------
-#pkgs = "@PYTHONPKGS@"
 import SpheralCompiledModules
 pkgs = [x for x in dir(SpheralCompiledModules) if "Spheral" in x]
 for pkg in pkgs:
