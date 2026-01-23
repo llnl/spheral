@@ -6,7 +6,7 @@ from RestartMethods import *
 from CRKSPH import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class SolidCRKSPH(CRKSPH):
     "SolidCRKSPH -- The CRKSPH/ACRKSPH solid material hydrodynamic package for Spheral++."
