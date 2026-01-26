@@ -39,11 +39,11 @@ packages:
         environment: {}
         extra_rpaths: []
   cmake:
-    version: [3.23.1]
+    version: [3.25.2]
     buildable: false
     externals:
-    - spec: cmake@3.23.1
-      prefix: /usr/tce/packages/cmake/cmake-3.23.1
+    - spec: cmake@3.25.2
+      prefix: /usr/tce/packages/cmake/cmake-3.25.2
   gmake:
     version: [4.2.1]
     buildable: false
