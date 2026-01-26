@@ -9,7 +9,7 @@
 import mpi
 
 import SpheralConfigs
-from SpheralUtilities import BuildData
+from SpheralCompiledModules.SpheralUtilities import BuildData
 if not BuildData.cxx_compiler_id == "GNU":
     try:
         import sys, os

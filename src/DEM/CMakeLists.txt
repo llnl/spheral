@@ -16,7 +16,6 @@ set(DEM_inst
     LinearSpringDEM)
 
 set(DEM_sources
-    DEMFieldNames.cc
     ContactStorageLocation.cc
     DEMDimension.cc)
 

@@ -5,7 +5,7 @@ from PYB11Generator import *
 from CRKSPHBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPH(CRKSPHBase):
     "CRKSPHBase -- The CRKSPH/ACRKSPH hydrodynamic package for Spheral++."
