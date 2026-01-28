@@ -78,7 +78,7 @@ packages:
   py-pip:
     externals:
     - spec: py-pip@22.0.4
-      prefix: /usr/tce/packages/python/python-3.9.12
+      prefix: /usr/tce/packages/python/python-3.12.2
     buildable: false
   readline:
     externals:
@@ -87,8 +87,8 @@ packages:
     buildable: false
   python:
     externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
+    - spec: python@3.12.2
+      prefix: /usr/tce/packages/python/python-3.12.2
     buildable: false
 
   autoconf:

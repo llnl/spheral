@@ -50,8 +50,8 @@ packages:
 # ------ SYSTEM LIBS -------
   python:
     externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
+    - spec: python@3.12.4
+      prefix: /usr/tce/packages/python/python-3.12.4
     buildable: false
   ncurses:
     externals:
