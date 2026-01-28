@@ -6,6 +6,7 @@
 #define __Spheral_CHAI_MA_wrapper__
 
 #include "config.hh"
+#include "DBC.hh"
 
 #include "chai/ManagedArray.hpp"
 #include "chai/managed_ptr.hpp"
@@ -30,22 +31,15 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
 // Macros for updating managed_ptr member data
 // TODO: Modify this to work on a list of member variables
 #define ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, EXEC_SPACE) \
-  do {                                                                  \
-    /* Get the object type from the pointer (removes 'volatile' and '&' if present) */ \
-    using ObjectType = std::remove_cv_t<std::remove_reference_t<decltype(*(MANAGED_PTR))>>; \
-    /* Get the member type by accessing the member */                   \
-    using MemberType = decltype(std::declval<ObjectType>().MEMBER_NAME); \
-    /* Create local instance of INPUT_VALUE to ensure it is captured */ \
-    const MemberType local_input = INPUT_VALUE;                         \
-    /* Create the pointer-to-member type */                             \
-    MemberType ObjectType::* member_ptr = &ObjectType::MEMBER_NAME;     \
-    chai::managed_ptr<ObjectType> local_ptr(MANAGED_PTR);               \
+  {                                                                     \
+  const auto local_input = INPUT_VALUE;                                 \
     RAJA::forall<EXEC_SPACE>                                            \
       (RAJA::TypedRangeSegment<unsigned>(0,1),                          \
        [=] SPHERAL_HOST_DEVICE (int) {                                  \
-         local_ptr.get()->*member_ptr = local_input;                    \
+         MANAGED_PTR->MEMBER_NAME = local_input;                        \
        });                                                              \
-  } while(0)
+    HIP_ERROR_CHECK                                                     \
+  }
 
 #define ASSIGN_MEMBER_HOST(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE) ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, RAJA::seq_exec);
 #ifdef SPHERAL_ENABLE_HIP

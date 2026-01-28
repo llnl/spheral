@@ -53,6 +53,7 @@ public:
                      const FieldListView<Dimension, Scalar>& fCl,
                      const FieldListView<Dimension, Scalar>& fCq,
                      const FieldListView<Dimension, Tensor>& DvDx) const override;
+
   friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//

@@ -22,6 +22,7 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "DataBase/updateStateFields.hh"
 #include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/LimitedMonaghanGingoldViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -312,12 +313,16 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        chai::managed_ptr<QType>& Q) const {
 
   TIME_BEGIN("SolidSPHevalDerivs");
   TIME_BEGIN("SolidSPHevalDerivs_initial");
 
   using QPiType = typename QType::ReturnType;
+  // using LimMonGView = LimitedMonaghanGingoldViscosityView<Dimension>;
+  // using QPiType = typename LimMonGView::ReturnType;
+  // using ArtView = ArtificialViscosityView<Dimension, Scalar>;
+  // LimMonGView* Qptrd = chai::make_on_device<LimMonGView>(1.0, 1.0, false, false, 1.0, 0.2);
 
   // The kernels and such.
   const auto& W = this->kernel();
@@ -445,6 +450,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(effViscousPressure_v.size() == numNodeLists);
   CHECK(XSPHWeightSum_v.size() == numNodeLists);
   CHECK(XSPHDeltaV_v.size() == numNodeLists);
+
   //auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
 
   // The scale for the tensile correction.
@@ -472,8 +478,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
       Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj;
       Vector gradWQi, gradWQj, gradWGi, gradWGj;
-      Scalar Qi, Qj;
-      //QPiType QPiij, QPiji;
       SymTensor sigmai, sigmaj, sigmarhoi, sigmarhoj;
       size_t i = pairs[kk].i_node;
       size_t j = pairs[kk].j_node;
@@ -616,8 +620,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto vij = vi - vj;
       QPiType QPiij(0.0);
       QPiType QPiji(0.0);
-      Qi = 0.0;
-      Qj = 0.0;
+      Scalar Qi = 0.0;
+      Scalar Qj = 0.0;
+      // ArtView* Qptr = Qptrd;
+      // Qptr->QPiij(QPiij, QPiji, Qi, Qj,
       Q->QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
@@ -635,7 +641,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurej, Qj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurei, mj*Qi*WQi/rhoj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurej, mi*Qj*WQj/rhoi);
-
       // Compute the stress tensors.
       if (sameMatij) {
         sigmai = fDij*Si - Pi * SymTensor::one();
@@ -846,6 +851,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   XSPHDeltaV.move(chai::CPU);
   DSDt.move(chai::CPU);
   rhoSumCorrection.move(chai::CPU);
+  //chai::destroy_on_device(Qptrd);
   TIME_END("SolidSPHevalDerivs_final");
   TIME_END("SolidSPHevalDerivs");
 }

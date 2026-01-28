@@ -35,10 +35,10 @@ public:
     ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
     mLinearInExpansion(linearInExpansion),
     mQuadraticInExpansion(quadraticInExpansion) {
-    m_viewPtr = chai::make_managed<MonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                            Cquadratic,
-                                                                            linearInExpansion,
-                                                                            quadraticInExpansion);
+    m_viewPtr = chai::make_managed<ViewType>(Clinear,
+                                             Cquadratic,
+                                             linearInExpansion,
+                                             quadraticInExpansion);
   }
 
   virtual ~MonaghanGingoldViscosity() { m_viewPtr.free(); }
@@ -74,7 +74,7 @@ protected:
   //--------------------------- Protected Interface ---------------------------//
   // New member variables like mLinearInExpansion require this
   template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
     ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
     ASSIGN_MEMBER_ALL(a_viewPtr, mLinearInExpansion, mLinearInExpansion);
     ASSIGN_MEMBER_ALL(a_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);

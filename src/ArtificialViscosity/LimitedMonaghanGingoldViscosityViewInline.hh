@@ -31,6 +31,7 @@ namespace {
 //}
 
 SPHERAL_HOST_DEVICE
+inline
 double limiterVL(const double x) {
   if (x > 0.0) {
     return 2.0/(1.0 + x)*2.0*x/(1.0 + x);                       // van Leer

@@ -190,6 +190,29 @@ inline bool nearlyEqual(const T& x,
 #endif // SPHERAL_GPU_ACTIVE
 #define VERIFY(x) VERIFY2(x, #x)
 
+//----------------------------------------------------------------------------
+//                               GPU checks
+// Checks specific to GPUs
+//----------------------------------------------------------------------------
+
+#ifdef SPHERAL_ENABLE_HIP
+#define HIP_CHECK(expression)                  \
+{                                              \
+    const hipError_t status = expression;      \
+    if(status != hipSuccess){                  \
+        std::cerr << "HIP error "              \
+                  << status << ": "            \
+                  << hipGetErrorString(status) \
+                  << " at " << __FILE__ << ":" \
+                  << __LINE__ << std::endl;    \
+    }                                          \
+}
+#define HIP_ERROR_CHECK HIP_CHECK(hipGetLastError())
+#else
+#define HIP_CHECK(expression)
+#define HIP_ERROR_CHECK
+#endif
+
 // //----------------------------------------------------------------------------
 // // Make lower case versions of all the contracts.
 // //----------------------------------------------------------------------------

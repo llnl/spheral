@@ -243,7 +243,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
                         const DataBase<Dim<1>>& dataBase,
                         const State<Dim<1>>& state,
                         StateDerivatives<Dim<1>>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        chai::managed_ptr<QType>& Q) const {
   TIME_BEGIN("SphericalSPHevalDerivs");
   TIME_BEGIN("SphericalSPHevalDerivs_initial");
 

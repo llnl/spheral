@@ -32,6 +32,6 @@ using EXEC_POLICY = RAJA::omp_parallel_for_exec;
 #else
 using EXEC_POLICY = RAJA::seq_exec;
 #endif
-using TRS_UINT = RAJA::TypedRangeSegment<unsigned>;
+using TRS_UINT = RAJA::TypedRangeSegment<size_t>;
 enum class AtomicOp { Add, Sub, Max, Min };
 #endif //  SPHERAL_config_HPP

@@ -93,7 +93,7 @@ macro(spheral_add_test)
   endif()
 
   # If we're configuring for unified memory on Cray machines we need to fiddle with the environment
-  if (SPHERAL_UNIFIED_MEMORY AND ENABLE_HIP)
+  if (ENABLE_HIP)
     set_tests_properties(${original_test_name} PROPERTIES ENVIRONMENT HSA_XNACK=1)
   endif()
 

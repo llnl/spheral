@@ -79,7 +79,8 @@ public:
                      const FieldListView<Dimension, Scalar>& fCl,
                      const FieldListView<Dimension, Scalar>& fCq,
                      const FieldListView<Dimension, Tensor>& DvDx) const = 0;
-  friend class ArtificialViscosity<Dimension>;
+
+  //friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;

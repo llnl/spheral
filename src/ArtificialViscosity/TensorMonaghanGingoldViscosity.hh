@@ -28,8 +28,7 @@ public:
                                  const Scalar Cquadratic,
                                  const TableKernel<Dimension>& kernel) :
     ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel) {
-    m_viewPtr = chai::make_managed<TensorMonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                                  Cquadratic);
+    m_viewPtr = chai::make_managed<ViewType>(Clinear, Cquadratic);
   }
 
   virtual ~TensorMonaghanGingoldViscosity() { m_viewPtr.free(); }

@@ -16,7 +16,7 @@ namespace Spheral {
 template<typename Dimension> class LimitedMonaghanGingoldViscosity;
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosityView
+class LimitedMonaghanGingoldViscosityView final
   : public MonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//

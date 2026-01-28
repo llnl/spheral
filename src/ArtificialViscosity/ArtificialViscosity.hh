@@ -190,7 +190,7 @@ protected:
      }
   */
   template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
     ASSIGN_MEMBER_ALL(a_viewPtr, mClinear, mClinear);
     ASSIGN_MEMBER_ALL(a_viewPtr, mCquadratic, mCquadratic);
     ASSIGN_MEMBER_ALL(a_viewPtr, mEpsilon2, mEpsilon2);

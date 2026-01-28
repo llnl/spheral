@@ -78,7 +78,7 @@ public:
 protected:
   //--------------------------- Protected Interface ---------------------------//
   template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
+  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
     MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
     ASSIGN_MEMBER_ALL(a_viewPtr, mEtaCritFrac, mEtaCritFrac);
     ASSIGN_MEMBER_ALL(a_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
