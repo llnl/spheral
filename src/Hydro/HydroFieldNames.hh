@@ -23,7 +23,7 @@ struct HydroFieldNames {
   static inline const std::string acceleration = "delta " + velocity;   // Note here we *must* start with "delta " to work with IncrementFieldList!
   // Normal hydro sources (things that do modify material thermal energy)
   static inline const std::string hydroAcceleration = acceleration + " hydro";
-  static inline const std::string ahgAcceleration = "delta " + hydroAcceleration + " anti hourglass";
+  static inline const std::string ahgAcceleration = hydroAcceleration + " anti hourglass";
   static inline const std::string massDensity = "mass density";
   static inline const std::string normalization = "normalization";
   static inline const std::string specificThermalEnergy = "specific thermal energy";

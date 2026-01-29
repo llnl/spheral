@@ -13,9 +13,6 @@ set(SVPH_inst
     CellPressurePolicy
    )
 
-
-set(SVPH_sources )
-
 instantiate(SVPH_inst SVPH_sources)
 
 set(SVPH_headers

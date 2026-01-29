@@ -6,7 +6,7 @@ from IntegratorAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralIntegrator")
+@PYB11module("SpheralCompiledModules.SpheralIntegrator")
 class Integrator:
     "Base class for all Spheral time integration algorithms"
 

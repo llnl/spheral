@@ -6,7 +6,7 @@ from FieldView import FieldView
 # Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralField")
+@PYB11module("SpheralCompiledModules.SpheralField")
 class Field(FieldBase,
             FieldView):
 

@@ -27,8 +27,6 @@ set(GSPH_inst
     RiemannSolvers/HLLC
     RiemannSolvers/SecondOrderArtificialViscosity)
 
-set(GSPH_sources )
-
 set(GSPH_headers
     computeSumVolume.hh
     computeMFMDensity.hh

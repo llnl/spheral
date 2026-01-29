@@ -1,7 +1,7 @@
 from PYB11Generator import *
 from UpdatePolicyBase import *
 
-@PYB11module("SpheralDataBase")
+@PYB11module("SpheralCompiledModules.SpheralDataBase")
 @PYB11holder("std::shared_ptr")
 @PYB11template("Dimension")
 class UpdatePolicyBase:

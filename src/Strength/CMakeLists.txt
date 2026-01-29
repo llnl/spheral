@@ -8,8 +8,6 @@ set(Strength_inst
     YieldStrengthPolicy
    )
 
-set(Strength_sources )
-
 instantiate(Strength_inst Strength_sources)
 
 set(Strength_headers

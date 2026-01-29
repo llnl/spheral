@@ -14,9 +14,6 @@ set(Hydro_inst
     computeSPHVolume
    )
 
-
-set(Hydro_sources )
-
 if (SPHERAL_ENABLE_2D)
   list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)
 endif()

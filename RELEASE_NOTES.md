@@ -1,3 +1,19 @@
+Version X.X.X -- Release date XXX
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+
+  * Bug fixes
+
+  * Build changes / improvements:
+    * Updated to PYB11Genertor 2025.12.1
+    * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
+      For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
+      so there is no user interface impact.
+
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
   * Important Notes:
