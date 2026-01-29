@@ -18,6 +18,7 @@ public:
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
   SPHERAL_HOST_DEVICE CubicHermiteInterpolatorView() = default;
+  SPHERAL_HOST_DEVICE virtual ~CubicHermiteInterpolatorView() = default;
   // Comparisons
   SPHERAL_HOST_DEVICE bool operator==(const CubicHermiteInterpolatorView& rhs) const;
 

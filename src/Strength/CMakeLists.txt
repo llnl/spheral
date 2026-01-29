@@ -8,10 +8,6 @@ set(Strength_inst
     YieldStrengthPolicy
    )
 
-set(Strength_sources
-    SolidFieldNames.cc
-    )
-
 instantiate(Strength_inst Strength_sources)
 
 set(Strength_headers

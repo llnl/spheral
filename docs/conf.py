@@ -27,9 +27,9 @@ copyright = '2025, LLNS'
 author = 'J. Michael Owen'
 
 # The short X.Y version
-version = '2025.06.1'
+version = '2025.12.0'
 # The full version, including alpha/beta/rc tags
-release = '2025.06.1'
+release = '2025.12.0'
 
 
 # -- General configuration ---------------------------------------------------

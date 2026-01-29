@@ -12,7 +12,9 @@ def get_config_dir(base_dir):
 # Spack instance info
 default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
 
+# Set environment variables so Spack no longer uses ~/.spack directory
 os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
+os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2

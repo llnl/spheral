@@ -120,6 +120,9 @@
 # ------------------------------------------------------------------------------
 
 .update_tpls:
+  variables:
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   stage: update_tpls
   variables:
     GIT_STRATEGY: clone
@@ -147,6 +150,9 @@
 #       bootstrap_cache/
 
 .build_dev_pkg:
+  variables:
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   stage: generate_buildcache
   extends: [.spheral_rev_str]
   script:

@@ -10,10 +10,8 @@
 
 #include <vector>
 #include <algorithm>
+
 using std::vector;
-using std::string;
-using std::pair;
-using std::make_pair;
 
 namespace Spheral {
 
@@ -31,19 +29,18 @@ generateCylDistributionFromRZ(vector<double>& x,
                               const int procID,
                               const int nProcs) {
 
-  typedef Dim<3>::Vector Vector;
-  typedef Dim<3>::Tensor Tensor;
-  typedef Dim<3>::SymTensor SymTensor;
+  using Vector = Dim<3>::Vector;
+  using SymTensor = Dim<3>::SymTensor;
 
   // Pre-conditions.
-  const int n = x.size();
-  const int nextra = extraFields.size();
-  VERIFY((int)y.size() == n and
-         (int)z.size() == n and
-         (int)m.size() == n and
-         (int)H.size() == n);
-  for (auto i = 0; i != nextra; ++i) VERIFY((int)extraFields[i].size() == n);
-  VERIFY(count(z.begin(), z.end(), 0.0) == n);
+  const auto n = x.size();
+  const auto nextra = extraFields.size();
+  VERIFY(y.size() == n and
+         z.size() == n and
+         m.size() == n and
+         H.size() == n);
+  for (auto i = 0u; i < nextra; ++i) VERIFY(extraFields[i].size() == n);
+  VERIFY(size_t(std::count(z.begin(), z.end(), 0.0)) == n);
   VERIFY(nNodePerh > 0.0);
   VERIFY(kernelExtent > 0.0);
   VERIFY(phi > 0.0);
@@ -52,29 +49,31 @@ generateCylDistributionFromRZ(vector<double>& x,
 
   // Make an initial pass to determine how many nodes we're going
   // to generate.
-  int ntot = 0;
-  for (int i = 0; i != n; ++i) {
-    const SymTensor Hi = H[i];
+  size_t ntot = 0u;
+  for (auto i = 0u; i < n; ++i) {
+    const auto& Hi = H[i];
     // const double hzi = 1.0/(Hi*Vector(0.0, 0.0, 1.0)).magnitude();
     // const double hzi = Hi.Inverse().Trace()/3.0;
-    const double hzi = Hi.Inverse().eigenValues().maxElement();
-    const double yi = y[i];
+    const auto hzi = Hi.Inverse().eigenValues().maxElement();
+    const auto yi = y[i];
     // const double dphi = CylindricalBoundary::angularSpacing(yi, hzi, nNodePerh, kernelExtent);
-    const int nhoopsegment = max(1, int(phi*yi/(hzi/nNodePerh) + 0.5));
-    const double dphi = phi/nhoopsegment;
+    const auto nhoopsegment = max(1u, unsigned(phi*yi/(hzi/nNodePerh) + 0.5));
+    const auto dphi = phi/nhoopsegment;
     CHECK(distinctlyGreaterThan(dphi, 0.0));
-    const int nsegment = max(1, int(phi/dphi + 0.5));
+    const auto nsegment = max(1u, unsigned(phi/dphi + 0.5));
     ntot += nsegment;
   }
 
   // Determine how the global IDs should be partitioned between processors.
-  const int ndomain0 = ntot/nProcs;
-  const int remainder = ntot % nProcs;
-  VERIFY(remainder < nProcs);
-  const int ndomain = ndomain0 + (procID < remainder ? 1 : 0);
-  const int minGlobalID = procID*ndomain0 + min(procID, remainder);
-  const int maxGlobalID = minGlobalID + ndomain - 1;
-  VERIFY(procID < nProcs - 1 || maxGlobalID == ntot - 1);
+  // This could actually fail if we have more processors than points, so if that comes up we need to generalize...
+  const size_t ndomain0 = ntot/nProcs;
+  const size_t remainder = ntot % nProcs;
+  VERIFY(remainder < size_t(nProcs));
+  const size_t ndomain = ndomain0 + (size_t(procID) < remainder ? 1u : 0u);
+  const size_t minGlobalID = procID*ndomain0 + min(size_t(procID), remainder);
+  const size_t maxGlobalID = minGlobalID + ndomain - 1u;
+  VERIFY(unsigned(procID) < (nProcs - 1u) || maxGlobalID == (ntot - 1u));
+  VERIFY2(ntot < std::numeric_limits<size_t>::max(), "generateCylDistributionFromRZ ERROR: requested configuation requires " << ntot << " points be generated, which exceeds the maximum possible value of " << std::numeric_limits<size_t>::max());
   
   // Copy the input.
   vector<double> xrz(x), yrz(y), zrz(z), mrz(m);
@@ -82,58 +81,60 @@ generateCylDistributionFromRZ(vector<double>& x,
   vector<vector<double> > extrasrz(extraFields);
 
   // Prepare the lists we're going to rebuild.
-  x = vector<double>();
-  y = vector<double>();
-  z = vector<double>();
-  m = vector<double>();
-  H = vector<SymTensor>();
-  globalIDs = vector<int>();
-  extraFields = vector<vector<double> >(nextra);
+  x.clear();
+  y.clear();
+  z.clear();
+  m.clear();
+  H.clear();
+  globalIDs.clear();
+  extraFields.clear();
+  extraFields.resize(nextra);
 
   // Iterate over the plane of input nodes, and rotate it out for the full 3-D 
   // distribution.
-  int globalID = 0;
-  for (int i = 0; i != n; ++i) {
-    const SymTensor Hi = Hrz[i];
+  size_t globalID = 0u;
+  for (auto i = 0u; i < n; ++i) {
+    const auto& Hi = Hrz[i];
     // const double hzi = 1.0/(Hi*Vector(0.0, 0.0, 1.0)).magnitude();
     // const double hzi = Hi.Inverse().Trace()/3.0;
-    const double hzi = Hi.Inverse().eigenValues().maxElement();
-    const double xi = xrz[i];
-    const double yi = yrz[i];
-    const double mi = mrz[i];
+    const auto hzi = Hi.Inverse().eigenValues().maxElement();
+    const auto xi = xrz[i];
+    const auto yi = yrz[i];
+    const auto mi = mrz[i];
     // const int nhoopsegment = max(1, int(phi/CylindricalBoundary::angularSpacing(yi, hzi, nNodePerh, kernelExtent) + 0.5));
-    const int nhoopsegment = max(1, int(phi*yi/(hzi/nNodePerh) + 0.5));
-    const double dphi = phi/nhoopsegment;
-    const Vector posi = Vector(xi, yi, 0.0);
-    for (int ihoop = 0; ihoop != nhoopsegment; ++ihoop) {
-      const double phii = (double(ihoop) + 0.5)*dphi;
-      if (globalID >= minGlobalID and globalID <= maxGlobalID) {
-        const double xj = xi;
-        const double yj = yi*cos(phii);
-        const double zj = yi*sin(phii);
+    const size_t nhoopsegment = max(1u, unsigned(phi*yi/(hzi/nNodePerh) + 0.5));
+    const auto dphi = phi/nhoopsegment;
+    const auto posi = Vector(xi, yi, 0.0);
+    for (auto ihoop = 0u; ihoop < nhoopsegment; ++ihoop) {
+      const auto phii = (double(ihoop) + 0.5)*dphi;
+      if (size_t(globalID) >= minGlobalID and size_t(globalID) <= maxGlobalID) {
+        const auto xj = xi;
+        const auto yj = yi*cos(phii);
+        const auto zj = yi*sin(phii);
         x.push_back(xj);
         y.push_back(yj);
         z.push_back(zj);
         m.push_back(mi/nhoopsegment * phi/(2.0*M_PI));
         globalIDs.push_back(globalID);
-        const Vector posj = Vector(xj, yj, zj);
-        const Tensor R = CylindricalBoundary::reflectOperator(posi, posj);
+        const auto posj = Vector(xj, yj, zj);
+        const auto R = CylindricalBoundary::reflectOperator(posi, posj);
         H.push_back((R*Hi*R).Symmetric());
-        for (int ikey = 0; ikey != nextra; ++ikey) extraFields[ikey].push_back(extrasrz[ikey][i]);
+        for (auto ikey = 0u; ikey < nextra; ++ikey) extraFields[ikey].push_back(extrasrz[ikey][i]);
       }
       ++globalID;
     }
   }
 
   // Post-conditions.
-  VERIFY((int)x.size() == ndomain and
-         (int)y.size() == ndomain and
-         (int)z.size() == ndomain and
-         (int)m.size() == ndomain and
-         (int)globalIDs.size() == ndomain and
-         (int)H.size() == ndomain);
-  for (int ikey = 0; ikey != nextra; ++ikey) VERIFY((int)extraFields[ikey].size() == ndomain);
-  int nglobal = x.size();
+  VERIFY2(x.size() == ndomain and
+          y.size() == ndomain and
+          z.size() == ndomain and
+          m.size() == ndomain and
+          globalIDs.size() == ndomain and
+          H.size() == ndomain,
+          "Something wrong with the final array sizes: " << ndomain << " != " << x.size() << " " << y.size() << " " << z.size() << " " << globalIDs.size() << " " << H.size());
+  for (auto ikey = 0u; ikey < nextra; ++ikey) VERIFY(extraFields[ikey].size() == ndomain);
+  auto nglobal = x.size();
   if (nProcs > 1) {
     nglobal = allReduce(x.size(), SPHERAL_OP_SUM);
   }

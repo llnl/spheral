@@ -282,13 +282,14 @@ struct DBoptlist_wrapper {
   std::vector<std::shared_ptr<void> > mCache;
 
   // Constructors.
-  DBoptlist_wrapper(const int maxopts=1024):
+  DBoptlist_wrapper(const int maxopts=10):
     mOptlistPtr(DBMakeOptlist(maxopts)),
     mCache() {}
 
   // Destructor.
   ~DBoptlist_wrapper() {
-    //ASSERT(DBFreeOptlist(mOptlistPtr) == 0);
+    // FIXME: This should not be commented out but causes a double free during python exit
+    // DBFreeOptlist(mOptlistPtr);
   }
 
   // Generic functor definitions for adding and getting options.

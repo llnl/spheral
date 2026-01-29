@@ -25,14 +25,6 @@ NBSplineKernel<Dimension>::NBSplineKernel(const int order):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-NBSplineKernel<Dimension>::~NBSplineKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the order of this spline.
 //------------------------------------------------------------------------------
 template<typename Dimension>
