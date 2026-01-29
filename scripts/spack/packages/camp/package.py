@@ -10,4 +10,5 @@ from spack.pkg.builtin.camp import Camp as BuiltinCamp
 
 class Camp(BuiltinCamp):
 
+    version("2025.12.0", tag="v2025.12.0", submodules=False)
     version("2025.03.0", tag="v2025.03.0", submodules=False)
