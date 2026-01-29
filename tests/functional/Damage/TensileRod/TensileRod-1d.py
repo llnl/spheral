@@ -187,7 +187,7 @@ nPerh = 1.51
 order = 5
 
 if DamageModelConstructor in (GradyKippTensorDamage, GradyKippTensorDamageOwen, ProbabilisticDamageModel):
-    damageName = os.path.join(str(DamageModelConstructor.__name__), str(damageCoupling))
+    damageName = os.path.join(str(DamageModelConstructor.__name__), f"{damageCoupling.__class__.__name__}.{damageCoupling.name}")
 else:
     damageName = DamageModelConstructor.__name__
 

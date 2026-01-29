@@ -75,6 +75,16 @@ packages:
       prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
 
 # ------ SYSTEM LIBS -------
+  py-decorator:
+    externals:
+    - spec: py-decorator@5.1.1
+      prefix: /collab/usr/gapps/python/build/spack-toss4.1/var/spack/environments/python/._view/75prb56irmif5ejtirjthpx6kq3gqo52/lib/python3.9/site-packages
+    buildable: false
+  py-pip:
+    externals:
+    - spec: py-pip@22.0.4
+      prefix: /usr/tce/packages/python/python-3.12.2
+    buildable: false
   readline:
     externals:
     - spec: readline@7.0
@@ -82,8 +92,8 @@ packages:
     buildable: false
   python:
     externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
+    - spec: python@3.12.2
+      prefix: /usr/tce/packages/python/python-3.12.2
     buildable: false
 
   autoconf:
