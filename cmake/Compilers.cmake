@@ -21,7 +21,13 @@ if (ENABLE_WARNINGS)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND CXX_COMPILE_FLAGS -fdiagnostics-show-option -Wno-unused-command-line-argument -Wno-c++17-extensions)
     if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 18.0.0)
-      list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
+      list(APPEND CXX_COMPILE_FLAGS -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
+      if(CMAKE_CXX_COMPILER_VERSION LESS 20.0.0)
+        list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion)
+        # We build some Fortran code from outside sources (like the Helmholtz EOS) that
+        # cause building errors if the compiler is too picky...
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
+      endif()
     endif()
   endif()
 else()
@@ -69,10 +75,6 @@ message("-- Using CXX compile flags ${CXX_COMPILE_FLAGS}")
 # Currently unused
 set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
   "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
-
-# We build some Fortran code from outside sources (like the Helmholtz EOS) that
-# cause building errors if the compiler is too picky...
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
 
 #-------------------------------------------------------------------------------
 # Set link options

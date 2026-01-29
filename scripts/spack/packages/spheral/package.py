@@ -50,7 +50,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cmake@3.21.0:', type='build')
 
-    depends_on('boost@1.85.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
+    depends_on('boost@1.87.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
 
@@ -64,7 +64,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('silo~fortran+python +hdf5', type='build')
 
-    depends_on('chai@develop+raja', type='build')
+    depends_on('chai@2025.12.0+raja', type='build')
 
     depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
 
@@ -118,7 +118,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     for ctpl in debug_tpl_list:
         depends_on(f"{ctpl} build_type=Debug", when="build_type=Debug")
 
-    depends_on('leos@8.4.2+filters+yaml~xml+silo', type='build', when='+leos')
+    depends_on('leos@8.5.2+filters+yaml~xml+silo', type='build', when='+leos')
     depends_on('leos build_type=Debug', when='+leos build_type=Debug')
     # TODO: Get leos working with +rocm variant using 8.5.2
     # if LEOSpresent:
