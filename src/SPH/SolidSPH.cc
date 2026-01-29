@@ -319,10 +319,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   TIME_BEGIN("SolidSPHevalDerivs_initial");
 
   using QPiType = typename QType::ReturnType;
-  // using LimMonGView = LimitedMonaghanGingoldViscosityView<Dimension>;
-  // using QPiType = typename LimMonGView::ReturnType;
-  // using ArtView = ArtificialViscosityView<Dimension, Scalar>;
-  // LimMonGView* Qptrd = chai::make_on_device<LimMonGView>(1.0, 1.0, false, false, 1.0, 0.2);
 
   // The kernels and such.
   const auto& W = this->kernel();
@@ -462,23 +458,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
   // Walk all the interacting pairs.
   TIME_BEGIN("SolidSPHevalDerivs_pairs");
-  //#pragma omp parallel
   {
-    // Thread private  scratch variables.
-    // size_t i, j, nodeListi, nodeListj;
-    // Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj;
-    // Vector gradWi, gradWj, gradWQi, gradWQj, gradWGi, gradWGj;
-    // Scalar Qi, Qj;
-    // QPiType QPiij, QPiji;
-    // SymTensor sigmai, sigmaj, sigmarhoi, sigmarhoj;
-
-// #pragma omp for
-//     for (auto kk = 0u; kk < npairs; ++kk) {
+#ifdef SPHERAL_ENABLE_HIP
+#pragma clang optimize off
+#endif
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
-      Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj;
-      Vector gradWQi, gradWQj, gradWGi, gradWGj;
-      SymTensor sigmai, sigmaj, sigmarhoi, sigmarhoj;
       size_t i = pairs[kk].i_node;
       size_t j = pairs[kk].j_node;
       size_t nodeListi = pairs[kk].i_list;
@@ -579,25 +564,25 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       CHECK(etaMagj >= 0.0);
 
       // Symmetrized kernel weight and gradient.
+      Scalar Wi, Wj, gWi, gWj;
       W_view.kernelAndGradValue(etaMagi, Hdeti, Wi, gWi);
       W_view.kernelAndGradValue(etaMagj, Hdetj, Wj, gWj);
       Vector gradWi = gWi*Hi*etaiUnit;
       Vector gradWj = gWj*Hj*etajUnit;
-      if (oneKernelQ) {
-        WQi = Wi;
-        WQj = Wj;
-        gradWQi = gradWi;
-        gradWQj = gradWj;
-      } else {
+      Scalar WQi = Wi;
+      Scalar WQj = Wj;
+      Vector gradWQi = gradWi;
+      Vector gradWQj = gradWj;
+      if (!oneKernelQ) {
+        Scalar gWQi, gWQj;
         WQ_view.kernelAndGradValue(etaMagi, Hdeti, WQi, gWQi);
         WQ_view.kernelAndGradValue(etaMagj, Hdetj, WQj, gWQj);
         gradWQi = gWQi*Hi*etaiUnit;
         gradWQj = gWQj*Hj*etajUnit;
       }
-      if (oneKernelG) {
-        gradWGi = gradWi;
-        gradWGj = gradWj;
-      } else {
+      Vector gradWGi = gradWi;
+      Vector gradWGj = gradWj;
+      if (!oneKernelG) {
         gradWGi = Hi*etaiUnit * WG_view.gradValue(etaMagi, Hdeti);
         gradWGj = Hj*etajUnit * WG_view.gradValue(etaMagj, Hdetj);
       }
@@ -606,13 +591,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       if (nodeListi == nodeListj) {
         RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumi, mj*Wi);
         RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumj, mi*Wj);
-        // rhoSumi += mj*Wi;
-        // rhoSumj += mi*Wj;
       }
 
       // Contribution to the sum density correction
-      // rhoSumCorrectioni += mj*WQi / rhoj;
-      // rhoSumCorrectionj += mi*WQj / rhoi;
       RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectioni, mj*WQi / rhoj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectionj, mi*WQj / rhoi);
 
@@ -622,8 +603,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       QPiType QPiji(0.0);
       Scalar Qi = 0.0;
       Scalar Qj = 0.0;
-      // ArtView* Qptr = Qptrd;
-      // Qptr->QPiij(QPiij, QPiji, Qi, Qj,
       Q->QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
@@ -633,15 +612,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);
       const auto workQj = vij.dot(Qaccj);
-      // maxViscousPressurei = std::max(maxViscousPressurei, Qi);
-      // maxViscousPressurej = std::max(maxViscousPressurej, Qj);
-      // effViscousPressurei += mj*Qi*WQi/rhoj;
-      // effViscousPressurej += mi*Qj*WQj/rhoi;
       RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurei, Qi);
       RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurej, Qj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurei, mj*Qi*WQi/rhoj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurej, mi*Qj*WQj/rhoi);
       // Compute the stress tensors.
+      SymTensor sigmai, sigmaj;
       if (sameMatij) {
         sigmai = fDij*Si - Pi * SymTensor::one();
         sigmaj = fDij*Sj - Pj * SymTensor::one();
@@ -660,14 +636,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      sigmarhoi = safeOmegai*sigmai/(rhoi*rhoi);
-      sigmarhoj = safeOmegaj*sigmaj/(rhoj*rhoj);
+      SymTensor sigmarhoi = safeOmegai*sigmai/(rhoi*rhoi);
+      SymTensor sigmarhoj = safeOmegaj*sigmaj/(rhoj*rhoj);
       const auto deltaDvDt = sigmarhoi*gradWi + sigmarhoj*gradWj - Qacci - Qaccj;
       if (freeParticle && fragdir) {
         DvDti.atomicAdd(mj*deltaDvDt);
         DvDtj.atomicSub(mi*deltaDvDt);
-        // DvDti += mj*deltaDvDt;
-        // DvDtj -= mi*deltaDvDt;
       }
       //if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
@@ -680,17 +654,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                                          mj*(sigmarhoi.doubledot(deltaDvDxi.Symmetric()) - workQi));
       RAJA::atomicSub<RAJA::auto_atomic>(&DepsDtj,
                                          mi*(sigmarhoj.doubledot(deltaDvDxj.Symmetric()) - workQj));
-      // DepsDti -= mj*(sigmarhoi.doubledot(deltaDvDxi.Symmetric()) - workQi);
-      // DepsDtj -= mi*(sigmarhoj.doubledot(deltaDvDxj.Symmetric()) - workQj);
 
       // Velocity gradient.
       DvDxi.atomicSub(mj*deltaDvDxi);
       DvDxj.atomicSub(mi*deltaDvDxj);
-      // DvDxi -= mj*deltaDvDxi;
-      // DvDxj -= mi*deltaDvDxj;
       if (sameMatij) {
-        // localDvDxi -= mj*deltaDvDxi;
-        // localDvDxj -= mi*deltaDvDxj;
         localDvDxi.atomicSub(mj*deltaDvDxi);
         localDvDxj.atomicSub(mi*deltaDvDxj);
       }
@@ -702,29 +670,20 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
         RAJA::atomicAdd<RAJA::auto_atomic>(&XSPHWeightSumj, wXSPHij);
         XSPHDeltaVi.atomicSub(wXSPHij*vij);
         XSPHDeltaVj.atomicAdd(wXSPHij*vij);
-        // XSPHWeightSumi += wXSPHij;
-        // XSPHWeightSumj += wXSPHij;
-        // XSPHDeltaVi -= wXSPHij*vij;
-        // XSPHDeltaVj += wXSPHij*vij;
       }
 
       // Linear gradient correction term.
       Mi.atomicSub(mj*rij.dyad(gradWGi));
       Mj.atomicSub(mi*rij.dyad(gradWGj));
-      // Mi -= mj*rij.dyad(gradWGi);
-      // Mj -= mi*rij.dyad(gradWGj);
       if (sameMatij) {
         localMi.atomicSub(mj*rij.dyad(gradWGi));
         localMj.atomicSub(mi*rij.dyad(gradWGj));
-        // localMi -= mj*rij.dyad(gradWGi);
-        // localMj -= mi*rij.dyad(gradWGj);
       }
 
     }); // loop over pairs
-
-    // Reduce the thread values to the master.
-    //threadReduceFieldLists<Dimension>(threadStack);
-
+#ifdef SPHERAL_ENABLE_HIP
+#pragma clang optimize on
+#endif
   }   // OpenMP parallel region
   TIME_END("SolidSPHevalDerivs_pairs");
   // Finish up the derivatives for each point.
@@ -742,8 +701,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
     //   // cerr << "BLAGO!" << endl;
     // }
 
-// #pragma omp parallel for
-//     for (auto i = 0u; i < ni; ++i) {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, ni),
     [=] SPHERAL_HOST_DEVICE (size_t i) {
 
@@ -851,7 +808,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   XSPHDeltaV.move(chai::CPU);
   DSDt.move(chai::CPU);
   rhoSumCorrection.move(chai::CPU);
-  //chai::destroy_on_device(Qptrd);
   TIME_END("SolidSPHevalDerivs_final");
   TIME_END("SolidSPHevalDerivs");
 }
