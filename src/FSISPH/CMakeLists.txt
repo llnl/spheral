@@ -8,10 +8,6 @@ set(FSISPH_inst
     SlideSurface
     )
 
-
-set(FSISPH_sources )
-
-
 instantiate(FSISPH_inst FSISPH_sources)
 
 set(FSISPH_headers

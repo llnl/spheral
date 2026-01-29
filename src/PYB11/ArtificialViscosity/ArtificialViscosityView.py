@@ -6,7 +6,7 @@ from ArtificialViscosity import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension", "QPiType")
-@PYB11module("SpheralArtificialViscosity")
+@PYB11module("SpheralCompiledModules.SpheralArtificialViscosity")
 class ArtificialViscosityView():
 
     PYB11typedefs = """

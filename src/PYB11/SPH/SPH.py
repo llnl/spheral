@@ -5,7 +5,7 @@ from PYB11Generator import *
 from SPHBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSPH")
+@PYB11module("SpheralCompiledModules.SpheralSPH")
 @PYB11dynamic_attr
 class SPH(SPHBase):
 

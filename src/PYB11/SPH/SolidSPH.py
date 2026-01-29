@@ -6,7 +6,7 @@ from SPHBase import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralSPH")
+@PYB11module("SpheralCompiledModules.SpheralSPH")
 @PYB11dynamic_attr
 class SolidSPH(SPHBase):
     "SolidSPH -- The SPH/ASPH solid material hydrodynamic package for Spheral++."

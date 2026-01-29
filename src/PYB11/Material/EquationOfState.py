@@ -5,7 +5,7 @@ from PYB11Generator import *
 from EOSAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralMaterial")
+@PYB11module("SpheralCompiledModules.SpheralMaterial")
 class EquationOfState:
 
     PYB11typedefs = """
