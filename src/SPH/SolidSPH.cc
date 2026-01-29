@@ -569,34 +569,28 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       W_view.kernelAndGradValue(etaMagj, Hdetj, Wj, gWj);
       Vector gradWi = gWi*Hi*etaiUnit;
       Vector gradWj = gWj*Hj*etajUnit;
-      Scalar WQi = Wi;
-      Scalar WQj = Wj;
-      Vector gradWQi = gradWi;
-      Vector gradWQj = gradWj;
-      if (!oneKernelQ) {
+      Scalar WQi, WQj;
+      Vector gradWQi, gradWQj;
+      if (oneKernelQ) {
+        WQi = Wi;
+        WQj = Wj;
+        gradWQi = gradWi;
+        gradWQj = gradWj;
+      } else {
         Scalar gWQi, gWQj;
         WQ_view.kernelAndGradValue(etaMagi, Hdeti, WQi, gWQi);
         WQ_view.kernelAndGradValue(etaMagj, Hdetj, WQj, gWQj);
         gradWQi = gWQi*Hi*etaiUnit;
         gradWQj = gWQj*Hj*etajUnit;
       }
-      Vector gradWGi = gradWi;
-      Vector gradWGj = gradWj;
-      if (!oneKernelG) {
+      Vector gradWGi, gradWGj;
+      if (oneKernelG) {
+        gradWGi = gradWi;
+        gradWGj = gradWj;
+      } else {
         gradWGi = Hi*etaiUnit * WG_view.gradValue(etaMagi, Hdeti);
         gradWGj = Hj*etajUnit * WG_view.gradValue(etaMagj, Hdetj);
       }
-
-      // Contribution to the sum density (only if the same material).
-      if (nodeListi == nodeListj) {
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumi, mj*Wi);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumj, mi*Wj);
-      }
-
-      // Contribution to the sum density correction
-      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectioni, mj*WQi / rhoj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectionj, mi*WQj / rhoi);
-
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
       QPiType QPiij(0.0);
@@ -608,6 +602,16 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                ri, Hi, etai, vi, rhoi, ci,  
                rj, Hj, etaj, vj, rhoj, cj,
                fClQView, fCqQView, DvDxQView);
+      // Contribution to the sum density (only if the same material).
+      if (nodeListi == nodeListj) {
+        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumi, mj*Wi);
+        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumj, mi*Wj);
+      }
+
+      // Contribution to the sum density correction
+      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectioni, mj*WQi / rhoj);
+      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectionj, mi*WQj / rhoi);
+
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);
