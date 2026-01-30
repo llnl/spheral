@@ -27,7 +27,7 @@ namespace Spheral {
 // Forward declarations
 struct NodePairIdxType;
 
-template<typename Dimension, typename Value, size_t numElements=1>
+template<typename Value, size_t numElements=1>
 class PairwiseFieldView {
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -39,7 +39,7 @@ public:
   using value_type = Value;
 #endif
   
-  using SelfType = PairwiseFieldView<Dimension, Value, numElements>;
+  using SelfType = PairwiseFieldView<Value, numElements>;
   using Accessor = PairwiseFieldDetail::ElementAccessor<SelfType, numElements>;
   using reference = typename Accessor::reference;
   using const_reference = typename Accessor::const_reference;

@@ -13,12 +13,20 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Constructor
+// Constructor (connectivity)
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Value, size_t numElements>
 PairwiseField<Dimension, Value, numElements>::PairwiseField(const ConnectivityMap<Dimension>& connectivity):
-  PairwiseFieldView<Dimension, Value, numElements>(),
-  mPairsPtr(connectivity.nodePairListPtr()),
+  PairwiseField<Dimension, Value, numElements>(connectivity.nodePairListPtr()) {
+}
+
+//------------------------------------------------------------------------------
+// Constructor (pairs)
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+PairwiseField<Dimension, Value, numElements>::PairwiseField(std::shared_ptr<NodePairList> pairsPtr):
+  PairwiseFieldView<Value, numElements>(),
+  mPairsPtr(pairsPtr),
   mArray() {
   if (auto p = mPairsPtr.lock()) {
     mArray.resize(numElements * p->size());
@@ -36,7 +44,7 @@ PairwiseField<Dimension, Value, numElements>::PairwiseField(const ConnectivityMa
 template<typename Dimension, typename Value, size_t numElements>
 inline
 PairwiseField<Dimension, Value, numElements>::PairwiseField(const PairwiseField& rhs):
-  PairwiseFieldView<Dimension, Value, numElements>(),
+  PairwiseFieldView<Value, numElements>(),
   mPairsPtr(rhs.mPairsPtr),
   mArray(rhs.mArray) {
   assignDataSpan();

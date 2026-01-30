@@ -22,10 +22,10 @@ struct NodePairIdxType;
 class NodePairList;
 
 template<typename Dimension, typename Value, size_t numElements=1>
-class PairwiseField: public PairwiseFieldView<Dimension, Value, numElements> {
+class PairwiseField: public PairwiseFieldView<Value, numElements> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  using ViewType = PairwiseFieldView<Dimension, Value, numElements>;
+  using ViewType = PairwiseFieldView<Value, numElements>;
 
   using ContainerType = std::vector<Value>;
   using value_type = typename ContainerType::value_type;
@@ -37,11 +37,12 @@ public:
   using const_iterator = StrideIterator<const Value, numElements>;
 
   // Bring in various methods hidden in PairwiseFieldView
-  using PairwiseFieldView<Dimension, Value, numElements>::operator();
-  using PairwiseFieldView<Dimension, Value, numElements>::operator[];
+  using ViewType::operator();
+  using ViewType::operator[];
 
   // Constructors, destructors
   PairwiseField(const ConnectivityMap<Dimension>& connectivity);
+  PairwiseField(std::shared_ptr<NodePairList> pairsPtr);
   PairwiseField(const PairwiseField& rhs);
   virtual ~PairwiseField();
   PairwiseField& operator=(const PairwiseField& rhs);
@@ -68,7 +69,7 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  using PairwiseFieldView<Dimension, Value, numElements>::mSpan;
+  using ViewType::mSpan;
   std::weak_ptr<NodePairList> mPairsPtr;
   ContainerType mArray;
 
