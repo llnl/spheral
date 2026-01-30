@@ -36,9 +36,10 @@ class Raja(BuiltinRaja):
         entries = super().initconfig_package_entries()
 
         # C++17
-        if (spec.satisfies("@2024.07.0:")
+        if (spec.satisfies("@2025.12.0:") or
+            (spec.satisfies("@2024.07.0:")
             and spec.satisfies("+sycl")
-            or spec.satisfies("^rocprim@7.0:")):
+            or spec.satisfies("^rocprim@7.0:"))):
             entries = [f for f in entries if "BLT_CXX_STD" not in f]
             entries.append(cmake_cache_string("BLT_CXX_STD", "c++17"))
 
