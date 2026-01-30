@@ -17,13 +17,58 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Value, size_t numElements>
 PairwiseField<Dimension, Value, numElements>::PairwiseField(const ConnectivityMap<Dimension>& connectivity):
+  PairwiseFieldView<Dimension, Value, numElements>(),
   mPairsPtr(connectivity.nodePairListPtr()),
-  mValues() {
+  mArray() {
   if (auto p = mPairsPtr.lock()) {
-    mValues.resize(numElements * p->size());
+    mArray.resize(numElements * p->size());
   } else {
     VERIFY2(false, "PairwiseField constructed with invalid NodePairList");
   }
+  assignDataSpan();
+}
+
+//------------------------------------------------------------------------------
+// Copy Constructor.
+// Note we deliberately do not use the View copy constructor here, but
+// instead reassign its span view in our own assignDataSpan call.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+inline
+PairwiseField<Dimension, Value, numElements>::PairwiseField(const PairwiseField& rhs):
+  PairwiseFieldView<Dimension, Value, numElements>(),
+  mPairsPtr(rhs.mPairsPtr),
+  mArray(rhs.mArray) {
+  assignDataSpan();
+  DEBUG_LOG << "PairwiseField::copy : " << rhs.mArray.data() << " -> " << mArray.data() << " : " << rhs.mSpan.data() << " -> " << mSpan.data();
+}
+
+//------------------------------------------------------------------------------
+// Destructor
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+inline
+PairwiseField<Dimension, Value, numElements>::
+~PairwiseField() {
+  DEBUG_LOG << " --> PairwiseField::~PairwiseField() " << this;
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mSpan.free();
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Assignment operator
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+inline
+PairwiseField<Dimension, Value, numElements>&
+PairwiseField<Dimension, Value, numElements>::operator=(const PairwiseField& rhs) {
+  if (this != &rhs) {
+    mArray = rhs.mArray;
+    assignDataSpan();
+  }
+  DEBUG_LOG << "PairwiseField::assign : " << rhs.mArray.data() << " -> " << mArray.data() << " : " << rhs.mSpan.data() << " -> " <<  mSpan.data();
+  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -37,7 +82,7 @@ PairwiseField<Dimension, Value, numElements>::operator()(const NodePairIdxType& 
   if (!p) {
     VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
   }
-  return Accessor::at(mValues, p->index(x));
+  return Accessor::at(mArray, p->index(x));
 }
 
 template<typename Dimension, typename Value, size_t numElements>
@@ -48,7 +93,7 @@ PairwiseField<Dimension, Value, numElements>::operator()(const NodePairIdxType& 
   if (!p) {
     VERIFY2(false, "PairwiseField ERROR: attempt to index with invalid pair " << x);
   }
-  return Accessor::at(mValues, p->index(x));
+  return Accessor::at(mArray, p->index(x));
 }
 
 //------------------------------------------------------------------------------
@@ -63,6 +108,26 @@ PairwiseField<Dimension, Value, numElements>::pairs() const {
     VERIFY2(false, "Orphaned PairwiseField without NodePairList");
   }
   return *p;
+}
+
+//------------------------------------------------------------------------------
+// Assign the view span
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+inline
+void
+PairwiseField<Dimension, Value, numElements>::assignDataSpan() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mSpan = mArray;
+#else
+  if (mSpan.size() != mArray.size() or
+      mSpan.data(chai::CPU, false) != mArray.data()) {
+    DEBUG_LOG << "PairwiseField::assignDataSpan " << this;
+    initMAView(mSpan, mArray);
+  }
+  mSpan.registerTouch(chai::CPU);
+#endif
+  ENSURE(mSpan.size() == mArray.size() and (mArray.empty() or mSpan.data() == &mArray[0]));
 }
 
 }
