@@ -29,7 +29,7 @@ using PairwiseFieldDoubleDouble = Spheral::PairwiseField<DIM3, double, 2u>;
 using PairwiseFieldViewDoubleDouble = Spheral::PairwiseFieldView<double, 2u>;
 
 // Default Testing Size.
-static constexpr int N = 5;
+static constexpr int N = 10000;
 
 // PairwiseFieldViewTest is constructed at the start of each unit test.
 class PairwiseFieldViewTest : public ::testing::Test {
