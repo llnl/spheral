@@ -54,11 +54,11 @@ public:
   SPHERAL_HOST_DEVICE PairwiseFieldView& operator=(const PairwiseFieldView& rhs)    = default;
 
   // Access the data
-  SPHERAL_HOST_DEVICE const_reference operator[](const size_t k) const              { return Accessor::at(mSpan, k); }
-  SPHERAL_HOST_DEVICE const_reference operator()(const size_t k) const              { return (*this)[k]; }
+  SPHERAL_HOST_DEVICE reference operator[](const size_t k) const                    { return Accessor::at(mSpan, k); }
+  SPHERAL_HOST_DEVICE reference operator()(const size_t k) const                    { return (*this)[k]; }
 
-  SPHERAL_HOST_DEVICE reference       operator[](const size_t k)                    { return Accessor::at(mSpan, k); }
-  SPHERAL_HOST_DEVICE reference       operator()(const size_t k)                    { return (*this)[k]; }
+  SPHERAL_HOST_DEVICE reference operator[](const size_t k)                          { return Accessor::at(mSpan, k); }
+  SPHERAL_HOST_DEVICE reference operator()(const size_t k)                          { return (*this)[k]; }
 
   // Comparators
   SPHERAL_HOST_DEVICE bool operator==(const PairwiseFieldView& rhs) const           { return mSpan == rhs.mSpan; }

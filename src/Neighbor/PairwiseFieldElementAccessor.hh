@@ -34,8 +34,8 @@ struct ElementAccessor {
   using value_type      = typename ContainerTraits<ContainerType>::value_type*;
   using reference       = typename ContainerTraits<ContainerType>::value_type*;
   using const_reference = const typename ContainerTraits<ContainerType>::value_type*;
-  SPHERAL_HOST_DEVICE static reference        at(      ContainerType& values, const size_t k) { REQUIRE(stride*k < values.size()); return &values[stride*k]; }
-  SPHERAL_HOST_DEVICE static const_reference  at(const ContainerType& values, const size_t k) { REQUIRE(stride*k < values.size()); return &values[stride*k]; }
+  SPHERAL_HOST_DEVICE static reference  at(      ContainerType& values, const size_t k) { REQUIRE(stride*k < values.size()); return &values[stride*k]; }
+  SPHERAL_HOST_DEVICE static reference  at(const ContainerType& values, const size_t k) { REQUIRE(stride*k < values.size()); return &values[stride*k]; }
 };
 
 // When we only have one element per index, return it by reference
@@ -45,8 +45,8 @@ struct ElementAccessor<T, 1u> {
   using value_type      = typename ContainerTraits<ContainerType>::value_type&;
   using reference       = typename ContainerTraits<ContainerType>::value_type&;
   using const_reference = const typename ContainerTraits<ContainerType>::value_type&;
-  SPHERAL_HOST_DEVICE static reference        at(      ContainerType& values, const size_t k) { REQUIRE(k < values.size()); return values[k]; }
-  SPHERAL_HOST_DEVICE static const_reference  at(const ContainerType& values, const size_t k) { REQUIRE(k < values.size()); return values[k]; }
+  SPHERAL_HOST_DEVICE static reference  at(      ContainerType& values, const size_t k) { REQUIRE(k < values.size()); return values[k]; }
+  SPHERAL_HOST_DEVICE static reference  at(const ContainerType& values, const size_t k) { REQUIRE(k < values.size()); return values[k]; }
 };
 
 }
