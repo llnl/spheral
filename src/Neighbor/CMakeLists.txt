@@ -34,6 +34,7 @@ set(Neighbor_headers
     PairwiseFieldElementAccessor.hh
     PairwiseFieldInline.hh
     PairwiseFieldElementAccessor.hh
+    PairwiseFieldView.hh
     )
 
 spheral_add_obj_library(Neighbor SPHERAL_OBJ_LIBS)
