@@ -33,7 +33,10 @@ public:
   ~RectangularPlaneSolidBoundary();
 
   virtual Vector distance(const Vector& position) const override;
-  virtual Vector velocity(const Vector& position) const override;
+  virtual Vector localVelocity(const Vector& position) const override;
+
+  virtual void registerState(DataBase<Dimension>& dataBase,
+                             State<Dimension>& state) override;
 
   virtual void update(const double multiplier,
                       const double time,
@@ -50,6 +53,10 @@ public:
 
   const Vector& velocity() const;
   void velocity(const Vector& value);
+
+  virtual std::string label() const override { return "RectangularPlaneSolidBoundary" ; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 
 protected:
   //-------------------------- Protected Interface --------------------------//

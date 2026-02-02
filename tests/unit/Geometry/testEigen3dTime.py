@@ -8,7 +8,6 @@ import time
 
 import random
 random.seed(941)
-rangen = random.Random()
 ranrange = 1.0e8
 
 n = 500000
@@ -19,7 +18,7 @@ elements = []
 t0 = time.clock()
 for i in range(n):
     if i % nfreq == 0:
-        elements = [rangen.uniform(-ranrange, ranrange) for i in range(6)]
+        elements = [random.uniform(-ranrange, ranrange) for i in range(6)]
     field[i] = SymTensor(elements[0], elements[1], elements[2],
                          elements[1], elements[3], elements[4],
                          elements[2], elements[4], elements[5])

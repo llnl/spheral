@@ -18,7 +18,7 @@ template<typename Dimension, typename ValueType>
 inline
 PureReplaceState<Dimension, ValueType>::
 PureReplaceState(std::initializer_list<std::string> depends):
-  FieldUpdatePolicy<Dimension>(depends) {
+  FieldUpdatePolicy<Dimension, ValueType>(depends) {
 }
 
 //------------------------------------------------------------------------------

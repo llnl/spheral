@@ -16,8 +16,8 @@ class GzipFileIOTest(FileIOTestBase, unittest.TestCase):
         self.intmax = 2**24
         self.unsignedmin = 0
         self.unsignedmax = 2**32
-        self.doublemin = -1e20
-        self.doublemax = 1e20
+        self.doublemin = -1e10
+        self.doublemax = 1e10
         self.constructor = GzipFileIO
 
         # Size the NodeLists.

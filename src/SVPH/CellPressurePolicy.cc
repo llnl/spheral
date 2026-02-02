@@ -21,17 +21,9 @@ namespace Spheral {
 template<typename Dimension>
 CellPressurePolicy<Dimension>::
 CellPressurePolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::mass,
-                                HydroFieldNames::volume,
-                                HydroFieldNames::specificThermalEnergy}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CellPressurePolicy<Dimension>::
-~CellPressurePolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::mass,
+                                        HydroFieldNames::volume,
+                                        HydroFieldNames::specificThermalEnergy}) {
 }
 
 //------------------------------------------------------------------------------

@@ -6,7 +6,7 @@ from RestartMethods import *
 # SolidNodeList template
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralNodeList")
+@PYB11module("SpheralCompiledModules.SpheralNodeList")
 @PYB11dynamic_attr
 class SolidNodeList(FluidNodeList):
     "Spheral SolidNodeList base class in %(Dimension)s, i.e.,  the NodeList for solid dynamics."
@@ -27,13 +27,13 @@ class SolidNodeList(FluidNodeList):
                name = "std::string",
                eos = "EquationOfState<%(Dimension)s>&",
                strength = "StrengthModel<%(Dimension)s>&",
-               numInternal = ("int", "0"),
-               numGhost = ("int", "0"),
+               numInternal = ("size_t", "0u"),
+               numGhost = ("size_t", "0u"),
                hmin = ("double", "1e-20"),
                hmax = ("double", "1e20"),
                hminratio = ("double", "0.1"),
                nPerh = ("double", "2.01"),
-               maxNumNeighbors = ("int", "500"),
+               maxNumNeighbors = ("size_t", "500u"),
                rhoMin = ("double", "1e-10"),
                rhoMax = ("double", "1e100")):
         "Constructor for a SolidNodeList class."

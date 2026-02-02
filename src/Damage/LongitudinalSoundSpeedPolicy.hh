@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 #include "NodeList/SolidNodeList.hh"
 
 namespace Spheral {
@@ -21,8 +21,7 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class LongitudinalSoundSpeedPolicy: 
-    public UpdatePolicyBase<Dimension> {
+class LongitudinalSoundSpeedPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -34,7 +33,7 @@ public:
 
   // Constructors, destructor.
   LongitudinalSoundSpeedPolicy(const SolidNodeList<Dimension>& nodes);
-  virtual ~LongitudinalSoundSpeedPolicy();
+  virtual ~LongitudinalSoundSpeedPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -47,12 +46,13 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
 
+  // Forbidden methods
+  LongitudinalSoundSpeedPolicy(const LongitudinalSoundSpeedPolicy& rhs) = delete;
+  LongitudinalSoundSpeedPolicy& operator=(const LongitudinalSoundSpeedPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   const SolidNodeList<Dimension>& mSolidNodeList;
-
-  LongitudinalSoundSpeedPolicy(const LongitudinalSoundSpeedPolicy& rhs);
-  LongitudinalSoundSpeedPolicy& operator=(const LongitudinalSoundSpeedPolicy& rhs);
 };
 
 }

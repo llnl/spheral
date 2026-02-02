@@ -110,7 +110,7 @@ commandLine(seed = "lattice",
             graphics = True,
             clearDirectories = False,
             dataDirBase = "dumps-spherical-Sedov",
-            outputFile = "None",
+            outputFile = None,
             )
 
 if smallPressure:
@@ -394,10 +394,10 @@ packages = [hydro]
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
     packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -509,7 +509,7 @@ if mpi.rank == 0:
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None" and mpi.rank == 0:
+if outputFile and mpi.rank == 0:
     outputFile = os.path.join(dataDir, outputFile)
     f = open(outputFile, "w")
     f.write(("# " + 16*"%15s " + "\n") % ("r", "x", "y", "z", "rho", "m", "P", "v", "eps", "A",

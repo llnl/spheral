@@ -365,8 +365,7 @@ class SpheralVisitDump:
     # Private method to process a Field name into a Visit palatable label
     #---------------------------------------------------------------------------
     def _processName(self, name):
-        import string
-        return string.replace(str(name), " ", "_")
+        return name.replace(" ", "_")
 
     #---------------------------------------------------------------------------
     # Private method to write an atomic DataType element to a file.

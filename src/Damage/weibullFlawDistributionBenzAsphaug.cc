@@ -19,19 +19,13 @@
 #include "Strength/SolidFieldNames.hh"
 #include "DataBase/State.hh"
 #include "Distributed/Communicator.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 
 using std::unordered_map;
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -48,8 +42,8 @@ weibullFlawDistributionBenzAsphaug(double volume,
                                    const double mWeibull,
                                    const FluidNodeList<Dimension>& nodeList,
                                    const State<Dimension>& state,
-                                   const int minFlawsPerNode,
-                                   const int minTotalFlaws,
+                                   const size_t minFlawsPerNode,
+                                   const size_t minTotalFlaws,
                                    const Field<Dimension, int>& mask) {
 
   // Pre-conditions.
@@ -66,11 +60,11 @@ weibullFlawDistributionBenzAsphaug(double volume,
                                           nodeList);
 
   // Construct unique global IDs for all nodes in the NodeList.
-  const int n = max(1, numGlobalNodes(nodeList));
-  const Field<Dimension, int> globalIDs = globalNodeIDs(nodeList);
+  const auto n = max(size_t(1u), numGlobalNodes(nodeList));
+  const Field<Dimension, size_t> globalIDs = globalNodeIDs(nodeList);
 
   // Prepare a table to faciliate looking local IDs from global.
-  unordered_map<unsigned, unsigned> global2local;
+  unordered_map<size_t, size_t> global2local;
   const auto nlocal = nodeList.numInternalNodes();
 #pragma omp parallel for
   for (auto i = 0u; i < nlocal; i++) global2local[globalIDs(i)] = i;
@@ -78,10 +72,10 @@ weibullFlawDistributionBenzAsphaug(double volume,
 
   // Prepare an int per *each* node, so that each process can keep track of how many
   // flaws are seeded globally (avoiding communication at the expense of memory).
-  vector<int> numFlawsPerNode((size_t) n, 0);
+  vector<size_t> numFlawsPerNode((size_t) n, 0);
 
   // Identify the rank and number of domains.
-  const int procID = Process::getRank();
+  const auto procID = Process::getRank();
 
   // Only proceed if there are nodes to initialize!
   if (n > 0) {
@@ -99,7 +93,7 @@ weibullFlawDistributionBenzAsphaug(double volume,
         CHECK(rho(i) > 0.0);
         volume += mass(i)/rho(i);
       }
-      volume = allReduce(volume, MPI_SUM, Communicator::communicator());
+      volume = allReduce(volume, SPHERAL_OP_SUM);
     }
     volume = std::max(volume, 1e-100);
     CHECK(volume > 0.0);
@@ -116,13 +110,13 @@ weibullFlawDistributionBenzAsphaug(double volume,
     // Loop and initialize flaws until:
     // a) every node has the minimum number of flaws per node, and
     // b) we meet the minimum number of total flaws.
-    int numCompletedNodes = 0;
-    int ienergy = 1;
+    size_t numCompletedNodes = 0;
+    size_t ienergy = 1;
     while ((numCompletedNodes < n) || (ienergy <= minTotalFlaws)) {
 
       // Randomly select a global node.
-      const int iglobal = int(uniform01(gen) * n);
-      CHECK(iglobal >= 0 && iglobal < n);
+      const auto iglobal = size_t(uniform01(gen) * n);
+      CHECK(iglobal < n);
 
       // Increment the number of flaws for this node, and check if this
       // completes this node.
@@ -130,7 +124,7 @@ weibullFlawDistributionBenzAsphaug(double volume,
       if (numFlawsPerNode[iglobal] == minFlawsPerNode) ++numCompletedNodes;
 
       // Is this node one of ours?
-      const typename unordered_map<unsigned, unsigned>::const_iterator itr = global2local.find(iglobal);
+      const auto itr = global2local.find(iglobal);
       if (itr != global2local.end()) {
 
         const unsigned i = itr->second;
@@ -168,11 +162,11 @@ weibullFlawDistributionBenzAsphaug(double volume,
 
     // Prepare some diagnostic output.
     const auto nused = std::max(1, mask.sumElements());
-    minNumFlaws = allReduce(minNumFlaws, MPI_MIN, Communicator::communicator());
-    maxNumFlaws = allReduce(maxNumFlaws, MPI_MAX, Communicator::communicator());
-    totalNumFlaws = allReduce(totalNumFlaws, MPI_SUM, Communicator::communicator());
-    epsMax = allReduce(epsMax, MPI_MAX, Communicator::communicator());
-    sumFlaws = allReduce(sumFlaws, MPI_SUM, Communicator::communicator());
+    minNumFlaws = allReduce(minNumFlaws, SPHERAL_OP_MIN);
+    maxNumFlaws = allReduce(maxNumFlaws, SPHERAL_OP_MAX);
+    totalNumFlaws = allReduce(totalNumFlaws, SPHERAL_OP_SUM);
+    epsMax = allReduce(epsMax, SPHERAL_OP_MAX);
+    sumFlaws = allReduce(sumFlaws, SPHERAL_OP_SUM);
     if (procID == 0) {
       cerr << "weibullFlawDistributionBenzAsphaug: Min num flaws per node: " << minNumFlaws << endl
            << "                                    Max num flaws per node: " << maxNumFlaws << endl
@@ -189,8 +183,8 @@ weibullFlawDistributionBenzAsphaug(double volume,
   {
     for (int i = 0; i != (int)nodeList.numInternalNodes(); ++i) {
       if (mask(i) == 1) {
-        ENSURE((int)flaws(i).size() >= minFlawsPerNode);
-        for (vector<double>::const_iterator itr = flaws(i).begin() + 1;
+        ENSURE(flaws(i).size() >= minFlawsPerNode);
+        for (auto itr = flaws(i).begin() + 1;
              itr != flaws(i).end();
              ++itr) ENSURE(*itr >= *(itr - 1));
       }

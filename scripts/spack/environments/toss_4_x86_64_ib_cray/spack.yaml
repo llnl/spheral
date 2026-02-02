@@ -1,0 +1,27 @@
+spack:
+  specs:
+  - matrix:
+      - [spheral]
+      - ["+mpi", "~mpi"]
+      - ["+rocm", "~rocm"]
+  view: false
+  concretizer:
+    unify: false
+  develop:
+    spheral:
+      path: ../../../../
+      spec: spheral@=develop
+  include:
+    - ../../configs/toss_4_x86_64_ib_cray/packages.yaml
+    - ../../configs/toss_4_x86_64_ib_cray/compilers.yaml
+    - ../../configs/config.yaml
+    - ../../configs/upstreams.yaml
+  repos:
+    - ../../
+  packages:
+    spheral:
+      require:
+        - spec: "amdgpu_target=gfx90a"
+          when: "+rocm arch=linux-rhel8-zen3"
+        - spec: "amdgpu_target=gfx942"
+          when: "+rocm arch=linux-rhel8-zen4"

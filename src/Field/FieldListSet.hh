@@ -20,16 +20,8 @@ public:
   std::vector< FieldList<Dimension, typename Dimension::Vector> > VectorFieldLists;
   std::vector< FieldList<Dimension, typename Dimension::Tensor> > TensorFieldLists;
   std::vector< FieldList<Dimension, typename Dimension::SymTensor> > SymTensorFieldLists;
-
-  // These methods are here as helpers for pybindgen.
-  std::vector< FieldList<Dimension, typename Dimension::Scalar> >* ScalarFieldListPtrs();
-  std::vector< FieldList<Dimension, typename Dimension::Vector> >* VectorFieldListPtrs();
-  std::vector< FieldList<Dimension, typename Dimension::Tensor> >* TensorFieldListPtrs();
-  std::vector< FieldList<Dimension, typename Dimension::SymTensor> >* SymTensorFieldListPtrs();
 };
 
 }
-
-#include "FieldListSetInline.hh"
 
 #endif

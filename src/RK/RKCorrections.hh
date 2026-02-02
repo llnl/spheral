@@ -12,8 +12,8 @@
 #include "Field/FieldList.hh"
 #include "Geometry/CellFaceFlag.hh"
 #include "Physics/Physics.hh"
-#include "boost/unordered_map.hpp"
 
+#include <unordered_map>
 #include <set>
 
 namespace Spheral {
@@ -83,13 +83,18 @@ public:
   // Initialize field lists and calculate initial RK corrections
   virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
   
+  // Initialize field lists and calculate initial RK corrections
+  virtual void initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                                    State<Dimension>& state,
+                                                    StateDerivatives<Dimension>& derivs) override;
+  
   // Compute the volumes
   virtual void preStepInitialize(const DataBase<Dimension>& dataBase, 
                                  State<Dimension>& state,
                                  StateDerivatives<Dimension>& derivs) override;
   
   // Compute RK corrections
-  virtual void initialize(const Scalar time, 
+  virtual bool initialize(const Scalar time, 
                           const Scalar dt,
                           const DataBase<Dimension>& dataBase, 
                           State<Dimension>& state,
@@ -141,7 +146,7 @@ private:
   const RKVolumeType mVolumeType;
   const bool mNeedHessian;
   const bool mUpdateInFinalize;
-  boost::unordered_map<RKOrder, ReproducingKernel<Dimension>> mWR;
+  std::unordered_map<RKOrder, ReproducingKernel<Dimension>> mWR;
 
   // State
   FieldList<Dimension, Scalar> mVolume;
@@ -149,7 +154,7 @@ private:
   // Corrections
   FieldList<Dimension, Scalar> mSurfaceArea;
   FieldList<Dimension, Vector> mNormal;
-  boost::unordered_map<RKOrder, FieldList<Dimension, RKCoefficients<Dimension>>> mCorrections;
+  std::unordered_map<RKOrder, FieldList<Dimension, RKCoefficients<Dimension>>> mCorrections;
   
   // Voronoi stuff
   FieldList<Dimension, int> mSurfacePoint;

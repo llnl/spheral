@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Distributed)
+spheral_add_pybind11_library(Distributed SPHERAL_MODULE_LIST)

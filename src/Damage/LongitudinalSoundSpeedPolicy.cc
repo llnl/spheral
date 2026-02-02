@@ -21,12 +21,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -36,19 +30,11 @@ namespace Spheral {
 template<typename Dimension>
 LongitudinalSoundSpeedPolicy<Dimension>::
 LongitudinalSoundSpeedPolicy(const SolidNodeList<Dimension>& nodes):
-  UpdatePolicyBase<Dimension>({SolidFieldNames::YoungsModulus,
-                               SolidFieldNames::bulkModulus,
-                               SolidFieldNames::shearModulus,
-                               HydroFieldNames::massDensity}),
+  FieldUpdatePolicy<Dimension, Scalar>({SolidFieldNames::YoungsModulus,
+                                        SolidFieldNames::bulkModulus,
+                                        SolidFieldNames::shearModulus,
+                                        HydroFieldNames::massDensity}),
   mSolidNodeList(nodes) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-LongitudinalSoundSpeedPolicy<Dimension>::
-~LongitudinalSoundSpeedPolicy() {
 }
 
 //------------------------------------------------------------------------------

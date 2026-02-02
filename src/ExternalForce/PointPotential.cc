@@ -71,13 +71,13 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Get the node positions from the state.
   const auto mnode = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto numNodeLists = position.numFields();
 
   // Get the acceleration and position change vectors we'll be modifying.
-  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Loop over the internal nodes.
   mPotential = 0.0;

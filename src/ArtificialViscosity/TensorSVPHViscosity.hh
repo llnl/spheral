@@ -4,66 +4,69 @@
 //
 // Created by J. Michael Owen, Sat Aug 31 13:31:51 PDT 2013
 //----------------------------------------------------------------------------//
-#ifndef TensorSVPHViscosity_HH
-#define TensorSVPHViscosity_HH
+#ifndef __Spheral_TensorSVPHViscosity__
+#define __Spheral_TensorSVPHViscosity__
 
 #include "ArtificialViscosity.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorSVPHViscosity: public ArtificialViscosity<Dimension> {
+class TensorSVPHViscosity: public ArtificialViscosity<Dimension, typename Dimension::Tensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename std::vector<Boundary<Dimension>*>::const_iterator ConstBoundaryIterator;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors.
-  TensorSVPHViscosity(Scalar Clinear, Scalar Cquadratic, Scalar fslice);
-
-  // Destructor.
-  ~TensorSVPHViscosity();
+  // Constructors, destructor
+  TensorSVPHViscosity(const Scalar Clinear,
+                      const Scalar Cquadratic,
+                      const TableKernel<Dimension>& WT,
+                      const Scalar fslice);
+  virtual ~TensorSVPHViscosity() = default;
 
   // Initialize the artificial viscosity for all FluidNodeLists in the given
   // DataBase.
-  virtual void initialize(const DataBase<Dimension>& dataBase,
-                          const State<Dimension>& state,
-                          const StateDerivatives<Dimension>& derivs,
-                          ConstBoundaryIterator boundaryBegin,
-                          ConstBoundaryIterator boundaryEnd,
-                          const Scalar time, 
+  virtual bool initialize(const Scalar t,
                           const Scalar dt,
-                          const TableKernel<Dimension>& W);
+                          const DataBase<Dimension>& dataBase,
+                          State<Dimension>& state,
+                          StateDerivatives<Dimension>& derivs) override;
 
-  // Required method to compute the tensor viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
-                                         const Vector& xi,
-                                         const Vector& etai,
-                                         const Vector& vi,
-                                         const Scalar rhoi,
-                                         const Scalar csi,
-                                         const SymTensor& Hi,
-                                         const Vector& xj,
-                                         const Vector& etaj,
-                                         const Vector& vj,
-                                         const Scalar rhoj,
-                                         const Scalar csj,
-                                         const SymTensor& Hj) const;
+  // We are abusing the normal ArtificialViscosity interface, and this normally
+  // required method is a no-op for this specialization.
+  virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
+                     Scalar& Qij, Scalar& Qji,          // result for viscous pressure
+                     const unsigned nodeListi, const unsigned i, 
+                     const unsigned nodeListj, const unsigned j,
+                     const Vector& xi,
+                     const SymTensor& Hi,
+                     const Vector& etai,
+                     const Vector& vi,
+                     const Scalar rhoi,
+                     const Scalar csi,
+                     const Vector& xj,
+                     const SymTensor& Hj,
+                     const Vector& etaj,
+                     const Vector& vj,
+                     const Scalar rhoj,
+                     const Scalar csj,
+                     const FieldList<Dimension, Scalar>& fCl,
+                     const FieldList<Dimension, Scalar>& fCq,
+                     const FieldList<Dimension, Tensor>& DvDx) const override { VERIFY2(false, "TensorSVPHViscosity ERROR: cannot call QPiij"); }
 
   // Access our internal state.
-  Scalar fslice() const;
-  void fslice(Scalar x);
+  Scalar fslice()                               const          { return mfslice; }
+  void fslice(const Scalar x)                                  { mfslice = x; }
 
-  const std::vector<Tensor>& DvDx() const;
-  const std::vector<Scalar>& shearCorrection() const;
-  const std::vector<Tensor>& Qface() const;
+  const std::vector<Tensor>& DvDx()             const          { return mDvDx; }
+  const std::vector<Scalar>& shearCorrection()  const          { return mShearCorrection; }
+  const std::vector<Tensor>& Qface()            const          { return mQface; }
 
   // Restart methods.
-  virtual std::string label() const { return "TensorSVPHViscosity"; }
+  virtual std::string label()                   const override { return "TensorSVPHViscosity"; }
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -71,10 +74,6 @@ private:
   std::vector<Tensor> mDvDx;
   std::vector<Scalar> mShearCorrection;
   std::vector<Tensor> mQface;
-
-  TensorSVPHViscosity();
-  TensorSVPHViscosity(const TensorSVPHViscosity&);
-  TensorSVPHViscosity& operator=(const TensorSVPHViscosity&) const;
 };
 
 }

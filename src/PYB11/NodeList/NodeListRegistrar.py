@@ -11,6 +11,7 @@ class NodeListRegistrar:
     @PYB11static
     @PYB11cppname("instance")
     @PYB11ignore
+    @PYB11returnpolicy("reference")
     def getinstance(self):
         return "NodeListRegistrar<%(Dimension)s>&"
     instance = property(getinstance, doc="The static NodeListRegistrar<%(Dimension)s> instance.")

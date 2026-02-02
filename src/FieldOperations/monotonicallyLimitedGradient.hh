@@ -89,7 +89,7 @@ buildLimiter(const std::vector<std::pair<double, typename Dimension::Vector> >& 
   CHECK(thpt > 0.0);
   result /= thpt;
   result = (fuzzyEqual(result.Determinant(), 0.0) ? 
-            SymTensor::zero :
+            SymTensor::zero() :
             thpt * (result.Inverse()));
 
   // Scale the thing to make sure all our limits are met.

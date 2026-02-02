@@ -38,14 +38,6 @@ NSincPolynomialKernel<Dimension>::NSincPolynomialKernel(const int order):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-NSincPolynomialKernel<Dimension>::~NSincPolynomialKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

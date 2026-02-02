@@ -49,15 +49,15 @@ GeomPlane<Dimension>::GeomPlane(const typename Dimension::Vector& point,
 // 1D
 template<>
 GeomPlane<Dim<1> >::GeomPlane(const vector<Dim<1>::Vector>& points):
-  mPoint(std::accumulate(points.begin(), points.end(), Dim<1>::Vector::zero)/std::max(size_t(1), points.size())),
-  mNormal(Dim<1>::Vector::one) {
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<1>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal(Dim<1>::Vector::one()) {
   REQUIRE2(points.size() > 0, "GeomPlane(points) ERROR: need at least 1 point.");
 }
 
 // 2D
 template<>
 GeomPlane<Dim<2> >::GeomPlane(const vector<Dim<2>::Vector>& points):
-  mPoint(std::accumulate(points.begin(), points.end(), Dim<2>::Vector::zero)/std::max(size_t(1), points.size())),
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<2>::Vector::zero())/std::max(size_t(1), points.size())),
   mNormal() {
   const unsigned n = points.size();
   CONTRACT_VAR(n);
@@ -75,7 +75,7 @@ GeomPlane<Dim<2> >::GeomPlane(const vector<Dim<2>::Vector>& points):
 // 3D
 template<>
 GeomPlane<Dim<3> >::GeomPlane(const vector<Dim<3>::Vector>& points):
-  mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero)/std::max(size_t(1), points.size())),
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero())/std::max(size_t(1), points.size())),
   mNormal() {
   const unsigned n = points.size();
   CONTRACT_VAR(n);
@@ -119,7 +119,7 @@ GeomPlane<Dim<3> >::GeomPlane(const vector<Dim<3>::Vector>& points):
 // // 3D
 // template<>
 // GeomPlane<Dim<3> >::GeomPlane(const vector<Dim<3>::Vector>& points):
-//   mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero)/std::max(size_t(1), points.size())),
+//   mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero())/std::max(size_t(1), points.size())),
 //   mNormal() {
 //   const unsigned n = points.size();
 //   REQUIRE2(n >= 3, "GeomPlane(points) ERROR: need at least 3 points.");

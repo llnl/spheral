@@ -72,7 +72,7 @@ centerOfMass(const Dim<3>::FacetedVolume& /*polyvol*/,
              const Dim<3>::Vector& /*gradRhoi*/) {
   typedef Dim<3>::Vector Vector;
   VERIFY2(false, "Implement me!");
-  return Vector::zero;
+  return Vector::zero();
 }
 #endif
 

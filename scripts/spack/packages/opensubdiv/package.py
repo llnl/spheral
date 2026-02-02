@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-from spack import *
+from spack.package import *
 
 
 class Opensubdiv(CMakePackage, CudaPackage):
@@ -20,7 +20,7 @@ class Opensubdiv(CMakePackage, CudaPackage):
 
     version('develop', branch='dev')
     version('3.4.3', sha256='7b22eb27d636ab0c1e03722c7a5a5bd4f11664ee65c9b48f341a6d0ce7f36745')
-    version('3.4.0',     sha256='d932b292f83371c7518960b2135c7a5b931efb43cdd8720e0b27268a698973e4')
+    version('3.4.0', sha256='d932b292f83371c7518960b2135c7a5b931efb43cdd8720e0b27268a698973e4')
 
     def url_for_version(self, version):
         url = "https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v{0}.tar.gz"
@@ -28,15 +28,15 @@ class Opensubdiv(CMakePackage, CudaPackage):
 
     variant('tbb', default=False, description='Builds with Intel TBB support')
     variant('openmp', default=False, description='Builds with OpenMP support')
-    variant('doc', default=False, description='Builds documentation. Requires Python 2')
+    #variant('doc', default=False, description='Builds documentation. Requires Python 2')
     variant('pic', default=True,
             description='Produce position-independent code (for shared libs)')
 
     depends_on('cmake@2.8.6:', type='build')
-    depends_on('graphviz', type='build', when='+doc')
-    depends_on('doxygen', type='build', when='+doc')
-    depends_on('py-docutils', type='build', when='+doc')
-    depends_on('python@2.6:2', type='build', when='+doc')
+    # depends_on('graphviz', type='build', when='+doc')
+    # depends_on('doxygen', type='build', when='+doc')
+    # depends_on('py-docutils', type='build', when='+doc')
+    # depends_on('python@2.6:2', type='build', when='+doc')
     #depends_on('gl')
     #depends_on('glew@1.9.0:')
     #depends_on('glfw@3.0.0:')

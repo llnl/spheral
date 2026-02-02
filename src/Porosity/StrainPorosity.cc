@@ -17,12 +17,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -110,12 +104,12 @@ evaluateDerivatives(const Scalar /*time*/,
   // Get the state fields.
   const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, mNodeList.name()); };
   const auto& rhoS = state.field(buildKey(SolidFieldNames::porositySolidDensity), 0.0);
-  const auto& DvDx = derivs.field(buildKey(HydroFieldNames::velocityGradient), Tensor::zero);
+  const auto& DvDx = derivs.field(buildKey(HydroFieldNames::velocityGradient), Tensor::zero());
   const auto& strain = state.field(buildKey(SolidFieldNames::porosityStrain), 0.0);
   const auto& alpha = state.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
   const auto& DuDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy), 0.0);
   // const auto& DrhoDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity), 0.0);
-  // const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero);
+  // const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero());
   auto&       DstrainDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityStrain), 0.0);
   auto&       DalphaDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   auto&       fDSnew = derivs.field(buildKey(ReplaceBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::fDSjutzi), 0.0);
@@ -124,45 +118,49 @@ evaluateDerivatives(const Scalar /*time*/,
   const auto n = mNodeList.numInternalNodes();
 #pragma omp parallel for
   for (auto i = 0u; i < n; ++i) {
-    DstrainDt(i) = DvDx(i).Trace();
     const auto alphai = alpha(i);
-    const auto epsi = strain(i);
-    const auto DuDti = DuDt(i);
-    const auto strainRate = min(0.0, DstrainDt(i) - mGammaS0*safeInv(mcS0*mcS0)*DuDti);
-    const auto alpha0i = mAlpha0(i);
-    const auto c0i = mc0(i);
-    const auto csi = mcS0 + (alphai - 1.0)*safeInv(alpha0i - 1.0)*(c0i - mcS0);
-
-    // The time rate of change for alpha depends on if we're in the elastic, exponential, or
-    // power-law regime of compaction.
-    auto DalphaDepsi = 0.0;
-    if (-std::abs(epsi) >= mEpsE) {
-      // Elastic regime
-      // We assume compaction is reversible in this regime.
-      DalphaDepsi = alphai*(1.0 - FastMath::square(csi*safeInv(mcS0)));
-      DalphaDt(i) = DalphaDepsi*strainRate;
-    } else if (epsi < 0.0) { // The plastic regimes only apply for negative strains (compaction)
-      if (epsi >= mEpsX) {
-        // Exponential regime
-        DalphaDepsi = mKappa*alphai;
-        DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
-      } else {
-        // Power-law -- irreversible compaction.
-        const auto epsCi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/(mKappa*alpha0i*exp(mKappa*(mEpsX - mEpsE))) + mEpsX;
-        const auto PLcoefi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/FastMath::square(epsCi - mEpsX);
-        DalphaDepsi = PLcoefi*(mEpsE - epsi);
-        DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
-      }
-    }
-
-    // Optionally update the deviatoric stress scaling term
-    if (mJutziStateUpdate) {
-      fDSnew(i) = (alphai == 1.0 ?
-                   1.0 :
-                   1.0 - DalphaDepsi/rhoS(i));
-                   // 1.0 + DalphaDt(i)/alphai * safeInv(DrhoDt(i)/rho(i), 0.01*csi*Dimension::nDim/H(i).Trace()));
-    } else {
+    if (alphai == 1.0) {
+      DstrainDt(i) = 0.0;
+      DalphaDt(i) = 0.0;
       fDSnew(i) = 1.0;
+    } else {
+      DstrainDt(i) = DvDx(i).Trace();
+      const auto epsi = strain(i);
+      const auto DuDti = DuDt(i);
+      const auto strainRate = min(0.0, DstrainDt(i) - mGammaS0*safeInv(mcS0*mcS0)*DuDti);
+      const auto alpha0i = mAlpha0(i);
+      const auto c0i = mc0(i);
+      const auto csi = mcS0 + (alphai - 1.0)*safeInv(alpha0i - 1.0)*(c0i - mcS0);
+
+      // The time rate of change for alpha depends on if we're in the elastic, exponential, or
+      // power-law regime of compaction.
+      auto DalphaDepsi = 0.0;
+      if (-std::abs(epsi) >= mEpsE) {
+        // Elastic regime
+        // We assume compaction is reversible in this regime.
+        DalphaDepsi = alphai*(1.0 - FastMath::square(csi*safeInv(mcS0)));
+        DalphaDt(i) = DalphaDepsi*strainRate;
+      } else if (epsi < 0.0) { // The plastic regimes only apply for negative strains (compaction)
+        if (epsi >= mEpsX) {
+          // Exponential regime
+          DalphaDepsi = mKappa*alphai;
+          DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
+        } else {
+          // Power-law -- irreversible compaction.
+          const auto epsCi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/(mKappa*alpha0i*exp(mKappa*(mEpsX - mEpsE))) + mEpsX;
+          const auto PLcoefi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/FastMath::square(epsCi - mEpsX);
+          DalphaDepsi = PLcoefi*(mEpsE - epsi);
+          DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
+        }
+      }
+
+      // Optionally update the deviatoric stress scaling term
+      if (mJutziStateUpdate) {
+        fDSnew(i) = std::max(0.0, std::min(1.0, 1.0 - DalphaDepsi/rhoS(i)));
+        // 1.0 + DalphaDt(i)/alphai * safeInv(DrhoDt(i)/rho(i), 0.01*csi*Dimension::nDim/H(i).Trace()));
+      } else {
+        fDSnew(i) = 1.0;
+      }
     }
 
 #pragma omp critical

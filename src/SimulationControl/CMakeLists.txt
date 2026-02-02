@@ -18,26 +18,49 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/.git)
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
+  execute_process(
+    COMMAND git --git-dir ${CMAKE_SOURCE_DIR}/.git branch --show-current
+    OUTPUT_VARIABLE gitbranch
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
   set(SPHERAL_VERSION_LIST ${tagcomm} ${githash} ${abbref})
   string(REPLACE ";" " " spheralversion "${SPHERAL_VERSION_LIST}")
 endif()
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/Spheral_banner.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/Spheral_banner.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Spheral_banner.py)
 
-set(_dims 1)
-if(ENABLE_2D)
-   list(APPEND _dims 2)
-endif()
-if(ENABLE_3D)
-   list(APPEND _dims 3)
-endif()
+# Configure SpheralConfigs.py.in
+set(SPHERAL_COMP_CONFIG)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "LEOS" IF SPHERAL_ENABLE_LEOS)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "ANEOS" IF SPHERAL_ENABLE_ANEOS)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "OPENSUBDIV" IF SPHERAL_ENABLE_OPENSUBDIV)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "TIMERS" IF SPHERAL_ENABLE_TIMERS)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "MPI" IF ENABLE_MPI)
+blt_list_append( TO SPHERAL_COMP_CONFIG ELEMENTS "SHARED" IF SPHERAL_ENABLE_SHARED)
+set(SPHERAL_HYDRO_IMPORTS "SPHHydros;PSPHHydros;CRKSPHHydros;DEM;SPHUtilities")
+blt_list_append( TO SPHERAL_HYDRO_IMPORTS ELEMENTS "FSISPHHydros;SlideSurfaces" IF SPHERAL_ENABLE_FSISPH)
+blt_list_append( TO SPHERAL_HYDRO_IMPORTS ELEMENTS "GSPHHydros" IF SPHERAL_ENABLE_GSPH)
+blt_list_append( TO SPHERAL_HYDRO_IMPORTS ELEMENTS "SVPHHydros" IF SPHERAL_ENABLE_SVPH)
 
-string(REPLACE ";" " " DIMS "${_dims}")
+set(SPHERAL_DIMS 1)
+blt_list_append( TO SPHERAL_DIMS ELEMENTS 2 IF SPHERAL_ENABLE_2D)
+blt_list_append( TO SPHERAL_DIMS ELEMENTS 3 IF SPHERAL_ENABLE_3D)
+
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/spheralDimensions.py.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/SpheralConfigs.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/SpheralConfigs.py)
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/spheralDimensions.py
   ${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py)
 
+# Add a custom target so other targets can depend on the availability of spheralDimensions
+add_custom_target(
+  generate_spheralDimensions
+  DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py" "${CMAKE_CURRENT_BINARY_DIR}/SpheralConfigs.py"
+)
 
 spheral_install_python_files(
   Spheral.py
@@ -60,6 +83,7 @@ spheral_install_python_files(
   SpheralPolytopeSiloDump.py
   Spheral1dVizDump.py
   SpheralMatplotlib.py
+  SpheralTimingParser.py
   findLastRestart.py
   Pnorm.py
   filearraycmp.py
@@ -78,5 +102,6 @@ spheral_install_python_files(
   buildOrderedDict.py
   CaptureStdout.py
   ${CMAKE_CURRENT_BINARY_DIR}/Spheral_banner.py
+  ${CMAKE_CURRENT_BINARY_DIR}/SpheralConfigs.py
   ${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py
   )

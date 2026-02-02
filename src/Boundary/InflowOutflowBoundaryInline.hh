@@ -60,7 +60,7 @@ plane() const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-int
+size_t
 InflowOutflowBoundary<Dimension>::
 numInflowNodes(const NodeList<Dimension>& nodeList) const {
   const auto itr = mNumInflowNodes.find(nodeList.name());

@@ -32,42 +32,6 @@ radius(typename Dimension::Scalar value) {
   mRadius=value;
 }
 
-
-template<typename Dimension>
-inline
-const typename Dimension::Vector&
-SphereSolidBoundary<Dimension>::
-clipPoint() const {
-  return mClipPoint;
-}
-
-template<typename Dimension>
-inline
-void
-SphereSolidBoundary<Dimension>::
-clipPoint(const typename Dimension::Vector& value) {
-  mClipPoint=value;
-  this->setClipIntersectionRadius();
-}
-
-
-template<typename Dimension>
-inline
-const typename Dimension::Vector&
-SphereSolidBoundary<Dimension>::
-clipAxis() const {
-  return mClipAxis;
-}
-
-template<typename Dimension>
-inline
-void
-SphereSolidBoundary<Dimension>::
-clipAxis(const typename Dimension::Vector& value) {
-  mClipAxis=value.unitVector();
-  this->setClipIntersectionRadius();
-}
-
 template<typename Dimension>
 inline
 const typename Dimension::Vector&
@@ -82,6 +46,22 @@ void
 SphereSolidBoundary<Dimension>::
 velocity(const typename Dimension::Vector& value)  {
   mVelocity=value;
+}
+
+template<typename Dimension>
+inline
+const typename DEMDimension<Dimension>::AngularVector&
+SphereSolidBoundary<Dimension>::
+angularVelocity() const {
+  return mAngularVelocity;
+}
+
+template<typename Dimension>
+inline
+void
+SphereSolidBoundary<Dimension>::
+angularVelocity(const typename DEMDimension<Dimension>::AngularVector& value)  {
+  mAngularVelocity=value;
 }
 
 }

@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Strength)
+spheral_add_pybind11_library(Strength SPHERAL_MODULE_LIST)

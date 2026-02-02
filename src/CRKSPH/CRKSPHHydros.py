@@ -7,6 +7,7 @@ dims = spheralDimensions()
 # The generic CRKSPHHydro pattern.
 #-------------------------------------------------------------------------------
 def CRKSPH(dataBase,
+           W,
            Q = None,
            order = RKOrder.LinearOrder,
            filter = 0.0,
@@ -22,7 +23,8 @@ def CRKSPH(dataBase,
            damageRelieveRubble = False,
            ASPH = False,
            etaMinAxis = 0.1,
-           crktype = "default"):
+           crktype = "default",
+           smoothingScaleMethod = None):
 
     # We use the provided DataBase to sniff out what sort of NodeLists are being
     # used, and based on this determine which SPH object to build.
@@ -34,65 +36,77 @@ def CRKSPH(dataBase,
         print("             which will result in fluid behaviour for those nodes.")
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
+    # Check for deprecated arguments
+    if not filter is None:
+        print("CRKSPH DEPRECATION WARNING: filter is no longer used -- ignoring")
+
     # Pick the appropriate C++ constructor from dimensionality and coordinates
     ndim = dataBase.nDim
     if GeometryRegistrar.coords() == CoordinateType.RZ:
         # RZ ----------------------------------------
         assert ndim == 2
         if nsolid > 0:
-            constructor = SolidCRKSPHHydroBaseRZ
+            constructor = SolidCRKSPHRZ
         else:
-            constructor = CRKSPHHydroBaseRZ
+            constructor = CRKSPHRZ
     else:
         # Cartesian ---------------------------------
         crktype = crktype.lower()
         assert crktype in ("default", "variant")
         if nsolid > 0:
-            constructor = eval("SolidCRKSPHHydroBase%id" % ndim)
+            constructor = eval("SolidCRKSPH%id" % ndim)
         else:
             if crktype == "variant":
                 constructor = eval("CRKSPHVariant%id" % ndim)
             else:
-                constructor = eval("CRKSPHHydroBase%id" % ndim)
+                constructor = eval("CRKSPH%id" % ndim)
 
     # Artificial viscosity.
     if not Q:
         Cl = 2.0*(dataBase.maxKernelExtent/4.0)
         Cq = 1.0*(dataBase.maxKernelExtent/4.0)**2
-        Q = eval("LimitedMonaghanGingoldViscosity%id(Clinear=%g, Cquadratic=%g)" % (ndim, Cl, Cq))
-
-    # Smoothing scale update
-    if ASPH:
-        smoothingScaleMethod = eval("ASPHSmoothingScale%id()" % ndim)
-    else:
-        smoothingScaleMethod = eval("SPHSmoothingScale%id()" % ndim)
+        Q = eval("LimitedMonaghanGingoldViscosity%id(Clinear=%g, Cquadratic=%g, kernel=W)" % (ndim, Cl, Cq))
 
     # Build the constructor arguments
-    kwargs = {"smoothingScaleMethod" : smoothingScaleMethod,
-              "dataBase" : dataBase,
+    kwargs = {"dataBase" : dataBase,
               "Q" : Q,
               "order" : order,
-              "filter" : filter,
               "cfl" : cfl,
               "useVelocityMagnitudeForDt" : useVelocityMagnitudeForDt,
               "compatibleEnergyEvolution" : compatibleEnergyEvolution,
               "evolveTotalEnergy" : evolveTotalEnergy,
               "XSPH" : XSPH,
               "densityUpdate" : densityUpdate,
-              "HUpdate" : HUpdate,
               "epsTensile" : epsTensile,
               "nTensile" : nTensile}
 
     if nsolid > 0:
         kwargs.update({"damageRelieveRubble" : damageRelieveRubble})
 
-    if GeometryRegistrar.coords() == CoordinateType.RZ:
-        kwargs.update({"etaMinAxis" : etaMinAxis})
-
     # Build the thing.
     result = constructor(**kwargs)
     result.Q = Q
+
+    # Add the Q as a sub-package (to run before the hydro)
+    result.prependSubPackage(Q)
+
+    # Smoothing scale update
+    if smoothingScaleMethod is None:
+        if ASPH:
+            if isinstance(ASPH, str) and ASPH.upper() == "CLASSIC":
+                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d(HUpdate, W)")
+            else:
+                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d(HUpdate, W)")
+        else:
+            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d(HUpdate, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
+    result.appendSubPackage(smoothingScaleMethod)
+
+    # If we're using area-weighted RZ, we need to reflect from the axis
+    if GeometryRegistrar.coords() == CoordinateType.RZ:
+        result.zaxisBC = AxisBoundaryRZ(etaMinAxis)
+        result.appendBoundary(result.zaxisBC)
+
     return result
 
 #-------------------------------------------------------------------------------

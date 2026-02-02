@@ -79,7 +79,7 @@ public:
 
   // Initialize the Hydro before we start a derivative evaluation.
   virtual
-  void initialize(const Scalar time,
+  bool initialize(const Scalar time,
                   const Scalar dt,
                   const DataBase<Dimension>& dataBase,
                   State<Dimension>& state,

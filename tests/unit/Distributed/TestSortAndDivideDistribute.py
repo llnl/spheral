@@ -25,7 +25,7 @@ class TestSortAndDivideRedistribute1d(TestDistributeByPosition1d):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in [self.dataBase.nodeLists()[i] for i in range(self.dataBase.numNodeLists)]:
+        for nodeList in [self.dataBase.nodeLists[i] for i in range(self.dataBase.numNodeLists)]:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes, mpi.SUM))
         print("Total num nodes: ", nNodesGlobal, sum(nNodesGlobal))
 
@@ -35,7 +35,7 @@ class TestSortAndDivideRedistribute1d(TestDistributeByPosition1d):
 
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
-        for nodeList, nGlobal in zip([self.dataBase.nodeLists()[i] for i in range(self.dataBase.numNodeLists)],
+        for nodeList, nGlobal in zip([self.dataBase.nodeLists[i] for i in range(self.dataBase.numNodeLists)],
                                      nNodesGlobal):
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             if n != nGlobal:
@@ -52,7 +52,7 @@ class TestSortAndDivideRedistribute1d(TestDistributeByPosition1d):
         # is exclusive in x range.
         localxmin = 1e10
         localxmax = -1e10
-        for nodeList in [self.dataBase.nodeLists()[i] for i in range(self.dataBase.numNodeLists)]:
+        for nodeList in [self.dataBase.nodeLists[i] for i in range(self.dataBase.numNodeLists)]:
             if nodeList.numInternalNodes > 0:
                 localxmin = min(localxmin, min([r.x for r in nodeList.positions().internalValues()] + [1e60]))
                 localxmax = max(localxmax, max([r.x for r in nodeList.positions().internalValues()] + [-1e60]))
@@ -63,7 +63,7 @@ class TestSortAndDivideRedistribute1d(TestDistributeByPosition1d):
         # Build a diagnostic plot to help show how the domains are distributed.
         domain = ScalarFieldList1d()
         domain.copyFields()
-        for nodes in self.dataBase.nodeLists():
+        for nodes in self.dataBase.nodeLists:
             f = ScalarField1d(nodes.name(), nodes, mpi.rank)
             domain.appendField(f)
         self.p = plotFieldList(domain,
@@ -85,7 +85,7 @@ class TestSortAndDivideRedistribute2d(TestParmetisRedistribute2d):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes,
                                               mpi.SUM))
 
@@ -96,7 +96,7 @@ class TestSortAndDivideRedistribute2d(TestParmetisRedistribute2d):
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
         i = 0
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             nGlobal = nNodesGlobal[i]
             if n != nGlobal:
@@ -127,7 +127,7 @@ class TestSortAndDivideRedistribute3d(TestParmetisRedistribute3d):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes,
                                               mpi.SUM))
 
@@ -138,7 +138,7 @@ class TestSortAndDivideRedistribute3d(TestParmetisRedistribute3d):
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
         i = 0
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             nGlobal = nNodesGlobal[i]
             if n != nGlobal:

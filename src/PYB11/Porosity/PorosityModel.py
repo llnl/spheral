@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPorosity")
+@PYB11module("SpheralCompiledModules.SpheralPorosity")
 class PorosityModel(Physics):
     """PorosityModel
 Base class for PorosityModels for common functionality.
@@ -18,6 +18,7 @@ Base class for PorosityModels for common functionality.
     using Vector = typename %(Dimension)s::Vector;
     using ScalarField = Field<%(Dimension)s, Scalar>;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................

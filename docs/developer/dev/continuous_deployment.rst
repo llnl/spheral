@@ -9,11 +9,12 @@ to their environment.
 
 On LC systems we maintain:
   * ``Spheral/risky``
-  * ``Spheral/2024.01.0``
+  * ``Spheral/2025.12.0``
+  * ``Spheral/2025.06.1``
+  * ``Spheral/2025.01.0``
+  * ``Spheral/2024.06.1``
+  * ``Spheral/2024.01.1``
   * ``Spheral/2023.06.0``
-  * ``Spheral/2023.03.1``
-  * ``Spheral/2023.03.0`` (deprecated as of TOSS4 upgrade)
-  * ``Spheral/2022.06.0`` (deprecated as of TOSS4 upgrade)
 
 Spheral/risky
 =============
@@ -55,18 +56,18 @@ developer with the appropriate permissions.
 
 Spheral-dev-pkg
 ===============
-
 As an artifact of our CD pipeline we generate a tar file with the naming format:
+
 ::
 
   $SYS_TYPE-spheral-dev-pkg-$SPHERAL_REVISION_STRING.tar.gz
 
-This tar file contains everything to build and install Spheral on the given 
-``$SYS_TYPE`` (e.g. ``toss_4_x86_64_ib``). It contains:
-  * A ``spack`` build cache of all the pre-built binaries for Spheral TPLs.
-  * A ``spack`` mirror of all TPL tars to enable re-compilation at a later date.
-  * ``spack`` bootstrap dependencies for use of libraries such as ``clingo``.
-  * Spheral source code.
+This tar file contains everything to build and install Spheral on the given ``$SYS_TYPE`` (e.g. ``toss_4_x86_64_ib``). It contains:
+
+- A ``spack`` build cache of all the pre-built binaries for Spheral TPLs.
+- A ``spack`` mirror of all TPL tars to enable re-compilation at a later date.
+- ``spack`` bootstrap dependencies for use of libraries such as ``clingo``.
+- Spheral source code.
 
 After extracting the ``dev-pkg`` tar on the target system a user can install 
 spheral using ``scritps/lc/install-from-dev-pkg.sh``.
@@ -78,9 +79,6 @@ This simple script will install Spheral from an unzipped ``dev-pkg`` file to the
 given location. There are a few environment variables that can be used to 
 configure this script.
 
-``SPACK_PKG_NAME`` (default : spheral)
-The name of the target spack package you want built and its dependencies.
-
 ``SPACK_URL`` (default : https://github.com/spack/spack)
 Spack location. A local clone of the spack repository can be used as well (e.g.
 ``SPACK_URL=file:///usr/mydir/spack``).
@@ -91,8 +89,8 @@ Useful for schedule based systems ( e.g. ``BUILD_ALLOC="salloc -N 1 --exclusive"
 ``SCRIPT_DIR``
 If the Spheral scripts have been moved, override this option.
 
-``SPEC``
-The spack spec to target (e.g. on TOSS4 ``SPEC=gcc@10.3.1``).
+``DEV_PKG_SPEC``
+The spack spec to target (e.g. on TOSS4 ``DEV_PKG_SPEC=spheral%gcc@10.3.1+mpi~caliper~network``).
 
 ``INSTALL_DIR``
 The installation directory for Spheral to live.

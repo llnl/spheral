@@ -11,7 +11,6 @@ from PolyhedronFileUtilities import *
 # Create a global random number generator.
 import random
 random.seed(660)
-rangen = random.Random()
 
 #-------------------------------------------------------------------------------
 # Make a square
@@ -152,10 +151,10 @@ class TestPolyClipper2d(unittest.TestCase):
             poly = Polygon(points, facets(points))
             for i in range(self.ntests):
                 planes1, planes2 = [], []
-                p0 = Vector(rangen.uniform(0.0, 1.0),
-                            rangen.uniform(0.0, 1.0))
-                phat = Vector(rangen.uniform(-1.0, 1.0), 
-                              rangen.uniform(-1.0, 1.0)).unitVector()
+                p0 = Vector(random.uniform(0.0, 1.0),
+                            random.uniform(0.0, 1.0))
+                phat = Vector(random.uniform(-1.0, 1.0), 
+                              random.uniform(-1.0, 1.0)).unitVector()
                 planes1.append(PolyClipperPlane2d(p0,  phat))
                 planes2.append(PolyClipperPlane2d(p0, -phat))
                 PCchunk1 = PolyClipperPolygon(PCpoly)
@@ -192,10 +191,10 @@ class TestPolyClipper2d(unittest.TestCase):
             poly = Polygon(points, facets(points))
             for i in range(self.ntests):
                 planes1, planes2 = [], []
-                p0 = Vector(rangen.uniform(0.0, 1.0),
-                            rangen.uniform(0.0, 1.0))
-                phat = Vector(rangen.uniform(-1.0, 1.0), 
-                              rangen.uniform(-1.0, 1.0)).unitVector()
+                p0 = Vector(random.uniform(0.0, 1.0),
+                            random.uniform(0.0, 1.0))
+                phat = Vector(random.uniform(-1.0, 1.0), 
+                              random.uniform(-1.0, 1.0)).unitVector()
                 planes1.append(PolyClipperPlane2d(p0,  phat))
                 planes2.append(PolyClipperPlane2d(p0,  phat))
                 planes2.append(PolyClipperPlane2d(p0,  phat))
@@ -229,8 +228,8 @@ class TestPolyClipper2d(unittest.TestCase):
         for points in self.pointSets:
             poly = Polygon(points, facets(points))
             for i in range(self.ntests):
-                r = rangen.uniform(2.0, 100.0) * (poly.xmax - poly.xmin).magnitude()
-                theta = rangen.uniform(0.0, 2.0*pi)
+                r = random.uniform(2.0, 100.0) * (poly.xmax - poly.xmin).magnitude()
+                theta = random.uniform(0.0, 2.0*pi)
                 phat = Vector(cos(theta), sin(theta))
                 p0 = poly.centroid + r*phat
                 planes = []
@@ -253,8 +252,8 @@ class TestPolyClipper2d(unittest.TestCase):
             poly = Polygon(points, facets(points))
             for i in range(self.ntests):
                 planes = []
-                r = rangen.uniform(2.0, 100.0) * (poly.xmax - poly.xmin).magnitude()
-                theta = rangen.uniform(0.0, 2.0*pi)
+                r = random.uniform(2.0, 100.0) * (poly.xmax - poly.xmin).magnitude()
+                theta = random.uniform(0.0, 2.0*pi)
                 phat = Vector(cos(theta), sin(theta))
                 p0 = poly.centroid + r*phat
                 planes.append(PolyClipperPlane2d(p0, phat))
@@ -277,12 +276,12 @@ class TestPolyClipper2d(unittest.TestCase):
             initializePolygon(PCpoly, points, vertexNeighbors(points))
             poly = Polygon(points, facets(points))
             for i in range(self.ntests):
-                p0 = Vector(rangen.uniform(0.0, 1.0),
-                            rangen.uniform(0.0, 1.0))
-                norm1 = Vector(rangen.uniform(-1.0, 1.0), 
-                               rangen.uniform(-1.0, 1.0)).unitVector()
-                norm2 = Vector(rangen.uniform(-1.0, 1.0), 
-                               rangen.uniform(-1.0, 1.0)).unitVector()
+                p0 = Vector(random.uniform(0.0, 1.0),
+                            random.uniform(0.0, 1.0))
+                norm1 = Vector(random.uniform(-1.0, 1.0), 
+                               random.uniform(-1.0, 1.0)).unitVector()
+                norm2 = Vector(random.uniform(-1.0, 1.0), 
+                               random.uniform(-1.0, 1.0)).unitVector()
                 planes1 = []
                 planes1.append(PolyClipperPlane2d(p0,  norm1))
                 planes1.append(PolyClipperPlane2d(p0,  norm2))

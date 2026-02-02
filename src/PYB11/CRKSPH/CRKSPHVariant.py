@@ -5,25 +5,25 @@ from PYB11Generator import *
 from CRKSPHHydroBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPHVariant(CRKSPHHydroBase):
     "CRKSPHVariant -- A development variant of CRKSPH for experimentation."
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef typename %(Dimension)s::FourthRankTensor FourthRankTensor;
-    typedef typename %(Dimension)s::FifthRankTensor FifthRankTensor;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using FourthRankTensor = typename %(Dimension)s::FourthRankTensor;
+    using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     def pyinit(self,
-               smoothingScaleMethod = "const SmoothingScaleBase<%(Dimension)s>&",
-               Q = "ArtificialViscosity<%(Dimension)s>&",
+               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                WPi = "const TableKernel<%(Dimension)s>&",
                filter = "const double",
@@ -33,7 +33,6 @@ class CRKSPHVariant(CRKSPHHydroBase):
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
                densityUpdate = "const MassDensityType",
-               HUpdate = "const HEvolutionType",
                correctionOrder = "const RKOrder",
                volumeType = "const RKVolumeType",
                epsTensile = "const double",

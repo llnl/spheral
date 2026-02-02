@@ -21,6 +21,8 @@ from PalphaPorosity import *
 PYB11includes += ['"Porosity/PorosityModel.hh"',
                   '"Porosity/StrainPorosity.hh"',
                   '"Porosity/PalphaPorosity.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------

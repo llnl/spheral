@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(polytope)
+spheral_add_pybind11_library(polytope SPHERAL_MODULE_LIST)

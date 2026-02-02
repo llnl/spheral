@@ -17,12 +17,6 @@
 using std::vector;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -117,8 +111,8 @@ Piij(const unsigned nodeListi, const unsigned i,
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj << " " << murj);
 
   // Now compute the symmetrized artificial viscous pressure.
-  return make_pair(ei/rhoRZi*Tensor::one,
-                   ej/rhoRZj*Tensor::one);
+  return make_pair(ei/rhoRZi*Tensor::one(),
+                   ej/rhoRZj*Tensor::one());
 }
 
 }

@@ -14,8 +14,7 @@ namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class SmoothingScaleBase;
-template<typename Dimension> class ArtificialViscosity;
+template<typename Dimension> class ArtificialViscosityHandle;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename DataType> class Field;
@@ -27,27 +26,30 @@ class SVPHHydroBase: public GenericHydro<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename Physics<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
+  using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
 
   // Constructors.
-  SVPHHydroBase(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
-                const TableKernel<Dimension>& W,
-                ArtificialViscosity<Dimension>& Q,
+  SVPHHydroBase(const TableKernel<Dimension>& W,
+                ArtificialViscosityHandle<Dimension>& Q,
                 const double cfl,
                 const bool useVelocityMagnitudeForDt,
                 const bool compatibleEnergyEvolution,
                 const bool XSVPH,
                 const bool linearConsistent,
                 const MassDensityType densityUpdate,
-                const HEvolutionType HUpdate,
                 const Scalar fcentroidal,
                 const Vector& xmin,
                 const Vector& xmax);
+
+  // No default constructor, copying, or assignment.
+  SVPHHydroBase() = delete;
+  SVPHHydroBase(const SVPHHydroBase&) = delete;
+  SVPHHydroBase& operator=(const SVPHHydroBase&) = delete;
 
   // Destructor.
   virtual ~SVPHHydroBase();
@@ -77,14 +79,6 @@ public:
   void registerDerivatives(DataBase<Dimension>& dataBase,
                            StateDerivatives<Dimension>& derivs) override;
 
-  // Initialize the Hydro before we start a derivative evaluation.
-  virtual
-  void initialize(const Scalar time,
-                  const Scalar dt,
-                  const DataBase<Dimension>& dataBase,
-                  State<Dimension>& state,
-                  StateDerivatives<Dimension>& derivs) override;
-                       
   // Evaluate the derivatives for the principle hydro variables:
   // mass density, velocity, and specific thermal energy.
   virtual
@@ -93,6 +87,12 @@ public:
                            const DataBase<Dimension>& dataBase,
                            const State<Dimension>& state,
                            StateDerivatives<Dimension>& derivatives) const override;
+  template<typename QType>
+  void evaluateDerivativesImpl(const Scalar time,
+                               const Scalar dt,
+                               const DataBase<Dimension>& dataBase,
+                               const State<Dimension>& state,
+                               StateDerivatives<Dimension>& derivatives) const;
 
   // Finalize the derivatives.
   virtual
@@ -125,10 +125,6 @@ public:
   MassDensityType densityUpdate() const;
   void densityUpdate(const MassDensityType type);
 
-  // Flag to select how we want to evolve the H tensor.
-  HEvolutionType HEvolution() const;
-  void HEvolution(const HEvolutionType type);
-
   // Flag to determine if we're using the total energy conserving compatible energy
   // evolution scheme.
   bool compatibleEnergyEvolution() const;
@@ -155,9 +151,6 @@ public:
   // Access the stored interpolation kernel
   const TableKernel<Dimension>& kernel() const;
 
-  // The object defining how we evolve smoothing scales.
-  const SmoothingScaleBase<Dimension>& smoothingScaleMethod() const;
-
   // The tessellation.
   const Mesh<Dimension>& mesh() const;
 
@@ -169,18 +162,12 @@ public:
   const FieldList<Dimension, Scalar>&    pressure() const;
   const FieldList<Dimension, Scalar>&    soundSpeed() const;
   const FieldList<Dimension, Scalar>&    volume() const;
-  const FieldList<Dimension, Scalar>&    specificThermalEnergy0() const;
-  const FieldList<Dimension, SymTensor>& Hideal() const;
-  const FieldList<Dimension, Scalar>&    maxViscousPressure() const;
   const FieldList<Dimension, Scalar>&    massDensitySum() const;
-  const FieldList<Dimension, Scalar>&    weightedNeighborSum() const;
-  const FieldList<Dimension, SymTensor>& massSecondMoment() const;
   const FieldList<Dimension, Vector>&    XSVPHDeltaV() const;
   const FieldList<Dimension, Vector>&    DxDt() const;
   const FieldList<Dimension, Vector>&    DvDt() const;
   const FieldList<Dimension, Scalar>&    DmassDensityDt() const;
   const FieldList<Dimension, Scalar>&    DspecificThermalEnergyDt() const;
-  const FieldList<Dimension, SymTensor>& DHDt() const;
   const FieldList<Dimension, Tensor>&    DvDx() const;
   const FieldList<Dimension, Tensor>&    internalDvDx() const;
   const FieldList<Dimension, std::vector<Vector> >& pairAccelerations() const;
@@ -197,12 +184,8 @@ protected:
   // The interpolation kernel
   const TableKernel<Dimension>& mKernel;
 
-  // The method defining how we evolve smoothing scales.
-  const SmoothingScaleBase<Dimension>& mSmoothingScaleMethod;
-
   // A bunch of switches.
   MassDensityType mDensityUpdate;
-  HEvolutionType mHEvolution;
   bool mCompatibleEnergyEvolution, mXSVPH, mLinearConsistent;
   Scalar mfcentroidal;
 
@@ -210,7 +193,7 @@ protected:
   Vector mXmin, mXmax;
 
   // The mesh.
-  typedef std::shared_ptr<Mesh<Dimension> > MeshPtr;
+  using MeshPtr = std::shared_ptr<Mesh<Dimension> >;
   MeshPtr mMeshPtr;
 
   // Some internal scratch fields.
@@ -220,14 +203,8 @@ protected:
   FieldList<Dimension, int>       mTimeStepMask;
   FieldList<Dimension, Scalar>    mPressure;
   FieldList<Dimension, Scalar>    mSoundSpeed;
-  FieldList<Dimension, Scalar>    mSpecificThermalEnergy0;
 
-  FieldList<Dimension, SymTensor> mHideal;
-  FieldList<Dimension, Scalar>    mMaxViscousPressure;
   FieldList<Dimension, Scalar>    mMassDensitySum;
-
-  FieldList<Dimension, Scalar>    mWeightedNeighborSum;
-  FieldList<Dimension, SymTensor> mMassSecondMoment;
 
   FieldList<Dimension, Vector>    mXSVPHDeltaV;
 
@@ -235,7 +212,6 @@ protected:
   FieldList<Dimension, Vector>    mDvDt;
   FieldList<Dimension, Scalar>    mDmassDensityDt;
   FieldList<Dimension, Scalar>    mDspecificThermalEnergyDt;
-  FieldList<Dimension, SymTensor> mDHDt;
   FieldList<Dimension, Tensor>    mDvDx;
   FieldList<Dimension, Tensor>    mInternalDvDx;
 
@@ -247,11 +223,6 @@ private:
   //--------------------------- Private Interface ---------------------------//
   // The restart registration.
   RestartRegistrationType mRestart;
-
-  // No default constructor, copying, or assignment.
-  SVPHHydroBase();
-  SVPHHydroBase(const SVPHHydroBase&);
-  SVPHHydroBase& operator=(const SVPHHydroBase&);
 };
 
 }

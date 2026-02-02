@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Porosity)
+spheral_add_pybind11_library(Porosity SPHERAL_MODULE_LIST)

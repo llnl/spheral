@@ -135,8 +135,7 @@ template<typename Dimension>
 inline
 const DataBase<Dimension>& 
 Integrator<Dimension>::dataBase() const {
-  CHECK(mDataBasePtr);
-  return *mDataBasePtr;
+  return mDataBase.get();
 }
 
 //------------------------------------------------------------------------------
@@ -192,7 +191,8 @@ template<typename Dimension>
 inline
 bool
 Integrator<Dimension>::rigorousBoundaries() const {
-  return mRigorousBoundaries;
+  DeprecationWarning("Integrator::rigorousBoundaries");
+  return false;
 }
 
 template<typename Dimension>
@@ -200,7 +200,7 @@ inline
 void
 Integrator<Dimension>::
 rigorousBoundaries(bool value) {
-  mRigorousBoundaries = value;
+  DeprecationWarning("Integrator::rigorousBoundaries");
 }
 
 //------------------------------------------------------------------------------
@@ -284,9 +284,8 @@ cullGhostNodes(bool x) {
 template<typename Dimension>
 inline
 DataBase<Dimension>& 
-Integrator<Dimension>::accessDataBase() {
-  CHECK(mDataBasePtr);
-  return *mDataBasePtr;
+Integrator<Dimension>::accessDataBase() const {
+  return mDataBase.get();
 }
 
 }

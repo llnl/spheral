@@ -26,6 +26,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ResidualType = typename Physics<Dimension>::ResidualType;
 
   // Constructors, destructors.
   PorosityModel(const SolidNodeList<Dimension>& nodeList,        // The NodeList we're going apply to
@@ -58,10 +59,17 @@ public:
 
   // Register the derivatives/change fields for updating state.
   virtual void registerDerivatives(DataBase<Dimension>& dataBase,
-                                   StateDerivatives<Dimension>& derivs);
+                                   StateDerivatives<Dimension>& derivs) override;
 
   // Do any required one-time initializations on problem start up.
   virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
+
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  // For porosity default to just relying on the hydro to handle this, so return no vote.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const override;
   //............................................................................
 
   //............................................................................

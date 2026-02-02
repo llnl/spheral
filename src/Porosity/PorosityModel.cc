@@ -16,6 +16,7 @@
 #include "DataBase/IncrementState.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/PureReplaceBoundedState.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <string>
 
@@ -24,12 +25,6 @@ using std::string;
 using std::to_string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -213,6 +208,64 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
 }
 
 //------------------------------------------------------------------------------
+// Return the maximum state change we care about for checking for convergence
+// in the implicit integration methods.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename PorosityModel<Dimension>::ResidualType
+PorosityModel<Dimension>::
+maxResidual(const DataBase<Dimension>& dataBase, 
+            const State<Dimension>& state1,
+            const State<Dimension>& state0,
+            const Scalar tol) const {
+  REQUIRE(tol > 0.0);
+
+  // Define some functions to compute residuals
+  auto fresS = [](const Scalar& x1, const Scalar& x2, const Scalar tol) { auto dx = std::abs(x2 - x1);     return dx/std::max(std::abs(x1) + std::abs(x2), tol); };
+
+  // Initialize the return value to some impossibly high value.
+  auto result = ResidualType(-1.0, "You should not see me!");
+
+  // Grab the state we're comparing
+  const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, mNodeList.name()); };
+  const auto& alpha0 = state0.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
+  const auto& alpha1 = state1.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
+  
+  // Walk the nodes
+  const auto n = mNodeList.numInternalNodes();
+  const auto rank = Process::getRank();
+#pragma omp parallel
+  {
+    auto maxResidual_local = result;
+#pragma omp for
+    for (auto i = 0u; i < n; ++i) {
+
+      // We limit by the change in phi
+      CHECK(alpha0(i) >= 1.0);
+      CHECK(alpha1(i) >= 1.0);
+      const auto phi0 = 1.0 - 1.0/alpha0(i);
+      const auto phi1 = 1.0 - 1.0/alpha1(i);
+      const auto phires = fresS(phi0, phi1, tol);
+      if (phires > maxResidual_local.first) {
+        maxResidual_local = ResidualType(phires, ("Porosity change: residual = " + to_string(phires) + "\n" +
+                                                  "                     phi0 = " + to_string(phi0) + 
+                                                  "                     phi1 = " + to_string(phi1) + 
+                                                  "      (nodeList, i, rank) = (" + mNodeList.name() + " " + to_string(i) + " " + to_string(rank) + ")\n"));
+      }
+    }
+
+#pragma omp critical
+    {
+      if (maxResidual_local.first > result.first) {
+        result = maxResidual_local;
+      }
+    }
+  }
+
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Dump the current state to the given file.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -224,6 +277,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mAlpha, pathName + "/alpha");
   file.write(mDalphaDt, pathName + "/DalphaDt");
   file.write(mSolidMassDensity, pathName + "/solidMassDensity");
+  file.write(mc0, pathName + "/c0");
   file.write(mfDS, pathName + "/fDS");
   file.write(mfDSnew, pathName + "/fDSnew");
 }
@@ -240,6 +294,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mAlpha, pathName + "/alpha");
   file.read(mDalphaDt, pathName + "/DalphaDt");
   file.read(mSolidMassDensity, pathName + "/solidMassDensity");
+  if (file.readIfAvailable(mc0, pathName + "/c0") != 0) SpheralMessage("PorosityModel WARNING: unable to load variable c0");
   file.read(mfDS, pathName + "/fDS");
   file.read(mfDSnew, pathName + "/fDSnew");
 }

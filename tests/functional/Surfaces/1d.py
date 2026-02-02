@@ -352,7 +352,7 @@ if graphics == "gnu":
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
     mprof = mpi.reduce(nodes1.mass().internalValues(), mpi.SUM)

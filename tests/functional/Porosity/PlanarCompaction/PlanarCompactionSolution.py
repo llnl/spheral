@@ -145,7 +145,10 @@ class PlanarCompactionSolution:
         us, rhos, epss, Ps, alphas, ue, rhoe, epse, Pe, alphae, xs, xe, v1, h1, v2, h2 = self.waveProperties(t)
         def _soundSpeed(rhoi, epsi, alphai):
             cS0 = self.eos.soundSpeed(alphai*rhoi, epsi)
-            return cS0 + (alphai - 1.0)/(self.alpha0 - 1.0)*(self.crushCurve.c0 - cS0)
+            if self.alpha0 > 1.0:
+                return cS0 + (alphai - 1.0)/(self.alpha0 - 1.0)*(self.crushCurve.c0 - cS0)
+            else:
+                return cS0
         c_s = _soundSpeed(rhos, epss, alphas)
         c_e = _soundSpeed(rhoe, epse, alphae)
         c_0 = self.crushCurve.c0

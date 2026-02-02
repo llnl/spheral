@@ -1,6 +1,7 @@
 include_directories(.)
 set(DataBase_inst
     DataBase
+    ReplaceWithRatioPolicy
     State
     StateBase
     StateDerivatives
@@ -25,6 +26,7 @@ set(DataBase_headers
     IncrementStateInline.hh
     IncrementBoundedState.hh
     IncrementBoundedStateInline.hh
+    MaxReplaceState.hh
     PureReplaceState.hh
     PureReplaceStateInline.hh
     ReplaceState.hh
@@ -33,11 +35,11 @@ set(DataBase_headers
     PureReplaceBoundedStateInline.hh
     ReplaceBoundedState.hh
     ReplaceBoundedStateInline.hh
+    ReplaceWithRatioPolicy.hh
     State.hh
     StateBase.hh
     StateBaseInline.hh
     StateDerivatives.hh
-    StateDerivativesInline.hh
     StateInline.hh
     applyPolicyToFieldList.hh
     updateStateFields.hh

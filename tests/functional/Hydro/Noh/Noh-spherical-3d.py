@@ -47,7 +47,7 @@ commandLine(order = 5,
             gamma = 5.0/3.0,
             mu = 1.0,
 
-            solid = False,    # If true, use the fluid limit of the solid hydro option
+            solid = False,                   # If true, use the fluid limit of the solid hydro option
 
             svph = False,
             crksph = False,
@@ -55,8 +55,10 @@ commandLine(order = 5,
             fsisph = False,
             gsph = False,
             mfm = False,
+            mfv = False,
 
-            asph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
+            asph = False,                    # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
+            radialOnly = False,              # Force ASPH tensors to be aligned and evolve radially
             boolReduceViscosity = False,
             HopkinsConductivity = False,     # For PSPH
             nhQ = 5.0,
@@ -86,7 +88,7 @@ commandLine(order = 5,
             XSPH = False,
             epsilonTensile = 0.0,
             nTensile = 8,
-            filter = 0.0,
+            xfilter = 0.0,
 
             IntegratorConstructor = CheapSynchronousRK2Integrator,
             goalTime = 0.6,
@@ -121,7 +123,8 @@ commandLine(order = 5,
             checkRestart = False,
             dataDir = "dumps-spherical-Noh",
             outputFile = "Noh_spherical_profiles.gnu",
-            comparisonFile = "None",
+            comparisonFile = None,
+            doCompare = True,
 
             graphics = True,
             )
@@ -144,8 +147,10 @@ elif fsisph:
     hydroname = "FSISPH"
 elif gsph:
     hydroname = "GSPH"
-elif gsph:
+elif mfm:
     hydroname = "MFM"
+elif mfv:
+    hydroname = "MFV"
 else:
     hydroname = "SPH"
 if asph:
@@ -154,17 +159,20 @@ if asph:
 if solid:
     hydroname = "Solid" + hydroname
 
-dataDir = os.path.join(dataDir,
-                       hydroname,
-                       "nPerh=%f" % nPerh,
-                       "compatibleEnergy=%s" % compatibleEnergy,
-                       "Cullen=%s" % boolCullenViscosity,
-                       "filter=%f" % filter,
-                       "nx=%i_ny=%i_nz=%i" % (nx, ny, nz))
-restartDir = os.path.join(dataDir, "restarts")
-restartBaseName = os.path.join(restartDir, "Noh-spherical-3d-%ix%ix%i" % (nx, ny, nz))
-
-vizDir = os.path.join(dataDir, "visit")
+if dataDir:
+    dataDir = os.path.join(dataDir,
+                           hydroname,
+                           "nPerh=%f" % nPerh,
+                           "compatibleEnergy=%s" % compatibleEnergy,
+                           "Cullen=%s" % boolCullenViscosity,
+                           "xfilter=%f" % xfilter,
+                           "nx=%i_ny=%i_nz=%i" % (nx, ny, nz))
+    restartDir = os.path.join(dataDir, "restarts")
+    restartBaseName = os.path.join(restartDir, "Noh-spherical-3d-%ix%ix%i" % (nx, ny, nz))
+    vizDir = os.path.join(dataDir, "visit")
+else:
+    restartBaseName = None
+    vizDir = None
 if vizTime is None and vizCycle is None:
     vizBaseName = None
 else:
@@ -173,7 +181,7 @@ else:
 #-------------------------------------------------------------------------------
 # Check if the necessary output directories exist.  If not, create them.
 #-------------------------------------------------------------------------------
-if mpi.rank == 0:
+if mpi.rank == 0 and dataDir:
     if clearDirectories and os.path.exists(dataDir):
         shutil.rmtree(dataDir)
     if not os.path.exists(restartDir):
@@ -272,12 +280,11 @@ if svph:
 elif crksph:
     hydro = CRKSPH(dataBase = db,
                    W = WT,
-                   filter = filter,
+                   order = correctionOrder,
+                   filter = xfilter,
                    cfl = cfl,
                    compatibleEnergyEvolution = compatibleEnergy,
                    XSPH = XSPH,
-                   correctionOrder = correctionOrder,
-                   volumeType = volumeType,
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate,
                    ASPH = asph)
@@ -288,7 +295,6 @@ elif fsisph:
                    interfaceMethod = HLLCInterface,
                    sumDensityNodeLists=[nodes1],                       
                    densityStabilizationCoefficient = 0.00,
-                   useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
                    evolveTotalEnergy = evolveTotalEnergy,
                    linearCorrectGradients = correctVelocityGradient,
@@ -327,10 +333,27 @@ elif mfm:
                 HUpdate = IdealH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile)
+elif mfv:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,True)
+    hydro = MFV(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient=correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                XSPH = XSPH,
+                gradientType = RiemannGradient,
+                densityUpdate=densityUpdate,
+                HUpdate = IdealH,
+                epsTensile = epsilonTensile,
+                nTensile = nTensile)
 elif psph:
     hydro = PSPH(dataBase = db,
                  W = WT,
-                 filter = filter,
+                 filter = xfilter,
                  cfl = cfl,
                  compatibleEnergyEvolution = compatibleEnergy,
                  evolveTotalEnergy = evolveTotalEnergy,
@@ -343,7 +366,7 @@ elif psph:
 else:
     hydro = SPH(dataBase = db,
                 W = WT,
-                filter = filter,
+                filter = xfilter,
                 cfl = cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
                 evolveTotalEnergy = evolveTotalEnergy,
@@ -356,21 +379,26 @@ else:
                 nTensile = nTensile,
                 ASPH = asph)
 output("hydro")
-output("hydro.kernel")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
-output("hydro.HEvolution")
-if not (gsph or fsisph):
+try:
     output("hydro.PiKernel")
+except:
+    pass
 if not fsisph:
     output("hydro.densityUpdate")
+output("hydro._smoothingScaleMethod.HEvolution")
+if radialOnly:
+    assert asph
+    hydro._smoothingScaleMethod.radialOnly = True
+    output("hydro._smoothingScaleMethod.radialOnly")
 
 packages = [hydro]
 
 #-------------------------------------------------------------------------------
 # Set the artificial viscosity parameters.
 #-------------------------------------------------------------------------------
-if not (gsph or mfm):
+if not (gsph or mfm or mfv):
     q = hydro.Q
     if Cl:
         q.Cl = Cl
@@ -398,10 +426,10 @@ if not (gsph or mfm):
     # Construct the MMRV physics object.
     #-------------------------------------------------------------------------------
     if boolReduceViscosity:
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nhQ,nhL,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nhQ,nhL,aMin,aMax)
         packages.append(evolveReducingViscosityMultiplier)
     elif boolCullenViscosity:
-        evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
         packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -502,6 +530,9 @@ else:
     control.advance(goalTime, maxSteps)
     control.updateViz(control.totalSteps, integrator.currentTime, 0.0)
     control.dropRestartFile()
+
+if not doCompare:
+    sys.exit(0)
 
 #-------------------------------------------------------------------------------
 # Plot the results.
@@ -611,7 +642,7 @@ if graphics:
 rmaxnorm = 0.35
 rminnorm = 0.05
 
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
     P = ScalarField("pressure", nodes1)
@@ -672,7 +703,7 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Also we can optionally compare the current results with another file.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None":
+        if comparisonFile:
             comparisonFile = os.path.join(dataDir, comparisonFile)
             import filecmp
             assert filecmp.cmp(outputFile, comparisonFile)

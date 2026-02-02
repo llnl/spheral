@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 #include <bitset>
-#include "boost/unordered_map.hpp"
+#include <unordered_map>
 
 #include "NullCellValue.hh"
 #include "UniqueNodeLeaf.hh"
@@ -88,7 +88,7 @@ public:
 
   //--------------------------- Private Interface ----------------------------//
   // Define the types we use to build the tree.
-  typedef boost::unordered_map<CellKey, Cell> TreeLevel;
+  typedef std::unordered_map<CellKey, Cell> TreeLevel;
   typedef std::vector<TreeLevel> Tree;
 
   // Private data.

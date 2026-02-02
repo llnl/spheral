@@ -23,7 +23,7 @@ inline
 PureReplaceBoundedState<Dimension, ValueType, BoundValueType>::
 PureReplaceBoundedState(const BoundValueType minValue,
                         const BoundValueType maxValue):
-  FieldUpdatePolicy<Dimension>(),
+  FieldUpdatePolicy<Dimension, ValueType>({}),
   mMinValue(minValue),
   mMaxValue(maxValue) {
 }
@@ -34,7 +34,7 @@ PureReplaceBoundedState<Dimension, ValueType, BoundValueType>::
 PureReplaceBoundedState(std::initializer_list<std::string> depends,
                         const BoundValueType minValue,
                         const BoundValueType maxValue):
-  FieldUpdatePolicy<Dimension>(depends),
+  FieldUpdatePolicy<Dimension, ValueType>(depends),
   mMinValue(minValue),
   mMaxValue(maxValue) {
 }
@@ -62,7 +62,7 @@ update(const KeyType& key,
   const auto n = f.nodeList().numInternalNodes();
 #pragma omp parallel for
   for (auto i = 0u; i < n; ++i) {
-    f(i) = std::min(mMaxValue, std::max(mMinValue, df(i)));
+    f(i) = min(mMaxValue, max(mMinValue, df(i)));
   }
 }
 

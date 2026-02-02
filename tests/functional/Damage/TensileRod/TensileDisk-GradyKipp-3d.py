@@ -291,7 +291,7 @@ output("db.numFluidNodeLists")
 # Construct constant velocity boundary conditions to be applied to the outside
 # of the disk.
 #-------------------------------------------------------------------------------
-## rNodes = vector_of_int()
+## rNodes = vector_of_ULL()
 ## dr = radius/ny
 ## rNodes.extend([i for i in xrange(nodes.numInternalNodes)
 ##                if sqrt(nodes.positions()[i].y**2 +

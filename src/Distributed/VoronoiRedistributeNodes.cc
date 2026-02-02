@@ -26,7 +26,9 @@
 #include "Utilities/boundPointWithinBox.hh"
 #include "Utilities/testBoxIntersection.hh"
 #include "Utilities/PairComparisons.hh"
-#include "Utilities/allReduce.hh"
+#include "Utilities/Timer.hh"
+#include "Utilities/SpheralMessage.hh"
+#include "allReduce.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -36,18 +38,11 @@
 #include <fstream>
 #include <cstdlib>
 #include <bitset>
+#include <sstream>
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-
-#include <boost/assign.hpp>
 
 namespace Spheral {
 
@@ -268,7 +263,7 @@ typename Dimension::Vector
 computeClosestNodePosition(const typename Dimension::Vector& targetPosition,
                            const vector<DomainNode<Dimension> >& nodes,
                            const int numProcs, 
-                           MPI_Comm communicator) {
+                           MPI_Comm communicator = Communicator::communicator()) {
   typedef typename Dimension::Vector Vector;
 
   // First find the local node closest to the center.
@@ -342,13 +337,14 @@ void
 VoronoiRedistributeNodes<Dimension>::
 redistributeNodes(DataBase<Dimension>& dataBase,
                   vector<Boundary<Dimension>*> boundaries) {
+  TIME_FUNCTION;
 
   // The usual parallel info.
   const int numProcs = this->numDomains();
   const int procID = this->domainID();
 
   // Get the global IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Compute the work and number density per node.
   const TableKernel<Dimension> W(BSplineKernel<Dimension>(), 100u);
@@ -381,13 +377,12 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Print the beginning statistics.
   std::string stats0 = this->gatherDomainDistributionStatistics(workField);
-  if (procID == 0) cout << "VoronoiRedistributeNodes: INITIAL node distribution statistics:" << endl
-                        << stats0 << endl;
+  SpheralMessage("VoronoiRedistributeNodes: INITIAL node distribution statistics:\n" << stats0);
 
   // Now we can get the node distribution description.
   vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, workField);
   const size_t numNodes = nodeDistribution.size();
-  const size_t numNodesGlobal = allReduce((uint64_t) numNodes, MPI_SUM, Communicator::communicator());
+  const size_t numNodesGlobal = allReduce((uint64_t) numNodes, SPHERAL_OP_SUM);
   const size_t avgNumNodes = numNodesGlobal/numProcs;
   CHECK(numNodes > 0);
 
@@ -404,8 +399,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Define the the length scale we use to determine when the generator positions have converged.
   const double tol = (xmax - xmin).minElement() * mTolerance;
-  if (procID == 0) cerr << "VoronoiRedistributeNodes: Found bounding box of " << xmin << " " << xmax << endl
-                        << "                          yielding generator convergence tolerance of " << tol << endl;
+  SpheralMessage(     "VoronoiRedistributeNodes: Found bounding box of " << xmin << " " << xmax
+                 << "\n                          yielding generator convergence tolerance of " << tol);
 
   // Determine the average work per generator.
   const Scalar totWork = workField.sumElements();
@@ -510,7 +505,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
           const Vector xmaxDaughter = daughterPositions[kdaughter] + dcell;
           if (numGensForDaughter[kdaughter] == 1) {
             generators[*genItr] = computeClosestNodePosition<Dimension>(0.5*(xminDaughter + xmaxDaughter),
-                                                                        nodeDistribution, numProcs, Communicator::communicator());
+                                                                        nodeDistribution, numProcs);
             generatorBounds[*genItr] = make_pair(xminDaughter, xmaxDaughter);
             CHECK(testPointInBox(generators[*genItr], xminDaughter, xmaxDaughter));
           } else if (numGensForDaughter[kdaughter] > 1) {
@@ -531,16 +526,15 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       CHECK(newGeneratorsInParents.size() == newParentCells.size());
       generatorsInParents = newGeneratorsInParents;
       parentCells = newParentCells;
-      if (procID == 0) cerr << "   Generation " << level << " : "
-                            << numRemainingGenerators << " generators remaining in " 
-                            << generatorsInParents.size() << " cells."
-                            << endl;
+      SpheralMessage("   Generation " << level << " : "
+                     << numRemainingGenerators << " generators remaining in " 
+                     << generatorsInParents.size() << " cells.");
     }
     VERIFY(numRemainingGenerators == 0);
 
 //     // Are there still remaining degeneracies in the generator positions?
 //     if (numRemainingGenerators > 0) {
-//       if (procID == 0) cerr << "  --> Breaking up " << numRemainingGenerators 
+//       if (procID == 0) cout << "  --> Breaking up " << numRemainingGenerators 
 //                             << " degeneracies in intial generator positions."
 //                             << endl;
 //       for (vector<vector<size_t> >::const_iterator cellItr = generatorsInParents.begin();
@@ -648,17 +642,17 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     workRatio = maxWork*safeInv(minWork);
 
     // Report this iterations statistics.
-    if (procID == 0) cerr << "VoronoiRedistributeNodes: Lloyds iteration " << iteration << endl
-                          << "                          max change:  " << maxDeltaGenerator << endl
-                          << "                          work ratio change:  " << workRatio << " " << oldWorkRatio << " " << abs(workRatio*safeInv(oldWorkRatio) - 1.0) << endl
-                          << "                          [min, max, avg] work      [" << minWork << ", " << maxWork << ", " << avgWork << "]" << endl
-                          << "                          [min, max, avg] num nodes [" << minNodes << ", " << maxNodes << ", " << avgNumNodes << "]" << endl;
+    SpheralMessage(   "  VoronoiRedistributeNodes: Lloyds iteration " << iteration
+                   << "\n                          max change:  " << maxDeltaGenerator
+                   << "\n                          work ratio change:  " << workRatio << " " << oldWorkRatio << " " << abs(workRatio*safeInv(oldWorkRatio) - 1.0)
+                   << "\n                          [min, max, avg] work      [" << minWork << ", " << maxWork << ", " << avgWork << "]"
+                   << "\n                          [min, max, avg] num nodes [" << minNodes << ", " << maxNodes << ", " << avgNumNodes << "]");
     if (minWork == 0.0) {
       if (procID == 0) {
-        cerr << "ERROR:  zero work associated with the following generators:" << endl;
+        SpheralError("ERROR:  zero work associated with the following generators:");
         for (size_t k = 0; (int)k != numProcs; ++k) {
           if (generatorWork[k] == 0.0) {
-            cerr << "    ----->  " << generators[k] << endl;
+            SpheralError("    ----->  " << generators[k]);
             generators[k] = startingGenerators[k];
           }
         }
@@ -684,8 +678,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Print the final statistics.
   std::string stats1 = this->gatherDomainDistributionStatistics(workField);
-  if (Process::getRank() == 0) cout << "VoronoiRedistributeNodes: FINAL node distribution statistics:" << endl
-                                    << stats1 << endl;
+  SpheralMessage("VoronoiRedistributeNodes: FINAL node distribution statistics:\n" << stats1);
 }
 
 //------------------------------------------------------------------------------
@@ -705,7 +698,7 @@ computeCentroids(const vector<DomainNode<Dimension> >& nodes,
 
   // Initializations.
   const vector<Vector> generators0(generators);
-  generators = vector<Vector>(numGenerators, Vector::zero);
+  generators = vector<Vector>(numGenerators, Vector::zero());
 
   // Iterate over the nodes, assigning each to it's nearest generator.
   vector<double> normalization(numGenerators, 0.0);
@@ -725,7 +718,7 @@ computeCentroids(const vector<DomainNode<Dimension> >& nodes,
   for (size_t igen = 0; igen != numGenerators; ++igen) {
     packElement(generators[igen], localBuffer);
     packElement(normalization[igen], localBuffer);
-    generators[igen] = Vector::zero;
+    generators[igen] = Vector::zero();
     normalization[igen] = 0.0;
   }
   for (size_t sendProc = 0; (int)sendProc != numProcs; ++sendProc) {
@@ -749,7 +742,7 @@ computeCentroids(const vector<DomainNode<Dimension> >& nodes,
   // at least some work.
   for (size_t igen = 0; igen != numGenerators; ++igen) {
     generators[igen] = 0.25*generators[igen]*safeInv(normalization[igen]) + 0.75*generators0[igen];
-    generators[igen] = computeClosestNodePosition<Dimension>(generators[igen], nodes, numProcs, Communicator::communicator());
+    generators[igen] = computeClosestNodePosition<Dimension>(generators[igen], nodes, numProcs);
   }
 }
 
@@ -867,8 +860,8 @@ cullGeneratorNodesByWork(const vector<typename Dimension::Vector>& generators,
       sort(distances.begin(), distances.end(), ComparePairsBySecondElement<PairType>());
 
       // Find the global range of distances from the generator.
-      double rmin = allReduce((distances.size() > 0 ? distances.front().second : DBL_MAX), MPI_MIN, Communicator::communicator());
-      double rmax = allReduce((distances.size() > 0 ? distances.back().second  : 0.0),     MPI_MAX, Communicator::communicator());
+      double rmin = allReduce((distances.size() > 0 ? distances.front().second : DBL_MAX), SPHERAL_OP_MIN);
+      double rmax = allReduce((distances.size() > 0 ? distances.back().second  : 0.0),     SPHERAL_OP_MAX);
 
       // Bisect for the appropriate radius to reject nodes.
       const double worktol = max(1.0e-10, 0.01*targetWork);
@@ -883,7 +876,7 @@ cullGeneratorNodesByWork(const vector<typename Dimension::Vector>& generators,
           localWork += nodes[itr->first].work;
           ++itr;
         }
-        currentWork = allReduce(localWork, MPI_SUM, Communicator::communicator());
+        currentWork = allReduce(localWork, SPHERAL_OP_SUM);
         if (currentWork < targetWork) {
           rmin = rreject;
         } else {
@@ -938,7 +931,7 @@ findNeighborGenerators(const size_t igen,
       CHECK(rmag2 > 0.0);
       inverseDistance.push_back(delta * safeInv(rmag2, 1.0e-4));
     } else {
-      inverseDistance.push_back(Vector::zero);
+      inverseDistance.push_back(Vector::zero());
     }
   }
   typedef typename Dimension::ConvexHull ConvexHull;

@@ -1,5 +1,10 @@
 //---------------------------------Spheral++----------------------------------//
-// Compute volume from inverse of the kernel summation
+// Compute volume from inverse of the kernel summation.
+//
+//   Hopkins P.F. (2015) "A New Class of Accurate, Mesh-Free Hydrodynamic 
+//   Simulation Methods," MNRAS, 450(1):53-110
+//
+// J.M. Pearl 2022
 //----------------------------------------------------------------------------//
 
 #include "GSPH/computeSumVolume.hh"

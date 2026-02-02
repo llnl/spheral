@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPorosity")
+@PYB11module("SpheralCompiledModules.SpheralPorosity")
 class PalphaPorosity(PorosityModel):
     """An implementation of the P-alpha porosity model described in
 
@@ -31,10 +31,11 @@ parameter (alpha) and gives it to the PorousEquationOfState.
 
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef Field<%(Dimension)s, Scalar> ScalarField;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using ScalarField = Field<%(Dimension)s, Scalar>;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................

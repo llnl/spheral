@@ -89,8 +89,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             checkEnergy = False,
             restoreCycle = -1,
             restartStep = 10000,
-            comparisonFile = "None",
-            normOutputFile = "None",
+            comparisonFile = None,
+            normOutputFile = None,
             writeOutputLabel = True,
 
             graphics = True,
@@ -460,7 +460,7 @@ L1 = 0.0
 for i in range(len(rho)):
     L1 = L1 + abs(rho[i]-rhoans[i])
 L1_tot = L1 / len(rho)
-# if mpi.rank == 0 and outputFile != "None":
+# if mpi.rank == 0 and outputFile:
 #     print "L1=",L1_tot,"\n"
 #     with open("Converge.txt", "a") as myfile:
 #         myfile.write("%s %s\n" % (nz, L1_tot))
@@ -513,7 +513,7 @@ xprof = mpi.reduce([x.magnitude() for x in nodes1.positions().internalValues()],
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
     mof = mortonOrderIndices(db)
@@ -551,7 +551,7 @@ if outputFile != "None":
         # #---------------------------------------------------------------------------
         # # Also we can optionally compare the current results with another file.
         # #---------------------------------------------------------------------------
-        # if comparisonFile != "None":
+        # if comparisonFile:
         #     comparisonFile = os.path.join(dataDir, comparisonFile)
         #     import filecmp
         #     assert filecmp.cmp(outputFile, comparisonFile)

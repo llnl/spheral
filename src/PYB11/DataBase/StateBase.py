@@ -7,17 +7,18 @@ from PYB11Generator import *
 class StateBase:
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef typename %(Dimension)s::FourthRankTensor FourthRankTensor;
-    typedef typename %(Dimension)s::FifthRankTensor FifthRankTensor;
-    typedef typename %(Dimension)s::FacetedVolume FacetedVolume;
-    typedef typename StateBase<%(Dimension)s>::KeyType KeyType;
-    typedef typename StateBase<%(Dimension)s>::FieldName FieldName;
-    typedef typename StateBase<%(Dimension)s>::MeshPtr MeshPtr;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using FourthRankTensor = typename %(Dimension)s::FourthRankTensor;
+    using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
+    using FacetedVolume = typename %(Dimension)s::FacetedVolume;
+    using KeyType = typename StateBase<%(Dimension)s>::KeyType;
+    using FieldName = typename StateBase<%(Dimension)s>::FieldName;
+    using MeshPtr = typename StateBase<%(Dimension)s>::MeshPtr;
+    using BoundaryType = Boundary<%(Dimension)s>;
 """
 
     #...........................................................................
@@ -100,9 +101,19 @@ class StateBase:
         return "std::vector<KeyType>"
 
     @PYB11const
-    def fieldKeys(self):
-        "The set of Field names for the state in the StateBase"
-        return "std::vector<FieldName>"
+    def fullFieldKeys(self):
+        "The set of Field names (with NodeList mangling) for the state in the StateBase"
+        return "std::vector<KeyType>"
+
+    @PYB11const
+    def fieldNames(self):
+        "The set of unique Field names for the state in the StateBase (no NodeList mangling)"
+        return "std::vector<KeyType>"
+
+    @PYB11const
+    def miscKeys(self):
+        "The set of names for non-Fields in the StateBase"
+        return "std::vector<KeyType>"
 
     def enrollConnectivityMap(self,
                               connectivityMapPtr = "std::shared_ptr<ConnectivityMap<%(Dimension)s>>"):
@@ -171,7 +182,8 @@ class StateBase:
     @PYB11const
     def fields(self,
                name = "const KeyType&",
-               dummy = ("const %(Value)s&", "%(Value)s()")):
+               dummy = ("const %(Value)s&", "%(Value)s()"),
+               allowNone = ("bool", "false")):
         "Return the %(Value)s FieldList based on the name"
         return "FieldList<%(Dimension)s, %(Value)s>"
 
@@ -228,8 +240,9 @@ class StateBase:
     allRKCoefficientsFields = PYB11TemplateMethod(allFields, "RKCoefficients<%(Dimension)s>")
 
     #...........................................................................
-    # enrollAny/getAny
+    # enroll/get
     @PYB11template("Value")
+    @PYB11cppname("enroll")
     def enrollAny(self,
                   key = "const KeyType&",
                   thing = "%(Value)s&"):
@@ -237,15 +250,27 @@ class StateBase:
         return "void"
 
     @PYB11template("Value")
+    def enrollCopy(self,
+                   key = "const KeyType&",
+                   thing = "%(Value)s&"):
+        "Enroll a copied type of %(Value)s."
+        return "void"
+    
+    @PYB11template("Value")
     @PYB11const
     @PYB11returnpolicy("reference_internal")
-    def getAny(self,
-               key = "const KeyType&"):
+    def get(self,
+            key = "const KeyType&"):
         "Return a stored type of %(Value)s"
         return "%(Value)s&"
 
-    enrollVectorVector = PYB11TemplateMethod(enrollAny, "std::vector<Vector>", pyname="enrollAny")
-    getVectorVector = PYB11TemplateMethod(getAny, "std::vector<Vector>", pyname="getAny")
+    enrollDouble = PYB11TemplateMethod(enrollCopy, "double")
+    enrollVectorVector = PYB11TemplateMethod(enrollAny, "std::vector<Vector>", pyname="enroll")
+    enrollVectorBoundary = PYB11TemplateMethod(enrollCopy, "std::vector<BoundaryType*>")
+    
+    getDouble = PYB11TemplateMethod(get, "double")
+    getVectorVector = PYB11TemplateMethod(get, "std::vector<Vector>", pyname="get")
+    getVectorBoundary = PYB11TemplateMethod(get, "std::vector<BoundaryType*>")
 
     #...........................................................................
     # assignFields

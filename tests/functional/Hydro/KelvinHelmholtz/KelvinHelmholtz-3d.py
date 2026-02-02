@@ -106,8 +106,7 @@ commandLine(nx = 200,
             redistributeStep = 500,
             checkRestart = False,
             dataDir = "dumps-KelvinHelmholtz-3d",
-            outputFile = "None",
-            
+
             bArtificialConduction = False,
             arCondAlpha = 0.5,
             )
@@ -354,10 +353,10 @@ packages = [hydro]
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WTPi,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WTPi,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
     packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------

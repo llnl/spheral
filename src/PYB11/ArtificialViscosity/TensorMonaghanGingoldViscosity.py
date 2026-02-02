@@ -6,6 +6,7 @@ from ArtificialViscosity import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
+@PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
 class TensorMonaghanGingoldViscosity(ArtificialViscosity):
     """A modified form of the Monaghan & Gingold viscosity, extended to tensor formalism.
 This method is described in
@@ -13,22 +14,32 @@ Owen, J Michael (2004), 'A tensor artficial visocity for SPH', Journal of Comput
 """
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
-               Clinear = ("const Scalar", "1.0"),
-               Cquadratic = ("const Scalar", "1.0")):
+               Clinear = "const Scalar",
+               Cquadratic = "const Scalar",
+               kernel = "const TableKernel<%(Dimension)s>&"):
         "TensorMonaghanGingoldViscosity constructor"
 
     #...........................................................................
     # Methods
+    @PYB11virtual
+    @PYB11const
+    def requireVelocityGradient(self):
+        "We need the velocity gradient and set this to true"
+        return "bool"
+
     @PYB11virtual
     @PYB11const
     def label(self):

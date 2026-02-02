@@ -51,7 +51,7 @@ getPolynomialsDefault(const Dim<2>::Vector& x,
                       typename RKIntegrationKernel<Dim<2>, order>::GradPolyArray& dp) {
   const auto numPoly1d = order + 1;
   const auto numPoly = RKIntegrationKernel<Dim<2>, order>::polynomialSize;
-  const auto dim = 2;
+  // const auto dim = 2;
   q[0][0]  = 1;
   q[0][1]  = 1;
   dq[0][0] = 0;
@@ -83,7 +83,7 @@ getPolynomialsDefault(const Dim<3>::Vector& x,
                       typename RKIntegrationKernel<Dim<3>, order>::GradPolyArray& dp) {
   const auto numPoly1d = order + 1;
   const auto numPoly = RKIntegrationKernel<Dim<2>, order>::polynomialSize;
-  const auto dim = 3;
+  // const auto dim = 3;
   q[0][0] = 1;
   q[0][1] = 1;
   q[0][2] = 1;

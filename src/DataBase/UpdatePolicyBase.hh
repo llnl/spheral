@@ -67,10 +67,6 @@ public:
   // Should this policy be cloned per Field when registering for a FieldList?
   virtual bool clonePerField() const { return false; }
 
-  // Test is this policy is for independent or dependent state.
-  bool independent() const;
-  bool dependent() const;
-
   // Return the set of field names that this state depends upon (if any).
   const std::vector<std::string>& dependencies() const;
 
@@ -79,6 +75,25 @@ public:
 
   // The wildcard string for comparing dependency keys.
   static const std::string wildcard() { return "*"; }
+
+  //............................................................................
+  // Methods to support implicit time advancement
+  // Test is this policy is for independent or dependent state, where independent means
+  // this should be treated as implicitly advanced state to be solved for
+  virtual bool independent() const;
+  virtual bool dependent() const { return not this->independent(); }
+
+  // Serialize the state we're updating to a std::vector<double> -- needed for packing State data in implicit time solve
+  virtual void serializeData(std::vector<double>& buf,
+                             const KeyType& key,
+                             const State<Dimension>& state) const;
+  virtual size_t deserializeData(const std::vector<double>& buf,
+                                 const KeyType& key,
+                                 const State<Dimension>& state,
+                                 const size_t offset) const;
+  virtual void serializeDerivatives(std::vector<double>& buf,
+                                    const KeyType& key,
+                                    const StateDerivatives<Dimension>& derivs) const;
 
 private:
   //--------------------------- Private Interface ---------------------------//

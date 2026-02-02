@@ -1,0 +1,1 @@
+spheral_add_pybind11_library(SmoothingScale SPHERAL_MODULE_LIST)

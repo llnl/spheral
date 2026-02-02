@@ -57,7 +57,8 @@ def identifyFragments(nodeList,
 
     # The C++ method does the heavy lifting.
     # Compute the fragments on the undamaged NodeList.
-    result = computeFragMethod(nodeList, linkRadius, density, damageField, densityThreshold, damageThreshold, assignDustToFragments)
+    mask = nodeList.mask();
+    result = computeFragMethod(nodeList, linkRadius, density, damageField, mask, densityThreshold, damageThreshold, assignDustToFragments)
     numFragments = mpi.allreduce(max(list(result.internalValues()) + [0]), mpi.MAX)
     numFragments += 1
 

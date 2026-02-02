@@ -6,19 +6,22 @@ from Physics import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
+@PYB11dynamic_attr
 class GenericRiemannHydro(Physics):
 
     PYB11typedefs = """
-  typedef typename %(Dimension)s::Scalar Scalar;
-  typedef typename %(Dimension)s::Vector Vector;
-  typedef typename %(Dimension)s::Tensor Tensor;
-  typedef typename %(Dimension)s::SymTensor SymTensor;
-  typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+  using Scalar = typename %(Dimension)s::Scalar;
+  using Vector = typename %(Dimension)s::Vector;
+  using Tensor = typename %(Dimension)s::Tensor;
+  using SymTensor = typename %(Dimension)s::SymTensor;
+  using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+  using PairAccelerationsType = typename GenericRiemannHydro<%(Dimension)s>::PairAccelerationsType;
+  using PairWorkType = typename GenericRiemannHydro<%(Dimension)s>::PairWorkType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
     
-    def pyinit(smoothingScaleMethod = "const SmoothingScaleBase<%(Dimension)s>&",
-               dataBase = "DataBase<%(Dimension)s>&",
+    def pyinit(dataBase = "DataBase<%(Dimension)s>&",
                riemannSolver = "RiemannSolverBase<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                epsDiffusionCoeff = "const Scalar",
@@ -30,7 +33,6 @@ class GenericRiemannHydro(Physics):
                correctVelocityGradient = "const bool",
                gradType = "const GradientType",
                densityUpdate = "const MassDensityType",
-               HUpdate = "const HEvolutionType",
                epsTensile = "const double",
                nTensile = "const double",
                xmin = "const Vector&",
@@ -82,7 +84,7 @@ temperature or pressure."""
                    state = "State<%(Dimension)s>&",
                    derivs = "StateDerivatives<%(Dimension)s>&"):
         "Initialize the Hydro before we start a derivative evaluation."
-        return "void"
+        return "bool"
                        
 #     @PYB11virtual
 #     @PYB11const
@@ -146,14 +148,12 @@ temperature or pressure."""
     cfl = PYB11property("Scalar", "cfl", "cfl", doc="The Courant-Friedrichs-Lewy timestep limit multiplier")
     specificThermalEnergyDiffusionCoefficient = PYB11property("Scalar", "specificThermalEnergyDiffusionCoefficient", "specificThermalEnergyDiffusionCoefficient", 
                                           doc="coefficient used to diffuse specificThermalEnergy amongst like nodes.")
-    riemannSolver = PYB11property("RiemannSolverBase<%(Dimension)s>&", "riemannSolver",returnpolicy="reference_internal",doc="The object defining the interface state construction.")
+    riemannSolver = PYB11property("RiemannSolverBase<%(Dimension)s>&", "riemannSolver", doc="The object defining the interface state construction.")
     kernel = PYB11property("const TableKernel<%(Dimension)s>&", "kernel", doc="The interpolation kernel")
     gradientType = PYB11property("GradientType", "gradientType", "gradientType",
                                  doc="Enum to selecting different gradients we can use")
     densityUpdate = PYB11property("MassDensityType", "densityUpdate", "densityUpdate",
                                   doc="Flag to choose whether we want to sum for density, or integrate the continuity equation.")
-    HEvolution = PYB11property("HEvolutionType", "HEvolution", "HEvolution",
-                               doc="Flag to select how we want to evolve the H tensor")
     compatibleEnergyEvolution = PYB11property("bool", "compatibleEnergyEvolution", "compatibleEnergyEvolution",
                                               doc="Flag to determine if we're using the total energy conserving compatible energy evolution scheme.")
     evolveTotalEnergy = PYB11property("bool", "evolveTotalEnergy", "evolveTotalEnergy",
@@ -172,28 +172,22 @@ temperature or pressure."""
     xmax = PYB11property("const Vector&", "xmax", "xmax",
                          returnpolicy="reference_internal",
                          doc="Optional maximum coordinate for bounding box for use generating the mesh for the Voronoi mass density update.")
-    smoothingScaleMethod = PYB11property("const SmoothingScaleBase<%(Dimension)s>&", "smoothingScaleMethod",
-                                         returnpolicy="reference_internal",
-                                         doc="The object defining how we evolve smoothing scales.")
 
     timeStepMask =                 PYB11property("const FieldList<%(Dimension)s, int>&",      "timeStepMask",         returnpolicy="reference_internal")
     pressure =                     PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "pressure",             returnpolicy="reference_internal")
+    volume =                       PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "volume",             returnpolicy="reference_internal")
     soundSpeed =                   PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "soundSpeed",           returnpolicy="reference_internal")
-    Hideal =                       PYB11property("const FieldList<%(Dimension)s, SymTensor>&","Hideal",               returnpolicy="reference_internal")
     normalization =                PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "normalization",        returnpolicy="reference_internal")
-    weightedNeighborSum =          PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "weightedNeighborSum",  returnpolicy="reference_internal")
-    massSecondMoment =             PYB11property("const FieldList<%(Dimension)s, SymTensor>&","massSecondMoment",     returnpolicy="reference_internal")
     XSPHWeightSum =                PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "XSPHWeightSum",        returnpolicy="reference_internal")
     XSPHDeltaV =                   PYB11property("const FieldList<%(Dimension)s, Vector>&",   "XSPHDeltaV",           returnpolicy="reference_internal")
     M =                            PYB11property("const FieldList<%(Dimension)s, Tensor>&",   "M",                    returnpolicy="reference_internal")
     DxDt =                         PYB11property("const FieldList<%(Dimension)s, Vector>&",   "DxDt",                 returnpolicy="reference_internal")
     DvDt =                         PYB11property("const FieldList<%(Dimension)s, Vector>&",   "DvDt",                 returnpolicy="reference_internal")
     DspecificThermalEnergyDt =     PYB11property("const FieldList<%(Dimension)s, Scalar>&",   "DspecificThermalEnergyDt", returnpolicy="reference_internal")
-    DHDt =                         PYB11property("const FieldList<%(Dimension)s, SymTensor>&","DHDt",                 returnpolicy="reference_internal")
     DvDx =                         PYB11property("const FieldList<%(Dimension)s, Tensor>&",   "DvDx",                 returnpolicy="reference_internal")
     
-    pairAccelerations = PYB11property("const std::vector<Vector>&", "pairAccelerations", returnpolicy="reference_internal")
-    pairDepsDt = PYB11property("const std::vector<Scalar>&", "pairDepsDt", returnpolicy="reference_internal")
+    pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")
+    pairDepsDt = PYB11property("const PairWorkType&", "pairDepsDt", returnpolicy="reference_internal")
     riemannDpDx = PYB11property("const FieldList<%(Dimension)s, Vector>&","riemannDpDx",returnpolicy="reference_internal")
     newRiemannDpDx = PYB11property("const FieldList<%(Dimension)s, Vector>&","newRiemannDpDx",returnpolicy="reference_internal")
     riemannDvDx = PYB11property("const FieldList<%(Dimension)s, Tensor>&","riemannDvDx",returnpolicy="reference_internal")

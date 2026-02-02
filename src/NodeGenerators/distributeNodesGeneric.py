@@ -53,7 +53,6 @@ def distributeNodesGeneric(listOfNodeTuples,
 
         # Find the maximum kernel extent for all NodeLists.
         kernelExtent = max(kernelExtent, nodes.neighbor().kernelExtent)
-        one = eval("Spheral.SymTensor%id.one" % db.nDim)
         hminInv = 1.0/nodes.hmin
         hmaxInv = 1.0/nodes.hmax
 
@@ -125,11 +124,11 @@ def distributeNodesGeneric(listOfNodeTuples,
 
     # Update the neighboring info.
     #exec("Spheral.Neighbor%id.setBoundingBox()" % db.nDim)
-    for nodes in db.nodeLists():
+    for nodes in db.nodeLists:
         nodes.neighbor().updateNodes()
 
     # Make sure we finished with the correct numbers of nodes!
-    totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists()]), mpi.SUM)
+    totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists]), mpi.SUM)
     assert totalCheck == totalNumGlobalNodes
 
     # Stuff any extra field values back in the initial lists.

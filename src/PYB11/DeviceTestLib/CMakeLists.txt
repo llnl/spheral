@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(DeviceTestLib)
+spheral_add_pybind11_library(DeviceTestLib SPHERAL_MODULE_LIST)

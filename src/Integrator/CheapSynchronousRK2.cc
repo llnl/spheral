@@ -21,31 +21,8 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CheapSynchronousRK2<Dimension>::CheapSynchronousRK2():
-  Integrator<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CheapSynchronousRK2<Dimension>::
-CheapSynchronousRK2(DataBase<Dimension>& dataBase):
-  Integrator<Dimension>(dataBase) {
-}
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
@@ -55,26 +32,6 @@ CheapSynchronousRK2<Dimension>::
 CheapSynchronousRK2(DataBase<Dimension>& dataBase,
                const vector<Physics<Dimension>*>& physicsPackages):
   Integrator<Dimension>(dataBase, physicsPackages) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CheapSynchronousRK2<Dimension>::~CheapSynchronousRK2() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CheapSynchronousRK2<Dimension>&
-CheapSynchronousRK2<Dimension>::
-operator=(const CheapSynchronousRK2<Dimension>& rhs) {
-  if (this != &rhs) {
-    Integrator<Dimension>::operator=(rhs);
-  }
-  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -120,8 +77,8 @@ step(typename Dimension::Scalar maxTime,
   state.update(derivs, hdt, t, hdt);
   this->currentTime(t + hdt);
   this->applyGhostBoundaries(state, derivs);
-  this->postStateUpdate(t + hdt, hdt, db, state, derivs);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + hdt, hdt, db, state, derivs);
   TIME_END("CheapRK2MidStep");
 
   // Evaluate the derivatives at the midpoint.
@@ -152,9 +109,8 @@ step(typename Dimension::Scalar maxTime,
   state.update(derivs, dt, t, dt);
   this->currentTime(t + dt);
   this->applyGhostBoundaries(state, derivs);
-  this->postStateUpdate(t + dt, dt, db, state, derivs);
   this->finalizeGhostBoundaries();
-  // this->enforceBoundaries(state, derivs);
+  this->postStateUpdate(t + dt, dt, db, state, derivs);
   TIME_END("CheapRK2EndStep");
 
   // Apply any physics specific finalizations.

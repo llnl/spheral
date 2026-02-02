@@ -96,7 +96,7 @@ commandLine(# discretization & domain
             graphics = True,
             clearDirectories = False,
             dataDirBase = "dumps-planar-Sedov",
-            outputFile = "None",
+            outputFile = None,
             )
 
 if smallPressure:
@@ -346,10 +346,10 @@ if not gsph:
     # Construct the MMRV physics object.
     #-------------------------------------------------------------------------------
     if boolReduceViscosity:
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
         packages.append(evolveReducingViscosityMultiplier)
     elif boolCullenViscosity:
-        evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
         packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -454,7 +454,7 @@ Aans = mpi.bcast(Aans, 0)
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None" and mpi.rank == 0:
+if outputFile and mpi.rank == 0:
     outputFile = os.path.join(dataDir, outputFile)
     f = open(outputFile, "w")
     f.write(("# " + 14*"%15s " + "\n") % ("r", "x", "rho", "P", "v", "eps", "A", "hr",

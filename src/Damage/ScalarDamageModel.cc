@@ -347,7 +347,7 @@ finalize(const typename Dimension::Scalar time,
         // Identify the direction we're going to fail in (the crack orientation).
         Vector strainDirection;
         {
-          const SymTensor sigmai = S(i) - P(i)*SymTensor::one;
+          const SymTensor sigmai = S(i) - P(i)*SymTensor::one();
           const typename SymTensor::EigenStructType eigen = sigmai.eigenVectors();
           double maxValue = -DBL_MAX;
           int k = 0;

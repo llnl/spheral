@@ -29,8 +29,8 @@ weibullFlawDistributionBenzAsphaug(double volume,
                                    const double mWeibull,
                                    const FluidNodeList<Dimension>& nodeList,
                                    const State<Dimension>& state,
-                                   const int minFlawsPerNode,
-                                   const int minTotalFlaws,
+                                   const size_t minFlawsPerNode,
+                                   const size_t minTotalFlaws,
                                    const Field<Dimension, int>& mask);
 
 }

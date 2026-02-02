@@ -31,10 +31,10 @@ NodeList.
     # Constructors
     def pyinit(self,
                nodeList = "const NodeList<%(Dimension)s>&",
-               nodeIndices = "const std::vector<int>&"):
+               nodeIndices = "const std::vector<size_t>&"):
         "Construct a constant velocity boundary for the specified nodes"
 
-    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodeList, py::list nodeIndices) { return std::make_unique<ConstantVelocityBoundary<%(Dimension)s>>(nodeList, Spheral::PYB11utils::from_list<int>(nodeIndices)); }")
+    @PYB11implementation("[](const NodeList<%(Dimension)s>& nodeList, py::list nodeIndices) { return std::make_unique<ConstantVelocityBoundary<%(Dimension)s>>(nodeList, Spheral::PYB11utils::from_list<size_t>(nodeIndices)); }")
     def pyinit1(self,
                 nodeList = "const NodeList<%(Dimension)s>&",
                 nodeIndices = "py::list"):
@@ -50,7 +50,7 @@ NodeList.
     #...........................................................................
     # Properties
     nodeList = PYB11property("const NodeList<%(Dimension)s>&", "nodeList", doc="The NodeList this boundary applies to")
-    nodeIndices = PYB11property("std::vector<int>", "nodeIndices", doc="The nodes this boundary is in control of")
+    nodeIndices = PYB11property("std::vector<size_t>", "nodeIndices", doc="The nodes this boundary is in control of")
     velocityCondition = PYB11property("std::vector<Vector>", "velocityCondition", doc="The velocities for the nodes we control")
 
 #-------------------------------------------------------------------------------

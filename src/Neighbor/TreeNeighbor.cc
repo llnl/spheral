@@ -13,7 +13,7 @@
 #include "NodeList/NodeList.hh"
 #include "Utilities/globalBoundingVolumes.hh"
 #include "Utilities/packElement.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 #include "Utilities/FastMath.hh"
 #include "Boundary/mapPositionThroughPlanes.hh"
 #include "Geometry/Dimension.hh"
@@ -29,12 +29,6 @@
 #include <algorithm>
 using std::vector;
 using std::map;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -246,7 +240,7 @@ setRefineNeighborList(const Vector& position,
                       const std::vector<int>& coarseNeighbors,
                       std::vector<int>& refineNeighbors) const {
   REQUIRE(H > 0.0);
-  this->setTreeRefineNeighborList(position, H*SymTensor::one, coarseNeighbors, refineNeighbors);
+  this->setTreeRefineNeighborList(position, H*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 template<typename Dimension>
@@ -266,7 +260,7 @@ TreeNeighbor<Dimension>::
 setRefineNeighborList(const Vector& position,
                       const std::vector<int>& coarseNeighbors,
                       std::vector<int>& refineNeighbors) const {
-  this->setTreeRefineNeighborList(position, 1.0e30*mBoxLength*SymTensor::one, coarseNeighbors, refineNeighbors);
+  this->setTreeRefineNeighborList(position, 1.0e30*mBoxLength*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 //------------------------------------------------------------------------------
@@ -298,7 +292,7 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
     while (remainingDaughters.size() > 0) {
       newDaughters = vector<Cell*>();
       ++ilevel;
-      cellSize = mBoxLength/(1U << ilevel);
+      cellSize = this->cellSize(ilevel);
     
       // Walk the candidates.
       for (typename vector<Cell*>::const_iterator itr = remainingDaughters.begin();
@@ -525,7 +519,7 @@ dumpTree(const Tree& tree,
   std::stringstream ss;
   CellKey ix, iy, iz;
   unsigned nlevels = tree.size();
-  if (globalTree) nlevels = allReduce(nlevels, MPI_MAX, Communicator::communicator());
+  if (globalTree) nlevels = allReduce(nlevels, SPHERAL_OP_MAX);
 
   ss << "Tree : nlevels = " << nlevels << "\n";
   for (unsigned ilevel = 0; ilevel != nlevels; ++ilevel) {
@@ -542,7 +536,7 @@ dumpTree(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {
@@ -607,7 +601,7 @@ dumpTreeStatistics(const Tree& tree,
                    const bool globalTree) const {
   std::stringstream ss;
   unsigned nlevels = tree.size();
-  if (globalTree) nlevels = allReduce(nlevels, MPI_MAX, Communicator::communicator());
+  if (globalTree) nlevels = allReduce(nlevels, SPHERAL_OP_MAX);
 
   ss << "Tree : nlevels = " << nlevels << "\n";
   for (unsigned ilevel = 0; ilevel != nlevels; ++ilevel) {
@@ -624,7 +618,7 @@ dumpTreeStatistics(const Tree& tree,
         this->serialize(itr->second, localBuffer);
       }
     }
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const unsigned numProcs = Process::getTotalNumberOfProcesses();
     const unsigned rank = Process::getRank();
     if (globalTree) {
@@ -824,7 +818,7 @@ typename TreeNeighbor<Dimension>::Vector
 TreeNeighbor<Dimension>::
 nearestCellCenter(const Vector& xi,
                   const double hi) const {
-  return this->nearestCellCenter(xi, SymTensor::one * 1.0/hi);
+  return this->nearestCellCenter(xi, SymTensor::one() * 1.0/hi);
 }
 
 //------------------------------------------------------------------------------
@@ -854,7 +848,7 @@ bool
 TreeNeighbor<Dimension>::
 occupied(const Vector& xi,
          const double hi) const {
-  return this->occupied(xi, SymTensor::one * 1.0/hi);
+  return this->occupied(xi, SymTensor::one() * 1.0/hi);
 }
 
 //------------------------------------------------------------------------------

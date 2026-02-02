@@ -3,24 +3,22 @@
 //
 // Created by JMO, Tue Oct 12 23:07:22 PDT 2010
 //----------------------------------------------------------------------------//
-#include "boost/unordered_map.hpp"
-#include "boost/functional/hash.hpp"
+#include <map>
+#include <unordered_map>
+#include <functional>
 #include "boost/bimap.hpp"
-using namespace boost;
-using ::boost::unordered_map;
-using std::min;
-using std::max;
-using std::abs;
+
+using std::unordered_map;
 
 #include "MeshConstructionUtilities.hh"
 #include "Utilities/removeElements.hh"
 #include "Utilities/DBC.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 #include "Utilities/boundingBox.hh"
 #include "Distributed/Communicator.hh"
 #include "NodeList/NodeList.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #include "Utilities/packElement.hh"
 #endif
@@ -45,7 +43,7 @@ namespace Spheral {
 
 namespace { // anonymous
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 //------------------------------------------------------------------------------
 // Look for anyone who has a non-empty string.
 //------------------------------------------------------------------------------
@@ -54,8 +52,7 @@ reduceToMaxString(const string& x,
                   const unsigned rank,
                   const unsigned numDomains) {
   unsigned badRank = allReduce((x.size() == 0 ? numDomains : rank),
-                               MPI_MIN,
-                               Communicator::communicator());
+                               SPHERAL_OP_MIN);
   if (badRank == numDomains) {
     return "";
   } else {
@@ -474,7 +471,7 @@ removeZonesByMask(const vector<unsigned>& zoneMask) {
   removeElements(mSharedFaces, killDomains);
 
   // // Any pre-existing parallel info is now invalid.
-  // if (allReduce(mNeighborDomains.size(), MPI_MAX, Communicator::communicator()) > 0) {
+  // if (allReduce(mNeighborDomains.size(), SPHERAL_OP_MAX) > 0) {
   //   mNeighborDomains = vector<unsigned>();
   //   mSharedNodes = vector<vector<unsigned> >();
   //   mSharedFaces = vector<vector<unsigned> >();
@@ -736,28 +733,28 @@ generateDomainInfo() {
   REQUIRE(mNodePositions.size() == numNodes());
 
   // This method is empty and a no-op unless we're building a parallel code!
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 
   // Start out by determining the global extent of the mesh.
   Vector xmin, xmax;
   this->boundingBox(xmin, xmax);
 
   // Define the hashing scale.
-  const double dxhash = (xmax - xmin).maxElement() / std::numeric_limits<KeyElement>::max();
+  const double dxhash = (xmax - xmin).maxElement() / double(std::numeric_limits<KeyElement>::max());
 
   // Puff out the bounds a bit.  We do the all reduce just to ensure
   // bit perfect consistency across processors.
   Vector boxInv;
   for (unsigned i = 0; i != Dimension::nDim; ++i) {
-    xmin(i) = allReduce(xmin(i) - dxhash, MPI_MIN, Communicator::communicator());
-    xmax(i) = allReduce(xmax(i) + dxhash, MPI_MAX, Communicator::communicator());
+    xmin(i) = allReduce(xmin(i) - dxhash, SPHERAL_OP_MIN);
+    xmax(i) = allReduce(xmax(i) + dxhash, SPHERAL_OP_MAX);
     boxInv(i) = safeInv(xmax(i) - xmin(i));
   }
 
   // Hash the node positions.  We want these sorted by key as well
   // to make testing if a key is present fast.
   vector<Key> nodeHashes;
-  boost::unordered_map<Key, unsigned> key2nodeID;
+  std::map<Key, unsigned> key2nodeID;
   nodeHashes.reserve(numNodes());
   for (unsigned i = 0; i != numNodes(); ++i) {
     nodeHashes.push_back(hashPosition(mNodePositions[i], xmin, xmax, boxInv));
@@ -856,7 +853,7 @@ generateDomainInfo() {
 
   // Determine which process owns each shared node.  We use the convention that the process
   // with the lowest rank wins.
-  boost::unordered_map<unsigned, unsigned> nodeOwner;
+  std::unordered_map<unsigned, unsigned> nodeOwner;
   for (unsigned k = 0; k != mNeighborDomains.size(); ++k) {
     for (unsigned j = 0; j != mSharedNodes[k].size(); ++j) {
       CHECK(k < mSharedNodes.size() and j < mSharedNodes[k].size());
@@ -1020,7 +1017,7 @@ generateParallelRind(vector<typename Dimension::Vector>& generators,
   REQUIRE(generators.size() == this->numZones());
   REQUIRE(Hs.size() == this->numZones());
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel procs.
   const unsigned numDomains = Process::getTotalNumberOfProcesses();
   //const unsigned rank = Process::getRank();
@@ -1033,14 +1030,14 @@ generateParallelRind(vector<typename Dimension::Vector>& generators,
     this->boundingBox(xmin, xmax);
 
     // Define the hashing scale.
-    const double dxhash = (xmax - xmin).maxElement() / std::numeric_limits<KeyElement>::max();
+    const double dxhash = (xmax - xmin).maxElement() / double(std::numeric_limits<KeyElement>::max());
 
     // Puff out the bounds a bit.  We do the all reduce just to ensure
     // bit perfect consistency across processors.
     Vector boxInv;
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
-      xmin(i) = allReduce(xmin(i) - dxhash, MPI_MIN, Communicator::communicator());
-      xmax(i) = allReduce(xmax(i) + dxhash, MPI_MAX, Communicator::communicator());
+      xmin(i) = allReduce(xmin(i) - dxhash, SPHERAL_OP_MIN);
+      xmax(i) = allReduce(xmax(i) + dxhash, SPHERAL_OP_MAX);
       boxInv(i) = safeInv(xmax(i) - xmin(i));
     }
 
@@ -1214,7 +1211,7 @@ globalMeshNodeIDs() const {
 
   // If we're serial this is easy!
   vector<unsigned> result(nlocal, UNSETID);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   if (numDomains != 1) {
     unsigned nown;
     const unsigned rank = Process::getRank();
@@ -1447,10 +1444,10 @@ Mesh<Dimension>::
 boundingBox(typename Dimension::Vector& xmin,
             typename Dimension::Vector& xmax) const {
   Spheral::boundingBox(mNodePositions, xmin, xmax);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   for (unsigned i = 0; i != Dimension::nDim; ++i) {
-    xmin(i) = allReduce(xmin(i), MPI_MIN, Communicator::communicator());
-    xmax(i) = allReduce(xmax(i), MPI_MAX, Communicator::communicator());
+    xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
+    xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
   }
 #endif
 }
@@ -1467,7 +1464,7 @@ boundingBox(typename Dimension::Vector& xmin,
 //   cerr << Process::getRank() << " Mesh::buildAncillaryCommData 1" << endl;
 //   mSharedFaces = vector<vector<unsigned> >();
 
-// #ifdef USE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //   // Compute the shared faces.  First get the unique global face IDs.
 //   const vector<unsigned> globalNodeIDs = this->globalMeshNodeIDs();
 //   const vector<unsigned> globalFaceIDs = this->globalMeshFaceIDs(globalNodeIDs);
@@ -1530,7 +1527,7 @@ boundingBox(typename Dimension::Vector& xmin,
 //   // Post-conditions.
 //   ENSURE(mSharedNodes.size() == mNeighborDomains.size());
 //   ENSURE(mSharedFaces.size() == mNeighborDomains.size());
-// #ifdef USE_MPI
+// #ifdef SPHERAL_ENABLE_MPI
 //   BEGIN_CONTRACT_SCOPE
 //   {
 //     cerr << Process::getRank() << " Mesh::buildAncillaryCommData 6" << endl;
@@ -1613,7 +1610,7 @@ validDomainInfo(const typename Dimension::Vector& xmin,
 
   CONTRACT_VAR(xmin);
   CONTRACT_VAR(xmax);
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const unsigned rank = Process::getRank();
   const unsigned numDomains = Process::getTotalNumberOfProcesses();
 

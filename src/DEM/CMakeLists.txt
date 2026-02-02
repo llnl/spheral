@@ -9,13 +9,13 @@ set(DEM_inst
     SolidBoundary/RectangularPlaneSolidBoundary
     SolidBoundary/CylinderSolidBoundary
     SolidBoundary/SphereSolidBoundary
+    SolidBoundary/ClippedSphereSolidBoundary
     ReplacePairFieldList
     IncrementPairFieldList
     ReplaceAndIncrementPairFieldList
     LinearSpringDEM)
 
 set(DEM_sources
-    DEMFieldNames.cc
     ContactStorageLocation.cc
     DEMDimension.cc)
 
@@ -29,6 +29,7 @@ set(DEM_headers
     SolidBoundary/RectangularPlaneSolidBoundary.hh
     SolidBoundary/CylinderSolidBoundary.hh
     SolidBoundary/SphereSolidBoundary.hh
+    SolidBoundary/ClippedSphereSolidBoundary.hh
     ReplacePairFieldList.hh
     ReplaceAndIncrementPairFieldList.hh
     IncrementPairFieldList.hh

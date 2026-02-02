@@ -7,7 +7,7 @@ if(ENABLE_TESTS)
   else()
     set(SPHERAL_DEPEND Spheral_CXX)
   endif()
-  blt_add_executable( NAME spheral_cuda_test
-                      SOURCES Spheral_CUDA_Test.cc
+  blt_add_executable( NAME spheral_offload_test
+                      SOURCES spheral_offload_test.cc
                       DEPENDS_ON ${SPHERAL_DEPEND} ${spheral_blt_cxx_depends})
 endif()

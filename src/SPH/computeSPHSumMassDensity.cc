@@ -10,10 +10,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
-
 template<typename Dimension, typename KernelType>
 void
 computeSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,

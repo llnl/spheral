@@ -9,8 +9,7 @@ from Spheral import *
 
 # Create a global random number generator.
 import random
-random.seed(375)
-rangen = random.Random()
+random.seed(3754589209)
 ranrange = 1.0e8
 
 #===============================================================================
@@ -35,16 +34,16 @@ def randomSymTensor3d(lam1 = None,
                       lam3 = None):
 
     if lam1 is None:
-        lam1 = rangen.uniform(-ranrange, ranrange)
+        lam1 = random.uniform(-ranrange, ranrange)
     if lam2 is None:
-        lam2 = rangen.uniform(-ranrange, ranrange)
+        lam2 = random.uniform(-ranrange, ranrange)
     if lam3 is None:
-        lam3 = rangen.uniform(-ranrange, ranrange)
+        lam3 = random.uniform(-ranrange, ranrange)
 
     # Pick random Euler angles.
-    theta = rangen.uniform(0.0, 2.0*pi)
-    phi = rangen.uniform(0.0, pi)
-    psi = rangen.uniform(0.0, pi)
+    theta = random.uniform(0.0, 2.0*pi)
+    phi = random.uniform(0.0, pi)
+    psi = random.uniform(0.0, pi)
 
     # Build the rotation matrix of eigen vectors.
     R = Tensor3d(cos(psi)*cos(phi) - cos(theta)*sin(phi)*sin(psi),
@@ -118,7 +117,7 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testDoublyDegenerateEigenValues(self):
         for i in range(self.ntests):
-            lam12 = rangen.uniform(-ranrange, ranrange)
+            lam12 = random.uniform(-ranrange, ranrange)
             A, vlam0, vectors0 = randomSymTensor3d(lam1 = lam12,
                                                    lam2 = lam12)
             lam0 = [x for x in vlam0]
@@ -136,7 +135,7 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testTriplyDegenerateEigenValues(self):
         for i in range(self.ntests):
-            lam123 = rangen.uniform(-ranrange, ranrange)
+            lam123 = random.uniform(-ranrange, ranrange)
             A, vlam0, vectors0 = randomSymTensor3d(lam1 = lam123,
                                                    lam2 = lam123,
                                                    lam3 = lam123)
@@ -155,9 +154,9 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testDiagonalEigenValues(self):
         for i in range(self.ntests):
-            lam1 = rangen.uniform(-ranrange, ranrange)
-            lam2 = rangen.uniform(-ranrange, ranrange)
-            lam3 = rangen.uniform(-ranrange, ranrange)
+            lam1 = random.uniform(-ranrange, ranrange)
+            lam2 = random.uniform(-ranrange, ranrange)
+            lam3 = random.uniform(-ranrange, ranrange)
             A = SymTensor3d(lam1, 0.0, 0.0,
                             0.0, lam2, 0.0,
                             0.0, 0.0, lam3)
@@ -199,7 +198,7 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testDoublyDegenerateEigenVectors(self):
         for i in range(self.ntests):
-            lam12 = rangen.uniform(-ranrange, ranrange)
+            lam12 = random.uniform(-ranrange, ranrange)
             A, vlam0, vectors0 = randomSymTensor3d(lam1 = lam12,
                                                    lam2 = lam12)
             lam0 = [(vlam0(i), vectors0.getColumn(i)) for i in range(3)]
@@ -255,7 +254,7 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testTriplyDegenerateEigenVectors(self):
         for i in range(self.ntests):
-            lam123 = rangen.uniform(-ranrange, ranrange)
+            lam123 = random.uniform(-ranrange, ranrange)
             A = SymTensor3d(lam123, 0.0, 0.0,
                             0.0, lam123, 0.0,
                             0.0, 0.0, lam123)
@@ -280,12 +279,9 @@ class TestEigenVectors(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testDiagonalEigenVectors(self):
         for i in range(self.ntests):
-            lam1 = rangen.uniform(-ranrange, ranrange)
-            lam2 = rangen.uniform(-ranrange, ranrange)
-            lam3 = rangen.uniform(-ranrange, ranrange)
-            A = SymTensor3d(lam1, 0.0, 0.0,
-                            0.0, lam2, 0.0,
-                            0.0, 0.0, lam3)
+            lam1 = random.uniform(-ranrange, ranrange)
+            lam2 = random.uniform(-ranrange, ranrange)
+            lam3 = random.uniform(-ranrange, ranrange)
             A = SymTensor3d(lam1, 0.0, 0.0,
                             0.0, lam2, 0.0,
                             0.0, 0.0, lam3)

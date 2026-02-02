@@ -1,13 +1,13 @@
 
 # Solid FSISPH
 #
-#ATS:fsisph1 = test(           SELF, "--fsisph True --solid True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Water-Gas Sod problem with FSISPH -- 1-D (serial)")
-#ATS:fsisph2 = testif(fsisph1, SELF, "--fsisph True --solid True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Water-Gas Sod problem with FSISPH -- 1-D (serial) RESTART CHECK")
+#ATS:fsisph1 = test(           SELF, "--fsisph True --solid True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Water-Gas Sod problem with FSISPH -- 1-D (serial)", fsisph=True)
+#ATS:fsisph2 = testif(fsisph1, SELF, "--fsisph True --solid True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Water-Gas Sod problem with FSISPH -- 1-D (serial) RESTART CHECK", fsisph=True)
 #
 # GSPH
 #
-#ATS:gsph1 = test(         SELF, "--gsph True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Water-Gas Sod problem with GSPH -- 1-D (serial)")
-#ATS:gsph2 = testif(gsph1, SELF, "--gsph True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Water-Gas Sod problem with GSPH -- 1-D (serial) RESTART CHECK")
+#ATS:gsph1 = test(         SELF, "--gsph True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Water-Gas Sod problem with GSPH -- 1-D (serial)", gsph=True)
+#ATS:gsph2 = testif(gsph1, SELF, "--gsph True --nx1 500 --nx2 30 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Water-Gas Sod problem with GSPH -- 1-D (serial) RESTART CHECK", gsph=True)
 #
 
 import os, sys
@@ -130,7 +130,7 @@ commandLine(nx1 = 1000,     # number of nodes
             restartStep = 10000,
             dataDirBase = "dumps-Sod-planar",
             restartBaseName = "Sod-planar-1d-restart",
-            outputFile = "None",
+            outputFile = None,
             checkRestart = False,
             graphics = True,
             )
@@ -400,10 +400,10 @@ if not (gsph or mfm):
     # Construct the MMRV physics object.
     #-------------------------------------------------------------------------------
     if boolReduceViscosity:
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,nh,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,nh,aMin,aMax)
         packages.append(evolveReducingViscosityMultiplier)
     elif boolCullenViscosity:
-        evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
         packages.append(evolveCullenViscosityMultiplier)
 
 
@@ -610,7 +610,7 @@ rmin = x0
 rmax = x2
 if mpi.rank == 0:
     multiSort(mo, xprof, rhoprof, Pprof, vprof, epsprof, hprof)
-    if outputFile != "None":
+    if outputFile:
         outputFile = os.path.join(dataDir, outputFile)
         f = open(outputFile, "w")
         f.write(("#  " + 17*"'%s' " + "\n") % ("x", "rho", "P", "v", "eps", "h", "mo",

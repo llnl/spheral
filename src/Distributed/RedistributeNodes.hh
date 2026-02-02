@@ -11,10 +11,6 @@
 #include <string>
 #include <vector>
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-
 namespace Spheral {
 
 template<typename Dimension> class DataBase;
@@ -55,13 +51,13 @@ public:
 
   // Calculate the current domain decomposition, and return it as a set of 
   // DomainNode identifiers.
-  std::vector<DomainNode<Dimension> > currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                                                                 const FieldList<Dimension, int>& globalNodeIDs) const;
+  std::vector<DomainNode<Dimension>> currentDomainDecomposition(const DataBase<Dimension>& dataBase,
+                                                                const FieldList<Dimension, size_t>& globalNodeIDs) const;
 
   // Same as above, but fills in work field in the DomainNodes.
-  std::vector<DomainNode<Dimension> > currentDomainDecomposition(const DataBase<Dimension>& dataBase,
-                                                                 const FieldList<Dimension, int>& globalNodeIDs,
-                                                                 const FieldList<Dimension, Scalar>& workPerNode) const;
+  std::vector<DomainNode<Dimension>> currentDomainDecomposition(const DataBase<Dimension>& dataBase,
+                                                                const FieldList<Dimension, size_t>& globalNodeIDs,
+                                                                const FieldList<Dimension, Scalar>& workPerNode) const;
 
   // Given a desired domain decomposition (as a vector<DomainNode>), reassign
   // nodes appropriately.

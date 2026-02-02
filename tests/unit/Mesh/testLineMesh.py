@@ -35,7 +35,7 @@ def meshScales(xnodes, xmin, xmax):
 # Create a global random number generator.
 #===============================================================================
 import random
-rangen = random.Random()
+random.seed(589290234)
 
 #===============================================================================
 # Some boundary conditions.
@@ -281,7 +281,7 @@ class UniformLineMeshTests(unittest.TestCase, LineMeshGenericTests):
 
         # Generate initial positions, and split them up between domains appropriately.
         dxavg = (x1 - x0)/nx
-        xnodes = [x0 + (i + 0.5)*dxavg for i in range(nx)] # [rangen.uniform(x0, x1) for i in xrange(nx)]
+        xnodes = [x0 + (i + 0.5)*dxavg for i in range(nx)] # [random.uniform(x0, x1) for i in xrange(nx)]
         xnodes.sort()
         self.dxmin, self.dxmax = meshScales(xnodes, x0, x1)
         for proc in range(numDomains):
@@ -309,13 +309,11 @@ class UniformLineMeshTests(unittest.TestCase, LineMeshGenericTests):
             bc.finalizeGhostBoundary()
         db = DataBase()
         db.appendNodeList(self.nodes)
-        vecbound = vector_of_Boundary()
-        for bc in bclist:
-            vecbound.append(bc)
         WT = TableKernel(BSplineKernel(), 1000)
-        smooth = SPHSmoothingScale()
-        iterateIdealH(db, vecbound, WT, smooth,
-                      tolerance = 1.0e-4)
+        smooth = SPHSmoothingScale(IdealH, WT)
+        iterateIdealH(db,
+                      vector_of_Physics([smooth]),
+                      vector_of_Boundary(bclist))
         return
 
     #---------------------------------------------------------------------------
@@ -393,12 +391,11 @@ class UniformGapLineMeshTests(unittest.TestCase, LineMeshGenericTests):
             bc.finalizeGhostBoundary()
         db = DataBase()
         db.appendNodeList(self.nodes)
-        vecbound = vector_of_Boundary()
-        for bc in bclist:
-            vecbound.append(bc)
         WT = TableKernel(BSplineKernel(), 1000)
-        smooth = SPHSmoothingScale()
-        iterateIdealH(db, vecbound, WT, smooth)
+        smooth = SPHSmoothingScale(IdealH, WT)
+        iterateIdealH(db,
+                      vector_of_Physics([smooth]),
+                      vector_of_Boundary(bclist))
         return
 
     #---------------------------------------------------------------------------
@@ -444,7 +441,7 @@ class RandomLineMeshTests(unittest.TestCase, LineMeshGenericTests):
 
         # Generate initial positions, and split them up between domains appropriately.
         dxavg = (x1 - x0)/nx
-        xnodes = [rangen.uniform(x0, x1) for i in range(nx)]
+        xnodes = [random.uniform(x0, x1) for i in range(nx)]
         xnodes.sort()
         self.dxmin, self.dxmax = meshScales(xnodes, x0, x1)
         for proc in range(numDomains):
@@ -472,12 +469,11 @@ class RandomLineMeshTests(unittest.TestCase, LineMeshGenericTests):
             bc.finalizeGhostBoundary()
         db = DataBase()
         db.appendNodeList(self.nodes)
-        vecbound = vector_of_Boundary()
-        for bc in bclist:
-            vecbound.append(bc)
         WT = TableKernel(BSplineKernel(), 1000)
-        smooth = SPHSmoothingScale()
-        iterateIdealH(db, vecbound, WT, smooth)
+        smooth = SPHSmoothingScale(IdealH, WT)
+        iterateIdealH(db,
+                      vector_of_Physics([smooth]),
+                      vector_of_Boundary(bclist))
         return
 
     #---------------------------------------------------------------------------

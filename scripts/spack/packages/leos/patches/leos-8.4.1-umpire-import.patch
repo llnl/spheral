@@ -1,0 +1,41 @@
+diff -u -b -r a/cmake/TPL_Setup/SetupUmpire.cmake b/cmake/TPL_Setup/SetupUmpire.cmake
+--- a/cmake/TPL_Setup/SetupUmpire.cmake
++++ b/cmake/TPL_Setup/SetupUmpire.cmake
+@@ -16,9 +16,14 @@ else()
+   # Look for directory with umpire-config.cmake
+   set ( BASE_UMPIRE_DIR ${UMPIRE_DIR} )
+ 
++  message(STATUS "Passed in UMPIRE_DIR: ${UMPIRE_DIR}")
++  message(STATUS "Updated BASE_UMPIRE_DIR: ${BASE_UMPIRE_DIR}")
++
+   # Check for directory holding umpire-config.cmake
+   if ( IS_DIRECTORY ${BASE_UMPIRE_DIR}/lib/cmake/umpire)
+     set (UMPIRE_DIR ${BASE_UMPIRE_DIR}/lib/cmake/umpire)
++  elseif ( IS_DIRECTORY ${BASE_UMPIRE_DIR}/lib64/cmake/umpire)
++    set (UMPIRE_DIR ${BASE_UMPIRE_DIR}/lib64/cmake/umpire)
+   elseif(IS_DIRECTORY ${BASE_UMPIRE_DIR}/share/umpire/cmake)
+     set (UMPIRE_DIR ${BASE_UMPIRE_DIR}/share/umpire/cmake)
+   elseif(NOT EXISTS ${UMPIRE_DIR}/umpire-config.cmake)
+@@ -26,6 +31,9 @@ else()
+   endif()
+ endif()
+ 
++message(STATUS "Modified UMPIRE_DIR: ${UMPIRE_DIR}")
++
++
+ if ( DEFINED camp_DIR )
+ 
+   string(FIND ${camp_DIR} "lib/cmake/camp"   NEW_CAMP_CONFIG_LOC)
+@@ -65,7 +73,11 @@ else()
+ endif()
+ 
+ #set(UMPIRE_MIN_VERSION "5.0") 
+-find_package(UMPIRE ${UMPIRE_MIN_VERSION} REQUIRED)
++find_package(UMPIRE ${UMPIRE_MIN_VERSION} REQUIRED NO_DEFAULT_PATH
++                    PATHS ${UMPIRE_DIR}/share/umpire/cmake
++                         ${UMPIRE_DIR}/lib/cmake/umpire
++                         ${UMPIRE_DIR}/lib64/cmake/umpire
++                         ${UMPIRE_DIR})
+ 
+ if (UMPIRE_FOUND) 
+ 

@@ -5,7 +5,7 @@ from LimiterBaseAbstractMethods import *
 # Base class for riemann solver wave speeds
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class LimiterBase:
 
     PYB11typedefs = """
@@ -41,7 +41,7 @@ PYB11inject(LimiterBaseAbstractMethods, LimiterBase, pure_virtual=True)
 # minmod limiter
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class MinModLimiter(LimiterBase):
 
     PYB11typedefs = """
@@ -69,7 +69,7 @@ class MinModLimiter(LimiterBase):
 # VanLeer limiter
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class VanLeerLimiter(LimiterBase):
 
     PYB11typedefs = """
@@ -97,7 +97,7 @@ class VanLeerLimiter(LimiterBase):
 # VanAlba limiter
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class VanAlbaLimiter(LimiterBase):
 
     PYB11typedefs = """
@@ -125,7 +125,7 @@ class VanAlbaLimiter(LimiterBase):
 # Superbee limiter
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class SuperbeeLimiter(LimiterBase):
 
     PYB11typedefs = """
@@ -153,7 +153,7 @@ class SuperbeeLimiter(LimiterBase):
 # Ospre limiter
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class OspreLimiter(LimiterBase):
 
     PYB11typedefs = """
@@ -162,6 +162,34 @@ class OspreLimiter(LimiterBase):
 
     def pyinit():
         "Ospre slope limiter constructor"
+
+    @PYB11virtual
+    @PYB11const
+    def slopeLimiter(self,
+                     x = "const Scalar"):
+        "slope limiter from flux limiter."
+        return "Scalar"
+
+    @PYB11virtual
+    @PYB11const
+    def fluxLimiter(self,
+                     x = "const Scalar"):
+        "slope limiter from flux limiter."
+        return "Scalar"
+
+#-------------------------------------------------------------------------------
+# Barth Jespersen limiter
+#-------------------------------------------------------------------------------
+@PYB11template("Dimension")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
+class BarthJespersenLimiter(LimiterBase):
+
+    PYB11typedefs = """
+  typedef typename %(Dimension)s::Scalar Scalar;
+  """
+
+    def pyinit():
+        "Barth Jespersen slope limiter constructor"
 
     @PYB11virtual
     @PYB11const

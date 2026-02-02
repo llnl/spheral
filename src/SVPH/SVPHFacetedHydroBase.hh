@@ -14,8 +14,7 @@ namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class SmoothingScaleBase;
-template<typename Dimension> class ArtificialViscosity;
+template<typename Dimension> class ArtificialViscosityHandle;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename DataType> class Field;
@@ -27,18 +26,17 @@ class SVPHFacetedHydroBase: public GenericHydro<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename Physics<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
-  typedef typename Physics<Dimension>::TimeStepType TimeStepType;
+  using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
+  using TimeStepType = typename Physics<Dimension>::TimeStepType;
 
   // Constructors.
-  SVPHFacetedHydroBase(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
-                       const TableKernel<Dimension>& W,
-                       ArtificialViscosity<Dimension>& Q,
+  SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
+                       ArtificialViscosityHandle<Dimension>& Q,
                        const double cfl,
                        const bool useVelocityMagnitudeForDt,
                        const bool compatibleEnergyEvolution,
@@ -46,11 +44,15 @@ public:
                        const bool linearConsistent,
                        const bool generateVoid,
                        const MassDensityType densityUpdate,
-                       const HEvolutionType HUpdate,
                        const Scalar fcentroidal,
                        const Scalar fcellPressure,
                        const Vector& xmin,
                        const Vector& xmax);
+
+  // No default constructor, copying, or assignment.
+  SVPHFacetedHydroBase() = delete;
+  SVPHFacetedHydroBase(const SVPHFacetedHydroBase&) = delete;
+  SVPHFacetedHydroBase& operator=(const SVPHFacetedHydroBase&) = delete;
 
   // Destructor.
   virtual ~SVPHFacetedHydroBase();
@@ -75,14 +77,6 @@ public:
   void registerDerivatives(DataBase<Dimension>& dataBase,
                            StateDerivatives<Dimension>& derivs) override;
 
-  // Initialize the Hydro before we start a derivative evaluation.
-  virtual
-  void initialize(const Scalar time,
-                  const Scalar dt,
-                  const DataBase<Dimension>& dataBase,
-                  State<Dimension>& state,
-                  StateDerivatives<Dimension>& derivs) override;
-                       
   // Evaluate the derivatives for the principle hydro variables:
   // mass density, velocity, and specific thermal energy.
   virtual
@@ -126,10 +120,6 @@ public:
   MassDensityType densityUpdate() const;
   void densityUpdate(MassDensityType type);
 
-  // Flag to select how we want to evolve the H tensor.
-  HEvolutionType HEvolution() const;
-  void HEvolution(HEvolutionType type);
-
   // Flag to determine if we're using the total energy conserving compatible energy
   // evolution scheme.
   bool compatibleEnergyEvolution() const;
@@ -164,9 +154,6 @@ public:
   // Access the stored interpolation kernel
   const TableKernel<Dimension>& kernel() const;
 
-  // The object defining how we evolve smoothing scales.
-  const SmoothingScaleBase<Dimension>& smoothingScaleMethod() const;
-
   // The tessellation.
   const Mesh<Dimension>& mesh() const;
 
@@ -179,29 +166,22 @@ public:
   const FieldList<Dimension, Scalar>&    cellPressure() const;
   const FieldList<Dimension, Scalar>&    soundSpeed() const;
   const FieldList<Dimension, Scalar>&    volume() const;
-  const FieldList<Dimension, Scalar>&    specificThermalEnergy0() const;
-  const FieldList<Dimension, SymTensor>& Hideal() const;
-  const FieldList<Dimension, Scalar>&    maxViscousPressure() const;
   const FieldList<Dimension, Scalar>&    massDensitySum() const;
-  const FieldList<Dimension, Scalar>&    weightedNeighborSum() const;
-  const FieldList<Dimension, SymTensor>& massSecondMoment() const;
   const FieldList<Dimension, Vector>&    XSVPHDeltaV() const;
   const FieldList<Dimension, Vector>&    DxDt() const;
   const FieldList<Dimension, Vector>&    DvDt() const;
   const FieldList<Dimension, Scalar>&    DmassDensityDt() const;
   const FieldList<Dimension, Scalar>&    DspecificThermalEnergyDt() const;
-  const FieldList<Dimension, SymTensor>& DHDt() const;
   const FieldList<Dimension, Tensor>&    DvDx() const;
   const FieldList<Dimension, Tensor>&    internalDvDx() const;
   // const FieldList<Dimension, std::vector<Scalar> >& faceMass() const;
   // const FieldList<Dimension, std::vector<Vector> >& faceVelocity() const;
   // const FieldList<Dimension, std::vector<Vector> >& faceAcceleration() const;
-  // const FieldList<Dimension, std::vector<Scalar> >& faceSpecificThermalEnergy0() const;
   const FieldList<Dimension, std::vector<Vector> >& faceForce() const;
 
   //****************************************************************************
   // Methods required for restarting.
-  virtual std::string label() const { return "SVPHFacetedHydroBase"; }
+  virtual std::string label() const override { return "SVPHFacetedHydroBase"; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************
@@ -211,12 +191,8 @@ protected:
   // The interpolation kernel
   const TableKernel<Dimension>& mKernel;
 
-  // The method defining how we evolve smoothing scales.
-  const SmoothingScaleBase<Dimension>& mSmoothingScaleMethod;
-
   // A bunch of switches.
   MassDensityType mDensityUpdate;
-  HEvolutionType mHEvolution;
   bool mCompatibleEnergyEvolution, mXSVPH, mLinearConsistent, mGenerateVoid;
   Scalar mfcentroidal, mfcellPressure;
 
@@ -224,7 +200,7 @@ protected:
   Vector mXmin, mXmax;
 
   // The mesh.
-  typedef std::shared_ptr<Mesh<Dimension> > MeshPtr;
+  using MeshPtr = std::shared_ptr<Mesh<Dimension> >;
   MeshPtr mMeshPtr;
 
   // Some internal scratch fields.
@@ -235,14 +211,8 @@ protected:
   FieldList<Dimension, Scalar>    mPressure;
   FieldList<Dimension, Scalar>    mCellPressure;
   FieldList<Dimension, Scalar>    mSoundSpeed;
-  FieldList<Dimension, Scalar>    mSpecificThermalEnergy0;
 
-  FieldList<Dimension, SymTensor> mHideal;
-  FieldList<Dimension, Scalar>    mMaxViscousPressure;
   FieldList<Dimension, Scalar>    mMassDensitySum;
-
-  FieldList<Dimension, Scalar>    mWeightedNeighborSum;
-  FieldList<Dimension, SymTensor> mMassSecondMoment;
 
   FieldList<Dimension, Vector>    mXSVPHDeltaV;
 
@@ -250,7 +220,6 @@ protected:
   FieldList<Dimension, Vector>    mDvDt;
   FieldList<Dimension, Scalar>    mDmassDensityDt;
   FieldList<Dimension, Scalar>    mDspecificThermalEnergyDt;
-  FieldList<Dimension, SymTensor> mDHDt;
   FieldList<Dimension, Tensor>    mDvDx;
   FieldList<Dimension, Tensor>    mInternalDvDx;
 
@@ -259,18 +228,12 @@ protected:
   // FieldList<Dimension, std::vector<Scalar> >    mFaceMass;
   // FieldList<Dimension, std::vector<Vector> >    mFaceVelocity;
   // FieldList<Dimension, std::vector<Vector> >    mFaceAcceleration;
-  // FieldList<Dimension, std::vector<Scalar> >    mFaceSpecificThermalEnergy0;
   FieldList<Dimension, std::vector<Vector> >    mFaceForce;
 
 private:
   //--------------------------- Private Interface ---------------------------//
   // The restart registration.
   RestartRegistrationType mRestart;
-
-  // No default constructor, copying, or assignment.
-  SVPHFacetedHydroBase();
-  SVPHFacetedHydroBase(const SVPHFacetedHydroBase&);
-  SVPHFacetedHydroBase& operator=(const SVPHFacetedHydroBase&);
 };
 
 }

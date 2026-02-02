@@ -23,8 +23,10 @@ namespace Spheral {
 class Box1d {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef GeomVector<1> Vector;
-  typedef GeomFacet1d Facet;
+  using Vector = GeomVector<1>;
+  using Tensor = GeomTensor<1>;
+  using SymTensor = GeomSymmetricTensor<1>;
+  using Facet = GeomFacet1d;
 
   //----------------------------------------------------------------------------
   // Constructors, assignment, destructor.
@@ -113,6 +115,8 @@ private:
   std::vector<Vector> mVertices;
   mutable std::vector<Facet> mFacets; // for now, just create this when we need it
 };
+
+std::ostream& operator<<(std::ostream& os, const Box1d& box);
 
 }
 

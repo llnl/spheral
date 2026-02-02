@@ -20,17 +20,17 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class SoundSpeedPolicy: public FieldUpdatePolicy<Dimension> {
+class SoundSpeedPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   SoundSpeedPolicy();
-  virtual ~SoundSpeedPolicy();
+  virtual ~SoundSpeedPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -43,10 +43,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  SoundSpeedPolicy(const SoundSpeedPolicy& rhs);
-  SoundSpeedPolicy& operator=(const SoundSpeedPolicy& rhs);
+  // Forbidden methodws
+  SoundSpeedPolicy(const SoundSpeedPolicy& rhs) = delete;
+  SoundSpeedPolicy& operator=(const SoundSpeedPolicy& rhs) = delete;
 };
 
 }

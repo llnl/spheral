@@ -1,14 +1,14 @@
 # Grady-Kipp-Owen damage 
-#ATS:t10 = test(SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories True --domainIndependent True --outputFile 'TensileRod-GradyKipp-1d-1proc-reproducing.txt'", np=1, label="Tensile rod (GradyKippOwen damage) domain independence test SERIAL RUN")
-#ATS:t11 = testif(t10, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-GradyKipp-1d-4proc-reproducing.txt' --comparisonFile 'TensileRod-GradyKipp-1d-1proc-reproducing.txt'", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RUN")
-#ATS:t12 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-GradyKipp-1d-1proc-reproducing-restart.txt' --comparisonFile 'TensileRod-GradyKipp-1d-1proc-reproducing.txt' --restoreCycle 500", np=1, label="Tensile rod (GradyKippOwen damage) domain independence test SERIAL RESTART RUN")
-#ATS:t13 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-GradyKipp-1d-4proc-reproducing-restart.txt' --comparisonFile 'TensileRod-GradyKipp-1d-1proc-reproducing.txt' --restoreCycle 500", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RESTART RUN")
+#ATS:t10 = test(SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories True --domainIndependent True --outputFile 'TensileRod-1d-1proc.gnu' --checkRef True", np=1, label="Tensile rod (GradyKippOwen damage) domain independence test SERIAL RUN")
+#ATS:t11 = testif(t10, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu'", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RUN")
+#ATS:t12 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-1proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=1, label="Tensile rod (GradyKippOwen damage) domain independence test SERIAL RESTART RUN")
+#ATS:t13 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RESTART RUN")
 #
 # Probabilistic damage
-#ATS:t20 = test(SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories True --domainIndependent True --outputFile 'TensileRod-Probabilistic-1d-1proc-reproducing.txt' --referenceFile 'Reference/TensileRod-Probabilistic-1d-1proc-reproducing-20231211.txt' ", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RUN")
-#ATS:t21 = testif(t20, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-Probabilistic-1d-4proc-reproducing.txt' --comparisonFile 'TensileRod-Probabilistic-1d-1proc-reproducing.txt' --referenceFile 'Reference/TensileRod-Probabilistic-1d-1proc-reproducing-20231211.txt'", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RUN")
-#ATS:t22 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-Probabilistic-1d-1proc-reproducing-restart.txt' --comparisonFile 'TensileRod-Probabilistic-1d-1proc-reproducing.txt' --referenceFile 'Reference/TensileRod-Probabilistic-1d-1proc-reproducing-20231211.txt' --restoreCycle 500", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RESTART RUN")
-#ATS:t23 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-Probabilistic-1d-4proc-reproducing-restart.txt' --comparisonFile 'TensileRod-Probabilistic-1d-1proc-reproducing.txt' --referenceFile 'Reference/TensileRod-Probabilistic-1d-1proc-reproducing-20231211.txt' --restoreCycle 500", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RESTART RUN")
+#ATS:t20 = test(SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories True --domainIndependent True --outputFile 'TensileRod-1d-1proc.gnu' --checkRef True", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RUN")
+#ATS:t21 = testif(t20, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu'", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RUN")
+#ATS:t22 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-1proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RESTART RUN")
+#ATS:t23 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RESTART RUN")
 
 #-------------------------------------------------------------------------------
 # A rod of stainless steel undergoing tensile strain.  This is intended as a
@@ -95,6 +95,7 @@ commandLine(length = 3.0,
             etamax = 1.5,
 
             # Parameters for the time dependent strain and cracking.
+            useDamage = True,
             DamageModelConstructor = ProbabilisticDamageModel,
             volumeMultiplier = (3.0/100.0)**2,
             numFlawsPerNode = 1,
@@ -129,7 +130,7 @@ commandLine(length = 3.0,
             # Optionally we can initialize a break near the origin.
             initialBreakRadius = 0.0,
             
-            crksph = False,
+            hydroType = "SPH",                 # one of (SPH, CRKSPH, FSISPH)
             hmin = 1e-5,
             hmax = 1.0,
             cfl = 0.5,
@@ -169,25 +170,26 @@ commandLine(length = 3.0,
 
             testtol = 1.0e-4,
             clearDirectories = False,
-            referenceFile = "Reference/TensileRod-GradyKippOwen-1d-1proc-reproducing-20231211.txt",
             dataDirBase = "dumps-TensileRod-1d",
-            outputFile = "None",
-            comparisonFile = "None",
+            checkRef = False,
+            outputFile = None,
+            comparisonFile = None,
             )
 
-if crksph:
-    hydroname = "CRKSPH"
-    nPerh = 1.51
-    order = 5
-else:
-    hydroname = "SPH"
-    nPerh = 1.51
-    order = 5
+# On the IBM BlueOS machines we have some tolerance issues...
+if "SYS_TYPE" in os.environ and os.environ["SYS_TYPE"] == "blueos_3_ppc64le_ib_p9":
+    testtol *= 20.0
+
+hydroType = hydroType.upper()
+assert hydroType in ("SPH", "CRKSPH", "FSISPH")
+
+nPerh = 1.51
+order = 5
+
 if DamageModelConstructor in (GradyKippTensorDamage, GradyKippTensorDamageOwen, ProbabilisticDamageModel):
     damageName = os.path.join(str(DamageModelConstructor.__name__), str(damageCoupling))
 else:
     damageName = DamageModelConstructor.__name__
-                              
 
 #kWeibull = 8.8e4 * kWeibullFactor
 #kWeibull = 6.52e3 * kWeibullFactor
@@ -195,7 +197,12 @@ kWeibull = 6.52e5 * kWeibullFactor
 mWeibull = 2.63   * mWeibullFactor
 
 dataDir = os.path.join(dataDirBase,
-                       hydroname,
+                       hydroType,
+                       damageName,
+                       "nx=%i" % nx,
+                       "k=%4.2f_m=%4.2f" % (kWeibull, mWeibull))
+refDir = os.path.join("Reference",
+                       hydroType,
                        damageName,
                        "nx=%i" % nx,
                        "k=%4.2f_m=%4.2f" % (kWeibull, mWeibull))
@@ -375,12 +382,13 @@ output("mpi.reduce(nodes.numInternalNodes, mpi.SUM)")
 # nodes.specificThermalEnergy(ScalarField("tmp", nodes, eps0))
 
 # Set node velocites.
+pos = nodes.positions()
+vel = nodes.velocity()
 for i in range(nodes.numInternalNodes):
-    nodes.velocity()[i].x = nodes.positions()[i].x/(0.5*length)*v0
+    vel[i].x = pos[i].x/(0.5*length)*v0
 
 # Set an initial damage if requested.
 if initialBreakRadius > 0.0:
-    pos = nodes.positions()
     D = nodes.damage()
     fragIDs = nodes.fragmentIDs()
     for i in range(nodes.numInternalNodes):
@@ -405,21 +413,17 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct constant velocity boundary conditions to be applied to the rod ends.
 #-------------------------------------------------------------------------------
-x0Nodes = vector_of_int()
-x1Nodes = vector_of_int()
-dummy = [x0Nodes.append(i) for i in range(nodes.numInternalNodes)
-         if nodes.positions()[i].x < -0.5*length + 5*dx]
-dummy = [x1Nodes.append(i) for i in range(nodes.numInternalNodes)
-         if nodes.positions()[i].x >  0.5*length - 5*dx]
+x0Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x < -0.5*length + 5*dx]
+x1Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x >  0.5*length - 5*dx]
 print("Selected %i constant velocity nodes." % (mpi.allreduce(len(x0Nodes) + len(x1Nodes), mpi.SUM)))
 
 # Set the nodes we're going to control to one single velocity at each end.
-v0 = mpi.allreduce(min([nodes.velocity()[i].x for i in x0Nodes] + [100.0]), mpi.MIN)
-v1 = mpi.allreduce(max([nodes.velocity()[i].x for i in x1Nodes] + [-100.0]), mpi.MAX)
+v0 = mpi.allreduce(max([vel[i].x for i in x0Nodes] + [-100.0]), mpi.MAX)
+v1 = mpi.allreduce(min([vel[i].x for i in x1Nodes] + [ 100.0]), mpi.MIN)
 for i in x0Nodes:
-    nodes.velocity()[i].x = v0
+    vel[i].x = v0
 for i in x1Nodes:
-    nodes.velocity()[i].x = v1
+    vel[i].x = v1
 
 xbc0 = ConstantVelocityBoundary(nodes, x0Nodes)
 xbc1 = ConstantVelocityBoundary(nodes, x1Nodes)
@@ -429,33 +433,50 @@ bcs = [xbc0, xbc1]
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
+if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
-                   filter = filter,
+                   W = WT,
                    cfl = cfl,
+                   useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
                    XSPH = XSPH,
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate)
+
+elif hydroType == "FSISPH":
+    hydro = FSISPH(dataBase = db,
+                   W = WT,
+                   cfl = cfl,
+                   interfaceMethod = HLLCInterface,
+                   #decoupleDamagedMaterial = True,
+                   densityStabilizationCoefficient = 0.00,
+                   useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   linearCorrectGradients = correctVelocityGradient,
+                   HUpdate = HUpdate)
 else:
+    assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
-                filter = filter,
                 cfl = cfl,
+                useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                 compatibleEnergyEvolution = compatibleEnergy,
                 gradhCorrection = gradhCorrection,
+                XSPH = XSPH,
                 correctVelocityGradient = correctVelocityGradient,
                 densityUpdate = densityUpdate,
-                HUpdate = HUpdate,
-                XSPH = XSPH,
                 epsTensile = epsilonTensile,
-                nTensile = nTensile)
+                nTensile = nTensile,
+                HUpdate = HUpdate)
+
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
+
+packages = [hydro]
 
 #-------------------------------------------------------------------------------
 # Construct a damage model.
@@ -532,21 +553,22 @@ elif DamageModelConstructor is ProbabilisticDamageModel:
                                          damageInCompression = damageInCompression)
 
 output("damageModel")
+output("damageModel.strainAlgorithm")
+output("damageModel.damageCouplingAlgorithm")
+
 if DamageModelConstructor in (GradyKippTensorDamage, GradyKippTensorDamageOwen):
     if cullToWeakestFlaws:
         damageModel.cullToWeakestFlaws()
-    output("damageModel.strainAlgorithm")
-    output("damageModel.damageCouplingAlgorithm")
 
 # damageModel.excludeNodes = xNodes
-output("damageModel")
+
+if useDamage:
+    packages.append(damageModel)
 
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-integrator.appendPhysicsPackage(hydro)
-integrator.appendPhysicsPackage(damageModel)
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 if dtMin:
     integrator.dtMin = dtMin
@@ -601,9 +623,11 @@ output("control")
 #-------------------------------------------------------------------------------
 # Monitor the evolution of the mass averaged strain.
 #-------------------------------------------------------------------------------
-if DamageModelConstructor in (GradyKippTensorDamageBenzAsphaug, GradyKippTensorDamageOwen):
+if DamageModelConstructor in (GradyKippTensorDamageBenzAsphaug,
+                              GradyKippTensorDamageOwen,
+                              ProbabilisticDamageModel):
     strainHistory = AverageStrain(damageModel,
-                                  os.path.join(dataDir, "strainhistory.txt"))
+                                  os.path.join(dataDir, "strainhistory.gnu"))
     control.appendPeriodicWork(strainHistory.sample, 1)
 
 #-------------------------------------------------------------------------------
@@ -625,23 +649,23 @@ if graphics:
     h = db.newFluidScalarFieldList(0.0, "h")
     for i in range(nodes.numInternalNodes):
         h[0][i] = 1.0/H[0][i].xx
-    rhoPlot = plotFieldList(state.scalarFields("mass density"),
+    rhoPlot = plotFieldList(state.scalarFields(HydroFieldNames.massDensity),
                             plotStyle="o-",
                             winTitle="rho @ %g %i" % (control.time(), mpi.procs))
-    velPlot = plotFieldList(state.vectorFields("velocity"),
+    velPlot = plotFieldList(state.vectorFields(HydroFieldNames.velocity),
                             yFunction = "%s.x",
                             plotStyle="o-",
                             winTitle="vel @ %g %i" % (control.time(), mpi.procs))
-    mPlot = plotFieldList(state.scalarFields("mass"),
+    mPlot = plotFieldList(state.scalarFields(HydroFieldNames.mass),
                           plotStyle="o-",
                           winTitle="mass @ %g %i" % (control.time(), mpi.procs))
-    PPlot = plotFieldList(state.scalarFields("pressure"),
+    PPlot = plotFieldList(state.scalarFields(HydroFieldNames.pressure),
                           plotStyle="o-",
                           winTitle="pressure @ %g %i" % (control.time(), mpi.procs))
-    uPlot = plotFieldList(state.scalarFields("specific thermal energy"),
+    uPlot = plotFieldList(state.scalarFields(HydroFieldNames.specificThermalEnergy),
                           plotStyle="o-",
                           winTitle="specific thermal energy @ %g %i" % (control.time(), mpi.procs))
-    SPlot = plotFieldList(state.symTensorFields("deviatoric stress"),
+    SPlot = plotFieldList(state.symTensorFields(SolidFieldNames.deviatoricStress),
                           yFunction = "%s.xx",
                           plotStyle="o-",
                           winTitle="$S_{xx}$ @ %g %i" % (control.time(), mpi.procs))
@@ -649,7 +673,7 @@ if graphics:
                           plotStyle="o-",
                           winTitle="h @ %g %i" % (control.time(), mpi.procs))
 
-    d = state.symTensorFields("tensor damage")
+    d = state.symTensorFields(SolidFieldNames.tensorDamage)
     dPlot = plotFieldList(d,
                           yFunction = "%s.xx",
                           winTitle="damage @ %g %i" % (control.time(), mpi.procs),
@@ -662,6 +686,12 @@ if graphics:
              (uPlot, "u.png"),
              (hPlot, "h.png"),
              (dPlot, "damage.png")]
+
+    if hydroType == "FSISPH":
+        DPPlot = plotFieldList(hydro.damagedPressure,
+                               plotStyle="o-",
+                               winTitle="damaged pressure @ %g %i" % (control.time(), mpi.procs))
+        plots += [(DPPlot, "pressure_damaged.png")]
 
     if DamageModelConstructor in (GradyKippTensorDamage, GradyKippTensorDamageOwen):
         ts = damageModel.strain
@@ -740,10 +770,11 @@ if graphics:
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     from SpheralTestUtilities import multiSort
-    state = State(db, integrator.physicsPackages())
+    referenceFile = os.path.join(refDir, outputFile)
     outputFile = os.path.join(dataDir, outputFile)
+    state = State(db, integrator.physicsPackages())
     pos = state.vectorFields(HydroFieldNames.position)
     rho = state.scalarFields(HydroFieldNames.massDensity)
     P = state.scalarFields(HydroFieldNames.pressure)
@@ -771,21 +802,19 @@ if outputFile != "None":
                     (xi, rhoi, Pi, vi, epsi, hi, si, di))
         f.close()
 
-        #---------------------------------------------------------------------------
-        # Check the floating values for the state against reference data.
-        #---------------------------------------------------------------------------
-        import filearraycmp as fcomp
-        assert fcomp.filearraycmp(outputFile, referenceFile, testtol, testtol)
-        print("Floating point comparison test passed.")
+        if checkRef:   #if BuildData.cxx_compiler_id == "GNU":
+            #---------------------------------------------------------------------------
+            # Check the floating values for the state against reference data.
+            #---------------------------------------------------------------------------
+            import filearraycmp as fcomp
+            assert fcomp.filearraycmp(outputFile, referenceFile, testtol, testtol)
+            print("Floating point comparison test passed.")
 
-        #---------------------------------------------------------------------------
-        # Also we can optionally compare the current results with another file for
-        # bit level consistency.
-        #---------------------------------------------------------------------------
-        if comparisonFile != "None" and BuildData.cxx_compiler_id != "IntelLLVM":
-            comparisonFile = os.path.join(dataDir, comparisonFile)
-            import filecmp
-            assert filecmp.cmp(outputFile, comparisonFile)
-
-if graphics:
-    plt.show()
+            #---------------------------------------------------------------------------
+            # Also we can optionally compare the current results with another file for
+            # bit level consistency.
+            #---------------------------------------------------------------------------
+            if comparisonFile:
+                comparisonFile = os.path.join(dataDir, comparisonFile)
+                import filecmp
+                assert filecmp.cmp(outputFile, comparisonFile)

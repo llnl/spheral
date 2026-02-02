@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <set>
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 #include "silo.h"
 
 #include "Mesh.hh"

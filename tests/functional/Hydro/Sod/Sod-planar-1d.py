@@ -13,13 +13,13 @@
 #
 # Solid FSISPH
 #
-#ATS:fsisph1 = test(           SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Sod problem with FSISPH -- 1-D (serial)")
-#ATS:fsisph2 = testif(fsisph1, SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Sod problem with FSISPH -- 1-D (serial) RESTART CHECK")
+#ATS:fsisph1 = test(           SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Sod problem with FSISPH -- 1-D (serial)", fsisph=True)
+#ATS:fsisph2 = testif(fsisph1, SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Sod problem with FSISPH -- 1-D (serial) RESTART CHECK", fsisph=True)
 #
 # GSPH
 #
-#ATS:gsph1 = test(         SELF, "--gsph True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Sod problem with GSPH -- 1-D (serial)")
-#ATS:gsph2 = testif(gsph1, SELF, "--gsph True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Sod problem with GSPH -- 1-D (serial) RESTART CHECK")
+#ATS:gsph1 = test(         SELF, "--gsph True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Planar Sod problem with GSPH -- 1-D (serial)", gsph=True)
+#ATS:gsph2 = testif(gsph1, SELF, "--gsph True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Planar Sod problem with GSPH -- 1-D (serial) RESTART CHECK", gsph=True)
 #
 # MFM
 #
@@ -97,9 +97,7 @@ commandLine(nx1 = 400,
             epsilonTensile = 0.0,
             nTensile = 8,
             rhoMin = 0.01,
-            hourglass = None,
-            hourglassOrder = 1,
-            hourglassLimiter = 1,
+            fhourglass = 0.0,
             filter = 0.00,
             KernelConstructor = NBSplineKernel,
             order = 5,
@@ -112,7 +110,7 @@ commandLine(nx1 = 400,
             steps = None,
             goalTime = 0.15,
             dt = 1e-6,
-            dtMin = 1.0e-6,
+            dtMin = 1.0e-8,
             dtMax = 0.1,
             dtGrowth = 2.0,
             rigorousBoundaries = False,
@@ -128,6 +126,12 @@ commandLine(nx1 = 400,
             gradhCorrection = True,
             linearConsistent = False,
 
+            ftol = None,
+            convergenceTolerance = None,
+            maxIterations = None,
+            maxAllowedDtMultiplier = None,
+            beta = None,
+
             useRefinement = False,
 
             clearDirectories = False,
@@ -135,7 +139,7 @@ commandLine(nx1 = 400,
             restartStep = 10000,
             dataDirBase = "dumps-Sod-planar",
             restartBaseName = "Sod-planar-1d-restart",
-            outputFile = "None",
+            outputFile = None,
             checkRestart = False,
 
             graphics = True,
@@ -216,7 +220,11 @@ strength = NullStrength()
 #-------------------------------------------------------------------------------
 # Interpolation kernels.
 #-------------------------------------------------------------------------------
-WT = TableKernel(NBSplineKernel(order), 1000)
+if KernelConstructor == NBSplineKernel:
+    Wbase = NBSplineKernel(order)
+else:
+    Wbase = KernelConstructor()
+WT = TableKernel(Wbase, 1000)
 kernelExtent = WT.kernelExtent
 output("WT")
 
@@ -343,6 +351,7 @@ if svph:
                  xmax = Vector( 100.0))
 elif crksph:
     hydro = CRKSPH(dataBase = db,
+                   W = WT,
                    order = correctionOrder,
                    filter = filter,
                    cfl = cfl,
@@ -458,10 +467,10 @@ if not (gsph or mfm):
     # Construct the MMRV physics object.
     #-------------------------------------------------------------------------------
     if boolReduceViscosity:
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,nh,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,nh,aMin,aMax)
         packages.append(evolveReducingViscosityMultiplier)
     elif boolCullenViscosity:
-        evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
         packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -476,11 +485,10 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 # Optionally construct an hourglass control object.
 #-------------------------------------------------------------------------------
-if hourglass:
-    hg = hourglass(WT, hourglassOrder, hourglassLimiter)
+if fhourglass > 0.0:
+    hg = SubPointPressureHourglassControl(fhourglass)
     output("hg")
-    output("hg.order")
-    output("hg.limiter")
+    output("hg.fHG")
     packages.append(hg)
 
 #-------------------------------------------------------------------------------
@@ -511,12 +519,31 @@ integrator.rigorousBoundaries = rigorousBoundaries
 integrator.verbose = dtverbose
 output("integrator")
 output("integrator.havePhysicsPackage(hydro)")
-if hourglass:
-    output("integrator.havePhysicsPackage(hg)")
 output("integrator.lastDt")
 output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.rigorousBoundaries")
+
+# Special stuff for implicit integrators
+if isinstance(integrator, ImplicitIntegrator):
+    if beta:
+        integrator.beta = beta
+    if convergenceTolerance:
+        integrator.convergenceTolerance = convergenceTolerance
+    if maxIterations:
+        integrator.maxIterations = maxIterations
+    if maxAllowedDtMultiplier:
+        integrator.maxAllowedDtMultiplier = maxAllowedDtMultiplier
+    output("integrator.beta")
+    output("integrator.convergenceTolerance")
+    output("integrator.maxIterations")
+    output("integrator.maxAllowedDtMultiplier")
+try:   # This will only work for BackwardEuler currently
+    if ftol:
+        integrator.ftol = ftol
+    output("integrator.ftol")
+except:
+    pass
 
 #-------------------------------------------------------------------------------
 # Make the problem controller.
@@ -697,13 +724,13 @@ if graphics:
                    (splot, "Sod-planar-surfacePoint.png")]
     
     if not gsph:
-        viscPlot = plotFieldList(hydro.maxViscousPressure,
-                             winTitle = "max($\\rho^2 \pi_{ij}$)",
-                             colorNodeLists = False)
+        viscPlot = plotFieldList(q.maxViscousPressure,
+                                 winTitle = "max($\\rho^2 \pi_{ij}$)",
+                                 colorNodeLists = False)
         plots.append((viscPlot, "Sod-planar-viscosity.png"))
     
     if boolCullenViscosity:
-        cullAlphaPlot = plotFieldList(q.ClMultiplier,
+        cullAlphaPlot = plotFieldList(evolveCullenViscosityMultiplier.ClMultiplier,
                                       winTitle = "Cullen alpha")
         cullDalphaPlot = plotFieldList(evolveCullenViscosityMultiplier.DalphaDt,
                                        winTitle = "Cullen DalphaDt")
@@ -711,7 +738,7 @@ if graphics:
                   (cullDalphaPlot, "Sod-planar-Cullen-DalphaDt.png")]
 
     if boolReduceViscosity:
-        alphaPlot = plotFieldList(q.ClMultiplier,
+        alphaPlot = plotFieldList(evolveReducingViscosityMultiplier.ClMultiplier,
                                   winTitle = "rvAlpha",
                                   colorNodeLists = False)
 
@@ -739,7 +766,7 @@ rmin = x0
 rmax = x2
 if mpi.rank == 0:
     multiSort(mo, xprof, rhoprof, Pprof, vprof, epsprof, hprof)
-    if outputFile != "None":
+    if outputFile:
         outputFile = os.path.join(dataDir, outputFile)
         f = open(outputFile, "w")
         f.write(("#  " + 19*"'%s' " + "\n") % ("x", "rho", "P", "v", "eps", "A", "h", "mo",

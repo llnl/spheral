@@ -119,8 +119,8 @@ commandLine(nx1     = 50,
             redistributeStep = 500,
             checkRestart = False,
             dataDir = "dumps-Rayleigh-Taylor-2d-constRho",
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
             
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             
@@ -379,7 +379,7 @@ packages = [hydro]
 #-------------------------------------------------------------------------------
 
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     
     packages.append(evolveReducingViscosityMultiplier)
 

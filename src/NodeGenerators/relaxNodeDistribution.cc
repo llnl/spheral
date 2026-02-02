@@ -3,26 +3,16 @@
 // Optionally the user can specify a weighting function for the nodes.
 //------------------------------------------------------------------------------
 #include "relaxNodeDistribution.hh"
+#include "Mesh/Mesh.hh"
 #include "Field/FieldList.hh"
 #include "Boundary/Boundary.hh"
-#include "Utilities/allReduce.hh"
-
-#ifdef USE_MPI
-#include <mpi.h>
-#include "Distributed/Communicator.hh"
-#endif
+#include "Distributed/allReduce.hh"
 
 #include <ctime>
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -33,7 +23,6 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
                       const typename Dimension::FacetedVolume& boundary,
                       const std::vector<Boundary<Dimension>*>& /*boundaries*/,
                       const TableKernel<Dimension>& /*W*/,
-                      const SmoothingScaleBase<Dimension>& /*smoothingScaleMethod*/,
                       const WeightingFunctor<Dimension>& weightingFunctor,
                       const WeightingFunctor<Dimension>& massDensityFunctor,
                       const double targetMass,
@@ -51,7 +40,7 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
   FieldList<Dimension, Vector> position = dataBase.fluidPosition();
   FieldList<Dimension, Scalar> rho = dataBase.fluidMassDensity();
   FieldList<Dimension, SymTensor> H = dataBase.fluidHfield();
-  FieldList<Dimension, Vector> delta = dataBase.newFluidFieldList(Vector::zero, "delta");
+  FieldList<Dimension, Vector> delta = dataBase.newFluidFieldList(Vector::zero(), "delta");
   const Vector& xmin = boundary.xmin();
   const Vector& xmax = boundary.xmax();
   const double stopTol = tolerance*((xmax - xmin).maxAbsElement());
@@ -64,7 +53,7 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
   int iter = 0;
   while (iter < maxIterations and maxDelta > stopTol) {
     ++iter;
-    delta = Vector::zero;
+    delta = Vector::zero();
     maxDelta = 0.0;
 
     // Read out the node positions to a flat list.
@@ -144,9 +133,7 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
       ++k;
     }
   }
-#ifdef USE_MPI
-  Msum = allReduce(Msum, MPI_SUM, Communicator::communicator());
-#endif
+  Msum = allReduce(Msum, SPHERAL_OP_SUM);
 
   // If needed, rescale the masses.
   if (targetMass > 0.0) {

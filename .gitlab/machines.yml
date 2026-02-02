@@ -1,35 +1,68 @@
 # ------------------------------------------------------------------------------
 # MACHINE TEMPLATES
 
-.on_ruby:
+.on_tioga:
   tags:
-    - ruby
+    - tioga
+    - flux
+  variables:
+    JACAMAR_SCHEDULER_ACTION: default
+    SCHEDULER_PARAMETERS: "--exclusive -N 1 -t 60"
+    NPROC: 64
+    HOSTNAME: 'tioga'
+  timeout: 24 hours
+  extends: [.on_toss_4_x86_cray]
+
+.tioga_shell:
+  tags:
+    - tioga
     - shell
   variables:
-    HOSTNAME: 'ruby'
-    PARTITION: pdebug
-    BUILD_ALLOC: srun -N 1 -c 36 -p pdebug -t 60
-    TEST_ALLOC: ''
+    ENVIRONMENT: "INTERACTIVE"
+  timeout: 24 hours
+  extends: [.on_toss_4_x86_cray]
+
+.on_dane:
+  tags:
+    - dane
+    - batch
+  variables:
+    JACAMAR_SCHEDULER_ACTION: default
+    SCHEDULER_PARAMETERS: "--reservation=ci --exclusive -N 1 -t 120"
+    NPROC: 112
+    HOSTNAME: 'dane'
+  timeout: 24 hours
   extends: [.on_toss_4_x86]
 
-.on_lassen:
+.dane_shell:
   tags:
-    - lassen
+    - dane
     - shell
   variables:
-    HOSTNAME: 'lassen'
-    BUILD_ALLOC: lalloc 1 -W 60
-    TEST_ALLOC: $BUILD_ALLOC
-    LC_MODULES: "cuda/11.1.0"
-  extends: [.on_blueos_3_ppc64]
+    ENVIRONMENT: "INTERACTIVE"
+  timeout: 24 hours
+  extends: [.on_toss_4_x86]
 
 # ------------------------------------------------------------------------------
 
 .toss_resource_general:
-  extends: [.on_ruby]
+  extends: [.on_dane]
 
-.blueos_resource_general:
-  extends: [.on_lassen]
+.cray_resource_general:
+  extends: [.on_tioga]
+
+.toss_shell1:
+  extends: [.dane_shell]
+
+# Use for performance tests
+.toss_shell2:
+  extends: [.dane_shell]
+
+.cray_shell1:
+  extends: [.tioga_shell]
+
+.cray_shell2:
+  extends: [.tioga_shell]
 
 # ------------------------------------------------------------------------------
 #
@@ -41,11 +74,14 @@
   resource_group: toss2
   extends: [.toss_resource_general]
 
-.blueos_resource1:
-  #resource_group: blueos1
-  extends: [.blueos_resource_general]
+.toss_resource3:
+  resource_group: toss3
+  extends: [.toss_resource_general]
 
-.blueos_resource2:
-  #resource_group: blueos2
-  extends: [.blueos_resource_general]
+.cray_resource1:
+  resource_group: cray1
+  extends: [.cray_resource_general]
 
+.cray_resource2:
+  resource_group: cray2
+  extends: [.cray_resource_general]

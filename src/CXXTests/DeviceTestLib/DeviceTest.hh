@@ -1,10 +1,15 @@
 #ifndef __Spheral_DeviceTest_hh__
 #define __Spheral_DeviceTest_hh__
+#include "RAJA/RAJA.hpp"
+
+#if defined(RAJA_ENABLE_HIP)
+#include <hip/hip_runtime.h>
+#endif
 
 namespace Spheral
 {
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) or defined(__HIPCC__)
 __device__ void add(int a, int b, int *c);
 
 __global__ void launch(int a, int b, int *c);

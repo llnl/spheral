@@ -12,7 +12,7 @@
 #include "Strength/SolidFieldNames.hh"
 #include "DataBase/State.hh"
 #include "Distributed/Communicator.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 
 #include <boost/functional/hash.hpp>  // hash_combine
 
@@ -27,12 +27,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -47,7 +41,7 @@ weibullFlawDistributionOwen(const unsigned seed,
                             const double mWeibull,
                             const FluidNodeList<Dimension>& nodeList,
                             const State<Dimension>& state,
-                            const int minFlawsPerNode,
+                            const size_t minFlawsPerNode,
                             const double volumeMultiplier,
                             const Field<Dimension, int>& mask) {
 
@@ -108,8 +102,8 @@ weibullFlawDistributionOwen(const unsigned seed,
         Vmax = max(Vmax, Vi);
       }
     }
-    Vmin = allReduce(Vmin*volumeMultiplier, MPI_MIN, Communicator::communicator());
-    Vmax = allReduce(Vmax*volumeMultiplier, MPI_MAX, Communicator::communicator());
+    Vmin = allReduce(Vmin*volumeMultiplier, SPHERAL_OP_MIN);
+    Vmax = allReduce(Vmax*volumeMultiplier, SPHERAL_OP_MAX);
     CHECK(Vmin > 0.0);
     CHECK(Vmax >= Vmin);
 
@@ -157,12 +151,12 @@ weibullFlawDistributionOwen(const unsigned seed,
     // Some diagnostic output.
     const auto nused = std::max(1, mask.sumElements());
     if (nglobal > 0) {
-      minNumFlaws = allReduce(minNumFlaws, MPI_MIN, Communicator::communicator());
-      maxNumFlaws = allReduce(maxNumFlaws, MPI_MAX, Communicator::communicator());
-      totalNumFlaws = allReduce(totalNumFlaws, MPI_SUM, Communicator::communicator());
-      epsMin = allReduce(epsMin, MPI_MIN, Communicator::communicator());
-      epsMax = allReduce(epsMax, MPI_MAX, Communicator::communicator());
-      sumFlaws = allReduce(sumFlaws, MPI_SUM, Communicator::communicator());
+      minNumFlaws = allReduce(minNumFlaws, SPHERAL_OP_MIN);
+      maxNumFlaws = allReduce(maxNumFlaws, SPHERAL_OP_MAX);
+      totalNumFlaws = allReduce(totalNumFlaws, SPHERAL_OP_SUM);
+      epsMin = allReduce(epsMin, SPHERAL_OP_MIN);
+      epsMax = allReduce(epsMax, SPHERAL_OP_MAX);
+      sumFlaws = allReduce(sumFlaws, SPHERAL_OP_SUM);
     }
     if (procID == 0) {
       cerr << "weibullFlawDistributionOwen: Min num flaws per node: " << minNumFlaws << endl

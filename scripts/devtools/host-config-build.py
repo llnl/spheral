@@ -3,7 +3,9 @@
 import os
 import sys
 import argparse
-import subprocess
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from spheralutils import sexe
 
 source_dir=os.getcwd()
 
@@ -17,7 +19,7 @@ def parse_args():
       help='Location of spheral source directory.')
 
   parser.add_argument('-i', '--install-dir', type=str, default="",
-      help='Location of spheral source directory.')
+      help='Where to install Spheral.')
 
   parser.add_argument('--build-dir', type=str, default="",
       help='Name of build directory.')
@@ -29,30 +31,15 @@ def parse_args():
   parser.add_argument('--build', action='store_true',
       help='Run make -j install after configuring build dirs.')
 
-  parser.add_argument('--lc-modules', type=str, default="",
-      help='LC Modules to use during build, install and smoke test. This is not used if --build is not enabled.')
+  parser.add_argument('--ctest', action='store_true',
+      help='Run make test after build stage.')
+
+  parser.add_argument('--nprocs', default=48,
+      help="Set number of procs to use while building. This is not used if --build is not enabled.")
 
   parser.add_argument('-D', action='append', default=[])
 
   return parser.parse_args()
-
-
-# Helper function for executing commands stolen from uberenv
-def sexe(cmd,ret_output=False,echo=False):
-    """ Helper for executing shell commands. """
-    if echo:
-        print("[exe: {0}]".format(cmd))
-    if ret_output:
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
-        out = p.communicate()[0]
-        out = out.decode('utf8')
-        return p.returncode,out
-    else:
-        return subprocess.call(cmd,shell=True)
-
 
 def main():
   args = parse_args()
@@ -63,7 +50,7 @@ def main():
     hostconfig_path=args.host_config
   else:
     hostconfig_path=os.path.abspath(args.host_config)
-    
+
 
   # Set up our directory structure paths.
   if not args.build_dir:
@@ -76,10 +63,10 @@ def main():
     install_dir=args.install_dir
   build_dir=build_dir+"/build"
   # Pull the cmake command to use out of our host config.
-  cmake_cmd=sexe("grep 'CMake executable' \"{0}\"".format(hostconfig_path), ret_output=True, echo=True)[1].split()[-1]
+  cmake_cmd=sexe("grep 'CMake executable' \"{0}\"".format(hostconfig_path), ret_output=True, echo=False).split()[-1]
 
   cmake_extra_args=""
-  if args.D:
+  if args.D and args.D != ['']:
     cmake_extra_args="-D"+" -D".join(args.D)
   
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -101,20 +88,9 @@ def main():
 
   # Move to the build directory.
   os.chdir(build_dir)
-  
-  # We need a module command to add to our environment on each python
-  # subprocess call otherwise we might get a bad build depending on 
-  # the default compiler setup for the system.
-  ml_cmd=""
-  ml_cmd_v=""
-  if not args.lc_modules:
-    print("Warning: No LC_MODULES set, ensure appropriate compilers are in path or you may experience incorrect builds!")
-  else:
-    ml_cmd_v = "module load {0} &&".format(args.lc_modules)
-    ml_cmd = "module load {0} 2>/dev/null &&".format(args.lc_modules)
 
   # Run our CMake config step.
-  sexe("{0} {1} -C {2} -DCMAKE_INSTALL_PREFIX={3} {4} {5}".format(ml_cmd_v, cmake_cmd, hostconfig_path, install_dir, cmake_extra_args, source_dir))
+  sexe(f"{cmake_cmd} -C {hostconfig_path} -DCMAKE_INSTALL_PREFIX={install_dir} {cmake_extra_args} {source_dir}")
 
   # Build and install Spheral
 
@@ -122,16 +98,18 @@ def main():
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("~~~~~ Building Spheral")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    build_cmd = f"{cmake_cmd} --build . --target install -j {args.nprocs}"
 
-    build_result = sexe("{0} {1} --build . -j 48 --target install".format(ml_cmd, cmake_cmd), echo=True)
+    sexe(build_cmd, echo=True, ret_output=False)
 
-    # If our build or install failed, run again to get our first error.
-    if build_result != 0:
-      print(build_result)
+    if args.ctest:
       print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-      print("Compilation failed")
+      print("~~~~~ Running Spheral gtest suite.")
       print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-      sys.exit(1)
+      ctest_cmd = f"ctest --test-dir {build_dir}/tests"
+
+      sexe(ctest_cmd, echo=True, ret_output=False)
+
 
 if __name__ == "__main__":
   main()

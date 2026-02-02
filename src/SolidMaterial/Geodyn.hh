@@ -14,8 +14,6 @@
 #ifndef __Spheral_Geodyn_hh__
 #define __Spheral_Geodyn_hh__
 
-#include "boost/multi_array.hpp"
-
 #include "SolidMaterial/SolidEquationOfState.hh"
 #include "SolidMaterial/StrengthModel.hh"
 #include "Physics/Physics.hh"
@@ -127,20 +125,6 @@ public:
   // the same signature as the restart label.
   virtual std::string label() const { return "Geodyn Spheral interface"; }
 
-  // Some packages might want a hook to do some initializations before the
-  // evaluateDerivatives() method is called.
-  virtual void initialize(const Scalar time, 
-                          const Scalar dt,
-                          const DataBase<Dimension>& dataBase, 
-                          State<Dimension>& state,
-                          StateDerivatives<Dimension>& derivs);
-
-  // Similarly packages might want a hook to do some post-step finalizations.
-  virtual void finalize(const Scalar time, 
-                        const Scalar dt,
-                        DataBase<Dimension>& dataBase, 
-                        State<Dimension>& state,
-                        StateDerivatives<Dimension>& derivs);
 private:
   //--------------------------- Private Interface ---------------------------//
   // Tables for the temp->energy lookup.

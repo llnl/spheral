@@ -3,7 +3,9 @@
 # just be using the Jacobi algorithm!
 
 from Spheral import *
-from testEigen3d import rangen, randomSymTensor3d
+import random
+random.seed(547957292)
+from testEigen3d import randomSymTensor3d
 
 # The number of tensors we're going to time operating on.
 ntests = 10000

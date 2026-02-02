@@ -19,16 +19,16 @@ template<typename Dimension> class StateDerivatives;
 template<typename Dimension> class FluidNodeList;
 
 template<typename Dimension>
-class EntropyPolicy: public FieldUpdatePolicy<Dimension> {
+class EntropyPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   EntropyPolicy();
-  virtual ~EntropyPolicy();
+  virtual ~EntropyPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -41,10 +41,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  EntropyPolicy(const EntropyPolicy& rhs);
-  EntropyPolicy& operator=(const EntropyPolicy& rhs);
+  // Forbiddnen
+  EntropyPolicy(const EntropyPolicy& rhs) = delete;
+  EntropyPolicy& operator=(const EntropyPolicy& rhs) = delete;
 };
 
 }

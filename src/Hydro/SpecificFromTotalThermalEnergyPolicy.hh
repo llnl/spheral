@@ -34,7 +34,7 @@ public:
 
   // Constructors, destructor.
   SpecificFromTotalThermalEnergyPolicy();
-  virtual ~SpecificFromTotalThermalEnergyPolicy();
+  virtual ~SpecificFromTotalThermalEnergyPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -47,10 +47,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  SpecificFromTotalThermalEnergyPolicy(const SpecificFromTotalThermalEnergyPolicy& rhs);
-  SpecificFromTotalThermalEnergyPolicy& operator=(const SpecificFromTotalThermalEnergyPolicy& rhs);
+  // Forbidden methods
+  SpecificFromTotalThermalEnergyPolicy(const SpecificFromTotalThermalEnergyPolicy& rhs) = delete;
+  SpecificFromTotalThermalEnergyPolicy& operator=(const SpecificFromTotalThermalEnergyPolicy& rhs) = delete;
 };
 
 }

@@ -20,8 +20,6 @@
 #include "SolidMaterial/StrengthModel.hh"
 #include "Physics/Physics.hh"
 
-#include "boost/multi_array.hpp"
-
 namespace Spheral {
 
 template<typename Dimension>

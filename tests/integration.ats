@@ -1,13 +1,23 @@
 #-------------------------------------------------------------------------------
 # This file contains the acceptance tests for committing changes to the 
 # SolidSpheral code to the main repository.  Please verify these all pass 
-# (using the ATS) before pushing changes to that public repot!
+# (using the ATS) before pushing changes to that public repo!
 #-------------------------------------------------------------------------------
+
+glue(fsisph = False)
+glue(gsph = False)
+glue(svph = False)
+glue(independent = True)
+glue(nt = 1)
+
+# Fail test to make sure tests are working
+source("unit/Utilities/testFails.py")
 
 # Geometry unit tests
 source("unit/Geometry/testVector.py")
 source("unit/Geometry/testTensor.py")
 source("unit/Geometry/testInnerOuterProduct.py")
+source("unit/Geometry/testEigen2d.py")
 source("unit/Geometry/testEigen3d.py")
 source("unit/Geometry/testPolygon.py")
 source("unit/Geometry/testPolyhedron.py")
@@ -31,6 +41,7 @@ source("unit/SVPH/testSVPHInterpolation-1d.py")
 
 # Field unit tests
 source("unit/Field/testField.py")
+source("unit/Field/testFieldView.py")
 
 # Neighbor unit tests
 source("unit/Neighbor/testNestedGridNeighbor.py")
@@ -45,6 +56,10 @@ source("unit/Material/testEOS.py")
 source("unit/SolidMaterial/testTillotsonEquationOfState.py")
 source("unit/SolidMaterial/testANEOS.py")
 source("functional/Material/UnitConversion.py")
+
+# LEOS tests
+source("functional/LEOS/testLEOSFieldvsSingle.py")
+source("functional/LEOS/testLEOSvsReference.py")
 
 # Test the sampling to lattice method.
 source("unit/FieldOperations/testSampleMultipleFields2Lattice1d.py")
@@ -67,18 +82,21 @@ source("unit/Utilities/testCubicHermiteInterpolator.py")
 source("unit/Utilities/testBiLinearInterpolator.py")
 source("unit/Utilities/testBiQuadraticInterpolator.py")
 source("unit/Utilities/testBiCubicInterpolator.py")
+source("unit/Utilities/testTimers.py")
 
 # Mesh tests.
 source("unit/Mesh/testLineMesh.py")
 # source("unit/Mesh/testPolygonalMesh.py")   # Suspended until we fix the polytope with Spheral issues.
 # source("unit/Mesh/testPolyhedralMesh.py")  # Suspended until we fix the polytope with Spheral issues.
 
+# Solvers unit tests
+source("unit/Solvers/testKinsol.py")
+
 # MPI python interface unit tests
 source("unit/Distributed/testMPI4PYasPYMPI.py")
 
 # C++ unit tests.
 source("functional/CXXTests/test_r3d_utils.py")
-source("unit/CXXTests/runCXXTests.ats")
 
 # Hydro tests
 source("functional/Hydro/HydroTests.ats")
@@ -92,6 +110,7 @@ source("functional/Gravity/ApproximatePolyhedralGravityModel.py")
 
 # Strength tests.
 #source("functional/Strength/PlateImpact/PlateImpact-1d.py")
+source("functional/Strength/TaylorImpact/TaylorImpact.py")
 source("functional/Strength/CollidingPlates/CollidingPlates-1d.py")
 source("functional/Strength/DiametralCompression/DiametralCompression.py")
 source("functional/Strength/Verney/Verney-spherical.py")
@@ -112,3 +131,4 @@ source("functional/RK/testVoronoiVolume.py")
 
 # KernelIntegrator tests
 source("unit/KernelIntegrator/TestIntegrator.py")
+source("unit/KernelIntegrator/testFlatConnectivity.py")

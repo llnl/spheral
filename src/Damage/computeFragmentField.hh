@@ -16,6 +16,7 @@ computeFragmentField(const NodeList<Dimension>& nodeList,
                      const double linkRadius,
                      const Field<Dimension, typename Dimension::Scalar>& density,
                      const Field<Dimension, typename Dimension::SymTensor>& damage,
+                     const Field<Dimension, int>& mask,
                      const double densityThreshold,
                      const double damageThreshold,
                      const bool assignDustToFragments);

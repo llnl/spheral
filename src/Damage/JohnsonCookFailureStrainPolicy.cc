@@ -19,12 +19,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -42,11 +36,11 @@ JohnsonCookFailureStrainPolicy(const Field<Dimension, Scalar>& D1,
                                const double sigmamax,
                                const double efailmin,
                                const double Tcrit):
-  UpdatePolicyBase<Dimension>({HydroFieldNames::pressure,
-                               HydroFieldNames::specificThermalEnergy,
-                               SolidFieldNames::deviatoricStress,
-                               SolidFieldNames::plasticStrain,
-                               SolidFieldNames::meltSpecificEnergy}),
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::pressure,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::deviatoricStress,
+                                        SolidFieldNames::plasticStrain,
+                                        SolidFieldNames::meltSpecificEnergy}),
   mD1(D1),
   mD2(D2),
   mD3(D3),
@@ -56,14 +50,6 @@ JohnsonCookFailureStrainPolicy(const Field<Dimension, Scalar>& D1,
   msigmamax(sigmamax),
   mefailmin(efailmin),
   mTcrit(Tcrit) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-JohnsonCookFailureStrainPolicy<Dimension>::
-~JohnsonCookFailureStrainPolicy() {
 }
 
 //------------------------------------------------------------------------------
@@ -97,7 +83,7 @@ update(const KeyType& key,
 
   const auto& P = state.field(PKey, 0.0);
   const auto& eps = state.field(epsKey, 0.0);
-  const auto& S = state.field(stressKey, SymTensor::zero);
+  const auto& S = state.field(stressKey, SymTensor::zero());
   const auto& psr = derivs.field(psrKey, 0.0);
   const auto& epsMelt = state.field(meltKey, 0.0);
 

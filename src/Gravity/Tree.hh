@@ -8,14 +8,15 @@
 //
 // Created by JMO, Tue Oct  4 10:17:41 PDT 2022
 //----------------------------------------------------------------------------//
+
 #ifndef __Spheral_Tree__
 #define __Spheral_Tree__
 
 #include "Geometry/Dimension.hh"
 
 #include <stdint.h>
-#include "boost/unordered_map.hpp"
-#include "boost/unordered_set.hpp"
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Spheral {
 
@@ -59,8 +60,8 @@ public:
   // Data types we use to build the internal tree structure.
   typedef uint32_t LevelKey;
   typedef std::pair<size_t, size_t> NodeID;
-  typedef boost::unordered_map<NodeID, std::vector<boost::unordered_set<CellKey> > > CompletedCellSet;
-  typedef boost::unordered_map<CellKey, Cell> TreeLevel;
+  typedef std::unordered_map<NodeID, std::vector<std::unordered_set<CellKey> > > CompletedCellSet;
+  typedef std::unordered_map<CellKey, Cell> TreeLevel;
 
   static unsigned num1dbits;                   // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
   static CellKey max1dKey;                     // The maximum number of cells this corresponds to in a direction.

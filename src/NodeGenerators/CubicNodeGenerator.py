@@ -59,9 +59,9 @@ class GenerateSquareNodeDistribution(NodeGeneratorBase):
         assert nxdomains * nydomains == mpi.procs
         
         # The number of nodes per domain.
-        nxperdomain = nx / nxdomains
+        nxperdomain = nx // nxdomains
         nxremainder = nx % nxdomains
-        nyperdomain = ny / nydomains
+        nyperdomain = ny // nydomains
         nyremainder = ny % nydomains
         assert nxremainder < nxdomains
         assert nyremainder < nydomains
@@ -84,7 +84,7 @@ class GenerateSquareNodeDistribution(NodeGeneratorBase):
 
         # Compute our domain indicies.
         ixdomain = mpi.rank % nxdomains
-        iydomain = mpi.rank / nxdomains
+        iydomain = mpi.rank // nxdomains
         ixmin = nodeindex(ixdomain, nxperdomain,  nxremainder)
         ixmax = nodeindex(ixdomain + 1, nxperdomain,  nxremainder)
         iymin = nodeindex(iydomain, nyperdomain,  nyremainder)

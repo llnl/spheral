@@ -11,6 +11,7 @@
 #include "Neighbor/ConnectivityMap.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "DataBase/IncrementState.hh"
+#include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "NodeList/FluidNodeList.hh"
@@ -23,12 +24,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -37,38 +32,31 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 TensorSVPHViscosity<Dimension>::
-TensorSVPHViscosity(Scalar Clinear, Scalar Cquadratic, Scalar fslice):
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic),
+TensorSVPHViscosity(const Scalar Clinear,
+                    const Scalar Cquadratic,
+                    const TableKernel<Dimension>& WT,
+                    const Scalar fslice):
+  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, WT),
   mfslice(fslice),
   mDvDx(),
   mShearCorrection(),
-  mQface(){
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TensorSVPHViscosity<Dimension>::
-~TensorSVPHViscosity() {
+  mQface() {
 }
 
 //------------------------------------------------------------------------------
 // Initialize for the FluidNodeLists in the given DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-void
+bool
 TensorSVPHViscosity<Dimension>::
-initialize(const DataBase<Dimension>& dataBase,
-           const State<Dimension>& state,
-           const StateDerivatives<Dimension>& /*derivs*/,
-           ConstBoundaryIterator /*boundaryBegin*/,
-           ConstBoundaryIterator /*boundaryEnd*/,
-           const typename Dimension::Scalar /*time*/,
-           const typename Dimension::Scalar /*dt*/,
-           const TableKernel<Dimension>& W) {
+initialize(const Scalar t,
+           const Scalar dt,
+           const DataBase<Dimension>& dataBase,
+           State<Dimension>& state,
+           StateDerivatives<Dimension>& derivs) {
 
-  typedef typename Mesh<Dimension>::Face Face;
+  using Face = typename Mesh<Dimension>::Face;
+  const auto& W = this->kernel();
 
   // The set of NodeLists.
   const vector<const NodeList<Dimension>*> nodeLists(dataBase.fluidNodeListBegin(),
@@ -78,17 +66,17 @@ initialize(const DataBase<Dimension>& dataBase,
   // Grab the state we need.
   const Mesh<Dimension>& mesh = state.mesh();
   const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
 
   // Prepare the state we're going to compute.
   const unsigned numFaces = mesh.numFaces();
-  mDvDx = vector<Tensor>(numFaces, Tensor::zero);
+  mDvDx = vector<Tensor>(numFaces, Tensor::zero());
   mShearCorrection = vector<Scalar>(numFaces, 1.0);
-  mQface = vector<Tensor>(numFaces, Tensor::zero);
+  mQface = vector<Tensor>(numFaces, Tensor::zero());
 
   // Walk the faces.
   const Scalar Cl = this->Cl();
@@ -96,7 +84,7 @@ initialize(const DataBase<Dimension>& dataBase,
   const bool balsaraCorrection = this->balsaraShearCorrection();
   const Scalar csMin = this->negligibleSoundSpeed();
   const Scalar eps2 = this->epsilon2();
-  const SymTensor H0 = 1.0e100*SymTensor::one;
+  const SymTensor H0 = 1.0e100*SymTensor::one();
   for (unsigned iface = 0; iface != numFaces; ++iface) {
     const Face& face = mesh.face(iface);
     const Vector posFace = face.position();
@@ -204,79 +192,7 @@ initialize(const DataBase<Dimension>& dataBase,
     CHECK(fuzzyLessThanOrEqual(muface.Trace(), 0.0, 1.0e-8));
     mQface[iface] = mShearCorrection[iface]*rhoFace*(-Cl*csFace*muface + Cq*muface*muface);
   }
-}
-
-//------------------------------------------------------------------------------
-// Method to apply the viscous acceleration, work, and pressure, to the derivatives
-// all in one step (efficiency and all).
-//------------------------------------------------------------------------------
-template<typename Dimension>
-pair<typename Dimension::Tensor,
-     typename Dimension::Tensor>
-TensorSVPHViscosity<Dimension>::
-Piij(const unsigned /*nodeListi*/, const unsigned /*i*/, 
-     const unsigned /*nodeListj*/, const unsigned /*j*/,
-     const Vector& /*xi*/,
-     const Vector& /*etai*/,
-     const Vector& /*vi*/,
-     const Scalar /*rhoi*/,
-     const Scalar /*csi*/,
-     const SymTensor& /*Hi*/,
-     const Vector& /*xj*/,
-     const Vector& /*etaj*/,
-     const Vector& /*vj*/,
-     const Scalar /*rhoj*/,
-     const Scalar /*csj*/,
-     const SymTensor& /*Hj*/) const {
-  VERIFY2(false, "TensorSVPHViscosity::Piij incorrectly called.");
-}
-
-//------------------------------------------------------------------------------
-// fslice
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-TensorSVPHViscosity<Dimension>::
-fslice() const {
-  return mfslice;
-}
-
-template<typename Dimension>
-void
-TensorSVPHViscosity<Dimension>::
-fslice(typename Dimension::Scalar x) {
-  VERIFY(x >= 0.0 and x <= 1.0);
-  mfslice = x;
-}
-
-//------------------------------------------------------------------------------
-// DvDx
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const std::vector<typename Dimension::Tensor>&
-TensorSVPHViscosity<Dimension>::
-DvDx() const {
-  return mDvDx;
-}
-
-//------------------------------------------------------------------------------
-// DvDx
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const std::vector<typename Dimension::Scalar>&
-TensorSVPHViscosity<Dimension>::
-shearCorrection() const {
-  return mShearCorrection;
-}
-
-//------------------------------------------------------------------------------
-// Qface
-//------------------------------------------------------------------------------
-template<typename Dimension>
-const std::vector<typename Dimension::Tensor>&
-TensorSVPHViscosity<Dimension>::
-Qface() const {
-  return mQface;
+  return false;
 }
 
 }

@@ -20,7 +20,10 @@
 namespace Spheral {
 template<typename Dimension>
 SolidBoundaryBase<Dimension>::
-SolidBoundaryBase(){} 
+SolidBoundaryBase():
+  mUniqueIndex(-1),
+  mRestart(registerWithRestart(*this)){
+} 
 template<typename Dimension>
 SolidBoundaryBase<Dimension>::
 ~SolidBoundaryBase(){} 

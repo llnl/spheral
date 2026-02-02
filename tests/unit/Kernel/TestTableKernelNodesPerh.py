@@ -1,155 +1,238 @@
-import Gnuplot
-import numpy
+import numpy as np
+import sys
 
 from Spheral import *
 from SpheralTestUtilities import *
-from SpheralGnuPlotUtilities import *
+from SpheralMatplotlib import *
 
-################################################################################
-def plotW(plot, W, xmin=0.0, xmax=2.0, numPnts=200, Hdet=1.0, title='',
-          lineTitle=''):
-    dx = (xmax - xmin)/(numPnts - 1)
-    x = numpy.array(list(range(numPnts)))
-    y = numpy.array([0.0]*numPnts)
-    x = dx*x + xmin
-    for i in range(numPnts):
-        y[i] = W(x[i], Hdet)
-    plot('set xrange [%f:%f]' % (xmin, xmax))
-    plot.xlabel('r')
-    plot.ylabel('W(r)')
-    if title:
-        plot.title(title)
-    data = Gnuplot.Data(x, y, with_='lines', title=lineTitle)
-    plot.replot(data)
-    return
+#-------------------------------------------------------------------------------
+# What kernels should we plot
+#-------------------------------------------------------------------------------
+kernels = sys.argv[1:]
+output("kernels")
 
-import sys, string
-kernels = list(map(string.lower, sys.argv[1:]))
-print(kernels)
+#-------------------------------------------------------------------------------
+# SPH zeroth moment algorithm
+#-------------------------------------------------------------------------------
+def sumKernelValues1d(WT, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    result = sum([abs(WT.kernelValueSPH(abs(etax))) for etax in np.arange(-etamax, etamax, deta)])
+    return result
 
-numPts = 51
-dx = 1.0/(numPts - 1)
+def sumKernelValues2d(WT, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    result = 0.0
+    for etay in np.arange(-etamax, etamax, deta):
+        for etax in np.arange(-etamax, etamax, deta):
+            eta = sqrt(etax*etax + etay*etay)
+            result += WT.kernelValueSPH(eta)
+    return sqrt(result)
 
-################################################################################
-numPoints = 100
+def sumKernelValues3d(WT, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    result = 0.0
+    for etaz in np.arange(-etamax, etamax, deta):
+        for etay in np.arange(-etamax, etamax, deta):
+            for etax in np.arange(-etamax, etamax, deta):
+                eta = sqrt(etax*etax + etay*etay + etaz*etaz)
+                result += WT.kernelValueSPH(eta)
+    return (result)**(1.0/3.0)
 
-kernelDict = {'spline': [BSplineKernel1d(),
-                         BSplineKernel2d(),
-                         BSplineKernel3d()],
-              }
+#-------------------------------------------------------------------------------
+# ASPH second moment algorithm
+#-------------------------------------------------------------------------------
+def safeInv(x, fuzz=1e-30):
+    return x/(x*x + fuzz)
 
-titleDict = {'spline':  'B Spline Kernel',
-             'h': 'H kernel',
-             'h10': 'H kernel (extent = 10)',
-             'quartic': 'Quartic Spline Kernel',
-             'w4spline': 'W4 Spline Kernel',
-             'gauss': 'Gaussian Kernel',
-             'supergauss': 'SuperGaussian Kernel',
-             'pigauss': 'Pi Gaussian Kernel',
-             'sinc': 'Sinc Kernel',
-             'poly1': 'Linear Polynomial Sinc approx Kernel',
-             'poly3': 'Cubic Polynomial Sinc approx Kernel',
-             'poly5': 'Quintic Polynomial Sinc approx Kernel',
-             'poly7': 'Septic Polynomial Sinc approx Kernel',
-             'spline3': '3rd order b spline Kernel',
-             'spline5': '5th order b spline Kernel',
-             'spline7': '7th order b spline Kernel',
-             'spline9': '9th order b spline Kernel',
-             'spline11': '11th order b spline Kernel',
-             }
+def sumKernelValuesASPH1d(WT, targetNperh, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    result = sum([WT.kernelValueASPH(abs(etax), targetNperh)*etax*etax for etax in np.arange(-etamax, etamax, deta)])
+    return result
 
-data = []
-plots = []
-plotWsum = generateNewGnuPlot()
-plotWsum("set xlabel 'Nodes per smoothing scale'")
-plotWsum("set ylabel 'W_{sum}'")
-#plotWsum("set logscale y")
-for kernel in kernels:
-    title(titleDict[kernel])
-    for W in kernelDict[kernel]:
+def sumKernelValuesASPH2d(WT, targetNperh, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    result = SymTensor2d()
+    for etay in np.arange(-etamax, etamax, deta):
+        for etax in np.arange(-etamax, etamax, deta):
+            eta = Vector2d(etax, etay)
+            Wi = WT.kernelValueASPH(eta.magnitude(), targetNperh)
+            result += Wi * eta.selfdyad()
+    return sqrt(0.5*result.eigenValues().sumElements())
 
-        nDim = 0
-        if str(W).split()[0][-2:] == "1d":
-            nDim = 1
-        elif str(W).split()[0][-2:] == "2d":
-            nDim = 2
-        elif str(W).split()[0][-2:] == "3d":
-            nDim = 3
-        assert nDim > 0
-        
-        # Build the TableKernel.
-        WT = eval('TableKernel' + str(W).split()[0][-2:] + '(W, numPoints)')
-        #WH = eval('HKernel' + str(W).split()[0][-2:] + '(W.kernelExtent)')
+def sumKernelValuesASPH3d(WT, targetNperh, nperh):
+    deta = 1.0/nperh
+    etamax = WT.kernelExtent
+    Wsum = SymTensor3d()
+    result = SymTensor3d()
+    for etaz in np.arange(-etamax, etamax, deta):
+        for etay in np.arange(-etamax, etamax, deta):
+            for etax in np.arange(-etamax, etamax, deta):
+                eta = Vector3d(etax, etay, etaz)
+                result += WT.kernelValueASPH(eta.magnitude(), targetNperh) * eta.selfdyad()
+    return (result.eigenValues().sumElements()/3.0)**(1.0/3.0)
 
-        # Go over the range of nodes per H, and see how well the TableKernel predicts
-        Wsumarray = []
-        actualnperh = []
-        lookupnperh = []
-        for nperh in [0.5*float(x) for x in range(1, 20)]:
-            deta = 1.0/nperh
-            npoints = int(WT.kernelExtent*nperh)
-            Wsum = 0.0
+# def sumKernelValuesSlice2d(WT, nhat, nperh, detax, detay):
+#     etamax = WT.kernelExtent
+#     result = SymTensor2d()
+#     for etay in np.arange(-etamax, etamax, detay):
+#         for etax in np.arange(-etamax, etamax, detax):
+#             eta = Vector2d(etax, etay)
+#             result += WT.kernelValueASPH(eta.magnitude(), nperh) * eta.selfdyad()
+#     return sqrt((result*nhat).magnitude())
 
-            eta = 0.0
-            for i in range(-npoints, npoints):
-                eta = abs(i*deta)
-                if nDim == 1 and eta > 1.0e-5:
-                    Wsum += abs(WT.gradValue(eta, 1.0))
-                if nDim > 1:
-                    for j in range(-npoints, npoints):
-                        eta = sqrt((i*deta)**2 +
-                                   (j*deta)**2)
-                        if nDim == 2 and eta > 1.0e-5:
-                            Wsum += abs(WT.gradValue(eta, 1.0))
-                        if nDim > 2:
-                            for k in range(-npoints, npoints):
-                                eta = sqrt((i*deta)**2 +
-                                           (j*deta)**2 +
-                                           (k*deta)**2)
-                                if eta > 1.0e-5:
-                                    Wsum += abs(WT.gradValue(eta, 1.0))
+# def sumKernelValuesSlice3d(WT, nhat, nperh, detax, detay, detaz):
+#     etamax = WT.kernelExtent
+#     result = SymTensor3d()
+#     for etaz in np.arange(-etamax, etamax, detaz):
+#         for etay in np.arange(-etamax, etamax, detay):
+#             for etax in np.arange(-etamax, etamax, detax):
+#                 eta = Vector3d(etax, etay, etaz)
+#                 result += WT.kernelValueASPH(eta.magnitude(), nperh) * eta.selfdyad()
+#     return ((result*nhat).magnitude())**(1.0/3.0)
 
-            Wsum = Wsum**(1.0/nDim)
-            result = WT.equivalentNodesPerSmoothingScale(Wsum)
-            Wsumarray.append(Wsum)
-            actualnperh.append(nperh)
-            lookupnperh.append(result)
+#-------------------------------------------------------------------------------
+# Here we go...
+#-------------------------------------------------------------------------------
+for Wstr in kernels:
+    title(Wstr)
 
-        # Plot the lookup results.
-        actualdata = Gnuplot.Data(Wsumarray, actualnperh,
-                                  with_ = "lines",
-                                  title = "Actual n per h",
-                                  inline = True)
-        lookupdata = Gnuplot.Data(Wsumarray, lookupnperh,
-                                  with_ = "points",
-                                  title = "Lookup n per h",
-                                  inline = True)
-        nperhdata = Gnuplot.Data(actualnperh, lookupnperh,
-                                 with_="points",
-                                 title = None,
-                                 inline = True)
-        data.extend([actualdata, lookupdata, nperhdata])
+    nDim = 0
+    if str(Wstr).split()[0][-2:] == "1d":
+        nDim = 1
+    elif str(Wstr).split()[0][-2:] == "2d":
+        nDim = 2
+    elif str(Wstr).split()[0][-2:] == "3d":
+        nDim = 3
+    assert nDim > 0
 
-        plot = generateNewGnuPlot()
-        plot.plot(actualdata)
-        plot.replot(lookupdata)
-        plot.title("%-d" % nDim)
-        plot.xlabel("W_{sum}")
-        plot.ylabel("n per h")
-        plot.refresh()
-        plots.append(plot)
+    # Plot the kernel basics
+    WT = eval(f"TableKernel{nDim}d({Wstr}(), 400)")
+    #plotTableKernel(WT, nPerh=4.01)
 
-        p = generateNewGnuPlot()
-        p.plot(nperhdata)
-        p.title("Comparison of actual vs. lookup nperh")
-        p.xlabel("actual nperh")
-        p.ylabel("lookup nperh")
-        p.refresh()
-        plots.append(p)
+    targetNperh = 4.01
+    asph = eval(f"ASPHSmoothingScale{nDim}d(WT, {targetNperh}, 400)")
 
-        # Plot Wsum as a function of n per h.
-        nperhdata = Gnuplot.Data(WT.nperhValues, WT.WsumValues,
-                                 with_ = "lines",
-                                 title = ("%i -D" % (nDim)),
-                                 inline = True)
-        plotWsum.replot(nperhdata)
+    # Now how well do we recover nPerh based on kernel sums?
+    etamax = WT.kernelExtent
+    nperh0 = np.arange(1.0/etamax, 10.0, 0.1)
+    nperhSPH = []
+    nperhASPH = []
+    WsumSPH = []
+    WsumASPH = []
+    for nperh in nperh0:
+        Wsumi = eval(f"sumKernelValues{nDim}d(WT, {nperh})")
+        WsumASPHi = eval(f"sumKernelValuesASPH{nDim}d(WT, {targetNperh}, {nperh})")
+        WsumSPH.append(Wsumi)
+        WsumASPH.append(WsumASPHi)
+        nperhSPH.append(WT.equivalentNodesPerSmoothingScale(Wsumi))
+        nperhASPH.append(asph.equivalentNodesPerSmoothingScale(WsumASPHi))
+    WsumSPH = np.array(WsumSPH)
+    WsumASPH = np.array(WsumASPH)
+    nperhSPH = np.array(nperhSPH)
+    nperhASPH = np.array(nperhASPH)
+
+    # Helper function for plotting
+    def plotIt(x, y, style,
+               label = None,
+               xlabel = None,
+               ylabel = None,
+               title = None,
+               plot = None):
+        if plot is None:
+            plot = newFigure()
+        plot.plot(x, y, style, label=label)
+        if title:
+            plot.set_title(title)
+        if xlabel:
+            plot.set_xlabel(xlabel)
+        if ylabel:
+            plot.set_ylabel(ylabel)
+        plot.legend()
+        return plot
+
+    # SPH fit for nperh(Wsum)
+    plot = plotIt(WsumSPH, nperh0, "r-*", label="Actual",
+                  title = f"{Wstr} n per h as a function of $\sum W$ : SPH algorithm",
+                  xlabel = r"$\sum W$",
+                  ylabel = "n per h")
+    plotIt(WsumSPH, nperhSPH, "k-", label="Fit", plot=plot)
+
+    # ASPH fit for nperh(Wsum)
+    plot = plotIt(WsumASPH, nperh0, "r-*", label="Actual",
+                  title = f"{Wstr} n per h as a function of $\lambda(\psi)$ : ASPH algorithm",
+                  xlabel = r"$\lambda(\psi)$",
+                  ylabel = "n per h")
+    plotIt(WsumASPH, nperhASPH, "k-", label="Fit", plot=plot)
+
+    # # SPH nperh
+    # plot = plotIt(nperh0, nperhSPH, "b*-", label="nperh lookup",
+    #               title = f"{Wstr} n per h lookup test : SPH algorithm",
+    #               xlabel = "nperh actual",
+    #               ylabel = "nperh estimated")
+
+    # # SPH nperh error
+    # plot = plotIt(nperh0, (nperhSPH - nperh0)/nperh0, "r*-",
+    #               title = f"{Wstr} n per h lookup test error : SPH algorithm",
+    #               xlabel = "nperh actual",
+    #               ylabel = "Error")
+
+    # plot = plotIt(nperh0, nperhASPH, "b*-",
+    #               title = f"{Wstr} n per h lookup test : ASPH algorithm",
+    #               xlabel = "nperh actual",
+    #               ylabel = "nperh estimated")
+
+    # plot = plotIt(nperh0, (nperhASPH - nperh0)/nperh0, "r*-",
+    #               title = f"{Wstr} n per h lookup test error : ASPH algorithm",
+    #               xlabel = "nperh actual",
+    #               ylabel = "Error")
+
+    # # Test ASPH with different aspect ratios
+    # if nDim == 2:
+    #     aspect = np.arange(0.1, 1.0, 0.05)
+    #     X, Y = np.meshgrid(nperh0, aspect)
+    #     WsumASPHx = np.ndarray(X.shape)
+    #     WsumASPHy = np.ndarray(X.shape)
+    #     nperhASPHx = np.ndarray(X.shape)
+    #     nperhASPHy = np.ndarray(X.shape)
+    #     nperhASPHx_err = np.ndarray(X.shape)
+    #     nperhASPHy_err = np.ndarray(X.shape)
+    #     for iy in range(X.shape[0]):
+    #         for ix in range(X.shape[1]):
+    #             nPerhi = X[iy,ix]
+    #             aspecti = Y[iy,ix]
+    #             WsumASPHx[iy,ix] = sumKernelValuesSlice2d(WT, Vector2d(1,0), nPerhi, 1.0/nPerhi, aspecti/nPerhi)
+    #             WsumASPHy[iy,ix] = sumKernelValuesSlice2d(WT, Vector2d(0,1), nPerhi, 1.0/nPerhi, aspecti/nPerhi)
+    #             nperhASPHx[iy,ix] = WT.equivalentNodesPerSmoothingScaleASPH(WsumASPHx[iy,ix])
+    #             nperhASPHy[iy,ix] = WT.equivalentNodesPerSmoothingScaleASPH(WsumASPHy[iy,ix])
+    #             nperhASPHx_err[iy,ix] = (nperhASPHx[iy,ix] - nPerhi)/nPerhi
+    #             nperhASPHy_err[iy,ix] = (nperhASPHy[iy,ix] - nPerhi/aspecti)/(nPerhi/aspecti)
+
+    #     plotSurface(X, Y, WsumASPHx,
+    #                 title = f"{Wstr} ASPH Wsum $X$",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")
+    #     plotSurface(X, Y, WsumASPHy,
+    #                 title = f"{Wstr} ASPH Wsum $Y$",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")
+    #     plotSurface(X, Y, nperhASPHx,
+    #                 title = f"{Wstr} ASPH n per h $X$",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")
+    #     plotSurface(X, Y, nperhASPHy,
+    #                 title = f"{Wstr} ASPH n per h $Y$",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")
+    #     plotSurface(X, Y, nperhASPHx_err,
+    #                 title = f"{Wstr} ASPH n per h $X$ error",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")
+    #     plotSurface(X, Y, nperhASPHy_err,
+    #                 title = f"{Wstr} ASPH n per h $Y$ error",
+    #                 xlabel = "n per h",
+    #                 ylabel = "aspect ratio")

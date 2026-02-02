@@ -2,11 +2,9 @@
 // Implement Lloyd's algorithm for centroidal relaxation of fluid points.
 //------------------------------------------------------------------------------
 #include "centroidalRelaxNodesImpl.hh"
-#include "RK/computeVoronoiVolume.hh"
+#include "VoronoiCells/computeVoronoiVolume.hh"
 #include "RK/ReproducingKernel.hh"
 #include "RK/gradientRK.hh"
-#include "NodeList/ASPHSmoothingScale.hh"
-#include "Utilities/iterateIdealH.hh"
 
 #include <ctime>
 using std::vector;
@@ -14,12 +12,6 @@ using std::tuple;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -57,8 +49,8 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
   auto D = db.solidDamage();
 
   // Prepare the storage for the point-wise fields.
-  auto gradRhof = db.newFluidFieldList(Vector::zero, "mass density gradient");
-  auto deltaCentroid = db.newFluidFieldList(Vector::zero, "delta centroid");
+  auto gradRhof = db.newFluidFieldList(Vector::zero(), "mass density gradient");
+  auto deltaCentroid = db.newFluidFieldList(Vector::zero(), "delta centroid");
   auto corrections0 = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections0");
   auto corrections = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections");
 
@@ -119,8 +111,8 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
         ntot += n;
         for (auto i = 0U; i != n; ++i) avgneighbors += cm.numNeighborsForNode(nodeListi, i);
       }
-      ntot = allReduce(ntot, MPI_SUM, Communicator::communicator());
-      avgneighbors = allReduce(avgneighbors, MPI_SUM, Communicator::communicator())/ntot;
+      ntot = allReduce(ntot, SPHERAL_OP_SUM);
+      avgneighbors = allReduce(avgneighbors, SPHERAL_OP_SUM)/ntot;
       if (Process::getRank() == 0) cerr << "Avergage number of neighbors per node: " << avgneighbors << " " << ntot << endl;
     } // BLAGO
 
@@ -178,16 +170,16 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
         const auto deltai = delta.magnitude()/(Dimension::nDim/H(nodeListi, i).Trace());
         avgdelta += deltai;
         maxdelta = std::max(maxdelta, deltai);
-        // if (vol(nodeListi, i) > 0.0) H(nodeListi, i) = SymTensor::one / std::min(hmax, 2.0*Dimension::rootnu(vol(nodeListi, i)));  
+        // if (vol(nodeListi, i) > 0.0) H(nodeListi, i) = SymTensor::one() / std::min(hmax, 2.0*Dimension::rootnu(vol(nodeListi, i)));  
 // Not correct, but hopefully good enough for our iterative Voronoi purposes.
         pos(nodeListi, i) += delta;
         rhof(nodeListi, i) = rhofunc(pos(nodeListi, i));
         if (vol(nodeListi, i) > 0.0) mass(nodeListi, i) = rhof(nodeListi,i)*vol(nodeListi,i);
       }
     }
-    avgdelta = (allReduce(avgdelta, MPI_SUM, Communicator::communicator())/
-                allReduce(db.numInternalNodes(), MPI_SUM, Communicator::communicator()));
-    maxdelta = allReduce(maxdelta, MPI_MAX, Communicator::communicator());
+    avgdelta = (allReduce(avgdelta, SPHERAL_OP_SUM)/
+                allReduce(db.numInternalNodes(), SPHERAL_OP_SUM));
+    maxdelta = allReduce(maxdelta, SPHERAL_OP_MAX);
     if (Process::getRank() == 0) cerr << "centroidalRelaxNodes iteration " << iter
                                       << ", avg delta frac " << avgdelta 
                                       << ", max delta frac " << maxdelta 

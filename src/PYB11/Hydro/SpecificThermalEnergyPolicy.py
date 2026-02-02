@@ -1,7 +1,7 @@
 from PYB11Generator import *
 from UpdatePolicyBase import *
 
-@PYB11module("SpheralHydro")
+@PYB11module("SpheralCompiledModules.SpheralHydro")
 @PYB11template("Dimension")
 class SpecificThermalEnergyPolicy(UpdatePolicyBase):
     """SpecificThermalEnergyPolicy -- An implementation of UpdatePolicyBase specialized
@@ -48,3 +48,7 @@ SPH. International Journal for Numerical Methods in Fluids, 75(11), 749–774. "
 we need to just time advance normally."""
         return "void"
 
+    @PYB11virtual
+    @PYB11const
+    def independent(self):
+        return "bool"

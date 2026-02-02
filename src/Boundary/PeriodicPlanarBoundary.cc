@@ -97,12 +97,12 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FacetedVolume>& field) c
   // Apply the boundary condition to all the ghost node values.
   const NodeList<Dimension>& nodeList = field.nodeList();
   CHECK(this->controlNodes(nodeList).size() == this->ghostNodes(nodeList).size());
-  vector<int>::const_iterator controlItr = this->controlBegin(nodeList);
-  vector<int>::const_iterator ghostItr = this->ghostBegin(nodeList);
+  auto controlItr = this->controlBegin(nodeList);
+  auto ghostItr = this->ghostBegin(nodeList);
   for (; controlItr < this->controlEnd(nodeList); ++controlItr, ++ghostItr) {
     CHECK(ghostItr < this->ghostEnd(nodeList));
-    CHECK(*controlItr >= 0 and *controlItr < (int)nodeList.numNodes());
-    CHECK(*ghostItr >= (int)nodeList.firstGhostNode() and *ghostItr < (int)nodeList.numNodes());
+    CHECK(*controlItr < nodeList.numNodes());
+    CHECK(*ghostItr >= nodeList.firstGhostNode() and *ghostItr < nodeList.numNodes());
     field(*ghostItr) = MapFacetedVolume<PeriodicBoundary<Dimension>::PeriodicPlanarBoundary, Dimension>::doit(*this, field(*controlItr));
   }
 }
@@ -117,11 +117,10 @@ PeriodicBoundary<Dimension>::PeriodicPlanarBoundary::
 enforceBoundary(Field<Dimension, typename Dimension::FacetedVolume>& field) const {
   REQUIRE(valid());
   const auto& nodeList = field.nodeList();
-  for (auto itr = this->violationBegin(nodeList);
-       itr < this->violationEnd(nodeList); 
-       ++itr) {
-    CHECK(*itr >= 0 && *itr < (int)nodeList.numInternalNodes());
-    field(*itr) = MapFacetedVolume<PeriodicBoundary<Dimension>::PeriodicPlanarBoundary, Dimension>::doit(*this, field(*itr));
+  const auto& violationNodes = this->violationNodes(nodeList);
+  for (auto i: violationNodes) {
+    CHECK(i < nodeList.numInternalNodes());
+    field(i) = MapFacetedVolume<PeriodicBoundary<Dimension>::PeriodicPlanarBoundary, Dimension>::doit(*this, field(i));
   }
 }
 

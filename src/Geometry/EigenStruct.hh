@@ -8,6 +8,7 @@
 #define __Spheral_EigenStruct_hh__
 
 #include <iostream>
+
 #include "Geometry/GeomVector_fwd.hh"
 #include "Geometry/GeomTensor_fwd.hh"
 #include "Geometry/GeomSymmetricTensor_fwd.hh"
@@ -19,19 +20,6 @@ template<int nDim>
 struct EigenStruct {
   GeomVector<nDim> eigenValues;
   GeomTensor<nDim> eigenVectors;
-
-  EigenStruct() {}
-  EigenStruct(const EigenStruct& rhs):
-    eigenValues(rhs.eigenValues),
-    eigenVectors(rhs.eigenVectors) {
-  }
-  EigenStruct& operator=(const EigenStruct& rhs) {
-    if (this != &rhs) {
-      eigenValues = rhs.eigenValues;
-      eigenVectors = rhs.eigenVectors;
-    }
-    return *this;
-  }
 };
 
 // Forward declarations.
@@ -43,9 +31,6 @@ template<int nDim> std::ostream& operator<<(::std::ostream os, Spheral::EigenStr
 // Include these here to avoid compiler complaints incomplete types.
 #include "GeomVector.hh"
 #include "GeomTensor.hh"
-
-#ifndef __GCCXML__
 #include "EigenStructInline.hh"
-#endif
 
 #endif

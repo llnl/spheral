@@ -9,107 +9,60 @@
 #include "TableKernel.hh"
 
 #include "Utilities/SpheralFunctions.hh"
-#include "Utilities/bisectSearch.hh"
+#include "Utilities/bisectRoot.hh"
 #include "Utilities/simpsonsIntegration.hh"
 #include "Utilities/safeInv.hh"
-
-using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
 namespace {  // anonymous
+
 //------------------------------------------------------------------------------
-// Sum the Kernel values for the given stepsize.
+// Sum the Kernel values for the given stepsize (SPH)
 //------------------------------------------------------------------------------
 inline
 double
-sumKernelValues(const TableKernel<Dim<1> >& W,
-                const double deta) {
-  REQUIRE(deta > 0);
+sumKernelValues(const TableKernel<Dim<1>>& W,
+                const double nPerh) {
+  REQUIRE(nPerh > 0.0);
+  const auto deta = 1.0/nPerh;
   double result = 0.0;
-  double etax = deta;
-  while (etax < W.kernelExtent()) {
-    result += 2.0*std::abs(W.gradValue(etax, 1.0));
-    etax += deta;
+  double etar = deta;
+  while (etar < W.kernelExtent()) {
+    result += 2.0*W.kernelValueSPH(etar);
+    etar += deta;
   }
   return result;
 }
 
 inline
 double
-sumKernelValues(const TableKernel<Dim<2> >& W,
-                const double deta) {
-  REQUIRE(deta > 0);
-  typedef Dim<2>::Vector Vector;
+sumKernelValues(const TableKernel<Dim<2>>& W,
+                const double nPerh) {
+  REQUIRE(nPerh > 0.0);
+  const auto deta = 1.0/nPerh;
   double result = 0.0;
-  double etay = 0.0;
-  while (etay < W.kernelExtent()) {
-    double etax = 0.0;
-    while (etax < W.kernelExtent()) {
-      const Vector eta(etax, etay);
-      double dresult = std::abs(W.gradValue(eta.magnitude(), 1.0));
-      if (distinctlyGreaterThan(etax, 0.0)) dresult *= 2.0;
-      if (distinctlyGreaterThan(etay, 0.0)) dresult *= 2.0;
-      if (fuzzyEqual(eta.magnitude(), 0.0)) dresult *= 0.0;
-      result += dresult;
-      etax += deta;
-    }
-    etay += deta;
+  double etar = deta;
+  while (etar < W.kernelExtent()) {
+    result += 2.0*M_PI*etar/deta*W.kernelValueSPH(etar);
+    etar += deta;
   }
   return sqrt(result);
 }
 
 inline
 double
-sumKernelValues(const TableKernel<Dim<3> >& W,
-                const double deta) {
-  REQUIRE(deta > 0);
-  typedef Dim<3>::Vector Vector;
+sumKernelValues(const TableKernel<Dim<3>>& W,
+                const double nPerh) {
+  REQUIRE(nPerh > 0.0);
+  const auto deta = 1.0/nPerh;
   double result = 0.0;
-  double etaz = 0.0;
-  while (etaz < W.kernelExtent()) {
-    double etay = 0.0;
-    while (etay < W.kernelExtent()) {
-      double etax = 0.0;
-      while (etax < W.kernelExtent()) {
-        const Vector eta(etax, etay, etaz);
-        CHECK(eta >= 0.0);
-        double dresult = std::abs(W.gradValue(eta.magnitude(), 1.0));
-        if (distinctlyGreaterThan(etax, 0.0)) dresult *= 2.0;
-        if (distinctlyGreaterThan(etay, 0.0)) dresult *= 2.0;
-        if (distinctlyGreaterThan(etaz, 0.0)) dresult *= 2.0;
-        if (fuzzyEqual(eta.magnitude(), 0.0)) dresult *= 0.0;
-        result += dresult;
-        etax += deta;
-      }
-      etay += deta;
-    }
-    etaz += deta;
+  double etar = deta;
+  while (etar < W.kernelExtent()) {
+    result += 4.0*M_PI*FastMath::square(etar/deta)*W.kernelValueSPH(etar);
+    etar += deta;
   }
-  return FastMath::CubeRootHalley2(result);
-}
-
-// Special hacked version to allow for running 1-D stacks of nodes in 3-D.
-// This is way ugly and tricky -- DON'T EMULATE THIS KIND OF EXAMPLE!
-template<typename KernelType>
-inline
-double
-sumKernelValuesAs1D(const KernelType& W,
-                    const double deta) {
-  REQUIRE(deta > 0);
-  double result = 0.0;
-  double etax = deta;
-  while (etax < W.kernelExtent()) {
-    result += 2.0*std::abs(W.gradValue(etax, 1.0));
-    etax += deta;
-  }
-  return result;
+  return pow(result, 1.0/3.0);
 }
 
 //------------------------------------------------------------------------------
@@ -133,7 +86,7 @@ class f1func {
 public:
   f1func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    return abs(safeInvVar(zeta)*eta)*W.kernelValue(abs(zeta - eta), 1.0);
+    return std::abs(safeInvVar(zeta)*eta)*W.kernelValue(std::abs(zeta - eta), 1.0);
   }
 };
 
@@ -145,7 +98,7 @@ class f2func {
 public:
   f2func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    return safeInvVar(zeta*zeta)*eta*abs(eta)*W.kernelValue(abs(zeta - eta), 1.0);
+    return safeInvVar(zeta*zeta)*eta*std::abs(eta)*W.kernelValue(std::abs(zeta - eta), 1.0);
   }
 };
 
@@ -157,9 +110,9 @@ class gradf1func {
 public:
   gradf1func(const KernelType& W, const double zeta): W(W), zeta(zeta) {}
   double operator()(const double eta) const {
-    const double Wu = W.kernelValue(abs(zeta - eta), 1.0);
-    const double gWu = W.gradValue(abs(zeta - eta), 1.0);
-    const double gf1inv = safeInvVar(zeta)*abs(eta)*gWu - safeInvVar(zeta*zeta)*abs(eta)*Wu;
+    const double Wu = W.kernelValue(std::abs(zeta - eta), 1.0);
+    const double gWu = W.gradValue(std::abs(zeta - eta), 1.0);
+    const double gf1inv = safeInvVar(zeta)*std::abs(eta)*gWu - safeInvVar(zeta*zeta)*std::abs(eta)*Wu;
     if (eta < 0.0) {
       return -gf1inv;
     } else {
@@ -208,30 +161,6 @@ gradf1Integral(const KernelType& W,
                                                                      numbins);
 }
 
-//------------------------------------------------------------------------------
-// Functors for building interpolation of kernel
-//------------------------------------------------------------------------------
-template<typename KernelType>
-struct Wlookup {
-  const KernelType& mW;
-  Wlookup(const KernelType& W): mW(W) {}
-  double operator()(const double x) const { return mW(x, 1.0); }
-};
-
-template<typename KernelType>
-struct gradWlookup {
-  const KernelType& mW;
-  gradWlookup(const KernelType& W): mW(W) {}
-  double operator()(const double x) const { return mW.grad(x, 1.0); }
-};
-
-template<typename KernelType>
-struct grad2Wlookup {
-  const KernelType& mW;
-  grad2Wlookup(const KernelType& W): mW(W) {}
-  double operator()(const double x) const { return mW.grad2(x, 1.0); }
-};
-
 }  // anonymous
 
 //------------------------------------------------------------------------------
@@ -240,27 +169,43 @@ struct grad2Wlookup {
 template<typename Dimension>
 template<typename KernelType>
 TableKernel<Dimension>::TableKernel(const KernelType& kernel,
-                                    const unsigned numPoints):
-  Kernel<Dimension, TableKernel<Dimension> >(),
-  mInterp(0.0, kernel.kernelExtent(), numPoints, Wlookup<KernelType>(kernel)),
-  mGradInterp(0.0, kernel.kernelExtent(), numPoints, gradWlookup<KernelType>(kernel)),
-  mGrad2Interp(0.0, kernel.kernelExtent(), numPoints, grad2Wlookup<KernelType>(kernel)),
-  mNumPoints(numPoints),
-  mNperhValues(),
-  mWsumValues(),
-  mMinNperh(0.25),
-  mMaxNperh(64.0) {
+                                    const unsigned numPoints,
+                                    const typename Dimension::Scalar minNperh,
+                                    const typename Dimension::Scalar maxNperh):
+  TableKernelView<Dimension>(),
+  mInterpVal(0.0, kernel.kernelExtent(), numPoints,      [&](const double x) { return kernel(x, 1.0); }),
+  mGradInterpVal(0.0, kernel.kernelExtent(), numPoints,  [&](const double x) { return kernel.grad(x, 1.0); }),
+  mGrad2InterpVal(0.0, kernel.kernelExtent(), numPoints, [&](const double x) { return kernel.grad2(x, 1.0); }),
+  mNperhLookupVal(),
+  mWsumLookupVal() {
+
+  // Gotta have a minimally reasonable nperh range
+  this->mMaxNperh = maxNperh;
+  this->mMinNperh = std::max(minNperh, 1.1/kernel.kernelExtent());
+  this->mNumPoints = numPoints;
+  if (this->mMaxNperh <= this->mMinNperh) this->mMaxNperh = 4.0*this->mMinNperh;
 
   // Pre-conditions.
-  VERIFY(numPoints > 0);
-
+  VERIFY2(this->mNumPoints > 0, "TableKernel ERROR: require numPoints > 0 : " << this->mNumPoints);
+  VERIFY2(this->mMinNperh > 0.0 and this->mMaxNperh > this->mMinNperh, "TableKernel ERROR: Bad (minNperh, maxNperh) range: (" << this->mMinNperh << ", " << this->mMaxNperh << ")");
+  this->mInterp = mInterpVal.view();
+  this->mGradInterp = mGradInterpVal.view();
+  this->mGrad2Interp = mGrad2InterpVal.view();
   // Set the volume normalization and kernel extent.
   this->setVolumeNormalization(1.0); // (kernel.volumeNormalization() / Dimension::pownu(hmult));  // We now build this into the tabular kernel values.
   this->setKernelExtent(kernel.kernelExtent());
   this->setInflectionPoint(kernel.inflectionPoint());
 
-  // Set the table of n per h values.
-  this->setNperhValues();
+  // Set the interpolation methods for looking up nperh (SPH methodology)
+  mWsumLookupVal.initialize(this->mMinNperh, this->mMaxNperh, numPoints,
+                            [&](const double x) -> double { return sumKernelValues(*this, x); });
+  mNperhLookupVal.initialize(mWsumLookupVal(this->mMinNperh), mWsumLookupVal(this->mMaxNperh), numPoints,
+                             [&](const double Wsum) -> double { return bisectRoot([&](const double nperh) { return mWsumLookupVal(nperh) - Wsum; }, this->mMinNperh, this->mMaxNperh); });
+  // Make nperh lookups monotonic
+  mWsumLookupVal.makeMonotonic();
+  mNperhLookupVal.makeMonotonic();
+  this->mNperhLookup = mNperhLookupVal.view();
+  this->mWsumLookup = mWsumLookupVal.view();
 }
 
 //------------------------------------------------------------------------------
@@ -269,23 +214,12 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
 template<typename Dimension>
 TableKernel<Dimension>::
 TableKernel(const TableKernel<Dimension>& rhs):
-  Kernel<Dimension, TableKernel<Dimension>>(rhs),
-  mInterp(rhs.mInterp),
-  mGradInterp(rhs.mGradInterp),
-  mGrad2Interp(rhs.mGrad2Interp),
-  mNumPoints(rhs.mNumPoints),
-  mNperhValues(rhs.mNperhValues),
-  mWsumValues( rhs.mWsumValues),
-  mMinNperh(rhs.mMinNperh),
-  mMaxNperh(rhs.mMaxNperh) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TableKernel<Dimension>::
-~TableKernel() {
+  TableKernelView<Dimension>(rhs),
+  mInterpVal(rhs.mInterpVal),
+  mGradInterpVal(rhs.mGradInterpVal),
+  mGrad2InterpVal(rhs.mGrad2InterpVal),
+  mNperhLookupVal(rhs.mNperhLookupVal),
+  mWsumLookupVal(rhs.mWsumLookupVal) {
 }
 
 //------------------------------------------------------------------------------
@@ -296,144 +230,14 @@ TableKernel<Dimension>&
 TableKernel<Dimension>::
 operator=(const TableKernel<Dimension>& rhs) {
   if (this != &rhs) {
-    Kernel<Dimension, TableKernel<Dimension>>::operator=(rhs);
-    mInterp = rhs.mInterp;
-    mGradInterp = rhs.mGradInterp;
-    mGrad2Interp = rhs.mGrad2Interp;
-    mNumPoints = rhs.mNumPoints;
-    mNperhValues = rhs.mNperhValues;
-    mWsumValues =  rhs.mWsumValues;
-    mMinNperh = rhs.mMinNperh;
-    mMaxNperh = rhs.mMaxNperh;
+    TableKernelView<Dimension>::operator=(rhs);
+    mInterpVal = rhs.mInterpVal;
+    mGradInterpVal = rhs.mGradInterpVal;
+    mGrad2InterpVal = rhs.mGrad2InterpVal;
+    mNperhLookupVal = rhs.mNperhLookupVal;
+    mWsumLookupVal = rhs.mWsumLookupVal;
   }
   return *this;
-}
-
-//------------------------------------------------------------------------------
-// Equivalence
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-TableKernel<Dimension>::
-operator==(const TableKernel<Dimension>& rhs) const {
-  return ((mInterp == rhs.mInterp) and
-          (mGradInterp == rhs.mGradInterp) and
-          (mGrad2Interp == rhs.mGrad2Interp));
-}
-
-//------------------------------------------------------------------------------
-// Determine the number of nodes per smoothing scale implied by the given
-// sum of kernel values.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::
-equivalentNodesPerSmoothingScale(const Scalar Wsum) const {
-
-  // Find the lower bound in the tabulated Wsum's bracketing the input
-  // value.
-  const int lb = bisectSearch(mWsumValues, Wsum);
-  CHECK((lb >= -1) and (lb <= int(mWsumValues.size()) - 1));
-  const int ub = lb + 1;
-  const int n = int(mNumPoints);
-  CHECK((lb == -1 and Wsum <= mWsumValues[0]) ||
-        (ub == n and Wsum >= mWsumValues[n - 1]) ||
-        (Wsum >= mWsumValues[lb] and Wsum <= mWsumValues[ub]));
-
-  // Now interpolate for the corresponding nodes per h (within bounds);
-  Scalar result;
-  if (lb == -1) {
-    result = mNperhValues[0];
-  } else if (ub == n) {
-    result = mNperhValues[n - 1];
-  } else {
-    result = std::min(mNperhValues[ub],
-                      std::max(mNperhValues[lb],
-                               mNperhValues[lb] +
-                               (Wsum - mWsumValues[lb])/
-                               (mWsumValues[ub] - mWsumValues[lb])*
-                               (mNperhValues[ub] - mNperhValues[lb])));
-    ENSURE(result >= mNperhValues[lb] and result <= mNperhValues[ub]);
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Determine the effective Wsum we would expect for the given n per h.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-TableKernel<Dimension>::
-equivalentWsum(const Scalar nPerh) const {
-
-  // Find the lower bound in the tabulated n per h's bracketing the input
-  // value.
-  const int lb = bisectSearch(mNperhValues, nPerh);
-  CHECK((lb >= -1) and (lb <= int(mNperhValues.size()) - 1));
-  const int ub = lb + 1;
-  const int n = int(mNumPoints);
-  CHECK((lb == -1 and nPerh <= mNperhValues[0]) ||
-        (ub == n and nPerh >= mNperhValues[n - 1]) ||
-        (nPerh >= mNperhValues[lb] and nPerh <= mNperhValues[ub]));
-
-  // Now interpolate for the corresponding Wsum.
-  Scalar result;
-  if (lb == -1) {
-    result = mWsumValues[0];
-  } else if (ub == n) {
-    result = mWsumValues[n - 1];
-  } else {
-    result = std::min(mWsumValues[ub], 
-                      std::max(mWsumValues[lb],
-                               mWsumValues[lb] +
-                               (nPerh - mNperhValues[lb])/
-                               (mNperhValues[ub] - mNperhValues[lb])*
-                               (mWsumValues[ub] - mWsumValues[lb])));
-    ENSURE(result >= mWsumValues[lb] and result <= mWsumValues[ub]);
-  }
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Initialize the Nperh values.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-TableKernel<Dimension>::
-setNperhValues(const bool scaleTo1D) {
-  REQUIRE(mMinNperh > 0.0);
-  REQUIRE(mMaxNperh > mMinNperh);
-  REQUIRE(mNumPoints > 1);
-  REQUIRE(this->kernelExtent() > 0.0);
-
-  // Size the Nperh array.
-  mWsumValues = vector<Scalar>(mNumPoints);
-  mNperhValues = vector<Scalar>(mNumPoints);
-
-  // For the allowed range of n per h, sum up the kernel values.
-  const Scalar dnperh = (mMaxNperh - mMinNperh)/(mNumPoints - 1u);
-  for (auto i = 0u; i < mNumPoints; ++i) {
-    const Scalar nperh = mMinNperh + i*dnperh;
-    CHECK(nperh >= mMinNperh and nperh <= mMaxNperh);
-    const Scalar deta = 1.0/nperh;
-    mNperhValues[i] = nperh;
-    if (scaleTo1D) {
-      mWsumValues[i] = sumKernelValuesAs1D(*this, deta);
-    } else {
-      mWsumValues[i] = sumKernelValues(*this, deta);
-    }
-  }
-
-  // Post-conditions.
-  BEGIN_CONTRACT_SCOPE
-  ENSURE(mWsumValues.size() == mNumPoints);
-  ENSURE(mNperhValues.size() == mNumPoints);
-  for (auto i = 0u; i < mNumPoints - 1; ++i) {
-    ENSURE(mWsumValues[i] <= mWsumValues[i + 1]);
-    ENSURE(mNperhValues[i] <= mNperhValues[i + 1]);
-  }
-  END_CONTRACT_SCOPE
-
 }
 
 }

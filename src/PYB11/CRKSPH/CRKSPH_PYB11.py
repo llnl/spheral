@@ -9,16 +9,18 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
-from CRKSPHHydroBase import *
-from SolidCRKSPHHydroBase import *
+from CRKSPHBase import *
+from CRKSPH import *
+from SolidCRKSPH import *
 
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
-PYB11includes += ['"CRKSPH/CRKSPHHydroBase.hh"',
-                  '"CRKSPH/CRKSPHHydroBaseRZ.hh"',
-                  '"CRKSPH/SolidCRKSPHHydroBase.hh"',
-                  '"CRKSPH/SolidCRKSPHHydroBaseRZ.hh"',
+PYB11includes += ['"CRKSPH/CRKSPHBase.hh"',
+                  '"CRKSPH/CRKSPH.hh"',
+                  '"CRKSPH/CRKSPHRZ.hh"',
+                  '"CRKSPH/SolidCRKSPH.hh"',
+                  '"CRKSPH/SolidCRKSPHRZ.hh"',
                   '"CRKSPH/computeCRKSPHSumMassDensity.hh"',
                   '"CRKSPH/computeSolidCRKSPHSumMassDensity.hh"',
                   '"CRKSPH/detectSurface.hh"',
@@ -26,7 +28,11 @@ PYB11includes += ['"CRKSPH/CRKSPHHydroBase.hh"',
                   '"CRKSPH/editMultimaterialSurfaceTopology.hh"',
                   '"CRKSPH/zerothOrderSurfaceCorrections.hh"',
                   '"Utilities/NodeCoupling.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"ArtificialViscosity/ArtificialViscosity.hh"',
+                  '"ArtificialViscosity/ArtificialViscosityHandle.hh"',
+                  '"Neighbor/PairwiseField.hh"',
                   '"FileIO/FileIO.hh"',
                   '<iterator>']
 
@@ -107,27 +113,28 @@ For such points:
 # Instantiate our types
 #-------------------------------------------------------------------------------
 for ndim in dims:
-    exec('''
-CRKSPHHydroBase%(ndim)id = PYB11TemplateClass(CRKSPHHydroBase, template_parameters="%(Dimension)s")
-SolidCRKSPHHydroBase%(ndim)id = PYB11TemplateClass(SolidCRKSPHHydroBase, template_parameters="%(Dimension)s")
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+CRKSPHBase{ndim}d = PYB11TemplateClass(CRKSPHBase, template_parameters="{Dimension}")
+CRKSPH{ndim}d = PYB11TemplateClass(CRKSPH, template_parameters="{Dimension}")
+SolidCRKSPH{ndim}d = PYB11TemplateClass(SolidCRKSPH, template_parameters="{Dimension}")
 
 @PYB11pycppname("centerOfMass")
-def centerOfMass%(ndim)id(polyvol = "const %(Dimension)s::FacetedVolume&",
-                          gradRhoi = "const %(Dimension)s::Vector&"):
+def centerOfMass{ndim}d(polyvol = "const {Dimension}::FacetedVolume&",
+                        gradRhoi = "const {Dimension}::Vector&"):
     "Compute the center of mass of a FacetedVolume assuming a linear mass density field."
-    return "%(Dimension)s::Vector"
+    return "{Dimension}::Vector"
 
-computeCRKSPHSumMassDensity%(ndim)id = PYB11TemplateFunction(computeCRKSPHSumMassDensity, template_parameters="%(Dimension)s")
-computeSolidCRKSPHSumMassDensity%(ndim)id = PYB11TemplateFunction(computeSolidCRKSPHSumMassDensity, template_parameters="%(Dimension)s")
-detectSurface%(ndim)id = PYB11TemplateFunction(detectSurface, template_parameters="%(Dimension)s")
-editMultimaterialSurfaceTopology%(ndim)id = PYB11TemplateFunction(editMultimaterialSurfaceTopology, template_parameters="%(Dimension)s")
-zerothOrderSurfaceCorrections%(ndim)id = PYB11TemplateFunction(zerothOrderSurfaceCorrections, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+computeCRKSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeCRKSPHSumMassDensity, template_parameters="{Dimension}")
+computeSolidCRKSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeSolidCRKSPHSumMassDensity, template_parameters="{Dimension}")
+detectSurface{ndim}d = PYB11TemplateFunction(detectSurface, template_parameters="{Dimension}")
+editMultimaterialSurfaceTopology{ndim}d = PYB11TemplateFunction(editMultimaterialSurfaceTopology, template_parameters="{Dimension}")
+zerothOrderSurfaceCorrections{ndim}d = PYB11TemplateFunction(zerothOrderSurfaceCorrections, template_parameters="{Dimension}")
+''')
 
 #-------------------------------------------------------------------------------
 # 2D
 #-------------------------------------------------------------------------------
 if 2 in dims:
-    from CRKSPHHydroBaseRZ import *
-    from SolidCRKSPHHydroBaseRZ import *
+    from CRKSPHRZ import *
+    from SolidCRKSPHRZ import *

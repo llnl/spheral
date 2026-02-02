@@ -14,7 +14,6 @@ from Spheral import *
 # Create a global random number generator.
 import random
 random.seed(710)
-rangen = random.Random()
 ranrange = (-1.0, 1.0)
 
 # Choose a default overall tolerance for comparisons
@@ -41,7 +40,7 @@ def fillRandom(Constructor):
     ndim = Constructor.nDimensions
     nelem = Constructor.numElements
     for i in range(Constructor.numElements):
-        result[i] = rangen.uniform(*ranrange)
+        result[i] = random.uniform(*ranrange)
     if "Sym" in Constructor.__name__:
         result = 0.5*(result + result.Transpose())
     return result
@@ -58,7 +57,7 @@ class TestInnerProduct(unittest.TestCase):
         for typestring in ("Vector%id", "Tensor%id", "SymTensor%id", "ThirdRankTensor%id"):
             for dim in dims:
                 ttype = eval(typestring % dim)
-                x = rangen.uniform(*ranrange)
+                x = random.uniform(*ranrange)
                 y = fillRandom(ttype)
                 result = innerProduct(x, y)
                 answer = ttype()
@@ -74,7 +73,7 @@ class TestInnerProduct(unittest.TestCase):
         for typestring in ("Vector%id", "Tensor%id", "SymTensor%id", "ThirdRankTensor%id"):
             for dim in dims:
                 ttype = eval(typestring % dim)
-                x = rangen.uniform(*ranrange)
+                x = random.uniform(*ranrange)
                 y = fillRandom(ttype)
                 result = innerProduct(y, x)
                 answer = ttype()
@@ -418,7 +417,7 @@ class TestOuterProduct(unittest.TestCase):
         for typestring in ("Vector%id", "Tensor%id", "SymTensor%id", "ThirdRankTensor%id"):
             for dim in dims:
                 ttype = eval(typestring % dim)
-                x = rangen.uniform(*ranrange)
+                x = random.uniform(*ranrange)
                 y = fillRandom(ttype)
                 result = outerProduct(x, y)
                 answer = ttype()
@@ -434,7 +433,7 @@ class TestOuterProduct(unittest.TestCase):
         for typestring in ("Vector%id", "Tensor%id", "SymTensor%id", "ThirdRankTensor%id"):
             for dim in dims:
                 ttype = eval(typestring % dim)
-                x = rangen.uniform(*ranrange)
+                x = random.uniform(*ranrange)
                 y = fillRandom(ttype)
                 result = outerProduct(y, x)
                 answer = ttype()

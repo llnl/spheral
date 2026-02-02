@@ -116,7 +116,7 @@ class TestDistributeByPosition1d(unittest.TestCase):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes,
                                               mpi.SUM))
 
@@ -127,7 +127,7 @@ class TestDistributeByPosition1d(unittest.TestCase):
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
         i = 0
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             nGlobal = nNodesGlobal[i]
             if n != nGlobal:
@@ -137,7 +137,7 @@ class TestDistributeByPosition1d(unittest.TestCase):
         # Have each domain figure out it's min and max x.
         localxmin = 1e10
         localxmax = -1e10
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             if nodeList.numInternalNodes > 0:
                 localxmin = min(localxmin, min([nodeList.positions()[i].x for i in range(nodeList.numNodes)]))
                 localxmax = max(localxmax, max([nodeList.positions()[i].x for i in range(nodeList.numNodes)]))

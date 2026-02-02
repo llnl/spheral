@@ -12,8 +12,8 @@
 #include "Field/FieldList.hh"
 
 #include <stdint.h>
-#include "boost/unordered_map.hpp"
-#include "boost/unordered_set.hpp"
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Spheral {
 
@@ -54,7 +54,7 @@ public:
 
   //! We augment the generic body force state.
   virtual void registerState(DataBase<Dimension>& dataBase,
-                             State<Dimension>& state);
+                             State<Dimension>& state) override;
 
   //! This is the derivative method that all BodyForce classes must provide.
   virtual 
@@ -62,13 +62,13 @@ public:
                            const Scalar /*dt*/,
                            const DataBase<Dimension>& dataBase,
                            const State<Dimension>& state,
-                           StateDerivatives<Dimension>& derivs) const;
+                           StateDerivatives<Dimension>& derivs) const override;
 
   //! Vote on the timestep.  This uses a velocity-limiting rule.
   virtual TimeStepType dt(const DataBase<Dimension>& /*dataBase*/, 
                           const State<Dimension>& state,
                           const StateDerivatives<Dimension>& /*derivs*/,
-                          const Scalar /*currentTime*/) const;
+                          const Scalar /*currentTime*/) const override;
 
   // An optional hook to initialize once when the problem is starting up.
   // Typically this is used to size arrays once all the materials and NodeLists have
@@ -85,17 +85,17 @@ public:
                                                     StateDerivatives<Dimension>& derivs) override;
 
   //! Initialize before we start a derivative evaluation.
-  virtual void initialize(const Scalar /*time*/,
+  virtual bool initialize(const Scalar /*time*/,
                           const Scalar /*dt*/,
                           const DataBase<Dimension>& dataBase,
                           State<Dimension>& state,
-                          StateDerivatives<Dimension>& /*derivs*/);
+                          StateDerivatives<Dimension>& /*derivs*/) override;
                        
   //! This package opts out of building connectivity.
-  virtual bool requireConnectivity() const { return false; }
+  virtual bool requireConnectivity() const override { return false; }
 
   //! Return the total energy contribution due to the gravitational potential.
-  virtual Scalar extraEnergy() const;
+  virtual Scalar extraEnergy() const override;
 
   //! Return the gravitational potential created by the particle distribution.
   const FieldList<Dimension, Scalar>& potential() const;
@@ -133,7 +133,7 @@ public:
 
   //****************************************************************************
   // Methods required for restarting.
-  virtual std::string label() const { return "TreeGravity"; }
+  virtual std::string label() const override { return "TreeGravity"; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************
@@ -143,7 +143,7 @@ private:
   typedef uint32_t LevelKey;
   typedef uint64_t CellKey;
   typedef std::pair<size_t, size_t> NodeID;
-  typedef boost::unordered_map<NodeID, std::vector<boost::unordered_set<CellKey> > > CompletedCellSet;
+  typedef std::unordered_map<NodeID, std::vector<std::unordered_set<CellKey> > > CompletedCellSet;
 
   static unsigned num1dbits;                   // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
   static CellKey max1dKey;                     // The maximum number of cells this corresponds to in a direction.
@@ -177,7 +177,7 @@ private:
   };
 
   // Define the types we use to build the tree.
-  typedef boost::unordered_map<CellKey, Cell> TreeLevel;
+  typedef std::unordered_map<CellKey, Cell> TreeLevel;
   typedef std::vector<TreeLevel> Tree;
 
   // Private data.

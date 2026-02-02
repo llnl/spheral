@@ -1,21 +1,20 @@
 namespace Spheral {
+
 //------------------------------------------------------------------------------
 // Determine the principle derivatives.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-GSPHHydroBase<Dimension>::
+GSPH<Dimension>::
 evaluateDerivatives(const typename Dimension::Scalar time,
                     const typename Dimension::Scalar dt,
                     const DataBase<Dimension>& dataBase,
                     const State<Dimension>& state,
-                          StateDerivatives<Dimension>& derivatives) const {
+                    StateDerivatives<Dimension>& derivs) const {
   TIME_BEGIN("GSPHevalDerivs");
 
   const auto& riemannSolver = this->riemannSolver();
 
-  const auto& smoothingScale = this->smoothingScaleMethod();
-  
   // A few useful constants we'll use in the following loop.
   const auto tiny = std::numeric_limits<Scalar>::epsilon();
   const auto xsph = this->XSPH();
@@ -42,16 +41,16 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   // Get the state and derivative FieldLists.
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const auto riemannDpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  const auto riemannDvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  const auto riemannDpDx = state.fields(GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  const auto riemannDvDx = state.fields(GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
   
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
@@ -66,23 +65,25 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(riemannDvDx.size() == numNodeLists);
 
   // Derivative FieldLists.
-  const auto  M = derivatives.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
-  auto  normalization = derivatives.fields(HydroFieldNames::normalization, 0.0);
-  auto  DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto  DrhoDt = derivatives.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
-  auto  DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-  auto  DepsDt = derivatives.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  auto  DvDx = derivatives.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-  auto  DHDt = derivatives.fields(IncrementState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
-  auto  Hideal = derivatives.fields(ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
-  auto& pairAccelerations = derivatives.getAny(HydroFieldNames::pairAccelerations, vector<Vector>());
-  auto& pairDepsDt = derivatives.getAny(HydroFieldNames::pairWork, vector<Scalar>());
-  auto  XSPHDeltaV = derivatives.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
-  auto  weightedNeighborSum = derivatives.fields(HydroFieldNames::weightedNeighborSum, 0.0);
-  auto  massSecondMoment = derivatives.fields(HydroFieldNames::massSecondMoment, SymTensor::zero);
-  auto  newRiemannDpDx = derivatives.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  auto  newRiemannDvDx = derivatives.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  const auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
+  auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto  DrhoDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
+  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
+  auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
+  auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  auto* pairAccelerationsPtr = (compatibleEnergy ?
+                                &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
+                                nullptr);
+  auto* pairDepsDtPtr = (compatibleEnergy ?
+                         &derivs.template get<PairWorkType>(HydroFieldNames::pairWork) :
+                         nullptr);
+  auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
+  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
   
+  CHECK(DrhoDx.size() == numNodeLists);
   CHECK(M.size() == numNodeLists);
   CHECK(normalization.size() == numNodeLists);
   CHECK(DxDt.size() == numNodeLists);
@@ -90,20 +91,13 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(DvDt.size() == numNodeLists);
   CHECK(DepsDt.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
-  CHECK(DHDt.size() == numNodeLists);
-  CHECK(Hideal.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
-  CHECK(weightedNeighborSum.size() == numNodeLists);
-  CHECK(massSecondMoment.size() == numNodeLists);
   CHECK(newRiemannDpDx.size() == numNodeLists);
   CHECK(newRiemannDvDx.size() == numNodeLists);
+  CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
+  CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
 
-  if (compatibleEnergy){
-    pairAccelerations.resize(npairs);
-    pairDepsDt.resize(2*npairs);
-  }
-
-  this->computeMCorrection(time,dt,dataBase,state,derivatives);
+  this->computeMCorrection(time,dt,dataBase,state,derivs);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -111,12 +105,10 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
     Scalar psii,psij, Wi, gWi, Wj, gWj, Pstar, rhostari, rhostarj;
-    Vector gradPsii, gradPsij, Ai, Aj, vstar;
+    Vector gradPsii, gradPsij, vstar;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDt_thread = DvDt.threadCopy(threadStack);
-    auto weightedNeighborSum_thread = weightedNeighborSum.threadCopy(threadStack);
-    auto massSecondMoment_thread = massSecondMoment.threadCopy(threadStack);
     auto DepsDt_thread = DepsDt.threadCopy(threadStack);
     auto DvDx_thread = DvDx.threadCopy(threadStack);
     auto newRiemannDpDx_thread = newRiemannDpDx.threadCopy(threadStack);
@@ -139,7 +131,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto& vi = velocity(nodeListi, i);
       const auto& rhoi = massDensity(nodeListi, i);
       const auto& voli = volume(nodeListi, i);
-      //const auto& epsi = specificThermalEnergy(nodeListi, i);
       const auto& Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& ci = soundSpeed(nodeListi, i);
@@ -155,11 +146,9 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       auto& newRiemannDpDxi = newRiemannDpDx_thread(nodeListi,i);
       auto& newRiemannDvDxi = newRiemannDvDx_thread(nodeListi,i);
       auto& DvDxi = DvDx_thread(nodeListi, i);
-      auto& weightedNeighborSumi = weightedNeighborSum_thread(nodeListi, i);
-      auto& massSecondMomenti = massSecondMoment_thread(nodeListi, i);
       auto& XSPHDeltaVi = XSPHDeltaV_thread(nodeListi,i);
+      const auto& gradRhoi = DrhoDx(nodeListi,i);
       const auto& Mi = M(nodeListi,i);
-
 
       // Get the state for node j
       const auto& riemannDpDxj = riemannDpDx(nodeListj, j);
@@ -169,7 +158,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto& vj = velocity(nodeListj, j);
       const auto& rhoj = massDensity(nodeListj, j);
       const auto& volj = volume(nodeListj, j);
-      //const auto& epsj = specificThermalEnergy(nodeListj, j);
       const auto& Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
       const auto& cj = soundSpeed(nodeListj, j);
@@ -185,15 +173,12 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       auto& newRiemannDpDxj = newRiemannDpDx_thread(nodeListj,j);
       auto& newRiemannDvDxj = newRiemannDvDx_thread(nodeListj,j);
       auto& DvDxj = DvDx_thread(nodeListj, j);
-      auto& weightedNeighborSumj = weightedNeighborSum_thread(nodeListj, j);
-      auto& massSecondMomentj = massSecondMoment_thread(nodeListj, j);
       auto& XSPHDeltaVj = XSPHDeltaV_thread(nodeListj,j);
+      const auto& gradRhoj = DrhoDx(nodeListj,j);
       const auto& Mj = M(nodeListj,j);
-
+      
       // Node displacement.
       const auto rij = ri - rj;
-      const auto rhatij =rij.unitVector();
-      const auto vij = vi - vj;
       const auto etai = Hi*rij;
       const auto etaj = Hj*rij;
       const auto etaMagi = etai.magnitude();
@@ -210,15 +195,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       const auto Hetaj = Hj*etaj.unitVector();
       const auto gradWj = gWj*Hetaj;
 
-      // Zero'th and second moment of the node distribution -- used for the
-      // ideal H calculation.
-      const auto rij2 = rij.magnitude2();
-      const auto thpt = rij.selfdyad()*safeInvVar(rij2*rij2*rij2);
-      weightedNeighborSumi += std::abs(gWi);
-      weightedNeighborSumj += std::abs(gWj);
-      massSecondMomenti += gradWi.magnitude2()*thpt;
-      massSecondMomentj += gradWj.magnitude2()*thpt;
-
       // Determine an effective pressure including a term to fight the tensile instability.
       //const auto fij = epsTensile*pow(Wi/(Hdeti*WnPerh), nTensile);
       const auto fij = epsTensile*FastMath::pow4(Wi/(Hdeti*WnPerh));
@@ -233,26 +209,28 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       auto gradPj = riemannDpDxj;
       auto gradVi = riemannDvDxi;
       auto gradVj = riemannDvDxj;
-      if (gradType==GradientType::SPHSameTimeGradient){
-        gradPi = newRiemannDpDxi;
-        gradPj = newRiemannDpDxj;
-        gradVi = newRiemannDvDxi;
-        gradVj = newRiemannDvDxj;
+      if (gradType==GradientType::SPHSameTimeGradient or
+          gradType==GradientType::SPHUncorrectedGradient){
+        gradPi = newRiemannDpDx(nodeListi,i);
+        gradPj = newRiemannDpDx(nodeListj,j);
+        gradVi = newRiemannDvDx(nodeListi,i);
+        gradVj = newRiemannDvDx(nodeListj,j);
       }
-      riemannSolver.interfaceState(i,            j, 
-                                   nodeListi,    nodeListj, 
-                                   ri,           rj, 
+      
+      riemannSolver.interfaceState(ri,           rj, 
+                                   Hi,           Hj, 
                                    rhoi,         rhoj, 
                                    ci,           cj, 
                                    Peffi,        Peffj, 
                                    vi,           vj, 
+                                   gradRhoi,     gradRhoj,
                                    gradPi,       gradPj, 
                                    gradVi,       gradVj, 
-                                   Pstar,
-                                   vstar,
-                                   rhostari,
-                                   rhostarj);
-
+                                   Pstar,     //output
+                                   vstar,     //output
+                                   rhostari,  //output
+                                   rhostarj); //output
+      
       // get our basis function and interface area vectors
       //--------------------------------------------------------
       psii = volj*Wi;
@@ -266,22 +244,21 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       // acceleration
       //------------------------------------------------------
       const auto deltaDvDt = Pstar*(Ai+Aj);
-      DvDti -= deltaDvDt;
-      DvDtj += deltaDvDt;
+      DvDti -= deltaDvDt/mi;
+      DvDtj += deltaDvDt/mj;
 
       // energy
       //------------------------------------------------------
       const auto deltaDepsDti = 2.0*Pstar*Ai.dot(vi-vstar);
       const auto deltaDepsDtj = 2.0*Pstar*Aj.dot(vstar-vj);
+      DepsDti += deltaDepsDti/mi;
+      DepsDtj += deltaDepsDtj/mj;
 
-      DepsDti += deltaDepsDti;
-      DepsDtj += deltaDepsDtj;
-     
       if(compatibleEnergy){
         const auto invmij = 1.0/(mi*mj);
-        pairAccelerations[kk] = deltaDvDt*invmij; 
-        pairDepsDt[2*kk]   = deltaDepsDti*invmij; 
-        pairDepsDt[2*kk+1] = deltaDepsDtj*invmij; 
+        (*pairAccelerationsPtr)[kk] = deltaDvDt*invmij; 
+        (*pairDepsDtPtr)[kk][0]  = deltaDepsDti*invmij; 
+        (*pairDepsDtPtr)[kk][1]  = deltaDepsDtj*invmij; 
       }
 
       // gradients
@@ -342,17 +319,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   // Finish up the derivatives for each point.
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = mass[nodeListi]->nodeList();
-    const auto  hmin = nodeList.hmin();
-    const auto  hmax = nodeList.hmax();
-    const auto  hminratio = nodeList.hminratio();
-    const auto  nPerh = nodeList.nodesPerSmoothingScale();
-
     const auto ni = nodeList.numInternalNodes();
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
 
       // Get the state for node i.
-      const auto& ri = position(nodeListi, i);
       const auto& mi = mass(nodeListi, i);
       const auto& voli = volume(nodeListi,i);
       const auto& vi = velocity(nodeListi, i);
@@ -370,14 +341,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       auto& DvDti = DvDt(nodeListi, i);
       auto& DepsDti = DepsDt(nodeListi, i);
       auto& DvDxi = DvDx(nodeListi, i);
-      auto& DHDti = DHDt(nodeListi, i);
-      auto& Hideali = Hideal(nodeListi, i);
       auto& XSPHDeltaVi = XSPHDeltaV(nodeListi, i);
-      auto& weightedNeighborSumi = weightedNeighborSum(nodeListi, i);
-      auto& massSecondMomenti = massSecondMoment(nodeListi, i);
-
-      DvDti /= mi;
-      DepsDti /= mi;
 
       normi += voli*Hdeti*W0;
 
@@ -386,36 +350,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       // If needed finish the total energy derivative.
       if (totalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
 
-      // Complete the moments of the node distribution for use in the ideal H calculation.
-      weightedNeighborSumi = Dimension::rootnu(max(0.0, weightedNeighborSumi/Hdeti));
-      massSecondMomenti /= Hdeti*Hdeti;
-
       // Determine the position evolution, based on whether we're doing XSPH or not.
       DxDti = vi;
       if (xsph){
         DxDti += XSPHDeltaVi/max(tiny, normi);
       } 
-
-      // The H tensor evolution.
-      DHDti = smoothingScale.smoothingScaleDerivative(Hi,
-                                                             ri,
-                                                             DvDxi,
-                                                             hmin,
-                                                             hmax,
-                                                             hminratio,
-                                                             nPerh);
-      Hideali = smoothingScale.newSmoothingScale(Hi,
-                                                        ri,
-                                                        weightedNeighborSumi,
-                                                        massSecondMomenti,
-                                                        W,
-                                                        hmin,
-                                                        hmax,
-                                                        hminratio,
-                                                        nPerh,
-                                                        connectivityMap,
-                                                        nodeListi,
-                                                        i);
     } // nodes loop
   } // nodeLists loop
 
@@ -428,40 +367,45 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-GSPHHydroBase<Dimension>::
+GSPH<Dimension>::
 computeMCorrection(const typename Dimension::Scalar /*time*/,
                    const typename Dimension::Scalar /*dt*/,
                    const DataBase<Dimension>& dataBase,
                    const State<Dimension>& state,
-                         StateDerivatives<Dimension>& derivatives) const {
-
+                   StateDerivatives<Dimension>& derivs) const {
   // The kernels and such.
   const auto& W = this->kernel();
-  const auto gradType = this->gradientType();
-
+  const auto calcSpatialGradients =  (this->gradientType() == GradientType::SPHSameTimeGradient 
+                                  or  this->gradientType() == GradientType::SPHUncorrectedGradient);
+  const auto correctSpatialGradients = (this->gradientType() == GradientType::SPHSameTimeGradient);
+  
   // The connectivity.
   const auto& connectivityMap = dataBase.connectivityMap();
   const auto& nodeLists = connectivityMap.nodeLists();
   const auto numNodeLists = nodeLists.size();
 
   // Get the state and derivative FieldLists. 
+  const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
 
+  CHECK(massDensity.size() == numNodeLists);
   CHECK(volume.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
   CHECK(pressure.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
 
-  auto  M = derivatives.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero);
-  auto  newRiemannDpDx = derivatives.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero);
-  auto  newRiemannDvDx = derivatives.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero);
+  auto  M = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
+  auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
+  auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
   
   CHECK(M.size() == numNodeLists);
+  CHECK(DrhoDx.size() == numNodeLists);
   CHECK(newRiemannDpDx.size() == numNodeLists);
   CHECK(newRiemannDvDx.size() == numNodeLists);
 
@@ -476,6 +420,7 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto M_thread = M.threadCopy(threadStack);
+    auto DrhoDx_thread = DrhoDx.threadCopy(threadStack);
     auto newRiemannDpDx_thread = newRiemannDpDx.threadCopy(threadStack);
     auto newRiemannDvDx_thread = newRiemannDvDx.threadCopy(threadStack);
 
@@ -487,6 +432,7 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
       nodeListj = pairs[kk].j_list;
       
       // Get the state for node i.
+      const auto& rhoi = massDensity(nodeListi, i);
       const auto& ri = position(nodeListi, i);
       const auto& voli = volume(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
@@ -495,8 +441,10 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
       CHECK(Hdeti > 0.0);
 
       auto& Mi = M_thread(nodeListi, i);
+      auto& DrhoDxi = DrhoDx_thread(nodeListi, i);
 
       // Get the state for node j
+      const auto& rhoj = massDensity(nodeListj, j);
       const auto& rj = position(nodeListj, j);
       const auto& volj = volume(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
@@ -505,6 +453,7 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
       CHECK(Hdetj > 0.0);
 
       auto& Mj = M_thread(nodeListj, j);
+      auto& DrhoDxj = DrhoDx_thread(nodeListj, j);
 
       const auto rij = ri - rj;
 
@@ -530,12 +479,17 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
       Mi -= rij.dyad(gradPsii);
       Mj -= rij.dyad(gradPsij);
       
+      DrhoDxi -= (rhoi - rhoj) * gradPsii;
+      DrhoDxj -= (rhoi - rhoj) * gradPsij;
+
       // // based on nodal values
-      if (gradType == GradientType::SPHSameTimeGradient){
+      if (calcSpatialGradients){
+        
         const auto& vi = velocity(nodeListi, i);
         const auto& Pi = pressure(nodeListi, i);
         const auto& vj = velocity(nodeListj, j);
         const auto& Pj = pressure(nodeListj, j);
+
         auto& newRiemannDpDxi = newRiemannDpDx_thread(nodeListi, i);
         auto& newRiemannDvDxi = newRiemannDvDx_thread(nodeListi, i);
         auto& newRiemannDpDxj = newRiemannDpDx_thread(nodeListj, j);
@@ -546,6 +500,7 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
 
         newRiemannDvDxi -= (vi-vj).dyad(gradPsii);
         newRiemannDvDxj -= (vi-vj).dyad(gradPsij);
+
       }
     } // loop over pairs
 
@@ -554,7 +509,7 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
 
   }   // OpenMP parallel region
   
-  // Finish up the spatial gradient calculation
+  // loop the nodes to finish up the spatial gradient calculation
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = M[nodeListi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
@@ -562,33 +517,37 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
     for (auto i = 0u; i < ni; ++i) {
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       auto& Mi = M(nodeListi, i);
+      auto& DrhoDxi = DrhoDx(nodeListi, i);
 
       const auto Mdeti = std::abs(Mi.Determinant());
 
       const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2);
       const auto goodM =  (Mdeti > 1e-2 and enoughNeighbors);                   
 
-      Mi = ( goodM ? Mi.Inverse() : Tensor::one);
+      Mi = ( goodM ? Mi.Inverse() : Tensor::one());
 
-      if (gradType == GradientType::SPHSameTimeGradient){
+      DrhoDxi = Mi.Transpose()*DrhoDxi;
+        
+      if (correctSpatialGradients){
+
         auto& newRiemannDpDxi = newRiemannDpDx(nodeListi, i);
         auto& newRiemannDvDxi = newRiemannDvDx(nodeListi, i);
-
         newRiemannDpDxi = Mi.Transpose()*newRiemannDpDxi;
         newRiemannDvDxi = newRiemannDvDxi*Mi;
-      }
-    }
-    
-  }
+
+      } // if correctSpatialGradients
+    }   // for each node
+  }     // for each node list
   
   for (ConstBoundaryIterator boundItr = this->boundaryBegin();
          boundItr != this->boundaryEnd();
          ++boundItr)(*boundItr)->applyFieldListGhostBoundary(M);
 
-  if (gradType == GradientType::SPHSameTimeGradient){ 
+  if (calcSpatialGradients){ 
     for (ConstBoundaryIterator boundItr = this->boundaryBegin();
           boundItr != this->boundaryEnd();
            ++boundItr){
+      (*boundItr)->applyFieldListGhostBoundary(DrhoDx);
       (*boundItr)->applyFieldListGhostBoundary(newRiemannDpDx);
       (*boundItr)->applyFieldListGhostBoundary(newRiemannDvDx);
     }
@@ -597,6 +556,5 @@ computeMCorrection(const typename Dimension::Scalar /*time*/,
          boundaryItr != this->boundaryEnd();
          ++boundaryItr) (*boundaryItr)->finalizeGhostBoundary();
  
-}
-
+} // MC correction method
 } // spheral namespace

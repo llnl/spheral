@@ -8,62 +8,17 @@ namespace Spheral {
 // Return as a reference descendent class.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 Descendant&
 Kernel<Dimension, Descendant>::asDescendant() const {
   return static_cast<Descendant&>(const_cast<Kernel<Dimension, Descendant>&>(*this));
 }
 
 //------------------------------------------------------------------------------
-// Empty constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::Kernel():
-  mVolumeNormalization(0.0),
-  mKernelExtent(0.0),
-  mInflectionPoint(0.0) {
-}
-
-//------------------------------------------------------------------------------
-// Copy constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::Kernel(const Kernel& rhs):
-  mVolumeNormalization(rhs.mVolumeNormalization),
-  mKernelExtent(rhs.mKernelExtent),
-  mInflectionPoint(rhs.mInflectionPoint) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>::~Kernel() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension, typename Descendant>
-inline
-Kernel<Dimension, Descendant>&
-Kernel<Dimension, Descendant>::operator=(const Kernel<Dimension, Descendant>& rhs) {
-  if (this != &rhs) {
-    mVolumeNormalization = rhs.volumeNormalization();
-    mKernelExtent = rhs.kernelExtent();
-    mInflectionPoint = rhs.inflectionPoint();
-  }
-  return *this;
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance or position.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::operator()(const double& etaij, 
                                           const typename Dimension::Scalar& Hdet) const {
@@ -72,7 +27,7 @@ Kernel<Dimension, Descendant>::operator()(const double& etaij,
 }
 
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::operator()(const typename Dimension::Vector& etaj,
                                           const typename Dimension::Vector& etai,
@@ -84,7 +39,7 @@ Kernel<Dimension, Descendant>::operator()(const typename Dimension::Vector& etaj
 // Return the gradient value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::grad(const double& etaij,
                                     const typename Dimension::Scalar& Hdet) const {
@@ -93,7 +48,7 @@ Kernel<Dimension, Descendant>::grad(const double& etaij,
 }
 
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::grad(const typename Dimension::Vector& etaj,
                                     const typename Dimension::Vector& etai,
@@ -105,7 +60,7 @@ Kernel<Dimension, Descendant>::grad(const typename Dimension::Vector& etaj,
 // Return the second derivative value for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::grad2(const double& etaij,
                                      const typename Dimension::Scalar& Hdet) const {
@@ -114,7 +69,7 @@ Kernel<Dimension, Descendant>::grad2(const double& etaij,
 }
 
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::grad2(const typename Dimension::Vector& etaj,
                                      const typename Dimension::Vector& etai,
@@ -127,7 +82,7 @@ Kernel<Dimension, Descendant>::grad2(const typename Dimension::Vector& etaj,
 // distance and H determinant.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::kernelValue(double etaij, const double Hdet) const {
   return asDescendant().kernelValue(etaij, Hdet);
@@ -138,7 +93,7 @@ Kernel<Dimension, Descendant>::kernelValue(double etaij, const double Hdet) cons
 // distance and H determinant.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::gradValue(double etaij, const double Hdet) const {
   return asDescendant().gradValue(etaij, Hdet);
@@ -149,7 +104,7 @@ Kernel<Dimension, Descendant>::gradValue(double etaij, const double Hdet) const 
 // a given distance and H determinant.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::grad2Value(double etaij, const double Hdet) const {
   return asDescendant().grad2Value(etaij, Hdet);
@@ -159,7 +114,7 @@ Kernel<Dimension, Descendant>::grad2Value(double etaij, const double Hdet) const
 // Return the volume normalization.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::volumeNormalization() const {
   return mVolumeNormalization;
@@ -169,7 +124,7 @@ Kernel<Dimension, Descendant>::volumeNormalization() const {
 // Set the volume normalization.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 Kernel<Dimension, Descendant>::setVolumeNormalization(double volumeNormalization) {
   REQUIRE(volumeNormalization > 0.0);
@@ -180,7 +135,7 @@ Kernel<Dimension, Descendant>::setVolumeNormalization(double volumeNormalization
 // Return the kernel extent.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::kernelExtent() const {
   return mKernelExtent;
@@ -190,7 +145,7 @@ Kernel<Dimension, Descendant>::kernelExtent() const {
 // Set the kernel extent.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 Kernel<Dimension, Descendant>::setKernelExtent(double extent) {
   REQUIRE(extent > 0.0);
@@ -201,7 +156,7 @@ Kernel<Dimension, Descendant>::setKernelExtent(double extent) {
 // Return the inflection point.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 double
 Kernel<Dimension, Descendant>::inflectionPoint() const {
   return mInflectionPoint;
@@ -211,7 +166,7 @@ Kernel<Dimension, Descendant>::inflectionPoint() const {
 // Set the inflection point.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 Kernel<Dimension, Descendant>::setInflectionPoint(double x) {
   mInflectionPoint = x;

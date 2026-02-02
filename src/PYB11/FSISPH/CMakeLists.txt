@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(FSISPH)
+spheral_add_pybind11_library(FSISPH SPHERAL_MODULE_LIST)

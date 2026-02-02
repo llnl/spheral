@@ -20,6 +20,7 @@ public:
   //--------------------------- Public Interface ---------------------------//
   using Vector = GeomVector<2>;
   using Tensor = GeomTensor<2>;
+  using SymTensor = GeomSymmetricTensor<2>;
   using Facet = GeomFacet2d;
 
   //----------------------------------------------------------------------------

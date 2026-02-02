@@ -9,7 +9,7 @@ from Spheral1d import *
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(5479029084)
 
 # We'll just use a gamma-law gas to base our tests on.
 gamma = 5.0/3.0
@@ -35,6 +35,13 @@ class EOSTest(unittest.TestCase):
         rho0 = np.random.uniform(rhoMin, rhoMax, n)
         P0 = np.random.uniform(Pmin, Pmax, n)
 
+        # for (rho0i, P0i) in zip(rho0, P0):
+        #     epsi = eos.specificThermalEnergyForPressure(P0i, rho0i, 0.0, 1e10, epsTol, Ptol, maxIterations, verbose=False)
+        #     Pi = eos.pressure(rho0i, epsi)
+        #     Perri = abs(Pi - P0i)/max(1e-10, P0i)
+        #     self.assertTrue(Perri < Perrcheck,
+        #                     f"Pressure error out of tolerance: {Perri} > {Perrcheck}")
+
         # Now some cuteness to call a method across elements of numpy arrays.
         epsLookup = np.vectorize(eos.specificThermalEnergyForPressure)
         Plookup = np.vectorize(eos.pressure)
@@ -45,22 +52,6 @@ class EOSTest(unittest.TestCase):
         # The corresponding pressures.
         P = Plookup(rho0, eps)
 
-        # Compute the error
-        # reltol, abstol = 1e4*Ptol, 1e4*Ptol
-        # def passfail(x, y):
-        #     if abs(y) < abstol:
-        #         if abs(x - y) > abstol:
-        #             print "abs Blago: ", x, y
-        #         return abs(x - y) < abstol
-        #     else:
-        #         if abs(x - y)/y > reltol:
-        #             print "rel Blago: ", x, y
-        #         return abs(x - y)/y < reltol
-        # passfailLookup = np.vectorize(passfail)
-        # Perr = np.minimum(P0, np.abs((P - P0)/np.maximum(1.0e-10, P0)))
-        # self.assertTrue(passfailLookup(P, P0).all(),
-        #                 "Pressure error out of tolerance: %s vs %s" % (Perr.max(), Ptol))
-        # assert passfailLookup(P, P0).all()
         Perr = np.minimum(P0, np.abs((P - P0)/np.maximum(1.0e-10, P0)))
         self.assertTrue((Perr < Perrcheck).all(),
                         "Pressure error out of tolerance: %s > %s" % (Perr.max(), Perrcheck))

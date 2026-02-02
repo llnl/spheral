@@ -124,7 +124,7 @@ evaluateGradient(const TableKernel<Dimension>& kernel,
   
   // Perform inner products and return result
   const auto CP = innerProductRK(corrections, P, 0, 0);
-  Vector result = Vector::zero;
+  Vector result = Vector::zero();
   for (auto d = 0; d < Dimension::nDim; ++ d) {
     const auto CdP = innerProductRK(corrections, dP, 0, offsetGradP(d));
     const auto dCP = innerProductRK(corrections, P, offsetGradC(d), 0);
@@ -158,7 +158,7 @@ evaluateHessian(const TableKernel<Dimension>& kernel,
   // Perform inner products and return result
   // Could precompute the inner products in a separate loop for efficiency
   const auto CP = innerProductRK(corrections, P, 0, 0);
-  SymTensor result = SymTensor::zero;
+  SymTensor result = SymTensor::zero();
   for (auto d1 = 0; d1 < Dimension::nDim; ++d1) {
     const auto Cd1P = innerProductRK(corrections, dP, 0, offsetGradP(d1));
     const auto d1CP = innerProductRK(corrections, P, offsetGradC(d1), 0);
@@ -197,7 +197,7 @@ evaluateKernelAndGradient(const TableKernel<Dimension>& kernel,
   
   // Perform inner products and return result
   const auto CP = innerProductRK(corrections, P, 0, 0);
-  Vector result = Vector::zero;
+  Vector result = Vector::zero();
   for (auto d = 0; d < Dimension::nDim; ++ d) {
     const auto CdP = innerProductRK(corrections, dP, 0, offsetGradP(d));
     const auto dCP = innerProductRK(corrections, P, offsetGradC(d), 0);
@@ -234,7 +234,7 @@ evaluateKernelAndGradients(const TableKernel<Dimension>& kernel,
   
   // Perform inner products and return result
   const auto CP = innerProductRK(corrections, P, 0, 0);
-  Vector result = Vector::zero;
+  Vector result = Vector::zero();
   for (auto d = 0; d < Dimension::nDim; ++ d) {
     const auto CdP = innerProductRK(corrections, dP, 0, offsetGradP(d));
     const auto dCP = innerProductRK(corrections, P, offsetGradC(d), 0);
@@ -349,7 +349,7 @@ computeCorrections(const ConnectivityMap<Dimension>& connectivityMap,
   // Compute corrections for each point
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto numNodes = connectivityMap.numNodes(nodeListi);
-    for (auto nodei = 0; nodei < numNodes; ++nodei) {
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
       // Initialize polynomial matrices for point i
       M.setZero();
       for (auto& mat : dM) {
@@ -601,9 +601,9 @@ computeNormal(const ConnectivityMap<Dimension>& connectivityMap,
   // Sum up normal directions
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto numNodes = connectivityMap.numNodes(nodeListi);
-    for (auto nodei = 0; nodei < numNodes; ++nodei) {
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
       // Zero out normal
-      normal(nodeListi, nodei) = Vector::zero;
+      normal(nodeListi, nodei) = Vector::zero();
       
       // Add contribution from other points
       const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);

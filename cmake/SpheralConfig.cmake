@@ -26,3 +26,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/spheral_cxx-config.cmake
   DESTINATION ${SPHERAL_INSTALL_CMAKE_MODULE_DIR}
 )
 
+# Install the BLT files that are included like BLTSetupMPI, BLTSetupHIP, etc.
+blt_install_tpl_setups(DESTINATION ${SPHERAL_INSTALL_CMAKE_MODULE_DIR})

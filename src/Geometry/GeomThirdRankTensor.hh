@@ -17,40 +17,32 @@
 namespace Spheral {
 
 template<int nDim>
-class GeomThirdRankTensor : public RankNTensor<nDim, 3, GeomThirdRankTensor<nDim> > {
+class GeomThirdRankTensor : public RankNTensor<nDim, 3, GeomThirdRankTensor<nDim>> {
+  using BaseType = RankNTensor<nDim, 3, GeomThirdRankTensor<nDim>>;
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename RankNTensor<nDim, 3, GeomThirdRankTensor>::size_type size_type;
-  static const size_type numElements;
+  using size_type = typename BaseType::size_type;
 
-  // Useful static member data.
-  static const GeomThirdRankTensor zero;
+  SPHERAL_HOST_DEVICE static constexpr GeomThirdRankTensor zero() { return GeomThirdRankTensor<nDim>(); }
 
   // Constructors.
-  GeomThirdRankTensor();
-  explicit GeomThirdRankTensor(const double val);
-  GeomThirdRankTensor(const GeomThirdRankTensor& rhs);
-
-  // Destructor.
-  ~GeomThirdRankTensor();
+  SPHERAL_HOST_DEVICE GeomThirdRankTensor() = default;
+  SPHERAL_HOST_DEVICE explicit GeomThirdRankTensor(const double val);
+  SPHERAL_HOST_DEVICE GeomThirdRankTensor(const GeomThirdRankTensor& rhs) = default;
 
   // Assignment.
-  GeomThirdRankTensor& operator=(const GeomThirdRankTensor& rhs);
-  GeomThirdRankTensor& operator=(const double rhs);
+  SPHERAL_HOST_DEVICE GeomThirdRankTensor& operator=(const GeomThirdRankTensor& rhs) = default;
+  SPHERAL_HOST_DEVICE GeomThirdRankTensor& operator=(const double rhs);
 
   // Access the elements by indicies.
-  double operator()(const size_type i, const size_type j, const size_type k) const;
-  double& operator()(const size_type i, const size_type j, const size_type k);
+  SPHERAL_HOST_DEVICE double operator()(const size_type i, const size_type j, const size_type k) const;
+  SPHERAL_HOST_DEVICE double& operator()(const size_type i, const size_type j, const size_type k);
 
 private:
   //--------------------------- Private Interface ---------------------------//
   using RankNTensor<nDim, 3, GeomThirdRankTensor>::mElements;
 };
-
-
-template<int nDims> const typename GeomThirdRankTensor<nDims>::size_type GeomThirdRankTensor<nDims>::numElements = calcNumNRankElements<nDims, 3>();
-template<int nDims> const GeomThirdRankTensor<nDims> GeomThirdRankTensor<nDims>::zero = GeomThirdRankTensor<nDims>(0.0);
 
 }
 

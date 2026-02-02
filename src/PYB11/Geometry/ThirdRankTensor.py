@@ -7,11 +7,11 @@ from PYB11Generator import *
 class ThirdRankTensor:
     "Spheral third rank tensor (%(ndim)sx%(ndim)sx%(ndim)s) class"
 
-    # Static attributes
-    nrank = PYB11readonly(static=True, doc="Rank of the tensor", returnpolicy="copy")
-    nDimensions = PYB11readonly(static=True, doc="Number of dimensions", returnpolicy="copy")
-    numElements = PYB11readonly(static=True, doc="Number of elements stored in the type", returnpolicy="copy")
-    zero = PYB11readonly(static=True, doc="The zero value equivalent", returnpolicy="copy")
+    # constexpr attributes
+    nrank = PYB11property(constexpr=True, static=True, doc="Rank of the tensor")
+    nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
+    numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
+    zero = PYB11property(constexpr=True, static=True, doc="The zero value equivalent")
 
     # Constructors
     def pyinit0(self):
@@ -26,16 +26,16 @@ class ThirdRankTensor:
         "Construct setting the element values to a constant value."
 
     # Sequence methods
-    @PYB11implementation("[](const Dim<%(ndim)s>::ThirdRankTensor&) { return Dim<%(ndim)s>::ThirdRankTensor::numElements; }")
+    @PYB11implementation("[](const Dim<%(ndim)s>::ThirdRankTensor&) { return Dim<%(ndim)s>::ThirdRankTensor::numElements(); }")
     def __len__(self):
         "The size (number of elements) of the ThirdRankTensor."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::ThirdRankTensor &s, size_t i) { if (i >= Dim<%(ndim)s>::ThirdRankTensor::numElements) throw py::index_error(); return s[i]; }") 
+    @PYB11implementation("[](const Dim<%(ndim)s>::ThirdRankTensor &s, size_t i) { if (i >= Dim<%(ndim)s>::ThirdRankTensor::numElements()) throw py::index_error(); return s[i]; }") 
     @PYB11returnpolicy("reference_internal")
     def __getitem__(self):
         "Python indexing to get an element."
 
-    @PYB11implementation("[](Dim<%(ndim)s>::ThirdRankTensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::ThirdRankTensor::numElements) throw py::index_error(); s[i] = v; }") 
+    @PYB11implementation("[](Dim<%(ndim)s>::ThirdRankTensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::ThirdRankTensor::numElements()) throw py::index_error(); s[i] = v; }") 
     def __setitem__(self):
         "Python indexing to set an element."
 
@@ -106,14 +106,6 @@ class ThirdRankTensor:
     def __eq__(self):
         return
     def __ne__(self):
-        return
-    def __lt__(self):
-        return
-    def __gt__(self):
-        return
-    def __le__(self):
-        return
-    def __ge__(self):
         return
 
     # String representation

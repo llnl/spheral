@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Damage)
+spheral_add_pybind11_library(Damage SPHERAL_MODULE_LIST)

@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Neighbor)
+spheral_add_pybind11_library(Neighbor SPHERAL_MODULE_LIST)

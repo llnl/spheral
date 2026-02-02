@@ -158,7 +158,6 @@ class MassFunctor(PairScalarFunctor):
 # Set the node positions, velocities, and densities.
 dx = 1.0/nx1
 import random
-rangen = random.Random()
 from newtonRaphson import *
 cs = sqrt(cs2)
 pos = nodes1.positions()
@@ -170,7 +169,7 @@ for i in range(nodes1.numInternalNodes):
     xi0 = newtonRaphsonFindRoot(func0, 0.0, 1.0, 1.0e-15, 1.0e-15)
     xi1 = newtonRaphsonFindRoot(func1, 0.0, 1.0, 1.0e-15, 1.0e-15)
     xi = x0 + (x1 - x0)*0.5*(xi0 + xi1)
-    pos[i].x = xi + ranfrac*dx*rangen.uniform(-1.0, 1.0)
+    pos[i].x = xi + ranfrac*dx*random.uniform(-1.0, 1.0)
     vel[i].x = 0.5*(A*cs*sin(twopi*kfreq*(xi0 - x0)/(x1 - x0)) +
                     A*cs*sin(twopi*kfreq*(xi1 - x0)/(x1 - x0)))
     rho[i] = rho1*0.5*((1.0 + A*sin(twopi*kfreq*(xi0 - x0)/(x1 - x0))) +

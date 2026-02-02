@@ -1,8 +1,8 @@
 
 # Solid FSISPH
 #
-#ATS:fsisph1 = test(           SELF, "--fsisph True --solid True --nx1 500 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Copper plastic-wave problem with FSISPH -- 1-D (serial)")
-##ATS:fsisph2 = testif(fsisph1, SELF, "--fsisph True --solid True --nx1 500 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Copper plastic-wave problem with FSISPH -- 1-D (serial) RESTART CHECK")
+#ATS:fsisph1 = test(           SELF, "--fsisph True --solid True --nx1 500 --cfl 0.45 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Copper plastic-wave problem with FSISPH -- 1-D (serial)", fsisph=True)
+##ATS:fsisph2 = testif(fsisph1, SELF, "--fsisph True --solid True --nx1 500 --cfl 0.45 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Copper plastic-wave problem with FSISPH -- 1-D (serial) RESTART CHECK", fsisph=True)
 
 
 import os, sys, shutil
@@ -65,7 +65,6 @@ commandLine(# materials properties
             fsiEpsDiffuseCoeff = 0.1,           # diffusion coeff for specific thermal energy
             fsiXSPHCoeff = 0.0,                 # ramps xsph up
             fsiInterfaceMethod = HLLCInterface, # (HLLCInterface, ModulusInterface, NoInterface)
-            fsiPlaneStrain = True,
             
             # CRK parameters
             correctionOrder = LinearOrder,
@@ -129,7 +128,7 @@ commandLine(# materials properties
             restartStep = 10000,
             dataDirBase = "dumps-Piston-1d-Cu",
             restartBaseName = "Piston-1d-Cu-restart",
-            outputFile = "None",
+            outputFile = None,
             checkRestart = False,
             graphics = True,
             )
@@ -289,8 +288,7 @@ elif fsisph:
                    compatibleEnergyEvolution = compatibleEnergy,
                    evolveTotalEnergy = evolveTotalEnergy,
                    linearCorrectGradients = correctVelocityGradient,
-                   HUpdate = HUpdate,
-                   planeStrain=fsiPlaneStrain)
+                   HUpdate = HUpdate)
 else:
     hydro = SPH(dataBase = db,
                 W = WT,
@@ -340,10 +338,10 @@ output("q.quadraticInExpansion")
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
     packages.append(evolveCullenViscosityMultiplier)
 
 
@@ -451,7 +449,7 @@ Ss = db.solidDeviatoricStress
 Sxx = db.newSolidScalarFieldList(0.0, "deviatoricStress")
 Y = hydro.yieldStrength
 mu = hydro.shearModulus
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 numNodeLists = db.numNodeLists
 for nodeListi in range(numNodeLists):
     

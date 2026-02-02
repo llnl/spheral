@@ -123,6 +123,7 @@ C Terrible idea!
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
       double precision get_ANEOS_atomicWeight
+      double precision minAtomicFrac
       integer matnum
 
 C We'll use a common block to build a mapping from material numbers to offsets
@@ -155,6 +156,17 @@ C Find the material number
 
  120  matoffset = 99*(i - 1)
       get_ANEOS_atomicWeight = ack(matoffset + 29)
+
+C Find the minimum atomic fraction
+      minAtomicFrac = 1.0
+      matoffset = 30*(i - 1)
+      do 150 i = 1, 30
+         if (cot(i) .gt. 0.0) then
+            minAtomicFrac = min(minAtomicFrac, cot(i))
+         end if
+ 150  continue
+      get_ANEOS_atomicWeight = get_ANEOS_atomicWeight/minAtomicFrac
+
       return
       end
 

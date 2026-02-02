@@ -1,0 +1,58 @@
+
+'''
+This module allows access to the Spheral build configuration information
+'''
+
+import sys, os
+
+def build_type():
+    return "@CMAKE_BUILD_TYPE@"
+
+def sys_arch():
+    return "@SPHERAL_SYS_ARCH@"
+
+def config():
+    return "@SPHERAL_CONFIGURATION@"
+
+def spec():
+    return "@SPHERAL_SPEC@"
+
+def dimensions():
+    dims_str = "@SPHERAL_DIMS@"
+    return [int(x) for x in dims_str.split(";")]
+
+def component_configs():
+    comp_str = "@SPHERAL_COMP_CONFIG@"
+    return comp_str.split(";")
+
+def enable_mpi():
+    return ("MPI" in component_configs())
+
+def enable_timer():
+    return ("TIMERS" in component_configs())
+
+def enable_shared():
+    return ("SHARED" in component_configs())
+
+def hydro_imports():
+    hydro_str = "@SPHERAL_HYDRO_IMPORTS@"
+    return hydro_str.split(";")
+
+def caliper_module_path():
+    if (enable_timer()):
+        caliper_loc = "@CONFIG_CALIPER_DIR@"
+        return os.path.join(caliper_loc, "lib64/caliper")
+    else:
+        return None
+
+def version():
+    return "@spheralversion@"
+
+def git_hash():
+    return "@githash@"
+
+def git_branch():
+    return "@gitbranch@"
+
+def test_install_path():
+    return "@SPHERAL_TEST_INSTALL_PREFIX@"

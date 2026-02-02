@@ -25,10 +25,6 @@ using std::vector;
 
 namespace Spheral {
 
-using std::abs;
-using std::min;
-using std::max;
-
 //------------------------------------------------------------------------------
 // Overloaded method to find the closest point on a face for each dimension.
 //------------------------------------------------------------------------------

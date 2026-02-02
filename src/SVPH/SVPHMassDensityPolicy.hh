@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 
 namespace Spheral {
 
@@ -19,20 +19,20 @@ template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
 
 template<typename Dimension>
-class SVPHMassDensityPolicy: public UpdatePolicyBase<Dimension> {
+class SVPHMassDensityPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename UpdatePolicyBase<Dimension>::KeyType KeyType;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using KeyType = typename UpdatePolicyBase<Dimension>::KeyType;
 
   // Constructors, destructor.
   SVPHMassDensityPolicy(const Scalar& rhoMin,
                         const Scalar& rhoMax);
-  virtual ~SVPHMassDensityPolicy();
+  virtual ~SVPHMassDensityPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -45,13 +45,14 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Forbidden methods
+  SVPHMassDensityPolicy() = delete;
+  SVPHMassDensityPolicy(const SVPHMassDensityPolicy& rhs) = delete;
+  SVPHMassDensityPolicy& operator=(const SVPHMassDensityPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   Scalar mRhoMin, mRhoMax;
-
-  SVPHMassDensityPolicy();
-  SVPHMassDensityPolicy(const SVPHMassDensityPolicy& rhs);
-  SVPHMassDensityPolicy& operator=(const SVPHMassDensityPolicy& rhs);
 };
 
 }

@@ -1,8 +1,9 @@
+#include <cmath>
+#include <limits>
+#include <iostream>
+#include <random>
 #include <time.h>
 #include <vector>
-#include <iostream>
-
-#include "boost/random.hpp"
 
 #include "Utilities/FastMath.hh"
 #include "Utilities/DBC.hh"
@@ -13,21 +14,19 @@ int main(int argc, char* argv[]) {
 
   // Make some random number generators.
   // Doubles.
-  typedef boost::mt19937 BaseGenerator;
-  typedef boost::uniform_real<double> DoubleDistribution;
-  typedef boost::variate_generator<BaseGenerator&, DoubleDistribution> DoubleRandomGenerator;
-  BaseGenerator baseGen;
-  DoubleRandomGenerator unitDoubleGenerator(baseGen, DoubleDistribution(0.0, 1.0));
-  DoubleRandomGenerator tinyDoubleGenerator(baseGen, DoubleDistribution(0.0, 1.0e-20));
-  DoubleRandomGenerator hugeDoubleGenerator(baseGen, DoubleDistribution(0.0, sqrt(numeric_limits<double>::max())));
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<double> unitDoubleDistribution(0.0, 1.0);
+  std::uniform_real_distribution<double> tinyDoubleDistribution(0.0, 1.0e-20);
+  std::uniform_real_distribution<double> hugeDoubleDistribution(0.0, sqrt(numeric_limits<double>::max()));
 
-  // Make a big ass vector of doubles.
+  // Make a big vector of doubles.
   const int n = 10000;
   cerr << "Generating random input..." << endl;
   vector<double> xinput(3*n);
-  for (int i = 0; i != n; ++i) xinput[i] = unitDoubleGenerator();
-  for (int i = n; i != 2*n; ++i) xinput[i] = tinyDoubleGenerator();
-  for (int i = 2*n; i != 3*n; ++i) xinput[i] = hugeDoubleGenerator();
+  for (int i = 0; i != n; ++i) xinput[i] = unitDoubleDistribution(generator);
+  for (int i = n; i != 2*n; ++i) xinput[i] = tinyDoubleDistribution(generator);
+  for (int i = 2*n; i != 3*n; ++i) xinput[i] = hugeDoubleDistribution(generator);
 
   //===========================================================================
   // Check the correctness of sqrt.

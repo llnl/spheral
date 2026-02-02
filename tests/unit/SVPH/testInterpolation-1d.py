@@ -1,4 +1,4 @@
-#ATS:test(SELF, "--linearConsistent True --graphics False", label="SVPH interpolation test -- 1-D (serial)")
+#ATS:test(SELF, "--linearConsistent True --graphics False", label="SVPH interpolation test -- 1-D (serial)", svph=True)
 #-------------------------------------------------------------------------------
 # A set of tests to compare how different meshless methods interpolate fields.
 #-------------------------------------------------------------------------------
@@ -85,8 +85,7 @@ else:
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -128,7 +127,7 @@ nodes1.massDensity(ScalarField("tmp", nodes1, rho1))
 #-------------------------------------------------------------------------------
 dx = (x1 - x0)/nx1
 for i in range(nodes1.numInternalNodes):
-    nodes1.positions()[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+    nodes1.positions()[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list

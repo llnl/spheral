@@ -77,7 +77,7 @@ commandLine(nxlist = [20,40,80,160,320,640,1280],
             restartStep = 200,
             dataDirBase = "Sod-planar-1d",
             restartBaseName = "Sod-planar-1d-restart",
-            outputFile = "None",
+            outputFile = None,
 
             graphics = "gnu",
             serialDump = False, #whether to dump a serial ascii file at the end for viz
@@ -242,7 +242,7 @@ for nx1 in nxlist:
 
     if boolReduceViscosity:
         #q.reducingViscosityCorrection = True
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
         
         packages.append(evolveReducingViscosityMultiplier)
 
@@ -466,7 +466,7 @@ for nx1 in nxlist:
     rmax = x2
     if mpi.rank == 0:
         multiSort(mo, xprof, rhoprof, Pprof, vprof, epsprof, hprof)
-        if outputFile != "None":
+        if outputFile:
             outputFile = os.path.join(dataDir, outputFile)
             f = open(outputFile, "w")
             f.write(("#  " + 17*"'%s' " + "\n") % ("x", "rho", "P", "v", "eps", "h", "mo",

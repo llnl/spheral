@@ -6,10 +6,6 @@
 #include "KernelIntegrator.hh"
 
 #include "Hydro/HydroFieldNames.hh"
-#include "Utilities/Process.hh"
-
-// // For debugging, can remove later
-// #include "Utilities/Process.hh"
 
 namespace Spheral {
 
@@ -31,7 +27,17 @@ KernelIntegrator(const int integrationOrder,
 #else
   mHmult(1.0),
 #endif
-  mStateSet(false) {
+  mNumOrdinates(),
+  mBaseWeights(),
+  mBaseOrdinates(),
+  mNumSurfaceOrdinates(),
+  mBaseSurfaceWeights(),
+  mBaseSurfaceOrdinates(),
+  mState(),
+  mIntegrals(),
+  mScratchData(),
+  mTotalNumSubcells(),
+  mTotalNumSubfacets() {
   initializeQuadrature();
 }
 
@@ -43,14 +49,13 @@ void
 KernelIntegrator<Dimension>::
 setState(const double time,
          const State<Dimension>& state) {
-  mStateSet = true;
   mTime = time;
-  mState = state;
-  VERIFY(mState.fieldNameRegistered(HydroFieldNames::position) &&
-         mState.fieldNameRegistered(HydroFieldNames::H) &&
-         mState.fieldNameRegistered(HydroFieldNames::volume) &&
-         mState.fieldNameRegistered(HydroFieldNames::cells) &&
-         mState.fieldNameRegistered(HydroFieldNames::cellFaceFlags));
+  mState = std::make_unique<State<Dimension>>(state);
+  VERIFY(mState->fieldNameRegistered(HydroFieldNames::position) &&
+         mState->fieldNameRegistered(HydroFieldNames::H) &&
+         mState->fieldNameRegistered(HydroFieldNames::volume) &&
+         mState->fieldNameRegistered(HydroFieldNames::cells) &&
+         mState->fieldNameRegistered(HydroFieldNames::cellFaceFlags));
 }
 
 //------------------------------------------------------------------------------
@@ -82,11 +87,13 @@ performIntegration() {
   VERIFY2(omp_get_num_threads() == 1, "integration fails for > 1 OpenMP thread");
   
   // Get some data out of database and state
+  VERIFY(mState);
   const auto numNodeLists = mDataBase.numFluidNodeLists();
-  const auto position = mState.fields(HydroFieldNames::position, Vector::zero);
-  const auto H = mState.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto volume = mState.fields(HydroFieldNames::volume, 0.0);
-  const auto cells = mState.fields(HydroFieldNames::cells, FacetedVolume());
+  CONTRACT_VAR(numNodeLists);
+  const auto position = mState->fields(HydroFieldNames::position, Vector::zero());
+  const auto H = mState->fields(HydroFieldNames::H, SymTensor::zero());
+  const auto volume = mState->fields(HydroFieldNames::volume, 0.0);
+  const auto cells = mState->fields(HydroFieldNames::cells, FacetedVolume());
 
   // Since we may be receiving state from user, we need to make sure FieldLists aren't empty
   VERIFY(position.size() >= numNodeLists &&
@@ -147,11 +154,11 @@ performIntegration() {
     const auto pairi = mFlatConnectivity.localToNode(i);
     const auto nodeListi = pairi.first;
     const auto nodei = pairi.second;
-#if REPLACEOVERLAP
-    const auto xi = position(nodeListi, nodei);
-    // const auto volumei = volume(nodeListi, nodei);
-    // const auto deltai = std::pow(volumei, 1. / Dimension::nDim); // An approximation of cell length
-#endif
+// #if REPLACEOVERLAP
+//     const auto xi = position(nodeListi, nodei);
+//     const auto volumei = volume(nodeListi, nodei);
+//     const auto deltai = std::pow(volumei, 1. / Dimension::nDim); // An approximation of cell length
+// #endif
     const auto& cell = cells(nodeListi, nodei);
     
     // Get the number of neighbors for the Voronoi integration region

@@ -95,7 +95,7 @@ class TestDistributedBoundary1d:
         # Set the ghost nodes for each domain distributed NodeList.
         self.domainbc.setAllGhostNodes(self.dataBase)
         self.domainbc.finalizeGhostBoundary()
-        for nodes in self.dataBase.nodeLists():
+        for nodes in self.dataBase.nodeLists:
             nodes.neighbor().updateNodes()
 
         # Exchange the global node ID fields.

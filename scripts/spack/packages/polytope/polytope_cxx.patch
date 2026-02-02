@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt	2024-04-18 13:16:02.394111000 -0700
++++ b/CMakeLists.txt	2024-04-18 13:15:58.611132000 -0700
+@@ -10,7 +10,7 @@
+ project(Polytope)
+ 
+ # We require at least C++11
+-set(CMAKE_CXX_STANDARD 11)
++set(CMAKE_CXX_STANDARD 14)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ set(CMAKE_CXX_EXTENSIONS OFF)
+ 

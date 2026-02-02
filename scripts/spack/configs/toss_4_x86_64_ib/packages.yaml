@@ -4,21 +4,55 @@ packages:
     # us to run on broadwell as well
     target: [ivybridge]
     compiler: [gcc, clang]
+    providers:
+      blas: [openblas]
+      lapack: [openblas]
+      mpi: [mvapich2]
+      pkgconfig: [pkg-config]
+      pil: [py-pillow]
+      jpeg: [libjpeg]
+      zlib-api: [zlib]
   cmake:
     version: [3.23.1]
     buildable: false
     externals:
     - spec: cmake@3.23.1
       prefix: /usr/tce/packages/cmake/cmake-3.23.1
+  gmake:
+    version: [4.2.1]
+    buildable: false
+    externals:
+    - spec: gmake@4.2.1
+      prefix: /usr
+  git:
+    version: [2.29.1]
+    buildable: false
+    externals:
+    - spec: git@2.29.1+tcltk
+      prefix: /usr/tce
+  perl:
+    version: [5.26.3]
+    buildable: false
+    externals:
+    - spec: perl@5.26.3
+      prefix: /usr
 
   mvapich2:
     externals:
     - spec: mvapich2@2.3.6%gcc@10.3.1~cuda~debug~regcache~wrapperrpath ch3_rank_bits=32
         file_systems=lustre,nfs,ufs process_managers=slurm
       prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-gcc-10.3.1
+    - spec: mvapich2@2.3.6%clang@14.0.6~alloca~cuda~debug+regcache+wrapperrpath ch3_rank_bits=32
+        fabrics=mrail file_systems=auto process_managers=slurm
+      prefix: /usr/tce/packages/mvapich2/mvapich2-2.3.6-clang-14.0.6
     buildable: false
 
 # ------ SYSTEM LIBS -------
+  python:
+    externals:
+    - spec: python@3.9.12
+      prefix: /usr/tce/packages/python/python-3.9.12
+    buildable: false
   ncurses:
     externals:
     - spec: ncurses@5.9
@@ -128,3 +162,8 @@ packages:
     externals:
     - spec: netlib-lapack@3.9.0
       prefix: /usr
+  openblas:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openblas@0.3.15

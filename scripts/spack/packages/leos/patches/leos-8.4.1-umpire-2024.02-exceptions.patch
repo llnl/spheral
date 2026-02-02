@@ -1,0 +1,106 @@
+diff --git a/LIP/cpp_source/Implementation/LIP_MemoryManager.cpp b/LIP/cpp_source/Implementation/LIP_MemoryManager.cpp
+index 6fef6c3..7a237a3 100644
+--- a/LIP/cpp_source/Implementation/LIP_MemoryManager.cpp
++++ b/LIP/cpp_source/Implementation/LIP_MemoryManager.cpp
+@@ -36,6 +36,8 @@
+ 
+ #endif // UMPIRE_ENABLE_IPC_SHARED_MEMORY
+ 
++using LIP_Umpire_Exception = umpire::out_of_memory_error::exception;
++
+ #endif // LIP_USE_UMPIRE
+ 
+ #include "LIP_MemoryManager.hxx"
+@@ -164,7 +166,7 @@ void* MemoryManager::allocate(std::size_t nbytes, MemoryType_t mem_type,
+ #else
+       ptr = alloc.allocate(nbytes);
+ #endif
+-    } catch (umpire::util::Exception &e) {
++    } catch (LIP_Umpire_Exception &e) {
+       // Just return the nullptr.
+       // TODO: Throw exception instead?
+       std::cout << "Umpire exception at allocation: " << e.what() << std::endl;
+@@ -219,7 +221,7 @@ void MemoryManager::deallocate(void *ptr, MemoryType_t mem_type)
+       auto alloc = getUmpireAllocator(mem_type);
+       alloc.deallocate(ptr);
+ 
+-    } catch (umpire::util::Exception &e) {
++    } catch (LIP_Umpire_Exception &e) {
+       // Just catch the exception.  No way to handle this.
+       // TODO: Throw exception instead?
+       // throw e;
+@@ -272,9 +274,9 @@ void MemoryManager::real_copy(void *dest, void *src,
+     try {
+       auto &rm = umpire::ResourceManager::getInstance();
+       rm.copy(dest, src, nbytes);
+-    } catch (umpire::util::Exception e) {
++    } catch (LIP_Umpire_Exception& e) {
+ 
+-      std::string message(ERR_COPY_FAILED_S + " " + e.message() );
++      std::string message(ERR_COPY_FAILED_S + " " + e.what() );
+       status.setStatus(Status::SL_ERROR, __func__, ERR_COPY_FAILED, message);
+ 
+     }
+@@ -326,7 +328,7 @@ bool MemoryManager::isMemoryOnCPU( MemoryType_t const mem_type )
+    */
+     return( platform == umpire::Platform::host);
+ 
+-   } catch (umpire::util::Exception &e) {
++   } catch (LIP_Umpire_Exception &e) {
+ 
+      // TODO: Is there a better way to handle this? May cause crash soon after call.
+      // TODO: Throw exception instead?
+@@ -367,7 +369,7 @@ bool MemoryManager::isMemoryOnGPU( MemoryType_t const mem_type )
+     return( platform == umpire::Platform::cuda);
+ #endif
+ 
+-   } catch (umpire::util::Exception &e) {
++   } catch (LIP_Umpire_Exception &e) {
+ 
+      // TODO: Is there a better way to handle this? May cause crash soon after call.
+      // TODO: Throw exception instead?
+@@ -455,7 +457,7 @@ bool MemoryManager::isSharedMemory(MemoryType_t const mem_type)
+ 
+       is_shared = isSharedAllocator(alloc);
+ 
+-     } catch (umpire::util::Exception &e) {
++     } catch (LIP_Umpire_Exception &e) {
+ 
+        // TODO: Is there a better way to handle this? May cause crash soon after call.
+        // TODO: Throw exception instead?
+@@ -506,7 +508,7 @@ bool MemoryManager::isMemoryOwner(MemoryType_t const mem_type )
+ 
+       isOwner = isMemoryOwner(alloc);
+ 
+-    } catch (umpire::util::Exception &e) {
++    } catch (LIP_Umpire_Exception &e) {
+       // Just catch the exception.  No way to handle this.
+       // leave isOwner = true
+       // TODO: Throw exception instead?
+@@ -578,7 +580,7 @@ void MemoryManager::syncSharedMemoryProcs(MemoryType_t const mem_type)
+           umpire::get_communicator_for_allocator( alloc, base_comm_);
+ 
+ 
+-    } catch (umpire::util::Exception &e) {
++    } catch (LIP_Umpire_Exception &e) {
+       // Just catch the exception.  No way to handle this.
+       // TODO: Throw exception instead?
+       // throw e;
+@@ -740,7 +742,7 @@ bool MemoryManager::initializeUmpireIDMemory(MemoryType_t mem_type)
+ 
+     status = initializeUmpireIDMemory(alloc);
+ 
+-  } catch (umpire::util::Exception &e) {
++  } catch (LIP_Umpire_Exception &e) {
+ 
+     status = false;
+     // TODO: Throw exception instead?
+@@ -785,7 +787,7 @@ bool MemoryManager::initializeUmpireIDMemory(umpire::Allocator &alloc)
+       }
+     }
+ 
+-  } catch (umpire::util::Exception &e) {
++  } catch (LIP_Umpire_Exception &e) {
+ 
+     status = false;
+     // TODO: Throw exception instead?

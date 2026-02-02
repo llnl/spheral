@@ -121,7 +121,7 @@ commandLine(nr = 20,                     # Radial resolution of the shell in poi
             clearDirectories = False,
             dataDirBase = "dumps-Verney-Be-R",
             outputFile = "Verney-Be-R.gnu",
-            comparisonFile = "None",
+            comparisonFile = None,
 
             # Testing
             checkRestart = False,
@@ -275,7 +275,7 @@ else:
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.kernel")
@@ -432,7 +432,7 @@ print("Total energy error: %g" % Eerror)
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     from SpheralTestUtilities import multiSort
     state = State(db, integrator.physicsPackages())
     outputFile = os.path.join(dataDir, outputFile)
@@ -475,7 +475,7 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Also we can optionally compare the current results with another file.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None":
+        if comparisonFile:
             comparisonFile = os.path.join(dataDir, comparisonFile)
             import filecmp
             assert filecmp.cmp(outputFile, comparisonFile)
@@ -484,33 +484,27 @@ if outputFile != "None":
 # Plot the state.
 #-------------------------------------------------------------------------------
 if graphics:
-    from SpheralGnuPlotUtilities import *
+    from SpheralMatplotlib import *
     state = State(db, integrator.physicsPackages())
     rhoPlot = plotFieldList(state.scalarFields("mass density"),
                             xFunction = "%s.x",
-                            plotStyle="points",
                             winTitle="rho @ %g" % (control.time()))
     velPlot = plotFieldList(state.vectorFields("velocity"),
                             xFunction = "%s.x",
                             yFunction = "%s.x",
-                            plotStyle="points",
                             winTitle="vel @ %g" % (control.time()))
     mPlot = plotFieldList(state.scalarFields("mass"),
                           xFunction = "%s.x",
-                          plotStyle="points",
                           winTitle="mass @ %g" % (control.time()))
     PPlot = plotFieldList(state.scalarFields("pressure"),
                           xFunction = "%s.x",
-                          plotStyle="points",
                           winTitle="pressure @ %g" % (control.time()))
     hPlot = plotFieldList(state.symTensorFields("H"),
                           xFunction = "%s.x",
                           yFunction = "1.0/%s.xx",
-                          plotStyle="points",
                           winTitle="h @ %g" % (control.time()))
     psPlot = plotFieldList(state.scalarFields(SolidFieldNames.plasticStrain),
                            xFunction = "%s.x",
-                           plotStyle="points",
                            winTitle="plastic strain @ %g" % (control.time()))
 
 #-------------------------------------------------------------------------------

@@ -50,7 +50,7 @@ public:
 
   // Set the ghost nodes for a predefined set of control nodes.
   void setGhostNodes(NodeList<Dimension>& nodeList, 
-                     const std::vector<int>& presetControlNodes);
+                     const std::vector<size_t>& presetControlNodes);
 
   // Allow access to the entrance and exit planes.
   virtual const GeomPlane<Dimension>& enterPlane() const;

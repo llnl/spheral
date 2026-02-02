@@ -11,7 +11,6 @@ from Spheral2d import *
 # Create a global random number generator.
 import random
 random.seed(402)
-rangen = random.Random()
 
 plots = []
 
@@ -27,12 +26,12 @@ def randomPoints(numPoints,
 
     # Determine the rotational transform.
     if theta is None:
-        theta = rangen.uniform(0.0, 2.0*pi)
+        theta = random.uniform(0.0, 2.0*pi)
     R = rotationMatrix(Vector(cos(theta), sin(theta)))
     
     for i in range(numPoints):
-        result.append(R*Vector(rangen.uniform(xmin, xmax),
-                               rangen.uniform(ymin, ymax)))
+        result.append(R*Vector(random.uniform(xmin, xmax),
+                               random.uniform(ymin, ymax)))
 
     return R, result
 
@@ -115,8 +114,8 @@ class TestPolygon(unittest.TestCase):
         rinner, router = self.innerOuterRadii(self.polygon)
         centroid = self.polygon.centroid
         for i in range(self.ntests):
-            theta = rangen.uniform(0.0, 2.0*pi)
-            p = centroid + rangen.uniform(0.0, rinner) * Vector(cos(theta), sin(theta))
+            theta = random.uniform(0.0, 2.0*pi)
+            p = centroid + random.uniform(0.0, rinner) * Vector(cos(theta), sin(theta))
             self.assertTrue(self.polygon.contains(p),
                             "Polygon should contain %s but reports it does not." % str(p))
         return
@@ -128,8 +127,8 @@ class TestPolygon(unittest.TestCase):
         rinner, router = self.innerOuterRadii(self.polygon)
         centroid = self.polygon.centroid
         for i in range(self.ntests):
-            theta = rangen.uniform(0.0, 2.0*pi)
-            p = centroid + rangen.uniform(router, 2.0*router) * Vector(cos(theta), sin(theta))
+            theta = random.uniform(0.0, 2.0*pi)
+            p = centroid + random.uniform(router, 2.0*router) * Vector(cos(theta), sin(theta))
             self.assertTrue(not self.polygon.contains(p),
                             "%s should be outside polygon but polygon reports it is contained." % str(p))
         return
@@ -355,8 +354,8 @@ class TestPolygon(unittest.TestCase):
     # Test shift in-place
     #---------------------------------------------------------------------------
     def testShiftInPlace(self):
-        shift = Vector(rangen.uniform(-10.0, -10.0),
-                       rangen.uniform(-10.0, -10.0))
+        shift = Vector(random.uniform(-10.0, -10.0),
+                       random.uniform(-10.0, -10.0))
         polygon2 = Polygon(self.polygon)
         polygon2 += shift
         for p0, p1 in zip([self.polygon.xmin, self.polygon.xmax] + list(self.polygon.vertices),

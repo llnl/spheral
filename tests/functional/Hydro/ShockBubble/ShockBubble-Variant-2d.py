@@ -98,7 +98,7 @@ commandLine(air2He1 = 2.0,            # Ratio of zone lengths in Air/He
             checkRestart = False,
             dataDir = "dumps-bubbleShock-variant-2d",
             vizName = "ShockBubble-variant-2d",
-            outputFile = "None",
+            outputFile = None,
             )
 
 airEnergy = airPressure/((airGamma - 1.0)*airDensity)

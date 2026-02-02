@@ -1,4 +1,4 @@
-#ATS:test(SELF, "--linearConsistent True --graphics False", label="SVPH interpolation test -- 2-D (serial)")
+#ATS:test(SELF, "--linearConsistent True --graphics False", label="SVPH interpolation test -- 2-D (serial), svph=True")
 #-------------------------------------------------------------------------------
 # A set of tests to compare how different meshless methods interpolate fields.
 #-------------------------------------------------------------------------------
@@ -102,8 +102,7 @@ elif testCase == "step":
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -144,11 +143,11 @@ if distribution == "random":
     nquant = 2**16
     usedset = set()
     i = 0
-    j = rangen.randint(0, 2**32)
+    j = random.randint(0, 2**32)
     dx, dy = (x1 - x0)/nquant, (y1 - y0)/nquant
     while i != nx*ny:
         while j in usedset:
-            j = rangen.randint(0, 2**32)
+            j = random.randint(0, 2**32)
         gen1.x[i] = x0 + (j % nquant + 0.5)*dx
         gen1.y[i] = y0 + (j // nquant + 0.5)*dy
         usedset.add(j)

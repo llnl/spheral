@@ -4,13 +4,19 @@ include(ExternalProject)
 # Configure CMake
 #-------------------------------------------------------------------------------
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS On)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
 if (NOT SPHERAL_CMAKE_MODULE_PATH)
   set(SPHERAL_CMAKE_MODULE_PATH "${SPHERAL_ROOT_DIR}/cmake")
 endif()
 list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+#-------------------------------------------------------------------------------
+# Add Spheral CMake Macros for tests and executables
+#-------------------------------------------------------------------------------
+include(SpheralMacros)
 
 #-------------------------------------------------------------------------------
 # Set Compiler Flags / Options
@@ -27,15 +33,17 @@ set(Python3_EXECUTABLE ${python_DIR}/bin/python3)
 
 set(ENABLE_MPI ON CACHE BOOL "")
 set(ENABLE_OPENMP ON CACHE BOOL "")
+
+set(BLT_CXX_STD "c++17" CACHE STRING "")
 set(BLT_DOCS_TARGET_NAME "blt_docs" CACHE STRING "")
 
-if(NOT SPHERAL_BLT_DIR) 
+if(NOT SPHERAL_BLT_DIR)
   set (SPHERAL_BLT_REL_DIR "${SPHERAL_ROOT_DIR}/cmake/blt" CACHE PATH "")
   get_filename_component(SPHERAL_BLT_DIR "${SPHERAL_BLT_REL_DIR}" ABSOLUTE)
 endif()
 
 if (NOT EXISTS "${SPHERAL_BLT_DIR}/SetupBLT.cmake")
-    message(FATAL_ERROR 
+  message(FATAL_ERROR
             "${SPHERAL_BLT_DIR} is not present.\n"
             "call cmake with -DSPHERAL_BLT_DIR=/your/installation/of/blt\n")
 endif()
@@ -43,48 +51,57 @@ endif()
 include(${SPHERAL_BLT_DIR}/SetupBLT.cmake)
 
 #-------------------------------------------------------------------------------
-# Include standard build system logic and options / definitions
+# Set Spheral options
 #-------------------------------------------------------------------------------
-# TODO: Prefix Spheral options
-set(ENABLE_CXXONLY OFF CACHE BOOL "enable C++ only build without python bindings")
-set(ENABLE_1D ON CACHE BOOL "enable 1d")
-set(ENABLE_2D ON CACHE BOOL "enable 2d")
-set(ENABLE_3D ON CACHE BOOL "enable 3d")
-set(ENABLE_INSTANTIATIONS ON CACHE BOOL "enable instantiations")
-set(ENABLE_TIMER OFF CACHE BOOL "enable timer")
-set(ENABLE_ANEOS ON CACHE BOOL "enable the ANEOS equation of state package")
-set(ENABLE_OPENSUBDIV ON CACHE BOOL "enable the Opensubdiv Pixar extension for refining polyhedra")
-set(ENABLE_HELMHOLTZ ON CACHE BOOL "enable the Helmholtz equation of state package")
 
-option(SPHERAL_ENABLE_ARTIFICIAL_CONDUCTION "Enable the artificial conduction package" ON)
-option(SPHERAL_ENABLE_EXTERNAL_FORCE "Enable the external force package" ON)
-option(SPHERAL_ENABLE_GRAVITY "Enable the gravity package" ON)
+include(${SPHERAL_ROOT_DIR}/cmake/SpheralOptions.cmake)
 
-option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
-option(ENABLE_STATIC_CXXONLY "build only static libs" OFF)
-option(ENABLE_SHARED "Building C++ libs shared" ON)
-
-if(ENABLE_STATIC_CXXONLY)
-  set(ENABLE_CXXONLY ON)
-  set(ENABLE_SHARED OFF)
+if(ENABLE_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_CXXONLY is deprecated. Use SPHERAL_ENABLE_PYTHON=OFF "
+    "and either SPHERAL_ENABLE_STATIC or SHARED.")
+elseif(ENABLE_STATIC_CXXONLY)
+  message(FATAL_ERROR
+    "ENABLE_STATIC_CXXONLY is deprecated. Use -DSPHERAL_ENABLE_PYTHON=OFF -DSPHERAL_ENABLE_STATIC=ON.")
 endif()
 
 if(ENABLE_MPI)
-  set(BLT_MPI_COMPILE_FLAGS -DUSE_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DOMPI_SKIP_MPICXX)
-  list(APPEND SPHERAL_BLT_DEPENDS mpi)
+  set(SPHERAL_ENABLE_MPI ON)
+  set(BLT_MPI_COMPILE_FLAGS -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DOMPI_SKIP_MPICXX)
+  list(APPEND SPHERAL_CXX_DEPENDS mpi)
 endif()
 
 if(ENABLE_OPENMP)
-  list(APPEND SPHERAL_BLT_DEPENDS openmp)
+  list(APPEND SPHERAL_CXX_DEPENDS openmp)
 endif()
 
 if(ENABLE_CUDA)
-  #set(CMAKE_CUDA_FLAGS  "${CMAKE_CUDA_FLAGS} -arch=${CUDA_ARCH} --extended-lambda -Xcudafe --display_error_number")
-  set(CMAKE_CUDA_STANDARD 17)
+  # TODO: Determine if --expt-relaxed-constexpr is needed
+
+  # Can be --expt-extended-lambda or --extended-lambda (newer CUDA versions only)
+  if (NOT "${CMAKE_CUDA_FLAGS}" MATCHES "extended-lambda")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+  endif()
+
+  if (NOT "${CMAKE_CUDA_FLAGS}" MATCHES "-Xcudafe(=| +)--display_error_number")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcudafe=--display_error_number")
+  endif()
+
   list(APPEND SPHERAL_CXX_DEPENDS cuda)
+  set(SPHERAL_ENABLE_CUDA ON)
 endif()
 
-option(BOOST_HEADER_ONLY "only use the header only components of Boost" OFF)
+if(ENABLE_HIP)
+  list(APPEND SPHERAL_CXX_DEPENDS blt::hip)
+  list(APPEND SPHERAL_CXX_DEPENDS blt::hip_runtime)
+  set(SPHERAL_ENABLE_HIP ON)
+endif()
+
+if(ENABLE_HIP OR ENABLE_CUDA)
+  set(SPHERAL_GPU_ENABLED ON CACHE BOOL "Whether CUDA or HIP is enabled")
+else()
+  set(SPHERAL_GPU_ENABLED OFF CACHE BOOL "Whether CUDA or HIP is enabled")
+endif()
 
 #-------------------------------------------------------------------------------#
 # Set a default build type if none was specified
@@ -101,15 +118,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 #-------------------------------------------------------------------------------
-# Should we build sphinx documentation
-#-------------------------------------------------------------------------------
-set(ENABLE_DOCS OFF CACHE BOOL "enable sphinx Spheral documentation")
-
-#-------------------------------------------------------------------------------
 # Locate third party libraries
 #-------------------------------------------------------------------------------
 include(${SPHERAL_ROOT_DIR}/cmake/InstallTPLs.cmake)
 
+#-------------------------------------------------------------------------------
+# Set CMake definitions
+#-------------------------------------------------------------------------------
 include(${SPHERAL_ROOT_DIR}/cmake/CMakeDefinitions.cmake)
 
 #-------------------------------------------------------------------------------
@@ -139,55 +154,30 @@ set_property(GLOBAL PROPERTY SPHERAL_CXX_DEPENDS "${SPHERAL_CXX_DEPENDS}")
 #-------------------------------------------------------------------------------
 # Prepare to build the src
 #-------------------------------------------------------------------------------
+configure_file(${SPHERAL_ROOT_DIR}/src/config.hh.in
+  ${PROJECT_BINARY_DIR}/src/config.hh)
+include_directories(${PROJECT_BINARY_DIR}/src)
+
 add_subdirectory(${SPHERAL_ROOT_DIR}/src)
 
 #-------------------------------------------------------------------------------
 # Add the documentation
 #-------------------------------------------------------------------------------
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_DOCS)
   add_subdirectory(${SPHERAL_ROOT_DIR}/docs)
 endif()
 
 #-------------------------------------------------------------------------------
 # Build C++ tests and install tests to install directory
 #-------------------------------------------------------------------------------
-if (ENABLE_TESTS)
-  add_subdirectory(${SPHERAL_ROOT_DIR}/tests/unit/CXXTests)
+if (SPHERAL_ENABLE_TESTS)
+  add_subdirectory(${SPHERAL_ROOT_DIR}/tests)
 
-  # A macro to preserve directory structure when installing files
-  macro(install_with_directory)
-      set(optionsArgs "")
-      set(oneValueArgs SOURCE DESTINATION)
-      set(multiValueArgs FILES)
-      cmake_parse_arguments(CAS "${optionsArgs}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
-      foreach(FILE ${CAS_FILES})
-          get_filename_component(DIR ${FILE} DIRECTORY)
-          INSTALL(FILES ${CAS_SOURCE}/${FILE} DESTINATION ${CAS_DESTINATION}/${DIR})
-      endforeach()
-  endmacro(install_with_directory)
-
-  # Find the test files we want to install
-  set(test_files1 "")
-  if (EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    execute_process(
-      COMMAND git ls-files tests
-      WORKING_DIRECTORY ${SPHERAL_ROOT_DIR}
-      OUTPUT_VARIABLE test_files1)
-  else()
-    execute_process(
-      COMMAND find tests -type f
-      WORKING_DIRECTORY ${SPHERAL_ROOT_DIR}
-      OUTPUT_VARIABLE test_files1)
-  endif()
-  string(REPLACE "\n" " " test_files ${test_files1})
-  separate_arguments(test_files)
-  list(REMOVE_ITEM test_files tests/unit/CXXTests/runCXXTests.ats)
-  install_with_directory(
-    FILES       ${test_files} 
-    SOURCE      ${SPHERAL_ROOT_DIR}
+  include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralInstallPythonFiles.cmake)
+  spheral_install_python_tests(${SPHERAL_ROOT_DIR}/tests/ ${SPHERAL_TEST_INSTALL_PREFIX})
+  # Always install performance.py in the top of the testing script
+  install(FILES ${SPHERAL_ROOT_DIR}/tests/performance.py
     DESTINATION ${SPHERAL_TEST_INSTALL_PREFIX})
 endif()
 
-if(NOT ENABLE_DEV_BUILD)
-  include(${SPHERAL_ROOT_DIR}/cmake/SpheralConfig.cmake)
-endif()
+include(${SPHERAL_ROOT_DIR}/cmake/SpheralConfig.cmake)

@@ -21,22 +21,16 @@ template<typename Dimension>
 class Verlet: public Integrator<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors.
-  Verlet();
-  Verlet(DataBase<Dimension>& dataBase);
   Verlet(DataBase<Dimension>& dataBase,
-                 const std::vector<Physics<Dimension>*>& physicsPackages);
-
-  // Destructor.
-  ~Verlet();
-
-  // Assignment.
-  Verlet& operator=(const Verlet& rhs);
+         const std::vector<Physics<Dimension>*>& physicsPackages);
+  virtual ~Verlet() = default;
+  Verlet& operator=(const Verlet& rhs) = default;
 
   // All Integrators are required to provide the single cycle method.
   virtual bool step(Scalar maxTime,
@@ -46,8 +40,8 @@ public:
   // We need to make the simpler form of step visible!
   using Integrator<Dimension>::step;
 
-  // Restart methods.
-  virtual std::string label() const override { return "Verlet"; }
+  // Forbidden methods
+  Verlet() = delete;
 
 private:
   //--------------------------- Private Interface ---------------------------//

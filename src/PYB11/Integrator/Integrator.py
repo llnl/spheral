@@ -6,30 +6,24 @@ from IntegratorAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralIntegrator")
+@PYB11module("SpheralCompiledModules.SpheralIntegrator")
 class Integrator:
     "Base class for all Spheral time integration algorithms"
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
 """
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
-        "Construct an itegrator"
-
-    def pyinit1(self, dataBase = "DataBase<%(Dimension)s>&"):
-        "Construct an integrator with a DataBase"
-
-    def pyinit2(self,
-                dataBase = "DataBase<%(Dimension)s>&",
-                physicsPackages = "const std::vector<Physics<%(Dimension)s>*>&"):
-        "Construct an integrator with a DataBase and physics packages"
+    def pyinit(self,
+               dataBase = "DataBase<%(Dimension)s>&",
+               physicsPackages = ("const std::vector<Physics<%(Dimension)s>*>&", "std::vector<Physics<%(Dimension)s>*>()")):
+        "Construct an integrator with a DataBase and optional physics packages"
 
     #...........................................................................
     # Virtual methods
@@ -50,6 +44,7 @@ class Integrator:
         return "Scalar"
 
     @PYB11virtual
+    @PYB11const
     def preStepInitialize(self,
                           state = "State<%(Dimension)s>&",
                           derivs = "StateDerivatives<%(Dimension)s>&"):
@@ -58,6 +53,7 @@ To be called once per advance cycle."""
         return "void"
 
     @PYB11virtual
+    @PYB11const
     def initializeDerivatives(self,
                               t = "const double",
                               dt = "const double",
@@ -69,6 +65,7 @@ several times during a time step."""
         return "void"
 
     @PYB11virtual
+    @PYB11const
     def postStepFinalize(self,
                          t = "const double",
                          dt = "const double",
@@ -133,24 +130,29 @@ several times during a time step."""
         "Get the unique set of boundary conditions across all physics packages."
         return "std::vector<Boundary<%(Dimension)s>*>"
 
+    @PYB11const
     def setGhostNodes(self):
         "Set the ghost nodes for all node lists according to the boundary conditions."
         return "void"
 
+    @PYB11const
     def applyGhostBoundaries(self,
                              state = "State<%(Dimension)s>&",
                              derivs = "StateDerivatives<%(Dimension)s>&"):
         "Set the ghost node values on the Fields of the nodes lists in the data base."
         return "void"
 
+    @PYB11const
     def finalizeGhostBoundaries(self):
         "Finalize the ghost node boundary conditions."
         return "void"
 
+    @PYB11const
     def setViolationNodes(self):
         "Find the nodes in violation of the boundary conditions."
         return "void"
 
+    @PYB11const
     def enforceBoundaries(self,
                           state = "State<%(Dimension)s>&",
                           derivs = "StateDerivatives<%(Dimension)s>&"):
@@ -182,6 +184,7 @@ into compliance."""
     allowDtCheck = PYB11property("bool", "allowDtCheck", "allowDtCheck", doc="Should the integrator check interim timestep votes and abort steps?")
     domainDecompositionIndependent = PYB11property("bool", "domainDecompositionIndependent", "domainDecompositionIndependent", doc="Order operations to be bit perfect reproducible regardless of domain decomposition")
     cullGhostNodes = PYB11property("bool", "cullGhostNodes", "cullGhostNodes", doc="Cull ghost nodes to just active set")
+    dtMultiplier = PYB11property("Scalar", "dtMultiplier", doc="Multiplier for selected time step")
 
 #-------------------------------------------------------------------------------
 # Inject other interfaces

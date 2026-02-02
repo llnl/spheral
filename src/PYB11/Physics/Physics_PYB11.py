@@ -17,6 +17,8 @@ PYB11includes += ['"Physics/Physics.hh"',
                   '"Physics/GenericBodyForce.hh"',
                   '"Boundary/Boundary.hh"',
                   '"ArtificialViscosity/ArtificialViscosity.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"Kernel/TableKernel.hh"']
 
 #-------------------------------------------------------------------------------
@@ -34,8 +36,6 @@ MassDensityType = PYB11enum(("SumDensity",
                              "VoronoiCellDensity",
                              "SumVoronoiCellDensity",
                              "CorrectedSumDensity"), export_values=True)
-HEvolutionType = PYB11enum(("IdealH", 
-                            "IntegrateH"), export_values = True)
 
 #-------------------------------------------------------------------------------
 # Do our dimension dependent instantiations.

@@ -13,7 +13,7 @@
 
 namespace Spheral {
 
-template<typename Dimension>
+template<typename Dimension, typename ValueType>
 class FieldUpdatePolicy: public UpdatePolicyBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -22,7 +22,7 @@ public:
 
   // Constructors, destructor.
   FieldUpdatePolicy(std::initializer_list<std::string> depends = {});
-  virtual ~FieldUpdatePolicy() {};
+  virtual ~FieldUpdatePolicy() = default;
   
   // Should this policy be cloned per Field when registering for a FieldList?
   // Setting this to true is the only purpose of this class, so that policies
@@ -30,6 +30,17 @@ public:
   // in each Field in the FieldList being registered separately with copies of
   // the shared_ptr to the policy.
   virtual bool clonePerField() const override { return true; }
+
+  // Serialize our data to a buffer
+  virtual void serializeData(std::vector<double>& buf,
+                             const KeyType& key,
+                             const State<Dimension>& state) const override;
+  virtual size_t deserializeData(const std::vector<double>& buf,
+                                 const KeyType& key,
+                                 const State<Dimension>& state,
+                                 const size_t offset) const override;
+
+  FieldUpdatePolicy() = delete;
 
 private:
   //--------------------------- Private Interface ---------------------------//

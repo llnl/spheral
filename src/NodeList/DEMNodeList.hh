@@ -28,17 +28,17 @@ public:
   typedef typename Dimension::SymTensor SymTensor;
   // Constructors.
   DEMNodeList(std::string name,
-                const int numInternal,
-                const int numGhost,
-                const Scalar hmin,
-                const Scalar hmax,
-                const Scalar hminratio,
-                const Scalar nPerh,
-                const Scalar neighborSearchBuffer,
-                const int maxNumNeighbors);
+              const size_t numInternal,
+              const size_t numGhost,
+              const Scalar hmin,
+              const Scalar hmax,
+              const Scalar hminratio,
+              const Scalar nPerh,
+              const Scalar neighborSearchBuffer,
+              const size_t maxNumNeighbors);
 
   // Destructor
-  virtual ~DEMNodeList();
+  virtual ~DEMNodeList() = default;
 
   Field<Dimension, Scalar>& particleRadius();
   const Field<Dimension, Scalar>& particleRadius() const;
@@ -48,14 +48,14 @@ public:
   const Field<Dimension, int>& compositeParticleIndex() const;
   void compositeParticleIndex(const Field<Dimension, int>& compositeParticleIndex);
 
-  Field<Dimension, int>& uniqueIndex();
-  const Field<Dimension, int>& uniqueIndex() const;
-  void uniqueIndex(const Field<Dimension, int>& uniqueIndex);
+  Field<Dimension, size_t>& uniqueIndex();
+  const Field<Dimension, size_t>& uniqueIndex() const;
+  void uniqueIndex(const Field<Dimension, size_t>& uniqueIndex);
 
   Scalar neighborSearchBuffer() const;
   void   neighborSearchBuffer(Scalar x);
 
-  void setHfieldFromParticleRadius(const int startUniqueIndex);
+  void setHfieldFromParticleRadius(const size_t startUniqueIndex);
 
   //****************************************************************************
   // Methods required for restarting.
@@ -65,19 +65,17 @@ public:
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************
 
+  // No default constructor or copying.
+  DEMNodeList() = delete;
+  DEMNodeList(const DEMNodeList& nodes) = delete;
+  DEMNodeList& operator=(const DEMNodeList& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
-#ifndef __GCCXML__
   Scalar mNeighborSearchBuffer;
   Field<Dimension, Scalar> mParticleRadius;
   Field<Dimension, int> mCompositeParticleIndex;
-  Field<Dimension, int> mUniqueIndex;
-#endif
-
-  // No default constructor or copying.
-  DEMNodeList();
-  DEMNodeList(const DEMNodeList& nodes);
-  DEMNodeList& operator=(const DEMNodeList& rhs);
+  Field<Dimension, size_t> mUniqueIndex;
 };
 
 }

@@ -11,6 +11,7 @@ evolveTotalEnergy = True
 boolCullenViscosity = True
 HopkinsConductivity = True
 resMultiplier = 1
+glue(independent=True)
 
 #-------------------------------------------------------------------------------
 # Function to add the tests.

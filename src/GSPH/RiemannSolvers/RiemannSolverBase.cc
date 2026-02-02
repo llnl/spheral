@@ -35,8 +35,6 @@ RiemannSolverBase(LimiterBase<Dimension>& slopeLimiter,
   mSlopeLimiter(slopeLimiter),
   mWaveSpeed(waveSpeed),
   mLinearReconstruction(linearReconstruction){
-  //mDpDx(FieldStorageType::CopyFields),
-  //mDvDx(FieldStorageType::CopyFields){
 }
 
 //------------------------------------------------------------------------------
@@ -52,91 +50,14 @@ RiemannSolverBase<Dimension>::
 template<typename Dimension>
 void
 RiemannSolverBase<Dimension>::
-initialize(const DataBase<Dimension>& dataBase,
-           const State<Dimension>& state,
-           const StateDerivatives<Dimension>& derivs,
-           typename RiemannSolverBase<Dimension>::ConstBoundaryIterator boundaryBegin,
-           typename RiemannSolverBase<Dimension>::ConstBoundaryIterator boundaryEnd,
+initialize(const DataBase<Dimension>& /*dataBase*/,
+           const State<Dimension>& /*state*/,
+           const StateDerivatives<Dimension>& /*derivs*/,
+           typename RiemannSolverBase<Dimension>::ConstBoundaryIterator /*boundaryBegin*/,
+           typename RiemannSolverBase<Dimension>::ConstBoundaryIterator /*boundaryEnd*/,
            const typename Dimension::Scalar /*time*/,
            const typename Dimension::Scalar /*dt*/,
            const TableKernel<Dimension>& /*W*/){
-
-  // if(mLinearReconstruction){
-  //   dataBase.resizeFluidFieldList(mDpDx,Vector::zero,GSPHFieldNames::RiemannPressureGradient0,true);
-  //   dataBase.resizeFluidFieldList(mDvDx,Tensor::zero,GSPHFieldNames::RiemannVelocityGradient0,true);
-
-  //   //const auto& DpDx0 = derivs.fields( GSPHFieldNames::pressureGradient, Vector::zero);
-  //   //const auto& DpDxRaw0 = derivs.fields( GSPHFieldNames::pressureGradient+"RAW", Vector::zero);
-  //   const auto& DvDx0 = derivs.fields( HydroFieldNames::velocityGradient,Tensor::zero);
-  //   //const auto& localDvDx0 = derivs.fields( HydroFieldNames::internalVelocityGradient,Tensor::zero);
-  //   //const auto& DvDxRaw0 = derivs.fields( HydroFieldNames::velocityGradient+"RAW",Tensor::zero);
-  //   const auto& DvDt0 = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
-  //   const auto& rho0 = state.fields(HydroFieldNames::massDensity, 0.0);
-
-  //   const auto& connectivityMap = dataBase.connectivityMap();
-  //   const auto& nodeLists = connectivityMap.nodeLists();
-  //   const auto numNodeLists = nodeLists.size();
-
-  //   // copy from previous time step
-  //   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  //     const auto& nodeList = nodeLists[nodeListi];
-  //     const auto ni = nodeList->numInternalNodes();
-  //     #pragma omp parallel for
-  //     for (auto i = 0u; i < ni; ++i) {
-  //       //const auto localDvDxi = localDvDx0(nodeListi,i);
-  //       const auto DvDxi = DvDx0(nodeListi,i);
-  //       //const auto DvDxRawi = DvDxRaw0(nodeListi,i);
-  //       //const auto DpDxi = DpDx0(nodeListi,i);
-  //       //const auto DpDxRawi = DpDxRaw0(nodeListi,i);
-  //       const auto DvDti = DvDt0(nodeListi,i);
-  //       const auto rhoi = rho0(nodeListi,i);
-
-  //       // this'll need some cleaning
-  //       // switch(mGradientType){ 
-  //       //   case GradientType::RiemannGradient: // default grad based on riemann soln
-  //           mDvDx(nodeListi,i) = DvDxi;
-  //           mDpDx(nodeListi,i) = -rhoi*DvDti;
-  //       //     break;
-  //       //   case GradientType::HydroAccelerationGradient: // based on hydro accel for DpDx
-  //       //     mDvDx(nodeListi,i) = DvDxi;
-  //       //     mDpDx(nodeListi,i) = -rhoi*DvDti;
-  //       //     break;
-  //       //   case GradientType::SPHGradient: // raw gradients
-  //       //     mDvDx(nodeListi,i) = DvDxRawi;
-  //       //     mDpDx(nodeListi,i) = DpDxRawi;
-  //       //     break;
-  //       //   case GradientType::MixedMethodGradient: // raw gradient for P riemann gradient for v
-  //       //     mDvDx(nodeListi,i) = DvDxi;
-  //       //     mDpDx(nodeListi,i) = DpDxRawi;
-  //       //     break;
-  //       //   case GradientType::OnlyDvDxGradient: // raw gradients
-  //       //     mDvDx(nodeListi,i) = DvDxi;
-  //       //     mDpDx(nodeListi,i) = Vector::zero;
-  //       //     break;
-  //       //   case GradientType::LocalDvDxGradient: // local velocity gradient 
-  //       //     mDvDx(nodeListi,i) = localDvDxi;
-  //       //     mDpDx(nodeListi,i) = DpDxi;
-  //       //     break;
-  //       //   default : 
-  //       //     mDvDx(nodeListi,i) = Tensor::zero;
-  //       //     mDpDx(nodeListi,i) = Vector::zero;
-            
-  //       // }
-  //     } 
-  //   }
-
-  //   for (auto boundItr = boundaryBegin;
-  //             boundItr != boundaryEnd;
-  //           ++boundItr) {
-  //     (*boundItr)->applyFieldListGhostBoundary(mDpDx);
-  //     (*boundItr)->applyFieldListGhostBoundary(mDvDx);
-  //   }
-
-  //   for (auto boundItr = boundaryBegin;
-  //             boundItr != boundaryEnd;
-  //           ++boundItr) (*boundItr)->finalizeGhostBoundary();
-  
-  // } // if LinearReconstruction
 
 } // initialize method
 
@@ -227,39 +148,15 @@ linearReconstruction(const typename Dimension::Vector& ri,
 //------------------------------------------------------------------------------
 // default to non-op
 //------------------------------------------------------------------------------
-// template<typename Dimension>
-// void
-// RiemannSolverBase<Dimension>::
-// interfaceState(const int /*i*/,
-//                const int /*j*/,
-//                const int /*nodelisti*/,
-//                const int /*nodelistj*/,
-//                const Vector& /*ri*/,
-//                const Vector& /*rj*/,
-//                const Scalar& /*rhoi*/,   
-//                const Scalar& /*rhoj*/, 
-//                const Scalar& /*ci*/,   
-//                const Scalar& /*cj*/, 
-//                const Scalar& /*sigmai*/,    
-//                const Scalar& /*sigmaj*/,
-//                const Vector& /*vi*/,    
-//                const Vector& /*vj*/,
-//                      Scalar& /*Pstar*/,
-//                      Vector& /*vstar*/,
-//                      Scalar& /*rhostari*/,
-//                      Scalar& /*rhostarj*/) const{
 
-// }
 
 template<typename Dimension>
 void
 RiemannSolverBase<Dimension>::
-interfaceState(const int /*i*/,
-               const int /*j*/,
-               const int /*nodelisti*/,
-               const int /*nodelistj*/,
-               const Vector& /*ri*/,
+interfaceState(const Vector& /*ri*/,
                const Vector& /*rj*/,
+               const SymTensor& /*Hi*/,
+               const SymTensor& /*Hj*/,
                const Scalar& /*rhoi*/,   
                const Scalar& /*rhoj*/, 
                const Scalar& /*ci*/,   
@@ -268,6 +165,8 @@ interfaceState(const int /*i*/,
                const Scalar& /*Pj*/,
                const Vector& /*vi*/,    
                const Vector& /*vj*/,
+               const Vector& /*DrhoDxi*/,    
+               const Vector& /*DrhoDxj*/,
                const Vector& /*DpDxi*/,    
                const Vector& /*DpDxj*/,
                const Tensor& /*DvDxi*/,    
@@ -285,12 +184,10 @@ interfaceState(const int /*i*/,
 template<typename Dimension>
 void
 RiemannSolverBase<Dimension>::
-interfaceState(const int /*i*/,
-               const int /*j*/,
-               const int /*nodelisti*/,
-               const int /*nodelistj*/,
-               const Vector& /*ri*/,
+interfaceState(const Vector& /*ri*/,
                const Vector& /*rj*/,
+               const SymTensor& /*Hi*/,
+               const SymTensor& /*Hj*/,
                const Scalar& /*rhoi*/,   
                const Scalar& /*rhoj*/, 
                const Scalar& /*ci*/,   

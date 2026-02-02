@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(NodeList)
+spheral_add_pybind11_library(NodeList SPHERAL_MODULE_LIST)

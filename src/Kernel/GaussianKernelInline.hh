@@ -49,14 +49,6 @@ GaussianKernel<Dimension>::GaussianKernel(const double extent):
 // }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-GaussianKernel<Dimension>::~GaussianKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

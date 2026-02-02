@@ -7,6 +7,9 @@ from SpheralTestUtilities import *
 import os, shutil, time, sys
 import mpi
 
+import random
+random.seed(4599281940)
+
 title("distributed connectivity")
 
 commandLine(
@@ -132,22 +135,18 @@ else:
 # Randomize the node positions
 #-------------------------------------------------------------------------------
 if randomizeNodes:
-    import random
-    seed = 2
-    rangen = random.Random()
-    rangen.seed(seed)
     delta = (x1 - x0) / nx
     pos = nodes.positions()
     for i in range(nodes.numInternalNodes):
         if dimension == 1:
-            pos[i].x += ranfrac * delta * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * delta * random.uniform(-1.0, 1.0)
         elif dimension == 2:
-            pos[i].x += ranfrac * delta * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * delta * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * delta * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * delta * random.uniform(-1.0, 1.0)
         elif dimension == 3:
-            pos[i].x += ranfrac * delta * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * delta * rangen.uniform(-1.0, 1.0)
-            pos[i].z += ranfrac * delta * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * delta * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * delta * random.uniform(-1.0, 1.0)
+            pos[i].z += ranfrac * delta * random.uniform(-1.0, 1.0)
 
 #-------------------------------------------------------------------------------
 # Make the DataBase
@@ -173,11 +172,10 @@ fieldLists = [mass, position, h]
 #-------------------------------------------------------------------------------
 domainbc = TreeDistributedBoundary.instance()
 bounds = vector_of_Boundary([domainbc])
-method = SPHSmoothingScale()
+method = SPHSmoothingScale(IdealH, WT)
 iterateIdealH(dataBase,
+              vector_of_Physics([method]),
               bounds,
-              WT,
-              method,
               100, # max h iterations
               1.e-8) # h tolerance
 dataBase.updateConnectivityMap(testGhosts, testOverlap)
@@ -185,7 +183,7 @@ dataBase.updateConnectivityMap(testGhosts, testOverlap)
 #-------------------------------------------------------------------------------
 # Create the distributed boundary and compute the connectivity
 #-------------------------------------------------------------------------------
-for NN in dataBase.nodeLists():
+for NN in dataBase.nodeLists:
     NN.numGhostNodes = 0
     NN.neighbor().updateNodes()
 domainbc.setAllGhostNodes(dataBase)
@@ -193,7 +191,7 @@ domainbc.finalizeGhostBoundary()
 for fl in fieldLists:
     domainbc.applyFieldListGhostBoundary(fl)
 domainbc.finalizeGhostBoundary()
-for NN in dataBase.nodeLists():
+for NN in dataBase.nodeLists:
     NN.neighbor().updateNodes()
 dataBase.updateConnectivityMap(testGhosts, testOverlap)
 connectivity = dataBase.connectivityMap(testGhosts, testOverlap)
@@ -220,7 +218,7 @@ output("globalIndicesFL")
 #-------------------------------------------------------------------------------
 globalIndices = []
 globalConnectivity = []
-for ni, nodeList in enumerate(dataBase.nodeLists()):
+for ni, nodeList in enumerate(dataBase.nodeLists):
     for i in range(nodeList.numNodes if testGhosts else nodeList.numInternalNodes):
         globali = globalIndicesFL(ni, i)
         globalConnectivityi = []

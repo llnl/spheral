@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(SVPH)
+spheral_add_pybind11_library(SVPH SPHERAL_MODULE_LIST)

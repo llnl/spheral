@@ -129,6 +129,15 @@ numBoundaryNodes() const {
   return mNumBoundaryNodes;
 }
 
+template<typename Dimension>
+inline
+int
+FlatConnectivity<Dimension>::
+numGlobalBoundaryNodes() const {
+  CHECK(mBoundaryInformationInitialized);
+  return mNumGlobalBoundaryNodes;
+}
+
 //------------------------------------------------------------------------------
 // Convert between local and node indices
 //------------------------------------------------------------------------------

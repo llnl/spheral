@@ -13,10 +13,11 @@ This for uses the "three point" formalism, which allows damaged points to
 cut communication between pairs that talk across them."""
 
     PYB11typedefs = """
-  typedef typename %(Dimension)s::Scalar Scalar;
-  typedef typename %(Dimension)s::Vector Vector;
-  typedef typename %(Dimension)s::Tensor Tensor;
-  typedef typename %(Dimension)s::SymTensor SymTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     def pyinit(self,

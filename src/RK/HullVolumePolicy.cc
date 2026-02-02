@@ -56,7 +56,7 @@ update(const KeyType& key,
   FieldList<Dimension, Scalar> volume = state.fields(fieldKey, Scalar());
 
   // Get the position from the state, and do the deed.
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero);
+  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   computeHullVolumes(mConnectivityMap, position, volume);
 }
 

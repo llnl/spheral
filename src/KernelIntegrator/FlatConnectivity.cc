@@ -6,18 +6,16 @@
 #include "FlatConnectivity.hh"
 
 #include <algorithm>
-#ifdef USE_MPI
-#include "mpi.h"
-#endif
 
 #include "Boundary/ConstantBoundary.hh"
 #include "Boundary/InflowOutflowBoundary.hh"
 #include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"
-#include "Distributed/Communicator.hh"
 #include "Geometry/CellFaceFlag.hh"
 #include "Hydro/HydroFieldNames.hh"
+#include "Distributed/allReduce.hh"
 #include "Utilities/DBC.hh"
+#include "Utilities/Timer.hh"
 #include "Utilities/globalNodeIDs.hh"
 
 namespace Spheral {
@@ -52,8 +50,12 @@ FlatConnectivity():
   mBoundaryInformationInitialized(false),
   mNumLocalNodes(0),
   mNumInternalLocalNodes(0),
+  mNumConnectivityNodes(0),
   mNumGlobalNodes(0),
-  mNumBoundaryNodes(0) {
+  mNumBoundaryNodes(0),
+  mNumGlobalBoundaryNodes(0),
+  mFirstGlobalIndex(0),
+  mLastGlobalIndex(0) {
 }
 
 //------------------------------------------------------------------------------
@@ -63,6 +65,7 @@ template<typename Dimension>
 void 
 FlatConnectivity<Dimension>::
 computeIndices(const DataBase<Dimension>& dataBase) {
+  TIME_FUNCTION;
   VERIFY(fluidNodeListsFirst(dataBase));
   
   // Get information from DataBase
@@ -204,21 +207,25 @@ template<typename Dimension>
 void 
 FlatConnectivity<Dimension>::
 computeOverlapIndices(const DataBase<Dimension>& dataBase) {
+  TIME_FUNCTION;
   VERIFY(mIndexingInitialized);
   
   // Get information from DataBase
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
   const auto& connectivity = dataBase.connectivityMap();
   const auto requireGhostConnectivity = connectivity.buildGhostConnectivity();
   VERIFY(connectivity.buildOverlapConnectivity());
   VERIFY(!requireGhostConnectivity || mGhostIndexingInitialized);
   
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Store the flattened overlap connectivity
   mNumOverlapNeighbors.resize(mNumConnectivityNodes);
@@ -315,6 +322,7 @@ void
 FlatConnectivity<Dimension>::
 computeGlobalIndices(const DataBase<Dimension>& dataBase,
                      const std::vector<Boundary<Dimension>*>& boundaries) {
+  TIME_FUNCTION;
   VERIFY(mIndexingInitialized);
   
   // Get information from DataBase
@@ -322,25 +330,24 @@ computeGlobalIndices(const DataBase<Dimension>& dataBase,
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
   const auto numGlobalNodesDB = dataBase.globalNumFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
+  CONTRACT_VAR(numGlobalNodesDB);
 
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Get global indices manually
-#ifdef USE_MPI
-  int globalScan = 0;
-  MPI_Scan(&mNumInternalLocalNodes, &globalScan, 1, MPI_INT, MPI_SUM, Communicator::communicator());
+  int globalScan = distScan(mNumInternalLocalNodes, SPHERAL_OP_SUM);
   VERIFY(globalScan >= mNumInternalLocalNodes);
   mFirstGlobalIndex = globalScan - mNumInternalLocalNodes;
   mLastGlobalIndex = globalScan - 1;
-  MPI_Allreduce(&mNumInternalLocalNodes, &mNumGlobalNodes, 1, MPI_INT, MPI_SUM, Communicator::communicator());
+  mNumGlobalNodes = allReduce(mNumInternalLocalNodes, SPHERAL_OP_SUM);
   VERIFY(mNumGlobalNodes >= mNumInternalLocalNodes);
-#else
-  mNumGlobalNodes = mNumInternalLocalNodes;
-#endif
-  VERIFY(mNumGlobalNodes == numGlobalNodesDB);
+  VERIFY(mNumGlobalNodes == int(numGlobalNodesDB));
   // std::cout << Process::getRank() << "\t" << mNumInternalLocalNodes << "\t" << mNumGlobalNodes << "\t" << mFirstGlobalIndex << "\t" << mLastGlobalIndex << std::endl;
   
   FieldList<Dimension, int> globalNodeIndices = dataBase.newFluidFieldList(0, "global node IDs");
@@ -402,6 +409,7 @@ void
 FlatConnectivity<Dimension>::
 computeSurfaceIndices(const DataBase<Dimension>& dataBase,
                       const State<Dimension>& state) {
+  TIME_FUNCTION;
   VERIFY(mIndexingInitialized);
   VERIFY(mGhostIndexingInitialized); // Could consider editing to not require this
   
@@ -409,6 +417,9 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
   const auto& connectivity = dataBase.connectivityMap();
   const auto cells = state.fields(HydroFieldNames::cells, FacetedVolume());
   const auto cellFaceFlags = state.fields(HydroFieldNames::cellFaceFlags, std::vector<CellFaceFlag>());
@@ -421,9 +432,9 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
 #endif
   
   // Make sure number of nodes has not changed since computing indices
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
 
   // Since we are doing a gather operation, we need to make sure to clear out old data first
   mSurfaceNormal.resize(mNumLocalNodes);
@@ -557,11 +568,14 @@ computeBoundaryInformation(const DataBase<Dimension>& dataBase,
   const auto numNodeListsDB = dataBase.numFluidNodeLists();
   const auto numNodesDB = dataBase.numFluidNodes();
   const auto numInternalNodesDB = dataBase.numFluidInternalNodes();
+  CONTRACT_VAR(numNodeListsDB);
+  CONTRACT_VAR(numNodesDB);
+  CONTRACT_VAR(numInternalNodesDB);
 
   // Make sure the sizes haven't changed since the indexing was initialized
-  VERIFY(numNodesDB == mNumLocalNodes);
+  VERIFY(numNodesDB == size_t(mNumLocalNodes));
   VERIFY(numNodeListsDB == mNodeToLocalIndex.size());
-  VERIFY(numInternalNodesDB == mNumInternalLocalNodes);
+  VERIFY(numInternalNodesDB == size_t(mNumInternalLocalNodes));
   
   // Initialize the arrays
   mConstantBoundaryNodes.clear();
@@ -591,6 +605,7 @@ computeBoundaryInformation(const DataBase<Dimension>& dataBase,
   std::sort(mConstantBoundaryNodes.begin(), mConstantBoundaryNodes.end());
   mConstantBoundaryNodes.erase(std::unique(mConstantBoundaryNodes.begin(), mConstantBoundaryNodes.end()), mConstantBoundaryNodes.end());
   mNumBoundaryNodes = mConstantBoundaryNodes.size();
+  mNumGlobalBoundaryNodes = allReduce(mNumBoundaryNodes, SPHERAL_OP_SUM);
 
   // For each point, get the number of neighbors that are constant boundary nodes
   {
@@ -805,6 +820,85 @@ globalOverlapNeighborIndices(const int locali,
   }
   CHECK(index == numNonConstNeighbors);
 }
+
+//------------------------------------------------------------------------------
+// Get the local and global indices along with a map to make the global indices unique
+//------------------------------------------------------------------------------
+template<typename Dimension>
+unsigned 
+FlatConnectivity<Dimension>::
+uniqueNeighborIndices(const unsigned locali,
+                      std::vector<unsigned>& localNeighbors,
+                      std::vector<unsigned>& globalNeighbors,
+                      std::vector<unsigned>& constNeighbors,
+                      std::vector<unsigned>& indexMap) const {
+  TIME_FUNCTION;
+  CHECK(mIndexingInitialized);
+  CHECK(mBoundaryInformationInitialized);
+  CHECK(mGlobalIndexingInitialized);
+  CHECK(locali < static_cast<unsigned>(mNumConnectivityNodes));
+  CHECK(size_t(locali) < mNumNeighbors.size() &&
+        size_t(locali) < mFlatToLocalIndex.size());
+
+  const auto numNonConstNeighbors = mNumNeighbors[locali] - mNumConstantBoundaryNeighbors[locali];
+  const auto numConstNeighbors = mNumConstantBoundaryNeighbors[locali];
+
+  // Get the original indices
+  localNeighbors.resize(numNonConstNeighbors);
+  globalNeighbors.resize(numNonConstNeighbors);
+  constNeighbors.resize(numConstNeighbors);
+  auto index = 0u;
+  auto cindex = 0u;
+  for (auto localj : mFlatToLocalIndex[locali]) {
+    CHECK(size_t(localj) < mIsConstantBoundaryNode.size());
+    if (mIsConstantBoundaryNode[localj]) {
+      constNeighbors[cindex] = localj;
+      ++cindex;
+    }
+    else {
+      CHECK(index < static_cast<unsigned>(numNonConstNeighbors));
+      CHECK(size_t(localj) < mLocalToGlobalIndex.size());
+      localNeighbors[index] = localj;
+      globalNeighbors[index] = mLocalToGlobalIndex[localj];
+      ++index;
+    }
+  }
+  CHECK(index == static_cast<unsigned>(numNonConstNeighbors));
+  CHECK(cindex == static_cast<unsigned>(numConstNeighbors));
+
+  // Make them unique
+  return getUniqueIndices(globalNeighbors, indexMap);
+}
+
+
+template<typename Dimension>
+unsigned
+FlatConnectivity<Dimension>::
+getUniqueIndices(const std::vector<unsigned>& globalNeighbors,
+                 std::vector<unsigned>& indexMap) const {
+  // if i is the index and ii is the unique index, indexMap[i] = ii
+  const auto size = globalNeighbors.size();
+  auto index = 0u;
+  indexMap.resize(size);
+  std::map<unsigned, unsigned> globalToIndex;
+  for (auto j = 0u; j < size; ++j) {
+    const auto global = globalNeighbors[j];
+    auto it = globalToIndex.find(global);
+    if (it == globalToIndex.end()) {
+      // If the map doesn't have this global index yet, add a new index to the map
+      globalToIndex[global] = index;
+      indexMap[j] = index;
+      ++index;
+    }
+    else {
+      // If the map has this global index, then map back to that unique index
+      indexMap[j] = it->second;
+    }
+  }
+
+  return index;
+}
+
 
 //------------------------------------------------------------------------------
 // Check whether NodeList ordering is appropriate for this function

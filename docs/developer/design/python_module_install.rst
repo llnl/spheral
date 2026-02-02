@@ -47,7 +47,7 @@ These packages are **always** required when building the Spheral python interfac
   virtualenv==20.2.2
   pyb11generator==1.0.12
 
-Optionally if we are building Spheral with ``ENABLE_DOCS=On`` we will need:
+Optionally if we are building Spheral with ``SPHERAL_ENABLE_DOCS=On`` we will need:
 
 ::
 

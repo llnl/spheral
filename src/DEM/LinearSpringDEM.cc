@@ -18,7 +18,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/DataBase.hh"
 #include "DataBase/IncrementState.hh"
-#include "DataBase/ReplaceState.hh"
+#include "DataBase/MaxReplaceState.hh"
 
 #include "Field/FieldList.hh"
 #include "Neighbor/ConnectivityMap.hh"
@@ -32,6 +32,8 @@
 #include "DEM/LinearSpringDEM.hh"
 #include "DEM/ContactStorageLocation.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
+
+#include "Utilities/Timer.hh"
 
 #ifdef _OPENMP
 #include "omp.h"
@@ -59,7 +61,31 @@ vec_to_string(const Vector& vec) {
   return oss.str();
 }
 
+// function to calculate the contact durations
+double
+computeContactDuration(double m, 
+                       double k, 
+                       double B){
+  CHECK(m >= 0);
+  CHECK(k > 0);
+  CHECK(B < 0);
+  return M_PI*std::sqrt(0.5*m/k * (1.0 + 1.0/(B*B)));
 }
+
+// our lumped damping term were going to force the restitution coefficient to be less than
+// 1 and more than zero with a small buffer to prevent singular behavior w/out resorting
+// to if statements.
+double
+computeBeta(double restitutionCoefficient){
+  CHECK(restitutionCoefficient >= 0);
+  CHECK(restitutionCoefficient <= 1);
+  const double tiny = 1.0e-8;
+  return M_PI/std::log(std::min(std::max(restitutionCoefficient,tiny),1.0-tiny));
+}
+
+}
+
+
 
 //------------------------------------------------------------------------------
 // Default constructor
@@ -78,9 +104,11 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
                 const Scalar cohesiveTensileStrength,
                 const Scalar shapeFactor,
                 const Scalar stepsPerCollision,
+                const bool   enableFastTimeStepping,
                 const Vector& xmin,
                 const Vector& xmax):
   DEMBase<Dimension>(dataBase,stepsPerCollision,xmin,xmax),
+  mEnableFastTimeStepping(enableFastTimeStepping),
   mNormalSpringConstant(normalSpringConstant),
   mNormalRestitutionCoefficient(normalRestitutionCoefficient),
   mTangentialSpringConstant(tangentialSpringConstant),
@@ -91,10 +119,21 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
   mTorsionalFrictionCoefficient(torsionalFrictionCoefficient),
   mCohesiveTensileStrength(cohesiveTensileStrength),
   mShapeFactor(shapeFactor),
-  mNormalBeta(M_PI/std::log(std::max(normalRestitutionCoefficient,1.0e-3))),
-  mTangentialBeta(M_PI/std::log(std::max(tangentialRestitutionCoefficient,1.0e-3))),
-  mMomentOfInertia(FieldStorageType::CopyFields) { 
+  mNormalBeta(computeBeta(normalRestitutionCoefficient)),
+  mTangentialBeta(computeBeta(tangentialRestitutionCoefficient)),
+  mCollisionDuration(0.0),
+  mMomentOfInertia(FieldStorageType::CopyFields),
+  mMaximumOverlap(FieldStorageType::CopyFields),
+  mNewMaximumOverlap(FieldStorageType::CopyFields) { 
+
     mMomentOfInertia = dataBase.newDEMFieldList(0.0, DEMFieldNames::momentOfInertia);
+    mMaximumOverlap = dataBase.newDEMFieldList(0.0, DEMFieldNames::maximumOverlap);
+    mNewMaximumOverlap = dataBase.newDEMFieldList(0.0,MaxReplaceState<Dimension, Scalar>::prefix() + DEMFieldNames::maximumOverlap);
+
+    const auto mass = dataBase.DEMMass();
+    const auto minMass = mass.min();
+    mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+
 }
 
 //------------------------------------------------------------------------------
@@ -112,18 +151,60 @@ typename LinearSpringDEM<Dimension>::TimeStepType
 LinearSpringDEM<Dimension>::
 dt(const DataBase<Dimension>& dataBase,
    const State<Dimension>& state,
-   const StateDerivatives<Dimension>& /*derivs*/,
-   const typename Dimension::Scalar /*currentTime*/) const{
+   const StateDerivatives<Dimension>& derivs,
+   const typename Dimension::Scalar currentTime) const {
 
-  // Get some useful fluid variables from the DataBase.
-  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto  r = state.fields(DEMFieldNames::particleRadius, 0.0);
-  //const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-  //                                                       this->requireOverlapConnectivity(),
-  //                                                       this->requireIntersectionConnectivity());
+  TIME_BEGIN("LinearSpringDEMdt");
+
+  auto dtMin = std::numeric_limits<Scalar>::max();
+  TimeStepType result(dtMin, "DEM error, this message should not get to the end");
+
+  if (this->enableFastTimeStepping()){
+    result = this->variableTimeStep(dataBase,
+                                    state,
+                                    derivs,
+                                    currentTime);
+  }else{
+    result = this->fixedTimeStep();
+  }
+
+  TIME_END("LinearSpringDEMdt");
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// set our timestep (for now its a constant single value)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename LinearSpringDEM<Dimension>::TimeStepType
+LinearSpringDEM<Dimension>::
+fixedTimeStep() const {
+    return make_pair(mCollisionDuration/this->stepsPerCollision(),("fixed-dt Linear Spring DEM vote for time step"));
+}
+
+template<typename Dimension>
+void
+LinearSpringDEM<Dimension>::
+recomputeContactDuration()  {
+  const auto& db = this->dataBase();
+  const auto mass = db.DEMMass();
+  const auto minMass = mass.min();
+  mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+}
+
+template<typename Dimension>
+typename LinearSpringDEM<Dimension>::TimeStepType
+LinearSpringDEM<Dimension>::
+variableTimeStep(const DataBase<Dimension>& dataBase,
+                 const State<Dimension>& state,
+                 const StateDerivatives<Dimension>& /*derivs*/,
+                 const typename Dimension::Scalar /*currentTime*/) const {
   
+  // FieldLists we'll need for the timestep calc.
+  const auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto r = state.fields(DEMFieldNames::particleRadius, 0.0);
 
   const auto& contacts = this->contactStorageIndices();
   const unsigned int numP2PContacts = this->numParticleParticleContacts();
@@ -137,7 +218,7 @@ dt(const DataBase<Dimension>& dataBase,
 
   // Compute the spring timestep constraint (except for the mass)
   const auto nsteps = this->stepsPerCollision();
-  const auto dtSpring0 = M_PI*std::sqrt(0.5/mNormalSpringConstant * (1.0 + 1.0/(mNormalBeta*mNormalBeta)))/nsteps;
+  const auto dtSpring0 = computeContactDuration(1.0,mNormalSpringConstant,mNormalBeta)/nsteps;
 
   CHECK(nsteps > 0);
 
@@ -164,8 +245,6 @@ dt(const DataBase<Dimension>& dataBase,
     const auto& rj = position(nodeListj, j);
     const auto& vj = velocity(nodeListj, j);
     const auto  Rj = r(nodeListj, j);
-    
-    // Spring constant timestep for this pair
 
     // Compare closing speed to separation
     const auto rji = rj - ri;
@@ -215,7 +294,7 @@ dt(const DataBase<Dimension>& dataBase,
     //solid boundary and distance vector to particle i
     const auto& solidBoundary = solidBoundaries[bci];
     const auto rib = solidBoundary->distance(ri);
-    const auto vb = solidBoundary->velocity(ri);
+    const auto vb = solidBoundary->localVelocity(ri);
 
     // Compare closing speed to separation
     const auto vib = vi-vb;
@@ -251,6 +330,10 @@ dt(const DataBase<Dimension>& dataBase,
 
 
   // Ensure no point moves further than the buffer distance in one timestep
+  //--------------------------------------------------------------------------------------
+  // NOTE: it would be nice if this wasn't based on the absolute velocity for cases
+  //       where we have a blob of dem particles moving at elevated speeds
+  //--------------------------------------------------------------------------------------
   const auto numNodeLists = position.size();
   for (auto k = 0u; k < numNodeLists; ++k) {
     const auto n = position[k]->size();
@@ -271,6 +354,20 @@ dt(const DataBase<Dimension>& dataBase,
   return result;
 }
 
+//------------------------------------------------------------------------------
+// method that fires once on startup
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+LinearSpringDEM<Dimension>::
+preStepInitialize(const DataBase<Dimension>& dataBase,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs){
+  TIME_BEGIN("preStepInitialize");
+  DEMBase<Dimension>::preStepInitialize(dataBase,state,derivs);
+  this->recomputeContactDuration();
+  TIME_END("preStepInitialize");
+}
 
 //------------------------------------------------------------------------------
 // method that fires once on startup
@@ -279,8 +376,10 @@ template<typename Dimension>
 void
 LinearSpringDEM<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase){
+  TIME_BEGIN("LinearSpringDEMinitializeProblemStartup");
   DEMBase<Dimension>::initializeProblemStartup(dataBase);
   this->setMomentOfInertia();
+  TIME_END("LinearSpringDEMinitializeProblemStartup");
 }
 
 //------------------------------------------------------------------------------
@@ -291,10 +390,40 @@ void
 LinearSpringDEM<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
+  TIME_BEGIN("LinearSpringDEMregisterState");
+
   DEMBase<Dimension>::registerState(dataBase,state);
+
   dataBase.resizeDEMFieldList(mMomentOfInertia, 0.0, DEMFieldNames::momentOfInertia, false);
+  dataBase.resizeDEMFieldList(mMaximumOverlap, 0.0, DEMFieldNames::maximumOverlap, false);
+
+  auto maxOverlapPolicy = make_policy<MaxReplaceState<Dimension,Scalar>>();
+
   state.enroll(mMomentOfInertia);
+  state.enroll(mMaximumOverlap, maxOverlapPolicy);
+
+  TIME_END("LinearSpringDEMregisterState");
 }
+
+//------------------------------------------------------------------------------
+// Register the state we need/are going to evolve.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+LinearSpringDEM<Dimension>::
+registerDerivatives(DataBase<Dimension>& dataBase,
+              StateDerivatives<Dimension>& derivs) {
+  TIME_BEGIN("LinearSpringDEMregisterDerivs");
+
+  DEMBase<Dimension>::registerDerivatives(dataBase,derivs);
+
+  dataBase.resizeDEMFieldList(mNewMaximumOverlap, 0.0, DEMFieldNames::maximumOverlap, false);
+
+  derivs.enroll(mNewMaximumOverlap);
+
+  TIME_END("LinearSpringDEMregisterDerivs");
+}
+
 //------------------------------------------------------------------------------
 // evaluate the derivatives
 //------------------------------------------------------------------------------
@@ -306,7 +435,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
                     const DataBase<Dimension>& dataBase,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const{
-
+  TIME_BEGIN("LinearSpringDEMevaluateDerivatives");                    
   this->resizeDerivativePairFieldLists(derivatives);
 
   // A few useful constants we'll use in the following loop.
@@ -316,23 +445,23 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   const auto muD = this->dynamicFrictionCoefficient();
   const auto muS = this->staticFrictionCoefficient();
-  const auto muT = this->torsionalFrictionCoefficient();
-  const auto muR = this->rollingFrictionCoefficient();
+  const auto muT = this->torsionalFrictionCoefficient() * shapeFactor * muS;
+  const auto muR = this->rollingFrictionCoefficient() * shapeFactor;
 
   const auto Cc = this->cohesiveTensileStrength();
 
   // spring constants
   const auto kn = this->normalSpringConstant();        // normal
   const auto ks = this->tangentialSpringConstant();    // sliding
-  const auto kt = 0.50 * ks * shapeFactor2;
-  const auto kr = 0.25 * kn * shapeFactor2;
+  const auto kt = 2.0 * ks * shapeFactor2;
+  const auto kr = kn * shapeFactor2;
 
   const auto invKs = 1.0/max(ks,tiny);
   const auto invKt = 1.0/max(kt,tiny);
   const auto invKr = 1.0/max(kr,tiny);
   
-  const auto normalDampingTerms = 2.0*kn/(1.0+mNormalBeta*mNormalBeta);
-  const auto tangentialDampingTerms = 4.0/5.0*ks/(1.0+mTangentialBeta*mTangentialBeta);
+  const auto normalDampingTerms = 4.0*kn/(1.0+mNormalBeta*mNormalBeta);
+  const auto tangentialDampingTerms = 4.0*ks/(1.0+mTangentialBeta*mTangentialBeta);
  
   // The connectivity.
   const auto& nodeLists = dataBase.DEMNodeListPtrs();
@@ -346,11 +475,11 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Get the state FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto momentOfInertia = state.fields(DEMFieldNames::momentOfInertia, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto omega = state.fields(DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
   const auto radius = state.fields(DEMFieldNames::particleRadius, 0.0);
-  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (int)0);
+  const auto uniqueIndices = state.fields(DEMFieldNames::uniqueIndices, (size_t)0);
   const auto compositeIndex = state.fields(DEMFieldNames::compositeParticleIndex, (int)0);
   
   CHECK(mass.size() == numNodeLists);
@@ -366,7 +495,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto shearDisplacement = state.fields(DEMFieldNames::shearDisplacement, std::vector<Vector>());
   const auto rollingDisplacement = state.fields(DEMFieldNames::rollingDisplacement, std::vector<Vector>());
   const auto torsionalDisplacement = state.fields(DEMFieldNames::torsionalDisplacement, std::vector<Scalar>());
-  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<int>());
+  const auto neighborIds = state.fields(DEMFieldNames::neighborIndices, std::vector<size_t>());
 
   CHECK(equilibriumOverlap.size() == numNodeLists);
   CHECK(shearDisplacement.size() == numNodeLists);
@@ -375,13 +504,15 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   CHECK(neighborIds.size() == numNodeLists);
 
   // Get the deriv FieldLists
-  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto DxDt = derivatives.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto DomegaDt = derivatives.fields(IncrementState<Dimension, Scalar>::prefix() + DEMFieldNames::angularVelocity, DEMDimension<Dimension>::zero);
+  auto newMaximumOverlap = derivatives.fields(MaxReplaceState<Dimension,Scalar>::prefix() + DEMFieldNames::maximumOverlap, 0.0);
   
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DvDt.size() == numNodeLists);
   CHECK(DomegaDt.size() == numNodeLists);
+  CHECK(newMaximumOverlap.size() == numNodeLists);
   
   // Get the deriv pairFieldLists
   auto DDtShearDisplacement = derivatives.fields(ReplaceAndIncrementPairFieldList<Dimension, std::vector<Vector>>::incrementPrefix() +  DEMFieldNames::shearDisplacement, std::vector<Vector>());
@@ -412,6 +543,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto DvDt_thread = DvDt.threadCopy(threadStack);
     auto DomegaDt_thread = DomegaDt.threadCopy(threadStack);
+    auto newMaxOverlap_thread = newMaximumOverlap.threadCopy(threadStack, ThreadReduction::MAX);
 
     //------------------------------------
     // particle-particle contacts
@@ -449,7 +581,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
       
       // if so do the things
       if (delta0 > 0.0){
-
+        
         // get remaining state for node i
         const auto  cIdi = compositeIndex(nodeListi,i);
         const auto  uIdi = uniqueIndices(nodeListi,i);
@@ -473,10 +605,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         // Get the derivs from node i
         auto& DvDti = DvDt_thread(nodeListi, i);
         auto& DomegaDti = DomegaDt_thread(nodeListi, i);
+        auto& maxOverlapi = newMaxOverlap_thread(nodeListi,i);
 
         // Get the derivs from node j
         auto& DvDtj = DvDt_thread(nodeListj, j);
         auto& DomegaDtj = DomegaDt_thread(nodeListj, j);
+        auto& maxOverlapj = newMaxOverlap_thread(nodeListj,j);
 
         // storage sign, this makes pairwise values i-j independent
         const int storageSign = (uIdi <= uIdj ? 1 : -1);
@@ -489,6 +623,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         // boolean checks
         const auto isBondedParticle = (cIdi == cIdj);
+        const auto allowSliding = (!isBondedParticle);
 
         // effective delta
         const auto delta = delta0 - overlapij;
@@ -501,14 +636,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto lj = rijMag-li;
 
         // effective quantities (mass, reduced radius) respectively, mij->mi for mi=mj
-        const auto mij = 2.0*(mi*mj)/(mi+mj);
-        const auto lij = 2.0*(li*lj)/(li+lj);
+        const auto mij = mi*mj/(mi+mj);
+        const auto lij = li*lj/(li+lj);
 
         // damping constants -- ct and cr derived quantities ala Zhang 2017
         const auto Cn = std::sqrt(mij*normalDampingTerms);
         const auto Cs = std::sqrt(mij*tangentialDampingTerms);
-        const auto Ct = 0.50 * Cs * shapeFactor2;
-        const auto Cr = 0.25 * Cn * shapeFactor2;
+        const auto Ct = 2.0 * Cs * shapeFactor2;
+        const auto Cr = Cn * shapeFactor2;
 
         // our velocities
         const Vector vroti = -DEMDimension<Dimension>::cross(omegai,rhatij);
@@ -516,88 +651,51 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         const Vector vij = vi-vj + li*vroti - lj*vrotj;
 
-        const Scalar vn = vij.dot(rhatij);                  // normal velocity
-        const Vector vs = vij - vn*rhatij;                  // sliding velocity
+        const Scalar vn = vij.dot(rhatij);                   // normal velocity
+        const Vector vs = vij - vn*rhatij;                   // sliding velocity
         const Vector vr = -li*vroti - lj*vrotj;              // rolling velocity
         const Scalar vt = -lij*DEMDimension<Dimension>::dot(omegai-omegaj,rhatij); // torsion velocity
 
         // normal forces 
         //------------------------------------------------------------
-        const Vector fn = (kn*delta - Cn*vn)*rhatij;        // normal spring
-        const Vector fc = Cc*shapeFactor2*lij*lij*rhatij;   // normal cohesion
-        const Scalar fnMag = fn.magnitude();                // magnitude of normal spring force
+        const Vector fn = (kn*delta - Cn*vn)*rhatij;          // normal spring
+        const Vector fc = 4.0*Cc*shapeFactor2*lij*lij*rhatij; // normal cohesion
+        const Scalar fnMag = fn.magnitude();                  // magnitude of normal spring force
 
         // sliding
         //------------------------------------------------------------
-        // project onto new tangential plane -- maintain magnitude
-        Vector newDeltaSlidij = (deltaSlidij - rhatij.dot(deltaSlidij)*rhatij).unitVector()*deltaSlidij.magnitude();
-        
-        // spring dashpot
-        const Vector ft0spring = - ks*newDeltaSlidij;
-        const Vector ft0damp = - Cs*vs;
-              Vector ft = ft0spring + ft0damp;
-
-        // static friction limit
-        if  (!isBondedParticle and (ft.magnitude() > muS*fnMag)){
-
-          const Scalar ftDynamic = muD*fnMag;
-          ft = ftDynamic*ft.unitVector();
-
-          newDeltaSlidij = ( ft0damp.magnitude() > ftDynamic ? 
-                                Vector::zero : 
-                               -(ft-ft0damp)*invKs );
-
-        }
+        Vector newDeltaSlidij, fs;
+        this->slidingSpringDamper(ks,Cs,muS,muD,deltaSlidij,vs,fnMag,invKs,rhatij,allowSliding,
+                                  newDeltaSlidij,fs); // outputs
 
         // torsion
         //------------------------------------------------------------
-        // since we use a scalar no need to modify here
-        auto newDeltaTorsij = deltaTorsij;
-        
-        // spring dashpot
-        const Scalar Mt0spring = - kt*newDeltaTorsij;
-        const Scalar Mt0damp = - Ct*vt;
-              Scalar MtorsionMag = (Mt0spring + Mt0damp); 
-        const Scalar MtStatic = muT*shapeFactor*muS*fnMag;
-
-        // limit to static
-        if  (!isBondedParticle and (std::abs(MtorsionMag) > MtStatic)){
-         MtorsionMag =  (MtorsionMag > 0.0 ? 1.0 : -1.0)*MtStatic;
-         newDeltaTorsij = (std::abs(Mt0damp) > MtStatic ? 0.0 :  -(MtorsionMag-Mt0damp)*invKt);
-        }
+        Scalar newDeltaTorsij, ft;
+        this->slidingSpringDamper(kt,Ct,muT,muT,deltaTorsij,vt,fnMag,invKt,allowSliding,
+                                  newDeltaTorsij,ft); // output
 
         // rolling
         //------------------------------------------------------------
-        // project onto new tangential plane -- maintain magnitude
-        Vector newDeltaRollij = (deltaRollij - rhatij.dot(deltaRollij)*rhatij).unitVector()*deltaRollij.magnitude();
-    
-        // spring dashpot
-        const Vector Mr0spring = - kr*newDeltaRollij;
-        const Vector Mr0damp = - Cr*vr;
-              Vector effectiveRollingForce = (Mr0spring + Mr0damp); 
-        const Scalar MrStatic = muR*shapeFactor*fnMag;
-
-        // limit to static
-        if  (!isBondedParticle and (effectiveRollingForce.magnitude() > MrStatic)){
-         effectiveRollingForce =  MrStatic*effectiveRollingForce.unitVector();
-         newDeltaRollij = (Mr0damp.magnitude() > MrStatic ?
-                           Vector::zero :  
-                           -(effectiveRollingForce-Mr0damp)*invKr);
-        }
-
+        Vector newDeltaRollij, fr;
+        this->slidingSpringDamper(kr,Cr,muR,muR,deltaRollij,vr,fnMag,invKr,rhatij,allowSliding,
+                                  newDeltaRollij,fr); // outputs
         // accelerations
         //------------------------------------------------------------
         // Rectilinear Acceleration 
-        const Vector fij = fn - fc + ft;
+        const auto fij = fn - fc + fs;
         DvDti += fij/mi;
         DvDtj -= fij/mj;
 
         // angular acceleration
         const auto Msliding = -DEMDimension<Dimension>::cross(rhatij,fij);
-        const auto Mrolling = -DEMDimension<Dimension>::cross(rhatij,effectiveRollingForce);
-        const auto Mtorsion = MtorsionMag * this->torsionMoment(rhatij,omegai,omegaj); // rename torsionDirection
+        const auto Mrolling = -DEMDimension<Dimension>::cross(rhatij,fr);
+        const auto Mtorsion = ft * this->torsionMoment(rhatij,omegai,omegaj); // rename torsionDirection
         DomegaDti += (Msliding*li - (Mtorsion + Mrolling) * lij)/Ii;
         DomegaDtj += (Msliding*lj + (Mtorsion + Mrolling) * lij)/Ij;
+
+        // update max overlaps
+        maxOverlapi = max(maxOverlapi,delta);
+        maxOverlapj = max(maxOverlapj,delta);
 
         // for spring updates
         newShearDisplacement(nodeListi,i)[contacti] = storageSign*newDeltaSlidij;
@@ -656,6 +754,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         // Get the derivs from node i
         auto& DvDti = DvDt_thread(nodeListi, i);
         auto& DomegaDti = DomegaDt_thread(nodeListi, i);
+        auto& maxOverlapi = newMaxOverlap_thread(nodeListi,i);
 
         // get pairwise variables
         const auto& deltaSlidib = shearDisplacement(nodeListi,i)[contacti];
@@ -663,7 +762,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto  deltaTorsib = torsionalDisplacement(nodeListi,i)[contacti];
 
         // velocity of boundary @ ri
-        const auto vb = solidBoundary->velocity(ri);
+        const auto vb = solidBoundary->localVelocity(ri);
 
         // line of action for the contact
         const auto rhatib = rib.unitVector();
@@ -672,19 +771,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto li = rib.magnitude();
 
         // effective quantities
-        const auto mib = 2*mi;
-        const auto lib = 2*li;
+        const auto mib = mi;
+        const auto lib = li;
 
-        // damping constants -- ct and cr derived quantities ala Zhang 2017
-        //----------------------------To-Do-----------------------------------
-        // oh man okay, solid bc's were overdamping. The 0.5 factor got the
-        // coeff of restitution right (i guess i missed a factor of 2 somewhere)
-        // need to go back and do the math later.
-        //--------------------------------------------------------------------
+        // damping coefficients
         const auto Cn = std::sqrt(mib*normalDampingTerms);
         const auto Cs = std::sqrt(mib*tangentialDampingTerms);
-        const auto Ct = 0.50 * Cs * shapeFactor2;
-        const auto Cr = 0.25 * Cn * shapeFactor2;
+        const auto Ct = 2.0 * Cs * shapeFactor2;
+        const auto Cr = Cn * shapeFactor2;
 
         // velocities
         const Vector vroti = -DEMDimension<Dimension>::cross(omegai,rhatib);
@@ -698,68 +792,27 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         // normal forces 
         //------------------------------------------------------------
-        const Vector fn = (kn*delta - Cn*vn)*rhatib;        // normal spring
-        const Vector fc = Cc*shapeFactor2*lib*lib*rhatib;     // normal cohesion
-        const Scalar fnMag = fn.magnitude();                // magnitude of normal spring force
+        const Vector fn = (kn*delta - Cn*vn)*rhatib;          // normal spring
+        const Vector fc = 4.0*Cc*shapeFactor2*lib*lib*rhatib; // normal cohesion
+        const Scalar fnMag = fn.magnitude();                  // magnitude of normal spring force
 
         // sliding
         //------------------------------------------------------------
-        // project onto new tangential plane -- maintain magnitude
-        Vector newDeltaSlidib = (deltaSlidib - rhatib.dot(deltaSlidib)*rhatib).unitVector()*deltaSlidib.magnitude();
-        
-        // spring dashpot
-        const Vector ft0spring = - ks*newDeltaSlidib;
-        const Vector ft0damp = - Cs*vs;
-              Vector ft = ft0spring + ft0damp;
-
-        // static friction limit
-        if (ft.magnitude() > muS*fnMag){
-
-          const Scalar ftDynamic = muD*fnMag;
-          ft = ftDynamic*ft.unitVector();
-
-          newDeltaSlidib = ( ft0damp.magnitude() > ftDynamic ? 
-                                Vector::zero : 
-                               -(ft-ft0damp)*invKs );
-
-        }
+        Vector newDeltaSlidib, ft;
+        this->slidingSpringDamper(ks,Cs,muS,muD,deltaSlidib,vs,fnMag,invKs,rhatib,true,
+                                  newDeltaSlidib,ft);  // outputs
 
         // torsion
         //------------------------------------------------------------
-        // since we use a scalar no need to modify here
-        auto newDeltaTorsib = deltaTorsib;
-        
-        // spring dashpot
-        const Scalar Mt0spring = - kt*newDeltaTorsib;
-        const Scalar Mt0damp = - Ct*vt;
-              Scalar MtorsionMag = (Mt0spring + Mt0damp); 
-        const Scalar MtStatic = muT*shapeFactor*muS*fnMag;
-
-        // limit to static
-        if (std::abs(MtorsionMag) > MtStatic){
-         MtorsionMag =  (MtorsionMag > 0.0 ? 1.0 : -1.0)*MtStatic;
-         newDeltaTorsib = (std::abs(Mt0damp) > MtStatic ? 0.0 :  -(MtorsionMag-Mt0damp)*invKt);
-        }
+        Scalar newDeltaTorsib, MtorsionMag;
+        this->slidingSpringDamper(kt,Ct,muT,muT,deltaTorsib,vt,fnMag,invKt,true,
+                                  newDeltaTorsib, MtorsionMag); // output
 
         // rolling
         //------------------------------------------------------------
-        // project onto new tangential plane -- maintain magnitude
-        Vector newDeltaRollib = (deltaRollib - rhatib.dot(deltaRollib)*rhatib).unitVector()*deltaRollib.magnitude();
-    
-        // spring dashpot
-        const Vector Mr0spring = - kr*newDeltaRollib;
-        const Vector Mr0damp = - Cr*vr;
-              Vector effectiveRollingForce = (Mr0spring + Mr0damp); 
-        const Scalar MrStatic = muR*shapeFactor*fnMag;
-
-        // limit to static
-        if (effectiveRollingForce.magnitude() > MrStatic){
-         effectiveRollingForce =  MrStatic*effectiveRollingForce.unitVector();
-         newDeltaRollib = (Mr0damp.magnitude() > MrStatic ?
-                           Vector::zero :  
-                           -(effectiveRollingForce-Mr0damp)*invKr);
-        }
-
+        Vector newDeltaRollib, fr;
+        this->slidingSpringDamper(kr,Cr,muR,muR,deltaRollib,vr,fnMag,invKr,rhatib,true,
+                                  newDeltaRollib, fr); // outputs
         // accelerations
         //------------------------------------------------------------
         // Rectilinear Acceleration 
@@ -768,9 +821,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
         // angular acceleration
         const auto Msliding = -DEMDimension<Dimension>::cross(rhatib,fib);
-        const auto Mrolling = -DEMDimension<Dimension>::cross(rhatib,effectiveRollingForce);
+        const auto Mrolling = -DEMDimension<Dimension>::cross(rhatib,fr);
         const auto Mtorsion = MtorsionMag * this->torsionMoment(rhatib,omegai,0*omegai); // rename torsionDirection
         DomegaDti += (Msliding*li - (Mtorsion + Mrolling) * lib)/Ii;
+
+        // update max overlaps
+        maxOverlapi = max(maxOverlapi,delta);
 
         // for spring updates
         newShearDisplacement(nodeListi,i)[contacti] = newDeltaSlidib;
@@ -796,6 +852,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         DxDt(nodeListi,i) = veli;
     }   // loop nodes
   }     // loop nodelists
+
+  TIME_END("LinearSpringDEMevaluateDerivatives");
 }       // method
 
 
@@ -875,6 +933,8 @@ LinearSpringDEM<Dimension>::
 dumpState(FileIO& file, const string& pathName) const {
   DEMBase<Dimension>::dumpState(file,pathName);
   file.write(mMomentOfInertia, pathName + "/momentOfInertia");
+  file.write(mMaximumOverlap, pathName + "/maximumOverlap");
+  file.write(mNewMaximumOverlap, pathName + "/newMaximumOverlap");
 }
 
 //------------------------------------------------------------------------------
@@ -886,6 +946,8 @@ LinearSpringDEM<Dimension>::
 restoreState(const FileIO& file, const string& pathName) {
   DEMBase<Dimension>::restoreState(file,pathName);
   file.read(mMomentOfInertia, pathName + "/momentOfInertia");
+  file.read(mMaximumOverlap, pathName + "/maximumOverlap");
+  file.read(mNewMaximumOverlap, pathName + "/newMaximumOverlap");
 }
 } // namespace
 

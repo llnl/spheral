@@ -2,30 +2,52 @@ packages:
   all:
     target: [ppc64le]
     compiler: [gcc, clang]
+    providers:
+      blas: [netlib-lapack]
+      lapack: [netlib-lapack]
+      mpi: [spectrum-mpi]
+      zlib-api: [zlib]
   cmake:
-    version: [3.20.2]
+    version: [3.21.1]
     buildable: false
     externals:
-    - spec: cmake@3.20.2
-      prefix: /usr/tce/packages/cmake/cmake-3.20.2
+    - spec: cmake@3.21.1
+      prefix: /usr/tce/packages/cmake/cmake-3.21.1
+  gmake:
+    version: [4.2.1]
+    buildable: false
+    externals:
+    - spec: gmake@4.2.1
+      prefix: /usr
+  git:
+    version: [2.29.1]
+    buildable: false
+    externals:
+    - spec: git@2.29.1+tcltk
+      prefix: /usr/tce
+  perl:
+    version: [5.26.3]
+    buildable: false
+    externals:
+    - spec: perl@5.26.3
+      prefix: /usr
 
   cuda:
-    version: [11.1.0, 11.0.2, 10.1.243, 10.1.168, 9.2.148, 8.0]
+    version:
+    - 11.1.0
+    - 11.0.2
+    - 10.1.243
     buildable: false
     externals:
+    - spec: cuda@11.4.1+allow-unsupported-compilers
+      prefix: /usr/tce/packages/cuda/cuda-11.4.1
     - spec: cuda@11.1.0~allow-unsupported-compilers
       prefix: /usr/tce/packages/cuda/cuda-11.1.0
     - spec: cuda@11.0.2~allow-unsupported-compilers
       prefix: /usr/tce/packages/cuda/cuda-11.0.2
     - spec: cuda@10.1.243~allow-unsupported-compilers
       prefix: /usr/tce/packages/cuda/cuda-10.1.243
-    - spec: cuda@10.1.168+allow-unsupported-compilers
-      prefix: /usr/tce/packages/cuda/cuda-10.1.168
-    - spec: cuda@9.2.148~allow-unsupported-compilers
-      prefix: /usr/tce/packages/cuda/cuda-9.2.148
-    - spec: cuda@8.0~allow-unsupported-compilers
-      prefix: /usr/tce/packages/cuda/cuda-8.0
-  
+
   spectrum-mpi:
     externals:
     - spec: spectrum-mpi@10.3.1.03rtm0%pgi@19.10
@@ -36,6 +58,8 @@ packages:
       prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1
     - spec: spectrum-mpi@10.3.1.03rtm0%gcc@4.9.3
       prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-4.9.3
+    - spec: spectrum-mpi@10.3.1.03rtm0%gcc@10.2.1
+      prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-10.2.1
     - spec: spectrum-mpi@10.3.1.03rtm0%clang@9.0.0
       prefix: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-clang-9.0.0
     - spec: spectrum-mpi@10.3.1.03rtm0%clang@9.0.0-ibm
@@ -49,6 +73,11 @@ packages:
     buildable: false
 
 # ------ SYSTEM LIBS -------
+  python:
+    externals:
+    - spec: python@3.8.2
+      prefix: /usr/apps/python-3.8.2
+    buildable: false
   ncurses:
     externals:
     - spec: ncurses@5.9
@@ -130,15 +159,15 @@ packages:
       prefix: /usr
     buildable: false
   tcl:
-     externals:
-     - spec: tcl@8.5.19
-       prefix: /usr
-     buildable: false
+    externals:
+    - spec: tcl@8.5.19
+      prefix: /usr
+    buildable: false
   tk:
-     externals:
-     - spec: tk@8.5.19
-       prefix: /usr
-     buildable: false
+    externals:
+    - spec: tk@8.5.19
+      prefix: /usr
+    buildable: false
   fontconfig:
     externals:
     - spec: fontconfig@2.13.1

@@ -10,13 +10,8 @@
 // Created by JMO, Sun Jan 31 19:53:36 PST 2010
 //----------------------------------------------------------------------------//
 #include "DataBase/DataBase.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 #include "Geometry/Dimension.hh"
-#include "Distributed/Communicator.hh"
-
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 #include <vector>
 #include <algorithm>
@@ -24,12 +19,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -108,8 +97,8 @@ globalBoundingBox(const Field<Dimension, typename Dimension::Vector>& positions,
 
   // Now find the global bounds across all processors.
   for (unsigned i = 0; i != Dimension::nDim; ++i) {
-    xmin(i) = allReduce(xmin(i), MPI_MIN, Communicator::communicator());
-    xmax(i) = allReduce(xmax(i), MPI_MAX, Communicator::communicator());
+    xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
+    xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
   }
 }
 
@@ -139,8 +128,8 @@ globalBoundingBox(const FieldList<Dimension, typename Dimension::Vector>& positi
 
   // Now find the global bounds across all processors.
   for (unsigned i = 0; i != Dimension::nDim; ++i) {
-    xmin(i) = allReduce(xmin(i), MPI_MIN, Communicator::communicator());
-    xmax(i) = allReduce(xmax(i), MPI_MAX, Communicator::communicator());
+    xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
+    xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
   }
 }
 
@@ -164,8 +153,8 @@ globalBoundingVolumes(const DataBase<Dimension>& dataBase,
   vector<Vector> nodePositions, samplePositions;
   nodePositions.reserve(numNodes);
   samplePositions.reserve(numSamples);
-  for (size_t fieldi = 0; fieldi != positions.numFields(); ++fieldi) {
-    for (size_t i = 0; i != positions[fieldi]->numElements(); ++i) {
+  for (size_t fieldi = 0u; fieldi < positions.numFields(); ++fieldi) {
+    for (size_t i = 0u; i < positions[fieldi]->numElements(); ++i) {
       nodePositions.push_back(positions(fieldi, i));
       appendSamplingPositions(positions(fieldi, i), extents(fieldi, i), samplePositions);
     }

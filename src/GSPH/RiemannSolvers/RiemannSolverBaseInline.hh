@@ -41,44 +41,4 @@ linearReconstruction(bool x) {
   mLinearReconstruction=x;
 }
 
-
-//------------------------------------------------------------------------------
-// field getters
-//------------------------------------------------------------------------------
-
-
-// template<typename Dimension>
-// inline
-// FieldList<Dimension, typename Dimension::Vector>&
-// RiemannSolverBase<Dimension>::
-// DpDx() {
-//   return mDpDx;
-// }
-
-// template<typename Dimension>
-// inline
-// FieldList<Dimension, typename Dimension::Tensor>&
-// RiemannSolverBase<Dimension>::
-// DvDx() {
-//   return mDvDx;
-// }
-
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension, typename Dimension::Vector>&
-// RiemannSolverBase<Dimension>::
-// DpDx() const {
-//   return mDpDx;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension, typename Dimension::Tensor>&
-// RiemannSolverBase<Dimension>::
-// DvDx() const {
-//   return mDvDx;
-// }
-
-
 }

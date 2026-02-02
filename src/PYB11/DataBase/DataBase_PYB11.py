@@ -128,6 +128,7 @@ PYB11includes += ['"DataBase/DataBase.hh"',
                   '"DataBase/ReplaceBoundedState.hh"',
                   '"DataBase/PureReplaceState.hh"',
                   '"DataBase/PureReplaceBoundedState.hh"',
+                  '"Boundary/Boundary.hh"',
                   '"Field/Field.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
                   '"Physics/Physics.hh"',
@@ -163,7 +164,6 @@ State{ndim}d = PYB11TemplateClass(State, template_parameters="Dim<{ndim}>")
 StateDerivatives{ndim}d = PYB11TemplateClass(StateDerivatives, template_parameters="Dim<{ndim}>")
 DataBase{ndim}d = PYB11TemplateClass(DataBase, template_parameters="Dim<{ndim}>")
 UpdatePolicyBase{ndim}d = PYB11TemplateClass(UpdatePolicyBase, template_parameters="Dim<{ndim}>")
-FieldUpdatePolicy{ndim}d = PYB11TemplateClass(FieldUpdatePolicy, template_parameters="Dim<{ndim}>")
 ''')
 
     for (value, label) in (("Dim<%i>::Scalar" % ndim,          "Scalar"),
@@ -176,10 +176,22 @@ FieldUpdatePolicy{ndim}d = PYB11TemplateClass(FieldUpdatePolicy, template_parame
         Dimension = f"Dim<{ndim}>"
         suffix = f"{ndim}d"
         exec(f'''
+{label}FieldUpdatePolicy{suffix} = PYB11TemplateClass(FieldUpdatePolicy, template_parameters=("{Dimension}", "{value}"))
 {label}IncrementState{suffix} = PYB11TemplateClass(IncrementState, template_parameters = ("{Dimension}", "{value}"))
-{label}IncrementBoundedState{suffix} = PYB11TemplateClass(IncrementBoundedState, template_parameters = ("{Dimension}", "{value}"))
 {label}PureReplaceState{suffix} = PYB11TemplateClass(PureReplaceState, template_parameters = ("{Dimension}", "{value}"))
-{label}PureReplaceBoundedState{suffix} = PYB11TemplateClass(PureReplaceBoundedState, template_parameters = ("{Dimension}", "{value}"))
 {label}ReplaceState{suffix} = PYB11TemplateClass(ReplaceState, template_parameters = ("{Dimension}", "{value}"))
+''')
+
+    # Bounding can only be applied to a subset of DataTypes
+    for (value, label) in (("Dim<%i>::Scalar" % ndim,          "Scalar"),
+                           ("Dim<%i>::Vector" % ndim,          "Vector"),
+                           ("Dim<%i>::Tensor" % ndim,          "Tensor"),
+                           ("Dim<%i>::SymTensor" % ndim,       "SymTensor")):
+        Dimension = f"Dim<{ndim}>"
+        suffix = f"{ndim}d"
+        exec(f'''
+{label}IncrementBoundedState{suffix} = PYB11TemplateClass(IncrementBoundedState, template_parameters = ("{Dimension}", "{value}"))
+{label}PureReplaceBoundedState{suffix} = PYB11TemplateClass(PureReplaceBoundedState, template_parameters = ("{Dimension}", "{value}"))
 {label}ReplaceBoundedState{suffix} = PYB11TemplateClass(ReplaceBoundedState, template_parameters = ("{Dimension}", "{value}"))
 ''')
+        

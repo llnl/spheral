@@ -9,6 +9,7 @@ Welcome to Spheral's developer documentation. This documentation is a work in pr
    
    dev/submodules.rst
    dev/diagnostic_tools.rst
+   dev/docker_dev_env.rst
    dev/release_process.rst
    dev/continuous_deployment.rst
 

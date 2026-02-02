@@ -79,7 +79,7 @@ def _PalphaPorosityFactory(ndim):
                     last_alphae = 0.0
                     iter = 0
                     def DalphaDP_elastic(P, alpha):
-                        h = 1.0 + (alpha - 1.0)*(c0min - cS0)/(cS0*(alphae - 1.0))
+                        h = 1.0 + (alpha - 1.0)*(c0min - cS0)/max(1.0e-20, cS0*(alphae - 1.0))
                         return alpha*alpha/K0*(1.0 - 1.0/(h*h))
                     while abs(alphae - last_alphae) > 1.0e-10 and iter < 1000:
                         iter += 1

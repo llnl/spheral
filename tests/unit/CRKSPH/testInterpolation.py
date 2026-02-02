@@ -67,7 +67,7 @@ commandLine(
 
     graphics = True,
     plotKernels = False,
-    outputFile = "None",
+    outputFile = None,
 )
 
 assert testCase in ("linear", "quadratic", "step")
@@ -80,7 +80,7 @@ FacetedVolume = {"1d" : Box1d,
 #-------------------------------------------------------------------------------
 # Appropriately set generic object names based on the test dimensionality.
 #-------------------------------------------------------------------------------
-exec("from Spheral%s import *" % testDim)
+exec("from Spheral%s import *" % testDim, globals())
 
 ## import Spheral
 ## for name in [x for x in Spheral.__dict__ if testDim in x]:
@@ -90,8 +90,7 @@ exec("from Spheral%s import *" % testDim)
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -191,14 +190,14 @@ for nodes, dx in ((nodes1, dx1),
     pos = nodes.positions()
     for i in range(nodes.numInternalNodes):
         if testDim == "1d":
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
         elif testDim == "2d":
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * dy * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * dy * random.uniform(-1.0, 1.0)
         elif testDim == "3d":
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * dy * rangen.uniform(-1.0, 1.0)
-            pos[i].z += ranfrac * dz * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * dy * random.uniform(-1.0, 1.0)
+            pos[i].z += ranfrac * dz * random.uniform(-1.0, 1.0)
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -228,7 +227,7 @@ if iterateH:
 #-------------------------------------------------------------------------------
 f = db.newFluidScalarFieldList(name="test field")
 pos = db.fluidPosition
-for iNodeList, nodes in enumerate(db.nodeLists()):
+for iNodeList, nodes in enumerate(db.nodeLists):
     for i in range(nodes.numInternalNodes):
         x = pos(iNodeList, i).x
         if testCase == "linear":
@@ -290,7 +289,7 @@ computeCRKSPHCorrections(M0, M1, M2, M3, M4, gradM0, gradM1, gradM2, gradM3, gra
 # Measure the interpolated values and gradients.
 #-------------------------------------------------------------------------------
 if testSPH:
-    for iNodeList, nodes in enumerate(db.nodeLists()):
+    for iNodeList, nodes in enumerate(db.nodeLists):
         for i in range(nodes.numInternalNodes):
             ri = position(iNodeList, i)
             Hi = H(iNodeList, i)
@@ -466,7 +465,7 @@ if graphics:
         p7.plot(xvals, WR, "g-", label="RK")
         p7.axes.legend()
         plt.title("Kernel")
-        if outputFile != "None":
+        if outputFile:
             f = open("Kernel_" + outputFile, "w")
             f.write(("#" + 3*' "%20s"' + "\n") % ("eta", "Wj", "WRj"))
             for xi, Wi, WRi in zip(xvals, W, WR):
@@ -474,10 +473,10 @@ if graphics:
             f.close()
 
     # We may want a gnu/pdv style text file.
-    if outputFile != "None" and testDim == "2d":
+    if outputFile and testDim == "2d":
         of = open(outputFile, "w")
         of.write(('#' + 7*' "%20s"' + '\n') % ("x", "interp answer", "grad answer", "interp SPH", "interp CRK", "grad SPH", "grad CRK"))
-        for iNodeList, nodes in enumerate(db.nodeLists()):
+        for iNodeList, nodes in enumerate(db.nodeLists):
             for i in range(nodes.numInternalNodes):
                 of.write((7*" %20g" + "\n") %
                          (position(iNodeList,i), yans(iNodeList,i), dyans(iNodeList,i), fSPH(iNodeList,i), fRK(iNodeList,i), dfSPH(iNodeList,i).x, dfRK(iNodeList,i).x))
@@ -495,7 +494,7 @@ if graphics:
 if plotKernels:
     import Gnuplot
     pk = generateNewGnuPlot()
-    for iNodeList, nodes in enumerate(db.nodeLists()):
+    for iNodeList, nodes in enumerate(db.nodeLists):
         for i in range(nodes.numInternalNodes):
             xi = positions(iNodeList,i).x
             Hi = H(iNodeList,i)

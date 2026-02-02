@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(CXXTypes)
+spheral_add_pybind11_library(CXXTypes SPHERAL_MODULE_LIST)

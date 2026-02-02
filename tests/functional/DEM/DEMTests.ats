@@ -10,6 +10,10 @@ source("LinearSpringDEM/TwoParticleCollision/fiveParticleCollision-2d.py")
 source("LinearSpringDEM/ImpactingSquares/impactingSquares-2d.py")
 source("LinearSpringDEM/ImpactingSquares/impactingSquares-3d.py")
 
-# test restitution coefficient and friction against solid boundaries
+# test restitution coefficient, natural frequency, and friction against solid boundaries
 source("LinearSpringDEM/SolidBoundaryCondition/singleParticleBoundaryCollision-3d.py")
 source("LinearSpringDEM/SolidBoundaryCondition/finiteSolidPlanes-3d.py")
+source("LinearSpringDEM/SolidBoundaryCondition/pureTorsion-3d.py")
+
+# test moving solid boundaries
+source("LinearSpringDEM/MovingSolidBoundaries/singleParticleMovingBoundaryCollision-3d.py")

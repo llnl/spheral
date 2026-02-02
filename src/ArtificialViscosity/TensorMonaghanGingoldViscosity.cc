@@ -12,105 +12,118 @@
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "NodeList/FluidNodeList.hh"
+#include "Kernel/TableKernel.hh"
 #include "Utilities/rotationMatrix.hh"
 #include "Utilities/GeometricUtilities.hh"
-
+#include "Utilities/Timer.hh"
 #include "Utilities/DBC.hh"
 
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
+
+namespace {
+
+//------------------------------------------------------------------------------
+// Helper to remove any expansion terms from DvDx
+//------------------------------------------------------------------------------
+template<typename Tensor>
+inline
+void
+removeExpansion(Tensor& DvDx) {
+  const auto DvDx_s = DvDx.Symmetric();
+  const auto DvDx_a = DvDx.SkewSymmetric();
+  const auto eigeni = DvDx_s.eigenVectors();
+  DvDx = constructTensorWithMinDiagonal(eigeni.eigenValues, 0.0);
+  DvDx.rotationalTransform(eigeni.eigenVectors);
+  DvDx += DvDx_a;
+}
+
+}
 
 //------------------------------------------------------------------------------
 // Construct with the given value for the linear and quadratic coefficients.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 TensorMonaghanGingoldViscosity<Dimension>::
-TensorMonaghanGingoldViscosity(Scalar Clinear, Scalar Cquadratic):
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic) {
-  this->calculateSigma(true);
+TensorMonaghanGingoldViscosity(const Scalar Clinear,
+                               const Scalar Cquadratic,
+                               const TableKernel<Dimension>& kernel):
+  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, kernel) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
+// Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+void
 TensorMonaghanGingoldViscosity<Dimension>::
-~TensorMonaghanGingoldViscosity() {
-}
+QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
+      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
+      const unsigned nodeListi, const unsigned i, 
+      const unsigned nodeListj, const unsigned j,
+      const Vector& xi,
+      const SymTensor& Hi,
+      const Vector& etai,
+      const Vector& vi,
+      const Scalar rhoi,
+      const Scalar csi,
+      const Vector& xj,
+      const SymTensor& Hj,
+      const Vector& etaj,
+      const Vector& vj,
+      const Scalar rhoj,
+      const Scalar csj,
+      const FieldList<Dimension, Scalar>& fCl,
+      const FieldList<Dimension, Scalar>& fCq,
+      const FieldList<Dimension, Tensor>& DvDx) const {
 
-//------------------------------------------------------------------------------
-// Method to apply the viscous acceleration, work, and pressure, to the derivatives
-// all in one step (efficiency and all).
-//------------------------------------------------------------------------------
-template<typename Dimension>
-pair<typename Dimension::Tensor,
-     typename Dimension::Tensor>
-TensorMonaghanGingoldViscosity<Dimension>::
-Piij(const unsigned nodeListi, const unsigned i, 
-     const unsigned nodeListj, const unsigned j,
-     const Vector& xi,
-     const Vector& etai,
-     const Vector& vi,
-     const Scalar rhoi,
-     const Scalar csi,
-     const SymTensor& /*Hi*/,
-     const Vector& xj,
-     const Vector& etaj,
-     const Vector& vj,
-     const Scalar rhoj,
-     const Scalar csj,
-     const SymTensor& /*Hj*/) const {
+  // Preconditions
+  REQUIRE(fCl.size() == fCq.size());
+  REQUIRE(DvDx.size() > std::max(nodeListi, nodeListj));
 
-  // If the nodes are not closing, then skip the rest and the Q is zero.
-  const Vector xij = xi - xj;
-  const Vector vij = vi - vj;
+  // A few useful constants
+  const auto tiny = 1.0e-20;
+  const auto multipliers = fCl.size() > 0u;
+
+  // If the nodes are not closing, then skip the rest and the Q for this pair is zero.
+  const auto xij = xi - xj;
+  const auto vij = vi - vj;
   if (vij.dot(xij) < 0.0) {
-          
-    const double tiny = 1.0e-20;
-    double Cl = this->mClinear;
-    double Cq = this->mCquadratic;
-    const double eps2 = this->mEpsilon2;
-    const bool limiter = this->mLimiterSwitch;
 
-    // Grab the FieldLists scaling the coefficients.
-    // These incorporate things like the Balsara shearing switch or Morris & Monaghan time evolved
-    // coefficients.
-    const Scalar fCli = this->mClMultiplier(nodeListi, i);
-    const Scalar fCqi = this->mCqMultiplier(nodeListi, i);
-    const Scalar fClj = this->mClMultiplier(nodeListj, j);
-    const Scalar fCqj = this->mCqMultiplier(nodeListj, j);
-    const Scalar fshear = std::max(this->mShearCorrection(nodeListi, i), this->mShearCorrection(nodeListj, j));
-    Cl *= 0.5*(fCli + fClj)*fshear;
-    Cq *= 0.5*(fCqi + fCqj)*fshear;
+    // Find our linear and quadratic coefficients
+    const auto fCli = multipliers ? fCl(nodeListi, i) : 1.0;
+    const auto fCqi = multipliers ? fCq(nodeListi, i) : 1.0;
+    const auto fClj = multipliers ? fCl(nodeListj, j) : 1.0;
+    const auto fCqj = multipliers ? fCq(nodeListj, j) : 1.0;
+    const auto& DvDxi = DvDx(nodeListi, i);
+    const auto& DvDxj = DvDx(nodeListj, j);
+    const auto fshear = (mBalsaraShearCorrection ?
+                         0.5*(this->calcBalsaraShearCorrection(DvDxi, Hi, csi) +
+                              this->calcBalsaraShearCorrection(DvDxj, Hj, csj)) :
+                         1.0);
+    const auto Clij = 0.5*(fCli + fClj)*fshear * mClinear;
+    const auto Cqij = 0.5*(fCqi + fCqj)*fshear * mCquadratic;
 
     // Some more geometry.
-    const Scalar xij2 = xij.magnitude2();
-    const Vector xijUnit = xij.unitVector();
-    const Scalar hi2 = xij2/(etai.magnitude2() + tiny);
-    const Scalar hj2 = xij2/(etaj.magnitude2() + tiny);
-    const Scalar hi = sqrt(hi2);
-    const Scalar hj = sqrt(hj2);
+    const auto xij2 = xij.magnitude2();
+    const auto xijUnit = xij.unitVector();
+    const auto hi2 = xij2/(etai.magnitude2() + tiny);
+    const auto hj2 = xij2/(etaj.magnitude2() + tiny);
+    const auto hi = sqrt(hi2);
+    const auto hj = sqrt(hj2);
 
-    // BOOGA!
-    const Tensor& _sigmai = this->mSigma(nodeListi, i);
-    const Tensor& _sigmaj = this->mSigma(nodeListj, j);
-    Tensor sigmai = _sigmai;
-    Tensor sigmaj = _sigmaj;
+    // Build the tensor for grad-v with the pair-wise value sliced in
+    Tensor sigmai = DvDxi;
+    Tensor sigmaj = DvDxj;
     {
-      const Tensor R = rotationMatrix(xijUnit);
-      const Tensor Rinverse = R.Transpose();
-      const Vector thpt1 = sqrt(xij2)*(R*vij);
-      const Vector deltaSigmai = thpt1/(xij2 + eps2*hi2);
-      const Vector deltaSigmaj = thpt1/(xij2 + eps2*hj2);
+      const auto R = rotationMatrix(xijUnit);
+      const auto Rinverse = R.Transpose();
+      const auto thpt1 = sqrt(xij2)*(R*vij);
+      const auto deltaSigmai = thpt1/(xij2 + mEpsilon2*hi2);
+      const auto deltaSigmaj = thpt1/(xij2 + mEpsilon2*hj2);
       sigmai.rotationalTransform(R);
       sigmaj.rotationalTransform(R);
       sigmai.setColumn(0, deltaSigmai);
@@ -118,26 +131,28 @@ Piij(const unsigned nodeListi, const unsigned i,
       sigmai.rotationalTransform(Rinverse);
       sigmaj.rotationalTransform(Rinverse);
     }
-    // BOOGA!
+
+    // Remove any expansive components from sigma
+    removeExpansion(sigmai);
+    removeExpansion(sigmaj);
 
     // Calculate the tensor viscous internal energy.
-    const Tensor mui = hi*sigmai;
-    Tensor Qepsi = -Cl*csi*mui.Transpose() + Cq*mui*mui;
-    if (limiter) Qepsi = this->calculateLimiter(vi, vj, csi, csj, hi, hj, nodeListi, i)*Qepsi;
+    const auto mui = hi*sigmai;
+    const auto Qepsi = -Clij*csi*mui.Transpose() + Cqij*mui*mui;
 
-    const Tensor muj = hj*sigmaj;
-    Tensor Qepsj = -Cl*csj*muj.Transpose() + Cq*muj*muj;
-    if (limiter) Qepsj = this->calculateLimiter(vj, vi, csj, csi, hj, hi, nodeListj, j)*Qepsj;
+    const auto muj = hj*sigmaj;
+    const auto Qepsj = -Clij*csj*muj.Transpose() + Cqij*muj*muj;
 
-    // We now have enough to compute Pi!
-    const Tensor QPii = Qepsi/rhoi;
-    const Tensor QPij = Qepsj/rhoj;
-    return make_pair(QPii, QPij);
-
+    // We now have enough to compute Pi and Q!
+    QPiij = Qepsi/rhoi;
+    QPiji = Qepsj/rhoj;
+    Qij = rhoi*rhoi*(QPiij.diagonalElements().maxAbsElement());
+    Qji = rhoj*rhoj*(QPiji.diagonalElements().maxAbsElement());
   } else {
-
-    return make_pair(Tensor::zero, Tensor::zero);
-
+    QPiij = Tensor::zero();
+    QPiji = Tensor::zero();
+    Qij = 0.0;
+    Qji = 0.0;
   }
 }
 

@@ -2,35 +2,59 @@
 # TensorCRKSPHViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosity import *
-from ArtificialViscosityAbstractMethods import *
+from TensorMonaghanGingoldViscosity import *
 
 @PYB11template("Dimension")
-class TensorCRKSPHViscosity(ArtificialViscosity):
+class TensorCRKSPHViscosity(TensorMonaghanGingoldViscosity):
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
-               Clinear = ("const Scalar", "1.0"),
-               Cquadratic = ("const Scalar", "1.0")):
+               Clinear = "const Scalar",
+               Cquadratic = "const Scalar",
+               kernel = "const TableKernel<%(Dimension)s>&",
+               order = "const RKOrder"):
         "TensorCRKSPHViscosity constructor"
 
     #...........................................................................
     # Methods
     @PYB11virtual
     @PYB11const
+    def requireVelocityGradient(self):
+        "We need the velocity gradient and set this to true"
+        return "bool"
+
+    @PYB11virtual
+    def updateVelocityGradient(self,
+                               dataBase = "const DataBase<%(Dimension)s>&",
+                               state = "const State<%(Dimension)s>&",
+                               derivs = "const StateDerivatives<%(Dimension)s>&"):
+        "Update the locally stored velocity gradient"
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
+    def requireReproducingKernels(self):
+        "Some physics algorithms require reproducing kernels."
+        return "std::set<RKOrder>"
+
+    @PYB11virtual
+    @PYB11const
     def label(self):
         return "std::string"
 
-#-------------------------------------------------------------------------------
-# Inject abstract interface
-#-------------------------------------------------------------------------------
-PYB11inject(ArtificialViscosityAbstractMethods, TensorCRKSPHViscosity, virtual=True, pure_virtual=False)
+    #...........................................................................
+    # Properties
+    order = PYB11property("RKOrder", "order", "order",
+                          doc="RK order to use to estimate velocity gradient")

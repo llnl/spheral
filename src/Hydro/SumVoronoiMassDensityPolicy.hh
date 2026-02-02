@@ -32,7 +32,7 @@ public:
                               const Physics<Dimension>& package,
                               const double rhoMin,
                               const double rhoMax);
-  virtual ~SumVoronoiMassDensityPolicy();
+  virtual ~SumVoronoiMassDensityPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -52,14 +52,16 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Forbidden methods
+  SumVoronoiMassDensityPolicy(const SumVoronoiMassDensityPolicy& rhs) = delete;
+  SumVoronoiMassDensityPolicy& operator=(const SumVoronoiMassDensityPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   bool mEnforceBoundaries;
   const TableKernel<Dimension>& mW;
   const Physics<Dimension>& mPackage;
   double mRhoMin, mRhoMax;
-  SumVoronoiMassDensityPolicy(const SumVoronoiMassDensityPolicy& rhs);
-  SumVoronoiMassDensityPolicy& operator=(const SumVoronoiMassDensityPolicy& rhs);
 };
 
 }

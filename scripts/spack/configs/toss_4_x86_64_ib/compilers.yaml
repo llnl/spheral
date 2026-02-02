@@ -1,4 +1,4 @@
-compilers:
+compilers::
 - compiler:
     spec: clang@14.0.6
     paths:

@@ -1,50 +1,60 @@
 include_directories(.)
 
+set(Distributed_sources
+    Communicator.cc
+    Process.cc
+    RegisterMPIDataTypes.cc
+    )
+
+set(Distributed_inst )
+
+set(Distributed_headers
+    allReduce.hh
+    Communicator.hh
+    Process.hh
+    RegisterMPIDataTypes.hh
+    )
+
 if (ENABLE_MPI)
   #----------------------------------------------------------------------------
   # MPI parallel on
   #----------------------------------------------------------------------------
-  set(Distributed_sources Communicator.cc waitAllWithDeadlockDetection.cc)
+  list(APPEND Distributed_sources waitAllWithDeadlockDetection.cc)
 
-  if (ENABLE_1D)
+  if (SPHERAL_ENABLE_1D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes1d.cc)
   endif()
 
-  if (ENABLE_2D)
+  if (SPHERAL_ENABLE_2D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes2d.cc)
   endif()
 
-  if (ENABLE_3D)
+  if (SPHERAL_ENABLE_3D)
     list(APPEND Distributed_sources SortAndDivideRedistributeNodes3d.cc)
   endif()
 
-  set(Distributed_inst
-      DistributedBoundary
-      NestedGridDistributedBoundary
-      TreeDistributedBoundary
-      BoundingVolumeDistributedBoundary
-      RedistributeNodes
-      DistributeByXPosition
-      SortAndDivideRedistributeNodes
-      SpaceFillingCurveRedistributeNodes
-      MortonOrderRedistributeNodes
-      PeanoHilbertOrderRedistributeNodes
-      VoronoiRedistributeNodes
-      )
+  list(APPEND Distributed_inst
+       DistributedBoundary
+       NestedGridDistributedBoundary
+       TreeDistributedBoundary
+       BoundingVolumeDistributedBoundary
+       RedistributeNodes
+       DistributeByXPosition
+       SortAndDivideRedistributeNodes
+       SpaceFillingCurveRedistributeNodes
+       MortonOrderRedistributeNodes
+       PeanoHilbertOrderRedistributeNodes
+       VoronoiRedistributeNodes
+       )
 
-  instantiate(Distributed_inst Distributed_sources)
-
-  set(Distributed_headers
+ list(APPEND Distributed_headers
       BoundingVolumeDistributedBoundary.hh
-      BoundingVolumeDistributedBoundaryInline.hh
-      Communicator.hh
       CompareDomainNodesByPosition.hh
       DistributeByXPosition.hh
       DistributedBoundary.hh
       DistributedBoundaryInline.hh
       MortonOrderRedistributeNodes.hh
       NestedGridDistributedBoundary.hh
-      NestedGridDistributedBoundaryInline.hh
       NestedGridRedistributeNodes.hh
       NestedGridRedistributeNodesInline.hh
       NestedGridUtilities.hh
@@ -60,26 +70,30 @@ if (ENABLE_MPI)
       SortAndDivideRedistributeNodesInline.hh
       SpaceFillingCurveRedistributeNodes.hh
       TreeDistributedBoundary.hh
-      TreeDistributedBoundaryInline.hh
       VoronoiRedistributeNodes.hh
       waitAllWithDeadlockDetection.hh
       )
 
-  install(FILES       mpi_mpi4py.py
-          DESTINATION Spheral
-          RENAME      mpi.py
-          )
-
-  spheral_add_obj_library(Distributed SPHERAL_OBJ_LIBS)
+  set(MPIPY_FILE_NAME "mpi_mpi4py.py")
 
 else()
   #----------------------------------------------------------------------------
   # MPI parallel off
   #----------------------------------------------------------------------------
-  install(FILES       fakempi.py
-          DESTINATION Spheral
-          RENAME      mpi.py
-          )
+  set(MPIPY_FILE_NAME "fakempi.py")
 
 endif()
 
+if (SPHERAL_ENABLE_PYTHON)
+  configure_file(${MPIPY_FILE_NAME}
+    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/mpi.py
+    COPYONLY)
+
+  install(FILES       ${MPIPY_FILE_NAME}
+          DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
+          RENAME      mpi.py
+          )
+endif()
+instantiate(Distributed_inst Distributed_sources)
+
+spheral_add_obj_library(Distributed SPHERAL_OBJ_LIBS)

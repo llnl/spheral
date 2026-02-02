@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Helmholtz)
+spheral_add_pybind11_library(Helmholtz SPHERAL_MODULE_LIST)

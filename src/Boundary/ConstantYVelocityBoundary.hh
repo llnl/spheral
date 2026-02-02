@@ -35,7 +35,7 @@ public:
 
   // Constructors and destructors.
   ConstantYVelocityBoundary(const NodeList<Dimension>& nodeList,
-                            const std::vector<int>& nodeIndicies);
+                            const std::vector<size_t>& nodeIndices);
   virtual ~ConstantYVelocityBoundary();
 
   //**********************************************************************

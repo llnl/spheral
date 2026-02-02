@@ -121,7 +121,8 @@ The full gradient can be constructed from the result as \vec{grad} = H * \vec{et
 #-------------------------------------------------------------------------------
 # BSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "BSplineKernel<%(Dimension)s>"})
 class BSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -131,7 +132,8 @@ class BSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # W4Spline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "W4SplineKernel<%(Dimension)s>"})
 class W4SplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -141,7 +143,8 @@ class W4SplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Gaussian
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "GaussianKernel<%(Dimension)s>"})
 class GaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -152,7 +155,8 @@ class GaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # SuperGaussian
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "SuperGaussianKernel<%(Dimension)s>"})
 class SuperGaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -162,7 +166,8 @@ class SuperGaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # PiGaussianSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "PiGaussianKernel<%(Dimension)s>"})
 class PiGaussianKernel(Kernel):
     PYB11typedefs=""
 
@@ -178,7 +183,8 @@ class PiGaussianKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Hat
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "HatKernel<%(Dimension)s>"})
 class HatKernel(Kernel):
     PYB11typedefs=""
 
@@ -193,7 +199,8 @@ class HatKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Sinc
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "SincKernel<%(Dimension)s>"})
 class SincKernel(Kernel):
     PYB11typedefs=""
 
@@ -203,7 +210,8 @@ class SincKernel(Kernel):
 #-------------------------------------------------------------------------------
 # NSincPolynomial
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "NSincPolynomialKernel<%(Dimension)s>"})
 class NSincPolynomialKernel(Kernel):
     PYB11typedefs=""
 
@@ -213,7 +221,8 @@ class NSincPolynomialKernel(Kernel):
 #-------------------------------------------------------------------------------
 # NBSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "NBSplineKernel<%(Dimension)s>"})
 class NBSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -239,8 +248,16 @@ class NBSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # Table
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
-class TableKernel(Kernel):
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "TableKernelView<%(Dimension)s>"})
+class TableKernelView(Kernel):
+    PYB11typedefs=""
+
+    def pyinit(self):
+        "Default constructor"
+
+@PYB11template("Dimension")
+class TableKernel(TableKernelView):
     PYB11typedefs="""
     using Scalar = typename %(Dimension)s::Scalar;
     using Vector = typename %(Dimension)s::Vector;
@@ -251,72 +268,100 @@ class TableKernel(Kernel):
     # Constructors
     def pyinit(self,
                kernel = "const BSplineKernel<%(Dimension)s>&",
-               numPoints = ("const unsigned", "100")):
+               numPoints = ("const unsigned", "100"),
+               minNperh = ("const double", "0.25"),
+               maxNperh = ("const double", "64.0")):
         "Construct with BSpline kernel"
 
     def pyinita(self,
                 kernel = "const W4SplineKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with W4Spline kernel"
 
     def pyinitb(self,
                 kernel = "const GaussianKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with Gaussian kernel"
 
     def pyinitc(self,
                 kernel = "const SuperGaussianKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with SuperGaussian kernel"
 
     def pyinitd(self,
                 kernel = "const PiGaussianKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with PiGaussian kernel"
 
     def pyinite(self,
                 kernel = "const HatKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with Hat kernel"
 
     def pyinitf(self,
                 kernel = "const SincKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with Sinc kernel"
 
     def pyinitg(self,
                 kernel = "const NSincPolynomialKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with NSincPolynomial kernel"
 
     def pyinith(self,
                 kernel = "const QuarticSplineKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with Quartic spline kernel"
 
     def pyiniti(self,
                 kernel = "const QuinticSplineKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with Quintic spline kernel"
 
     def pyinitj(self,
                 kernel = "const NBSplineKernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with NBSpline kernel"
 
     def pyinitk(self,
                 kernel = "const WendlandC2Kernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with WendlandC2 kernel"
 
     def pyinitl(self,
                 kernel = "const WendlandC4Kernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with WendlandC4 kernel"
 
     def pyinitm(self,
                 kernel = "const WendlandC6Kernel<%(Dimension)s>&",
-                numPoints = ("const unsigned", "100")):
+                numPoints = ("const unsigned", "100"),
+                minNperh = ("const double", "0.25"),
+                maxNperh = ("const double", "64.0")):
         "Construct with WendlandC6 kernel"
 
     #...........................................................................
@@ -355,6 +400,19 @@ class TableKernel(Kernel):
         return "void"
 
     @PYB11const
+    def kernelValueSPH(self,
+                       etaij = "const Scalar"):
+        "Compute the kernel value appropriate for use in the SPH variable h 'ideal h' calculation"
+        return "Scalar"
+
+    @PYB11const
+    def kernelValueASPH(self,
+                        etaij = "const Scalar",
+                        nPerh = "const Scalar"):
+        "Compute the kernel value appropriate for use in the ASPH variable H 'ideal H' calculation"
+        return "Scalar"
+
+    @PYB11const
     def equivalentNodesPerSmoothingScale(self,
                                          Wsum = "Scalar"):
         "Compute the nPerh that corresponds to the Wsum value"
@@ -368,14 +426,20 @@ class TableKernel(Kernel):
 
     #...........................................................................
     # Properties
-    nperhValues = PYB11property("const std::vector<Scalar>&", returnpolicy="reference_internal", doc="The lookup table used for finding nperh")
-    WsumValues = PYB11property("const std::vector<Scalar>&", returnpolicy="reference_internal", doc="The lookup table of Wsum values")
     numPoints = PYB11property("size_t", doc="The number of points in the table")
+    minNperhLookup = PYB11property("double", doc="The lower limit for looking up the effective nPerh")
+    maxNperhLookup = PYB11property("double", doc="The upper limit for looking up the effective nPerh")
+    Winterpolator = PYB11property(doc = "W(x) interpolator")
+    gradWinterpolator = PYB11property(doc = "grad W(x) interpolator")
+    grad2Winterpolator = PYB11property(doc = "grad^2 W(x) interpolator")
+    nPerhInterpolator = PYB11property(doc = "nperh(x) interpolator (SPH)")
+    WsumInterpolator = PYB11property(doc = "Wsum(x) interpolator (SPH)")
 
 #-------------------------------------------------------------------------------
 # WendlandC2
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC2Kernel<%(Dimension)s>"})
 class WendlandC2Kernel(Kernel):
     PYB11typedefs=""
 
@@ -385,7 +449,8 @@ class WendlandC2Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # WendlandC4
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC4Kernel<%(Dimension)s>"})
 class WendlandC4Kernel(Kernel):
     PYB11typedefs=""
 
@@ -395,7 +460,8 @@ class WendlandC4Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # WendlandC6
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "WendlandC6Kernel<%(Dimension)s>"})
 class WendlandC6Kernel(Kernel):
     PYB11typedefs=""
 
@@ -405,7 +471,8 @@ class WendlandC6Kernel(Kernel):
 #-------------------------------------------------------------------------------
 # QuarticSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "QuarticSplineKernel<%(Dimension)s>"})
 class QuarticSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -415,7 +482,8 @@ class QuarticSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # QuinticSpline
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "QuinticSplineKernel<%(Dimension)s>"})
 class QuinticSplineKernel(Kernel):
     PYB11typedefs=""
 
@@ -425,7 +493,8 @@ class QuinticSplineKernel(Kernel):
 #-------------------------------------------------------------------------------
 # ExpInv
 #-------------------------------------------------------------------------------
-PYB11template("Dimension")
+@PYB11template("Dimension")
+@PYB11template_dict({"Descendant": "ExpInvKernel<%(Dimension)s>"})
 class ExpInvKernel(Kernel):
     PYB11typedefs=""
 

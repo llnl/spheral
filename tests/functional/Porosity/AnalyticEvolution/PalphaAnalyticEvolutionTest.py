@@ -56,7 +56,7 @@ commandLine(
     b2 = 0.0,
     mu = 2.0,
 
-    IntegratorConstructor = SynchronousRK1Integrator,
+    IntegratorConstructor = ForwardEulerIntegrator,
     goalTime = 5.0,
     steps = None,
     sampleCycle = 1,

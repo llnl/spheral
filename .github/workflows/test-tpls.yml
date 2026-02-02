@@ -3,10 +3,14 @@ name: Test external build.
 on:
   pull_request:
     paths:
-      - .uberenv_config.json
       - scripts/spack/**
       - scripts/devtools/**
-
+      - scripts/runtime-requirements.txt.in
+      - scripts/build-requirements.txt
+      - Dockerfile
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: llnl/spheral

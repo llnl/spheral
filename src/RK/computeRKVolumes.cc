@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "computeRKVolumes.hh"
 
-#include "computeVoronoiVolume.hh"
+#include "VoronoiCells/computeVoronoiVolume.hh"
 #include "computeHullVolumes.hh"
 #include "computeRKSumVolume.hh"
 #include "computeHVolumes.hh"

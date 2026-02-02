@@ -13,7 +13,7 @@ from findLastRestart import *
 from GenerateNodeDistribution3d import *
 from GenerateDEMfromSPHGenerator import GenerateDEMfromSPHGenerator3d
 
-sys.path.insert(0, '..')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from DEMConservationTracker import TrackConservation3d as TrackConservation
 
 if mpi.procs > 1:
@@ -77,6 +77,7 @@ commandLine(vImpact = 1.0,                            # impact velocity
             checkConservation = False,             # turn on error checking for momentum conservation
             restitutionErrorThreshold = 0.02,      # relative error actual restitution vs nominal
             conservationErrorThreshold = 1e-15,    # relative error for momentum conservation
+            omegaThreshold = 1e-14,                # tolerance for erroneous spin up in inactive directions
             torsionalObjectivityThreshold = 1e-10  # relative error bounds on torsion objectivity test
             )
 
@@ -342,15 +343,33 @@ if checkConservation:
     if  conservation.deltaRotationalMomentumZ() > conservationErrorThreshold:
         raise ValueError("rotational momentum -z conservation error, %g, exceeds bounds" % conservation.deltaRotationalMomentumZ())
 
-if boolCheckSlidingFriction or boolCheckRollingFriction or boolCheckTorsionalFriction:
+if boolCheckSlidingFriction or boolCheckRollingFriction:
 # check for non-physical behavior
 #-------------------------------------------------------------
     if omega[0][0].magnitude()+omega[0][1].magnitude() > 2*omega0:
         raise ValueError("particles are rotating faster post-collision")
-
+    if abs(omega[0][0].x) > omegaThreshold or abs(omega[0][0].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 0 in perpendicular direction")
+    if abs(omega[0][1].x) > omegaThreshold or abs(omega[0][1].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 1 in perpendicular direction")
+    
+if  boolCheckTorsionalFriction:
+# check for non-physical behavior
+#-------------------------------------------------------------
+    if omega[0][0].magnitude()+omega[0][1].magnitude() > 2*omega0:
+        raise ValueError("particles are rotating faster post-collision")
+    if abs(omega[0][0].z) > omegaThreshold or abs(omega[0][0].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 0 in perpendicular direction")
+    if abs(omega[0][1].z) > omegaThreshold or abs(omega[0][1].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 1 in perpendicular direction")
+    
 if boolCheckTorsionalObjectivity:
 # to satify objectivity omega (along axis) should not change when equal
 #-------------------------------------------------------------
     omegaError = (2*omega0 - omega[0][0][0] - omega[0][1][0]) / (2*omega0)
     if omegaError > torsionalObjectivityThreshold:
         raise ValueError("torsional objectivity failure with relative angular velocity error, %g, exceeds bounds" % omegaError)
+    if abs(omega[0][0].z) > omegaThreshold or abs(omega[0][0].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 0 in perpendicular direction")
+    if abs(omega[0][1].z) > omegaThreshold or abs(omega[0][1].y) > omegaThreshold:
+        raise ValueError("erroneous spin-up of particle 1 in perpendicular direction")

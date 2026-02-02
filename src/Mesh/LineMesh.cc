@@ -6,11 +6,11 @@
 #include "Mesh.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/bisectSearch.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -22,12 +22,6 @@ using std::set;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -56,8 +50,7 @@ reconstructInternal(const vector<Mesh<Dim<1> >::Vector>& localGenerators,
                     const Mesh<Dim<1> >::Vector& xmax) {
 
   // Is there anything to do?
-  if (allReduce(unsigned(localGenerators.size()), MPI_SUM, Communicator::communicator()) == 0) return;
-
+  if (allReduce(unsigned(localGenerators.size()), SPHERAL_OP_SUM) == 0) return;
 
   // Pre-conditions.
   BEGIN_CONTRACT_SCOPE
@@ -73,7 +66,7 @@ reconstructInternal(const vector<Mesh<Dim<1> >::Vector>& localGenerators,
 
   // Get the full set of generators we need.
   vector<Vector> generators = localGenerators;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Parallel info.
   const unsigned rank = Process::getRank();
   const unsigned numDomains = Process::getTotalNumberOfProcesses();
@@ -284,8 +277,8 @@ boundingSurface() const {
     xmin = std::min(xmin, mNodePositions[i].x());
     xmax = std::max(xmax, mNodePositions[i].x());
   }
-  xmin = allReduce(xmin, MPI_MIN, Communicator::communicator());
-  xmax = allReduce(xmax, MPI_MAX, Communicator::communicator());
+  xmin = allReduce(xmin, SPHERAL_OP_MIN);
+  xmax = allReduce(xmax, SPHERAL_OP_MAX);
   return FacetedVolume(Vector(0.5*(xmin + xmax)), 0.5*(xmax - xmin));
 }
 

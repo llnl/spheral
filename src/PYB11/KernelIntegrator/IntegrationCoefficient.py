@@ -60,24 +60,4 @@ class FieldListIntegrationCoefficient(IntegrationCoefficient):
                             kid = "const KernelIntegrationData<%(Dimension)s>&"):
         "Return a value for the coefficient"
         return "%(CoefficientType)s"
-    
-@PYB11template("Dimension", "CoefficientType")
-@PYB11holder("std::shared_ptr")
-class IntegralDependsOnCoefficient:
-    def pyinit(self):
-        "Choose coefficient for integral (coefficient defaults to one)"
 
-    coefficient = PYB11property(doc="The coefficient",
-                                getter = "getCoefficient",
-                                setter = "setCoefficient")
-
-@PYB11template("Dimension", "CoefficientType")
-@PYB11holder("std::shared_ptr")
-class IntegralDependsOnFieldListCoefficient:
-    def pyinit(self):
-        "Choose coefficient for integral"
-
-    coefficient = PYB11property(doc="The coefficient",
-                                getter = "getCoefficient",
-                                setter = "setCoefficient")
-    

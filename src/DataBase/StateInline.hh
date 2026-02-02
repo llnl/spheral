@@ -1,17 +1,33 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Enroll the given policy.
+// Functors in a detail namespace to help with partial specialization
 //------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-void
-State<Dimension>::
-enroll(const typename State<Dimension>::KeyType& key,
-       typename State<Dimension>::PolicyPointer polptr) {
-  KeyType fieldKey, nodeKey;
-  this->splitFieldKey(key, fieldKey, nodeKey);
-  mPolicyMap[fieldKey][key] = polptr;
+namespace Detail {
+    
+template<typename Dimension, typename T>
+struct EnrollAny {
+  void operator()(State<Dimension>& state,
+                  const typename State<Dimension>::KeyType& key,
+                  T& thing) {
+    dynamic_cast<StateBase<Dimension>*>(&state)->enroll(key, thing);
+  }
+};
+
+template<typename Dimension, typename T>
+struct EnrollAny<Dimension, std::shared_ptr<T>> {
+  void operator()(State<Dimension>& state,
+                  const typename State<Dimension>::KeyType& key,
+                  std::shared_ptr<T>& thing) {
+    auto UPP = std::dynamic_pointer_cast<UpdatePolicyBase<Dimension>>(thing);
+    if (UPP) {
+      state.enroll(key, UPP);
+    } else {
+      dynamic_cast<StateBase<Dimension>*>(&state)->enroll(key, thing);
+    }
+  }
+};
+
 }
 
 //------------------------------------------------------------------------------
@@ -22,9 +38,9 @@ inline
 void
 State<Dimension>::
 enroll(FieldBase<Dimension>& field,
-       typename State<Dimension>::PolicyPointer polptr) {
+       typename State<Dimension>::PolicyPointer policy) {
   this->enroll(field);
-  this->enroll(this->key(field), polptr);
+  this->enroll(this->key(field), policy);
 }
 
 //------------------------------------------------------------------------------
@@ -35,51 +51,32 @@ inline
 void
 State<Dimension>::
 enroll(FieldListBase<Dimension>& fieldList,
-       typename State<Dimension>::PolicyPointer polptr) {
-  if (polptr->clonePerField()) {
+       typename State<Dimension>::PolicyPointer policy) {
+  if (policy->clonePerField()) {
     // std::cerr << "Registering FieldList " << this->key(fieldList) << " with cloning policy" << std::endl;
-    for (auto bitr = fieldList.begin_base(); bitr < fieldList.end_base(); ++bitr) {
-      this->enroll(**bitr, polptr);
+    for (auto fptr: range(fieldList.begin_base(), fieldList.end_base())) {
+      this->enroll(*fptr, policy);
     }
   } else {
     // std::cerr << "Registering FieldList " << this->key(fieldList) << " with SINGLE policy" << std::endl;
     // this->enroll(this->key(fieldList), fieldList);
     this->enroll(fieldList);  // enrolls each field without a policy
-    this->enroll(this->key(fieldList), polptr);
+    this->enroll(this->key(fieldList), policy);
   }
 }
 
 //------------------------------------------------------------------------------
-// Enroll the given field.
+// Enroll the given policy.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
 void
 State<Dimension>::
-enroll(FieldBase<Dimension>& field) {
-  StateBase<Dimension>::enroll(field);
-}
-
-//------------------------------------------------------------------------------
-// Enroll the given field shared_pointer.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-void
-State<Dimension>::
-enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr) {
-  StateBase<Dimension>::enroll(fieldPtr);
-}
-
-//------------------------------------------------------------------------------
-// Enroll the given field list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-void
-State<Dimension>::
-enroll(FieldListBase<Dimension>& fieldList) {
-  StateBase<Dimension>::enroll(fieldList);
+enroll(const typename State<Dimension>::KeyType& key,
+       typename State<Dimension>::PolicyPointer policy) {
+  KeyType fieldKey, nodeKey;
+  this->splitFieldKey(key, fieldKey, nodeKey);
+  mPolicyMap[fieldKey][key] = policy;
 }
 
 //------------------------------------------------------------------------------
@@ -96,23 +93,15 @@ policy(const Field<Dimension, Value>& field) const {
 }
   
 //------------------------------------------------------------------------------
-// Optionally trip a flag indicating policies should time advance only -- no replacing state!
-// This is useful when you're trying to cheat and reuse derivatives from a prior advance.
+// Enroll an arbitrary type
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
-bool
-State<Dimension>::
-timeAdvanceOnly() const {
-  return mTimeAdvanceOnly;
-}
-
-template<typename Dimension>
+template<typename T>
 inline
 void
 State<Dimension>::
-timeAdvanceOnly(const bool x) {
-  mTimeAdvanceOnly = x;
+enroll(const KeyType& key, T& thing) {
+  Detail::EnrollAny<Dimension, T>()(*this, key, thing);
 }
 
 }

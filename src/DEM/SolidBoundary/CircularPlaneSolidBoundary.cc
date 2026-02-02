@@ -5,11 +5,16 @@
 // J.M. Pearl 2023
 //----------------------------------------------------------------------------//
 
+#include "FileIO/FileIO.hh"
+
 #include "DataBase/DataBase.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 
 #include "DEM/SolidBoundary/CircularPlaneSolidBoundary.hh"
+
+#include <string>
+using std::string;
 
 namespace Spheral {
 
@@ -20,7 +25,7 @@ CircularPlaneSolidBoundary(const Vector& point, const Vector& normal, const Scal
   mPoint(point),
   mNormal(normal),
   mExtent(extent),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>
@@ -45,8 +50,22 @@ distance(const Vector& position) const {
 template<typename Dimension>
 typename Dimension::Vector
 CircularPlaneSolidBoundary<Dimension>::
-velocity(const Vector& position) const { 
+localVelocity(const Vector& position) const { 
   return mVelocity;
+}
+
+template<typename Dimension>
+void
+CircularPlaneSolidBoundary<Dimension>::
+registerState(DataBase<Dimension>& dataBase,
+              State<Dimension>& state) {   
+  const auto boundaryKey = "CircularPlaneSolidBoundary_" + std::to_string(std::abs(this->uniqueIndex()));
+  const auto pointKey = boundaryKey +"_point";
+  const auto velocityKey = boundaryKey +"_velocity";
+  const auto normalKey = boundaryKey +"_normal";
+  state.enroll(pointKey,mPoint);
+  state.enroll(pointKey,mVelocity);
+  state.enroll(pointKey,mNormal);
 }
 
 template<typename Dimension>
@@ -56,5 +75,29 @@ update(const double multiplier, const double t, const double dt) {
   mPoint += multiplier*mVelocity;
 }
 
+
+//------------------------------------------------------------------------------
+// Restart
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+CircularPlaneSolidBoundary<Dimension>::
+dumpState(FileIO& file, const string& pathName) const {
+  file.write(mPoint, pathName + "/point");
+  file.write(mNormal, pathName + "/normal");
+  file.write(mExtent, pathName + "/extent");
+  file.write(mVelocity, pathName + "/velocity");
+}
+
+
+template<typename Dimension>
+void
+CircularPlaneSolidBoundary<Dimension>::
+restoreState(const FileIO& file, const string& pathName) {
+  file.read(mPoint, pathName + "/point");
+  file.read(mNormal, pathName + "/normal");
+  file.read(mExtent, pathName + "/extent");
+  file.read(mVelocity, pathName + "/velocity");
+}
 
 }

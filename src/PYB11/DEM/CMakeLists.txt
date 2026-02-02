@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(DEM)
+spheral_add_pybind11_library(DEM SPHERAL_MODULE_LIST)

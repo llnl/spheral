@@ -82,8 +82,8 @@ commandLine(KernelConstructor = BSplineKernel,
             restartStep = 10000,
             dataDir = "dumps-2p",
             restartBaseName = "2p",
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
 
             graphics = True,
             serialDump = True #whether to dump a serial ascii file at the end for viz

@@ -17,11 +17,12 @@ class State(StateBase):
     typedef typename StateBase<%(Dimension)s>::MeshPtr MeshPtr;
     typedef typename State<%(Dimension)s>::PackageList PackageList;
     typedef typename State<%(Dimension)s>::PolicyPointer PolicyPointer;
+    using BoundaryType = Boundary<%(Dimension)s>;
 """
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
+    def pyinit0(self):
         "Default constructor"
 
     def pyinit1(self,
@@ -59,7 +60,8 @@ class State(StateBase):
                derivs = "StateDerivatives<%(Dimension)s>&",
                multiplier = "const double",
                t = "const double",
-               dt = "const double"):
+               dt = "const double",
+               dependentOnly = "const bool"):
         "Advance using the derivatives object, assuming state1 = state0 + multiplier*derivs"
         return "void"
 
@@ -105,6 +107,25 @@ class State(StateBase):
     def policy1(self, key="const KeyType&"):
         "Get the update policy associated with a key"
         return "PolicyPointer"
+
+    @PYB11const
+    def serializeIndependentData(self,
+                                 buf = "std::vector<double>&"):
+        "Serialize any data associated with independent state"
+        return "void"
+
+    @PYB11const
+    def deserializeIndependentData(self,
+                                   buf = "const std::vector<double>&"):
+        "Deserialize data associated with independent state"
+        return "void"
+
+    @PYB11const
+    def serializeDerivatives(self,
+                             buf = "std::vector<double>&",
+                             derivs = "const StateDerivatives<%(Dimension)s>&"):
+        "Serialize any derivatives associated with independent state"
+        return "void"
 
     #...........................................................................
     # Template methods

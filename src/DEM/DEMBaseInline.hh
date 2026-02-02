@@ -151,7 +151,7 @@ isActiveContact() const {
 
 template<typename Dimension>
 inline
-const FieldList<Dimension, vector<int>>&
+const FieldList<Dimension, vector<size_t>>&
 DEMBase<Dimension>::
 neighborIndices() const {
   return mNeighborIndices;
@@ -321,8 +321,6 @@ rollingMoment(const Dim<3>::Vector rhatij,
   return DEMDimension<Dim<3>>::cross((vroti + vrotj),rhatij).unitVector();
 }
 
-
-
 //------------------------------------------------------------------------------
 // Add a Boundary condition to the end of the current boundary list.
 //------------------------------------------------------------------------------
@@ -331,7 +329,9 @@ inline
 void
 DEMBase<Dimension>::
 appendSolidBoundary(SolidBoundaryBase<Dimension>& boundary) {
-    mSolidBoundaries.push_back(&boundary);
+  mNewSolidBoundaryIndex -= 1;
+  boundary.uniqueIndex(mNewSolidBoundaryIndex);
+  mSolidBoundaries.push_back(&boundary);
 }
 
 //------------------------------------------------------------------------------
@@ -345,6 +345,15 @@ clearSolidBoundaries() {
   mSolidBoundaries = std::vector<SolidBoundaryBase<Dimension>*>();
 }
 
+
+template<typename Dimension>
+inline
+int
+DEMBase<Dimension>::
+newSolidBoundaryIndex() const {
+  return mNewSolidBoundaryIndex;
+}
+
 //------------------------------------------------------------------------------
 // Test if the given Boundary condition is listed in the physics package.
 //------------------------------------------------------------------------------
@@ -355,6 +364,16 @@ DEMBase<Dimension>::
 haveSolidBoundary(const SolidBoundaryBase<Dimension>& boundary) const {
   return std::count(mSolidBoundaries.begin(), mSolidBoundaries.end(), &boundary) > 0;
 }
+
+template<typename Dimension>
+inline
+void
+DEMBase<Dimension>::
+removeSolidBoundary(const SolidBoundaryBase<Dimension>& boundary) {
+  const auto bcPtr = std::find(mSolidBoundaries.begin(),mSolidBoundaries.end(),&boundary);
+  if (bcPtr != mSolidBoundaries.end()) mSolidBoundaries.erase(bcPtr);
+}
+
 
 template<typename Dimension>
 inline
@@ -399,14 +418,6 @@ unsigned int
 DEMBase<Dimension>::
 numParticleBoundaryContacts() const {
   return (mContactStorageIndices.size()-this->numParticleParticleContacts());
-}
-
-template<typename Dimension>
-inline
-int
-DEMBase<Dimension>::
-getSolidBoundaryUniqueIndex(const int x) const {
-  return -x-1;
 }
 
 }

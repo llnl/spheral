@@ -58,6 +58,4 @@ private:
 
 }
 
-#include "TreeDistributedBoundaryInline.hh"
-
 #endif

@@ -34,6 +34,8 @@ PYB11includes += ['"NodeList/SolidNodeList.hh"',
                   '"Damage/PairMaxDamageNodeCoupling.hh"',
                   '"Damage/ThreePointDamagedNodeCoupling.hh"',
                   '"Damage/DamageGradientNodeCoupling.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------
@@ -77,8 +79,8 @@ def weibullFlawDistributionBenzAsphaug(volume = "double",
                                        mWeibull = "const double",
                                        nodeList = "const FluidNodeList<%(Dimension)s>&",
                                        state = "const State<%(Dimension)s>&",
-                                       minFlawsPerNode = "const int",
-                                       minTotalFlaws = "const int",
+                                       minFlawsPerNode = "const size_t",
+                                       minTotalFlaws = "const size_t",
                                        mask = "const Field<%(Dimension)s, int>&"):
     "Implements the Benz-Asphaug algorithm, starting with a minimum based on the volume of the simulation."
     return "Field<%(Dimension)s, std::vector<double>>"
@@ -89,7 +91,7 @@ def weibullFlawDistributionOwen(seed = "const unsigned",
                                 mWeibull = "const double",
                                 nodeList = "const FluidNodeList<%(Dimension)s>&",
                                 state = "const State<%(Dimension)s>&",
-                                minFlawsPerNode = "const int",
+                                minFlawsPerNode = "const size_t",
                                 volumeMultiplier = "const double",
                                 mask = "const Field<%(Dimension)s, int>&"):
     """Implements the Owen algorithm, stochastically seeding flaws with a maximum
@@ -101,6 +103,7 @@ def computeFragmentField(nodeList = "const NodeList<%(Dimension)s>&",
                          linkRadius = "const double",
                          density = "const Field<%(Dimension)s, double>&",
                          damage = "const Field<%(Dimension)s, typename %(Dimension)s::SymTensor>&",
+                         mask = "const Field<%(Dimension)s, int>&",
                          densityThreshold = "const double",
                          damageThreshold = "const double",
                          assignDustToFragments = "const bool"):

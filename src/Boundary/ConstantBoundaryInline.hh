@@ -7,7 +7,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-int
+size_t
 ConstantBoundary<Dimension>::
 numConstantNodes() const {
   return mNumConstantNodes;

@@ -13,11 +13,7 @@
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
 #include "NodeList/NodeList.hh"
-#include "Distributed/Communicator.hh"
-
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
+#include "Distributed/allReduce.hh"
 
 #include <algorithm>
 #include <vector>
@@ -25,12 +21,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -72,13 +62,7 @@ nodeOrdering(const FieldList<Dimension, DataType>& criteria) {
 
   // Find the total number of nodes.
   const int numLocalNodes = sortedList.size();
-  int numGlobalNodes = numLocalNodes;
-#ifdef USE_MPI
-  {
-    int tmp = numGlobalNodes;
-    MPI_Allreduce(&tmp, &numGlobalNodes, 1, MPI_INT, MPI_SUM, Communicator::communicator());
-  }
-#endif
+  int numGlobalNodes = allReduce(numLocalNodes, SPHERAL_OP_SUM);
 
   // Iterate over the local nodes in order.
   int iLocal = 0;
@@ -88,23 +72,12 @@ nodeOrdering(const FieldList<Dimension, DataType>& criteria) {
     if (iLocal < numLocalNodes) localKey = std::get<2>(sortedList[iLocal]);
 
     // Find the next key globally.
-    Key globalKey = localKey;
-#ifdef USE_MPI
-    {
-      Key tmp = localKey;
-      MPI_Allreduce(&tmp, &globalKey, 1, DataTypeTraits<Key>::MpiDataType(), MPI_MIN, Communicator::communicator());
-    }
-#endif
+    Key globalKey = allReduce(localKey, SPHERAL_OP_MIN);
 
     // If we have the next index, check for duplicates on other domains.
     int minProcID = numProcs + 1;
     if (localKey == globalKey) minProcID = procID;
-#ifdef USE_MPI
-    {
-      int tmp = minProcID;
-      MPI_Allreduce(&tmp, &minProcID, 1, MPI_INT, MPI_MIN, Communicator::communicator());
-    }
-#endif
+    minProcID = allReduce(minProcID, SPHERAL_OP_MIN);
 
     // Are we the next global key?
     if (localKey == globalKey and procID == minProcID) {
@@ -133,13 +106,8 @@ nodeOrdering(const FieldList<Dimension, DataType>& criteria) {
       int countGlobal = 0;
       for (typename FieldList<Dimension, int>::const_iterator itr = result.begin();
            itr != result.end();
-           ++itr, ++iNodeList) countGlobal += count((**itr).internalBegin(), (**itr).internalEnd(), iGlobal);
-#ifdef USE_MPI
-      {
-        int tmp = countGlobal;
-        MPI_Allreduce(&tmp, &countGlobal, 1, MPI_INT, MPI_SUM, Communicator::communicator());
-      }
-#endif
+           ++itr, ++iNodeList) countGlobal += std::count((**itr).internalBegin(), (**itr).internalEnd(), iGlobal);
+      countGlobal = allReduce(countGlobal, SPHERAL_OP_SUM);
       ENSURE(countGlobal == 1);
     }
   }

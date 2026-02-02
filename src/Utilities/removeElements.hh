@@ -102,7 +102,7 @@ removeElements(std::vector<Value,DataAllocator<Value>>& vec,
         REQUIRE(*itr < *(itr + 1));
       }
       if (elements.size() > 0) {
-        REQUIRE(elements[0] >= 0 && elements.back() < originalSize);
+        REQUIRE(elements.back() < originalSize);
       }
     }
     END_CONTRACT_SCOPE

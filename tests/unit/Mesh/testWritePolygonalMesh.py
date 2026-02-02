@@ -26,7 +26,7 @@ assert nxproc*nxproc == numDomains
 # Create a global random number generator.
 #===============================================================================
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Return a random string to help make test files unique.
@@ -209,9 +209,9 @@ class RandomPolygonalMeshTests(unittest.TestCase, PolygonalMeshSiloGenericTests)
         xynodes_all = []
         occupiedCells = set()
         for k in range(n):
-            i = rangen.randint(0, ncell)
+            i = random.randint(0, ncell)
             while i in occupiedCells:
-                i = rangen.randint(0, ncell)
+                i = random.randint(0, ncell)
             ix = i % nxcell
             iy = i / nxcell
             xynodes_all.append(Vector((ix + 0.5)*dxcell, (iy + 0.5)*dycell))

@@ -6,26 +6,41 @@ from ArtificialViscosity import *
 from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
+@PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
 class TensorSVPHViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
-               Clinear = ("const Scalar", "1.0"),
-               Cquadratic = ("const Scalar", "1.0"),
-               fslice = ("const Scalar", "0.5")):
+               Clinear = "const Scalar",
+               Cquadratic = "const Scalar",
+               kernel = "const TableKernel<%(Dimension)s>&",
+               fslice = "const Scalar"):
         "TensorSVPHViscosity constructor"
 
     #...........................................................................
     # Methods
+    @PYB11virtual
+    def initialize(self,
+                   time = "const Scalar", 
+                   dt = "const Scalar",
+                   dataBase = "const DataBase<%(Dimension)s>&", 
+                   state = "State<%(Dimension)s>&",
+                   derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Some packages might want a hook to do some initializations before the evaluateDerivatives() method is called."
+        return "bool"
+
     @PYB11virtual
     @PYB11const
     def label(self):

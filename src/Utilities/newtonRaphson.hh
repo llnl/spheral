@@ -93,6 +93,7 @@ newtonRaphson(const Function& functor,
 
   VERIFY2(false, "newtonRaphson: failed to converge!");
 
+  return 0;
 }
 
 }

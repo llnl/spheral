@@ -56,17 +56,6 @@ RKCorrections(const std::set<RKOrder> orders,
     mCorrections.emplace(std::make_pair(order, FieldList<Dimension, RKCoefficients<Dimension>>(FieldStorageType::CopyFields)));
   }
 
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
-  mSurfaceArea = dataBase.newFluidFieldList(0.0, HydroFieldNames::surfaceArea);
-  mNormal = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::normal);
-  mSurfacePoint = dataBase.newFluidFieldList(0, HydroFieldNames::surfacePoint);
-  mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
-  if (mVolumeType == RKVolumeType::RKVoronoiVolume) {
-    mCells = dataBase.newFluidFieldList(FacetedVolume(), HydroFieldNames::cells);
-    mCellFaceFlags = dataBase.newFluidFieldList(std::vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags);
-  }
-  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero, "delta centroid");
-  
   ENSURE(mWR.size() == mOrders.size());
   ENSURE(mCorrections.size() == mOrders.size());
 }
@@ -86,14 +75,41 @@ template<typename Dimension>
 void
 RKCorrections<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
+  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  mSurfaceArea = dataBase.newFluidFieldList(0.0, HydroFieldNames::surfaceArea);
+  mNormal = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::normal);
+  mSurfacePoint = dataBase.newFluidFieldList(0, HydroFieldNames::surfacePoint);
+  mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
+  if (mVolumeType == RKVolumeType::RKVoronoiVolume) {
+    mCells = dataBase.newFluidFieldList(FacetedVolume(), HydroFieldNames::cells);
+    mCellFaceFlags = dataBase.newFluidFieldList(std::vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags);
+  }
+  mDeltaCentroid = dataBase.newFluidFieldList(Vector::zero(), "delta centroid");
+  
+  for (auto order: mOrders) {
+    mCorrections[order] = dataBase.newFluidFieldList(RKCoefficients<Dimension>(), RKFieldNames::rkCorrections(order));
+  }
+  ENSURE(mWR.size() == mOrders.size());
+  ENSURE(mCorrections.size() == mOrders.size());
+}
+
+//------------------------------------------------------------------------------
+// Optional hook to initialize once when the problem is starting up
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+RKCorrections<Dimension>::
+initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                     State<Dimension>& state,
+                                     StateDerivatives<Dimension>& derivs) {
   // Get some more data
   const auto& connectivityMap = dataBase.connectivityMap();
   const auto& W = mWR.begin()->second.kernel();
-  const auto  mass = dataBase.fluidMass();
-  const auto  H = dataBase.fluidHfield();
-  const auto  position = dataBase.fluidPosition();
-  const auto  massDensity = dataBase.fluidMassDensity();
-  const auto  damage = dataBase.solidDamage();
+  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto  damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
   
   // Compute the volumes
   computeRKVolumes(connectivityMap, W,
@@ -117,8 +133,8 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
     (*boundItr)->finalizeGhostBoundary();
   }
   
-  // Allocate correction fields
-  for (auto order: mOrders) mCorrections[order] = dataBase.newFluidFieldList(RKCoefficients<Dimension>(), RKFieldNames::rkCorrections(order));
+  // // Allocate correction fields
+  // for (auto order: mOrders) mCorrections[order] = dataBase.newFluidFieldList(RKCoefficients<Dimension>(), RKFieldNames::rkCorrections(order));
   
   // Compute corrections
   for (auto order: mOrders) {
@@ -155,9 +171,9 @@ RKCorrections<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   // Stuff RKCorrections owns
-  state.enrollAny(RKFieldNames::rkOrders, mOrders);
+  state.enroll(RKFieldNames::rkOrders, mOrders);
   for (auto order: mOrders) {
-    state.enrollAny(RKFieldNames::reproducingKernel(order), mWR[order]);
+    state.enroll(RKFieldNames::reproducingKernel(order), mWR[order]);
     state.enroll(mCorrections[order]);
   }
   state.enroll(mVolume);
@@ -206,9 +222,10 @@ applyGhostBoundaries(State<Dimension>& state,
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto surfaceArea = state.fields(HydroFieldNames::surfaceArea, 0.0);
-  auto normal = state.fields(HydroFieldNames::normal, Vector::zero);
+  auto normal = state.fields(HydroFieldNames::normal, Vector::zero());
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
+  auto zerothCorrections = state.fields(RKFieldNames::rkCorrections(RKOrder::ZerothOrder), RKCoefficients<Dimension>());
 
   // Apply ghost boundary conditions
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
@@ -242,7 +259,7 @@ enforceBoundaries(State<Dimension>& state,
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto surfaceArea = state.fields(HydroFieldNames::surfaceArea, 0.0);
-  auto normal = state.fields(HydroFieldNames::normal, Vector::zero);
+  auto normal = state.fields(HydroFieldNames::normal, Vector::zero());
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
 
@@ -286,9 +303,9 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   const auto& W = mWR.begin()->second.kernel();
   const auto& connectivityMap = dataBase.connectivityMap();
   const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
   const auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto        volume = state.fields(HydroFieldNames::volume, 0.0);
   auto        surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
@@ -325,7 +342,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
 // Compute new RK corrections
 //------------------------------------------------------------------------------
 template<typename Dimension>
-void
+bool
 RKCorrections<Dimension>::
 initialize(const typename Dimension::Scalar time,
            const typename Dimension::Scalar dt,
@@ -337,12 +354,12 @@ initialize(const typename Dimension::Scalar time,
   CONTRACT_VAR(derivs);
   // Get data
   const auto& connectivityMap = dataBase.connectivityMap();
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  volume = state.fields(HydroFieldNames::volume, 0.0);
   auto        zerothCorrections = state.fields(RKFieldNames::rkCorrections(RKOrder::ZerothOrder), RKCoefficients<Dimension>());
   auto        surfaceArea = state.fields(HydroFieldNames::surfaceArea, 0.0);
-  auto        normal = state.fields(HydroFieldNames::normal, Vector::zero);
+  auto        normal = state.fields(HydroFieldNames::normal, Vector::zero());
   
   // Compute corrections
   for (auto order: mOrders) {
@@ -354,20 +371,22 @@ initialize(const typename Dimension::Scalar time,
   }
   
   // Apply ghost boundaries to corrections
-  for (auto boundaryItr = this->boundaryBegin(); boundaryItr < this->boundaryEnd(); ++boundaryItr) {
-    (*boundaryItr)->applyFieldListGhostBoundary(zerothCorrections);
-    (*boundaryItr)->applyFieldListGhostBoundary(surfaceArea);
-    (*boundaryItr)->applyFieldListGhostBoundary(normal);
-    for (auto order: mOrders) {
-      if (order != RKOrder::ZerothOrder) {
-        auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
-        (*boundaryItr)->applyFieldListGhostBoundary(corrections);
-      }
-    }
-  }
-  for (auto boundItr = this->boundaryBegin(); boundItr < this->boundaryEnd(); ++boundItr) {
-    (*boundItr)->finalizeGhostBoundary();
-  }
+  return true;
+
+  // for (auto boundaryItr = this->boundaryBegin(); boundaryItr < this->boundaryEnd(); ++boundaryItr) {
+  //   (*boundaryItr)->applyFieldListGhostBoundary(zerothCorrections);
+  //   (*boundaryItr)->applyFieldListGhostBoundary(surfaceArea);
+  //   (*boundaryItr)->applyFieldListGhostBoundary(normal);
+  //   for (auto order: mOrders) {
+  //     if (order != RKOrder::ZerothOrder) {
+  //       auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
+  //       (*boundaryItr)->applyFieldListGhostBoundary(corrections);
+  //     }
+  //   }
+  // }
+  // for (auto boundItr = this->boundaryBegin(); boundItr < this->boundaryEnd(); ++boundItr) {
+  //   (*boundItr)->finalizeGhostBoundary();
+  // }
 }
 
 //------------------------------------------------------------------------------

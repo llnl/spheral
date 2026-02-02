@@ -16,18 +16,18 @@ Hopkins arXiv:1409.7395
 """
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
-               q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                alphMax = ("const Scalar", "2.0"),
                alphMin = ("const Scalar", "0.02"),
@@ -91,6 +91,10 @@ Hopkins arXiv:1409.7395
     fKern = PYB11property("Scalar", "fKern", "fKern")
     boolHopkins = PYB11property("bool", "boolHopkins", "boolHopkins")
     kernel = PYB11property("const TableKernel<%(Dimension)s>&", "kernel", returnpolicy="reference_internal")
+    ClMultiplier = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "ClMultiplier",
+                                 doc="Correction multiplier for the linear term")
+    CqMultiplier = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "CqMultiplier",
+                                 doc="Correction multiplier for the quadratic term")
     PrevDvDt = PYB11property("const FieldList<%(Dimension)s, Vector>&", "PrevDvDt", returnpolicy="reference_internal")
     PrevDivV = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "PrevDivV", returnpolicy="reference_internal")
     PrevDivV2 = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "PrevDivV2", returnpolicy="reference_internal")

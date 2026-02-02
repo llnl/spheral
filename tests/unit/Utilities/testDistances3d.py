@@ -6,7 +6,7 @@ import unittest
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Test our methods for computing distances in 3-D.
@@ -26,10 +26,10 @@ class TestDistances3d(unittest.TestCase):
     # Randomly distort two line segments.
     #===========================================================================
     def randomDistortion(self, a0, a1, b0, b1):
-        l = rangen.uniform(self.multMin, self.multMax)
-        T = l*rotationMatrix(Vector(rangen.uniform(0.0, 1.0),
-                                    rangen.uniform(0.0, 1.0),
-                                    rangen.uniform(0.0, 1.0)).unitVector())
+        l = random.uniform(self.multMin, self.multMax)
+        T = l*rotationMatrix(Vector(random.uniform(0.0, 1.0),
+                                    random.uniform(0.0, 1.0),
+                                    random.uniform(0.0, 1.0)).unitVector())
         return T*a0, T*a1, T*b0, T*b1, l
 
     #===========================================================================

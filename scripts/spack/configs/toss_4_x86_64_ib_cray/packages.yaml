@@ -1,0 +1,129 @@
+packages:
+  all:
+    compiler: [rocmcc]
+    providers:
+      blas: [openblas]
+      lapack: [openblas]
+      mpi: [cray-mpich]
+      pkgconfig: [pkg-config]
+      zlib-api: [zlib]
+  cmake:
+    version: [3.24.2]
+    buildable: false
+    externals:
+    - spec: cmake@3.24.2
+      prefix: /usr/tce/packages/cmake/cmake-3.24.2
+  gmake:
+    version: [4.2.1]
+    buildable: false
+    externals:
+    - spec: gmake@4.2.1
+      prefix: /usr
+  perl:
+    version: [5.26.3]
+    buildable: false
+    externals:
+    - spec: perl@5.26.3
+      prefix: /usr
+
+  cray-mpich:
+    buildable: false
+    externals:
+    - spec: cray-mpich@8.1.31%rocmcc@6.2.0
+      prefix: /usr/tce/packages/cray-mpich/cray-mpich-8.1.31-rocmcc-6.2.0-magic
+
+  hip:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: hip@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/
+  llvm-amdgpu:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: llvm-amdgpu@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/llvm
+  hsa-rocr-dev:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+  rocminfo:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: rocminfo@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+  rocm-device-libs:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: rocm-device-libs@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+  rocprim:
+    version: [6.2.0]
+    buildable: false
+    externals:
+    - spec: rocprim@6.2.0%rocmcc@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+
+# ------ SYSTEM LIBS -------
+  py-decorator:
+    externals:
+    - spec: py-decorator@5.1.1
+      prefix: /collab/usr/gapps/python/build/spack-toss4.1/var/spack/environments/python/._view/75prb56irmif5ejtirjthpx6kq3gqo52/lib/python3.9/site-packages
+    buildable: false
+  py-pip:
+    externals:
+    - spec: py-pip@22.0.4
+      prefix: /usr/tce/packages/python/python-3.9.12
+    buildable: false
+  readline:
+    externals:
+    - spec: readline@7.0
+      prefix: /usr
+    buildable: false
+  python:
+    externals:
+    - spec: python@3.9.12
+      prefix: /usr/tce/packages/python/python-3.9.12
+    buildable: false
+
+  autoconf:
+    externals:
+    - spec: autoconf@2.69
+      prefix: /usr
+    buildable: false
+  automake:
+    externals:
+    - spec: automake@1.13.4
+      prefix: /usr
+    buildable: false
+  libtool:
+    externals:
+    - spec: libtool@2.4.2
+      prefix: /usr
+    buildable: false
+  pkg-config:
+    externals:
+    - spec: pkg-config@0.27.1
+      prefix: /usr
+    buildable: false
+  m4:
+    externals:
+    - spec: m4@1.4.18
+      prefix: /usr
+    buildable: false
+
+  netlib-lapack:
+    buildable: false
+    externals:
+    - spec: netlib-lapack@3.9.0
+      prefix: /usr
+  openblas:
+    buildable: false
+    externals:
+    - prefix: /usr
+      spec: openblas@0.3.15

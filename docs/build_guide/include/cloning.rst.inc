@@ -1,19 +1,21 @@
-..
-   CLONING
-   ----------------------------------------
 
-[git_clone-section-start]
-If you use git to clone the Spheral source be aware Spheral includes git submodules: `BLT <https://github.com/LLNL/blt>`_ and `Uberenv <https://github.com/LLNL/uberenv>`_.  In order to ensure such submodules are properly downloaded when cloning Spheral be sure to use the ``--recursive`` git option:
+Spheral uses multiple submodules, including `BLT <https://github.com/LLNL/blt>`_ and `PYB11Generator <https://github.com/LLNL/PYB11Generator>`_.
+Because of this, be sure to use the ``--recursive`` option when cloning Spheral:
 
 ::
 
-  git clone --recursive https://github.com/llnl/Spheral
+  git clone --recursive https://github.com/LLNL/Spheral
 
-If you forget to use the ``--recursive`` argument or if you checkout from a different branch you must run:
+If you forget to use the ``--recursive`` argument or if you checkout from a different branch, you must run:
 
 ::
 
   git submodule update --init --recursive
 
-[git_clone-section-end]
+Similarly, to update an existing Spheral repo, use
 
+::
+
+  git pull
+  git submodule sync --recursive
+  git submodule update --init --recursive

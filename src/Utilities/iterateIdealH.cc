@@ -4,48 +4,48 @@
 //------------------------------------------------------------------------------
 #include "iterateIdealH.hh"
 #include "Field/FieldList.hh"
-#include "NodeList/SmoothingScaleBase.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
+#include "Utilities/range.hh"
 #include "Distributed/Communicator.hh"
+#include "Hydro/HydroFieldNames.hh"
+#include "DataBase/State.hh"
+#include "DataBase/StateDerivatives.hh"
+#include "DataBase/IncrementBoundedState.hh"
+#include "DataBase/ReplaceBoundedState.hh"
 #include "Geometry/GeometryRegistrar.hh"
+#include "SmoothingScale/ASPHSmoothingScale.hh"
+#include "Utilities/Timer.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <ctime>
 using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
 template<typename Dimension>
 void
 iterateIdealH(DataBase<Dimension>& dataBase,
+              vector<Physics<Dimension>*>& packages,     // Should include smoothing scale algorithm
               const vector<Boundary<Dimension>*>& boundaries,
-              const TableKernel<Dimension>& W,
-              const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
               const int maxIterations,
               const double tolerance,
               const double nPerhForIteration,
               const bool sphericalStart,
               const bool fixDeterminant) {
+  TIME_FUNCTION;
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
-
-  const auto etaMax = W.kernelExtent();
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Start the timing.
   const auto t0 = clock();
 
   // Extract the state we care about.
-  const auto pos = dataBase.fluidPosition();
+  auto pos = dataBase.fluidPosition();
   auto m = dataBase.fluidMass();
   auto rho = dataBase.fluidMassDensity();
   auto H = dataBase.fluidHfield();
@@ -63,23 +63,19 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   vector<double> nperh0;
   // Pulled divide by nPerhForIteration out of loop to improve optimization
   if (distinctlyGreaterThan(nPerhForIteration, 0.0)) {
-      for (auto nodeListItr = dataBase.fluidNodeListBegin();
-          nodeListItr != dataBase.fluidNodeListEnd();
-          ++nodeListItr) {
-          const auto nperh = (*nodeListItr)->nodesPerSmoothingScale();
-          nperh0.push_back(nperh);
-          auto& Hfield = **(H.fieldForNodeList(**nodeListItr));
-          Hfield *= Dimension::rootnu(nperh / nPerhForIteration);
-          (*nodeListItr)->nodesPerSmoothingScale(nPerhForIteration);
-      }
+    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+      const auto nperh = nodeListPtr->nodesPerSmoothingScale();
+      nperh0.push_back(nperh);
+      auto& Hfield = **(H.fieldForNodeList(*nodeListPtr));
+      Hfield *= Dimension::rootnu(nperh / nPerhForIteration);
+      nodeListPtr->nodesPerSmoothingScale(nPerhForIteration);
+    }
   }
   else {
-      for (auto nodeListItr = dataBase.fluidNodeListBegin();
-          nodeListItr != dataBase.fluidNodeListEnd();
-          ++nodeListItr) {
-          const auto nperh = (*nodeListItr)->nodesPerSmoothingScale();
-          nperh0.push_back(nperh);
-      }
+    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+      const auto nperh = nodeListPtr->nodesPerSmoothingScale();
+      nperh0.push_back(nperh);
+    }
   }
   CHECK(nperh0.size() == dataBase.numFluidNodeLists());
 
@@ -98,16 +94,35 @@ iterateIdealH(DataBase<Dimension>& dataBase,
          itr != dataBase.internalNodeEnd();
          ++itr) {
       const auto Hdeti = H(itr).Determinant();
-      const auto Hi = Dimension::rootnu(Hdeti) * SymTensor::one;
+      const auto Hi = Dimension::rootnu(Hdeti) * SymTensor::one();
       H(itr) = Hi;
     }
   }
 
+  // // Check if we're using ASPH and radialOnly.  If so we'll switch to fixShape for the iteration.
+  // auto radialOnly = false;
+  // ASPHSmoothingScale<Dimension>* asphPkg = nullptr;
+  // for (auto* pkg: packages) {
+  //   asphPkg = dynamic_cast<ASPHSmoothingScale<Dimension>*>(pkg);
+  //   if (asphPkg != nullptr and asphPkg->radialOnly()) {
+  //     radialOnly = true;
+  //     asphPkg->radialOnly(false);
+  //     asphPkg->fixShape(true);
+  //     break;
+  //   }
+  // }
+
   // Build a list of flags to indicate which nodes have been completed.
   auto flagNodeDone = dataBase.newFluidFieldList(0, "node completed");
 
+  // Since we don't have a hydro there are a few other fields we need registered.
+  auto zerothMoment = dataBase.newFluidFieldList(0.0, HydroFieldNames::massZerothMoment);
+  auto firstMoment = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::massFirstMoment);
+  auto DvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::velocityGradient);
+  auto DHDt = dataBase.newFluidFieldList(SymTensor::zero(), IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
+  auto H1 = dataBase.newFluidFieldList(SymTensor::zero(), ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
+
   // Iterate until we either hit the max iterations or the H's achieve convergence.
-  const auto numNodeLists = dataBase.numFluidNodeLists();
   auto maxDeltaH = 2.0*tolerance;
   auto itr = 0;
   while (itr < maxIterations and maxDeltaH > tolerance) {
@@ -116,142 +131,58 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     // flagNodeDone = 0;
 
     // Remove any old ghost node information from the NodeLists.
-    for (auto k = 0u; k < numNodeLists; ++k) {
-      auto nodeListPtr = *(dataBase.fluidNodeListBegin() + k);
+    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
       nodeListPtr->numGhostNodes(0);
       nodeListPtr->neighbor().updateNodes();
     }
 
     // Enforce boundary conditions.
-    for (auto k = 0u; k < boundaries.size(); ++k) {
-      auto boundaryPtr = *(boundaries.begin() + k);
+    for (auto* boundaryPtr: boundaries) {
       boundaryPtr->setAllGhostNodes(dataBase);
       boundaryPtr->applyFieldListGhostBoundary(m);
       boundaryPtr->applyFieldListGhostBoundary(rho);
       boundaryPtr->finalizeGhostBoundary();
-      for (auto nodeListItr = dataBase.fluidNodeListBegin();
-           nodeListItr != dataBase.fluidNodeListEnd(); 
-           ++nodeListItr) {
-        (*nodeListItr)->neighbor().updateNodes();
-      }
+      for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) nodeListPtr->neighbor().updateNodes();
     }
 
-    // Prepare a FieldList to hold the new H.
-    FieldList<Dimension, SymTensor> H1(H);
-    H1.copyFields();
-    auto zerothMoment = dataBase.newFluidFieldList(0.0, "zerothMoment");
-    auto secondMoment = dataBase.newFluidFieldList(SymTensor::zero, "secondMoment");
-
-    // Get the new connectivity.
+    // Update connectivity
     dataBase.updateConnectivityMap(false, false, false);
-    const auto& connectivityMap = dataBase.connectivityMap();
-    const auto& pairs = connectivityMap.nodePairList();
-    const auto  npairs = pairs.size();
 
-    // Walk the pairs.
-#pragma omp parallel
-    {
-      typename SpheralThreads<Dimension>::FieldListStack threadStack;
-      auto zerothMoment_thread = zerothMoment.threadCopy(threadStack);
-      auto secondMoment_thread = secondMoment.threadCopy(threadStack);
+    // Prepare the state and derivatives
+    State<Dimension> state(dataBase, packages);
+    state.enrollConnectivityMap(dataBase.connectivityMapPtr(false, false, false));
+    StateDerivatives<Dimension> derivs(dataBase, packages);
+    state.enroll(pos);
+    state.enroll(m);
+    state.enroll(rho);
+    derivs.enroll(zerothMoment);
+    derivs.enroll(firstMoment);
+    derivs.enroll(DvDx);
+    derivs.enroll(DHDt);
+    derivs.enroll(H1);
 
-      int i, j, nodeListi, nodeListj;
-      Scalar ri, rj, mRZi, mRZj, Wi, gWi, Wj, gWj;
-      Vector xij, etai, etaj, gradWi, gradWj;
-      SymTensor thpt;
+    // Some methods (ASPH) update both Hideal and H in the finalize, so we make a copy of the state
+    // to give the methods
+    auto state1 = state;
+    state1.copyState();
 
-#pragma omp for
-      for (auto k = 0u; k < npairs; ++k) {
-        i = pairs[k].i_node;
-        j = pairs[k].j_node;
-        nodeListi = pairs[k].i_list;
-        nodeListj = pairs[k].j_list;
-
-        // Anything to do?
-        if (flagNodeDone(nodeListi, i) == 0 or flagNodeDone(nodeListj, j) == 0) {
-          const auto& posi = pos(nodeListi, i);
-          const auto& Hi = H(nodeListi, i);
-          const auto  mi = m(nodeListi, i);
-          const auto  rhoi = rho(nodeListi, i);
-
-          const auto& posj = pos(nodeListj, j);
-          const auto& Hj = H(nodeListj, j);
-          const auto  mj = m(nodeListj, j);
-          const auto  rhoj = rho(nodeListj, j);
-
-          xij = posi - posj;
-          etai = Hi*xij;
-          etaj = Hj*xij;
-          thpt = xij.selfdyad()/(xij.magnitude2() + 1.0e-10);
-
-          // Compute the node-node weighting
-          auto fweightij = 1.0, fispherical = 1.0, fjspherical = 1.0;
-          if (nodeListi != nodeListj) {
-            if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-              ri = abs(posi.y());
-              rj = abs(posj.y());
-              mRZi = mi/(2.0*M_PI*ri);
-              mRZj = mj/(2.0*M_PI*rj);
-              fweightij = mRZj*rhoi/(mRZi*rhoj);
-            } else {
-              fweightij = mj*rhoi/(mi*rhoj);
-            }
-          } else if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
-            const auto eii = Hi.xx()*posi.x();
-            const auto eji = Hi.xx()*posj.x();
-            const auto ejj = Hj.xx()*posj.x();
-            const auto eij = Hj.xx()*posi.x();
-            fispherical = (eii > etaMax ? 1.0 :
-                           eii < eji ? 2.0 :
-                           0.0);
-            fjspherical = (ejj > etaMax ? 1.0 :
-                           ejj < eij ? 2.0 :
-                           0.0);
-          }
-
-          W.kernelAndGradValue(etai.magnitude(), 1.0, Wi, gWi);
-          W.kernelAndGradValue(etaj.magnitude(), 1.0, Wj, gWj);
-          gradWi = gWi*Hi*etai.unitVector();
-          gradWj = gWj*Hj*etaj.unitVector();
-
-          // Increment the moments
-          zerothMoment_thread(nodeListi, i) += fweightij*    std::abs(gWi) * fispherical;
-          zerothMoment_thread(nodeListj, j) += 1.0/fweightij*std::abs(gWj) * fjspherical;
-          secondMoment_thread(nodeListi, i) += fweightij*    gradWi.magnitude2()*thpt;
-          secondMoment_thread(nodeListj, j) += 1.0/fweightij*gradWj.magnitude2()*thpt;
-        }
-      }
-
-      // Do the thread reduction for zeroth and second moments.
-      threadReduceFieldLists<Dimension>(threadStack);
-
-    }  // OMP parallel
-
-    // Finish the moments and measure the new H.
-    for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-      const auto nodeListPtr = *(dataBase.fluidNodeListBegin() + nodeListi);
+    // Call the smoothing scale package to get a new vote on the ideal H
+    for (auto* pkg: packages) pkg->preStepInitialize(dataBase, state1, derivs);
+    for (auto* pkg: packages) pkg->initialize(0.0, 1.0, dataBase, state1, derivs);
+    derivs.Zero();
+    for (auto* pkg: packages) pkg->evaluateDerivatives(0.0, 1.0, dataBase, state1, derivs);
+    for (auto* pkg: packages) pkg->finalizeDerivatives(0.0, 1.0, dataBase, state1, derivs);
+    for (auto* pkg: packages) pkg->finalize(0.0, 1.0, dataBase, state1, derivs);
+    
+    // Set the new H and measure how much it changed
+    for (auto [nodeListi_, nodeListPtr_] : enumerate(dataBase.fluidNodeListPtrs())) {     // __clang__
+      const auto nodeListi = nodeListi_;                                                  // __clang__
+      const auto nodeListPtr = nodeListPtr_;                                              // __clang__
       const auto ni = nodeListPtr->numInternalNodes();
-      const auto hmin = nodeListPtr->hmin();
-      const auto hmax = nodeListPtr->hmax();
-      const auto hminratio = nodeListPtr->hminratio();
-      const auto nPerh = nodeListPtr->nodesPerSmoothingScale();
 
 #pragma omp parallel for
       for (auto i = 0u; i < ni; ++i) {
         if (flagNodeDone(nodeListi, i) == 0) {
-          zerothMoment(nodeListi, i) = Dimension::rootnu(zerothMoment(nodeListi, i));
-          H1(nodeListi, i) = smoothingScaleMethod.newSmoothingScale(H(nodeListi, i),
-                                                                    pos(nodeListi, i),
-                                                                    zerothMoment(nodeListi, i),
-                                                                    secondMoment(nodeListi, i),
-                                                                    W,
-                                                                    hmin,
-                                                                    hmax,
-                                                                    hminratio,
-                                                                    nPerh,
-                                                                    connectivityMap,
-                                                                    nodeListi,
-                                                                    i);
 
           // If we are preserving the determinant, do it.
           if (fixDeterminant) {
@@ -266,24 +197,22 @@ iterateIdealH(DataBase<Dimension>& dataBase,
           const auto phimax = phi.maxElement();
           const auto deltaHi = max(abs(phimin - 1.0), abs(phimax - 1.0));
           if (deltaHi <= tolerance) flagNodeDone(nodeListi, i) = 1;
-          maxDeltaH = max(maxDeltaH, deltaHi);
+#pragma omp critical
+          {
+            maxDeltaH = max(maxDeltaH, deltaHi);
+          }
+
+// Assign the new H
+          H(nodeListi, i) = H1(nodeListi, i);
         }
       }
     }
 
-    // Assign the new H's.
-    H.assignFields(H1);
-
     // Globally reduce the max H change.
-    maxDeltaH = allReduce(maxDeltaH, MPI_MAX, Communicator::communicator());
+    maxDeltaH = allReduce(maxDeltaH, SPHERAL_OP_MAX);
 
     // Output the statitics.
-    if (Process::getRank() == 0)
-      cerr << "iterateIdealH: (iteration, deltaH) = ("
-           << itr << ", "
-           << maxDeltaH << ")"
-           << endl;
-
+    if (maxIterations > 1) SpheralMessage("iterateIdealH: (iteration, deltaH) = (" << itr << ", " << maxDeltaH << ")");
   }
 
   // If we have rescaled the nodes per h, now we have to iterate the H determinant
@@ -291,18 +220,13 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   if (distinctlyGreaterThan(nPerhForIteration, 0.0)) {
 
     // Reset the nperh.
-    size_t k = 0;
-    for (auto nodeListItr = dataBase.fluidNodeListBegin();
-         nodeListItr != dataBase.fluidNodeListEnd(); 
-         ++nodeListItr, ++k) {
+    for (auto [k, nodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
       CHECK(k < nperh0.size());
       //const double nperh = nperh0[k];
 //       Field<Dimension, SymTensor>& Hfield = **(H.fieldForNodeList(**nodeListItr));
 //       Hfield *= Dimension::rootnu(nPerhForIteration/nperh);
-      (*nodeListItr)->nodesPerSmoothingScale(nperh0[k]);
+      nodeListPtr->nodesPerSmoothingScale(nperh0[k]);
     }
-    CHECK(k == nperh0.size());
-
   }
 
   // If we're fixing the determinant, restore them.
@@ -316,42 +240,31 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   }
 
   // Leave the boundary conditions properly enforced.
-  for (auto nodeListItr = dataBase.fluidNodeListBegin();
-       nodeListItr != dataBase.fluidNodeListEnd(); 
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
+  for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+    nodeListPtr->numGhostNodes(0);
+    nodeListPtr->neighbor().updateNodes();
   }
-  for (auto boundaryItr = boundaries.begin(); 
-       boundaryItr != boundaries.end();
-       ++boundaryItr) {
-    (*boundaryItr)->setAllGhostNodes(dataBase);
-    (*boundaryItr)->finalizeGhostBoundary();
-    for (typename DataBase<Dimension>::FluidNodeListIterator nodeListItr = dataBase.fluidNodeListBegin();
-         nodeListItr != dataBase.fluidNodeListEnd(); 
-         ++nodeListItr) {
-      (*nodeListItr)->neighbor().updateNodes();
+  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
+    boundaryPtr->setAllGhostNodes(dataBase);
+    boundaryPtr->finalizeGhostBoundary();
+    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+      nodeListPtr->neighbor().updateNodes();
     }
   }
 
-  for (auto boundaryItr = boundaries.begin(); 
-       boundaryItr != boundaries.end();
-       ++boundaryItr) {
-    (*boundaryItr)->applyFieldListGhostBoundary(m);
-  }
-  for (auto boundaryItr = boundaries.begin(); 
-       boundaryItr != boundaries.end();
-       ++boundaryItr) {
-    (*boundaryItr)->finalizeGhostBoundary();
-  }
+  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) boundaryPtr->applyFieldListGhostBoundary(m);
+  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) boundaryPtr->finalizeGhostBoundary();
+
+  // // Restore ASPH radialOnly choice if necessary
+  // if (radialOnly) {
+  //   CHECK(asphPkg != nullptr);
+  //   asphPkg->radialOnly(true);
+  //   asphPkg->fixShape(false);
+  // }
 
   // Report the final timing.
   const auto t1 = clock();
-  if (Process::getRank() == 0)
-    cerr << "iterateIdealH: required a total of "
-         << (t1 - t0)/CLOCKS_PER_SEC
-         << " seconds."
-         << endl;
+  if (maxIterations > 1) SpheralMessage("iterateIdealH: required a total of " << ((t1 - t0)/CLOCKS_PER_SEC) << " seconds.");
 }
 
 }

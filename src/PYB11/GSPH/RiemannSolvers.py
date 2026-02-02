@@ -4,7 +4,7 @@ from PYB11Generator import *
 # Base class for riemann solver wave speeds
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class RiemannSolverBase:
 
     PYB11typedefs = """
@@ -25,11 +25,6 @@ class RiemannSolverBase:
     waveSpeed = PYB11property("WaveSpeedBase<%(Dimension)s>&", "waveSpeed",returnpolicy="reference_internal", doc="wave speed object")
     limiter = PYB11property("LimiterBase<%(Dimension)s>&", "limiter",returnpolicy="reference_internal", doc="slope limiter object")
 
-    #DpDx = PYB11property("const FieldList<%(Dimension)s, Vector>&", "DpDx",returnpolicy="reference_internal")
-    #DvDx = PYB11property("const FieldList<%(Dimension)s, Tensor>&", "DvDx",returnpolicy="reference_internal")
-    
-#PYB11inject(RiemannSolverBaseAbstractMethods, RiemannSolverBase, pure_virtual=True)
-
 #-------------------------------------------------------------------------------
 # HLLC Approximate Riemann Solver
 #-------------------------------------------------------------------------------
@@ -47,10 +42,11 @@ class HLLC(RiemannSolverBase):
                linearReconstruction = "const bool"):
         "slope limiter constructor"
 
+
 #-------------------------------------------------------------------------------
-# HLLC Approximate Riemann Solver with constant grav acceleration
+# HLLC Approximate Riemann Solver
 #-------------------------------------------------------------------------------
-class GHLLC(HLLC):
+class SecondOrderArtificialViscosity(RiemannSolverBase):
 
     PYB11typedefs = """
     typedef typename %(Dimension)s::Scalar Scalar;
@@ -59,11 +55,12 @@ class GHLLC(HLLC):
     typedef typename %(Dimension)s::SymTensor SymTensor;
     """
 
-    def pyinit(slopeLimiter = "LimiterBase<%(Dimension)s>&",
+    def pyinit(Cl = "const Scalar",
+               Cq = "const Scalar",
+               slopeLimiter = "LimiterBase<%(Dimension)s>&",
                waveSpeed = "WaveSpeedBase<%(Dimension)s>&",
-               linearReconstruction = "const bool",
-               gravitationalAcceleration = "const Vector"):
+               linearReconstruction = "const bool"):
         "slope limiter constructor"
 
-    
-    gravitationalAcceleration = PYB11property("Vector", "gravitationalAcceleration", "gravitationalAcceleration", doc="constant gravitational acceleration vector") 
+    Cl = PYB11property("Scalar", "Cl", "Cl", doc="linear artificial viscosity coefficient") 
+    Cq = PYB11property("Scalar", "Cq", "Cq", doc="quadratic artificial viscosity coefficient") 

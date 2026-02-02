@@ -226,11 +226,15 @@ operator=(const ReproducingKernelMethods<Dimension>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor
+// Equivalence
 //------------------------------------------------------------------------------
 template<typename Dimension>
+bool
 ReproducingKernelMethods<Dimension>::
-~ReproducingKernelMethods() {
-}  
+operator==(const ReproducingKernelMethods<Dimension>& rhs) const {
+  return (mOrder == rhs.mOrder and
+          mGradCorrectionsSize == rhs.mGradCorrectionsSize and
+          mHessCorrectionsSize == rhs.mHessCorrectionsSize);
+}
 
 }

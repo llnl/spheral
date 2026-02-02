@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(FieldOperations)
+spheral_add_pybind11_library(FieldOperations SPHERAL_MODULE_LIST)

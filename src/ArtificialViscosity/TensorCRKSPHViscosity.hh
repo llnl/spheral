@@ -3,10 +3,11 @@
 //
 // Created by J. Michael Owen, Wed Nov  5 23:51:31 PST 2014
 //----------------------------------------------------------------------------//
-#ifndef TensorCRKSPHViscosity_HH
-#define TensorCRKSPHViscosity_HH
+#ifndef __Spheral_TensorCRKSPHViscosity__
+#define __Spheral_TensorCRKSPHViscosity__
 
 #include "TensorMonaghanGingoldViscosity.hh"
+#include "RK/RKCorrectionParams.hh"
 
 namespace Spheral {
 
@@ -14,54 +15,49 @@ template<typename Dimension>
 class TensorCRKSPHViscosity: public TensorMonaghanGingoldViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename ArtificialViscosity<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
 
-  // Constructors.
-  TensorCRKSPHViscosity(Scalar Clinear, Scalar Cquadratic);
+  // Constructors, destructor
+  TensorCRKSPHViscosity(const Scalar Clinear,
+                        const Scalar Cquadratic,
+                        const TableKernel<Dimension>& kernel,
+                        const RKOrder order = RKOrder::LinearOrder);
+  virtual ~TensorCRKSPHViscosity() = default;
 
-  // Destructor.
-  ~TensorCRKSPHViscosity();
-
-  // Required method to compute the tensor viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
-                                         const Vector& xi,
-                                         const Vector& etai,
-                                         const Vector& vi,
-                                         const Scalar rhoi,
-                                         const Scalar csi,
-                                         const SymTensor& Hi,
-                                         const Vector& xj,
-                                         const Vector& etaj,
-                                         const Vector& vj,
-                                         const Scalar rhoj,
-                                         const Scalar csj,
-                                         const SymTensor& Hj) const;
-
-  // Restart methods.
-  virtual std::string label() const { return "TensorCRKSPHViscosity"; }
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  virtual void calculateSigmaAndGradDivV(const DataBase<Dimension>& dataBase,
-                                         const State<Dimension>& state,
-                                         const StateDerivatives<Dimension>& derivs,
-                                         const TableKernel<Dimension>& W,
-                                         ConstBoundaryIterator boundaryBegin,
-                                         ConstBoundaryIterator boundaryEnd);
-
-private:
-  //--------------------------- Private Interface ---------------------------//
+  // No default construction, copying, or assignment
   TensorCRKSPHViscosity();
   TensorCRKSPHViscosity(const TensorCRKSPHViscosity&);
   TensorCRKSPHViscosity& operator=(const TensorCRKSPHViscosity&) const;
 
-  FieldList<Dimension, Tensor> mGradVel;
+  // We do require the velocity gradient
+  virtual bool requireVelocityGradient()                const override { return true; }
+
+  // Override the method for computing the velocity gradient
+  virtual void updateVelocityGradient(const DataBase<Dimension>& db,
+                                      const State<Dimension>& state,
+                                      const StateDerivatives<Dimension>& derivs) override;
+
+  // Override the method listing our RK requirements
+  virtual std::set<RKOrder> requireReproducingKernels() const override { return std::set<RKOrder>({mOrder}); }
+
+  RKOrder order()                                       const          { return mOrder; }
+  void order(const RKOrder x)                                          { mOrder = x; }
+
+  // Restart methods.
+  virtual std::string label()                           const override { return "TensorCRKSPHViscosity"; }
+
+private:
+  //--------------------------- Private Interface ---------------------------//
+  RKOrder mOrder;
+
+  using ArtificialViscosity<Dimension, Tensor>::mClinear;
+  using ArtificialViscosity<Dimension, Tensor>::mCquadratic;
+  using ArtificialViscosity<Dimension, Tensor>::mEpsilon2;
+  using ArtificialViscosity<Dimension, Tensor>::mBalsaraShearCorrection;
 };
 
 }

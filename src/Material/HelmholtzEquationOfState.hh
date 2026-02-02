@@ -39,7 +39,7 @@ public:
   // We require any equation of state to define the following properties.
   virtual void setPressure(Field<Dimension, Scalar>& Pressure,
                            const Field<Dimension, Scalar>& massDensity,
-                           const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                           const Field<Dimension, Scalar>& specificThermalEnergy) const override;
           
   virtual void setPressureAndDerivs(Field<Dimension, Scalar>& Pressure,           // set pressure
                                     Field<Dimension, Scalar>& dPdu,               // set (\partial P)/(\partial u) (specific thermal energy)
@@ -49,58 +49,58 @@ public:
 
   virtual void setTemperature(Field<Dimension, Scalar>& temperature,
                               const Field<Dimension, Scalar>& massDensity,
-                              const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                              const Field<Dimension, Scalar>& specificThermalEnergy) const override;
           
   virtual void setSpecificThermalEnergy(Field<Dimension, Scalar>& specificThermalEnergy,
                                         const Field<Dimension, Scalar>& massDensity,
-                                        const Field<Dimension, Scalar>& temperature) const;
+                                        const Field<Dimension, Scalar>& temperature) const override;
           
   virtual void setSpecificHeat(Field<Dimension, Scalar>& specificHeat,
                                const Field<Dimension, Scalar>& massDensity,
-                               const Field<Dimension, Scalar>& temperature) const;
+                               const Field<Dimension, Scalar>& temperature) const override;
           
   virtual void setSoundSpeed(Field<Dimension, Scalar>& soundSpeed,
                              const Field<Dimension, Scalar>& massDensity,
-                             const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                             const Field<Dimension, Scalar>& specificThermalEnergy) const override;
           
   virtual void setGammaField(Field<Dimension, Scalar>& gamma,
                              const Field<Dimension, Scalar>& massDensity,
-                             const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                             const Field<Dimension, Scalar>& specificThermalEnergy) const override;
                       
   virtual void setBulkModulus(Field<Dimension, Scalar>& bulkModulus,
                               const Field<Dimension, Scalar>& massDensity,
-                              const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                              const Field<Dimension, Scalar>& specificThermalEnergy) const override;
           
   virtual void setEntropy(Field<Dimension, Scalar>& entropy,
                           const Field<Dimension, Scalar>& massDensity,
-                          const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                          const Field<Dimension, Scalar>& specificThermalEnergy) const override;
           
   // Some of the following methods are disabled
   virtual Scalar pressure(const Scalar /*massDensity*/,
-                          const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                          const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar temperature(const Scalar /*massDensity*/,
-                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar specificThermalEnergy(const Scalar /*massDensity*/,
-                                       const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                                       const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar specificHeat(const Scalar /*massDensity*/,
-                              const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                              const Scalar /*temperature*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar soundSpeed(const Scalar /*massDensity*/,
-                            const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                            const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   // Get the effective gamma (ratio of specific heats) for this eos.
   virtual Scalar gamma(const Scalar /*massDensity*/,
-                       const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                       const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   // Get the bulk modulus.
   virtual Scalar bulkModulus(const Scalar /*massDensity*/,
-                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                             const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
           
   virtual Scalar entropy(const Scalar /*massDensity*/,
-                         const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); }
+                         const Scalar /*specificThermalEnergy*/) const { VERIFY2(false, "HelmholtzEquationOfState does not support individual state calls."); return 0; }
 
           
   const Field<Dimension, Scalar>& abar() const;
@@ -109,7 +109,7 @@ public:
   bool getUpdateStatus() const;
   void setUpdateStatus(bool bSet);
           
-  virtual bool valid() const;
+  virtual bool valid() const override;
           
 private:
   //--------------------------- Private Interface ---------------------------//

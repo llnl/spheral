@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(Boundary)
+spheral_add_pybind11_library(Boundary SPHERAL_MODULE_LIST)

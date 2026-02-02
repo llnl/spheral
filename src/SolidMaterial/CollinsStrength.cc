@@ -17,12 +17,9 @@
 #include "SolidEquationOfState.hh"
 #include "Field/Field.hh"
 #include "NodeList/SolidNodeList.hh"
+#include "Utilities/SpheralMessage.hh"
 
 namespace Spheral {
-
-using std::abs;
-using std::min;
-using std::max;
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -57,7 +54,7 @@ CollinsStrength(const StrengthModel<Dimension>& shearModulusModel,
   mmud(0.0),
   mY0(Y0),
   mYm(Ym) {
-  if (Process::getRank() == 0) printf("Deprecation WARNING: specifying the Collins strength model without the coefficient of friction in damage (mud) is deprecated.\n");
+  DeprecationWarning("Deprecation WARNING: specifying the Collins strength model without the coefficient of friction in damage (mud) is deprecated");
 }
 
 //------------------------------------------------------------------------------

@@ -4,27 +4,19 @@
 .sys_config:
   variables:
     LLNL_SERVICE_USER: sphapp
-    UPSTREAM_DIR: /usr/WS2/wciuser/Spheral/spheral-spack-tpls
+    UPSTREAM_DIR: /usr/WS2/sduser/Spheral/spack_upstream/0.22
     DISPLAY: ':0.0'
-
-.on_toss_3_x86:
-  variables:
-    ARCH: 'toss_3_x86_64_ib'
-    GCC_VERSION: '8.3.1'
-    CLANG_VERSION: '9.0.0'
-  extends: [.sys_config]
 
 .on_toss_4_x86:
   variables:
     ARCH: 'toss_4_x86_64_ib'
-    GCC_VERSION: '10.3.1'
-    CLANG_VERSION: '14.0.6'
+    SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
+    RUN_CMD: 'srun'
   extends: [.sys_config]
 
-.on_blueos_3_ppc64:
+.on_toss_4_x86_cray:
   variables:
-    ARCH: 'blueos_3_ppc64le_ib_p9'
-    GCC_VERSION: '8.3.1'
-    CLANG_VERSION: '9.0.0'
+    ARCH: 'toss_4_x86_64_ib_cray'
+    SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
+    RUN_CMD: 'flux run'
   extends: [.sys_config]
-

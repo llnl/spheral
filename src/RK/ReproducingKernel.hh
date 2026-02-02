@@ -24,7 +24,8 @@ public:
   ReproducingKernel();
   ReproducingKernel(const ReproducingKernel& rhs);
   ReproducingKernel& operator=(const ReproducingKernel& rhs);
-  ~ReproducingKernel();
+  virtual ~ReproducingKernel() {}
+  bool operator==(const ReproducingKernel& rhs) const;
 
   // Base kernel calls
   Scalar evaluateBaseKernel(const Vector& x,

@@ -46,11 +46,14 @@ operator=(const ReproducingKernel<Dimension>& rhs) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor
+// Equivalence
 //------------------------------------------------------------------------------
 template<typename Dimension>
+bool
 ReproducingKernel<Dimension>::
-~ReproducingKernel() {
-}  
+operator==(const ReproducingKernel<Dimension>& rhs) const {
+  return (ReproducingKernelMethods<Dimension>::operator==(rhs) and
+          *mWptr == *(rhs.mWptr));
+}
 
 }

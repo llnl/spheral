@@ -12,13 +12,11 @@
 #include "GeomTensor.hh"
 #include "GeomFacet3d.hh"
 
-#include "axom/config.hpp"                          // compile time definitions
-#include "axom/core.hpp"                            // for execution_space traits
-#include "axom/mint.hpp"                            // for mint classes and functions
-#include "axom/quest.hpp"                           // axom surface queries (containment)
+#include "axom/quest.hpp"
 
-#include <vector>
 #include <memory>
+#include <vector>
+#include <utility>
 
 namespace Spheral {
 
@@ -27,6 +25,7 @@ public:
   //--------------------------- Public Interface ---------------------------//
   using Vector = GeomVector<3>;
   using Tensor = GeomTensor<3>;
+  using SymTensor = GeomSymmetricTensor<3>;
   using Facet = GeomFacet3d;
 
   //----------------------------------------------------------------------------
@@ -45,7 +44,7 @@ public:
 
   GeomPolyhedron(const GeomPolyhedron& rhs);
   GeomPolyhedron& operator=(const GeomPolyhedron& rhs);
-  ~GeomPolyhedron();
+  ~GeomPolyhedron() = default;
 
   // Test if the given point is internal to the polyhedron.
   bool contains(const Vector& point,
@@ -156,9 +155,9 @@ private:
   Vector mXmin, mXmax, mCentroid;
   double mRinterior2;
   bool mConvex;
-  mutable axom::quest::InOutOctree<3>::SurfaceMesh* mSurfaceMeshPtr;
-  mutable axom::quest::InOutOctree<3>* mSurfaceMeshQueryPtr;
-  mutable axom::quest::SignedDistance<3>* mSignedDistancePtr;
+  mutable std::shared_ptr<axom::quest::InOutOctree<3>::SurfaceMesh> mSurfaceMeshPtr;
+  mutable std::shared_ptr<axom::quest::InOutOctree<3>> mSurfaceMeshQueryPtr;
+  mutable std::shared_ptr<axom::quest::SignedDistance<3>> mSignedDistancePtr;
 
   static FILE* mDevnull;
 

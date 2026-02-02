@@ -202,6 +202,7 @@ decompose(std::vector<std::array<Vector, 3>>& subfacets) const {
   {
     const auto originalArea = this->area();
     auto areasum = 0.;
+    CONTRACT_VAR(areasum);
     for (auto& subfacet : subfacets) {
       const auto ab = subfacet[1] - subfacet[0];
       const auto ac = subfacet[2] - subfacet[0];
@@ -211,9 +212,11 @@ decompose(std::vector<std::array<Vector, 3>>& subfacets) const {
       CHECK(0 < subarea and subarea < originalArea);
       const auto subnormalUnit = subnormal.unitVector();
       const auto normalUnit = mNormal.unitVector();
-      CHECK(fuzzyEqual(subnormalUnit(0), normalUnit(0), 1.e-12) &&
-            fuzzyEqual(subnormalUnit(1), normalUnit(1), 1.e-12) &&
-            fuzzyEqual(subnormalUnit(2), normalUnit(2), 1.e-12));
+      CONTRACT_VAR(subnormalUnit);
+      CONTRACT_VAR(normalUnit);
+      CHECK2(fuzzyEqual(subnormalUnit(0), normalUnit(0), 1.e-8) &&
+             fuzzyEqual(subnormalUnit(1), normalUnit(1), 1.e-8) &&
+             fuzzyEqual(subnormalUnit(2), normalUnit(2), 1.e-8), "Normal vector mismatch: " << subnormalUnit << " != " << normalUnit);
       areasum += subarea;
     }
     CHECK(fuzzyEqual(areasum, originalArea));

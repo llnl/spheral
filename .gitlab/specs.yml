@@ -1,49 +1,62 @@
 # ------------------------------------------------------------------------------
 # SPEC TEMPLATES
 
-.gcc_mvapich2_cxxonly:
+.gcc_mpi_cxxonly:
   variables:
-    SPEC: 'gcc@$GCC_VERSION^mvapich2'
-    EXTRA_CMAKE_ARGS: '-DENABLE_CXXONLY=On'
+    SPEC: '%gcc+mpi'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_PYTHON=OFF -DSPHERAL_ENABLE_STATIC=ON -DENABLE_WARNINGS_AS_ERRORS=On'
 
-.gcc_mvapich2:
+.gcc_mpi:
   variables:
-    SPEC: 'gcc@$GCC_VERSION^mvapich2'
-    EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
+    SPEC: '%gcc+mpi'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_~mpi:
   variables:
-    SPEC: 'gcc@$GCC_VERSION~mpi'
-    EXTRA_CMAKE_ARGS: '-DENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
+    SPEC: '%gcc~mpi'
+    EXTRA_CMAKE_ARGS: '-DSPHERAL_ENABLE_DOCS=On -DENABLE_WARNINGS_AS_ERRORS=On'
 
 .gcc_~mpi_Debug:
   variables:
-    SPEC: 'gcc@$GCC_VERSION~mpi'
+    SPEC: '%gcc~mpi'
     EXTRA_CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DENABLE_WARNINGS_AS_ERRORS=On'
 
-.gcc_spectrum:
-  variables:
-    SPEC: 'gcc@$GCC_VERSION^spectrum-mpi'
-    EXTRA_CMAKE_ARGS: ''
 
-.clang_mvapich2:
+.clang_mpi_dev_build:
   variables:
-    SPEC: 'clang@$CLANG_VERSION^mvapich2'
-    EXTRA_CMAKE_ARGS: ''
+    SPEC: '%clang+mpi'
+    EXTRA_CMAKE_ARGS: '-DENABLE_WARNINGS_AS_ERRORS=On -DENABLE_DEV_BUILD=On'
+
+
 
 .cuda_11_gcc_~mpi:
   variables:
-    SPEC: 'gcc@$GCC_VERSION+cuda~mpi cuda_arch=70'
-    EXTRA_CMAKE_ARGS: ''
+    SPEC: '%gcc~mpi+cuda'
 
 .cuda_11_gcc_spectrum:
   variables:
-    SPEC: 'gcc@$GCC_VERSION+cuda cuda_arch=70'
-    EXTRA_CMAKE_ARGS: '-DENABLE_TIMER=On'
-
-.oneapi_2022_1_mvapich2:
-  variables:
-    SPEC: 'oneapi@2022.1^mvapich2'
+    SPEC: '%gcc+mpi+cuda'
     EXTRA_CMAKE_ARGS: ''
 
 
+
+.rocm_mpi:
+  variables:
+    SPEC: '%rocmcc+mpi~rocm'
+
+.rocm_~mpi:
+  variables:
+    SPEC: '%rocmcc~mpi~rocm'
+
+.rocm_~mpi_Debug:
+  variables:
+    SPEC: '%rocmcc~mpi~rocm'
+    EXTRA_CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DENABLE_WARNINGS_AS_ERRORS=On'
+
+.hip_rocm_mpi:
+  variables:
+    SPEC: '%rocmcc+mpi+rocm'
+
+.hip_rocm_~mpi:
+  variables:
+    SPEC: '%rocmcc~mpi+rocm'

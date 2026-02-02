@@ -42,10 +42,10 @@ update(const KeyType& key,
   REQUIRE(key == mCopyStateName);
 
   // The state we're updating
-  ValueType& f = state.template getAny<ValueType>(key);
+  ValueType& f = state.template get<ValueType>(key);
 
   // The master state we're copying
-  const ValueType& fmaster = state.template getAny<ValueType>(mMasterStateName);
+  const ValueType& fmaster = state.template get<ValueType>(mMasterStateName);
 
   // Copy the master state using the assignment operator
   f = fmaster;

@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(GSPH)
+spheral_add_pybind11_library(GSPH SPHERAL_MODULE_LIST)

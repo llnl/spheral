@@ -64,12 +64,13 @@ commandLine(nx1 = 256,
             psph = False,
             fsisph = False,
             gsph = False,
+            mfm = False,
 
             # hydro options
             solid = False,
             asph = False,   # Just for choosing the H algorithm
-            useVelocityMagnitudeForDt = False,
             XSPH = False,
+            useVelocityMagnitudeForDt = False,
             epsilonTensile = 0.0,
             nTensile = 8,
             filter = 0.0,
@@ -80,6 +81,8 @@ commandLine(nx1 = 256,
             evolveTotalEnergy = False,     
 
             # artificial viscosity 
+            Cl = None, 
+            Cq = None,
             linearConsistent = False,
             boolReduceViscosity = False,
             nh = 5.0,
@@ -94,8 +97,6 @@ commandLine(nx1 = 256,
             betaE = 1.0,
             fKern = 1.0/3.0,
             boolHopkinsCorrection = True,
-            Cl = None, 
-            Cq = None,
             linearInExpansion = False,
             Qlimiter = None,
             balsaraCorrection = False,
@@ -120,6 +121,8 @@ commandLine(nx1 = 256,
             # GSPH parameters
             gsphEpsDiffuseCoeff = 0.0,
             gsphLinearCorrect = True,
+            LimiterConstructor = VanLeerLimiter,
+            WaveSpeedConstructor = DavisWaveSpeed,
 
             ## integrator
             cfl = 0.5,
@@ -148,8 +151,6 @@ commandLine(nx1 = 256,
             redistributeStep = None,
             checkRestart = False,
             dataDir = "dumps-KelvinHelmholtz-2d_McNally",
-            outputFile = "None",
-            comparisonFile = "None",
             graphMixing = False,
             mixInterval = 0.02,
             mixFile = "MixingModeAmp.gnu",
@@ -164,10 +165,12 @@ assert not(boolReduceViscosity and boolCullenViscosity)
 assert numNodeLists in (1, 2)
 assert not svph 
 assert not (compatibleEnergy and evolveTotalEnergy)
-assert sum([fsisph,psph,gsph,crksph,svph])<=1
+assert sum([fsisph,psph,gsph,crksph,svph,mfm])<=1
 assert not (fsisph and not solid)
+assert not ((mfm or gsph) and (boolCullenViscosity or boolReduceViscosity))
 
 # hydro algorithm label
+useArtificialViscosity = True
 if svph:
     hydroname = "SVPH"
 elif crksph:
@@ -180,10 +183,18 @@ elif fsisph:
     hydroname = "FSISPH"
 elif gsph:
     hydroname = "GSPH"
+    useArtificialViscosity=False
+elif mfm:
+    hydroname = "MFM"
+    useArtificialViscosity=False
 else:
     hydroname = "SPH"
+
 if asph:
     hydroname = "A" + hydroname
+
+if solid:
+    hydroname = "solid" + hydroname
 
 dataDir = os.path.join(dataDir,
                        "rho1=%g-rho2=%g" % (rho1, rho2),
@@ -429,14 +440,29 @@ if fsisph:
                    ASPH = asph,
                    epsTensile = epsilonTensile)
 elif gsph:
-    limiter = VanLeerLimiter()
-    waveSpeed = DavisWaveSpeed()
+    limiter = LimiterConstructor
+    waveSpeed = WaveSpeedConstructor
     solver = HLLC(limiter,waveSpeed,gsphLinearCorrect)
     hydro = GSPH(dataBase = db,
                 riemannSolver = solver,
                 W = WT,
                 cfl=cfl,
-                specificThermalEnergyDiffusionCoefficient = gsphEpsDiffuseCoeff,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                densityUpdate=densityUpdate,
+                XSPH = XSPH,
+                ASPH = asph,
+                epsTensile = epsilonTensile,
+                nTensile = nTensile)
+elif mfm:
+    limiter = LimiterConstructor
+    waveSpeed = WaveSpeedConstructor
+    solver = HLLC(limiter,waveSpeed,gsphLinearCorrect)
+    hydro = GSPH(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
                 correctVelocityGradient= correctVelocityGradient,
                 evolveTotalEnergy = evolveTotalEnergy,
@@ -471,7 +497,7 @@ packages = [hydro]
 #-------------------------------------------------------------------------------
 # Set the artificial viscosity parameters.
 #-------------------------------------------------------------------------------
-if not gsph:
+if useArtificialViscosity:
     q = hydro.Q
     if not Cl is None:
         q.Cl = Cl
@@ -498,11 +524,11 @@ if not gsph:
 #-------------------------------------------------------------------------------
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
-if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+if boolReduceViscosity and useArtificialViscosity:
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
-elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+elif boolCullenViscosity and useArtificialViscosity:
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
     packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------

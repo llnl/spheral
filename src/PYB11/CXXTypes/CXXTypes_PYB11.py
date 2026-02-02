@@ -74,7 +74,8 @@ pair_double_double = PYB11TemplateClass(pair, template_parameters=("double", "do
 # RKCoefficients
 
 for ndim in dims:
-    exec('''
-vector_of_RKCoefficients%(ndim)id = PYB11_bind_vector("Spheral::RKCoefficients<%(Dimension)s>", opaque=True, local=False)
-''' % {"ndim"      : ndim,
-       "Dimension" : "Spheral::Dim<" + str(ndim) + ">"})
+    Dimension = f"Spheral::Dim<{ndim}>"
+    Vector = f"{Dimension}::Vector"
+    exec(f'''
+vector_of_RKCoefficients{ndim}d = PYB11_bind_vector("Spheral::RKCoefficients<{Dimension}>", opaque=True, local=False)
+''')

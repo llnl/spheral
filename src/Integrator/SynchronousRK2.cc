@@ -19,31 +19,8 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK2<Dimension>::SynchronousRK2():
-  Integrator<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK2<Dimension>::
-SynchronousRK2(DataBase<Dimension>& dataBase):
-  Integrator<Dimension>(dataBase) {
-}
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
@@ -53,26 +30,6 @@ SynchronousRK2<Dimension>::
 SynchronousRK2(DataBase<Dimension>& dataBase,
                const vector<Physics<Dimension>*>& physicsPackages):
   Integrator<Dimension>(dataBase, physicsPackages) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK2<Dimension>::~SynchronousRK2() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK2<Dimension>&
-SynchronousRK2<Dimension>::
-operator=(const SynchronousRK2<Dimension>& rhs) {
-  if (this != &rhs) {
-    Integrator<Dimension>::operator=(rhs);
-  }
-  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -115,7 +72,6 @@ step(typename Dimension::Scalar maxTime,
   this->applyGhostBoundaries(state, derivs);
   this->finalizeGhostBoundaries();
   this->postStateUpdate(t + hdt, hdt, db, state, derivs);
-  this->finalizeGhostBoundaries();
 
   // Evaluate the derivatives at the trial midpoint conditions.
   this->initializeDerivatives(t + hdt, hdt, state, derivs);
@@ -143,8 +99,8 @@ step(typename Dimension::Scalar maxTime,
   state.update(derivs, dt, t, dt);
   this->currentTime(t + dt);
   this->applyGhostBoundaries(state, derivs);
-  this->postStateUpdate(t + dt, dt, db, state, derivs);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + dt, dt, db, state, derivs);
 
   // Apply any physics specific finalizations.
   this->postStepFinalize(t + dt, dt, state, derivs);

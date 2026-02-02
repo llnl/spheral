@@ -8,12 +8,7 @@
 //
 // Created by JMO, Mon Sep 20 21:48:53 PDT 2004
 //----------------------------------------------------------------------------//
-#include <vector>
 #include <string>
-
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 #include "GradyKippScalarDamage.hh"
 #include "SolidFieldNames.hh"

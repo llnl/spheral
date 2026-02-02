@@ -1,3 +1,6 @@
+#ifndef __Spheral_Silo_vectorstringutils__
+#define __Spheral_Silo_vectorstringutils__
+
 #include <string>
 #include <sstream>
 #include <vector>
@@ -50,3 +53,5 @@ template<> std::string vector2string(const std::vector<std::string>& val, const 
 template<> std::vector<std::string> string2vector<std::string>(const std::string& val);
 
 }
+
+#endif

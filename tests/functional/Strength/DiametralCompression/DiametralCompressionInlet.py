@@ -4,7 +4,7 @@
 #
 # Solid FSISPH
 #
-#ATS:t100 = test(        SELF, "--clearDirectories True --checkError True --fsisph True --goalTime 2.0 --nrSpecimen 15 ", label="Diametral Compression Test FSISPH -- 2-D", np=1)
+#ATS:t100 = test(        SELF, "--clearDirectories True --checkError True --fsisph True --goalTime 2.0 --nrSpecimen 15 ", label="Diametral Compression Test FSISPH -- 2-D", np=1, fsisph=True)
 
 from Spheral2d import *
 import sys, os
@@ -422,7 +422,7 @@ for n in nodeListSet:
     db.appendNodeList(n)
     print(n.name)
 del n
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 
 output("db")
 output("db.nodeLists")
@@ -668,7 +668,7 @@ class loadCurveStorage:
 
     def maxY(self):
         maxy = 0.0
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
         for nodeList in nodeLists:
             positions = nodeList.positions()
             for position in positions:
@@ -678,7 +678,7 @@ class loadCurveStorage:
 
     def minY(self):
         miny = 0.0
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
         for nodeList in nodeLists:
             positions = nodeList.positions()
             for position in positions:

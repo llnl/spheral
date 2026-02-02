@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # A generator for creating a range of x values to test
@@ -25,7 +25,7 @@ def xygen(n, xmin, xmax, ymin, ymax):
     yield xmin, ymax
     count = 0
     while count < n:
-        yield rangen.uniform(xmin, xmax), rangen.uniform(ymin, ymax)
+        yield random.uniform(xmin, xmax), random.uniform(ymin, ymax)
         count += 1
 
 #===============================================================================
@@ -150,8 +150,8 @@ class XYInterpolatorTestingBase:
                     F = PolynomialFunctor(2, -10.0, 10.0)
                     Finterp = self.generateInterpolator(nx, ny, xlog, ylog, F)
                     for itest in range(self.ntests):
-                        x = rangen.uniform(self.xmin, self.xmax)
-                        y = rangen.uniform(self.ymin, self.ymax)
+                        x = random.uniform(self.xmin, self.xmax)
+                        y = random.uniform(self.ymin, self.ymax)
                         ix0, iy0, i0 = self.lowerBound_ans(x, y,
                                                            self.xmin, self.xmax,
                                                            self.ymin, self.ymax,

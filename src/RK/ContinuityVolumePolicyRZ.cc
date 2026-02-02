@@ -58,10 +58,10 @@ update(const KeyType& key,
 
   // Get the state we depend on
   const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
-  const auto& pos = state.field(buildKey(HydroFieldNames::position), Vector::zero);
+  const auto& pos = state.field(buildKey(HydroFieldNames::position), Vector::zero());
   const auto& mass = state.field(buildKey(HydroFieldNames::mass), 0.0);
   const auto& rho = state.field(buildKey(HydroFieldNames::massDensity), 0.0);
-  const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero);
+  const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero());
   const auto& DrhoDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity), 0.0);
 
   // Loop over the internal values of the field.

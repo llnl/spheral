@@ -8,13 +8,15 @@ from findLastRestart import *
 from GenerateNodeDistribution3d import *
 from GenerateDEMfromSPHGenerator import GenerateDEMfromSPHGenerator3d
 
-sys.path.insert(0, '..')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from DEMConservationTracker import TrackConservation3d as TrackConservation
 
 if mpi.procs > 1:
     from PeanoHilbertDistributeNodes import distributeNodes3d
 else:
     from DistributeNodes import distributeNodes3d
+
+random.seed(0)
 
 title("DEM 3d Impacting Squares")
 # This tests the conservation properties of the DEM package when
@@ -182,7 +184,7 @@ packages = [dem]
 # Initial Conditions
 #-------------------------------------------------------------------------------
 numNodeLists = db.numNodeLists
-nodeLists = db.nodeLists()
+nodeLists = db.nodeLists
 omega = dem.omega
 for i in range(db.numNodeLists):
     nodeListi = nodeLists[i]

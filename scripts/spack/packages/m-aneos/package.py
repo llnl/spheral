@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-from spack import *
+from spack.package import *
 
 
 class MAneos(MakefilePackage):
@@ -22,16 +22,15 @@ class MAneos(MakefilePackage):
 
     #patch('remove-mpiposix.patch', when='@4.8:4.10.2')
     def edit(self, spec, prefix):
-      makefile = FileFilter('src/Makefile')
+        makefile = FileFilter('src/Makefile')
 
-      makefile.filter(r'^\s*FC\s*=.*',  'FC = '  + spack_fc)
-      makefile.filter(r'^\s*FCFLAGS\s*=.*',  'FCFLAGS = '  + '-O3 -fPIC')
+        makefile.filter(r'^\s*FC\s*=.*',  'FC = '  + spack_fc)
+        makefile.filter(r'^\s*FCFLAGS\s*=.*',  'FCFLAGS = '  + '-O3 -fPIC')
 
     def install(self, spec, prefix):
-      mkdir(prefix.lib)
-      mkdir(prefix.input)
-      install('src/libaneos.a', prefix.lib)
-      install('input/dunite_.input', prefix.input)
-      install('input/quartz_.input', prefix.input)
-      install('input/serpent.input', prefix.input)
-
+        mkdir(prefix.lib)
+        mkdir(prefix.input)
+        install('src/libaneos.a', prefix.lib)
+        install('input/dunite_.input', prefix.input)
+        install('input/quartz_.input', prefix.input)
+        install('input/serpent.input', prefix.input)

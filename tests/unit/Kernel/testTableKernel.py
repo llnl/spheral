@@ -3,8 +3,10 @@ from Spheral import *
 from SpheralTestUtilities import fuzzyEqual
 
 from math import *
+import numpy as np
 import unittest
 import random
+random.seed(458945989204001)
 
 #===============================================================================
 # Main testing class.
@@ -33,7 +35,7 @@ class TestTableKernel(unittest.TestCase):
         self.W0tol = 1.0e-3
         self.W1tol = 1.0e-2
         self.W2tol = 1.0e-2
-        self.Wsumtol = 1.0e-10
+        self.Wsumtol = 2.0e-1
         
         return
 
@@ -93,16 +95,15 @@ class TestTableKernel(unittest.TestCase):
     #===========================================================================
     def testMonotonicity(self):
         for W in self.tableKernels:
-            nperh = W.nperhValues
-            Wsum = W.WsumValues
-            assert len(nperh) == len(Wsum)
-            for i in range(len(nperh) - 1):
-                self.assertTrue(nperh[i] < nperh[i + 1],
-                                "Failed monotonicity test in nperh table: %f %f" %
-                                (nperh[i], nperh[i + 1]))
-                self.assertTrue(Wsum[i] <= Wsum[i + 1],
-                                "Failed monotonicity test in Wsum table: %f %f" %
-                                (Wsum[i], Wsum[i + 1]))
+            WsumMin = W.equivalentWsum(W.minNperhLookup)
+            WsumMax = W.equivalentWsum(W.maxNperhLookup)
+            n = 2*W.numPoints
+
+            nperh = np.array([W.equivalentNodesPerSmoothingScale(x) for x in np.linspace(WsumMin, WsumMax, n)])
+            self.assertTrue(np.all(np.diff(nperh)) > 0.0, "nperh lookup values not monotonic")
+
+            Wsum = np.array([W.equivalentWsum(x) for x in np.linspace(W.minNperhLookup, W.maxNperhLookup, n)])
+            self.assertTrue(np.all(np.diff(Wsum)) > 0.0, "Wsum lookup values not monotonic")
         return
 
     #===========================================================================
@@ -110,24 +111,21 @@ class TestTableKernel(unittest.TestCase):
     #===========================================================================
     def testWsumValues1d(self):
         W = self.WT1
-        assert len(W.nperhValues) == len(W.WsumValues)
-        for nperh, Wsum in zip(W.nperhValues, W.WsumValues):
-            if Wsum > 0.0:
-                deta = 1.0/nperh
-                etax = deta
-                testSum = 0.0
-                while etax < W.kernelExtent:
-                    delta = 2.0*abs(W.gradValue(etax, 1.0))
-                    testSum += delta
-                    etax += deta
-                self.assertTrue(fuzzyEqual(Wsum, testSum, self.Wsumtol),
-                                "Wsum failure: %g != %g: " %
-                                (Wsum, testSum))
-                self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
-                                           nperh,
-                                           self.Wsumtol),
-                                "Lookup n per h failure: %g %g %g" %
-                                (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
+        n = 2*W.numPoints
+        minNperh = max(W.minNperhLookup, 0.5*W.kernelExtent)
+        for nperh in np.linspace(minNperh, W.maxNperhLookup, n):
+            deta = 1.0/nperh
+            etac = np.arange(-W.kernelExtent, W.kernelExtent+deta, deta)
+            testSum = np.sum(np.array([W.kernelValueSPH(abs(x)) for x in etac]))
+            tol = self.Wsumtol / (W.kernelExtent/deta)
+            self.assertTrue(fuzzyEqual(W.equivalentWsum(nperh), testSum, 2.0*tol),
+                            "Wsum failure: %g != %g @ %g: " %
+                            (W.equivalentWsum(nperh), testSum, nperh))
+            self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
+                                       nperh,
+                                       tol),
+                            "Lookup n per h failure: %g %g @ %g" %
+                            (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
         return
 
     #===========================================================================
@@ -135,33 +133,23 @@ class TestTableKernel(unittest.TestCase):
     #===========================================================================
     def testWsumValues2d(self):
         W = self.WT2
-        assert len(W.nperhValues) == len(W.WsumValues)
-        for nperh, Wsum in random.sample(list(zip(W.nperhValues, W.WsumValues)), 10):
-            if Wsum > 0.0:
-                deta = 1.0/nperh
-                testSum = 0.0
-                etay = 0.0
-                while etay < W.kernelExtent:
-                    etax = 0.0
-                    while etax < W.kernelExtent:
-                        eta = Vector2d(etax, etay)
-                        delta = abs(W.gradValue(eta.magnitude(), 1.0))
-                        if etax > 0.0:
-                            delta *= 2.0
-                        if etay > 0.0:
-                            delta *= 2.0
-                        testSum += delta
-                        etax += deta
-                    etay += deta
-                testSum = sqrt(testSum)
-                self.assertTrue(fuzzyEqual(Wsum, testSum, self.Wsumtol),
-                                "Wsum failure: %g != %g: " %
-                                (Wsum, testSum))
-                self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
-                                           nperh,
-                                           self.Wsumtol),
-                                "Lookup n per h failure: %g %g %g" %
-                                (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
+        minNperh = max(W.minNperhLookup, 0.5*W.kernelExtent)
+        for itest in range(10):
+            nperh = random.uniform(minNperh, W.maxNperhLookup)
+            deta = 1.0/nperh
+            etac = np.arange(-W.kernelExtent, W.kernelExtent+deta, deta)
+            xc, yc = np.meshgrid(etac, etac)
+            testSum = np.sum(np.array([W.kernelValueSPH(Vector3d(*x).magnitude()) for x in np.stack((np.ravel(xc), np.ravel(yc)), axis=-1)]))
+            testSum = sqrt(testSum)
+            tol = self.Wsumtol / (W.kernelExtent/deta)**2
+            self.assertTrue(fuzzyEqual(W.equivalentWsum(nperh), testSum, tol),
+                            "Wsum failure: %g != %g @ %g: " %
+                            (W.equivalentWsum(nperh), testSum, nperh))
+            self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
+                                       nperh,
+                                       tol),
+                            "Lookup n per h failure: %g %g @ %g" %
+                            (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
                              
         return
 
@@ -170,38 +158,23 @@ class TestTableKernel(unittest.TestCase):
     #===========================================================================
     def testWsumValues3d(self):
         W = self.WT3
-        assert len(W.nperhValues) == len(W.WsumValues)
-        for nperh, Wsum in random.sample(list(zip(W.nperhValues, W.WsumValues)), 10):
-            if Wsum > 0.0:
-                deta = 1.0/nperh
-                testSum = 0.0
-                etaz = 0.0
-                while etaz < W.kernelExtent:
-                    etay = 0.0
-                    while etay < W.kernelExtent:
-                        etax = 0.0
-                        while etax < W.kernelExtent:
-                            eta = Vector3d(etax, etay, etaz)
-                            delta = abs(W.gradValue(eta.magnitude(), 1.0))
-                            if etax > 0.0:
-                                delta *= 2.0
-                            if etay > 0.0:
-                                delta *= 2.0
-                            if etaz > 0.0:
-                                delta *= 2.0
-                            testSum += delta
-                            etax += deta
-                        etay += deta
-                    etaz += deta
-                testSum = testSum**(1.0/3.0)
-                self.assertTrue(fuzzyEqual(Wsum, testSum, self.Wsumtol),
-                                "Wsum failure: %g != %g: " %
-                                (Wsum, testSum))
-                self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
-                                           nperh,
-                                           self.Wsumtol),
-                                "Lookup n per h failure: %g %g %g" %
-                                (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
+        minNperh = max(W.minNperhLookup, 0.5*W.kernelExtent)
+        for itest in range(10):
+            nperh = random.uniform(minNperh, W.maxNperhLookup)
+            deta = 1.0/nperh
+            etac = np.arange(-W.kernelExtent, W.kernelExtent+deta, deta)
+            xc, yc, zc = np.meshgrid(etac, etac, etac)
+            testSum = np.sum(np.array([W.kernelValueSPH(Vector3d(*x).magnitude()) for x in np.stack((np.ravel(xc), np.ravel(yc), np.ravel(zc)), axis=-1)]))
+            testSum = testSum**(1.0/3.0)
+            tol = 5.0*self.Wsumtol / (W.kernelExtent/deta)**3
+            self.assertTrue(fuzzyEqual(W.equivalentWsum(nperh), testSum, tol),
+                            "Wsum failure: %g != %g @ %g: " %
+                            (W.equivalentWsum(nperh), testSum, nperh))
+            self.assertTrue(fuzzyEqual(W.equivalentNodesPerSmoothingScale(testSum),
+                                       nperh,
+                                       tol),
+                            "Lookup n per h failure: %g %g @ %g" %
+                            (testSum, W.equivalentNodesPerSmoothingScale(testSum), nperh))
                              
         return
 

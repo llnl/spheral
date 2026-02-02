@@ -66,33 +66,33 @@ four corners of each interpolation cell."""
     def prime_x(self,
                 x = "const double",
                 y = "const double"):
-        """Returns the interpolated value \\\partial_x <F>(x,y)"""
+        """Returns the interpolated value partial_x <F>(x,y)"""
         return "double"
 
     @PYB11const
     def prime_y(self,
                 x = "const double",
                 y = "const double"):
-        """Returns the interpolated value \\\partial_y <F>(x,y)"""
+        """Returns the interpolated value partial_y <F>(x,y)"""
         return "double"
 
     @PYB11const
     def prime2_xx(self,
                   x = "const double",
                   y = "const double"):
-        """Returns the interpolated value \\\partial_xx <F>(x,y)"""
+        """Returns the interpolated value partial_xx <F>(x,y)"""
         return "double"
 
     @PYB11const
     def prime2_xy(self,
                   x = "const double",
                   y = "const double"):
-        """Returns the interpolated value \\\partial_xy <F>(x,y)"""
+        """Returns the interpolated value partial_xy <F>(x,y)"""
         return "double"
 
     @PYB11const
     def prime2_yy(self,
                   x = "const double",
                   y = "const double"):
-        """Returns the interpolated value \\\partial_yy <F>(x,y)"""
+        """Returns the interpolated value partial_yy <F>(x,y)"""
         return "double"

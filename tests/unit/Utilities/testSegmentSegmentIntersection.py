@@ -6,7 +6,7 @@ import unittest
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Test our various segement-segment intersection scenarios.
@@ -26,9 +26,9 @@ class TestSegmentSegmentIntersection(unittest.TestCase):
     # Randomly distort two line segments.
     #===========================================================================
     def randomDistortion(self, a0, a1, b0, b1):
-        T = (rangen.uniform(self.multMin, self.multMax)*
-             rotationMatrix(Vector(rangen.uniform(0.0, 1.0),
-                                   rangen.uniform(0.0, 1.0)).unitVector()))
+        T = (random.uniform(self.multMin, self.multMax)*
+             rotationMatrix(Vector(random.uniform(0.0, 1.0),
+                                   random.uniform(0.0, 1.0)).unitVector()))
         return T*a0, T*a1, T*b0, T*b1, T
 
     #===========================================================================

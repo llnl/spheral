@@ -44,6 +44,10 @@ class TestSampleMultipleFields2Lattice:
         fieldListSet.VectorFieldLists.append(vel)
         fieldListSet.SymTensorFieldLists.append(Hfl)
         fieldListSet.TensorFieldLists.append(gradv)
+        assert len(fieldListSet.ScalarFieldLists) == 2
+        assert len(fieldListSet.VectorFieldLists) == 1
+        assert len(fieldListSet.SymTensorFieldLists) == 1
+        assert len(fieldListSet.TensorFieldLists) == 1
 
         # Build the mask.
         mask = self.db.newGlobalIntFieldList(1)

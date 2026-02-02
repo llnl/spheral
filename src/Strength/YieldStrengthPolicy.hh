@@ -17,17 +17,17 @@ template<typename Dimension> class StateDerivatives;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class YieldStrengthPolicy: public FieldUpdatePolicy<Dimension> {
+class YieldStrengthPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   YieldStrengthPolicy(const bool scaleWithPorosity = false);
-  virtual ~YieldStrengthPolicy();
+  virtual ~YieldStrengthPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -44,12 +44,13 @@ public:
   bool scaleWithPorosity() const       { return mScaleWithPorosity; }
   void scaleWithPorosity(const bool x) { mScaleWithPorosity = x; }
 
+  // Forbidden methods
+  YieldStrengthPolicy(const YieldStrengthPolicy& rhs) = delete;
+  YieldStrengthPolicy& operator=(const YieldStrengthPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   bool mScaleWithPorosity;
-
-  YieldStrengthPolicy(const YieldStrengthPolicy& rhs);
-  YieldStrengthPolicy& operator=(const YieldStrengthPolicy& rhs);
 };
 
 }

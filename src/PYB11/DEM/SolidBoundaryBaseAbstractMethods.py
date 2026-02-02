@@ -7,7 +7,7 @@ from PYB11Generator import *
 class SolidBoundaryBaseAbstractMethods:
 
     @PYB11const
-    def velocity(self,
+    def localVelocity(self,
                  position = "const Vector&"):
         "velocity of bc."
         return "Vector"
@@ -17,6 +17,12 @@ class SolidBoundaryBaseAbstractMethods:
                  position = "const Vector&"):
         "distance vector to bc."
         return "Vector"
+
+    def registerState(self,
+                      dataBase = "DataBase<%(Dimension)s>&",
+                      state = "State<%(Dimension)s>&"):
+        "Register the state solid bc expects to use and evolve."
+        return "void"
 
     def update(self,
                multiplier = "const double",

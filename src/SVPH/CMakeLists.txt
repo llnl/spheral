@@ -9,22 +9,15 @@ set(SVPH_inst
     SVPHCorrectionsPolicy
     SVPHMassDensityPolicy
     CompatibleFaceSpecificThermalEnergyPolicy
-    MeshIdealHPolicy
     SpecificThermalEnergyVolumePolicy
     CellPressurePolicy
    )
-
-
-set(SVPH_sources 
-  SVPHFieldNames.cc
-  )
 
 instantiate(SVPH_inst SVPH_sources)
 
 set(SVPH_headers
     CellPressurePolicy.hh
     CompatibleFaceSpecificThermalEnergyPolicy.hh
-    MeshIdealHPolicy.hh
     SVPHCorrectionsPolicy.hh
     SVPHFacetedHydroBase.hh
     SVPHFacetedHydroBaseInline.hh

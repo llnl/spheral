@@ -11,12 +11,13 @@ class RKCorrections(Physics):
     "Computes RK correction terms"
     
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::FacetedVolume FacetedVolume;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using FacetedVolume = typename %(Dimension)s::FacetedVolume;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     def pyinit(self,
@@ -68,7 +69,16 @@ class RKCorrections(Physics):
         return "void"
     
     @PYB11virtual
-    def initializeProblemStartup(self, dataBase = "DataBase<%(Dimension)s>&"):
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
+        "Tasks we do once on problem startup"
+        return "void"
+
+    @PYB11virtual
+    def initializeProblemStartupDependencies(self,
+                                             dataBase = "DataBase<%(Dimension)s>&",
+                                             state = "State<%(Dimension)s>&",
+                                             derivs = "StateDerivatives<%(Dimension)s>&"):
         "Tasks we do once on problem startup"
         return "void"
 
@@ -88,7 +98,7 @@ class RKCorrections(Physics):
                    state = "State<%(Dimension)s>&",
                    derivs = "StateDerivatives<%(Dimension)s>&"):
         "Initialize the Hydro before we start a derivative evaluation."
-        return "void"
+        return "bool"
                   
     @PYB11virtual
     def finalize(self,

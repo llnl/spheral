@@ -6,7 +6,7 @@
 
 #include "computeSPHSumMassDensity.cc"
 #include "correctSPHSumMassDensity.cc"
-#include "SPHHydroBase.hh"
+#include "SPHBase.hh"
 
 namespace Spheral {
 

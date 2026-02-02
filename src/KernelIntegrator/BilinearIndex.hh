@@ -8,7 +8,6 @@
 
 #include <vector>
 #include <unordered_map>
-// #include <boost/functional/hash.hpp>
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 
@@ -30,7 +29,6 @@ public:
   // Typedefs for bilinear indexing
   typedef typename std::pair<int, int> Pair;
   typedef typename std::unordered_map<Pair, int, BilinearHash<Pair>> MapPair;
-  // typedef typename std::unordered_map<Pair, int, boost::hash<Pair>> MapPair;
   typedef typename std::vector<Pair> VectorPair;
   typedef FieldList<Dimension, MapPair> PairToFlat;
   typedef FieldList<Dimension, VectorPair> FlatToPair;
@@ -38,7 +36,6 @@ public:
   // Typedefs for surface indexing
   typedef typename std::array<int, Dimension::nDim> ArrayDim;
   typedef typename std::unordered_map<ArrayDim, int, BilinearHash<ArrayDim>> MapNormal;
-  // typedef typename std::unordered_map<ArrayDim, int, boost::hash<ArrayDim>> MapNormal;
   typedef typename std::vector<Vector> NormalType;
   typedef FieldList<Dimension, MapNormal> NormalToFlat;
   typedef FieldList<Dimension, NormalType> FlatToNormal;

@@ -24,9 +24,6 @@
 namespace Spheral {
 
 using std::vector;
-using std::abs;
-using std::min;
-using std::max;
 
 //------------------------------------------------------------------------------
 // Specialized method to compute the pair-wise contribution to the moment.
@@ -142,7 +139,7 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
     pos.appendField(nodes.positions());
     H.appendField(nodes.Hfield());
     zerothMoment.appendNewField("zeroth moment", nodes, W0);
-    firstMoment.appendNewField("first moment", nodes, Vector::zero);
+    firstMoment.appendNewField("first moment", nodes, Vector::zero());
   }
 
   // Find the moment of the node distribution in eta coordinates.

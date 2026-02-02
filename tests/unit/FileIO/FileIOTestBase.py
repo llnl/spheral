@@ -4,7 +4,7 @@ from SpheralTestUtilities import fuzzyEqual
 import os
 import random
 
-g = random.Random()
+g = random.Random(49982020438450)  # Fix random seed
 
 WT1d = TableKernel1d(BSplineKernel1d(), 100)
 eos1d = GammaLawGasMKS1d(2.0, 2.0)

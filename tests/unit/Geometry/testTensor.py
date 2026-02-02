@@ -15,7 +15,6 @@ from Spheral import *
 # Create a global random number generator.
 import random
 random.seed(690)
-rangen = random.Random()
 nrandom = 10000
 
 #-------------------------------------------------------------------------------
@@ -39,15 +38,15 @@ def computeDeterminant(tensor, nDimensions):
 # Helper method to compute a random rotation matrix.
 #-------------------------------------------------------------------------------
 def randomRotationMatrix(n):
-    theta = rangen.uniform(0.0, 2.0*pi)
+    theta = random.uniform(0.0, 2.0*pi)
     if n == 1:
         return Tensor1d(1.0)
     elif n == 2:
         return Tensor2d(cos(theta), sin(theta),
                         -sin(theta), cos(theta))
     elif n == 3:
-        phi = rangen.uniform(0.0, pi)
-        psi = rangen.uniform(0.0, pi)
+        phi = random.uniform(0.0, pi)
+        psi = random.uniform(0.0, pi)
         return Tensor3d(cos(psi)*cos(phi) - cos(theta)*sin(phi)*sin(psi),
                         -sin(psi)*cos(phi) - cos(theta)*sin(phi)*cos(psi),
                         sin(theta)*sin(phi),
@@ -68,14 +67,14 @@ def randomSymmetricMatrix(n):
     minValue, maxValue = -1.0, 1.0
     R = randomRotationMatrix(n)
     if n == 1:
-        t = SymTensor1d(rangen.uniform(minValue, maxValue))
+        t = SymTensor1d(random.uniform(minValue, maxValue))
     elif n == 2:
-        t = SymTensor2d(rangen.uniform(minValue, maxValue), 0.0,
-                        0.0, rangen.uniform(minValue, maxValue))
+        t = SymTensor2d(random.uniform(minValue, maxValue), 0.0,
+                        0.0, random.uniform(minValue, maxValue))
     elif n == 3:
-        t = SymTensor3d(rangen.uniform(minValue, maxValue), 0.0, 0.0,
-                        0.0, rangen.uniform(minValue, maxValue), 0.0,
-                        0.0, 0.0, rangen.uniform(minValue, maxValue))
+        t = SymTensor3d(random.uniform(minValue, maxValue), 0.0, 0.0,
+                        0.0, random.uniform(minValue, maxValue), 0.0,
+                        0.0, 0.0, random.uniform(minValue, maxValue))
     t.rotationalTransform(R)
     return t
 
@@ -87,14 +86,14 @@ def randomPositiveSymmetricMatrix(n):
     minValue, maxValue = 0.0, 1.0
     R = randomRotationMatrix(n)
     if n == 1:
-        t = SymTensor1d(rangen.uniform(minValue, maxValue))
+        t = SymTensor1d(random.uniform(minValue, maxValue))
     elif n == 2:
-        t = SymTensor2d(rangen.uniform(minValue, maxValue), 0.0,
-                        0.0, rangen.uniform(minValue, maxValue))
+        t = SymTensor2d(random.uniform(minValue, maxValue), 0.0,
+                        0.0, random.uniform(minValue, maxValue))
     elif n == 3:
-        t = SymTensor3d(rangen.uniform(minValue, maxValue), 0.0, 0.0,
-                        0.0, rangen.uniform(minValue, maxValue), 0.0,
-                        0.0, 0.0, rangen.uniform(minValue, maxValue))
+        t = SymTensor3d(random.uniform(minValue, maxValue), 0.0, 0.0,
+                        0.0, random.uniform(minValue, maxValue), 0.0,
+                        0.0, 0.0, random.uniform(minValue, maxValue))
     t.rotationalTransform(R)
     return t
 
@@ -575,7 +574,7 @@ class SymmetricTensorTestBase:
 ##                3: 1e-3}[self.TensorType.nDimensions]
 ##         for t in xrange(nrandom):
 ##             st = randomSymmetricMatrix(self.TensorType.nDimensions)
-##             p = abs(rangen.choice([rangen.uniform(-5.0, -0.5), rangen.uniform(0.5, 5.0)]))
+##             p = abs(random.choice([random.uniform(-5.0, -0.5), random.uniform(0.5, 5.0)]))
 ##             stp = st.pow(p)
 ##             stpi = stp.pow(1.0/p)
 ##             diff = stpi - st

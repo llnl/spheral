@@ -13,11 +13,16 @@
 #ATS:t1 = test(      SELF, "--graphics False --clearDirectories True  --checkError False --dataDirBase dumps-PlanarCompaction-1d-sph-restart --restartStep 100 --steps 200", label="Planar porous aluminum compaction problem -- 1-D (serial, restart test step 1)")
 #ATS:t2 = testif(t1, SELF, "--graphics False --clearDirectories False --checkError False --dataDirBase dumps-PlanarCompaction-1d-sph-restart --restartStep 100 --steps 100 --checkRestart True --restoreCycle 100 --postCleanup True", label="Planar porous aluminum compaction problem -- 1-D (serial, restart test step 2)")
 #
+# Ordinary SPH with no initial porosity
+#
+#ATS:t3 = testif(t0, SELF, "--alpha0 1.0 --useDamage False --goalTime 1.0 --graphics False --clearDirectories True  --checkError True  --dataDirBase dumps-PlanarCompaction-1d-sph --restartStep 100000 --postCleanup True", np=4, label="Planar porous aluminum compaction problem with no initial porosity -- 1-D (4 proc, no damage model)")
+#ATS:t4 = testif(t3, SELF, "--alpha0 1.0 --useDamage True  --goalTime 1.0 --graphics False --clearDirectories True  --checkError True  --dataDirBase dumps-PlanarCompaction-1d-sph --restartStep 100000 --postCleanup True", np=4, label="Planar porous aluminum compaction problem with no initial porosity -- 1-D (4 proc, with damage model)")
+#
 # FSISPH
 #
-#ATS:t10 = test(       SELF, "--graphics False --clearDirectories True  --checkError True  --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph --restartStep 100000 --postCleanup True", np=4, label="Planar porous aluminum compaction problem -- 1-D (FSISPH, 4 proc)")
-#ATS:t11 = test(       SELF, "--graphics False --clearDirectories True  --checkError False --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph-restart --restartStep 100 --steps 200", label="Planar porous aluminum compaction problem -- 1-D (FSISPH, serial, restart test step 1)")
-#ATS:t12 = testif(t11, SELF, "--graphics False --clearDirectories False --checkError False --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph-restart --restartStep 100 --steps 100 --checkRestart True --restoreCycle 100 --postCleanup True", label="Planar porous aluminum compaction problem -- 1-D (FSISPH, serial, restart test step 2)")
+#ATS:t10 = test(       SELF, "--graphics False --clearDirectories True  --checkError True  --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph --restartStep 100000 --postCleanup True", np=4, label="Planar porous aluminum compaction problem -- 1-D (FSISPH, 4 proc)", fsisph=True)
+#ATS:t11 = test(       SELF, "--graphics False --clearDirectories True  --checkError False --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph-restart --restartStep 100 --steps 200", label="Planar porous aluminum compaction problem -- 1-D (FSISPH, serial, restart test step 1)", fsisph=True)
+#ATS:t12 = testif(t11, SELF, "--graphics False --clearDirectories False --checkError False --hydroType FSISPH --dataDirBase dumps-PlanarCompaction-1d-fsisph-restart --restartStep 100 --steps 100 --checkRestart True --restoreCycle 100 --postCleanup True", label="Planar porous aluminum compaction problem -- 1-D (FSISPH, serial, restart test step 2)", fsisph=True)
 #
 # CRKSPH
 #
@@ -95,6 +100,13 @@ commandLine(nx = 500,                          # Number of internal free points
             domainIndependent = True,
             dtverbose = False,
 
+            # Options for implicit integrators
+            ftol = None,
+            convergenceTolerance = None,
+            maxIterations = None,
+            maxAllowedDtMultiplier = None,
+            beta = None,
+
             # Problem control
             restoreCycle = -1,
             restartStep = 500,
@@ -106,30 +118,10 @@ commandLine(nx = 500,                          # Number of internal free points
             dataDirBase = "dumps-PlanarCompaction-1d",
             checkError = False,
             checkRestart = False,
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
 
             # Parameters for the test acceptance.,
-            L1rho =   0.0537214,   
-            L2rho =   0.0147186,   
-            Linfrho = 1.65537,     
-                                   
-            L1P =     0.018076,    
-            L2P =     0.005431,    
-            LinfP =   0.628838,    
-                                   
-            L1v =     0.0244616,   
-            L2v =     0.00841887,  
-            Linfv =   0.856119,    
-                                   
-            L1eps =   0.0105579,   
-            L2eps =   0.00336606,  
-            Linfeps = 0.355227,    
-                                   
-            L1h =     0.000436001, 
-            L2h =     0.00011995,  
-            Linfh =   0.0084786,   
-
             tol = 1.0e-5,
             )
 
@@ -151,62 +143,81 @@ restartBaseName = os.path.join(restartDir, "PlanarCompaction-%i" % nx)
 #-------------------------------------------------------------------------------
 # The reference values for error norms checking for pass/fail
 #-------------------------------------------------------------------------------
-LnormRef = {"SPH": {"Mass density" : {"L1"   : 0.06784186300927694,
-                                      "L2"   : 0.012774373437299643,
-                                      "Linf" : 0.6245679444354701},
-                    "Spec Therm E" : {"L1"   : 0.0001200742460791407,
-                                      "L2"   : 2.2616105613742583e-05,
-                                      "Linf" : 0.0010923440797387786},
-                    "velocity    " : {"L1"   : 0.004921931042558655,
-                                      "L2"   : 0.0009173594117158436,
-                                      "Linf" : 0.0448725433453345},
-                    "pressure    " : {"L1"   : 0.0022217375280911347,
-                                      "L2"   : 0.00039479153550769805,
-                                      "Linf" : 0.018793913196205617},
-                    "alpha       " : {"L1"   : 0.0590391542763204,
-                                      "L2"   : 0.007963583413760916,
-                                      "Linf" : 0.2738180402369801},
-                    "h           " : {"L1"   : 0.00043261838627472803,
-                                      "L2"   : 8.062946952637553e-05,
-                                      "Linf" : 0.014201309070925212}},
+LnormRef = {("SPH", 1.275) : {"Mass density" : {"L1"   : 0.06784186300927694,
+                                                "L2"   : 0.012774373437299643,
+                                                "Linf" : 0.6245679444354701},
+                              "Spec Therm E" : {"L1"   : 0.0001200742460791407,
+                                                "L2"   : 2.2616105613742583e-05,
+                                                "Linf" : 0.0010923440797387786},
+                              "velocity    " : {"L1"   : 0.004921931042558655,
+                                                "L2"   : 0.0009173594117158436,
+                                                "Linf" : 0.0448725433453345},
+                              "pressure    " : {"L1"   : 0.0022217375280911347,
+                                                "L2"   : 0.00039479153550769805,
+                                                "Linf" : 0.018793913196205617},
+                              "alpha       " : {"L1"   : 0.0590391542763204,
+                                                "L2"   : 0.007963583413760916,
+                                                "Linf" : 0.2738180402369801},
+                              "h           " : {"L1"   : 0.00043261838627472803,
+                                                "L2"   : 8.062946952637553e-05,
+                                                "Linf" : 0.014201309070925212}},
 
-            "FSISPH": {"Mass density" : {"L1"   : 0.06781314493410028,
-                                         "L2"   : 0.012767602580471844,
-                                         "Linf" : 0.6245698198195724},
-                       "Spec Therm E" : {"L1"   : 0.00011965457154529887,
-                                         "L2"   : 2.254867764655585e-05,
-                                         "Linf" : 0.0010923441579020216},
-                       "velocity    " : {"L1"   : 0.004913235403786584,
-                                         "L2"   : 0.0009163181868064007,
-                                         "Linf" : 0.044872645505280966},
-                       "pressure    " : {"L1"   : 0.002210222289968727,
-                                         "L2"   : 0.00039387994606202237,
-                                         "Linf" : 0.018793847854203908},
-                       "alpha       " : {"L1"   : 0.05903530352469833,
-                                         "L2"   : 0.007960855343380124,
-                                         "Linf" : 0.2738175996911776},
-                       "h           " : {"L1"   : 0.0004319674641541397,
-                                         "L2"   : 8.05536967933465e-05,
-                                         "Linf" : 0.014201309071287523}},
+            ("SPH", 1.0) : {"Mass density" : {"L1"   : 0.005416588903113661,  
+                                              "L2"   : 0.001994539770945366,  
+                                              "Linf" : 0.22293554904196977},  
+                            "Spec Therm E" : {"L1"   : 2.9911432798797925e-05,
+                                              "L2"   : 1.0394781088376176e-05,
+                                              "Linf" : 0.001048750342669405}, 
+                            "velocity    " : {"L1"   : 0.0010892623667423551, 
+                                              "L2"   : 0.0004049477641523086, 
+                                              "Linf" : 0.04538028008374117},  
+                            "pressure    " : {"L1"   : 0.0018120800940308072, 
+                                              "L2"   : 0.000663492813279845,  
+                                              "Linf" : 0.07305139125993931},  
+                            "alpha       " : {"L1"   : 0.0,                   
+                                              "L2"   : 0.0,                   
+                                              "Linf" : 0.0},                  
+                            "h           " : {"L1"   : 6.11935370574284e-05,  
+                                              "L2"   : 3.08688837519722e-05,  
+                                              "Linf" : 0.014204020975568329}},
 
-            "CRKSPH": {"Mass density" : {"L1"   : 0.0679707220773017,
-                                         "L2"   : 0.012783621322270034,
-                                         "Linf" : 0.6245687018640083},
-                       "Spec Therm E" : {"L1"   : 0.0001201303520771047,
-                                         "L2"   : 2.2622550331357265e-05,
-                                         "Linf" : 0.00109234444748564},
-                       "velocity    " : {"L1"   : 0.004926121368235753,
-                                         "L2"   : 0.0009173629106343205,
-                                         "Linf" : 0.044872623201390446},
-                       "pressure    " : {"L1"   : 0.0022258225868044238,
-                                         "L2"   : 0.00039496818856079414,
-                                         "Linf" : 0.018793890216913627},
-                       "alpha       " : {"L1"   : 0.05909030710035451,
-                                         "L2"   : 0.007965976598237856,
-                                         "Linf" : 0.2738173870953471},
-                       "h           " : {"L1"   : 0.00043274827065262975,
-                                         "L2"   : 8.062817025125132e-05,
-                                         "Linf" : 0.014201309070451522}},
+            ("FSISPH", 1.275) : {"Mass density" : {"L1"   : 0.06781314493410028,
+                                                   "L2"   : 0.012767602580471844,
+                                                   "Linf" : 0.6245698198195724},
+                                 "Spec Therm E" : {"L1"   : 0.00011965457154529887,
+                                                   "L2"   : 2.254867764655585e-05,
+                                                   "Linf" : 0.0010923441579020216},
+                                 "velocity    " : {"L1"   : 0.004913235403786584,
+                                                   "L2"   : 0.0009163181868064007,
+                                                   "Linf" : 0.044872645505280966},
+                                 "pressure    " : {"L1"   : 0.002210222289968727,
+                                                   "L2"   : 0.00039387994606202237,
+                                                   "Linf" : 0.018793847854203908},
+                                 "alpha       " : {"L1"   : 0.05903530352469833,
+                                                   "L2"   : 0.007960855343380124,
+                                                   "Linf" : 0.2738175996911776},
+                                 "h           " : {"L1"   : 0.0004319674641541397,
+                                                   "L2"   : 8.05536967933465e-05,
+                                                   "Linf" : 0.014201309071287523}},
+
+            ("CRKSPH", 1.275) : {"Mass density" : {"L1"   : 0.0679707220773017,
+                                                   "L2"   : 0.012783621322270034,
+                                                   "Linf" : 0.6245687018640083},
+                                 "Spec Therm E" : {"L1"   : 0.0001201303520771047,
+                                                   "L2"   : 2.2622550331357265e-05,
+                                                   "Linf" : 0.00109234444748564},
+                                 "velocity    " : {"L1"   : 0.004926121368235753,
+                                                   "L2"   : 0.0009173629106343205,
+                                                   "Linf" : 0.044872623201390446},
+                                 "pressure    " : {"L1"   : 0.0022258225868044238,
+                                                   "L2"   : 0.00039496818856079414,
+                                                   "Linf" : 0.018793890216913627},
+                                 "alpha       " : {"L1"   : 0.05909030710035451,
+                                                   "L2"   : 0.007965976598237856,
+                                                   "Linf" : 0.2738173870953471},
+                                 "h           " : {"L1"   : 0.00043274827065262975,
+                                                   "L2"   : 8.062817025125132e-05,
+                                                   "Linf" : 0.014201309070451522}},
 }
 
 #-------------------------------------------------------------------------------
@@ -312,6 +323,7 @@ else:
 #-------------------------------------------------------------------------------
 if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
+                   W = WT,
                    cfl = cfl,
                    compatibleEnergyEvolution = compatibleEnergy,
                    XSPH = XSPH,
@@ -340,7 +352,7 @@ if not Cq is None:
 output("hydro")
 output("  hydro.cfl")
 output("  hydro.useVelocityMagnitudeForDt")
-output("  hydro.HEvolution")
+output("  hydro._smoothingScaleMethod.HEvolution")
 output("  hydro.Q")
 output("  hydro.Q.Cl")
 output("  hydro.Q.Cq")
@@ -464,9 +476,7 @@ if useDamage:
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for package in packages:
-    integrator.appendPhysicsPackage(package)
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 if dtMin:
     integrator.dtMin = dtMin
@@ -483,6 +493,27 @@ output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.dtGrowth")
 output("integrator.domainDecompositionIndependent")
+
+# Special stuff for implicit integrators
+if isinstance(integrator, ImplicitIntegrator):
+    if beta:
+        integrator.beta = beta
+    if convergenceTolerance:
+        integrator.convergenceTolerance = convergenceTolerance
+    if maxIterations:
+        integrator.maxIterations = maxIterations
+    if maxAllowedDtMultiplier:
+        integrator.maxAllowedDtMultiplier = maxAllowedDtMultiplier
+    output("integrator.beta")
+    output("integrator.convergenceTolerance")
+    output("integrator.maxIterations")
+    output("integrator.maxAllowedDtMultiplier")
+try:   # This will only work for BackwardEuler currently
+    if ftol:
+        integrator.ftol = ftol
+    output("integrator.ftol")
+except:
+    pass
 
 #-------------------------------------------------------------------------------
 # Add the boundary conditions.
@@ -598,10 +629,10 @@ if mpi.rank == 0:
         Linf = Pn.gridpnorm("inf", xmin, xmax)
         print(f"{name}\t\t{L1} \t\t{L2} \t\t{Linf}")
 
-        if checkError and not (np.allclose(L1, LnormRef[hydroType][name]["L1"], tol, tol) and
-                               np.allclose(L2, LnormRef[hydroType][name]["L2"], tol, tol) and
-                               np.allclose(Linf, LnormRef[hydroType][name]["Linf"], tol, tol)):
-            print("Failing Lnorm tolerance for ", name, (L1, L2, Linf), LnormRef[hydroType][name])
+        if checkError and not (np.allclose(L1, LnormRef[(hydroType, alpha0)][name]["L1"], tol, tol) and
+                               np.allclose(L2, LnormRef[(hydroType, alpha0)][name]["L2"], tol, tol) and
+                               np.allclose(Linf, LnormRef[(hydroType, alpha0)][name]["Linf"], tol, tol)):
+            print("Failing Lnorm tolerance for ", name, (L1, L2, Linf), LnormRef[(hydroType, alpha0)][name])
             failure = True
 sys.stdout.flush()
 

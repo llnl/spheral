@@ -1,1 +1,1 @@
-spheral_add_pybind11_library(OpenMP)
+spheral_add_pybind11_library(OpenMP SPHERAL_MODULE_LIST)

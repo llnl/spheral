@@ -263,7 +263,7 @@ if graphics:
 #-------------------------------------------------------------------------------
 # If requested, write out the profiles
 #-------------------------------------------------------------------------------
-if outputFile != "None" and mpi.rank == 0:
+if outputFile and mpi.rank == 0:
     outputFile = os.path.join(dataDir, outputFile)
     f = open(outputFile, "w")
     f.write(("# " + 14*"%15s " + "\n") % ("r", "x", "y", "z", "vx", "vy", "vz", "Hxx", "Hxy", "Hxz", "Hyy", "Hyz", "Hzz", "phi"))

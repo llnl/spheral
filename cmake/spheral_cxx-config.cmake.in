@@ -1,17 +1,54 @@
 
 @PACKAGE_INIT@
 
-if(NOT axom_DIR)
-  set(axom_DIR "@axom_DIR@" CACHE PATH "")
-endif()
-set(SPHERAL_BLT_DIR "@SPHERAL_BLT_DIR@")
-set(SPHERAL_CXX_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
-set(SPHERAL_CXX_INCLUDE_DIRS "${SPHERAL_CXX_INSTALL_PREFIX}/include")
-if(NOT TARGET axom)
-  find_package(axom REQUIRED QUIET NO_DEFAULT_PATH PATHS ${axom_DIR} ${axom_DIR}/lib ${axom_DIR}/lib/cmake)
-endif()
-include("${SPHERAL_CXX_INSTALL_PREFIX}/lib/cmake/spheral_cxx-targets.cmake")
+if(NOT SPHERAL_FOUND)
+  #----------------------------------------------------------------------------
+  # Set user configuration options and features
+  #----------------------------------------------------------------------------
 
-set_property(TARGET Spheral_CXX
-  APPEND PROPERTY
-  INTERFACE_INCLUDE_DIRECTORIES ${SPHERAL_CXX_INCLUDE_DIRS})
+  # Language features
+  set(SPHERAL_ENABLE_MPI @ENABLE_MPI@)
+  set(SPHERAL_ENABLE_OPENMP @ENABLE_OPENMP@)
+  set(SPHERAL_ENABLE_CUDA @ENABLE_CUDA@)
+  set(SPHERAL_ENABLE_HIP @ENABLE_HIP@)
+  set(SPHERAL_ENABLE_TIMERS @SPHERAL_ENABLE_TIMERS@)
+  set(SPHERAL_ENABLE_PYTHON @SPHERAL_ENABLE_PYTHON@)
+  if(NOT axom_DIR)
+    set(axom_DIR "@axom_DIR@" CACHE PATH "")
+  endif()
+
+  set(SPHERAL_CXX_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
+  set(SPHERAL_CXX_INCLUDE_DIRS "${SPHERAL_CXX_INSTALL_PREFIX}/include")
+  if(SPHERAL_ENABLE_PYTHON AND NOT TARGET Python3)
+    set(python_DIR "@python_DIR@")
+    set(Python_EXECUTABLE ${python_DIR}/bin/python3)
+    set(Python3_EXECUTABLE ${python_DIR}/bin/python3)
+    find_package(Python3 COMPONENTS Interpreter Development)
+    set(PYTHON_EXE ${Python3_EXECUTABLE})
+  endif()
+  # Loop over TPLs that use find_package
+  set(SPHERAL_FP_TPLS "@SPHERAL_FP_TPLS@")
+  set(SPHERAL_FP_DIRS "@SPHERAL_FP_DIRS@")
+  foreach(tpl dir IN ZIP_LISTS SPHERAL_FP_TPLS SPHERAL_FP_DIRS)
+    if(NOT TARGET ${tpl})
+      find_package(${tpl} REQUIRED QUIET NO_DEFAULT_PATH PATHS ${dir})
+    endif()
+  endforeach()
+  if(SPHERALC_STANDALONE)
+    set(CMAKE_C_COMPILER "@CMAKE_C_COMPILER@" CACHE PATH "Spheral C compiler path")
+    set(CMAKE_CXX_COMPILER "@CMAKE_CXX_COMPILER@" CACHE PATH "Spheral C++ compiler path")
+    set(CMAKE_Fortran_COMPILER "@CMAKE_Fortran_COMPILER@" CACHE PATH "Spheral C++ compiler path")
+    set(ENABLE_MPI @ENABLE_MPI@ CACHE BOOL "")
+    if(SPHERAL_ENABLE_MPI)
+      set(MPI_C_COMPILER "@MPI_C_COMPILER@" CACHE PATH "")
+      set(MPI_CXX_COMPILER "@MPI_CXX_COMPILER@" CACHE PATH "")
+      set(MPI_Fortran_COMPILER "@MPI_Fortran_COMPILER@" CACHE PATH "")
+    endif()
+  endif()
+  include("${SPHERAL_CXX_INSTALL_PREFIX}/lib/cmake/spheral_cxx-targets.cmake")
+  include("${SPHERAL_CXX_INSTALL_PREFIX}/lib/cmake/BLTSetupTargets.cmake")
+  set_property(TARGET Spheral_CXX
+    APPEND PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES ${SPHERAL_CXX_INCLUDE_DIRS})
+  set(SPHERAL_FOUND TRUE)
+endif()

@@ -11,7 +11,6 @@ from Spheral3d import *
 # Create a global random number generator.
 import random
 random.seed(630)
-rangen = random.Random()
 
 #===============================================================================
 # Generate random points in the give box, optionally rotating the results to
@@ -27,17 +26,17 @@ def randomPoints(numPoints,
 
     # Determine the rotational transform.
     if theta is None:
-        theta = rangen.uniform(0.0, 2.0*pi)
+        theta = random.uniform(0.0, 2.0*pi)
     if phi is None:
-        phi = rangen.uniform(0.0, pi)
+        phi = random.uniform(0.0, pi)
     R = rotationMatrix(Vector(cos(theta)*sin(phi),
                               sin(theta)*sin(phi),
                               cos(phi)))
     
     for i in range(numPoints):
-        result.append(R*Vector(rangen.uniform(xmin, xmax),
-                               rangen.uniform(ymin, ymax),
-                               rangen.uniform(zmin, zmax)))
+        result.append(R*Vector(random.uniform(xmin, xmax),
+                               random.uniform(ymin, ymax),
+                               random.uniform(zmin, zmax)))
 
     return R, result
 
@@ -45,10 +44,10 @@ def randomPoints(numPoints,
 # Return a random vector with at most the given magnitude.
 #===============================================================================
 def randomVector(rmin, rmax):
-    xhat = rangen.uniform(0.0, 1.0)
-    yhat = rangen.uniform(0.0, sqrt(1.0 - xhat*xhat))
+    xhat = random.uniform(0.0, 1.0)
+    yhat = random.uniform(0.0, sqrt(1.0 - xhat*xhat))
     zhat = sqrt(1.0 - xhat*xhat - yhat*yhat)
-    r = rangen.uniform(rmin, rmax)
+    r = random.uniform(rmin, rmax)
     return Vector(r*xhat, r*yhat, r*zhat)
 
 #===============================================================================
@@ -96,7 +95,7 @@ class TestPolyhedron(unittest.TestCase):
     # with the normal contain method.
     #---------------------------------------------------------------------------
     def testContainSeeds(self):
-        for p in self.points: # rangen.sample(self.points, 10000):
+        for p in self.points: # random.sample(self.points, 10000):
             result = self.polyhedron.contains(p)
             if not result:
                 print("Bad polyhedron:  ", [str(x) for x in self.polyhedron.vertices])
@@ -112,7 +111,7 @@ class TestPolyhedron(unittest.TestCase):
     # with the generic contain method.
     #---------------------------------------------------------------------------
     def testGenericContainSeeds(self):
-        for p in rangen.sample(self.points, 5000):
+        for p in random.sample(self.points, 5000):
             result = pointInPolyhedron(p, self.polyhedron, True)
             if not result:
                 print("Bad polyhedron:  ", [str(x) for x in self.polyhedron.vertices])
@@ -355,7 +354,7 @@ class TestPolyhedron(unittest.TestCase):
             for k in range(len(iverts)):
                 i0, i1 = iverts[k], iverts[(k + 1) % n]
                 minedge = min(minedge, (verts[i1] - verts[i0]).magnitude())
-            #chi = rangen.uniform(0.1, 10.0)
+            #chi = random.uniform(0.1, 10.0)
             cp0 = f.position
             p = cp0 + 0.5*minedge*f.normal
             cp = self.polyhedron.closestPoint(p)
@@ -389,8 +388,8 @@ class TestPolyhedron(unittest.TestCase):
     # Test shift in-place
     #---------------------------------------------------------------------------
     def testShiftInPlace(self):
-        shift = Vector(rangen.uniform(-10.0, -10.0),
-                       rangen.uniform(-10.0, -10.0))
+        shift = Vector(random.uniform(-10.0, -10.0),
+                       random.uniform(-10.0, -10.0))
         polyhedron2 = Polyhedron(self.polyhedron)
         polyhedron2 += shift
         for p0, p1 in zip([self.polyhedron.xmin, self.polyhedron.xmax] + list(self.polyhedron.vertices),

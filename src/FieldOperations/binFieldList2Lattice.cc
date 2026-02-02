@@ -16,7 +16,7 @@
 #include "NodeList/NodeList.hh"
 #include "Geometry/MathTraits.hh"
 #include "Utilities/testBoxIntersection.hh"
-#include "Utilities/allReduce.hh"
+#include "Distributed/allReduce.hh"
 #include "Distributed/BoundingVolumeDistributedBoundary.hh"
 #include "Distributed/Communicator.hh"
 
@@ -24,14 +24,8 @@
 
 #include <algorithm>
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 extern "C" {
 #include <mpi.h>
 }
@@ -180,7 +174,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   CHECK(numProcs >= 1);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   BoundingVolumeDistributedBoundary<Dimension>& distributedBoundary = BoundingVolumeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -198,7 +192,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
        ++nodeItr) {
 
     // Mask out any parallel boundary nodes.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
                           count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                                 distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -217,7 +211,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   }
 
   // In parallel we have to reduce the elements across processors.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   vector<char> localBuffer;
   packElement(result, localBuffer);
   int bufSize = localBuffer.size();
@@ -227,8 +221,8 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   result = vector<Value>(ntotal, DataTypeTraits<Value>::zero());
 
   // Check that everyone agrees about the size.
-  CHECK(bufSize == allReduce(bufSize, MPI_MIN, Communicator::communicator()));
-  CHECK(bufSize == allReduce(bufSize, MPI_MAX, Communicator::communicator()));
+  CHECK(bufSize == allReduce(bufSize, SPHERAL_OP_MIN));
+  CHECK(bufSize == allReduce(bufSize, SPHERAL_OP_MAX));
 
   // Sum up everyone's contribution.
   for (auto sendProc = 0u; sendProc != numProcs; ++sendProc) {
@@ -268,7 +262,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   CHECK(numProcs >= 1);
 
   // We need to exclude any nodes that come from the Distributed boundary condition.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   BoundingVolumeDistributedBoundary<Dimension>& distributedBoundary = BoundingVolumeDistributedBoundary<Dimension>::instance();
 #endif
 
@@ -286,7 +280,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
        ++nodeItr) {
 
     // Mask out any parallel boundary nodes.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
                           count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
                                 distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
@@ -303,7 +297,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   }
 
   // In parallel we have to reduce the elements across processors.
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   vector<char> localBuffer;
   packElement(result, localBuffer);
   int bufSize = localBuffer.size();
@@ -315,9 +309,7 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   BEGIN_CONTRACT_SCOPE
   // Check that everyone agrees about the size.
   {
-    int bufSizeMin;
-    MPI_Allreduce(&bufSize, &bufSizeMin, 1, MPI_INT, MPI_MIN, Communicator::communicator());
-    CHECK(bufSizeMin == bufSize);
+    CHECK(bufSize == allReduce(bufSize, SPHERAL_OP_MIN));
   }
   END_CONTRACT_SCOPE
 

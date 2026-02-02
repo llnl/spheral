@@ -2,10 +2,58 @@
 // A collection of useful helper methods to explicitly unroll Dimensional 
 // loops for efficiency.
 //----------------------------------------------------------------------------//
+#ifndef __Spheral_GeometricUtilities__
+#define __Spheral_GeometricUtilities__
+
 #include "Geometry/Dimension.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Construct a Tensor with the given diagonal elements
+//------------------------------------------------------------------------------
+inline
+Dim<1>::Tensor
+constructTensorWithDiagonal(const Dim<1>::Vector& vec) {
+  return Dim<1>::Tensor(vec[0]);
+}
+
+inline
+Dim<2>::Tensor
+constructTensorWithDiagonal(const Dim<2>::Vector& vec) {
+  return Dim<2>::Tensor(vec[0], 0.0,
+                        0.0,    vec[1]);
+}
+
+inline
+Dim<3>::Tensor
+constructTensorWithDiagonal(const Dim<3>::Vector& vec) {
+  return Dim<3>::Tensor(vec[0], 0.0, 0.0,
+                        0.0,    vec[1], 0.0,
+                        0.0,    0.0,    vec[2]);
+}
+
+inline
+Dim<1>::SymTensor
+constructSymTensorWithDiagonal(const Dim<1>::Vector& vec) {
+  return Dim<1>::SymTensor(vec[0]);
+}
+
+inline
+Dim<2>::SymTensor
+constructSymTensorWithDiagonal(const Dim<2>::Vector& vec) {
+  return Dim<2>::SymTensor(vec[0], 0.0,
+                           0.0,     vec[1]);
+}
+
+inline
+Dim<3>::SymTensor
+constructSymTensorWithDiagonal(const Dim<3>::Vector& vec) {
+  return Dim<3>::SymTensor(vec[0], 0.0,    0.0,
+                           0.0,    vec[1], 0.0,
+                           0.0,    0.0,    vec[2]);
+}
 
 //------------------------------------------------------------------------------
 // Construct a Tensor with the given diagonal elements, enforcing a minimum.
@@ -14,48 +62,48 @@ inline
 Dim<1>::Tensor
 constructTensorWithMinDiagonal(const Dim<1>::Vector& vec,
                                const double maxval) {
-  return Dim<1>::Tensor(std::min(maxval, vec.x()));
+  return Dim<1>::Tensor(std::min(maxval, vec[0]));
 }
 
 inline
 Dim<2>::Tensor
 constructTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                                const double maxval) {
-  return Dim<2>::Tensor(std::min(maxval, vec.x()), 0.0,
-                        0.0, std::min(maxval, vec.y()));
+  return Dim<2>::Tensor(std::min(maxval, vec[0]), 0.0,
+                        0.0, std::min(maxval, vec[1]));
 }
 
 inline
 Dim<3>::Tensor
 constructTensorWithMinDiagonal(const Dim<3>::Vector& vec,
                                const double maxval) {
-  return Dim<3>::Tensor(std::min(maxval, vec.x()), 0.0, 0.0,
-                        0.0, std::min(maxval, vec.y()), 0.0,
-                        0.0, 0.0, std::min(maxval, vec.z()));
+  return Dim<3>::Tensor(std::min(maxval, vec[0]), 0.0, 0.0,
+                        0.0, std::min(maxval, vec[1]), 0.0,
+                        0.0, 0.0, std::min(maxval, vec[2]));
 }
 
 inline
 Dim<1>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<1>::Vector& vec,
                                   const double maxval) {
-  return Dim<1>::SymTensor(std::min(maxval, vec.x()));
+  return Dim<1>::SymTensor(std::min(maxval, vec[0]));
 }
 
 inline
 Dim<2>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                                   const double maxval) {
-  return Dim<2>::SymTensor(std::min(maxval, vec.x()), 0.0,
-                           0.0, std::min(maxval, vec.y()));
+  return Dim<2>::SymTensor(std::min(maxval, vec[0]), 0.0,
+                           0.0, std::min(maxval, vec[1]));
 }
 
 inline
 Dim<3>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<3>::Vector& vec,
                                   const double maxval) {
-  return Dim<3>::SymTensor(std::min(maxval, vec.x()), 0.0, 0.0,
-                           0.0, std::min(maxval, vec.y()), 0.0,
-                           0.0, 0.0, std::min(maxval, vec.z()));
+  return Dim<3>::SymTensor(std::min(maxval, vec[0]), 0.0, 0.0,
+                           0.0, std::min(maxval, vec[1]), 0.0,
+                           0.0, 0.0, std::min(maxval, vec[2]));
 }
 
 //------------------------------------------------------------------------------
@@ -65,48 +113,48 @@ inline
 Dim<1>::Tensor
 constructTensorWithMaxDiagonal(const Dim<1>::Vector& vec,
                                const double minval) {
-  return Dim<1>::Tensor(std::max(minval, vec.x()));
+  return Dim<1>::Tensor(std::max(minval, vec[0]));
 }
 
 inline
 Dim<2>::Tensor
 constructTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                                const double minval) {
-  return Dim<2>::Tensor(std::max(minval, vec.x()), 0.0,
-                        0.0, std::max(minval, vec.y()));
+  return Dim<2>::Tensor(std::max(minval, vec[0]), 0.0,
+                        0.0, std::max(minval, vec[1]));
 }
 
 inline
 Dim<3>::Tensor
 constructTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
                                const double minval) {
-  return Dim<3>::Tensor(std::max(minval, vec.x()), 0.0, 0.0,
-                        0.0, std::max(minval, vec.y()), 0.0,
-                        0.0, 0.0, std::max(minval, vec.z()));
+  return Dim<3>::Tensor(std::max(minval, vec[0]), 0.0, 0.0,
+                        0.0, std::max(minval, vec[1]), 0.0,
+                        0.0, 0.0, std::max(minval, vec[2]));
 }
 
 inline
 Dim<1>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<1>::Vector& vec,
                                   const double minval) {
-  return Dim<1>::SymTensor(std::max(minval, vec.x()));
+  return Dim<1>::SymTensor(std::max(minval, vec[0]));
 }
 
 inline
 Dim<2>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                                   const double minval) {
-  return Dim<2>::SymTensor(std::max(minval, vec.x()), 0.0,
-                           0.0, std::max(minval, vec.y()));
+  return Dim<2>::SymTensor(std::max(minval, vec[0]), 0.0,
+                           0.0, std::max(minval, vec[1]));
 }
 
 inline
 Dim<3>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
                                   const double minval) {
-  return Dim<3>::SymTensor(std::max(minval, vec.x()), 0.0, 0.0,
-                           0.0, std::max(minval, vec.y()), 0.0,
-                           0.0, 0.0, std::max(minval, vec.z()));
+  return Dim<3>::SymTensor(std::max(minval, vec[0]), 0.0, 0.0,
+                           0.0, std::max(minval, vec[1]), 0.0,
+                           0.0, 0.0, std::max(minval, vec[2]));
 }
 
 //------------------------------------------------------------------------------
@@ -118,7 +166,7 @@ Dim<1>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
                                    const double minval,
                                    const double maxval) {
-  return Dim<1>::Tensor(std::max(minval, std::min(maxval, vec.x())));
+  return Dim<1>::Tensor(std::max(minval, std::min(maxval, vec[0])));
 }
 
 inline
@@ -126,8 +174,8 @@ Dim<2>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                                    const double minval,
                                    const double maxval) {
-  return Dim<2>::Tensor(std::max(minval, std::min(maxval, vec.x())), 0.0,
-                        0.0, std::max(minval, std::min(maxval, vec.y())));
+  return Dim<2>::Tensor(std::max(minval, std::min(maxval, vec[0])), 0.0,
+                        0.0, std::max(minval, std::min(maxval, vec[1])));
 }
 
 inline
@@ -135,9 +183,9 @@ Dim<3>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
                                    const double minval,
                                    const double maxval) {
-  return Dim<3>::Tensor(std::max(minval, std::min(maxval, vec.x())), 0.0, 0.0,
-                        0.0, std::max(minval, std::min(maxval, vec.y())), 0.0,
-                        0.0, 0.0, std::max(minval, std::min(maxval, vec.z())));
+  return Dim<3>::Tensor(std::max(minval, std::min(maxval, vec[0])), 0.0, 0.0,
+                        0.0, std::max(minval, std::min(maxval, vec[1])), 0.0,
+                        0.0, 0.0, std::max(minval, std::min(maxval, vec[2])));
 }
 
 inline
@@ -145,7 +193,7 @@ Dim<1>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
                                       const double minval,
                                       const double maxval) {
-  return Dim<1>::SymTensor(std::max(minval, std::min(maxval, vec.x())));
+  return Dim<1>::SymTensor(std::max(minval, std::min(maxval, vec[0])));
 }
 
 inline
@@ -153,8 +201,8 @@ Dim<2>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                                       const double minval,
                                       const double maxval) {
-  return Dim<2>::SymTensor(std::max(minval, std::min(maxval, vec.x())), 0.0,
-                           0.0, std::max(minval, std::min(maxval, vec.y())));
+  return Dim<2>::SymTensor(std::max(minval, std::min(maxval, vec[0])), 0.0,
+                           0.0, std::max(minval, std::min(maxval, vec[1])));
 }
 
 inline
@@ -162,9 +210,9 @@ Dim<3>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
                                       const double minval,
                                       const double maxval) {
-  return Dim<3>::SymTensor(std::max(minval, std::min(maxval, vec.x())), 0.0, 0.0,
-                           0.0, std::max(minval, std::min(maxval, vec.y())), 0.0,
-                           0.0, 0.0, std::max(minval, std::min(maxval, vec.z())));
+  return Dim<3>::SymTensor(std::max(minval, std::min(maxval, vec[0])), 0.0, 0.0,
+                           0.0, std::max(minval, std::min(maxval, vec[1])), 0.0,
+                           0.0, 0.0, std::max(minval, std::min(maxval, vec[2])));
 }
 
 //------------------------------------------------------------------------------
@@ -174,24 +222,24 @@ inline
 Dim<1>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<1>::Vector& vec,
                                   const double exponent) {
-  return Dim<1>::SymTensor(pow(vec.x(), exponent));
+  return Dim<1>::SymTensor(pow(vec[0], exponent));
 }
 
 inline
 Dim<2>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<2>::Vector& vec,
                                   const double exponent) {
-  return Dim<2>::SymTensor(pow(vec.x(), exponent), 0.0,
-                           0.0, pow(vec.y(), exponent));
+  return Dim<2>::SymTensor(pow(vec[0], exponent), 0.0,
+                           0.0, pow(vec[1], exponent));
 }
 
 inline
 Dim<3>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<3>::Vector& vec,
                                   const double exponent) {
-  return Dim<3>::SymTensor(pow(vec.x(), exponent), 0.0, 0.0,
-                           0.0, pow(vec.y(), exponent), 0.0,
-                           0.0, 0.0, pow(vec.z(), exponent));
+  return Dim<3>::SymTensor(pow(vec[0], exponent), 0.0, 0.0,
+                           0.0, pow(vec[1], exponent), 0.0,
+                           0.0, 0.0, pow(vec[2], exponent));
 }
 
 //------------------------------------------------------------------------------
@@ -344,3 +392,5 @@ tensorElementWiseDivide<Dim<3>::Tensor>(Dim<3>::Tensor& lhs, const Dim<3>::Tenso
 }
 
 }
+
+#endif
