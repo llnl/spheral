@@ -197,6 +197,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if spec.satisfies('+rocm'):
             entries.append(cmake_cache_option("ENABLE_HIP", True))
             entries.append(cmake_cache_string("ROCM_PATH", spec["hip"].prefix))
+            if spec.satisfies("^hip@7.1.0"):
+                fortran_libs = "FortranRuntime;FortranCommon;FortranDecimal"
+                fortran_lib_dir = os.path.join(spec["hip"].prefix, "lib/llvm/lib")
+                entries.append(cmake_cache_string("CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES", fortran_lib_dir))
+                entries.append(cmake_cache_string("CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES", fortran_libs))
 
         if spec.satisfies('+cuda'):
             entries.append(cmake_cache_option("ENABLE_CUDA", True))

@@ -1,4 +1,3 @@
-# CMake has an issue with the 7.1.0 Fortran compilers, hacking to 6.4.3
 compilers::
 - compiler:
       spec: rocmcc@=7.1.0
