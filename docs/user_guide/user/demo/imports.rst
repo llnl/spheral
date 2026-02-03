@@ -1,4 +1,4 @@
-.. _demo-imports:
+.. _demo_imports:
 
 ==============================
 Importing Python modules

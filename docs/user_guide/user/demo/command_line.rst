@@ -1,4 +1,4 @@
-.. _demo-command-line:
+.. _demo_command_line:
 
 ====================================
 Command line definitions (optional)

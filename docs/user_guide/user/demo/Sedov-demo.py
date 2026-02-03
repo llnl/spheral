@@ -77,8 +77,7 @@ eos = GammaLawGas(gamma = gamma,
                   constants = units)
 
 #-------------------------------------------------------------------------------
-# Create our interpolation kernels -- one for normal hydro interactions, and
-# one for use with the artificial viscosity
+# Create our interpolation kernel
 #-------------------------------------------------------------------------------
 WT = TableKernel(WendlandC4Kernel())
 output("WT")

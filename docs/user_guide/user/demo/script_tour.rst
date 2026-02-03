@@ -1,3 +1,5 @@
+.. Spheral_script_tour:
+
 #################################
 A tour of a Spheral script
 #################################
@@ -24,4 +26,7 @@ Now let's go through each section of this script in some detail.
    imports.rst
    command_line.rst
    directories.rst
+   materials.rst
+   kernel.rst
+   nodes.rst
    point_generation.rst
