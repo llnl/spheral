@@ -7,3 +7,41 @@
   pages = {210},
 }
 
+@article{2014:Owen,
+  author = {Owen, J. Michael},
+  journal = {International Journal for numerical methods in fluids},
+  month = {apr},
+  number = {11},
+  pages = {749--774},
+  publisher = {John Wiley & Sons, Ltd},
+  title = {{A compatibly differenced total energy conserving form of SPH}},
+  url_dontuse = {http://doi.wiley.com/10.1002/fld.3912 papers3://publication/doi/10.1002/fld.3912},
+  volume = {75},
+  year = {2014}
+}
+
+@article{1998:Owen,
+  abstract = {Further development and additional details and tests of adaptive smoothed particle hydrodynamics (ASPH), the new version of smoothed particle hydrodynamics (SPH) described in the first paper in this series (Shapiro et al.), are presented. The ASPH method replaces the isotropic smoothing algorithm of standard SPH, in which interpolation is performed with spherical kernels of radius given by a scalar smoothing length, with anisotropic smoothing involving ellipsoidal kernels and tensor smoothing lengths. In standard SPH, the smoothing length for each particle represents the spatial resolution scale in the vicinity of that particle and is typically allowed to vary in space and time so as to reflect the local value of the mean interparticle spacing. This isotropic approach is not optimal, however, in the presence of strongly anisotropic volume changes such as occur naturally in a wide range of astrophysical flows, including gravitational collapse, cosmological structure formation, cloud-cloud collisions, and radiative shocks. In such cases, the local mean interparticle spacing varies not only in time and space but also in direction as well. This problem is remedied in ASPH, where each axis of the ellipsoidal smoothing kernel for a given particle is adjusted so as to reflect the different mean interparticle spacings along different directions in the vicinity of that particle. By deforming and rotating these ellipsoidal kernels so as to follow the anisotropy of volume changes local to each particle, ASPH adapts its spatial resolution scale in time, space, and direction. This significantly improves the spatial resolving power of the method over that of standard SPH at fixed particle number per simulation. This paper presents an alternative formulation of the ASPH algorithm for evolving anisotropic smoothing kernels, in which the geometric approach of the first paper in this series, based upon the Lagrangian deformation of ellipsoidal fluid elements surrounding each particle, is replaced by an approach involving a local transformation of coordinates to those in which the underlying anisotropic volume changes appear to be isotropic. Using this formulation the ASPH method is presented in two and three dimensions, including a number of details not previously included in the earlier paper, some of which represent either advances or different choices with respect to the ASPH method detailed in the earlier paper. Among the advances included here are an asynchronous time-integration scheme with different time steps for different particles and the generalization of the ASPH method to three dimensions. In the category of different choices, the shock-tracking algorithm described in the earlier paper for locally adapting the artificial viscosity to restrict viscous heating just to particles encountering shocks is not included here. Instead, we adopt a different interpolation kernel for use with the artificial viscosity, which has the effect of spatially localizing effects of the artificial viscosity. This version of the ASPH method in two and three dimensions is then applied to a series of one-, two-, and three-dimensional test problems, and the results are compared to those of standard SPH applied to the same problems. These include the problem of cosmological pancake collapse, the Riemann shock tube, cylindrical and spherical Sedov blast waves, the collision of two strong shocks, and problems involving shearing disks intended to test the angular momentum conservation properties of the method. These results further support the idea that ASPH has significantly better resolving power than standard SPH for a wide range of problems, including that of cosmological structure formation.},
+  author = {Owen, J. Michael and Villumsen, Jens V. and Shapiro, Paul R. and Martel, Hugo},
+  journal = {The Astrophysical Journal Supplement Series},
+  month = {jun},
+  number = {2},
+  pages = {155--209},
+  publisher = {IOP Publishing},
+  title = {{Adaptive Smoothed Particle Hydrodynamics: Methodology. II.}},
+  url_dontuse = {http://stacks.iop.org/0067-0049/116/i=2/a=155 papers3://publication/doi/10.1086/313100},
+  volume = {116},
+  year = {1998}
+}
+
+@inproceedings{2010:Owen,
+  address = {Manchester, UK},
+  author = {Owen, J. Michael},
+  booktitle = {Proceedings of the 5 th International SPHERIC Workshop},
+  month = {jan},
+  pages = {297--304},
+  title = {{ASPH modeling of Material Damage and Failure}},
+  url_dontuse = {https://e-reports-ext.llnl.gov/pdf/394275.pdf papers3://publication/uuid/13EAE11F-3B63-4AB3-A2ED-7B55CC6B2046},
+  year = {2010}
+}
+

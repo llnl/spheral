@@ -175,9 +175,7 @@ for p in packages:
 #-------------------------------------------------------------------------------
 # Construct a time integrator, and add the one physics package.
 #-------------------------------------------------------------------------------
-integrator = CheapSynchronousRK2Integrator(db)
-for p in packages:
-    integrator.appendPhysicsPackage(p)
+integrator = CheapSynchronousRK2Integrator(db, packages)
 integrator.lastDt = dt
 integrator.allowDtCheck = True
 output("integrator")

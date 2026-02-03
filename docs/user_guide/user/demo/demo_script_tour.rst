@@ -24,11 +24,12 @@ Now let's go through each section of this script in some detail.
 .. toctree::
    :maxdepth: 1
 
-   imports.rst
-   command_line.rst
-   directories.rst
-   materials.rst
-   kernel.rst
-   nodes.rst
-   point_generation.rst
-   initial_conditions.rst
+   demo_imports.rst
+   demo_command_line.rst
+   demo_directories.rst
+   demo_materials.rst
+   demo_kernel.rst
+   demo_nodes.rst
+   demo_point_generation.rst
+   demo_initial_conditions.rst
+   demo_database.rst
