@@ -42,6 +42,12 @@ Spheral++ provides a steerable parallel environment for performing coupled hydro
    developer/development_docs.rst
    developer/design_docs.rst
 
+.. toctree::
+   :maxdepth: 1
+   :caption: References:
+
+   references.rst
+
 .. include:: intro/introduction.rst.inc
    :start-after: [license-section-start]
    :end-before: [license-section-end]

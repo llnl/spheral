@@ -17,6 +17,7 @@ First let's look at the example Python script in its entirety, and then we'll go
 
 .. literalinclude:: Sedov-demo.py
    :language: Python
+   :linenos:
 
 Now let's go through each section of this script in some detail.
 
@@ -30,3 +31,4 @@ Now let's go through each section of this script in some detail.
    kernel.rst
    nodes.rst
    point_generation.rst
+   initial_conditions.rst

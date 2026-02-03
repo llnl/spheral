@@ -48,6 +48,12 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.autosectionlabel',
     'sphinx_subfigure',
+    'sphinxcontrib.bibtex',
+]
+
+# Configure bibtex
+bibtex_bibfiles = [
+    'references.bib',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -76,7 +82,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -122,7 +127,7 @@ latex_elements = {
 
     # The font size ('10pt', '11pt' or '12pt').
     #
-    # 'pointsize': '10pt',
+    # 'pointsize': 'v10pt',
 
     # Additional stuff for the LaTeX preamble.
     #
