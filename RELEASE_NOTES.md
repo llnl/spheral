@@ -1,10 +1,11 @@
-Version X.X.X -- Release date XXX
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
 ==============================================
   * Important Notes:
 
 Notable changes include:
 
   * New features / API changes:
+    * Added view class for PairwiseField (PairwiseFieldView)
 
   * Bug fixes
 
