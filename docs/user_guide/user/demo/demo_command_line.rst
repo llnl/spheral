@@ -4,17 +4,21 @@
 Command line definitions (optional)
 ====================================
 
-The next section in this script uses a handy function to allow us to override some variables from the command-line::
+The next section in this script uses a handy function to allow us to override some variables from the command-line:
 
-  #-------------------------------------------------------------------------------
-  # Generic problem parameters
-  #-------------------------------------------------------------------------------
-  commandLine(
-      # Geometry of the problem
-      rmin = 0.0,
-      rmax = 1.0,
-   ...
-   )
+.. code-block::
+   :linenos:
+   :lineno-start: 14
+
+   #-------------------------------------------------------------------------------
+   # Generic problem parameters
+   #-------------------------------------------------------------------------------
+   commandLine(
+       # Geometry of the problem
+       rmin = 0.0,
+       rmax = 1.0,
+    ...
+    )
 
 The ``commandLine()`` function is a wrapper around a standard Python method (`optparse <https://docs.python.org/3/library/optparse.html>`_) of allowing variables to be overridden on the command line, and designed to be a simpler interface to those more generic Python command line utilities.  Each entry in the ``commandLine()`` function is given a default value, and if not otherwise overridden results in a Python variable in the script that is defined to be that value.  For instance in this case following this block there will be a floating point variable named ``rmax`` with the value ``1.0``.  Because ``rmax`` is availble in the ``commandLine()`` statement we could choose to override its value to be 2 by adding ``--rmax 2.0`` on our Spheral run line.
 

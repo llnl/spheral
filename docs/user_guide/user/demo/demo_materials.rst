@@ -4,15 +4,19 @@
 Units and material properties
 =============================
 
-The next section of ``Sedov-demo.py`` describes the material models we are going to use in this calculation::
+The next section of ``Sedov-demo.py`` describes the material models we are going to use in this calculation:
 
-  #-------------------------------------------------------------------------------
-  # Material properties.
-  #-------------------------------------------------------------------------------
-  units = MKS()
-  eos = GammaLawGas(gamma = gamma,
-                    mu = mu,
-                    constants = units)
+.. code-block::
+   :linenos:
+   :lineno-start: 71
+
+   #-------------------------------------------------------------------------------
+   # Material properties.
+   #-------------------------------------------------------------------------------
+   units = MKS()
+   eos = GammaLawGas(gamma = gamma,
+                     mu = mu,
+                     constants = units)
 
 The first line descibes our physical units choice: here we are going to use standard SI units (meters, kilograms, and seconds).  Spheral is different from many physics modeling codes in that we do not use a single set of physical units in the code, but rather allow the user to specify the units of their choice appropriate for the problem at hand.  In general you may specify any choice by explicitly setting the simulation units of length, mass, and time to a ``PhysicalConstants`` object like so::
 

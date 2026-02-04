@@ -45,3 +45,19 @@
   year = {2010}
 }
 
+
+@article{2022:Pearl_fsisph,
+	title = {{FSISPH}: {An} {SPH} formulation for impacts between dissimilar materials},
+	volume = {469},
+	issn = {10902716},
+	url = {https://doi.org/10.1016/j.jcp.2022.111533},
+	doi = {10.1016/j.jcp.2022.111533},
+	abstract = {We present an SPH formulation with several new features designed to better model the fully-compressible interaction of dissimilar materials. We developed the new method to simulate the atmospheric entry and break-up of small celestial bodies in planetary atmospheres. The formulation uses a unity-based, density-energy discretization of the hydrodynamic conservation laws with linear-corrected kernel gradients. To account for variations in compressibility, we use an HLLC approximate Riemann solver to adjust the velocity gradient at material interfaces. To handle large transverse velocity discontinuities, we introduce a simple slip interface model that limits the artificial viscosity at material interfaces. Diffusion is optionally applied through the velocity gradient and this allows the density and specific thermal energy to evolve in a manner more consistent with the first law of thermodynamics in comparison to other more direct diffusion schemes. We also introduce a material-local second-order artificial conduction scheme used to smooth the specific thermal energy field. Material damage fits neatly under this framework by treating the damage front as a material interface. The method has been implemented as a solver, FSISPH, within the code, Spheral++, and is publicly available on github. We test our new solver on a number of classic shock, mixing, and multi-material problem. The components we outline can significantly improve accuracy of SPH for problems with sharp contact discontinuities.},
+	journal = {Journal of Computational Physics},
+	author = {Pearl, Jason M. and Raskin, Cody D. and Michael Owen, J.},
+	year = {2022},
+	note = {Publisher: Elsevier Inc.},
+	keywords = {Smoothed particle hydrodynamics, Fluid-solid interaction, Hydrodynamic instabilities, Multi-material},
+	pages = {111533},
+	file = {PDF:/Users/owen8/Zotero/storage/VJ2QLR26/1-s2.0-S0021999122005952-main.pdf:application/pdf},
+}

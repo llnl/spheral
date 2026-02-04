@@ -2,7 +2,11 @@
 Creating output directories
 ========================================
 
-The next section in ``Sedov-demo.py`` is pure Python, nothing Spheral specific about this::
+The next section in ``Sedov-demo.py`` is pure Python, nothing Spheral specific about this:
+
+.. code-block::
+   :linenos:
+   :lineno-start: 59
 
     #-------------------------------------------------------------------------------
     # Path names.

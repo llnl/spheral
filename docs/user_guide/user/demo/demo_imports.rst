@@ -4,20 +4,23 @@
 Importing Python modules
 ==============================
 
-The first section of our script simply imports several modules we're going to use in our script::
+The first section of our script simply imports several modules we're going to use in our script:
 
-  #-------------------------------------------------------------------------------
-  # The cylindrical Sedov test case (2-D).
-  #-------------------------------------------------------------------------------
-  import os, shutil
-  import mpi
-  from Spheral2d import *
-  from SpheralTestUtilities import *
-  from GenerateNodeDistribution2d import *
-  from PeanoHilbertDistributeNodes import distributeNodes2d
-  from SpheralMatplotlib import *
+.. code-block::
+   :linenos:
 
-  title("2-D SPH hydrodynamics demonstration of the cylindrical Sedov problem")
+   #-------------------------------------------------------------------------------
+   # The cylindrical Sedov test case (2-D).
+   #-------------------------------------------------------------------------------
+   import os, shutil
+   import mpi
+   from Spheral2d import *
+   from SpheralTestUtilities import *
+   from GenerateNodeDistribution2d import *
+   from PeanoHilbertDistributeNodes import distributeNodes2d
+   from SpheralMatplotlib import *
+
+   title("2-D SPH hydrodynamics demonstration of the cylindrical Sedov problem")
 
 The critical import here is ``from Spheral2d import *``, which loads all the core Spheral modules, and creates convenient aliases for all the :math:`(x,y)` geometric specializations.  Spheral is a C++ templated code, and contains implementations to run our physics model(s) in a variety of dimensions: 1D cartesian coordinates :math:`(x)` or spherical coordinates :math:`(r)`; 2D cartesian :math:`(x,y)` or cylindrical coordinates :math:`(r,z)`; and 3D cartesian :math:`(x,y,z)`.  So for instance there are ``Vector1d``, ``Vector2d``, and ``Vector3d`` types in the general module ``Spheral`` representing the 1D, 2D, and 3D geometrical vectors :math:`(x)`, :math:`(x,y)`, and :math:`(x,y,z)`.  When we specifically import a dimensional version of the Spheral module such as ``from Spheral2d import *`` these types are all loaded, but we also create convenient aliases dropping the dimensional suffix so that ``Vector`` is equivalent to ``Vector2d``, ``Tensor`` is the same as ``Tensor2d``, etc.  In general most Spheral scripts should load the appropriate dimensional version like this.  The current set of supported dimensionally typed imports is:
 
@@ -47,8 +50,8 @@ The other imports in this section are a mixture of Spheral utilities and ordinar
 | ``from GenerateNodeDistribution2d import *``
 | ``from PeanoHilbertDistributeNodes import distributeNodes2d``
 
-  These imports bring in Spheral utilties for building the point distribution in our problem and distributing them across our parallel problem.  This is discussed later in :ref:`point-generation`
+  These imports bring in Spheral utilties for building the point distribution in our problem and distributing them across our parallel problem.  This is discussed later in :ref:`point_generation`
 
 ``from SpheralMatplotlib import *``
-  This module provides some convenient plotting methods for Spheral types using the well-known Python module `matplotlib <https://matplotlib.org/>`_.  matplotlib is provided in a normal Spheral build, and all of it's capabilities are available.  We will see an example using the convenience functions from ``SpheralMatplotlib`` in :ref:`radial-plots`.
+  This module provides some convenient plotting methods for Spheral types using the well-known Python module `matplotlib <https://matplotlib.org/>`_.  matplotlib is provided in a normal Spheral build, and all of it's capabilities are available.  We will see an example using the convenience functions from ``SpheralMatplotlib`` in :ref:`radial_plots`.
 

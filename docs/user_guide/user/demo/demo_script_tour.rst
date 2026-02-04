@@ -33,3 +33,8 @@ Now let's go through each section of this script in some detail.
    demo_point_generation.rst
    demo_initial_conditions.rst
    demo_database.rst
+   demo_hydro.rst
+   demo_boundary_conditions.rst
+   demo_time_integrator.rst
+   demo_controller.rst
+   demo_advance.rst

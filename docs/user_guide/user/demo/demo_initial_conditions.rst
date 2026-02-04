@@ -1,4 +1,4 @@
-.. _Sedov_initial_conditions:
+`.. _Sedov_initial_conditions:
 
 =============================================
 Setting initial conditions (point properties)

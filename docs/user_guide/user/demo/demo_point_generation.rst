@@ -4,26 +4,30 @@
 Generating and distributing our nodes across processors
 =======================================================
 
-This section of ``Sedov-demo.py`` is concerned with how we generate the point distribution that represent the geometry/initial conditions of the problem, as well as how those points should be distributed across MPI parallel domains::
+This section of ``Sedov-demo.py`` is concerned with how we generate the point distribution that represent the geometry/initial conditions of the problem, as well as how those points should be distributed across MPI parallel domains:
 
-  #-------------------------------------------------------------------------------
-  # Generate the initial node geometry (lay down the points).
-  #-------------------------------------------------------------------------------
-  generator = GenerateNodeDistribution2d(nRadial = nRadial,
-                                         nTheta = 1,
-                                         rho = rho0,
-                                         distributionType = "constantDTheta",
-                                         rmin = rmin,
-                                         rmax = rmax,
-                                         xmin = (0.0, 0.0),
-                                         xmax = (rmax, rmax),
-                                         theta = 0.5*pi,
-                                         nNodePerh = nPerh)
-  distributeNodes2d((nodes, generator))
-  print("Point distribution across MPI ranks:")
-  output("  mpi.reduce(nodes.numInternalNodes, mpi.MIN)")
-  output("  mpi.reduce(nodes.numInternalNodes, mpi.MAX)")
-  output("  mpi.reduce(nodes.numInternalNodes, mpi.SUM)")
+.. code-block::
+   :linenos:
+   :lineno-start: 93
+
+   #-------------------------------------------------------------------------------
+   # Generate the initial node geometry (lay down the points).
+   #-------------------------------------------------------------------------------
+   generator = GenerateNodeDistribution2d(nRadial = nRadial,
+                                          nTheta = 1,
+                                          rho = rho0,
+                                          distributionType = "constantDTheta",
+                                          rmin = rmin,
+                                          rmax = rmax,
+                                          xmin = (0.0, 0.0),
+                                          xmax = (rmax, rmax),
+                                          theta = 0.5*pi,
+                                          nNodePerh = nPerh)
+   distributeNodes2d((nodes, generator))
+   print("Point distribution across MPI ranks:")
+   output("  mpi.reduce(nodes.numInternalNodes, mpi.MIN)")
+   output("  mpi.reduce(nodes.numInternalNodes, mpi.MAX)")
+   output("  mpi.reduce(nodes.numInternalNodes, mpi.SUM)")
 
 This is the section of our script describing how the points in our NodeList created in :ref:`nodelist_construction` will be created, and once this section is completed our initally empty NodeList ``nodes`` will be filled with points.
 
