@@ -89,15 +89,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   //auto  HStretchTensor = derivs.fields("HStretchTensor", SymTensor::zero());
   auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
   auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
-  auto* pairAccelerationsPtr = (compatibleEnergy ?
-                                &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
-                                nullptr);
-  auto* pairDepsDtPtr = (compatibleEnergy ?
-                         &derivs.template get<PairWorkType>(HydroFieldNames::pairWork) :
-                         nullptr);
-  auto* pairMassFluxPtr = (compatibleEnergy ?
-                           &derivs.template get<PairMassFluxType>(GSPHFieldNames::pairMassFlux) :
-                           nullptr);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairDepsDt = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
+  auto& pairMassFlux = derivs.template get<PairMassFluxType>(GSPHFieldNames::pairMassFlux);
   CHECK(DrhoDx.size() == numNodeLists);
   CHECK(M.size() == numNodeLists);
   CHECK(normalization.size() == numNodeLists);
@@ -110,9 +104,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   //CHECK(HStretchTensor.size() == numNodeLists);
   CHECK(newRiemannDpDx.size() == numNodeLists);
   CHECK(newRiemannDvDx.size() == numNodeLists);
-  CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
-  CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
-  CHECK(not compatibleEnergy or pairMassFluxPtr->size() == npairs);
+  CHECK(not compatibleEnergy or pairAccelerations.size() == npairs);
+  CHECK(not compatibleEnergy or pairDepsDt.size() == npairs);
+  CHECK(not compatibleEnergy or pairMassFlux.size() == npairs);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -308,10 +302,10 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       DEDtj += deltaDepsDtj;
      
       if(compatibleEnergy){
-        (*pairMassFluxPtr)[kk] = massFlux;
-        (*pairAccelerationsPtr)[kk] = deltaDvDt;
-        (*pairDepsDtPtr)[kk][0] = deltaDepsDti;
-        (*pairDepsDtPtr)[kk][1] = deltaDepsDtj;
+        pairMassFlux[kk] = massFlux;
+        pairAccelerations[kk] = deltaDvDt;
+        pairDepsDt[kk][0] = deltaDepsDti;
+        pairDepsDt[kk][1] = deltaDepsDtj;
       }
 
       // volume change based on nodal velocity
