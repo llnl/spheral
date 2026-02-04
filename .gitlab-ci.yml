@@ -25,10 +25,10 @@ variables:
 
 stages:
   - init
+  - update_tpls
   - tpls
   - build_and_install
   - run_ats
-  - update_tpls
   - run_perf
   - generate_buildcache
   - install_production
