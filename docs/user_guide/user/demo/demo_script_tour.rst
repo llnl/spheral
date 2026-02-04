@@ -4,7 +4,7 @@
 A tour of a Spheral script
 #################################
 
-Running a problem with Spheral involves assembling the necessary objects in Python: typically a set of physics packages, equations of state, materials, time integrator, etc.  These can then be handed to an object designed to coordinate and run the problem (the ``SpheralController``), generating output such as visualization files or invoking custom analysis routines the user might provide.  Each of these concepts will be discussed in depth later in this manual, but first let's take a tour of a simple example designed to run a classic hydrodynamics test: the Taylor-Sedov blastwave.
+Running a problem with Spheral involves assembling the necessary objects in Python: typically a set of physics packages, equations of state, materials, time integrator, etc.  These can then be handed to an object designed to coordinate and run the problem (the ``SpheralController``), generating output such as visualization files or invoking custom analysis routines the user might provide.  Each of these concepts will be discussed in depth later in this manual, but first let's take a tour of a simple example designed to run a classic hydrodynamics test: the Taylor-Sedov blastwave :cite:`1959:Sedov`.
 
 The analytical description of this problem starts with an infinitesimal energy spike deposited in a uniform pressureless gas.  This results in a shock or blastwave that propagates radially away from the original energy spike, and can be described by a self-similar analytic solution for a simple analytical material (such as a :math:`\gamma` law gas).
 
