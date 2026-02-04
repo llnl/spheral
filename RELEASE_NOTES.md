@@ -6,6 +6,7 @@ Notable changes include:
 
   * New features / API changes:
     * Added view class for PairwiseField (PairwiseFieldView)
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
 
   * Bug fixes
 
