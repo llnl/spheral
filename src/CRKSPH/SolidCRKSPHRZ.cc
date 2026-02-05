@@ -215,9 +215,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
+    derivs.enroll(HydroFieldNames::selfAccelerations, mSelfAccelerations);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  derivs.enroll(HydroFieldNames::selfAccelerations, mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -382,9 +382,9 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
   CHECK(effViscousPressure.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK((compatibleEnergy     and pairAccelerations.size() == npairs) or not compatibleEnergy);
-  CHECK((compatibleEnergy     and selfAccelerations.size() == 0u) or
-        (not compatibleEnergy and selfAccelerations.size() == numNodeLists));
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and selfAccelerations.size() == numNodeLists) or
+        (selfAccelerations.size() == 0u));
 
   // Build the functor we use to compute the effective coupling between nodes.
   const NodeCoupling coupling;
