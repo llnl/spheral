@@ -70,7 +70,6 @@ set(Utilities_headers
     FastMath.hh
     FieldDataTypeTraits.hh
     Functors.hh
-    GeometricUtilities.hh
     Hashes.hh
     KeyTraits.hh
     Logger.hh
