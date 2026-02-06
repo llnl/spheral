@@ -72,6 +72,7 @@ inline
 PairwiseField<Dimension, Value, numElements>&
 PairwiseField<Dimension, Value, numElements>::operator=(const PairwiseField& rhs) {
   if (this != &rhs) {
+    mPairsPtr = rhs.mPairsPtr;
     mArray = rhs.mArray;
     assignDataSpan();
   }

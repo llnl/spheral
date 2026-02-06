@@ -41,6 +41,7 @@ public:
   using ViewType::operator[];
 
   // Constructors, destructors
+  PairwiseField()                                               = default;
   PairwiseField(const ConnectivityMap<Dimension>& connectivity);
   PairwiseField(std::shared_ptr<NodePairList> pairsPtr);
   PairwiseField(const PairwiseField& rhs);
@@ -63,9 +64,6 @@ public:
   
   // Get the view (for trivially copyable types)
   ViewType view()                                               { return static_cast<ViewType>(*this); }
-
-  // Forbidden methods
-  PairwiseField()                                               = delete;
 
 private:
   //--------------------------- Private Interface ---------------------------//

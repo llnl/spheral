@@ -173,12 +173,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto* pairAccelerationsPtr = (compatibleEnergy ?
-                                &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
-                                nullptr);
-  auto* pairDepsDtPtr = (compatibleEnergy ?
-                         &derivs.template get<PairWorkType>(HydroFieldNames::pairWork) :
-                         nullptr);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairDepsDt = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   CHECK(M.size() == numNodeLists);
   CHECK(localM.size() == numNodeLists);
   CHECK(DepsDx.size() == numNodeLists);
@@ -204,8 +200,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == numPairs);
-  CHECK(not compatibleEnergy or pairDepsDtPtr->size() == numPairs);
+  CHECK(not compatibleEnergy or pairAccelerations.size() == numPairs);
+  CHECK(not compatibleEnergy or pairDepsDt.size() == numPairs);
 
   //this->computeMCorrection(time,dt,dataBase,state,derivs);
 
@@ -626,9 +622,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         DepsDtj -= mi*deltaDepsDtj;
 
         if(compatibleEnergy){
-          (*pairAccelerationsPtr)[kk] = - deltaDvDt;
-          (*pairDepsDtPtr)[kk][0] = - deltaDepsDti; 
-          (*pairDepsDtPtr)[kk][1] = - deltaDepsDtj;
+          pairAccelerations[kk] = - deltaDvDt;
+          pairDepsDt[kk][0] = - deltaDepsDti; 
+          pairDepsDt[kk][1] = - deltaDepsDtj;
         }
         
         // thermal diffusion
@@ -638,8 +634,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
           const auto cijEff = max(min(cij + (vi-vj).dot(rhatij), cij),0.0);
           const auto diffusion =  epsDiffusionCoeff*cijEff*(epsLineari-epsLinearj)*etaij.dot(gradWij)/(rhoij*etaMagij*etaMagij+tiny);
           if (compatibleEnergy) {
-            (*pairDepsDtPtr)[kk][0] += diffusion; 
-            (*pairDepsDtPtr)[kk][1] -= diffusion;
+            pairDepsDt[kk][0] += diffusion; 
+            pairDepsDt[kk][1] -= diffusion;
           }
         }
 

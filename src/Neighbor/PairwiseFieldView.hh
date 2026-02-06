@@ -66,6 +66,11 @@ public:
 
   // Other methods
   SPHERAL_HOST_DEVICE size_t size() const                                           { return mSpan.size()/numElements; }
+#ifdef SPHERAL_UNIFIED_MEMORY
+  SPHERAL_HOST_DEVICE bool empty() const                                            { return mSpan.empty(); }
+#else
+  SPHERAL_HOST        bool empty() const                                            { return mSpan.size() == 0u; }
+#endif
 
   // Zero the Field
   SPHERAL_HOST_DEVICE void Zero()                                                   { for (auto& x: mSpan) x = DataTypeTraits<Value>::zero(); }
