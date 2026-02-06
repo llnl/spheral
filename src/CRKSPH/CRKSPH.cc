@@ -80,7 +80,7 @@ CRKSPH(DataBase<Dimension>& dataBase,
                         densityUpdate,
                         epsTensile,
                         nTensile),
-  mPairAccelerationsPtr() {
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()) {
 }
 
 //------------------------------------------------------------------------------
@@ -134,8 +134,8 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   TIME_END("CRKregisterDerivatives");
 }
 
@@ -243,7 +243,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
   CHECK(DvDt.size() == numNodeLists);
@@ -253,7 +253,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(maxViscousPressure.size() == numNodeLists);
   CHECK(effViscousPressure.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -381,7 +381,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                  mj*weighti*((Pj - Pi)/rhoj*gradWi - rhoj*QPiji*gradWi));            // RK
       DvDti -= forceij/mi;
       DvDtj += forceji/mj; 
-      if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = -forceij/mi;               // Acceleration for i (j anti-symmetric)
+      if (compatibleEnergy) pairAccelerations[kk] = -forceij/mi;                     // Acceleration for i (j anti-symmetric)
 
       // Energy
       DepsDti += (true ? // surfacePoint(nodeListi, i) <= 1 ? 

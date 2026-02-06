@@ -119,7 +119,7 @@ SolidCRKSPHRZ(DataBase<Dimension>& dataBase,
                          epsTensile,
                          nTensile,
                          damageRelieveRubble),
-  mPairAccelerationsPtr(),
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
   mSelfAccelerations(FieldStorageType::CopyFields) {
 }
 
@@ -215,9 +215,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
     derivs.enroll(HydroFieldNames::selfAccelerations, mSelfAccelerations);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
 }
 
 //------------------------------------------------------------------------------
@@ -371,7 +371,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
   auto  localDvDx = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
@@ -385,9 +385,9 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
   CHECK(effViscousPressure.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
-  CHECK((compatibleEnergy     and selfAccelerations.size() == 0u) or
-        (not compatibleEnergy and selfAccelerations.size() == numNodeLists));
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and selfAccelerations.size() == numNodeLists) or
+        (selfAccelerations.size() == 0u));
 
   // Build the functor we use to compute the effective coupling between nodes.
   const NodeCoupling coupling;
@@ -542,8 +542,8 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
         DvDtj += forceji/mRZj;
       }
       if (compatibleEnergy) {
-        (*pairAccelerationsPtr)[kk][0] = -forceij/mRZi;
-        (*pairAccelerationsPtr)[kk][1] =  forceji/mRZj;
+        pairAccelerations[kk][0] = -forceij/mRZi;
+        pairAccelerations[kk][1] =  forceji/mRZj;
       }
 
       // Energy

@@ -157,8 +157,8 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mnTensile(nTensile),
   mxmin(xmin),
   mxmax(xmax),
-  mPairAccelerationsPtr(),
-  mPairDepsDtPtr(),
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
+  mPairDepsDtPtr(std::make_unique<PairWorkType>()),
   mTimeStepMask(FieldStorageType::CopyFields),
   mPressure(FieldStorageType::CopyFields),
   mDamagedPressure(FieldStorageType::CopyFields),
@@ -410,9 +410,9 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     mPairDepsDtPtr = std::make_unique<PairWorkType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-    derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
 
   derivs.enroll(plasticStrainRate);
   derivs.enroll(mXSPHDeltaV);
