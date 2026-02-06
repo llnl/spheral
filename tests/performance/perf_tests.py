@@ -16,6 +16,7 @@ class TestParams:
         self.test_name = test_name
         self.test_file = test_file
         self.test_vars = test_vars
+        self.ncores = None
         self.gen_inp = None
 
     def test_file(self):
@@ -27,11 +28,11 @@ class TestParams:
         else:
             return [self.test_name + i for i in list(self.test_vars.keys())]
 
-    def set_gen_input(self, NCores):
+    def set_gen_input(self):
         pass
 
-    def get_tests(self, NCores):
-        self.set_gen_input(NCores)
+    def get_tests(self):
+        self.set_gen_input()
         if not self.test_vars:
             return {self.test_name: self.gen_inp}
         else:
@@ -41,16 +42,18 @@ class TestParams:
 # Taylor impact test
 #---------------------------------------------------------------------------        
 class TaylorImpact(TestParams):
-    def __init__(self):
+    def __init__(self, ncores):
         super().__init__("3DTAYLOR",
                          "functional/Strength/TaylorImpact/TaylorImpact.py",
                          {"CRK": "--hydroType CRKSPH --densityUpdate SumVoronoiCellDensity",
                           "FSI": "--hydroType FSISPH",
                           "SOLIDSPH": "--hydroType SPH"})
+        # Only use half the number of cores
+        self.ncores = int(ncores/2)
 
-    def set_gen_inputs(self, NCores):
+    def set_gen_inputs(self):
         from SpheralTestUtilities import num_3d_cyl_nodes
-        Ntotal = NCores*n_per_core_3d
+        Ntotal = self.ncores*n_per_core_3d
         rlen = 0.945
         zlen = 7.5
         steps = 5
@@ -67,12 +70,14 @@ class TaylorImpact(TestParams):
 # 3D convection test
 #---------------------------------------------------------------------------
 class Conv3D(TestParams):
-    def __init__(self):
+    def __init__(self, ncores):
         super().__init__("3DCONV",
                          "unit/Boundary/testPeriodicBoundary-3d.py")
+        # Only use half the total cores
+        self.ncores = int(ncores/2)
 
-    def set_gen_inputs(self, NCores):
-        Ntotal = NCores*n_per_core_3d
+    def set_gen_inputs(self):
+        Ntotal = self.ncores*n_per_core_3d
         npd = int(np.cbrt(Ntotal))
         steps = 10
         self.gen_inp = f"--nx {npd} --ny {npd} --nz {npd} --steps {steps}"
@@ -81,7 +86,7 @@ class Conv3D(TestParams):
 # 2D NOH tests
 #---------------------------------------------------------------------------
 class NOH2D(TestParams):
-    def __init__(self):
+    def __init__(self, ncores):
         super().__init__("NC2D",
                          "functional/Hydro/Noh/Noh-cylindrical-2d.py",
                          {"SPH": "--crksph False --solid True",
@@ -91,18 +96,18 @@ class NOH2D(TestParams):
                           "GSPH": "--gsph True",
                           "MFM": "--mfm True",
                           "MFV": "--mfv True"})
+        # Only use 1/4 the number of cores
+        self.ncores = int(ncores/4)
         self.noh_gen_inp = "--cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 "+\
             "--nPerh 2.01 --graphics False --clearDirectories False --doCompare False "+\
             "--dataDir None --vizTime None --vizCycle None"
 
-    def set_gen_inputs(self, NCores):
-        # Only use half the number of cores per node
-        num_cores = int(NCores/2)
+    def set_gen_inputs(self):
         steps = 100
         rmin = 0.
         rmax = 1.
         thetaFactor = 0.5
-        Ntotal2d = n_per_core_2d*num_cores
+        Ntotal2d = self.ncores*n_per_core_2d
         # Determine nRadial to get Ntotal2d number of SPH nodes for a constantDTheta distribution
         area = np.pi*rmax**2*thetaFactor/2.
         dr = np.sqrt(area/Ntotal2d)
@@ -113,13 +118,15 @@ class NOH2D(TestParams):
 # 3D NOH tests
 #---------------------------------------------------------------------------
 class NOH3D(NOH2D):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, ncores):
+        super().__init__(ncores)
+        # Only use half the number of cores
+        self.ncores = int(ncores/2)
         self.test_name = "NS3D"
         self.test_file = "functional/Hydro/Noh/Noh-spherical-3d.py"
 
-    def set_gen_inputs(self, NCores):
-        Ntotal = NCores*n_per_core_3d
+    def set_gen_inputs(self):
+        Ntotal = self.ncores*n_per_core_3d
         npd = int(np.cbrt(Ntotal))
         steps = 10
         self.gen_inp = f"{self.noh_gen_inp} --nx {npd} --ny {npd} --nz {npd} --steps {steps}"
@@ -128,14 +135,15 @@ class NOH3D(NOH2D):
 # General functions
 #---------------------------------------------------------------------------
 
-def get_all_tests():
+# Use arbitrary number of cores if just need test names
+def get_all_tests(ncores = 0):
     # Recursively retrieve all subclasses of TestParams
     seen = set()
     work = [TestParams]
     while work:
         parent = work.pop()
         for child in parent.__subclasses__():
-            seen.add(child())
+            seen.add(child(ncores))
             work.append(child)
     return list(seen)
 

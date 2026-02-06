@@ -40,10 +40,18 @@
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
+  rules:
+    # If test-perf is in commit message or this is a merge to develop, do install in $PERF_INSTALL_DIR
+    - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop") && $DO_PERF_INSTALL'
+      variables:
+        EXTRA_INSTALL_ARGS: "-i $PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}" # Removes the leading %
+    - when: always
+      variables:
+        EXTRA_INSTALL_ARGS: "--no-clean"
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
-    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+    - ./$SCRIPT_DIR/devtools/host-config-build.py $EXTRA_INSTALL_ARGS --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
   artifacts:
     paths:
       - ci-dir.txt
@@ -83,25 +91,6 @@
   allow_failure:
     exit_codes:
       - 80
-
-# Run the performance suite and move the resulting Caliper files into the benchmark location
-.run_perf:
-  extends: [.retry_rule]
-  stage: run_perf
-  variables:
-    GIT_STRATEGY: none
-    FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
-    FF_USE_NEW_BASH_EVAL_STRATEGY: 1
-  script:
-    - CI_BUILD_DIR=$(cat ci-dir.txt)
-    - cd $CI_BUILD_DIR && cat job-name.txt
-
-    - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
-    - exit $exit_code
-  artifacts:
-    when: always
-    paths:
-      - ci-dir.txt
 
 .cleanup_dir:
   stage: cleanup
@@ -216,23 +205,6 @@
 # Script Utilities
 # ------------------------------------------------------------------------------
 
-# This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
-# This should be enough of a buffer that we likely won't delete a build mid pipeline,
-# and never fill the sphapp workspace storage.
-.clean_old_dirs:
-  stage: cleanup
-  variables:
-    GIT_STRATEGY: none
-  script:
-    - cd $SPHERAL_BUILDS_DIR
-
-    - MAX_DIR=30
-    - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
-    - echo $DIR_LIST
-
-    - ml load mpifileutils
-    - if [[ $DIR_LIST ]]; then $RUN_CMD -n 20 drm $DIR_LIST; else echo "No directories to remove at this time."; fi
-
 .merge_pr_rule:
   rules:
     - if: '$CI_COMMIT_REF_NAME == "develop"'
@@ -244,13 +216,6 @@
       when: manual
     - if: '$CI_COMMIT_MESSAGE =~ /test-prod/'
       when: manual
-
-.perf_pr_rule:
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "develop"'
-      when: always
-    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
-      when: always
 
 # Must skip cleanup if running the performance stage
 .cleanup_rule:

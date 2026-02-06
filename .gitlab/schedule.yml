@@ -1,0 +1,53 @@
+
+.run_perf:
+  stage: run_perf
+  variables:
+    GIT_STRATEGY: none
+    FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
+    FF_USE_NEW_BASH_EVAL_STRATEGY: 1
+    INSTALL_LOCATION: "$PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}"
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "performance_tests"'
+      when: always
+    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+      when: always
+    - when: never
+  script:
+    # This script submits a job that runs at 7
+    - echo "Submitting performance tests for install at $INSTALL_LOCATION"
+    - $INSTALL_LOCATION/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs $INSTALL_LOCATION/$PERF_ATS_FILE || exit_code=$?
+    - exit $exit_code
+
+toss_gcc_mpi_perf:
+  extends: [.toss_perf_shell, .gcc_mpi, .run_perf]
+
+toss_clang_mpi_dev_build_perf:
+  extends: [.toss_perf_shell, .clang_mpi_dev_build, .run_perf]
+
+cray_rocm_mpi_perf:
+  extends: [.cray_shell1, .rocm_mpi, .run_perf]
+
+cray_hip_rocm_mpi_perf:
+  extends: [.cray_shell2, .hip_rocm_mpi, .run_perf]
+
+# This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
+# This should be enough of a buffer that we likely won't delete a build mid pipeline,
+# and never fill the sphapp workspace storage.
+.clean_old_dirs:
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  extends: [.toss_perf_resource]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "cleanup"'
+      when: always
+    - when: never
+  # Prevent this job from getting artifacts
+  dependencies: []
+  script:
+    - cd $SPHERAL_BUILDS_DIR
+    - MAX_DIR=30
+    - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
+    - echo $DIR_LIST
+    - ml load mpifileutils
+    - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi

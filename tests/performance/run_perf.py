@@ -31,7 +31,7 @@ test_runs = 1 # Number of times to run each test
 CIRun = False
 if "cirun" in opts and opts["cirun"]:
     CIRun = True
-    test_runs = 5
+    test_runs = 3
     benchmark_dir = opts["benchmark_dir"]
 is_rerun = False
 if "rerun" in opts and opts["rerun"]:
@@ -54,19 +54,12 @@ if (not mpi_enabled):
     if (num_nodes > 1):
         raise Exception("Should not use more than 1 node when MPI is off")
 
-total_num_cores = 0
+num_cores = 0
 try:
-    total_num_cores = mac_procs[hostname] * num_nodes
+    num_cores = mac_procs[hostname] * num_nodes
 except:
     log("Machine name not recognized", echo=True)
     raise Exception
-# If MPI is turned off, thread the whole node
-if (not mpi_enabled):
-    num_cores = int(total_num_cores)
-else:
-    # Ideally, tests should be run with 2 nodes and each test will
-    # use one entire node, except the 2D tests which use half a node
-    num_cores = int(total_num_cores/2)
 
 def gather_files(manager):
     '''
@@ -92,9 +85,9 @@ def gather_files(manager):
         cfile = os.path.join(run_dir, cali_filename)
         test_name = test.options["label"]
         outfile = os.path.join(outdir, cali_filename)
-        log(f"Copying {cali_filename} to {outdir}", echo=True)
+        log(f"Moving {cali_filename} to {outdir}", echo=True)
         if (CIRun):
-            shutil.copy(cfile, outfile)
+            shutil.move(cfile, outfile)
             os.chmod(outfile, perms)
             shutil.chown(outfile, group="sduser")
     if (CIRun):
@@ -103,7 +96,7 @@ def gather_files(manager):
             os.chmod(p, perms)
             shutil.chown(p, group="sduser")
 
-def spheral_setup_test(test_param, ncores, threads=1, **kwargs):
+def spheral_setup_test(test_param, threads=1, **kwargs):
     '''
     General method for creating an individual performance test
     Parameters:
@@ -112,23 +105,23 @@ def spheral_setup_test(test_param, ncores, threads=1, **kwargs):
     threads: Number of threads per rank
     **kwargs: Any additional keyword arguments to pass to ATS tests routine
     '''
+    ncores = test_param.ncores
     if (not mpi_enabled):
         threads = ncores
         ncores = 1
     test_file = test_param.test_file()
-    tests = test_param.get_tests(NCores)
+    tests = test_param.get_tests()
     for test_name, inps in tests.items():
         for i in range(test_runs):
             if (test_runs > 1):
                 cali_name = f"{test_name}_{i}_{int(time.time())}.cali"
             else:
                 cali_name = f"{test_name}_{int(time.time())}.cali"
-            ccores = int(ncores / threads)
             timer_cmds = f"--caliperFilename {cali_name} --adiakData 'test_name: {test_name}'"
             finps = f"{inps} {timer_cmds}"
             t = test(script=test_file, clas=finps,
                      label=test_name,
-                     np=ccores,
+                     np=ncores,
                      nt=threads,
                      caliper_filename=cali_name,
                      **kwargs)
@@ -141,10 +134,10 @@ glue(keep=True, independent=True)
 #---------------------------------------------------------------------------
 # Test configurations
 #---------------------------------------------------------------------------
-all_tests = pt.get_all_tests()
+all_tests = pt.get_all_tests(num_cores)
 
 for t in all_tests:
-    spheral_setup_test(t, num_cores, num_threads)
+    spheral_setup_test(t, num_threads)
 
 # Add a wait to ensure all timer files are done
 wait()
