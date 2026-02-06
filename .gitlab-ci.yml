@@ -17,8 +17,6 @@ variables:
   SPHERAL_MODULE: "Spheral"
   SPACK_PKG_NAME: spheral
   DEV_PKG_SPEC: "spheral@develop+mpi~caliper~network%gcc"
-  # On merge to develop, do the install in this directory
-  PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs
 
 .spheral_rev_str:
   before_script:
