@@ -12,10 +12,8 @@ create-pages:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "deploy"'
-      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Deploy"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-deploy/'
-      when: always
   script:
     - source $HOME/docsvenv/bin/activate
     - srun -n 8 --cpus-per-task 14 python3 $SCRIPT_DIR/lc/plot_hist_data.py --threads 14

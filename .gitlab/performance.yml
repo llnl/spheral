@@ -7,11 +7,8 @@
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
     INSTALL_LOCATION: "$PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "performance_tests"'
-      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Performance tests"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
-      when: always
-    - when: never
   script:
     # This script submits a job that runs at 7
     - echo "Submitting performance tests for install at $INSTALL_LOCATION"
@@ -39,9 +36,7 @@ cray_hip_rocm_mpi_perf:
     GIT_STRATEGY: none
   extends: [.toss_perf_resource]
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "cleanup"'
-      when: always
-    - when: never
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
   # Prevent this job from getting artifacts
   dependencies: []
   script:
