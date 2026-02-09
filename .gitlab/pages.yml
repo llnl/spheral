@@ -12,7 +12,7 @@ create-pages:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "deploy"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Deploy"'
       when: always
     - if: '$CI_COMMIT_MESSAGE =~ /test-deploy/'
       when: always
