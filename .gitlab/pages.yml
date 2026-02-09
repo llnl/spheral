@@ -1,7 +1,8 @@
 create-pages:
   extends: [.toss_perf_resource]
   variables:
-    GIT_SUBMODULE_STRATEGY: normal
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: none
   stage: deploy
   # Prevent this job from collecting artifacts
   dependencies: []
