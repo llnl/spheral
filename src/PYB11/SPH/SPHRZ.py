@@ -15,6 +15,7 @@ class SPHRZ(SPHBase):
   using Vector = typename %(Dimension)s::Vector;
   using Tensor = typename %(Dimension)s::Tensor;
   using SymTensor = typename %(Dimension)s::SymTensor;
+  using ScalarFieldList = FieldList<%(Dimension)s, Scalar>;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename SPHRZ::PairAccelerationsType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
@@ -41,6 +42,27 @@ class SPHRZ(SPHBase):
 
     #...........................................................................
     # Virtual methods
+    @PYB11virtual
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
+        """An optional hook to initialize once when the problem is starting up.
+Typically this is used to size arrays once all the materials and NodeLists have
+been created.  It is assumed after this method has been called it is safe to
+call Physics::registerState for instance to create full populated State objects."""
+
+        return "void"
+
+    @PYB11virtual
+    def initializeProblemStartupDependencies(self,
+                                             dataBase = "DataBase<%(Dimension)s>&",
+                                             state = "State<%(Dimension)s>&",
+                                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        """A second optional method to be called on startup, after Physics::initializeProblemStartup has
+been called.
+One use for this hook is to fill in dependendent state using the State object, such as
+temperature or pressure."""
+        return "void"
+
     @PYB11virtual 
     def registerState(dataBase = "DataBase<%(Dimension)s>&",
                       state = "State<%(Dimension)s>&"):
@@ -92,3 +114,6 @@ mass density, velocity, and specific thermal energy."""
     #...........................................................................
     # Properties
     pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")
+    massRZ = PYB11property("const ScalarFieldList&", "massRZ", returnpolicy="reference_internal")
+    massDensityRZ = PYB11property("const ScalarFieldList&", "massDensityRZ", returnpolicy="reference_internal")
+    DmassDensityDtRZ = PYB11property("const ScalarFieldList&", "DmassDensityDtRZ", returnpolicy="reference_internal")

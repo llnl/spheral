@@ -63,6 +63,23 @@ public:
   // Destructor.
   virtual ~SPHRZ() = default;
 
+  // An optional hook to initialize once when the problem is starting up.
+  // This is called after the materials and NodeLists are created. This method
+  // should set the sizes of all arrays owned by the physics package and initialize
+  // independent variables.
+  // It is assumed after this method has been called it is safe to call
+  // Physics::registerState to create full populated State objects.
+  virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
+
+  // A second optional method to be called on startup, after Physics::initializeProblemStartup has
+  // been called.
+  // One use for this hook is to fill in dependendent state using the State object, such as
+  // temperature or pressure.
+  virtual
+  void initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                            State<Dimension>& state,
+                                            StateDerivatives<Dimension>& derivs) override;
+
   // Register the state Hydro expects to use and evolve.
   virtual 
   void registerState(DataBase<Dimension>& dataBase,
@@ -106,6 +123,9 @@ public:
                
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
+  const FieldList<Dimension, Scalar>& massRZ()            const { return mMassRZ; }
+  const FieldList<Dimension, Scalar>& massDensityRZ()     const { return mMassDensityRZ; }
+  const FieldList<Dimension, Scalar>& DmassDensityDtRZ()  const { return mDmassDensityDtRZ; }
 
   //****************************************************************************
   // Methods required for restarting.
@@ -115,6 +135,10 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
+
+  FieldList<Dimension, Scalar> mMassRZ;
+  FieldList<Dimension, Scalar> mMassDensityRZ;
+  FieldList<Dimension, Scalar> mDmassDensityDtRZ;
 };
 
 }
