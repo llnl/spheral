@@ -51,9 +51,9 @@ include:
   - local: .gitlab/performance.yml
   - local: .gitlab/jobs-mpi.yml
     rules:
-      - !reference [.job_rules, rules]
+      - if: !reference [.job_rules, rules]
   - local: .gitlab/jobs-seq.yml
     rules:
-      - !reference [.job_rules, rules]
+      - if: !reference [.job_rules, rules]
   - local: .gitlab/jobs-prod.yml
   - local: .gitlab/pages.yml
