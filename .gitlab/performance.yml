@@ -7,7 +7,7 @@
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
     INSTALL_LOCATION: "$PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}"
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Performance tests"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "performance_tests"'
       when: always
     - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
       when: always
@@ -39,7 +39,7 @@ cray_hip_rocm_mpi_perf:
     GIT_STRATEGY: none
   extends: [.toss_perf_resource]
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TAG == "cleanup"'
       when: always
     - when: never
   # Prevent this job from getting artifacts
