@@ -36,6 +36,11 @@ stages:
   - cleanup
   - deploy
 
+.job_rules:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
+      when: never
+
 include:
   - project: lc-templates/id_tokens
     file: id_tokens.yml
@@ -43,16 +48,12 @@ include:
   - local: .gitlab/machines.yml
   - local: .gitlab/scripts.yml
   - local: .gitlab/specs.yml
-  - local: .gitlab/schedule.yml
+  - local: .gitlab/performance.yml
   - local: .gitlab/jobs-mpi.yml
     rules:
-      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
-        when: never
+      - !reference [.job_rules, rules]
   - local: .gitlab/jobs-seq.yml
     rules:
-      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
-        when: never
+      - !reference [.job_rules, rules]
   - local: .gitlab/jobs-prod.yml
   - local: .gitlab/pages.yml
-
-

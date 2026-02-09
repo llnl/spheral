@@ -39,7 +39,7 @@ toss_gcc_mpi_test:
   needs: [toss_gcc_mpi_build]
 
 toss_gcc_mpi_cleanup:
-  extends: [.toss_resource2, .gcc_mpi, .cleanup_dir, .cleanup_rule]
+  extends: [.toss_resource2, .gcc_mpi, .cleanup_dir]
 
 
 
@@ -61,7 +61,7 @@ toss_clang_mpi_dev_build_test:
   needs: [toss_clang_mpi_dev_build_build]
 
 toss_clang_mpi_dev_build_cleanup:
-  extends: [.toss_resource3, .clang_mpi_dev_build, .cleanup_dir, .cleanup_rule]
+  extends: [.toss_resource3, .clang_mpi_dev_build, .cleanup_dir]
 
 
 
@@ -87,7 +87,7 @@ cray_rocm_mpi_test:
   needs: [cray_rocm_mpi_build]
 
 cray_rocm_mpi_cleanup:
-  extends: [.cray_resource1, .rocm_mpi, .cleanup_dir, .cleanup_rule]
+  extends: [.cray_resource1, .rocm_mpi, .cleanup_dir]
 
 
 
@@ -109,4 +109,4 @@ cray_hip_rocm_mpi_test:
   needs: [cray_hip_rocm_mpi_build]
 
 cray_hip_rocm_mpi_cleanup:
-  extends: [.cray_resource2, .hip_rocm_mpi, .cleanup_dir, .cleanup_rule]
+  extends: [.cray_resource2, .hip_rocm_mpi, .cleanup_dir]
