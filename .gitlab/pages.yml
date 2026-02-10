@@ -2,7 +2,7 @@ create-pages:
   extends: [.toss_perf_resource]
   variables:
     GIT_STRATEGY: clone
-    GIT_SUBMODULE_STRATEGY: none
+    GIT_SUBMODULE_STRATEGY: recursive
   stage: deploy
   # Prevent this job from collecting artifacts
   dependencies: []
