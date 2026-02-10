@@ -71,12 +71,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('hdf5 +hl', type='build')
 
-    # silo needs to be @ 4.11.1 to keep it the same as what was used before porting to spack v1.
-    # attempting to allow it to use the latest (currently 4.12) causes build failures
-    #
-    # a different option might be to use `silo~shared`
-    #
-    depends_on('silo@4.11.1+python +hdf5~fortran', type='build')
+    depends_on('silo@4.12.0 ~shared +hdf5', type='build')
 
     depends_on('chai@develop+raja', type='build')
     depends_on('raja', type='build')
