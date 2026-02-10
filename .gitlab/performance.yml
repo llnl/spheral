@@ -26,23 +26,3 @@ cray_rocm_mpi_perf:
 
 cray_hip_rocm_mpi_perf:
   extends: [.cray_shell2, .hip_rocm_mpi, .run_perf]
-
-# This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
-# This should be enough of a buffer that we likely won't delete a build mid pipeline,
-# and never fill the sphapp workspace storage.
-.clean_old_dirs:
-  stage: cleanup
-  variables:
-    GIT_STRATEGY: none
-  extends: [.toss_perf_resource]
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
-  # Prevent this job from getting artifacts
-  dependencies: []
-  script:
-    - cd $SPHERAL_BUILDS_DIR
-    - MAX_DIR=30
-    - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
-    - echo $DIR_LIST
-    - ml load mpifileutils
-    - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi
