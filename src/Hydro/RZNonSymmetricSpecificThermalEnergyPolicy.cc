@@ -80,11 +80,9 @@ update(const KeyType& key,
   const auto numFields = eps.numFields();
 
   // Get the state fields.
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
-  // const auto  eps0 = state.fields(HydroFieldNames::specificThermalEnergy + "0", Scalar());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
   const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
@@ -121,24 +119,26 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      const auto  ri = abs(pos(nodeListi, i).y());
-      const auto  weighti = abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon();
-      const auto  mi = mass(nodeListi, i)/(2.0*M_PI*ri);
+      // const auto  ri = abs(pos(nodeListi, i).y());
+      const auto  mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
 
       // State for node j.
-      const auto  rj = abs(pos(nodeListj, j).y());
-      const auto  weightj = abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon();
-      const auto  mj = mass(nodeListj, j)/(2.0*M_PI*rj);
+      // const auto  rj = abs(pos(nodeListj, j).y());
+      const auto  mj = mass(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      const auto  weighti = abs(DepsDt0(nodeListi, i)) * mi/(mi + mj) + numeric_limits<Scalar>::epsilon();
+      const auto  weightj = abs(DepsDt0(nodeListj, j)) * mj/(mi + mj) + numeric_limits<Scalar>::epsilon();
+      // const auto weighti = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListi, i)*sgn(dEij));
+      // const auto weightj = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListj, j)*sgn(dEij));
       const auto wi = weighti/(weighti + weightj);
       CHECK(wi >= 0.0 and wi <= 1.0);
       // const auto wi = entropyWeighting(si, sj, duij);
