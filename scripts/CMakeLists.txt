@@ -80,8 +80,10 @@ if (SPHERAL_ENABLE_PYTHON)
   message(\"-- Byte compilation complete.\")
   ")
 
-  message("-- Creating local Silo module path file.")
-  file(WRITE "${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/silo_lib.pth"
-    "@CONFIG_SILO_DIR@/lib"
-  )
+  # Not using the python interface to Silo presently
+  #
+  # message("-- Creating local Silo module path file.")
+  # file(WRITE "${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/silo_lib.pth"
+  #   "@CONFIG_SILO_DIR@/lib"
+  # )
 endif()
