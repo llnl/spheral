@@ -283,14 +283,21 @@ class SpheralTPL:
     def concretize_spec(self, check_spec):
         "Concretize the spec"
         if (self.args.add_spec):
-            self.spack_env.add(self.args.spec)
+            with self.spack_env.write_transaction():
+                self.spack_env.add(self.args.spec)
+                self.spack_env.write()
+
         force_conc = False
         if (self.args.clean):
             force_conc = True
             print("Cleaning and concretizing environment")
         else:
             print("Concretizing environment")
-        conc_spec = self.spack_env.concretize(force=force_conc)
+
+        with self.spack_env.write_transaction():
+            conc_spec = self.spack_env.concretize(force=force_conc)
+            self.spack_env.write()
+
         if conc_spec:
             print("Concretized specs")
             for x in conc_spec:
@@ -307,7 +314,6 @@ class SpheralTPL:
         else:
             specs = self.spack_env.concrete_roots()
             self.print_specs(specs)
-        self.spack_env.write()
 
     def install_and_config(self):
         "Install TPLs and create host config file for given spec"
@@ -375,7 +381,7 @@ class SpheralTPL:
             self.concretize_spec(check_spec=False)
             if self.args.update_upstream:
                 upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
-                with spack.config.override("config:install_tree", upstream_dir):
+                with spack.config.override("config", {"install_tree": {"root": str(upstream_dir)}}):
                     spack.config.set("config", {"install_tree": {"padded_length": 0}})
                     print("WARNING: Modifying local Spack files, do not commit these changes")
                     with self.spack_env.manifest.use_config():
