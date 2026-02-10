@@ -122,7 +122,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHRZInitializeStartupDependencies");
-  SPHBase<Dimension>::initializeProblemStartup(dataBase);
+  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
   dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ);
   dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
@@ -460,7 +460,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       const auto  safeOmegai = safeInv(omegai, tiny);
-      const auto  zetai = abs((Hi*posi).y());
+      // const auto  zetai = abs((Hi*posi).y());
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
 
@@ -489,7 +489,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
       const auto  safeOmegaj = safeInv(omegaj, tiny);
-      const auto  zetaj = abs((Hj*posj).y());
+      // const auto  zetaj = abs((Hj*posj).y());
       CHECK(rhoj > 0.0);
       CHECK(Hdetj > 0.0);
 
@@ -591,7 +591,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       }
 
       // Estimate of delta v (for XSPH).
-      if (sameMatij or min(zetai, zetaj) < 1.0) {
+      if (sameMatij) {// or min(zetai, zetaj) < 1.0) {
         const auto wXSPHij = 0.5*(mRZi/rhoi*Wi + mRZj/rhoj*Wj);
         XSPHWeightSumi += wXSPHij;
         XSPHWeightSumj += wXSPHij;
@@ -633,9 +633,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  zetai = abs((Hi*posi).y());
-      const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri, 0.25*hri);
+      // const auto  zetai = abs((Hi*posi).y());
+      // const auto  hri = ri*safeInv(zetai);
+      const auto  riInv = safeInv(ri); // , 0.25*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK(rhoi > 0.0);
       CHECK(rhoRZi > 0.0);

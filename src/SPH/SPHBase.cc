@@ -152,6 +152,12 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHBaseInitializeStartupDependencies");
 
+  // Create the local storage for time step mask, pressure, sound speed, and position weight.
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(mPressure, 0.0, HydroFieldNames::pressure);
+  dataBase.resizeFluidFieldList(mSoundSpeed, 0.0, HydroFieldNames::soundSpeed);
+  dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
+
   // Set the moduli.
   updateStateFields(HydroFieldNames::pressure, state, derivs);
   updateStateFields(HydroFieldNames::soundSpeed, state, derivs);
@@ -206,12 +212,6 @@ SPHBase<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   TIME_BEGIN("SPHBaseRegister");
-
-  // Create the local storage for time step mask, pressure, sound speed, and position weight.
-  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
-  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::pressure);
-  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::soundSpeed);
-  dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // We may need the volume per node as well.
   const bool updateVolume = (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
