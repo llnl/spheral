@@ -48,6 +48,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             n1 = 100,
             n2 = 20,
 
+            seed = "lattice",
             nPerh = 4.01,
 
             gamma = 5.0/3.0,
@@ -303,7 +304,7 @@ else:
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 1.0
 
-generator = GenerateNodeDistribution2d(nz, nr, rho0, "lattice",
+generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
                                        xmin = (z0, r0),
                                        xmax = (z1, r1),
                                        rmin = rmin,
