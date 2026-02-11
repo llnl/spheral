@@ -23,6 +23,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             n1 = 100,
             n2 = 20,
 
+            seed = "lattice",
             nPerh = 1.35,
 
             gamma = 5.0/3.0,
@@ -35,25 +36,22 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
 
             solid = False,             # If true, use the fluid limit of the solid hydro option
 
-            crksph = False,
-            psph = False,
+            hydroType = "SPH",         # one of (SPH, CRKSPH)
             asph = False,              # Choose the H advancement
-            compatibleEnergy = False,
-            evolveTotalEnergy = True,  # Only for SPH variants -- evolve total rather than specific energy
-            Cl = 1.0, 
-            Cq = 1.0,
-            etaCritFrac = 1.0,
-            etaFoldFrac = 0.2,
-            Qlimiter = False,
+            compatibleEnergy = True,
+            evolveTotalEnergy = False,  # Only for SPH variants -- evolve total rather than specific energy
+            Cl = None,
+            Cq = None,
             balsaraCorrection = False,
-            epsilon2 = 1e-2,
+            epsilon2 = None,
             hmin = 1e-10,
             hmax = 1e10,
             hminratio = 0.02,
             cfl = 0.5,
             useVelocityMagnitudeForDt = False,
-            xsph = False,
-            etaMinAxis = 0.01,        # r at which we start to modify hydro significantly
+            XSPH = False,
+            epsilonTensile = 0.0,
+            nTensile = 4.0,
 
             IntegratorConstructor = VerletIntegrator,
             goalTime = None,
@@ -64,7 +62,6 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             dtMax = 0.1,
             dtGrowth = 1.1,
             dtverbose = False,
-            rigorousBoundaries = False,
             maxSteps = None,
             statsStep = 1,
             vizCycle = None,
@@ -72,7 +69,6 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             vizDerivs = False,
             HUpdate = IdealH,
             correctionOrder = LinearOrder,
-            QcorrectionOrder = LinearOrder,
             volumeType = RKSumVolume,
             densityUpdate = RigorousSumDensity, # VolumeScaledDensity,
             gradhCorrection = False,
@@ -98,21 +94,13 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
 
 outputFile = "Sedov-%s-RZ.gnu" % problem
 
+hydroType = hydroType.upper()
+
 assert problem in ("planar", "cylindrical", "spherical")
 assert not (compatibleEnergy and evolveTotalEnergy)
 
-hydroname = ""
-if solid:
-    hydroname += "Solid"
-if asph:
-    hydroname += "A"
-if crksph:
-    hydroname += "CRKSPH"
-else:
-    hydroname += "SPH"
-
 dataDir = os.path.join("dumps-%s-Sedov-RZ" % problem,
-                       hydroname,
+                       hydroType,
                        "nPerh=%f" % nPerh)
 if compatibleEnergy:
     dataDir = os.path.join(dataDir, "compatibleEnergy")
@@ -231,67 +219,18 @@ else:
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 1.0
 
-generator = RZGenerator(GenerateNodeDistribution2d(nz, nr, rho0, "lattice",
-                                                   xmin = (z0, r0),
-                                                   xmax = (z1, r1),
-                                                   rmin = rmin,
-                                                   rmax = rmax,
-                                                   nNodePerh = nPerh,
-                                                   SPH = not asph))
+generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
+                                       xmin = (z0, r0),
+                                       xmax = (z1, r1),
+                                       rmin = rmin,
+                                       rmax = rmax,
+                                       nNodePerh = nPerh,
+                                       SPH = not asph)
 
 distributeNodes2d((nodes1, generator))
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MIN)")
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MAX)")
 output("mpi.reduce(nodes1.numInternalNodes, mpi.SUM)")
-
-#-------------------------------------------------------------------------------
-# Set the point source of energy.
-#-------------------------------------------------------------------------------
-pos = nodes1.positions()
-vel = nodes1.velocity()
-mass = nodes1.mass()
-eps = nodes1.specificThermalEnergy()
-H = nodes1.Hfield()
-Esum = 0.0
-dr = (r1 - r0)/nr
-dz = (z1 - z0)/nz
-msum = 0.0
-if problem == "planar":
-    epsi = 0.5*Espike/(rho0*dz)
-    for i in range(nodes1.numInternalNodes):
-        if pos[i].x < z0 + dz:
-            eps[i] += epsi
-            Esum += mass[i]*epsi
-elif problem == "cylindrical":
-    epsi = Espike/(rho0*pi*dr*dr)
-    for i in range(nodes1.numInternalNodes):
-        if pos[i].y < r0 + dr:
-            eps[i] += epsi
-            Esum += mass[i]*epsi
-else:
-    Wsum = 0.0
-    for i in range(nodes1.numInternalNodes):
-        Hi = H[i]
-        etaij = (Hi*pos[i]).magnitude()
-        Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * pos[i].y
-        Ei = Wi*0.25*Espike
-        eps[i] = Ei
-        Wsum += Wi
-    Wsum = mpi.allreduce(Wsum, mpi.SUM)
-    assert Wsum > 0.0
-    for i in range(nodes1.numInternalNodes):
-        eps[i] = eps[i]/(Wsum*mass[i])
-        Esum += eps[i]*mass[i]
-        eps[i] += eps0
-Eglobal = mpi.allreduce(Esum, mpi.SUM)
-if problem == "planar":
-    Eexpect = 0.5*Espike*pi*(r1*r1 - r0*r0)
-elif problem == "cylindrical":
-    Eexpect = Espike*(z1 - z0)
-else:
-    Eexpect = 0.25*Espike
-print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
-assert fuzzyEqual(Eglobal, Eexpect)
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -305,37 +244,39 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
-    hydro = CRKSPHRZ(dataBase = db,
-                     cfl = cfl,
-                     useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
-                     compatibleEnergyEvolution = compatibleEnergy,
-                     evolveTotalEnergy = evolveTotalEnergy,
-                     XSPH = xsph,
-                     correctionOrder = correctionOrder,
-                     densityUpdate = densityUpdate,
-                     HUpdate = HUpdate,
-                     etaMinAxis = etaMinAxis)
-    hydro.Q.etaCritFrac = etaCritFrac
-    hydro.Q.etaFoldFrac = etaFoldFrac
+if hydroType == "CRKSPH":
+    hydro = CRKSPH(dataBase = db,
+                   W = WT,
+                   cfl = cfl,
+                   useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   evolveTotalEnergy = evolveTotalEnergy,
+                   XSPH = XSPH,
+                   order = correctionOrder,
+                   densityUpdate = densityUpdate,
+                   HUpdate = HUpdate,
+                   ASPH = asph)
 else:
-    hydro = SPHRZ(dataBase = db,
-                  W = WT,
-                  cfl = cfl,
-                  useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
-                  compatibleEnergyEvolution = compatibleEnergy,
-                  evolveTotalEnergy = evolveTotalEnergy,
-                  gradhCorrection = gradhCorrection,
-                  correctVelocityGradient = correctVelocityGradient,
-                  densityUpdate = densityUpdate,
-                  HUpdate = HUpdate,
-                  XSPH = xsph,
-                  etaMinAxis = etaMinAxis)
+    assert hydroType == "SPH"
+    hydro = SPH(dataBase = db,
+                W = WT,
+                cfl = cfl,
+                useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
+                compatibleEnergyEvolution = compatibleEnergy,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradhCorrection = gradhCorrection,
+                correctVelocityGradient = correctVelocityGradient,
+                densityUpdate = densityUpdate,
+                HUpdate = HUpdate,
+                ASPH = asph,
+                XSPH = XSPH,
+                epsTensile = epsilonTensile,
+                nTensile = nTensile)
 output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 
 packages = [hydro]
 
@@ -343,17 +284,17 @@ packages = [hydro]
 # Construct the artificial viscosity.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-q.Cl = Cl
-q.Cq = Cq
-q.epsilon2 = epsilon2
-q.limiter = Qlimiter
+if Cl:
+    q.Cl = Cl
+if Cq:
+    q.Cq = Cq
+if epsilon2:
+    q.epsilon2 = epsilon2
 q.balsaraShearCorrection = balsaraCorrection
-q.QcorrectionOrder = QcorrectionOrder
 output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
-output("q.limiter")
 output("q.balsaraShearCorrection")
 
 #-------------------------------------------------------------------------------
@@ -395,7 +336,6 @@ integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
 integrator.dtGrowth = dtGrowth
-integrator.rigorousBoundaries = rigorousBoundaries
 integrator.domainDecompositionIndependent = domainIndependent
 integrator.verbose = dtverbose
 integrator.allowDtCheck = True
@@ -404,7 +344,6 @@ output("integrator.lastDt")
 output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.dtGrowth")
-output("integrator.rigorousBoundaries")
 output("integrator.domainDecompositionIndependent")
 output("integrator.verbose")
 output("integrator.allowDtCheck")
@@ -425,6 +364,59 @@ control = SpheralController(integrator, WT,
                             vizDerivs = vizDerivs,
                             SPH = not asph)
 output("control")
+
+#-------------------------------------------------------------------------------
+# Set the point source of energy.
+# We have to wait until after physics initialization to have the proper 3D mass
+# per point in this calculation.
+#-------------------------------------------------------------------------------
+if control.time() == 0.0:
+    pos = nodes1.positions()
+    vel = nodes1.velocity()
+    mass = nodes1.mass()
+    eps = nodes1.specificThermalEnergy()
+    H = nodes1.Hfield()
+    Esum = 0.0
+    dr = (r1 - r0)/nr
+    dz = (z1 - z0)/nz
+    msum = 0.0
+    if problem == "planar":
+        epsi = 0.5*Espike/(rho0*pi*r1*r1*dz)
+        for i in range(nodes1.numInternalNodes):
+            if pos[i].x < z0 + dz:
+                eps[i] += epsi
+                Esum += mass[i]*epsi
+    elif problem == "cylindrical":
+        epsi = Espike/(rho0*pi*dr*dr*z1)
+        for i in range(nodes1.numInternalNodes):
+            if pos[i].y < r0 + dr:
+                eps[i] += epsi
+                Esum += mass[i]*epsi
+    else:
+        Wsum = 0.0
+        for i in range(nodes1.numInternalNodes):
+            Hi = H[i]
+            etaij = (Hi*pos[i]).magnitude()
+            Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0)
+            Ei = Wi*0.25*Espike
+            eps[i] = Ei
+            Wsum += Wi
+        Wsum = mpi.allreduce(Wsum, mpi.SUM)
+        assert Wsum > 0.0
+        for i in range(nodes1.numInternalNodes):
+            eps[i] = eps[i]/(Wsum*mass[i])
+            Esum += eps[i]*mass[i]
+            eps[i] += eps0
+    Eglobal = mpi.allreduce(Esum, mpi.SUM)
+    if problem == "planar":
+        Eexpect = 0.5*Espike
+    elif problem == "cylindrical":
+        Eexpect = Espike
+    else:
+        Eexpect = 0.25*Espike
+    print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
+    assert fuzzyEqual(Eglobal, Eexpect)
+    control.dropViz()
 
 #-------------------------------------------------------------------------------
 # Advance to the end time.
@@ -487,7 +479,7 @@ if graphics:
              (APlot, "Sedov-planar-A.png"),
              (HPlot, "Sedov-%s-h-RZ.png" % problem)]
 
-    if crksph:
+    if hydroType == "CRKSPH":
         volPlot = plotFieldList(hydro.volume, 
                                 winTitle = "volume",
                                 colorNodeLists = False, plotGhosts = False)
