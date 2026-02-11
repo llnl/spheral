@@ -109,7 +109,7 @@ def spheral_setup_test(test_param, threads=1, **kwargs):
     if (not mpi_enabled):
         threads = ncores
         ncores = 1
-    test_file = os.path.join("../", test_param.test_file())
+    test_file = test_param.test_file()
     tests = test_param.get_tests()
     for test_name, inps in tests.items():
         for i in range(test_runs):

@@ -2,6 +2,7 @@
 
 # Configure the tests to be run by run_perf.py
 
+import os
 import numpy as np
 
 # General number of SPH nodes per core
@@ -13,6 +14,7 @@ n_per_core_2d = 1000
 class TestParams:
     # Constructor
     def __init__(self, test_name, test_file, test_vars = None):
+        self.cur_dir = os.path.dirname(__file__)
         self.test_name = test_name
         self.test_file = test_file
         self.test_vars = test_vars
@@ -20,7 +22,7 @@ class TestParams:
         self.gen_inp = None
 
     def test_file(self):
-        return self.test_file
+        return os.path.join(self.cur_dir, "../", self.test_file)
 
     def test_names(self):
         if not self.test_vars:

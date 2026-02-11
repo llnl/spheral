@@ -25,7 +25,6 @@ import hist_data_utils as hdu
 
 # How many months to plot
 num_of_months = 6
-plot_height = 500
 # Which region to plot
 plot_region = "advance"
 colors = px.colors.qualitative.Set1
@@ -145,23 +144,21 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
     start_time = time.time()
-    home_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-    default_perf_test = os.path.join(home_dir, "tests/performance")
     parser = argparse.ArgumentParser()
     parser.add_argument("--doc-dir", default="public")
     parser.add_argument("--bench", default="/usr/workspace/sduser/Spheral/benchmarks")
     parser.add_argument("--threads", default=None, type=int)
-    # Provide additional test dir if in LLNLSpheral
-    parser.add_argument("--test-dir", default=None)
+    parser.add_argument("--pkg-name", type=str, description="Either Spheral or LLNLSpheral")
     parser.add_argument("--test", action="store_true")
     args = parser.parse_args()
-    doc_dir = os.path.join(home_dir, args.doc_dir)
-    if args.test_dir:
-        sys.path.append(args.test_dir)
-        import llnl_perf_tests as pt
-    else:
-        sys.path.append(default_perf_test)
+    cur_dir = os.getcwd()
+    doc_dir = os.path.join(cur_dir, args.doc_dir)
+    if (args.pkg_name == "Spheral"):
+        sys.append("../../tests/performance")
         import perf_tests as pt
+    else:
+        sys.append("../../../tests/performance")
+        import llnl_perf_tests as pt
     if (rank == 0):
         if (os.path.exists(doc_dir)):
             shutil.rmtree(doc_dir)
