@@ -370,6 +370,12 @@ output("control")
 # We have to wait until after physics initialization to have the proper 3D mass
 # per point in this calculation.
 #-------------------------------------------------------------------------------
+if problem == "planar":
+    Eexpect = 0.5*pi*(r1*r1 - r0*r0)*Espike
+elif problem == "cylindrical":
+    Eexpect = Espike*(z1 - z0)
+else:
+    Eexpect = 0.25*Espike
 if control.time() == 0.0:
     pos = nodes1.positions()
     vel = nodes1.velocity()
@@ -380,40 +386,31 @@ if control.time() == 0.0:
     dr = (r1 - r0)/nr
     dz = (z1 - z0)/nz
     msum = 0.0
+
+    # Define a function to give the distance from the source
     if problem == "planar":
-        epsi = 0.5*Espike/(rho0*pi*r1*r1*dz)
-        for i in range(nodes1.numInternalNodes):
-            if pos[i].x < z0 + dz:
-                eps[i] += epsi
-                Esum += mass[i]*epsi
+        feta = lambda etai: etai.x
     elif problem == "cylindrical":
-        epsi = Espike/(rho0*pi*dr*dr*z1)
-        for i in range(nodes1.numInternalNodes):
-            if pos[i].y < r0 + dr:
-                eps[i] += epsi
-                Esum += mass[i]*epsi
+        feta = lambda etai: etai.y
     else:
-        Wsum = 0.0
-        for i in range(nodes1.numInternalNodes):
-            Hi = H[i]
-            etaij = (Hi*pos[i]).magnitude()
-            Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0)
-            Ei = Wi*0.25*Espike
-            eps[i] = Ei
-            Wsum += Wi
-        Wsum = mpi.allreduce(Wsum, mpi.SUM)
-        assert Wsum > 0.0
-        for i in range(nodes1.numInternalNodes):
-            eps[i] = eps[i]/(Wsum*mass[i])
-            Esum += eps[i]*mass[i]
-            eps[i] += eps0
+        feta = lambda etai: etai.magnitude()
+
+    Wsum = 0.0
+    for i in range(nodes1.numInternalNodes):
+        Hi = H[i]
+        etaij = feta(Hi*pos[i])
+        Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * mass[i]
+        Ei = Wi*Eexpect
+        eps[i] = Ei
+        Wsum += Wi
+    Wsum = mpi.allreduce(Wsum, mpi.SUM)
+    assert Wsum > 0.0
+    for i in range(nodes1.numInternalNodes):
+        eps[i] = eps[i]/(Wsum*mass[i])
+        Esum += eps[i]*mass[i]
+        eps[i] += eps0
+
     Eglobal = mpi.allreduce(Esum, mpi.SUM)
-    if problem == "planar":
-        Eexpect = 0.5*Espike
-    elif problem == "cylindrical":
-        Eexpect = Espike
-    else:
-        Eexpect = 0.25*Espike
     print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
     assert fuzzyEqual(Eglobal, Eexpect)
     control.dropViz()
@@ -548,7 +545,7 @@ if outputFile:
         #     import filecmp
         #     assert filecmp.cmp(outputFile, comparisonFile)
 
-Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[0])/control.conserve.EHistory[0]
+Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[2])/control.conserve.EHistory[2]
 print("Total energy error: %g" % Eerror)
 if checkEnergy and abs(Eerror) > 1e-13:
     raise ValueError("Energy error outside allowed bounds.")
