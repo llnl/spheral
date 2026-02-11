@@ -154,10 +154,10 @@ def main():
     cur_dir = os.getcwd()
     doc_dir = os.path.join(cur_dir, args.doc_dir)
     if (args.pkg_name == "Spheral"):
-        sys.append("../../tests/performance")
+        sys.path.append("../../tests/performance")
         import perf_tests as pt
     else:
-        sys.append("../../../tests/performance")
+        sys.path.append("../../../tests/performance")
         import llnl_perf_tests as pt
     if (rank == 0):
         if (os.path.exists(doc_dir)):
