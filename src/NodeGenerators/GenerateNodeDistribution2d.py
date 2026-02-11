@@ -1512,15 +1512,15 @@ class SlantedBoxNodeDistribution2d(NodeGeneratorBase):
 #-------------------------------------------------------------------------------
 def RZGenerator(generator):
 
-    # Correct the mass.
-    n = len(generator.m)
-    for i in range(n):
-        rhoi = generator.localMassDensity(i)
-        assert rhoi > 0.0
-        Ai = generator.localMass(i) / rhoi
-        Ri = sqrt(Ai/pi)
-        ri = generator.localPosition(i).y
-        Vi = toroidalVolume(Ri, ri)
-        generator.m[i] = generator.localPosition(i).y
+    # # Correct the mass.
+    # n = len(generator.m)
+    # for i in range(n):
+    #     rhoi = generator.localMassDensity(i)
+    #     assert rhoi > 0.0
+    #     Ai = generator.localMass(i) / rhoi
+    #     Ri = sqrt(Ai/pi)
+    #     ri = generator.localPosition(i).y
+    #     Vi = toroidalVolume(Ri, ri)
+    #     generator.m[i] = generator.localPosition(i).y
 
     return generator
