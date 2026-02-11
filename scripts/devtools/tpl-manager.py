@@ -74,9 +74,6 @@ class SpheralTPL:
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
                             help="ID string to postfix an initconfig file.")
-        parser.add_argument("--package-repo", type=str, default=None,
-                            help="Specify a location to put the spack-package repo. "+\
-                            "Defaults to spheral-spack-tpls/packages.")
         parser.add_argument("--dev-pkg", action="store_true",
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
@@ -92,7 +89,7 @@ class SpheralTPL:
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
 
-    def add_spack_paths(self, spack_dir, package_repo):
+    def add_spack_paths(self, spack_dir):
         "Append spack path to system to use spack python modules"
         spack_path = os.path.join(spack_dir, "lib", "spack")
         sys.path.append(spack_path)
@@ -131,7 +128,7 @@ class SpheralTPL:
             if (cur_hash != spack_commit):
                 sexe(f"git -C {spack_dir} fetch --depth=2 origin {spack_commit}")
                 sexe(f"git -C {spack_dir} checkout FETCH_HEAD")
-        self.add_spack_paths(spack_dir, self.args.package_repo)
+        self.add_spack_paths(spack_dir)
 
     def check_lock_file(self):
         "Check if any files in scripts/spack are newer than the spack.lock file"
