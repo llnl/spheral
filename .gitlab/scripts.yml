@@ -234,6 +234,21 @@
     - ml load mpifileutils
     - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi
 
+.clean_old_perfs:
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  extends: [.toss_perf_resource]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+  # Prevent this job from getting artifacts
+  dependencies: []
+  script:
+    - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
+    - ml load mpifileutils
+    - cd $BENCHMARK_LOC
+    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files
+
 # ------------------------------------------------------------------------------
 # Script Utilities
 # ------------------------------------------------------------------------------

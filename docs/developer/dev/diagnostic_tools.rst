@@ -140,27 +140,27 @@ Performance Regression Testing
 .. note::
    The following is currently only applicable for use on LC machines at LLNL.
 
-``tests/run_perf.py`` contains a set of performance regression tests. These tests allow a developer to estimate the performance implications of code under development and compare it to the current development branch of Spheral.
-When a merge to the develop branch occurs, the CI runs this regression test multiple times to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
+``tests/performance/run_perf.py`` contains a set of performance regression tests. These tests allow a developer to estimate the performance implications of code under development and compare it to the current development branch of Spheral.
+On a nightly basis, the CI runs this regression test multiple times to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
 The general procedure to comparing performance regression tests is:
 
 * Run the performance regression tests from an installation using 2 nodes (number of nodes used in benchmark run by CI):
    ::
 
-      ./spheral-ats --log test_dir_name --numNodes 2 tests/run_perf.py
+      ./bin/spheral-ats --log test_dir_name --numNodes 2 tests/performance/run_perf.py
 
    There is also a ``--threads`` option to specify a given number of threads per rank.
-   The test above will create an ATS python file, ``test_dir_name/atsr.py``, as well as
+   The test above will create an ATS python file, ``test_dir_name/atsr.py`` that will be used when analysing the performance.
 
 * In general, to compare the performance between two performance results, use:
    ::
 
-      ./spheral ./scripts/performance_analysis.py --perfdata1 /path/to/perf/data --perfdata2 /path/to/other/perf/data
+      ./bin/spheral ./scripts/performance_analysis.py --perfdata1 /path/to/perf/data --perfdata2 /path/to/other/perf/data
 
 * To compare newly run times with reference times for regression testing purposes, use:
    ::
 
-      ./spheral ./scripts/performance_analysis.py --perfdata test_dir_name --ref /directory/of/reference/caliper/files/
+      ./bin/spheral ./scripts/performance_analysis.py --perfdata test_dir_name --ref /directory/of/reference/caliper/files/
 
    The input to ``--ref`` can be also be an ATS directory created from running ``run_perf.py`` or just a directory of Caliper files.
    Removing the ``--ref`` input will default to comparing to benchmark timings in ``/usr/WS2/sduser/Spheral/benchmark``.
