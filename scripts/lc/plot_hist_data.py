@@ -148,7 +148,7 @@ def main():
     parser.add_argument("--doc-dir", default="public")
     parser.add_argument("--bench", default="/usr/workspace/sduser/Spheral/benchmarks")
     parser.add_argument("--threads", default=None, type=int)
-    parser.add_argument("--pkg-name", type=str, description="Either Spheral or LLNLSpheral")
+    parser.add_argument("--pkg-name", type=str, help="Either Spheral or LLNLSpheral")
     parser.add_argument("--test", action="store_true")
     args = parser.parse_args()
     cur_dir = os.getcwd()
