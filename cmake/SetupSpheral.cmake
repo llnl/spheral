@@ -14,6 +14,11 @@ list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #-------------------------------------------------------------------------------
+# Lines to add to the Spheral executable
+#-------------------------------------------------------------------------------
+set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "")
+
+#-------------------------------------------------------------------------------
 # Add Spheral CMake Macros for tests and executables
 #-------------------------------------------------------------------------------
 include(SpheralMacros)
