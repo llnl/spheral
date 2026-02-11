@@ -119,7 +119,6 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      // const auto  ri = abs(pos(nodeListi, i).y());
       const auto  mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
@@ -127,7 +126,6 @@ update(const KeyType& key,
       const auto& pacci = pairAccelerations[kk][0];
 
       // State for node j.
-      // const auto  rj = abs(pos(nodeListj, j).y());
       const auto  mj = mass(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
