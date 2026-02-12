@@ -57,4 +57,9 @@ include:
       - if: '$CI_PIPELINE_SOURCE == "push"'
         when: always
   - local: .gitlab/jobs-prod.yml
+    rules:
+      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
+        when: never
+      - if: '$CI_PIPELINE_SOURCE == "push"'
+        when: always
   - local: .gitlab/pages.yml
