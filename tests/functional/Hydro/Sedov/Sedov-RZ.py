@@ -17,14 +17,13 @@ title("RZ hydro test -- Sedov problem")
 # Generic problem parameters
 #-------------------------------------------------------------------------------
 commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
-            KernelConstructor = NBSplineKernel,
-            order = 5,
+            KernelConstructor = WendlandC4Kernel,
 
             n1 = 100,
             n2 = 20,
 
             seed = "lattice",
-            nPerh = 1.35,
+            nPerh = 4.01,
 
             gamma = 5.0/3.0,
             mu = 1.0,
@@ -161,11 +160,7 @@ strength = NullStrength()
 #-------------------------------------------------------------------------------
 # Interpolation kernels.
 #-------------------------------------------------------------------------------
-if KernelConstructor==NBSplineKernel:
-    Wbase = NBSplineKernel(order)
-else:
-    Wbase = KernelConstructor()
-WT = TableKernel(Wbase, 1000)
+WT = TableKernel(KernelConstructor(), 200)
 kernelExtent = WT.kernelExtent
 output("WT")
 
@@ -375,7 +370,7 @@ if problem == "planar":
 elif problem == "cylindrical":
     Eexpect = Espike*(z1 - z0)
 else:
-    Eexpect = 0.25*Espike
+    Eexpect = Espike/2.0
 if control.time() == 0.0:
     pos = nodes1.positions()
     vel = nodes1.velocity()
