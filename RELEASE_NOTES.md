@@ -5,8 +5,8 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
-    * Added view class for PairwiseField (PairwiseFieldView)
-    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * Added view class for PairwiseField (PairwiseFieldView).
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
 
   * Bug fixes
 
@@ -15,6 +15,12 @@ Notable changes include:
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
+    * Performance testing and CI improvements:
+      * The cleanup old directories job is now a scheduled pipelines that runs weekly.
+      * The performance tests and deploy jobs are now scheduled pipelines that run nightly.
+      * Gitlab pages now uses Plotly for interactive visualizations.
+      * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
+      * Merges to develop will trigger builds to be done in a shared directory for use by the performance testing scripts.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
