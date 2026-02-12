@@ -16,9 +16,8 @@ if (ENABLE_HIP)
   set(LANG_STR "HIP")
   # CMake sets the wrong optimization flag for debug mode with HIP
   # But this causes the asan to fail to compile for some reason
-  if (NOT SPHERAL_ENABLE_ASAN)
-    string(REPLACE "-O" "-O0" CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG}")
-  endif()
+  string(REPLACE "-O" "" CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG}")
+  set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0")
 endif()
 
 
@@ -100,6 +99,7 @@ if (SPHERAL_ENABLE_ASAN)
   get_filename_component(ASAN_LIBRARIES ${ASAN_LIBRARY_PATH} DIRECTORY)
   get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
   list(APPEND SPHERAL_ENV_LINES "export LD_PRELOAD=${ASAN_LIBRARY_PATH}")
+  list(APPEND SPHERAL_ENV_LINES "export ASAN_OPTIONS=detect_leaks=0")
   message("------------------------Configuring ASAN------------------------------------")
   message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
   # Modify the hip arch if necessary
