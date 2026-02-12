@@ -60,6 +60,11 @@ class PairwiseField:
         "NodePairList this PairwiseField is defined on"
         return "const NodePairList&"
 
+    @PYB11const
+    def empty(self):
+        "Check if PairwiseField is empty"
+        return "bool"
+
     #...........................................................................
     # Properties
     size = PYB11property("size_t", doc="size of the PairwiseField")

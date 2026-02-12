@@ -393,7 +393,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   CHECK(rhoSum.size() == numNodeLists);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
@@ -409,7 +409,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass[0]->nodeList();
@@ -624,7 +624,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
         DvDti += mj*deltaDvDt;
         DvDtj -= mi*deltaDvDt;
       }
-      if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
+      if (compatibleEnergy) pairAccelerations[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Pair-wise portion of grad velocity.
       const auto deltaDvDxi = fDij * vij.dyad(gradWGi);

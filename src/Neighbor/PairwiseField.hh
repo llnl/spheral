@@ -7,15 +7,11 @@
 //
 // Created by J. Michael Owen, Wed Nov 20 14:44:44 PST 2024
 //----------------------------------------------------------------------------//
-#ifndef _Spheral_NeighborSpace_PairwiseField_hh_
-#define _Spheral_NeighborSpace_PairwiseField_hh_
+#ifndef _Spheral_NeighborSpace_PairwiseField_
+#define _Spheral_NeighborSpace_PairwiseField_
 
-#include "Neighbor/PairwiseFieldElementAccessor.hh"
-#include "Utilities/DataTypeTraits.hh"
-#include "Utilities/StrideIterator.hh"
-#include "Utilities/DBC.hh"
+#include "Neighbor/PairwiseFieldView.hh"
 
-#include <vector>
 #include <memory>
 
 namespace Spheral {
@@ -26,9 +22,11 @@ struct NodePairIdxType;
 class NodePairList;
 
 template<typename Dimension, typename Value, size_t numElements=1>
-class PairwiseField {
+class PairwiseField: public PairwiseFieldView<Value, numElements> {
 public:
   //--------------------------- Public Interface ---------------------------//
+  using ViewType = PairwiseFieldView<Value, numElements>;
+
   using ContainerType = std::vector<Value>;
   using value_type = typename ContainerType::value_type;
   using SelfType = PairwiseField<Dimension, Value, numElements>;
@@ -38,46 +36,42 @@ public:
   using iterator = StrideIterator<Value, numElements>;
   using const_iterator = StrideIterator<const Value, numElements>;
 
+  // Bring in various methods hidden in PairwiseFieldView
+  using ViewType::operator();
+  using ViewType::operator[];
+
   // Constructors, destructors
+  PairwiseField()                                               = default;
   PairwiseField(const ConnectivityMap<Dimension>& connectivity);
-  PairwiseField(const PairwiseField& rhs)                       = default;
-  ~PairwiseField()                                              = default;
-  PairwiseField& operator=(const PairwiseField& rhs)            = default;
+  PairwiseField(std::shared_ptr<NodePairList> pairsPtr);
+  PairwiseField(const PairwiseField& rhs);
+  virtual ~PairwiseField();
+  PairwiseField& operator=(const PairwiseField& rhs);
 
-  // Access the data
-  const_reference operator[](const size_t k) const              { REQUIRE(!mPairsPtr.expired()); return Accessor::at(mValues, k); }
-  const_reference operator()(const size_t k) const              { return (*this)[k]; }
+  // Access the data using Node pair information
   const_reference operator()(const NodePairIdxType& x) const;
-
-  reference       operator[](const size_t k)                    { REQUIRE(!mPairsPtr.expired()); return Accessor::at(mValues, k); }
-  reference       operator()(const size_t k)                    { return (*this)[k]; }
   reference       operator()(const NodePairIdxType& x);
 
-  // Comparators
-  bool operator==(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mValues == rhs.mValues; }
-  bool operator!=(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mValues != rhs.mValues; }
-
   // Iterators
-  const_iterator begin() const                                  { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mValues.begin())); }
-  const_iterator end() const                                    { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mValues.end())); }
+  const_iterator begin() const                                  { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mArray.begin())); }
+  const_iterator end() const                                    { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mArray.end())); }
 
-  iterator begin()                                              { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mValues.begin())); }
-  iterator end()                                                { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mValues.end())); }
+  iterator begin()                                              { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.begin())); }
+  iterator end()                                                { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.end())); }
 
   // Other methods
   const NodePairList& pairs() const;
-  size_t size() const                                           { REQUIRE(!mPairsPtr.expired()); return mValues.size()/numElements; }
-
-  // Zero the Field
-  void Zero()                                                   { for (auto& x: mValues) x = DataTypeTraits<Value>::zero(); }
-
-  // Forbidden methods
-  PairwiseField()                                               = delete;
+  
+  // Get the view (for trivially copyable types)
+  ViewType view()                                               { return static_cast<ViewType>(*this); }
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  using ViewType::mSpan;
   std::weak_ptr<NodePairList> mPairsPtr;
-  ContainerType mValues;
+  ContainerType mArray;
+
+  void assignDataSpan();
 };
 
 }
