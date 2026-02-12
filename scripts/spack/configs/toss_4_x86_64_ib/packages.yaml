@@ -72,11 +72,6 @@ packages:
     buildable: false
 
 # ------ SYSTEM LIBS -------
-  python:
-    externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
   ncurses:
     externals:
     - spec: ncurses@5.9

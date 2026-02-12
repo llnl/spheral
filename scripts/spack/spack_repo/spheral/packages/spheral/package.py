@@ -53,7 +53,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("c", type="build")
     depends_on("cxx", type="build")
     depends_on("fortran", type="build")
-    depends_on('python', when='+python')
+    depends_on('python@3.12', when='+python')
 
     depends_on('mpi', when='+mpi')
 

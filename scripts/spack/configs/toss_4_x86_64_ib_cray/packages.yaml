@@ -80,12 +80,6 @@ packages:
     - spec: readline@7.0
       prefix: /usr
     buildable: false
-  python:
-    externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
-
   autoconf:
     externals:
     - spec: autoconf@2.69
