@@ -173,7 +173,7 @@ class SpheralTPL:
     def modify_env_file(self, env_file, mod_func):
         "Modify the spack.yaml file"
         from spack.util import spack_yaml
-        # Load the spack.yaml file
+        import re
         with open(env_file) as ff:
             try:
                 loader = spack_yaml.load(ff)
@@ -183,6 +183,18 @@ class SpheralTPL:
         with open(env_file, 'w') as ff:
             spack_yaml.dump(loader, ff)
 
+        # Fixup spack.yaml include:: list
+        #
+        # Spack's YAML dumper automatically quotes 'include::' because '::'
+        # is special in YAML, but Spack requires it to be unquoted to recognize the
+        # include directive
+        with open(env_file, 'r') as ff:
+            content = ff.read()
+        content = re.sub(r"  '['\"]?include:+['\"]?:", "  include::", content)
+
+        with open(env_file, 'w') as ff:
+            ff.write(content)
+
     def custom_spack_env(self, env_name):
         "Use/create a custom Spack environment"
         from spack import environment
@@ -190,43 +202,43 @@ class SpheralTPL:
             raise Exception("Must supply a --spec for a custom environment (IE --spec spheral+mpi%gcc)")
         env_file = os.path.join(self.env_dir, "spack.yaml")
         if (not os.path.exists(env_file)):
+            # Create a new environment
             env_cmd = SpackCommand("env")
             env_cmd("create", "--without-view", "-d", self.env_dir)
+
             def set_concretize(loader):
-                loader["spack"].update({
-                    "concretizer": {"unify": False},
-                    "config": {
-                        "install_tree": {"padded_length": 128},
-                        "misc_cache": "$spack/../misc_cache",
-                        "test_stage": "$spack/../test_stage",
-                        "build_stage": ["$spack/../build_stage"]
+                develop_dict = {}
+                repos_list = []
+
+                for package, path in package_dirs.items():
+                    repo_path = os.path.abspath(os.path.join(get_config_dir(path), f"spack_repo/{package}"))
+                    repos_list.append(repo_path)
+                    dev_path = os.path.abspath(path)
+                    develop_dict[package] = {
+                        "path": dev_path,
+                        "spec": f"{package}@=develop"
                     }
-                })
-                if "repos" not in loader["spack"]:
-                    loader["spack"]["repos"] = {}
-                loader["spack"]["repos"]["builtin"] = {
-                    "destination": "$spack/../packages",
-                    "git": "https://github.com/spack/spack-packages.git",
-                    "commit": "0f833a16999a012153c040c26c98256c14a1a4fd"
+
+                loader["spack"]["concretizer"] = {
+                    "unify": False,
+                    "reuse": False,
+                    "compiler_mixing": False
                 }
+                loader["spack"]["develop"] = develop_dict
+                loader["spack"]["include::"] = [
+                    "../../configs/config.yaml"
+                ]
+                loader["spack"]["repos"] = repos_list
+
                 return loader
+
             self.modify_env_file(env_file, set_concretize)
+
         self.spack_env = environment.Environment(self.env_dir)
         environment.activate(self.spack_env)
-        # Get all the Spack commands
-        repo_cmd = SpackCommand("repo")
-        dev_cmd = SpackCommand("develop")
         comp_cmd = SpackCommand("compiler")
         ext_cmd = SpackCommand("external")
-        cur_repos = repo_cmd("list") # spack repo list
 
-        # Add the repos and develop paths to the spack environment
-        for package, path in package_dirs.items():
-            if (package+" " not in cur_repos):
-                repo_path = os.path.abspath(os.path.join(get_config_dir(path), f"spack_repo/{package}"))
-                repo_cmd("add", f"{repo_path}") # spack repo add <repo_path>
-            dev_path = os.path.abspath(path)
-            dev_cmd("-p", dev_path, f"{package}@=develop") # spack develop <package>@=develop
         comp_cmd("find") # spack compiler find
         ext_cmd("find") # spack external find
         provider_dict = {}
@@ -252,11 +264,9 @@ class SpheralTPL:
         opt_packages = ["hdf5", "ncurses"]
         for i in opt_packages:
             self.find_spack_package(i, req=False)
-        # Hard-coding providers for these packages vastly improves TPL system
         provider_dict.update({"zlib-api": ["zlib"],
                               "blas": ["openblas"],
                               "lapack": ["openblas"]})
-        # Always add the spec for a custom environment
         if (provider_dict):
             self.config_env_providers(provider_dict)
         self.args.add_spec = True
