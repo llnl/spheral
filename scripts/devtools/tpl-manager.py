@@ -190,12 +190,25 @@ class SpheralTPL:
             raise Exception("Must supply a --spec for a custom environment (IE --spec spheral+mpi%gcc)")
         env_file = os.path.join(self.env_dir, "spack.yaml")
         if (not os.path.exists(env_file)):
-            # Create a new environment
             env_cmd = SpackCommand("env")
             env_cmd("create", "--without-view", "-d", self.env_dir)
             def set_concretize(loader):
-                new_dict = {"concretizer": {"unify": False}}
-                loader["spack"].update(new_dict)
+                loader["spack"].update({
+                    "concretizer": {"unify": False},
+                    "config": {
+                        "install_tree": {"padded_length": 128},
+                        "misc_cache": "$spack/../misc_cache",
+                        "test_stage": "$spack/../test_stage",
+                        "build_stage": ["$spack/../build_stage"]
+                    }
+                })
+                if "repos" not in loader["spack"]:
+                    loader["spack"]["repos"] = {}
+                loader["spack"]["repos"]["builtin"] = {
+                    "destination": "$spack/../packages",
+                    "git": "https://github.com/spack/spack-packages.git",
+                    "commit": "0f833a16999a012153c040c26c98256c14a1a4fd"
+                }
                 return loader
             self.modify_env_file(env_file, set_concretize)
         self.spack_env = environment.Environment(self.env_dir)
