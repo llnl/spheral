@@ -81,6 +81,7 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
+  const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
@@ -120,6 +121,7 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
+      const auto  mRZi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -127,23 +129,57 @@ update(const KeyType& key,
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
+      const auto  mRZj = mass(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto  weighti = abs(DepsDt0(nodeListi, i)) * mi/(mi + mj) + numeric_limits<Scalar>::epsilon();
-      const auto  weightj = abs(DepsDt0(nodeListj, j)) * mj/(mi + mj) + numeric_limits<Scalar>::epsilon();
-      // const auto weighti = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListi, i)*sgn(dEij));
-      // const auto weightj = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListj, j)*sgn(dEij));
-      const auto wi = weighti/(weighti + weightj);
-      CHECK(wi >= 0.0 and wi <= 1.0);
-      // const auto wi = entropyWeighting(si, sj, duij);
-      // CHECK2(fuzzyEqual(wi + entropyWeighting(sj, si, dEij/mj), 1.0, 1.0e-10),
-      //        wi << " " << entropyWeighting(sj, si, dEij/mj) << " " << (wi + entropyWeighting(sj, si, dEij/mj)));
-      DepsDt_thread(nodeListi, i) += wi*dEij/mi;
-      DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+      // const auto weighti = mi;
+      // const auto weightj = mj;
+      // // const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * 2.0*mi/(mi + mj);
+      // // const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * 2.0*mj/(mi + mj);
+      // // const auto weighti = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListi, i)*sgn(dEij));
+      // // const auto weightj = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListj, j)*sgn(dEij));
+      // const auto wi = weighti/(weighti + weightj);
+      // CHECK(wi >= 0.0 and wi <= 1.0);
+      // // const auto wi = entropyWeighting(si, sj, duij);
+      // // CHECK2(fuzzyEqual(wi + entropyWeighting(sj, si, dEij/mj), 1.0, 1.0e-10),
+      // //        wi << " " << entropyWeighting(sj, si, dEij/mj) << " " << (wi + entropyWeighting(sj, si, dEij/mj)));
+      // // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      // // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+
+      DepsDt_thread(nodeListi, i) += dEij*mRZi/(mi*(mRZi + mRZj));
+      DepsDt_thread(nodeListj, j) += dEij*mRZj/(mj*(mRZi + mRZj));
+
+      // const auto dEi0 = mi*DepsDt0(nodeListi, i);
+      // const auto dEj0 = mj*DepsDt0(nodeListj, j);
+      // if (sgn(dEi0) != sgn(dEj0)) {
+      //   if (sgn(dEij) == sgn(dEi0)) {
+      //     DepsDt_thread(nodeListi, i) += dEij/mi;
+      //   } else {
+      //     VERIFY(sgn(dEij) == sgn(dEj0));
+      //     DepsDt_thread(nodeListj, j) += dEij/mj;
+      //   }
+      // } else {
+      //   if (sgn(dEij) != sgn(dEi0) or fuzzyEqual(dEi0 + dEj0, 0.0)) {
+      //     DepsDt_thread(nodeListi, i) += dEij/(mi + mj);
+      //     DepsDt_thread(nodeListj, j) += dEij/(mi + mj);
+      //   } else {          
+      //     VERIFY(sgn(dEij) == sgn(dEi0) and sgn(dEij) == sgn(dEj0));
+      //     const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * 2.0*mi/(mi + mj);
+      //     const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * 2.0*mj/(mi + mj);
+      //     const auto wi = weighti/(weighti + weightj);
+      //     CHECK(wi >= 0.0 and wi <= 1.0);
+      //     DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      //     DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+
+      //     // const auto chi = dEij*safeInv(dEi0 + dEj0);
+      //     // DepsDt_thread(nodeListi, i) += chi*dEi0/mi;
+      //     // DepsDt_thread(nodeListj, j) += chi*dEj0/mj;
+      //   }
+      // }
 
       // // Check if either of these points was advanced non-conservatively.
       // if (surface) {
