@@ -123,6 +123,7 @@ public:
                
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
+  const FieldList<Dimension, Vector>& selfAccelerations() const { return mSelfAccelerations; }
   const FieldList<Dimension, Scalar>& massRZ()            const { return mMassRZ; }
   const FieldList<Dimension, Scalar>& massDensityRZ()     const { return mMassDensityRZ; }
   const FieldList<Dimension, Scalar>& DmassDensityDtRZ()  const { return mDmassDensityDtRZ; }
@@ -135,6 +136,7 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
+  FieldList<Dimension, Vector> mSelfAccelerations;
 
   FieldList<Dimension, Scalar> mMassRZ;
   FieldList<Dimension, Scalar> mMassDensityRZ;
