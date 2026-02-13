@@ -67,6 +67,8 @@ class SpheralTPL:
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
                             help="ID string to postfix an initconfig file.")
+        parser.add_argument("--debug-build", action="store_true",
+                            help="Adds the --keep-stage flag to spack for doing debug builds of TPLs")
         parser.add_argument("--dev-pkg", action="store_true",
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
@@ -311,6 +313,8 @@ class SpheralTPL:
         install_cmd = SpackCommand("install")
         if (self.args.dry_run):
             install_args.append("--fake")
+        if (self.args.debug_build):
+            install_args.append("--keep-stage")
         print(f"Running spack {' '.join(install_args)} {spec}")
         install_cmd(*install_args, spec)
 

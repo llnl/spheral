@@ -1,10 +1,18 @@
-Version X.X.X -- Release date XXX
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
 ==============================================
   * Important Notes:
 
 Notable changes include:
 
   * New features / API changes:
+    * Added view class for PairwiseField (PairwiseFieldView)
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * ArtificialViscosity has been refactored for use on the GPU.
+        * ArtificialViscosity is now ArtificialViscosityView.
+        * ArtificialViscosityHandle is now ArtificialViscosity.
+        * Both inherit from ArtificialViscosityBase.
+        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+    * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
 
   * Bug fixes
 
@@ -13,6 +21,8 @@ Notable changes include:
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
+    * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
+    * Updated from Rocm 6.2.0 to 6.4.3.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
@@ -56,11 +66,6 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
-      * ArtificialViscosity has been refactored for use on the GPU.
-        * ArtificialViscosity is now ArtificialViscosityView.
-        * ArtificialViscosityHandle is now ArtificialViscosity.
-        * Both inherit from ArtificialViscosityBase.
-        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
       * FieldNames are inlined for easier use on device.
       * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 

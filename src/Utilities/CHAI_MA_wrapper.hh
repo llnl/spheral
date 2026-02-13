@@ -27,30 +27,5 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
     a_ma = chai::makeManagedArray(a_dc.data(), a_dc.size(), chai::CPU, false);
   }
 }
-
-// Macros for updating managed_ptr member data
-// TODO: Modify this to work on a list of member variables
-#define ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, EXEC_SPACE) \
-  {                                                                     \
-  const auto local_input = INPUT_VALUE;                                 \
-    RAJA::forall<EXEC_SPACE>                                            \
-      (RAJA::TypedRangeSegment<unsigned>(0,1),                          \
-       [=] SPHERAL_HOST_DEVICE (int) {                                  \
-         MANAGED_PTR->MEMBER_NAME = local_input;                        \
-       });                                                              \
-    HIP_ERROR_CHECK                                                     \
-  }
-
-#define ASSIGN_MEMBER_HOST(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE) ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, RAJA::seq_exec);
-#ifdef SPHERAL_ENABLE_HIP
-#define ASSIGN_MEMBER_GPU(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE) ASSIGN_MEMBER(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE, EXEC_POLICY);
-#else
-#define ASSIGN_MEMBER_GPU(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE)
-#endif
-
-#define ASSIGN_MEMBER_ALL(MANAGED_PTR,  MEMBER_NAME, INPUT_VALUE) \
-  ASSIGN_MEMBER_HOST(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE);      \
-  ASSIGN_MEMBER_GPU(MANAGED_PTR, MEMBER_NAME, INPUT_VALUE);
-
 }
 #endif

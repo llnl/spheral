@@ -412,9 +412,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto  localDvDx_v = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
   auto  M_v = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
   auto  localM_v = derivs.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero());
-  auto  rhoSumCorrection_v = derivs.fields(HydroFieldNames::massDensityCorrection, 0.0);
-  auto  maxViscousPressure_v = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure_v = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
+  auto  maxViscousPressure_v = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
+  auto  rhoSumCorrection_v = derivs.fields(HydroFieldNames::massDensityCorrection, 0.0);
   auto  XSPHWeightSum_v = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV_v = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt_v = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
@@ -432,6 +432,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto XSPHWeightSum = XSPHWeightSum_v.view();
   auto XSPHDeltaV = XSPHDeltaV_v.view();
   auto DSDt = DSDt_v.view();
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto rhoSumCorrection = rhoSumCorrection_v.view();
   CHECK(rhoSum_v.size() == numNodeLists);
   CHECK(DxDt_v.size() == numNodeLists);
@@ -446,8 +447,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(effViscousPressure_v.size() == numNodeLists);
   CHECK(XSPHWeightSum_v.size() == numNodeLists);
   CHECK(XSPHDeltaV_v.size() == numNodeLists);
-
-  //auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass_v[0]->nodeList();
@@ -647,7 +647,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
         DvDti.atomicAdd(mj*deltaDvDt);
         DvDtj.atomicSub(mi*deltaDvDt);
       }
-      //if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
+      if (compatibleEnergy) pairAccelerations[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Pair-wise portion of grad velocity.
       const auto deltaDvDxi = fDij * vij.dyad(gradWGi);

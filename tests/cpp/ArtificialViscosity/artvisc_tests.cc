@@ -42,22 +42,24 @@ GPU_TYPED_TEST_P(ArtViscTypedTest, InitTests) {
   bool quad = false;
   // Initialize with certain variables
   LimMonGArtVisc Q(Cl, Cq, t_kernel, linear, quad, etaCF, etaFF);
-  // This grabs the dynamically casted view, used in the code
-  chai::managed_ptr<ArtViscScalarView3D> Qview = Q.getScalarView();
-  // This grabs the view directly, only used for testing
-  chai::managed_ptr<LimMonGArtView> QAview = Q.getView();
+  {
+    // NOTE: Views cannot persist when value class is modified
+    // This grabs the dynamically casted view, used in the code
+    chai::managed_ptr<ArtViscScalarView3D> Qview = Q.getScalarView();
+    // This grabs the view directly, only used for testing
+    chai::managed_ptr<LimMonGArtView> QAview = Q.getView();
 
-  // Test if initialized variables are set properly
-  SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
-  SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
-  SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
-  SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
-  EXEC_IN_SPACE_BEGIN(TypeParam)
-    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+    // Test if initialized variables are set properly
+    SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
     SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
     SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
-  EXEC_IN_SPACE_END()
-
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+      SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+      SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
+    EXEC_IN_SPACE_END()
+  }
   // Modify variables in the value class
   Cl = 11.5; Cq = 12.5; linear = false; etaCF = 1.3;
   Q.Cl(Cl);
@@ -66,15 +68,22 @@ GPU_TYPED_TEST_P(ArtViscTypedTest, InitTests) {
   Q.etaCritFrac(etaCF);
 
   // Test that the value and view classes are properly updated
-  SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
-  SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
-  SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
-  SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
-  EXEC_IN_SPACE_BEGIN(TypeParam)
-    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+  {
+    // Get new views since the value class was modified
+    // This grabs the dynamically casted view, used in the code
+    chai::managed_ptr<ArtViscScalarView3D> Qview = Q.getScalarView();
+    // This grabs the view directly, only used for testing
+    chai::managed_ptr<LimMonGArtView> QAview = Q.getView();
+    SPHERAL_ASSERT_FLOAT_EQ(Q.etaCritFrac(), etaCF);
     SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
     SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
-  EXEC_IN_SPACE_END()
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+      SPHERAL_ASSERT_FLOAT_EQ(QAview->etaCritFrac(), etaCF);
+      SPHERAL_ASSERT_EQ(QAview->linearInExpansion(), linear);
+    EXEC_IN_SPACE_END()
+   }
 }
 
 REGISTER_TYPED_TEST_SUITE_P(ArtViscTypedTest, InitTests);

@@ -14,7 +14,12 @@ option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories
 set(LANG_STR "CXX")
 if (ENABLE_HIP)
   set(LANG_STR "HIP")
+  # CMake sets the wrong optimization flag for debug mode with HIP
+  # But this causes the asan to fail to compile for some reason
+  string(REPLACE "-O" "" CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG}")
+  set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -g -O0")
 endif()
+
 
 set(CXX_COMPILE_FLAGS "")
 if (ENABLE_WARNINGS)
@@ -44,7 +49,6 @@ if (ENABLE_WARNINGS_AS_ERRORS)
   message("-- Treating warnings as errors")
 endif()
 
-
 if (NOT ENABLE_UNUSED_VARIABLE_WARNINGS)
   list(APPEND CXX_COMPILE_FLAGS -Wno-unused-variable)
 endif()
@@ -68,6 +72,10 @@ if (SPHERAL_ENABLE_RDC AND ENABLE_HIP)
   list(APPEND CXX_COMPILE_FLAGS -fgpu-rdc)
 endif()
 
+if (SPHERAL_ENABLE_ASAN)
+  list(APPEND CXX_COMPILE_FLAGS -fsanitize=address)
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS "${SPHERAL_CXX_FLAGS}"
   "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_COMPILE_FLAGS}>")
 message("-- Using CXX compile flags ${CXX_COMPILE_FLAGS}")
@@ -86,6 +94,29 @@ if (SPHERAL_ENABLE_RDC AND ENABLE_HIP)
   list(APPEND CXX_LINK_FLAGS -fgpu-rdc)
 endif()
 
+if (SPHERAL_ENABLE_ASAN)
+  list(APPEND CXX_LINK_FLAGS -fsanitize=address)
+  set(ASAN_LIBRARY_PATH "")
+  find_asan_library(ASAN_LIBRARY_PATH)
+  get_filename_component(ASAN_LIBRARIES ${ASAN_LIBRARY_PATH} DIRECTORY)
+  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
+  list(APPEND SPHERAL_ENV_LINES "export LD_PRELOAD=${ASAN_LIBRARY_PATH}")
+  list(APPEND SPHERAL_ENV_LINES "export ASAN_OPTIONS=detect_leaks=0")
+  message("------------------------Configuring ASAN------------------------------------")
+  message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
+  # Modify the hip arch if necessary
+  if (ENABLE_HIP)
+    list(APPEND SPHERAL_ENV_LINES "export HSA_XNACK=1")
+    string(FIND "${CMAKE_HIP_ARCHITECTURES}" "xnack" idx)
+    if (idx EQUAL -1)
+      set(CMAKE_HIP_ARCHITECTURES "${CMAKE_HIP_ARCHITECTURES}:xnack+" CACHE STRING "" FORCE)
+      message("-- Adding xnack+ to CMAKE_HIP_ARCHITECTURES, new value ${CMAKE_HIP_ARCHITECTURES}")
+    endif()
+  endif()
+  set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
+  message("----------------------------------------------------------------------------")
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")
 message("-- Using link flags ${CXX_LINK_FLAGS}")
 
@@ -94,12 +125,12 @@ message("-- Using link flags ${CXX_LINK_FLAGS}")
 #-------------------------------------------------------------------------------
 set(SPHERAL_PYB11_FLAGS ${CXX_COMPILE_FLAGS})
 list(APPEND SPHERAL_PYB11_FLAGS
-  -O1
-  -Wno-unused-local-typedefs 
+  -O1 # This is necessary, do not remove
+  -Wno-unused-local-typedefs
   -Wno-overloaded-virtual)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND SPHERAL_PYB11_FLAGS
-    -Wno-self-assign-overloaded 
+    -Wno-self-assign-overloaded
     -Wno-inconsistent-missing-override
     -Wno-delete-non-abstract-non-virtual-dtor
     -Wno-delete-abstract-non-virtual-dtor)

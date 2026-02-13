@@ -77,7 +77,7 @@ SPH(DataBase<Dimension>& dataBase,
                      nTensile,
                      xmin,
                      xmax),
-  mPairAccelerationsPtr() {
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()) {
 }
 
 //------------------------------------------------------------------------------
@@ -130,8 +130,8 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   TIME_END("SPHregisterDerivs");
 }
 
@@ -242,6 +242,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
 
   // Derivative FieldLists.
+<<<<<<< HEAD
   auto  rhoSum_v = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
   auto  normalization_v = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt_v = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
@@ -271,6 +272,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto localM = localM_v.view();
   auto maxViscousPressure = maxViscousPressure_v.view();
   auto effViscousPressure = effViscousPressure_v.view();
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto XSPHWeightSum = XSPHWeightSum_v.view();
   auto XSPHDeltaV = XSPHDeltaV_v.view();
   CHECK(rhoSum_v.size() == numNodeLists);
@@ -288,7 +290,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   CHECK(effViscousPressure_v.size() == numNodeLists);
   CHECK(XSPHWeightSum_v.size() == numNodeLists);
   CHECK(XSPHDeltaV_v.size() == numNodeLists);
-  //CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass_v[0]->nodeList();
@@ -465,7 +467,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
       DvDti.atomicSub(mj*deltaDvDt);
       DvDtj.atomicAdd(mi*deltaDvDt);
-      //if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = -mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
+      if (compatibleEnergy) pairAccelerations[kk] = -mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Specific thermal energy evolution.
       // const Scalar workQij = 0.5*(mj*workQi + mi*workQj);

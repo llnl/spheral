@@ -14,7 +14,6 @@
 #include "DataOutput/registerWithRestart.hh"
 #include "Utilities/SpheralMessage.hh"
 #include "ArtificialViscosityView.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
 #include "chai/managed_ptr.hpp"
 
 #include <utility>
@@ -79,7 +78,7 @@ public:
                                    StateDerivatives<Dimension>& derivatives) const override {};
 
   // Vote on a time step.
-  virtual TimeStepType dt(const DataBase<Dimension>& dataBase, 
+  virtual TimeStepType dt(const DataBase<Dimension>& dataBase,
                           const State<Dimension>& state,
                           const StateDerivatives<Dimension>& derivs,
                           const Scalar currentTime) const override;
@@ -105,21 +104,21 @@ public:
                                                     StateDerivatives<Dimension>& derivs) override;
 
   // initialize and post-state update are our chances to update the velocity gradient if needed
-  virtual bool initialize(const Scalar time, 
+  virtual bool initialize(const Scalar time,
                           const Scalar dt,
-                          const DataBase<Dimension>& dataBase, 
+                          const DataBase<Dimension>& dataBase,
                           State<Dimension>& state,
                           StateDerivatives<Dimension>& derivatives) override;
 
-  virtual bool postStateUpdate(const Scalar time, 
+  virtual bool postStateUpdate(const Scalar time,
                                const Scalar dt,
-                               const DataBase<Dimension>& dataBase, 
+                               const DataBase<Dimension>& dataBase,
                                State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives) override;
 
   // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
   // Artificial viscosities default to just relying on the hydro to handle this, so return no vote.
-  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase,
                                    const State<Dimension>& state1,
                                    const State<Dimension>& state0,
                                    const Scalar tol) const override { return std::make_pair<double, std::string>(0.0, this->label() + " no vote"); }
@@ -156,49 +155,16 @@ public:
 
   //...........................................................................
   // Methods for accessing the view.
-  virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() const {
+  virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() {
     return chai::managed_ptr<ArtViscViewScalar>();
   }
-  virtual chai::managed_ptr<ArtViscViewTensor> getTensorView() const {
+  virtual chai::managed_ptr<ArtViscViewTensor> getTensorView() {
     return chai::managed_ptr<ArtViscViewTensor>();
   }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // TODO: Change this from being a macro to being a templated function that takes an
-  // array of member variables that are assigned in a recrusive function, something like:
-  // template<typename ViewType, typename MemberType, typename ValueType, typename... Rest>
-  // SPHERAL_HOST_DEVICE
-  // void assign(chai::managed_ptr<ViewType> a_view,
-  //             MemberType ViewType::* a_memberPtr,
-  //             ValueType a_inputValue,
-  //             Rest... rest) {
-  //   a_view->*a_memberPtr = value;
-  //   if constexpr (sizeof...(Rest) > 0) {
-  //       assign(rest...);
-  //     }
-  // }
-  /* Downstream classes should redefine a version of this function that includes
-     any new member data that must be kept consistent between the value and
-     view instances like the following:
-
-     template<typename ViewPtr>
-     void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
-       ArtificialViscosity<Dimension>::updateMembers(a_viewPtr); // This should be the most recent upstream class
-       ASSIGN_MEMBER_ALL(a_viewPtr, mNewMemberData, mNewMemberData);
-       ... etc
-     }
-  */
-  template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
-    ASSIGN_MEMBER_ALL(a_viewPtr, mClinear, mClinear);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mCquadratic, mCquadratic);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mEpsilon2, mEpsilon2);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mBalsaraShearCorrection, mBalsaraShearCorrection);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mNegligibleSoundSpeed, mNegligibleSoundSpeed);
-  }
-
-  // This function should only call updateMembers(m_viewPtr) in downstream classes
+  // Function to update view pointer if it exists when member data is changed
   virtual void updateManagedPtr() = 0;
 
   using ArtificialViscosityBase<Dimension>::mClinear;

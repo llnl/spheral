@@ -108,7 +108,7 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
                       strengthInDamage,
                       xmin,
                       xmax),
-  mPairAccelerationsPtr(),
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
   mSelfAccelerations(FieldStorageType::CopyFields) {
 }
 
@@ -167,9 +167,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-    derivs.enroll(mSelfAccelerations);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -341,7 +341,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto  rhoSumCorrection = derivs.fields(HydroFieldNames::massDensityCorrection, 0.0);
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
@@ -361,7 +361,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy     and pairAccelerations.size() == npairs) or not compatibleEnergy);
   CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
         (not compatibleEnergy and selfAccelerations.size() == 0u));
 
@@ -575,8 +575,8 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
         DvDti += mRZj*deltaDvDt;
         DvDtj -= mRZi*deltaDvDt;
         if (compatibleEnergy) {
-          (*pairAccelerationsPtr)[kk][0] =  mRZj*deltaDvDt;
-          (*pairAccelerationsPtr)[kk][1] = -mRZi*deltaDvDt;
+          pairAccelerations[kk][0] =  mRZj*deltaDvDt;
+          pairAccelerations[kk][1] = -mRZi*deltaDvDt;
         }
       }
 

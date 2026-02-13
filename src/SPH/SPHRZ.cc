@@ -89,7 +89,7 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   nTensile,
                   xmin,
                   xmax),
-  mPairAccelerationsPtr() {
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()) {
 }
 
 //------------------------------------------------------------------------------
@@ -139,8 +139,8 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
 }
 
 //------------------------------------------------------------------------------
@@ -293,7 +293,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   auto  localM = derivs.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero());
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   CHECK(rhoSum.size() == numNodeLists);
@@ -310,7 +310,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   CHECK(effViscousPressure.size() == numNodeLists);
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -471,8 +471,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DvDti -= mRZj*deltaDvDt;
       DvDtj += mRZi*deltaDvDt;
       if (compatibleEnergy) {
-        (*pairAccelerationsPtr)[kk][0] = -mRZj*deltaDvDt;
-        (*pairAccelerationsPtr)[kk][1] =  mRZi*deltaDvDt;
+        pairAccelerations[kk][0] = -mRZj*deltaDvDt;
+        pairAccelerations[kk][1] =  mRZi*deltaDvDt;
       }
 
       // Specific thermal energy evolution.

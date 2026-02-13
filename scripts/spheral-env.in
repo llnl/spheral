@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+@SPHERAL_ENV_LINES@
+
 # Adding -B to prevent byte-compiling
 @SPHERAL_EXEC_DIR@/.venv/bin/python -B "$@"
 exit_result=$?

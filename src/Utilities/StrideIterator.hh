@@ -22,41 +22,16 @@ public:
   using difference_type = std::ptrdiff_t;
   using pointer = T*;
   using reference = T&;
+  SPHERAL_HOST_DEVICE StrideIterator(T* ptr): mptr(ptr)                  {}
 
-  constexpr StrideIterator() noexcept: mptr(nullptr) {}
-  constexpr explicit StrideIterator(pointer ptr) noexcept: mptr(ptr) {}
+  SPHERAL_HOST_DEVICE T& operator*()                               const { return *mptr; }
+  SPHERAL_HOST_DEVICE StrideIterator& operator++()                       { mptr += stride; return *this; }
+  SPHERAL_HOST_DEVICE StrideIterator operator++(int)                     { StrideIterator tmp = *this; ++(*this); return tmp; }
+  SPHERAL_HOST_DEVICE StrideIterator& operator--()                       { mptr -= stride; return *this; }
+  SPHERAL_HOST_DEVICE StrideIterator operator--(int)                     { StrideIterator tmp = *this; --(*this); return tmp; }
 
-  template<typename U, typename = std::enable_if_t<std::is_convertible_v<U*, T*>>>
-  constexpr StrideIterator(const StrideIterator<U, stride>& rhs) noexcept:
-    mptr(rhs.mptr) {}
-
-  constexpr reference operator*() const noexcept            { return *mptr; }
-  constexpr pointer operator->() const noexcept             { return mptr; }
-
-  constexpr StrideIterator& operator++() noexcept           { mptr += stride; return *this; }
-  constexpr StrideIterator operator++(int) noexcept         { auto tmp = *this; ++(*this); return tmp; }
-  constexpr StrideIterator& operator--() noexcept           { mptr -= stride; return *this; }
-  constexpr StrideIterator operator--(int) noexcept         { auto tmp = *this; --(*this); return tmp; }
-
-  constexpr StrideIterator& operator+=(difference_type n) noexcept { mptr += n*stride; return *this; }
-  constexpr StrideIterator& operator-=(difference_type n) noexcept { mptr -= n*stride; return *this; }
-  constexpr StrideIterator operator+(difference_type n) const noexcept { auto tmp = *this; return tmp += n; }
-  constexpr StrideIterator operator-(difference_type n) const noexcept { auto tmp = *this; return tmp -= n; }
-
-  constexpr reference operator[](difference_type n) const noexcept  { return *(*this + n); }
-
-  constexpr bool operator==(const StrideIterator& other) const noexcept { return mptr == other.mptr; }
-  constexpr bool operator!=(const StrideIterator& other) const noexcept { return mptr != other.mptr; }
-  constexpr bool operator<(const StrideIterator& other) const noexcept  { return mptr < other.mptr; }
-  constexpr bool operator>(const StrideIterator& other) const noexcept  { return mptr > other.mptr; }
-  constexpr bool operator<=(const StrideIterator& other) const noexcept { return mptr <= other.mptr; }
-  constexpr bool operator>=(const StrideIterator& other) const noexcept { return mptr >= other.mptr; }
-
-  constexpr difference_type operator-(const StrideIterator& other) const noexcept {
-    return (mptr - other.mptr)/static_cast<difference_type>(stride);
-  }
-
-  friend constexpr StrideIterator operator+(difference_type n, StrideIterator it) noexcept { return it += n; }
+  SPHERAL_HOST_DEVICE bool operator==(const StrideIterator& other) const { return mptr == other.mptr; }
+  SPHERAL_HOST_DEVICE bool operator!=(const StrideIterator& other) const { return !(*this == other); }
 
 private:
   template<typename, size_t> friend class StrideIterator;

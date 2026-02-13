@@ -26,9 +26,7 @@ public:
   FiniteVolumeViscosity(const Scalar Clinear,
                         const Scalar Cquadratic,
                         const TableKernel<Dimension>& WT) :
-    ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) {
-    m_viewPtr = chai::make_managed<ViewType>(Clinear, Cquadratic);
-  }
+    ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) { }
 
   virtual ~FiniteVolumeViscosity() { m_viewPtr.free(); }
 
@@ -53,22 +51,37 @@ public:
     return std::type_index(typeid(Scalar));
   }
 
-  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // Useful for testing
-  chai::managed_ptr<ViewType> getView() const {
+  chai::managed_ptr<ViewType> getView() {
+    initView();
     return m_viewPtr;
   }
+
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // Can simplify this call because no new value/view member data is made
-  virtual void updateManagedPtr() override { this->updateMembers(m_viewPtr); }
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear, mCquadratic);
+    }
+  }
 
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
 private:
   std::type_index m_viewType = typeid(ViewType);
-  chai::managed_ptr<ViewType> m_viewPtr;
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

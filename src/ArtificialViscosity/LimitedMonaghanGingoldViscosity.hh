@@ -31,17 +31,11 @@ public:
                                   const bool quadraticInExpansion,
                                   const Scalar etaCritFrac,
                                   const Scalar etaFoldFrac) :
-    MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel, 
+    MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel,
                                         linearInExpansion, quadraticInExpansion),
     mEtaCritFrac(etaCritFrac),
-    mEtaFoldFrac(etaFoldFrac) {
-    m_viewPtr = chai::make_managed<ViewType>(Clinear,
-                                             Cquadratic,
-                                             linearInExpansion,
-                                             quadraticInExpansion,
-                                             etaCritFrac,
-                                             etaFoldFrac);
-  }
+    mEtaFoldFrac(etaFoldFrac) { }
+
   virtual ~LimitedMonaghanGingoldViscosity() { m_viewPtr.free(); }
 
   // No default construction, copying, or assignment
@@ -67,33 +61,49 @@ public:
     return std::type_index(typeid(Scalar));
   }
 
-  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
+    initView();
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // Useful for testing
-  chai::managed_ptr<ViewType> getView() const {
+  chai::managed_ptr<ViewType> getView() {
+    initView();
     return m_viewPtr;
   }
+
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
-    MonaghanGingoldViscosity<Dimension>::updateMembers(a_viewPtr);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mEtaCritFrac, mEtaCritFrac);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mEtaFoldFrac, mEtaFoldFrac);
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear,
+                                               mCquadratic,
+                                               mLinearInExpansion,
+                                               mQuadraticInExpansion,
+                                               mEtaCritFrac,
+                                               mEtaFoldFrac);
+    }
   }
-    
-  virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
+
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
 
   // Not ideal but there is repeated member data between the value and view
   Scalar mEtaCritFrac = 1.0;
   Scalar mEtaFoldFrac = 0.2;
   using MonaghanGingoldViscosity<Dimension>::mLinearInExpansion;
   using MonaghanGingoldViscosity<Dimension>::mQuadraticInExpansion;
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
 private:
   std::type_index m_viewType = typeid(ViewType);
-  chai::managed_ptr<ViewType> m_viewPtr;
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

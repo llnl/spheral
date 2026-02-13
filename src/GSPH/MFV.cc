@@ -115,7 +115,7 @@ MFV(DataBase<Dimension>& dataBase,
   mDmomentumDt(FieldStorageType::CopyFields),
   mDvolumeDt(FieldStorageType::CopyFields),
   //mHStretchTensor(FieldStorageType::CopyFields),
-  mPairMassFluxPtr() {
+  mPairMassFluxPtr(std::make_unique<PairMassFluxType>()) {
     // mNodalVelocity = dataBase.newFluidFieldList(Vector::zero(), GSPHFieldNames::nodalVelocity);
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
