@@ -66,13 +66,14 @@
   extends: [.retry_rule]
   stage: perf_install
   variables:
-    INSTALL_DIR: "$PERF_INSTALL_DIR/${SPEC#?}"
     GIT_STRATEGY: none
   rules:
     - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop")'
       when: always
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
+    - echo "Copying install from $CI_BUILD_DIR/build_gitlab/install to $INSTALL_DIR"
     - ml load mpifileutils
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
     - cd $CI_BUILD_DIR
