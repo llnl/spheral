@@ -21,7 +21,6 @@ base_dir = os.getcwd()
 package_dirs = {"spheral": base_dir}
 
 default_install_args = dict(stop_at="initconfig", fail_fast=True)
-chmod_run = "chmod -Rf g+rwX"
 
 # Find if this repo is LLNLSpheral by checking the submodule list
 git_mod_cmd = "git config --file .gitmodules --name-only --get-regexp path$"
@@ -398,18 +397,16 @@ class SpheralTPL:
             self.concretize_spec(check_spec=False)
             if self.args.update_upstream:
                 upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
-                with spack.config.override("config", {"install_tree": {"root": str(upstream_dir)}}):
-                    spack.config.set("config", {"install_tree": {"padded_length": 0}})
-                    print("WARNING: Modifying local Spack files, do not commit these changes")
-                    with self.spack_env.manifest.use_config():
-                        print(spack.config.get("config:install_tree"))
-                        print(f"Installing to {upstream_dir}")
-                        # Pass None so it installs TPLs for all specs
-                        self.spack_env.install_all(install_deps=True, install_package=False, fail_fast=True)
-                        # Equivalent of running spack reindex
-                        spack.store.STORE.reindex()
-                chmod_cmd = chmod_run + f" {upstream_dir}"
-                os.system(chmod_cmd)
+                spack.config.set("config", {"install_tree": {"root": str(upstream_dir), "padded_length": 0}})
+                print("WARNING: Modifying local Spack files, do not commit these changes")
+                with self.spack_env.manifest.use_config():
+                    print(spack.config.get("config:install_tree"))
+                    print(f"Installing to {upstream_dir}")
+                    # Pass None so it installs TPLs for all specs
+                    self.spack_env.install_all(install_deps=True, install_package=False, fail_fast=True)
+                    # Equivalent of running spack reindex
+                    spack.store.STORE.reindex()
+                print("WARNING: Be sure to update permissions and groups on upstream.")
             else:
                 self.spack_env.install_specs(None, **default_install_args)
 

@@ -116,7 +116,7 @@
   rules:
     - !reference [.merge_pr_rule, rules]
   script:
-    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
 
 .toss_update_permissions:
   stage: update_permissions
@@ -125,7 +125,8 @@
   rules:
     - !reference [.merge_pr_rule, rules]
   script:
-    - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
+    - ml load mpifileutils
+    - chmod --mode go+rx $UPSTREAM_DIR
   dependencies: []
 
 # ------------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 .sys_config:
   variables:
     LLNL_SERVICE_USER: sphapp
-    UPSTREAM_DIR: /usr/WS2/sduser/Spheral/spack_upstream/0.22
+    UPSTREAM_DIR: /usr/WS2/sduser/Spheral/spack_upstream/1.1.0
     # On merge to develop, do the install in this directory
     PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs
     DISPLAY: ':0.0'
