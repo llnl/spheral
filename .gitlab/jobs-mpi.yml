@@ -6,7 +6,10 @@ toss_gcc_mpi_cxxonly_init:
 
 toss_gcc_mpi_cxxonly_tpls:
   extends: [.toss_resource1, .gcc_mpi_cxxonly, .tpls]
-  needs: [toss_gcc_mpi_cxxonly_init]
+  needs:
+    - job: toss_update_tpls
+      optional: true
+    - job: toss_gcc_mpi_cxxonly_init
 
 toss_gcc_mpi_cxxonly_build:
   extends: [.toss_resource1, .gcc_mpi_cxxonly, .build]
@@ -26,13 +29,18 @@ toss_gcc_mpi_init:
 
 toss_gcc_mpi_tpls:
   extends: [.toss_resource2, .gcc_mpi, .tpls]
-  needs: [toss_gcc_mpi_init]
+  needs:
+    - job: toss_update_tpls
+      optional: true
+    - job: toss_gcc_mpi_init
 
 toss_gcc_mpi_build:
-  variables:
-    DO_PERF_INSTALL: 1
   extends: [.toss_resource2, .gcc_mpi, .build_and_test]
   needs: [toss_gcc_mpi_tpls]
+
+toss_gcc_mpi_perf_install:
+  extends: [.toss_resource2, .gcc_mpi, .perf_install]
+  needs: [toss_gcc_mpi_build]
 
 toss_gcc_mpi_test:
   extends: [.toss_resource2, .gcc_mpi, .run_ats]
@@ -48,15 +56,20 @@ toss_clang_mpi_dev_build_init:
 
 toss_clang_mpi_dev_build_tpls:
   extends: [.toss_resource3, .clang_mpi_dev_build, .tpls]
-  needs: [toss_clang_mpi_dev_build_init]
+  needs:
+    - job: toss_update_tpls
+      optional: true
+    - job: toss_clang_mpi_dev_build_init
 
 toss_clang_mpi_dev_build_build:
   extends: [.toss_resource3, .clang_mpi_dev_build, .build_and_test]
   needs: [toss_clang_mpi_dev_build_tpls]
 
+toss_clang_mpi_dev_build_perf_install:
+  extends: [.toss_resource3, .clang_mpi_dev_build, .perf_install]
+  needs: [toss_clang_mpi_dev_build_build]
+
 toss_clang_mpi_dev_build_test:
-  variables:
-    DO_PERF_INSTALL: 1
   extends: [.toss_resource3, .clang_mpi_dev_build, .run_ats]
   needs: [toss_clang_mpi_dev_build_build]
 
@@ -74,13 +87,18 @@ cray_rocm_mpi_init:
 
 cray_rocm_mpi_tpls:
   extends: [.cray_resource1, .rocm_mpi, .tpls]
-  needs: [cray_rocm_mpi_init]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_rocm_mpi_init
 
 cray_rocm_mpi_build:
-  variables:
-    DO_PERF_INSTALL: 1
   extends: [.cray_resource1, .rocm_mpi, .build_and_test]
   needs: [cray_rocm_mpi_tpls]
+
+cray_rocm_mpi_perf_install:
+  extends: [.cray_resource1, .rocm_mpi, .perf_install]
+  needs: [cray_rocm_mpi_build]
 
 cray_rocm_mpi_test:
   extends: [.cray_resource1, .rocm_mpi, .run_ats]
@@ -96,13 +114,18 @@ cray_hip_rocm_mpi_init:
 
 cray_hip_rocm_mpi_tpls:
   extends: [.cray_resource2, .hip_rocm_mpi, .tpls]
-  needs: [cray_hip_rocm_mpi_init]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_hip_rocm_mpi_init
 
 cray_hip_rocm_mpi_build:
-  variables:
-    DO_PERF_INSTALL: 1
   extends: [.cray_resource2, .hip_rocm_mpi, .build_and_test]
   needs: [cray_hip_rocm_mpi_tpls]
+
+cray_hip_rocm_mpi_perf_install:
+  extends: [.cray_resource2, .hip_rocm_mpi, .perf_install]
+  needs: [cray_hip_rocm_mpi_build]
 
 cray_hip_rocm_mpi_test:
   extends: [.cray_resource2, .hip_rocm_mpi, .run_ats]

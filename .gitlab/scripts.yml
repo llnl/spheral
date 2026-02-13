@@ -40,18 +40,10 @@
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
-  rules:
-    # If test-perf is in commit message or this is a merge to develop, do install in $PERF_INSTALL_DIR
-    - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop") && $DO_PERF_INSTALL'
-      variables:
-        EXTRA_INSTALL_ARGS: "-i $PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}" # Removes the leading %
-    - when: always
-      variables:
-        EXTRA_INSTALL_ARGS: "--no-clean"
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
-    - ./$SCRIPT_DIR/devtools/host-config-build.py $EXTRA_INSTALL_ARGS --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
   artifacts:
     paths:
       - ci-dir.txt
@@ -68,6 +60,28 @@
     paths:
       - ci-dir.txt
       - job-name.txt
+
+# This copies the install so scheduled perf tests can use it
+.perf_install:
+  extends: [.retry_rule]
+  stage: perf_install
+  variables:
+    GIT_STRATEGY: none
+  rules:
+    - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop")'
+      when: always
+  script:
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
+    - echo "Copying install from $CI_BUILD_DIR/build_gitlab/install to $INSTALL_DIR"
+    - ml load mpifileutils
+    - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
+    - cd $CI_BUILD_DIR
+    - $RUN_CMD -n $NPROC dcp ./build_gitlab/install $INSTALL_DIR
+    - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
+  artifacts:
+    paths:
+      - ci-dir.txt
 
 .run_ats:
   extends: [.retry_rule]
