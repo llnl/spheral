@@ -17,7 +17,7 @@ if (ENABLE_HIP)
   # CMake sets the wrong optimization flag for debug mode with HIP
   # But this causes the asan to fail to compile for some reason
   string(REPLACE "-O" "" CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG}")
-  set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -O0")
+  set(CMAKE_HIP_FLAGS_DEBUG "${CMAKE_HIP_FLAGS_DEBUG} -g -O0")
 endif()
 
 
@@ -123,7 +123,7 @@ message("-- Using link flags ${CXX_LINK_FLAGS}")
 #-------------------------------------------------------------------------------
 set(SPHERAL_PYB11_FLAGS ${CXX_COMPILE_FLAGS})
 list(APPEND SPHERAL_PYB11_FLAGS
-  -O1
+  -O1 # This is necessary, do not remove
   -Wno-unused-local-typedefs
   -Wno-overloaded-virtual)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

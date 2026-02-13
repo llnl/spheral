@@ -11,7 +11,6 @@
 
 #include "ArtificialViscosityView.hh"
 #include "ArtificialViscosity.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
 
 namespace Spheral {
 
@@ -73,7 +72,7 @@ public:
                      const FieldListView<Dimension, Tensor>& DvDx) const override;
 
   friend class ArtificialViscosity<Dimension>;
-  friend class MonaghanGingoldViscosity<Dimension>;
+  //friend class MonaghanGingoldViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   bool mLinearInExpansion = false;

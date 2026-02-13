@@ -9,7 +9,6 @@
 #ifndef __Spheral_MonaghanGingoldViscosity__
 #define __Spheral_MonaghanGingoldViscosity__
 
-#include "ArtificialViscosityView.hh"
 #include "ArtificialViscosity.hh"
 #include "MonaghanGingoldViscosityView.hh"
 
@@ -34,12 +33,7 @@ public:
                            const bool quadraticInExpansion) :
     ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
     mLinearInExpansion(linearInExpansion),
-    mQuadraticInExpansion(quadraticInExpansion) {
-    m_viewPtr = chai::make_managed<MonaghanGingoldViscosityView<Dimension>>(Clinear,
-                                                                            Cquadratic,
-                                                                            linearInExpansion,
-                                                                            quadraticInExpansion);
-  }
+    mQuadraticInExpansion(quadraticInExpansion) { }
 
   virtual ~MonaghanGingoldViscosity() { m_viewPtr.free(); }
 
@@ -62,32 +56,44 @@ public:
     return std::type_index(typeid(Scalar));
   }
 
-  virtual chai::managed_ptr<ArtViscView> getScalarView() const override {
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
+    initView();
     return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
   }
 
   // Useful for testing
-  chai::managed_ptr<ViewType> getView() const {
+  chai::managed_ptr<ViewType> getView() {
+    initView();
     return m_viewPtr;
   }
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // New member variables like mLinearInExpansion require this
-  template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr> a_viewPtr) {
-    ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mLinearInExpansion, mLinearInExpansion);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear,
+                                               mCquadratic,
+                                               mLinearInExpansion,
+                                               mQuadraticInExpansion);
+    }
   }
 
-  virtual void updateManagedPtr() override { updateMembers(m_viewPtr); }
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
 
   // Not ideal but there is repeated member data between the value and view
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
   bool mLinearInExpansion = false;
   bool mQuadraticInExpansion = false;
 private:
   std::type_index m_viewType = typeid(ViewType);
-  chai::managed_ptr<ViewType> m_viewPtr;
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }
