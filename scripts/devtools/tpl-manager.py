@@ -9,13 +9,6 @@ def get_config_dir(base_dir):
     "Return directory containing the repo.yaml file for a base dir"
     return os.path.join(base_dir, "scripts/spack")
 
-# Spack instance info
-default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
-
-# Set environment variables so Spack no longer uses ~/.spack directory
-os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
-os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
-
 default_spack_url = "https://github.com/spack/spack.git"
 # Spack version: v1.0.2
 # spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
@@ -54,7 +47,7 @@ class SpheralTPL:
         parser.add_argument("--add-spec", action="store_true",
                             help="Set this flag to add the --spec to the environment.")
         parser.add_argument("--spack-dir", type=str,
-                            default=default_spack_dir,
+                            default=os.path.join(os.getcwd(), "../spheral-spack-tpls"),
                             help="Directory to install Spack instance and a build directory.")
         parser.add_argument("--update-upstream", action="store_true",
                             help="Install TPLs into the upstream instead of the local build. "+\
@@ -80,6 +73,10 @@ class SpheralTPL:
                             "Assumes building from a buildcache if --spec is provided.")
 
         self.args = parser.parse_args()
+
+        # Set environment variables so Spack no longer uses ~/.spack directory
+        os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(self.args.spack_dir, "misc")
+        os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
         if (not self.args.spec and self.args.ci_run):
             raise Exception("Must specify a --spec if doing --ci-run")
