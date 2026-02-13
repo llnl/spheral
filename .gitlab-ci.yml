@@ -28,6 +28,7 @@ stages:
   - update_tpls
   - tpls
   - build_and_install
+  - perf_install
   - run_ats
   - run_perf
   - generate_buildcache
