@@ -11,4 +11,4 @@ whatis([[ Loads Spheral/YYYY.MM.p
  Modifies: Add /usr/gapps/Spheral/$SYS_TYPE/YYYY.MM.p to the path in order to use the YYYY.MM.p release version of the Spheral modeling tools.
 ]])
 
-prepend_path("PATH", "/usr/gapps/Spheral/" .. os.getenv("SYS_TYPE") .. "/vYYYY.MM.p/bin")
+prepend_path("PATH", "/usr/gapps/Spheral/" .. os.getenv("SYS_TYPE") .. "/YYYY.MM.p/bin")

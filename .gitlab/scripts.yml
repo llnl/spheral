@@ -39,10 +39,18 @@
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
+  rules:
+    # If test-perf is in commit message or this is a merge to develop, do install in $PERF_INSTALL_DIR
+    - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop") && $DO_PERF_INSTALL'
+      variables:
+        EXTRA_INSTALL_ARGS: "-i $PERF_INSTALL_DIR/$SYS_TYPE/${SPEC#?}" # Removes the leading %
+    - when: always
+      variables:
+        EXTRA_INSTALL_ARGS: "--no-clean"
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
-    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+    - ./$SCRIPT_DIR/devtools/host-config-build.py $EXTRA_INSTALL_ARGS --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
   artifacts:
     paths:
       - ci-dir.txt
@@ -83,25 +91,6 @@
     exit_codes:
       - 80
 
-# Run the performance suite and move the resulting Caliper files into the benchmark location
-.run_perf:
-  extends: [.retry_rule, .perf_pr_rule]
-  stage: run_perf
-  variables:
-    GIT_STRATEGY: none
-    FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
-    FF_USE_NEW_BASH_EVAL_STRATEGY: 1
-  script:
-    - CI_BUILD_DIR=$(cat ci-dir.txt)
-    - cd $CI_BUILD_DIR && cat job-name.txt
-
-    - ./build_gitlab/install/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs ./build_gitlab/install/$PERF_ATS_FILE || exit_code=$?
-    - exit $exit_code
-  artifacts:
-    when: always
-    paths:
-      - ci-dir.txt
-
 .cleanup_dir:
   stage: cleanup
   extends: [.cleanup_rule]
@@ -124,12 +113,17 @@
     GIT_STRATEGY: clone
     GIT_SUBMODULE_STRATEGY: recursive
   stage: update_tpls
-  variables:
-    GIT_STRATEGY: clone
-  extends: [.merge_pr_rule]
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /update-upstream/'
-      when: always
+    - !reference [.merge_pr_rule, rules]
+  script:
+    - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
+
+.toss_update_permissions:
+  stage: update_permissions
+  variables:
+    GIT_STRATEGY: none
+  rules:
+    - !reference [.merge_pr_rule, rules]
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
   dependencies: []
@@ -154,6 +148,8 @@
     GIT_STRATEGY: clone
     GIT_SUBMODULE_STRATEGY: recursive
   stage: generate_buildcache
+  rules:
+    - !reference [.tag_release_rule, rules]
   extends: [.spheral_rev_str]
   script:
     - DEV_PKG_NAME=$SYS_TYPE-spheral-dev-pkg-$SPHERAL_REV_STR
@@ -178,6 +174,8 @@
   stage: install_production
   variables:
     GIT_STRATEGY: empty
+  rules:
+    - !reference [.tag_release_rule, rules]
   script:
     - INSTALL_DIR=$(cat install-dir.txt)
     - rm -rf $INSTALL_DIR
@@ -202,6 +200,9 @@
   stage: update_permissions
   variables:
     GIT_STRATEGY: none
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
   script:
     - INSTALL_DIR=$(cat install-dir.txt)
 
@@ -210,11 +211,9 @@
 
     - ln -sfn $INSTALL_DIR /usr/gapps/Spheral/$SYS_TYPE/$ALIAS
 
-
 # ------------------------------------------------------------------------------
-# Script Utilities
+# Scheduled Cleanup
 # ------------------------------------------------------------------------------
-
 # This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
 # This should be enough of a buffer that we likely won't delete a build mid pipeline,
 # and never fill the sphapp workspace storage.
@@ -222,15 +221,37 @@
   stage: cleanup
   variables:
     GIT_STRATEGY: none
+  extends: [.toss_perf_resource]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+  # Prevent this job from getting artifacts
+  dependencies: []
   script:
     - cd $SPHERAL_BUILDS_DIR
-
     - MAX_DIR=30
     - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
     - echo $DIR_LIST
-
     - ml load mpifileutils
-    - if [[ $DIR_LIST ]]; then $RUN_CMD -n 20 drm $DIR_LIST; else echo "No directories to remove at this time."; fi
+    - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi
+
+.clean_old_perfs:
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  extends: [.toss_perf_resource]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+  # Prevent this job from getting artifacts
+  dependencies: []
+  script:
+    - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
+    - ml load mpifileutils
+    - cd $BENCHMARK_LOC
+    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files
+
+# ------------------------------------------------------------------------------
+# Script Utilities
+# ------------------------------------------------------------------------------
 
 .merge_pr_rule:
   rules:
@@ -243,21 +264,6 @@
       when: manual
     - if: '$CI_COMMIT_MESSAGE =~ /test-prod/'
       when: manual
-
-.perf_pr_rule:
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "develop"'
-      when: always
-    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
-      when: always
-
-# Must skip cleanup if running the performance stage
-.cleanup_rule:
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "develop"'
-      when: never
-    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
-      when: never
 
 .retry_rule:
   retry:

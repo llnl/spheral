@@ -9,14 +9,20 @@ cray_update_tpls:
   needs: [toss_update_tpls]
 
 # ------------------------------------------------------------------------------
+# UPDATE PERM JOBS
+
+shared_tpls_update_permissions:
+  extends: [.toss_resource_general, .toss_update_permissions]
+
+# ------------------------------------------------------------------------------
 # PROD BUILD JOBS
 
 ### TAG RELEASE ###
 toss_build_dev_pkg_release:
-  extends: [.toss_resource_general, .build_dev_pkg, .tag_release_rule]
+  extends: [.toss_resource_general, .build_dev_pkg]
 
 toss_install_dev_pkg_release:
-  extends: [.toss_resource_general, .install_dev_pkg, .tag_release_rule]
+  extends: [.toss_resource_general, .install_dev_pkg]
   needs: [toss_build_dev_pkg_release]
 
 toss_release_permissions:
@@ -24,15 +30,3 @@ toss_release_permissions:
     ALIAS: $CI_COMMIT_TAG
   extends: [.toss_resource_general, .prod_permissions]
   needs: [toss_install_dev_pkg_release]
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: manual
-
-# ------------------------------------------------------------------------------
-# CLEAN OLD BUILD DIRS
-
-cleanup_old_dirs_toss:
-  extends: [.toss_resource_general, .clean_old_dirs]
-
-cleanup_old_dirs_cray:
-  extends: [.cray_resource_general, .clean_old_dirs]

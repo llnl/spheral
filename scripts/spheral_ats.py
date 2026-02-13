@@ -130,11 +130,14 @@ def main():
                         help="Set number of threads per rank to use. Only used by performance.py.")
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
+    parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
         return
-
+    if (options.get_benchmark):
+        print(benchmark_dir)
+        return
     #---------------------------------------------------------------------------
     # Setup machine info classes
     #---------------------------------------------------------------------------
