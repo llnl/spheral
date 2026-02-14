@@ -28,6 +28,7 @@ stages:
   - update_tpls
   - tpls
   - build_and_install
+  - perf_install
   - run_ats
   - run_perf
   - generate_buildcache
@@ -57,4 +58,9 @@ include:
       - if: '$CI_PIPELINE_SOURCE == "push"'
         when: always
   - local: .gitlab/jobs-prod.yml
+    rules:
+      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
+        when: never
+      - if: '$CI_PIPELINE_SOURCE == "push"'
+        when: always
   - local: .gitlab/pages.yml
