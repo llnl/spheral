@@ -136,10 +136,10 @@ update(const KeyType& key,
       const auto& paccj = pairAccelerations[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto weighti = mi;
-      // const auto weightj = mj;
-      // // const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * 2.0*mi/(mi + mj);
-      // // const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * 2.0*mj/(mi + mj);
+      // // const auto weighti = mi;
+      // // const auto weightj = mj;
+      // const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * mi/(mi + mj);
+      // const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * mj/(mi + mj);
       // // const auto weighti = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListi, i)*sgn(dEij));
       // // const auto weightj = std::max(numeric_limits<Scalar>::epsilon(), DepsDt0(nodeListj, j)*sgn(dEij));
       // const auto wi = weighti/(weighti + weightj);
@@ -147,12 +147,15 @@ update(const KeyType& key,
       // // const auto wi = entropyWeighting(si, sj, duij);
       // // CHECK2(fuzzyEqual(wi + entropyWeighting(sj, si, dEij/mj), 1.0, 1.0e-10),
       // //        wi << " " << entropyWeighting(sj, si, dEij/mj) << " " << (wi + entropyWeighting(sj, si, dEij/mj)));
-      // // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
-      // // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
-
-      DepsDt_thread(nodeListi, i) += dEij*mRZi/(mi*(mRZi + mRZj));
-      DepsDt_thread(nodeListj, j) += dEij*mRZj/(mj*(mRZi + mRZj));
-
+      // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+      
+      DepsDt_thread(nodeListi, i) += dEij/(mi + mj);
+      DepsDt_thread(nodeListj, j) += dEij/(mi + mj);
+      
+      // DepsDt_thread(nodeListi, i) += dEij*mRZi/(mi*(mRZi + mRZj));
+      // DepsDt_thread(nodeListj, j) += dEij*mRZj/(mj*(mRZi + mRZj));
+      
       // const auto dEi0 = mi*DepsDt0(nodeListi, i);
       // const auto dEj0 = mj*DepsDt0(nodeListj, j);
       // if (sgn(dEi0) != sgn(dEj0)) {
