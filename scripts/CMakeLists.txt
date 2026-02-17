@@ -17,6 +17,7 @@ if (SPHERAL_ENABLE_PYTHON)
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in"
     "${CMAKE_BINARY_DIR}/bin/spheral"
+    @ONLY
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )
 
