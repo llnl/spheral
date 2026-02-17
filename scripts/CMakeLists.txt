@@ -12,19 +12,12 @@ if (SPHERAL_ENABLE_PYTHON)
   # ***********
 
   # Configure the build time scripts to run a build dir spheral environment.
-  set(SPHERAL_EXEC_DIR ${CMAKE_BINARY_DIR})
-  set(SPHERAL_SCRIPT_DIR ${SPHERAL_ROOT_DIR})
   get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
   string(REPLACE ";" "\n" SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in"
     "${CMAKE_BINARY_DIR}/bin/spheral"
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  )
-
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/atstest.in"
-    "${CMAKE_BINARY_DIR}/bin/spheral-ats"
+    @ONLY
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )
 
@@ -49,29 +42,24 @@ if (SPHERAL_ENABLE_PYTHON)
     DESTINATION "${CMAKE_INSTALL_PREFIX}/scripts"
   )
 
+  install(FILES
+    "${CMAKE_BINARY_DIR}/bin/spheral"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  )
+
+  install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/atstest.sh"
+    RENAME "spheral-ats"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  )
+
   # Configure scripts for the install stage.
   install( CODE "
   message(\"-- Setting up spheral python virtual environment.\")
 
   execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target python_runtime_env)
-
-  message(\"-- Setting up spheral executable scripts.\")
-
-  set(SPHERAL_EXEC_DIR ${CMAKE_INSTALL_PREFIX})
-  set(SPHERAL_SCRIPT_DIR ${CMAKE_INSTALL_PREFIX})
-  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
-  string(REPLACE \";\" \"\\n\" SPHERAL_ENV_LINES \"${SPHERAL_ENV_LINES}\")
-  configure_file(
-    \"${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in\"
-    \"${CMAKE_INSTALL_PREFIX}/bin/spheral\"
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  )
-
-  configure_file(
-    \"${CMAKE_CURRENT_SOURCE_DIR}/atstest.in\"
-    \"${CMAKE_INSTALL_PREFIX}/bin/spheral-ats\"
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  )
   ")
 
   # byte compile all of the venv site-packages.
@@ -83,8 +71,9 @@ if (SPHERAL_ENABLE_PYTHON)
   message(\"-- Byte compilation complete.\")
   ")
 
-  message("-- Creating local Silo module path file.")
-  file(WRITE "${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/silo_lib.pth"
-    "@CONFIG_SILO_DIR@/lib"
-  )
+  # This is unused so no need to do it at the moment
+  # message("-- Creating local Silo module path file.")
+  # file(WRITE "${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/silo_lib.pth"
+  #   "@CONFIG_SILO_DIR@/lib"
+  # )
 endif()
