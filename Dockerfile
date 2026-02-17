@@ -3,7 +3,7 @@
 #   Optional Arguments:
 #     --progress=plain        : Prints plain output to terminal instead of windowed version.
 #     --build-args SPEC=...   : Specify optional build argument to override. Default = gcc
-#                               e.g. --build-args SPEC=clang 
+#                               e.g. --build-args SPEC=clang
 
 # To build and run a spheral test:
 #   sudo env DOCKERBUILDKIT=1 docker build . --target spheral --tag spheral (--progress=plain) (--network none)
@@ -30,13 +30,12 @@ ARG HOST_CONFIG=docker-$SPEC
 # Update Ubuntu and install necessary packages.
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
-    echo "nameserver 8.8.4.4" >> /etc/resolv.conf && \
-    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-
 RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y \
+        ca-certificates \
+        netbase \
+        iproute2 \
         build-essential \
         git \
         gfortran \
@@ -67,12 +66,10 @@ RUN apt-get update -y && \
         curl \
         libcurl4-openssl-dev \
         tk-dev \
-        iputils-ping \
-        dnsutils \
-        ca-certificates && \
+        iputils-ping && \
     rm -rf /var/lib/apt/lists/*
 
-# Setup system locale for pip package encoding/decoding 
+# Setup system locale for pip package encoding/decoding
 RUN locale-gen en_US.UTF-8
 
 RUN echo "Testing DNS resolution..." && \
