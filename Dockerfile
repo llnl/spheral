@@ -29,14 +29,56 @@ ARG HOST_CONFIG=docker-$SPEC
 
 # Update Ubuntu and install necessary packages.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git gfortran autotools-dev autoconf sqlite3 pkg-config uuid gettext cmake openmpi-bin libopenmpi-dev libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python3 unzip libtool wget curl libcurl4-openssl-dev tk-dev
-RUN apt-get install -y python3-dev python3-venv python3-pip
-RUN apt-get install -y iputils-ping
+
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    echo "nameserver 8.8.4.4" >> /etc/resolv.conf && \
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+        build-essential \
+        git \
+        gfortran \
+        autotools-dev \
+        autoconf \
+        sqlite3 \
+        pkg-config \
+        uuid \
+        gettext \
+        cmake \
+        openmpi-bin \
+        libopenmpi-dev \
+        libncurses-dev \
+        libgdbm-dev \
+        libffi-dev \
+        libssl-dev \
+        libexpat-dev \
+        libreadline-dev \
+        libbz2-dev \
+        locales \
+        python3 \
+        python3-dev \
+        python3-venv \
+        python3-pip \
+        unzip \
+        libtool \
+        wget \
+        curl \
+        libcurl4-openssl-dev \
+        tk-dev \
+        iputils-ping \
+        dnsutils \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Setup system locale for pip package encoding/decoding 
 RUN locale-gen en_US.UTF-8
+
+RUN echo "Testing DNS resolution..." && \
+    nslookup github.com && \
+    ping -c 2 github.com && \
+    curl -I https://github.com
 
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
@@ -71,6 +113,11 @@ ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
 ARG JCXX=8
 ARG JPY=1
+
+RUN echo "Testing DNS resolution..." && \
+    nslookup github.com && \
+    ping -c 2 github.com && \
+    curl -I https://github.com
 
 WORKDIR /home/spheral/workspace/
 
