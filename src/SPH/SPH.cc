@@ -191,7 +191,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const auto tiny = 1.0e-30;
   const auto W0 = W(0.0, 1.0);
   const auto epsTensile = this->epsilonTensile();
-  //const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
   const auto XSPH = this->XSPH();
 
@@ -242,7 +242,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
 
   // Derivative FieldLists.
-<<<<<<< HEAD
   auto  rhoSum_v = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
   auto  normalization_v = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt_v = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
@@ -256,9 +255,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto  localM_v = derivs.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero());
   auto  maxViscousPressure_v = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure_v = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
-  //auto* pairAccelerationsPtr_v = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto  XSPHWeightSum_v = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV_v = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
+  auto& pairAccelerations_v = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto rhoSum = rhoSum_v.view();
   auto normalization = normalization_v.view();
   auto DxDt = DxDt_v.view();
@@ -272,7 +271,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto localM = localM_v.view();
   auto maxViscousPressure = maxViscousPressure_v.view();
   auto effViscousPressure = effViscousPressure_v.view();
-  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto pairAccelerations = pairAccelerations_v.view();
   auto XSPHWeightSum = XSPHWeightSum_v.view();
   auto XSPHDeltaV = XSPHDeltaV_v.view();
   CHECK(rhoSum_v.size() == numNodeLists);
@@ -304,6 +303,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   //RAJA::region<RAJA::seq_region>([=]()
   //#pragma omp parallel
   {
+#ifdef SPHERAL_ENABLE_HIP
+#pragma clang optimize off
+#endif
     // Thread private scratch variables
     // unsigned i, j, nodeListi, nodeListj;
     // Vector gradWi, gradWj, gradWQi, gradWQj;
@@ -511,8 +513,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
     // Reduce the thread values to the master.
     //threadReduceFieldLists<Dimension>(threadStack);
-
-  }   // OpenMP parallel region
+#ifdef SPHERAL_ENABLE_HIP
+#pragma clang optimize on
+#endif
+  }
   TIME_END("SPHevalDerivs_pairs");
   // Finish up the derivatives for each point.
   TIME_BEGIN("SPHevalDerivs_final");

@@ -33,16 +33,7 @@ public:
                            const bool quadraticInExpansion) :
     ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
     mLinearInExpansion(linearInExpansion),
-<<<<<<< HEAD
-    mQuadraticInExpansion(quadraticInExpansion) {
-    m_viewPtr = chai::make_managed<ViewType>(Clinear,
-                                             Cquadratic,
-                                             linearInExpansion,
-                                             quadraticInExpansion);
-  }
-=======
     mQuadraticInExpansion(quadraticInExpansion) { }
->>>>>>> feature/gpu/art_visc
 
   virtual ~MonaghanGingoldViscosity() { m_viewPtr.free(); }
 
@@ -77,14 +68,6 @@ public:
   }
 protected:
   //--------------------------- Protected Interface ---------------------------//
-<<<<<<< HEAD
-  // New member variables like mLinearInExpansion require this
-  template<typename ViewPtr>
-  void updateMembers(chai::managed_ptr<ViewPtr>& a_viewPtr) {
-    ArtificialViscosity<Dimension>::updateMembers(a_viewPtr);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mLinearInExpansion, mLinearInExpansion);
-    ASSIGN_MEMBER_ALL(a_viewPtr, mQuadraticInExpansion, mQuadraticInExpansion);
-=======
   // Initialize the managed pointer if it doesn't exist
   void initView() {
     if (!m_viewPtr) {
@@ -93,7 +76,6 @@ protected:
                                                mLinearInExpansion,
                                                mQuadraticInExpansion);
     }
->>>>>>> feature/gpu/art_visc
   }
 
   // Reinitialize the managed pointer if it exists so member variables are up to date

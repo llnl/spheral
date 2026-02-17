@@ -335,7 +335,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto W0 = W(0.0, 1.0);
   const auto WQ0 = WQ(0.0, 1.0);
   const auto epsTensile = this->epsilonTensile();
-  //const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
   const auto XSPH = this->XSPH();
 
@@ -418,6 +418,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto  XSPHWeightSum_v = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV_v = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt_v = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
+  auto& pairAccelerations_v = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto rhoSum = rhoSum_v.view();
   auto DxDt = DxDt_v.view();
   auto DrhoDt = DrhoDt_v.view();
@@ -432,7 +433,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto XSPHWeightSum = XSPHWeightSum_v.view();
   auto XSPHDeltaV = XSPHDeltaV_v.view();
   auto DSDt = DSDt_v.view();
-  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto pairAccelerations = pairAccelerations_v.view();
   auto rhoSumCorrection = rhoSumCorrection_v.view();
   CHECK(rhoSum_v.size() == numNodeLists);
   CHECK(DxDt_v.size() == numNodeLists);
@@ -688,7 +689,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 #ifdef SPHERAL_ENABLE_HIP
 #pragma clang optimize on
 #endif
-  }   // OpenMP parallel region
+  }
   TIME_END("SolidSPHevalDerivs_pairs");
   // Finish up the derivatives for each point.
   TIME_BEGIN("SolidSPHevalDerivs_final");
