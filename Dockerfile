@@ -72,11 +72,6 @@ RUN apt-get update -y && \
 # Setup system locale for pip package encoding/decoding
 RUN locale-gen en_US.UTF-8
 
-RUN echo "Testing DNS resolution..." && \
-    nslookup github.com && \
-    ping -c 2 github.com && \
-    curl -I https://github.com
-
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
 
@@ -110,11 +105,6 @@ ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
 ARG JCXX=8
 ARG JPY=1
-
-RUN echo "Testing DNS resolution..." && \
-    nslookup github.com && \
-    ping -c 2 github.com && \
-    curl -I https://github.com
 
 WORKDIR /home/spheral/workspace/
 
