@@ -11,6 +11,8 @@
   variables:
     ARCH: 'toss_4_x86_64_ib'
     SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
+    # On merge to develop, do the install in this directory
+    PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs/$ARCH
     RUN_CMD: 'srun'
   extends: [.sys_config]
 
@@ -18,5 +20,7 @@
   variables:
     ARCH: 'toss_4_x86_64_ib_cray'
     SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
+    # On merge to develop, do the install in this directory
+    PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs/$ARCH
     RUN_CMD: 'flux run'
   extends: [.sys_config]
