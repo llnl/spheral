@@ -572,21 +572,25 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
+      const auto deltaDvDti = mRZj*((Pi*rhoj/(rhoi*rhoi)*gradWi + Pj/rhoj*gradWj)/rhoRZj + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*((Pj*rhoi/(rhoj*rhoj)*gradWj + Pi/rhoi*gradWi)/rhoRZi + Qacci + Qaccj);
       // const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
       // const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
-      const auto Prhoi = safeOmegai*Pi/(rhoi*rhoRZi);
-      const auto Prhoj = safeOmegaj*Pj/(rhoj*rhoRZj);
-      const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
-      DvDti -= mRZj*deltaDvDt;
-      DvDtj += mRZi*deltaDvDt;
+      // const auto Prhoi = safeOmegai*Pi/(rhoi*rhoRZi);
+      // const auto Prhoj = safeOmegaj*Pj/(rhoj*rhoRZj);
+      // const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
+      DvDti -= deltaDvDti;
+      DvDtj += deltaDvDtj;
       if (compatibleEnergy) {
-        pairAccelerations[kk][0] = -mRZj*deltaDvDt;
-        pairAccelerations[kk][1] =  mRZi*deltaDvDt;
+        pairAccelerations[kk][0] = -deltaDvDti;
+        pairAccelerations[kk][1] =  deltaDvDtj;
       }
 
       // Specific thermal energy evolution.
-      DepsDti += mRZj*(Prhoi*vij.dot(gradWi) + workQi);
-      DepsDtj += mRZi*(Prhoj*vij.dot(gradWj) + workQj);
+      DepsDti += mRZj*(Pi/rhoi*vij.dot(gradWi)/rhoRZj + workQi);
+      DepsDtj += mRZi*(Pj/rhoj*vij.dot(gradWj)/rhoRZi + workQj);
+      // DepsDti += mRZj*(Prhoi*vij.dot(gradWi) + workQi);
+      // DepsDtj += mRZi*(Prhoj*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Prhoi*vij.dot(gradWi) + workQi);
       // DepsDtj += mRZi*(2.0*M_PI*Prhoj*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
