@@ -95,6 +95,17 @@ mass density, velocity, and specific thermal energy."""
         return "void"
 
     @PYB11virtual
+    @PYB11const
+    def finalizeDerivatives(self,
+                            time = "const Scalar",
+                            dt = "const Scalar",
+                            dataBase = "const DataBase<%(Dimension)s>&",
+                            state = "const State<%(Dimension)s>&",
+                            derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Provide a hook to be called after all physics packages have had their evaluateDerivatives method called, but before anyone does anything with those derivatives."
+        return "void"
+
+    @PYB11virtual
     def applyGhostBoundaries(state = "State<%(Dimension)s>&",
                              derivs = "StateDerivatives<%(Dimension)s>&"):
         "Apply boundary conditions to the physics specific fields."

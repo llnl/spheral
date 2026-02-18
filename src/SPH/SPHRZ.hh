@@ -111,6 +111,16 @@ public:
                                StateDerivatives<Dimension>& derivatives,
                                const QType& Q) const;
 
+  // Provide a hook to be called after all physics packages have had their
+  // evaluateDerivatives method called, but before anyone does anything
+  // with those derivatives.
+  virtual 
+  void finalizeDerivatives(const Scalar time,
+                           const Scalar dt,
+                           const DataBase<Dimension>& dataBase,
+                           const State<Dimension>& state,
+                           StateDerivatives<Dimension>& derivatives) const override;
+
   // Apply boundary conditions to the physics specific fields.
   virtual
   void applyGhostBoundaries(State<Dimension>& state,

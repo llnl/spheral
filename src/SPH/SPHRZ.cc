@@ -207,10 +207,10 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-    // dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
+    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  // derivs.enroll(mSelfAccelerations);
+  derivs.enroll(mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -401,7 +401,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
-  // auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
+  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   CHECK(rhoSum.size() == numNodeLists);
@@ -420,8 +420,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
-  // CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
-  //       (not compatibleEnergy and selfAccelerations.size() == 0u));
+  CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
+        (not compatibleEnergy and selfAccelerations.size() == 0u));
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -572,21 +572,25 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
-      const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
-      // const auto Prhoi = safeOmegai*Pi/(rhoi*rhoRZi);
-      // const auto Prhoj = safeOmegaj*Pj/(rhoj*rhoRZj);
-      // const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
-      DvDti -= mRZj*deltaDvDti;
-      DvDtj += mRZi*deltaDvDtj;
+      // const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
+      // const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
+      const auto Prhoi = safeOmegai*Pi/(rhoi*rhoRZi);
+      const auto Prhoj = safeOmegaj*Pj/(rhoj*rhoRZj);
+      const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
+      DvDti -= mRZj*deltaDvDt;
+      DvDtj += mRZi*deltaDvDt;
       if (compatibleEnergy) {
-        pairAccelerations[kk][0] = -mRZj*deltaDvDti;
-        pairAccelerations[kk][1] =  mRZi*deltaDvDtj;
+        pairAccelerations[kk][0] = -mRZj*deltaDvDt;
+        pairAccelerations[kk][1] =  mRZi*deltaDvDt;
       }
 
       // Specific thermal energy evolution.
-      DepsDti -= mRZj*(2.0*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
-      DepsDtj += mRZi*(2.0*Pj/(rhoRZi*rhoj)*vij.dot(gradWj) + workQj);
+      DepsDti += mRZj*(Prhoi*vij.dot(gradWi) + workQi);
+      DepsDtj += mRZi*(Prhoj*vij.dot(gradWj) + workQj);
+      // DepsDti += mRZj*(2.0*M_PI*Prhoi*vij.dot(gradWi) + workQi);
+      // DepsDtj += mRZi*(2.0*M_PI*Prhoj*vij.dot(gradWj) + workQj);
+      // DepsDti += mRZj*(2.0*M_PI*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
+      // DepsDtj += mRZi*(2.0*M_PI*Pj/(rhoRZi*rhoj)*vij.dot(gradWj) + workQj);
 
       // Velocity gradient.
       const auto deltaDvDxi = mRZj*vij.dyad(gradWi);
@@ -669,7 +673,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       normi += mRZi/rhoi*W0*Hdeti;
 
       // // Finish the acceleration -- self hoop strain.
-      // const Vector deltaDvDti(0.0, -Pi/rhoRZi);
+      // const Vector deltaDvDti(0.0, Pi/rhoRZi);
       // DvDti += deltaDvDti;
       // if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
@@ -701,6 +705,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
+      // DepsDti -= 2.0*M_PI*Pi/rhoRZi*vri;
       DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
@@ -714,6 +719,27 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       }
     }
   }
+}
+
+//------------------------------------------------------------------------------
+// Finalize derivatives
+//------------------------------------------------------------------------------
+void
+SPHRZ::
+finalizeDerivatives(const Scalar time,
+                    const Scalar dt,
+                    const DataBase<Dim<2>>& dataBase,
+                    const State<Dim<2>>& state,
+                    StateDerivatives<Dim<2>>& derivs) const {
+
+  // If we're using compatible energy mode we need to apply BCs to DepsDt
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  if (compatibleEnergy) {
+    auto DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
+    for (auto* bptr: this->boundaryConditions()) bptr->applyFieldListGhostBoundary(DepsDt);
+    for (auto* bptr: this->boundaryConditions()) bptr->finalizeGhostBoundary();
+  }
+
 }
 
 //------------------------------------------------------------------------------
