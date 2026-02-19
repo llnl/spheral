@@ -7,6 +7,7 @@ config:
     padded_length: 128
   misc_cache: $spack/../misc_cache
   test_stage: $spack/../test_stage
+  source_cache: $spack/../source_cache
   build_stage:
     - $spack/../build_stage
 repos:
