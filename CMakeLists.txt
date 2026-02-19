@@ -9,3 +9,5 @@ set(SPHERAL_BINARY_DIR ${CMAKE_BINARY_DIR})
 set(SPHERAL_TEST_INSTALL_PREFIX tests)
 
 include(cmake/SetupSpheral.cmake)
+
+add_subdirectory(${SPHERAL_ROOT_DIR}/scripts)

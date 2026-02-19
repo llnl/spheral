@@ -43,6 +43,7 @@ function(spheral_install_python_tests test_dir test_dest)
     PATTERN "*.cmake" EXCLUDE
     PATTERN "*.in" EXCLUDE
     PATTERN "*.pyc" EXCLUDE
+    PATTERN "__pycache__" EXCLUDE
     PATTERN "cpp" EXCLUDE
     PATTERN "*~" EXCLUDE)
 endfunction()
