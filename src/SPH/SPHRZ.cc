@@ -94,7 +94,7 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   xmin,
                   xmax),
   mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
-  mSelfAccelerations(FieldStorageType::CopyFields),
+  // mSelfAccelerations(FieldStorageType::CopyFields),
   mMassRZ(FieldStorageType::CopyFields),
   mMassDensityRZ(FieldStorageType::CopyFields),
   mDmassDensityDtRZ(FieldStorageType::CopyFields) {
