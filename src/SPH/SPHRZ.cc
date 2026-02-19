@@ -576,13 +576,14 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto deltaDvDti = Aj*((Pi + Qi)*rhoj/(rhoi*rhoi)*gradWi + (Pj + Qj)/rhoj*gradWj); // + mRZj*(Qacci + Qaccj);  // More rigorous definition
-      const auto deltaDvDtj = Ai*((Pj + Qj)*rhoi/(rhoj*rhoj)*gradWj + (Pi + Qi)/rhoi*gradWi); // + mRZi*(Qacci + Qaccj);
+      // const auto deltaDvDti = Aj*((Pi + Qi)*rhoj/(rhoi*rhoi)*gradWi + (Pj + Qj)/rhoj*gradWj); // + mRZj*(Qacci + Qaccj);  // More rigorous definition
+      // const auto deltaDvDtj = Ai*((Pj + Qj)*rhoi/(rhoj*rhoj)*gradWj + (Pi + Qi)/rhoi*gradWi); // + mRZi*(Qacci + Qaccj);
       // const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
       // const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
-      // const auto Prhoi = safeOmegai*Pi/(rhoi*rhoRZi);
-      // const auto Prhoj = safeOmegaj*Pj/(rhoj*rhoRZj);
-      // const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
+      const auto Prhoi = Pi/(rhoRZi*rhoRZi);
+      const auto Prhoj = Pj/(rhoRZj*rhoRZj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
       // const auto deltaDvDt = 0.5*Ai*Aj*(Pi + Pj + Qi + Qj)*(gradWi - gradWj);      // CRK similar form
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
@@ -594,18 +595,18 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Specific thermal energy evolution.
       // DepsDti += 0.5*(Pi + 0.5*(Qi + Qj))*Ai*Aj*vij.dot(gradWi - gradWj);   // CRK similar form
       // DepsDtj += 0.5*(Pj + 0.5*(Qi + Qj))*Ai*Aj*vij.dot(gradWi - gradWj);
-      DepsDti += Aj*(Pi + Qi)/rhoi*vij.dot(gradWi); // + mRZj*(workQi + workQj);    // More rigorous definition
-      DepsDtj += Ai*(Pj + Qj)/rhoj*vij.dot(gradWj); // + mRZi*(workQi + workQj);
-      // DepsDti += mRZj*(Prhoi*vij.dot(gradWi) + workQi);
-      // DepsDtj += mRZi*(Prhoj*vij.dot(gradWj) + workQj);
+      // DepsDti += Aj*(Pi + Qi)/rhoi*vij.dot(gradWi); // + mRZj*(workQi + workQj);    // More rigorous definition
+      // DepsDtj += Ai*(Pj + Qj)/rhoj*vij.dot(gradWj); // + mRZi*(workQi + workQj);
+      DepsDti += mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
+      DepsDtj += mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Prhoi*vij.dot(gradWi) + workQi);
       // DepsDtj += mRZi*(2.0*M_PI*Prhoj*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
       // DepsDtj += mRZi*(2.0*M_PI*Pj/(rhoRZi*rhoj)*vij.dot(gradWj) + workQj);
 
       // Velocity gradient.
-      const auto deltaDvDxi = Aj*vij.dyad(gradWi);
-      const auto deltaDvDxj = Ai*vij.dyad(gradWj);
+      const auto deltaDvDxi = mRZj*vij.dyad(gradWi);
+      const auto deltaDvDxj = mRZi*vij.dyad(gradWj);
       DvDxi -= deltaDvDxi;
       DvDxj -= deltaDvDxj;
       if (sameMatij) {
@@ -623,11 +624,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       }
 
       // Linear gradient correction term.
-      Mi -= Aj*xij.dyad(gradWi);
-      Mj -= Ai*xij.dyad(gradWj);
+      Mi -= mRZj*xij.dyad(gradWi);
+      Mj -= mRZi*xij.dyad(gradWj);
       if (sameMatij) {
-        localMi -= Aj*xij.dyad(gradWi);
-        localMj -= Ai*xij.dyad(gradWj);
+        localMi -= mRZj*xij.dyad(gradWi);
+        localMj -= mRZi*xij.dyad(gradWj);
       }
 
     } // loop over pairs
@@ -682,7 +683,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // // Add the self-contribution to density sum.
       // rhoSumi += mRZi*W0*Hdeti;
       // rhoSumi /= circi;
-      normi += Ai*W0*Hdeti;
+      normi += mRZi*W0*Hdeti;
 
       // // Finish the acceleration -- self hoop strain.
       // const Vector deltaDvDti(0.0, Pi/rhoRZi);
@@ -709,7 +710,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       }
 
       // Finish the continuity equation.
-      XSPHWeightSumi += Hdeti*Ai*W0;
+      XSPHWeightSumi += Hdeti*mRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       const auto vri = vi.y(); // + XSPHDeltaVi.y();
@@ -717,7 +718,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
-      // DepsDti -= 2.0*M_PI*Pi/rhoRZi*vri;
       DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
