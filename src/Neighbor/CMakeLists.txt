@@ -33,7 +33,6 @@ set(Neighbor_headers
     PairwiseField.hh
     PairwiseFieldElementAccessor.hh
     PairwiseFieldInline.hh
-    PairwiseFieldElementAccessor.hh
     PairwiseFieldView.hh
     )
 

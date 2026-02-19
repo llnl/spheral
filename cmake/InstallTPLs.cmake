@@ -124,8 +124,13 @@ if(POLYTOPE_FOUND)
   # Install Polytope python library to our site-packages
   if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+      DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
     )
+    configure_file(
+      ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+      COPYONLY)
     if (NOT EXISTS ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so)
       message(FATAL_ERROR
         "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
@@ -244,16 +249,4 @@ blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
   include(${EXTERNAL_SPHERAL_TPL_CMAKE})
-endif()
-
-if (SPHERAL_ENABLE_PYTHON)
-  configure_file(
-    ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-    COPYONLY)
-
-  install(FILES ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
-  )
 endif()
