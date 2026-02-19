@@ -142,7 +142,6 @@ set(Utilities_headers
     range.hh
     AnyVisitor.hh
     SpheralMessage.hh
-    StrideIterator.hh
     initializeAxom.hh
   )
 

@@ -104,6 +104,3 @@ set(PYB11_python_targets
   SpheralCompiledPackages.py)
 
 spheral_install_python_files(${PYB11_python_targets})
-
-install(FILES       Spheral.pth
-        DESTINATION ${SPHERAL_SITE_PACKAGES_PATH})

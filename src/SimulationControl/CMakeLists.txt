@@ -62,6 +62,11 @@ add_custom_target(
   DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/spheralDimensions.py" "${CMAKE_CURRENT_BINARY_DIR}/SpheralConfigs.py"
 )
 
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/Spheral.pth "../../../../${SPHERAL_SITE_PACKAGES_PATH}/Spheral")
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Spheral.pth"
+  DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH})
+
 spheral_install_python_files(
   Spheral.py
   Spheral1d.py

@@ -11,7 +11,6 @@ set(TPL_SPHERAL_CMAKE_DIR ${SPHERAL_ROOT_DIR}/cmake/tpl)
 # Initialize TPL options
 include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralHandleTPL.cmake)
 include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralHandleExt.cmake)
-include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralPRT.cmake)
 
 #-----------------------------------------------------------------------------------
 # Submodules
@@ -20,7 +19,7 @@ include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralPRT.cmake)
 if (SPHERAL_ENABLE_PYTHON)
   # Find the appropriate Python
   find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-  set(SPHERAL_SITE_PACKAGES_PATH "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages" )
+  set(SPHERAL_SITE_PACKAGES_PATH "lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages")
   list(APPEND SPHERAL_CXX_DEPENDS Python3::Python)
 
   # Set the PYB11Generator path
@@ -38,21 +37,6 @@ if (SPHERAL_ENABLE_PYTHON)
     EXPORT spheral_cxx-targets
     DESTINATION lib/cmake)
   set_target_properties(pybind11_headers PROPERTIES EXPORT_NAME spheral::pybind11_headers)
-
-  # Install Spheral Python Build Dependencies to a python virtual env in the build tree.
-
-  # Need to set up the build env here so the python library targets can depend on
-  # python_build_env.
-  set(BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/build-requirements.txt)
-  list(APPEND BUILD_REQ_LIST ${SPHERAL_BINARY_DIR}/scripts/runtime-requirements.txt)
-  if(SPHERAL_ENABLE_DOCS)
-    list(APPEND BUILD_REQ_LIST ${SPHERAL_ROOT_DIR}/scripts/docs-requirements.txt)
-  endif()
-
-  Spheral_Python_Env(python_build_env
-    REQUIREMENTS ${BUILD_REQ_LIST}
-    PREFIX ${CMAKE_BINARY_DIR}
-  )
 endif()
 
 # This is currently unfilled in spheral
@@ -124,8 +108,13 @@ if(POLYTOPE_FOUND)
   # Install Polytope python library to our site-packages
   if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+      DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
     )
+    configure_file(
+      ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+      COPYONLY)
     if (NOT EXISTS ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so)
       message(FATAL_ERROR
         "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
@@ -244,16 +233,4 @@ blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
   include(${EXTERNAL_SPHERAL_TPL_CMAKE})
-endif()
-
-if (SPHERAL_ENABLE_PYTHON)
-  configure_file(
-    ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-    COPYONLY)
-
-  install(FILES ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
-  )
 endif()

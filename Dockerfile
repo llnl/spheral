@@ -54,7 +54,6 @@ RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cma
 # First time install of Spheral pip dependencies
 WORKDIR build_$HOST_CONFIG/build
 RUN make python_build_env
-RUN make python_runtime_env
 
 # Clean workspace once dependencies are installed
 WORKDIR /home/spheral/workspace/
@@ -87,7 +86,6 @@ RUN python3 scripts/devtools/host-config-build.py --host-config $HOST_CONFIG.cma
 # Build Spheral
 WORKDIR build_$HOST_CONFIG/build
 RUN make python_build_env
-RUN make python_runtime_env
 RUN make -j $JCXX Spheral_CXX
 RUN make -j $JPY
 RUN make install

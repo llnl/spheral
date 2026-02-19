@@ -22,6 +22,13 @@ Notable changes include:
       * Gitlab pages now uses Plotly for interactive visualizations.
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
       * Merges to develop will copy installs to a shared directory for use by the performance testing scripts.
+    * Builds and installs are cleaner:
+      * Rpaths are no longer overwritten, allowing things set in the host config file created by Spack to be used.
+      * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
+      * CMake steps related to configuring and installing python files have been moved from scripts/CMakeLists.txt to cmake/SpheralPythonEnv.cmake
+      * Installations now honor the CMAKE_INSTALL_PREFIX that is set at install time instead of configure time.
+      * Spheral_Python_Env function is replaced with a script that is run depending on the stage.
+      * The python_runtime_env is now always part of the install step but checks if relevant files have changed.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
