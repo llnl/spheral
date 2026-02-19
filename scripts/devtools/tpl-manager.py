@@ -45,7 +45,7 @@ class SpheralTPL:
                             help="Show the Spheral Spack info, including dependencies and variants.")
         parser.add_argument("--add-spec", action="store_true",
                             help="Set this flag to add the --spec to the environment.")
-        parser.add_argument("--spack-dir", type=str,
+        parser.add_argument("--tpl-dir", type=str,
                             default=os.path.join(os.getcwd(), "../spheral-spack-tpls"),
                             help="Directory to install Spack instance and a build directory.")
         parser.add_argument("--update-upstream", action="store_true",
@@ -74,7 +74,7 @@ class SpheralTPL:
         self.args = parser.parse_args()
 
         # Set environment variables so Spack no longer uses ~/.spack directory
-        os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(self.args.spack_dir, "misc")
+        os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(self.args.tpl_dir, "misc")
         os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
         if (not self.args.spec and self.args.ci_run):
@@ -85,9 +85,9 @@ class SpheralTPL:
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
 
-    def add_spack_paths(self, spack_dir):
+    def add_spack_paths(self, tpl_dir):
         "Append spack path to system to use spack python modules"
-        spack_path = os.path.join(spack_dir, "lib", "spack")
+        spack_path = os.path.join(tpl_dir, "lib", "spack")
         sys.path.append(spack_path)
         sys.path.append(os.path.join(spack_path, "spack"))
         sys.path.append(os.path.join(spack_path, "_vendoring"))
@@ -112,7 +112,7 @@ class SpheralTPL:
 
     def clone_spack(self):
         "Clone Spack and add paths to use spack python"
-        tpl_root = self.args.spack_dir
+        tpl_root = self.args.tpl_dir
         if (not os.path.exists(tpl_root)):
             os.mkdir(tpl_root)
         spack_dir = os.path.join(tpl_root, "spack")

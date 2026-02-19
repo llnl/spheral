@@ -76,7 +76,7 @@ RUN locale-gen en_US.UTF-8
 WORKDIR /home/spheral/workspace/
 
 COPY scripts scripts
-RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --tpl-dir /home
 COPY . .
 
 # Configure Spheral with SPEC TPLs.
@@ -110,7 +110,7 @@ WORKDIR /home/spheral/workspace/
 
 # Copy Spheral source and generate host config from tpl-manager (all dependencies should already be installed).
 COPY . .
-RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --tpl-dir /home
 
 # Configure Spheral with SPEC TPLs.
 RUN mv *.cmake $HOST_CONFIG.cmake
