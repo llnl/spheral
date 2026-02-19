@@ -719,8 +719,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
       DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
-      // // Finish the specific thermal energy evolution.
-      // DepsDti -= Pi/rhoi*vri*riInv;
+      // Finish the specific thermal energy evolution.
+      DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
