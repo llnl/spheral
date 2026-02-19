@@ -58,6 +58,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             asph = False,                      # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
 
             hydroType = "SPH",                 # one of (SPH, CRKSPH)
+            Q = None,                          # optionally override viscosity choice
             evolveTotalEnergy = False,         # Only for SPH variants -- evolve total rather than specific energy
             boolReduceViscosity = False,
             nhQ = 5.0,
@@ -343,9 +344,13 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
+if not Q is None:
+    Q = Q(Cl, Cq, WT)
+
 if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
+                   Q = Q,
                    cfl = cfl,
                    useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
@@ -359,6 +364,7 @@ else:
     assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
+                Q = Q,
                 cfl = cfl,
                 useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                 compatibleEnergyEvolution = compatibleEnergy,
