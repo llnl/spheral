@@ -141,7 +141,7 @@ Performance Regression Testing
    The following is currently only applicable for use on LC machines at LLNL.
 
 ``tests/performance/run_perf.py`` contains a set of performance regression tests. These tests allow a developer to estimate the performance implications of code under development and compare it to the current development branch of Spheral.
-On a nightly basis, the CI runs this regression test multiple times to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
+The CI runs this regression test multiple times on a schedule to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
 The general procedure to comparing performance regression tests is:
 
 * Run the performance regression tests from an installation using 2 nodes (number of nodes used in benchmark run by CI):
