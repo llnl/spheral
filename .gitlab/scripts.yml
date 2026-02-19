@@ -139,7 +139,7 @@
     - !reference [.merge_pr_rule, rules]
   script:
     - ml load mpifileutils
-    - dchmod --mode go+rx $UPSTREAM_DIR
+    - $RUN_CMD -n $NPROCS dchmod --mode go+rx $UPSTREAM_DIR
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
@@ -202,7 +202,7 @@
     - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
-    - dchmod --mode go+rx $INSTALL_DIR
+    - $RUN_CMD -n $NPROCS dchmod --mode go+rx $INSTALL_DIR
 
   artifacts:
     paths:
