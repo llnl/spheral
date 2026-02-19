@@ -36,6 +36,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             solid = False,             # If true, use the fluid limit of the solid hydro option
 
             hydroType = "SPH",         # one of (SPH, CRKSPH)
+            Q = None,                          # optionally override viscosity choice
             asph = False,              # Choose the H advancement
             compatibleEnergy = True,
             evolveTotalEnergy = False,  # Only for SPH variants -- evolve total rather than specific energy
@@ -239,9 +240,13 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
+if not Q is None:
+    Q = Q(Cl, Cq, WT)
+
 if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
+                   Q = Q,
                    cfl = cfl,
                    useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
@@ -255,6 +260,7 @@ else:
     assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
+                Q = Q,
                 cfl = cfl,
                 useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                 compatibleEnergyEvolution = compatibleEnergy,
