@@ -456,7 +456,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  mi = mass(nodeListi, i);
+      // const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto  rhoi = massDensity(nodeListi, i);
@@ -466,8 +466,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  ci = soundSpeed(nodeListi, i);
       const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  safeOmegai = safeInv(omegai, tiny);
-      const auto  Ai = mRZi/rhoRZi;
+      // const auto  safeOmegai = safeInv(omegai, tiny);
+      // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
@@ -487,7 +487,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node j
       const auto& posj = position(nodeListj, j);
-      const auto  mj = mass(nodeListj, j);
+      // const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto  rhoj = massDensity(nodeListj, j);
@@ -497,8 +497,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  cj = soundSpeed(nodeListj, j);
       const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
-      const auto  safeOmegaj = safeInv(omegaj, tiny);
-      const auto  Aj = mRZj/rhoRZj;
+      // const auto  safeOmegaj = safeInv(omegaj, tiny);
+      // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
       CHECK(rhoj > 0.0);
       CHECK(Hdetj > 0.0);
@@ -580,10 +580,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto deltaDvDtj = Ai*((Pj + Qj)*rhoi/(rhoj*rhoj)*gradWj + (Pi + Qi)/rhoi*gradWi); // + mRZi*(Qacci + Qaccj);
       // const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
       // const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
-      const auto Prhoi = Pi/(rhoRZi*rhoRZi);
-      const auto Prhoj = Pj/(rhoRZj*rhoRZj);
-      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
-      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
+      const auto Prhoi = (Pi + Qi)/(rhoRZi*rhoRZi);
+      const auto Prhoj = (Pj + Qj)/(rhoRZj*rhoRZj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj));// + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj));// + Qacci + Qaccj);
       // const auto deltaDvDt = 0.5*Ai*Aj*(Pi + Pj + Qi + Qj)*(gradWi - gradWj);      // CRK similar form
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
@@ -597,8 +597,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // DepsDtj += 0.5*(Pj + 0.5*(Qi + Qj))*Ai*Aj*vij.dot(gradWi - gradWj);
       // DepsDti += Aj*(Pi + Qi)/rhoi*vij.dot(gradWi); // + mRZj*(workQi + workQj);    // More rigorous definition
       // DepsDtj += Ai*(Pj + Qj)/rhoj*vij.dot(gradWj); // + mRZi*(workQi + workQj);
-      DepsDti += mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
-      DepsDtj += mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
+      DepsDti += mRZj*((Pi + Qi)/(rhoi*rhoRZi)*vij.dot(gradWi));// + workQi);
+      DepsDtj += mRZi*((Pj + Qj)/(rhoj*rhoRZj)*vij.dot(gradWj));// + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Prhoi*vij.dot(gradWi) + workQi);
       // DepsDtj += mRZi*(2.0*M_PI*Prhoj*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
@@ -647,21 +647,23 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
     for (auto i = 0u; i < ni; ++i) {
 
       // Get the state for node i.
-      const auto& posi = position(nodeListi, i);
-      const auto  ri = posi.y();
+      // const auto& posi = position(nodeListi, i);
+      // const auto  ri = posi.y();
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
-      const auto  Pi = pressure(nodeListi, i);
+      // const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       // const auto  zetai = abs((Hi*posi).y());
       // const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri); // , 0.25*hri);
+      // const auto  riInv = safeInv(ri, 0.25*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       const auto  Ai = mRZi/rhoRZi;
+      const auto  Vi = mi/rhoi;
+      const auto  riInv = 2.0*M_PI*Ai/Vi;
       CHECK(rhoi > 0.0);
       CHECK(rhoRZi > 0.0);
       CHECK(Hdeti > 0.0);
@@ -717,8 +719,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
       DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
-      // Finish the specific thermal energy evolution.
-      DepsDti -= Pi/rhoi*vri*riInv;
+      // // Finish the specific thermal energy evolution.
+      // DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
