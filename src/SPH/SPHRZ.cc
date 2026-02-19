@@ -464,7 +464,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  ci = soundSpeed(nodeListi, i);
-      const auto& omegai = omega(nodeListi, i);
+      // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
@@ -495,7 +495,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
       const auto  cj = soundSpeed(nodeListj, j);
-      const auto& omegaj = omega(nodeListj, j);
+      // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
@@ -654,7 +654,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto& vi = velocity(nodeListi, i);
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
-      // const auto  Pi = pressure(nodeListi, i);
+      const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       // const auto  zetai = abs((Hi*posi).y());
