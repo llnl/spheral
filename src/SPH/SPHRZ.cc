@@ -580,10 +580,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto deltaDvDtj = Ai*((Pj + Qj)*rhoi/(rhoj*rhoj)*gradWj + (Pi + Qi)/rhoi*gradWi); // + mRZi*(Qacci + Qaccj);
       // const auto deltaDvDti = (Pi*gradWi + Pj*gradWj)/(rhoi*rhoRZj) + Qacci + Qaccj;
       // const auto deltaDvDtj = (Pi*gradWi + Pj*gradWj)/(rhoRZi*rhoj) + Qacci + Qaccj;
-      const auto Prhoi = (Pi + Qi)/(rhoRZi*rhoRZi);
-      const auto Prhoj = (Pj + Qj)/(rhoRZj*rhoRZj);
-      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj));// + Qacci + Qaccj);
-      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj));// + Qacci + Qaccj);
+      const auto Prhoi = Pi/(rhoRZi*rhoRZi);
+      const auto Prhoj = Pj/(rhoRZj*rhoRZj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
       // const auto deltaDvDt = 0.5*Ai*Aj*(Pi + Pj + Qi + Qj)*(gradWi - gradWj);      // CRK similar form
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
@@ -597,8 +597,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // DepsDtj += 0.5*(Pj + 0.5*(Qi + Qj))*Ai*Aj*vij.dot(gradWi - gradWj);
       // DepsDti += Aj*(Pi + Qi)/rhoi*vij.dot(gradWi); // + mRZj*(workQi + workQj);    // More rigorous definition
       // DepsDtj += Ai*(Pj + Qj)/rhoj*vij.dot(gradWj); // + mRZi*(workQi + workQj);
-      DepsDti += mRZj*((Pi + Qi)/(rhoi*rhoRZi)*vij.dot(gradWi));// + workQi);
-      DepsDtj += mRZi*((Pj + Qj)/(rhoj*rhoRZj)*vij.dot(gradWj));// + workQj);
+      DepsDti += mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
+      DepsDtj += mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Prhoi*vij.dot(gradWi) + workQi);
       // DepsDtj += mRZi*(2.0*M_PI*Prhoj*vij.dot(gradWj) + workQj);
       // DepsDti += mRZj*(2.0*M_PI*Pi/(rhoi*rhoRZj)*vij.dot(gradWi) + workQi);
