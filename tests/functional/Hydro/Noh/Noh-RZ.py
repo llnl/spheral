@@ -152,6 +152,7 @@ hydroPath = (("Solid" if solid else "") +
              ("AC" if asph == "Classic" else "A" if asph else "") +
              hydroType)
 dataDir = os.path.join(dataDirBase,
+                       problem,
                        hydroPath,
                        "nPerh=%f" % nPerh,
                        "compatibleEnergy=%s" % compatibleEnergy,
