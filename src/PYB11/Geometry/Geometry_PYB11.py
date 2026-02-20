@@ -89,8 +89,17 @@ CoordinateType = PYB11enum(("Cartesian", "Spherical", "RZ"), export_values=True,
 #-------------------------------------------------------------------------------
 # General functions
 #-------------------------------------------------------------------------------
-def toroidalVolume(R = "const double",
-                   r = "const double"):
+def cylindricalToroidalVolume(d = "const double",
+                              r = "const double"):
+    """Spin a square around the axis, taking into account of whether the bottom of
+the square touches (or goes below) the axis.
+d : length of a side of the square to be rotated
+r : distance of square's center to axis of rotation
+"""
+    return "double"
+
+def circularToroidalVolume(R = "const double",
+                           r = "const double"):
     """Compute the volume of a toroid, taking into a account when the circular
 cross-section of the torus contains and is clipped by the axis of rotation
 (i.e., a spindle toroid).
