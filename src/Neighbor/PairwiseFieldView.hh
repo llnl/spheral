@@ -75,6 +75,14 @@ public:
   // Zero the Field
   SPHERAL_HOST_DEVICE void Zero()                                                   { for (auto& x: mSpan) x = DataTypeTraits<Value>::zero(); }
 
+  SPHERAL_HOST void move(chai::ExecutionSpace space) {
+#ifndef SPHERAL_UNIFIED_MEMORY
+    mSpan.move(space);
+#else
+    (void)space;
+#endif
+  }
+
 protected:
   //--------------------------- Protected Interface ---------------------------//
   ContainerType mSpan;

@@ -813,6 +813,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   XSPHDeltaV.move(chai::CPU);
   DSDt.move(chai::CPU);
   rhoSumCorrection.move(chai::CPU);
+  pairAccelerations.move(chai::CPU);
   TIME_END("SolidSPHevalDerivs_final");
   TIME_END("SolidSPHevalDerivs");
 }

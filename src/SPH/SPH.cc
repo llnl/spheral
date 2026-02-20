@@ -610,6 +610,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   effViscousPressure.move(chai::CPU);
   XSPHWeightSum.move(chai::CPU);
   XSPHDeltaV.move(chai::CPU);
+  pairAccelerations.move(chai::CPU);
   TIME_END("SPHevalDerivs_final");
   TIME_END("SPHevalDerivs");
 }
