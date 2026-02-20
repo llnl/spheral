@@ -7,7 +7,7 @@ Notable changes include:
   * New features / API changes:
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
-    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path. This allows installs to be relocatable.
+    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
 
   * Bug fixes
 
