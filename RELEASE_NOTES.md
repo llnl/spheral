@@ -23,7 +23,7 @@ Notable changes include:
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
       * Merges to develop will copy installs to a shared directory for use by the performance testing scripts.
     * Builds and installs are cleaner:
-      * Rpaths are no longer overwritten, allowing things set in the host config file created by Spack to be used.
+      * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
 
 Version v2025.12.0 -- Release date 2025-12-19
