@@ -4,6 +4,7 @@
 # Run using: ./spheral-ats tests/run_perf.py
 
 import sys, shutil, os, time, stat
+sys.path.append(os.path.dirname(__file__))
 import numpy as np
 import SpheralConfigs
 import perf_tests as pt
