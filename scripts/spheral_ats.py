@@ -127,7 +127,7 @@ def main():
     parser.add_argument("--atsHelp", action="store_true",
                         help="Print the help output for ATS. Useful for seeing ATS options.")
     parser.add_argument("--threads", type=int, default=None,
-                        help="Set number of threads per rank to use. Only used by performance.py.")
+                        help="Set number of threads per rank to use. Currently only used by run_perf.py.")
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
     parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")

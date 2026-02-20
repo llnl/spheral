@@ -260,7 +260,7 @@
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
     - ml load mpifileutils
     - cd $BENCHMARK_LOC
-    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files
+    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files.sh
 
 # ------------------------------------------------------------------------------
 # Script Utilities
