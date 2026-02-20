@@ -17,11 +17,12 @@ Notable changes include:
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
     * Performance testing and CI improvements:
+      * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
       * The cleanup old directories job is now a scheduled pipelines that runs weekly.
-      * The performance tests and deploy jobs are now scheduled pipelines that run nightly.
+      * The performance tests and deploy jobs are now scheduled pipelines that run on a schedule.
       * Gitlab pages now uses Plotly for interactive visualizations.
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
-      * Merges to develop will copy installs to a shared directory for use by the performance testing scripts.
+      * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.

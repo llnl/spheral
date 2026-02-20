@@ -75,8 +75,9 @@
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
     - ml load mpifileutils
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
-    - cd $CI_BUILD_DIR
-    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --build-dir perf_install -i $INSTALL_DIR --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+    - cd $CI_BUILD_DIR/build_gitlab/build
+    - cmake ../../ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+    - make -j $NPROC install
     - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
   artifacts:
     paths:

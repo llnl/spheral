@@ -13,7 +13,7 @@ variables:
 
   SCRIPT_DIR: "scripts"
   ATS_FILE: "tests/integration.ats"
-  PERF_ATS_FILE: "tests/performance/run_perf.py"
+  PERF_ATS_FILE: "tests/run_perf.py"
   SPHERAL_MODULE: "Spheral"
   SPACK_PKG_NAME: spheral
   DEV_PKG_SPEC: "spheral@develop+mpi~caliper~network%gcc"

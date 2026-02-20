@@ -4,10 +4,8 @@
 # Run using: ./spheral-ats tests/run_perf.py
 
 import sys, shutil, os, time, stat
-sys.path.append(os.path.dirname(__file__))
 import numpy as np
 import SpheralConfigs
-import perf_tests as pt
 from Spheral import TimerMgr
 from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
@@ -18,6 +16,9 @@ if (not TimerMgr.timers_usable()):
 
 # Get options from ats
 opts = getOptions()
+
+# Get install test path
+test_path = os.path.join(opts["install_path"], "tests")
 
 # Adding --threads to the command line arguments of spheral-ats
 # can force performance to use multiple threads per rank
@@ -110,7 +111,7 @@ def spheral_setup_test(test_param, threads=1, **kwargs):
     if (not mpi_enabled):
         threads = ncores
         ncores = 1
-    test_file = test_param.test_file()
+    test_file = test_param.test_file(test_path)
     tests = test_param.get_tests()
     for test_name, inps in tests.items():
         for i in range(test_runs):
@@ -135,6 +136,12 @@ glue(keep=True, independent=True)
 #---------------------------------------------------------------------------
 # Test configurations
 #---------------------------------------------------------------------------
+perf_paths = ["", "spheral/tests", "llnlspheral/tests"]
+sys.path.extend([os.path.join(test_path, i) for i in perf_paths])
+import perf_tests as pt
+if(os.path.exists(perf_paths[-1])):
+    import llnl_perf_tests
+
 all_tests = pt.get_all_tests(num_cores)
 
 for t in all_tests:

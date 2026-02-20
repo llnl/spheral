@@ -10,11 +10,6 @@ max_test_failures = 10
 # Number of times to rerun the ATS tests
 max_reruns = 1
 
-cur_dir = os.path.dirname(__file__)
-# Set current directory to install prefix
-if (os.path.islink(__file__)):
-    cur_dir = os.path.join(cur_dir, os.readlink(__file__))
-
 spheral_prefix = sys.executable.split(".venv")[0]
 ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
 spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
@@ -200,10 +195,12 @@ def main():
         ats_args.append(f"--glue='threads={options.threads}'")
     ats_args.append(f"""--glue='benchmark_dir="{benchmark_dir}"'""")
     ats_args.append("--glue='independent=True'")
+    # Add the current install directory as an ATS input option
+    ats_args.append(f"""--glue='install_path="{spheral_prefix}"'""")
     ats_args = " ".join(str(x) for x in ats_args)
     other_args = " ".join(str(x) for x in unknown_options)
     cmd = f"{ats_exe} -e {spheral_exe} {ats_args} {other_args}"
-    # Check if are already in an allocation
+    # Check if already in an allocation
     inAlloc = any(e in list(os.environ.keys()) for e in inAllocVars)
     # If already in allocation, do not do a launch
     if inAlloc:
