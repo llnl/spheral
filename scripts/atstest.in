@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-@SPHERAL_EXEC_DIR@/bin/spheral @SPHERAL_SCRIPT_DIR@/scripts/spheral_ats.py "$@"

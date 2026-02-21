@@ -1,0 +1,29 @@
+
+.run_perf:
+  stage: run_perf
+  variables:
+    GIT_STRATEGY: none
+    FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
+    FF_USE_NEW_BASH_EVAL_STRATEGY: 1
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Performance tests"'
+    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+  script:
+    # This script submits a job that runs at 7
+    # Benchmark directory is set in scripts/spheral_ats.py
+    - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
+    - echo "Running performance tests using install at $INSTALL_DIR"
+    - $INSTALL_DIR/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs $INSTALL_DIR/$PERF_ATS_FILE || exit_code=$?
+    - exit $exit_code
+
+toss_gcc_mpi_perf:
+  extends: [.toss_perf_shell, .gcc_mpi, .run_perf]
+
+toss_clang_mpi_dev_build_perf:
+  extends: [.toss_perf_shell, .clang_mpi_dev_build, .run_perf]
+
+cray_rocm_mpi_perf:
+  extends: [.cray_shell1, .rocm_mpi, .run_perf]
+
+cray_hip_rocm_mpi_perf:
+  extends: [.cray_shell2, .hip_rocm_mpi, .run_perf]
