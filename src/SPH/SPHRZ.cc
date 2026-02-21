@@ -141,7 +141,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
       const auto Ai = mass(k,i)/rho(k,i);
       const auto Ri = std::sqrt(Ai/M_PI);
       const auto ri = pos(k,i).y();
-      const auto Vi = toroidalVolume(Ri, ri);
+      const auto Vi = circularToroidalVolume(Ri, ri);
       mMassRZ(k,i) = mass(k,i);
       mMassDensityRZ(k,i) = rho(k,i);
       mass(k,i) = rho(k,i)*Vi;
@@ -285,7 +285,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
       const auto ri = position(k,i).y();
       CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
-      const auto Vi = toroidalVolume(Ri, ri);
+      const auto Vi = circularToroidalVolume(Ri, ri);
       massDensity(k,i) = mass(k,i)/Vi;
     }
   }
@@ -659,11 +659,13 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Hdeti = Hi.Determinant();
       // const auto  zetai = abs((Hi*posi).y());
       // const auto  hri = ri*safeInv(zetai);
-      // const auto  riInv = safeInv(ri, 0.25*hri);
+      // const auto  riInv = safeInvVar(ri, 0.25*hri);
+      // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       const auto  Ai = mRZi/rhoRZi;
       const auto  Vi = mi/rhoi;
       const auto  riInv = 2.0*M_PI*Ai/Vi;
+      // const auto  riInv = safeInv(ri, 0.25*std::sqrt(Ai));
       CHECK(rhoi > 0.0);
       CHECK(rhoRZi > 0.0);
       CHECK(Hdeti > 0.0);
