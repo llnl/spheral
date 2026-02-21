@@ -38,11 +38,11 @@ class TestParams:
         else:
             return [self.test_name + i for i in list(self.test_vars.keys())]
 
-    def set_gen_input(self):
+    def set_gen_inputs(self):
         pass
 
     def get_tests(self):
-        self.set_gen_input()
+        self.set_gen_inputs()
         if not self.test_vars:
             return {self.test_name: self.gen_inp}
         else:
