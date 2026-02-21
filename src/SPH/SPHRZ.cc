@@ -138,10 +138,12 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
     const auto n = mass[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
       CHECK(rho(k,i) > 0.0);
-      const auto Ai = mass(k,i)/rho(k,i);
-      const auto Ri = std::sqrt(Ai/M_PI);
       const auto ri = pos(k,i).y();
-      const auto Vi = circularToroidalVolume(Ri, ri);
+      const auto Ai = mass(k,i)/rho(k,i);
+      const auto di = std::sqrt(Ai);
+      const auto Vi = cylindricalToroidalVolume(di, ri);
+      // const auto Ri = std::sqrt(Ai/M_PI);
+      // const auto Vi = circularToroidalVolume(Ri, ri);
       mMassRZ(k,i) = mass(k,i);
       mMassDensityRZ(k,i) = rho(k,i);
       mass(k,i) = rho(k,i)*Vi;
@@ -282,10 +284,12 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto n = massDensity[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
       CHECK(massDensityRZ(k,i) > 0.0);
-      const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
       const auto ri = position(k,i).y();
       CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
-      const auto Vi = circularToroidalVolume(Ri, ri);
+      const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
+      const auto Vi = cylindricalToroidalVolume(di, ri);
+      // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
+      // const auto Vi = circularToroidalVolume(Ri, ri);
       massDensity(k,i) = mass(k,i)/Vi;
     }
   }

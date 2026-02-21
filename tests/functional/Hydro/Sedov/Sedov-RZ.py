@@ -99,7 +99,8 @@ hydroType = hydroType.upper()
 assert problem in ("planar", "cylindrical", "spherical")
 assert not (compatibleEnergy and evolveTotalEnergy)
 
-dataDir = os.path.join("dumps-%s-Sedov-RZ" % problem,
+dataDir = os.path.join("dumps-Sedov-RZ",
+                       problem,
                        hydroType,
                        "nPerh=%f" % nPerh)
 if compatibleEnergy:
