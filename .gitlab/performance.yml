@@ -8,6 +8,7 @@
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Performance tests"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+  dependencies: []
   script:
     # Directory storing benchmark data is set in scripts/spheral_ats.py
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
