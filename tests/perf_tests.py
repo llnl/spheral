@@ -21,7 +21,7 @@ class TestParams:
         self.ncores = None
         self.gen_inp = None
 
-    def test_file(self, install_test_path):
+    def get_test_file(self, install_test_path):
         # Determine path to test files either tests/ or tests/spheral/tests
         test_path_1 = os.path.join(install_test_path, self.test_type, "tests", self.test_file)
         test_path_2 = os.path.join(install_test_path, self.test_file)

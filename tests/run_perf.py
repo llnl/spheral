@@ -27,7 +27,7 @@ if "threads" in opts:
     num_threads = opts["threads"]
 
 # Adding --ciRun to the command line arguments of spheral-ats
-# triggers copy of Caliper files to benchmark location
+# triggers move of Caliper files to benchmark location
 benchmark_dir = None
 test_runs = 1 # Number of times to run each test
 CIRun = False
