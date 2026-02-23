@@ -278,6 +278,7 @@ output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
+output("hydro.XSPH")
 output("hydro._smoothingScaleMethod.HEvolution")
 
 packages = [hydro]

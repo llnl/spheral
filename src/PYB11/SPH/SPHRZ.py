@@ -125,7 +125,6 @@ mass density, velocity, and specific thermal energy."""
     #...........................................................................
     # Properties
     pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")
-    #selfAccelerations = PYB11property("const FieldList<%(Dimension)s, Vector>&", "selfAccelerations", returnpolicy="reference_internal")
     massRZ = PYB11property("const ScalarFieldList&", "massRZ", returnpolicy="reference_internal")
     massDensityRZ = PYB11property("const ScalarFieldList&", "massDensityRZ", returnpolicy="reference_internal")
     DmassDensityDtRZ = PYB11property("const ScalarFieldList&", "DmassDensityDtRZ", returnpolicy="reference_internal")
