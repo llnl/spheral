@@ -67,7 +67,7 @@ spack env activate ./scripts/spack/environments/dev_pkg
 spack mirror create -a -d $RESOURCE_DIR/mirror --exclude-specs "llnlspheral spheral"
 
 # Use spack to list all specs in the mirror and push them to the buildcache.
-spack buildcache push -auf $RESOURCE_DIR/mirror $(spack find --format /{hash})
+spack buildcache push -u -f $RESOURCE_DIR/mirror $(spack find --format /{hash})
 
 # Mirror bootstrap packages needed to start a spack instance on an airgapped system.
 spack bootstrap mirror --binary-packages $RESOURCE_DIR
