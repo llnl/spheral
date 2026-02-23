@@ -9,18 +9,13 @@ def get_config_dir(base_dir):
     "Return directory containing the repo.yaml file for a base dir"
     return os.path.join(base_dir, "scripts/spack")
 
+default_install_args = dict(stop_at="initconfig", fail_fast=True)
 default_spack_url = "https://github.com/spack/spack.git"
-# Spack version: v1.0.2
-# spack_commit = "734c5db2121b01c373eed6538e452f18887e9e44"
-# Spack version: v1.1.0
-spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"
-# Current repo (either LLNLSpheral or Spheral)
-package_name = "spheral"
+spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"   # Spack version: v1.1.0
 
+# Current repo (either LLNLSpheral or Spheral)
 base_dir = os.getcwd()
 package_dirs = {"spheral": base_dir}
-
-default_install_args = dict(stop_at="initconfig", fail_fast=True)
 
 # Find if this repo is LLNLSpheral by checking the submodule list
 git_mod_cmd = "git config --file .gitmodules --name-only --get-regexp path$"
@@ -29,6 +24,8 @@ if "spheral" in git_mod_out:
     package_name = "llnlspheral"
     package_dirs["spheral"] = os.path.join(base_dir, "spheral")
     package_dirs.update({"llnlspheral": base_dir})
+else:
+    package_name = "spheral"
 print(f"Managing {package_name} TPLs")
 
 class SpheralTPL:
@@ -51,8 +48,6 @@ class SpheralTPL:
         parser.add_argument("--update-upstream", action="store_true",
                             help="Install TPLs into the upstream instead of the local build. "+\
                             "Installs all specs in the current environment.")
-        parser.add_argument("--spack-url", type=str, default=default_spack_url,
-                            help="URL to download spack.")
         parser.add_argument("--clean", action="store_true",
                             help="Set this flag to ensure concretizations/installs are fresh. "+\
                             "If issues arise, try using this flag.")
@@ -70,6 +65,10 @@ class SpheralTPL:
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
                             "Assumes building from a buildcache if --spec is provided.")
+        parser.add_argument("--spack-url", type=str, default=default_spack_url,
+                            help="URL to download spack.")
+        parser.add_argument("--spack-debug-level", type=int, default=0,
+                            help="Set debug output level for spack instance usage")
 
         self.args = parser.parse_args()
 
@@ -376,7 +375,16 @@ class SpheralTPL:
         self.clone_spack()
         if (self.args.init_only):
             return
+
+        if (self.args.spack_debug_level > 0):
+            import spack.llnl.util.tty as tty
+            tty.set_debug(self.args.spack_debug_level)
+
         self.activate_spack_env()
+
+        debug_cmd = SpackCommand("debug")
+        debug_cmd("report")
+
         if (self.args.show_specs):
             find_cmd = SpackCommand("find")
             find_cmd("-r")
