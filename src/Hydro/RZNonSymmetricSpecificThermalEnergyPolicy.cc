@@ -73,6 +73,8 @@ update(const KeyType& key,
 //   std::cerr.setf(std::ios::scientific, std::ios::floatfield);
 //   std::cerr.precision(15);
 
+  const auto tiny = 1.0e-30;
+
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == HydroFieldNames::specificThermalEnergy and 
@@ -167,34 +169,43 @@ update(const KeyType& key,
       // DepsDt_thread(nodeListi, i) += dEij*mRZi/(mi*(mRZi + mRZj));
       // DepsDt_thread(nodeListj, j) += dEij*mRZj/(mj*(mRZi + mRZj));
 
-      const auto dEi0 = mi*DepsDt0(nodeListi, i);
-      const auto dEj0 = mj*DepsDt0(nodeListj, j);
-      if (sgn(dEi0) != sgn(dEj0)) {
-        if (sgn(dEij) == sgn(dEi0)) {
-          DepsDt_thread(nodeListi, i) += dEij/mi;
-        } else {
-          VERIFY(sgn(dEij) == sgn(dEj0));
-          DepsDt_thread(nodeListj, j) += dEij/mj;
-        }
-      } else {
-        if (sgn(dEij) != sgn(dEi0) or fuzzyEqual(dEi0 + dEj0, 0.0)) {
-          DepsDt_thread(nodeListi, i) += dEij/(mi + mj);
-          DepsDt_thread(nodeListj, j) += dEij/(mi + mj);
-        } else {          
-          VERIFY(sgn(dEij) == sgn(dEi0) and sgn(dEij) == sgn(dEj0));
-          const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * mi;
-          const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * mj;
-          const auto wi = weighti/(weighti + weightj);
-          CHECK(wi >= 0.0 and wi <= 1.0);
-          DepsDt_thread(nodeListi, i) += wi*dEij/mi;
-          DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+      // const auto dEi0 = mi*DepsDt0(nodeListi, i);
+      // const auto dEj0 = mj*DepsDt0(nodeListj, j);
+      // if (sgn(dEi0) != sgn(dEj0)) {
+      //   if (sgn(dEij) == sgn(dEi0)) {
+      //     DepsDt_thread(nodeListi, i) += dEij/mi;
+      //   } else {
+      //     VERIFY(sgn(dEij) == sgn(dEj0));
+      //     DepsDt_thread(nodeListj, j) += dEij/mj;
+      //   }
+      // } else {
+      //   if (sgn(dEij) != sgn(dEi0) or fuzzyEqual(dEi0 + dEj0, 0.0)) {
+      //     DepsDt_thread(nodeListi, i) += dEij/(mi + mj);
+      //     DepsDt_thread(nodeListj, j) += dEij/(mi + mj);
+      //   } else {          
+      //     VERIFY(sgn(dEij) == sgn(dEi0) and sgn(dEij) == sgn(dEj0));
+      //     const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * mi;
+      //     const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * mj;
+      //     const auto wi = weighti/(weighti + weightj);
+      //     CHECK(wi >= 0.0 and wi <= 1.0);
+      //     DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      //     DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
 
-          // const auto chi = dEij*safeInv(dEi0 + dEj0);
-          // DepsDt_thread(nodeListi, i) += chi*dEi0/mi;
-          // DepsDt_thread(nodeListj, j) += chi*dEj0/mj;
-        }
-      }
+      //     // const auto chi = dEij*safeInv(dEi0 + dEj0);
+      //     // DepsDt_thread(nodeListi, i) += chi*dEi0/mi;
+      //     // DepsDt_thread(nodeListj, j) += chi*dEj0/mj;
+      //   }
+      // }
       
+      const auto weighti = std::max(tiny, DepsDt0(nodeListi, i)*sgn(dEij)) * mi/(mi + mj);
+      const auto weightj = std::max(tiny, DepsDt0(nodeListj, j)*sgn(dEij)) * mj/(mi + mj);
+      // const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * mi;
+      // const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * mj;
+      const auto wi = weighti/(weighti + weightj);
+      CHECK(wi >= 0.0 and wi <= 1.0);
+      DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+
       // // Check if either of these points was advanced non-conservatively.
       // if (surface) {
       //   poisoned(nodeListi, i) |= (surfacePoint(nodeListi, i) > 1 or surfacePoint(nodeListj, j) > 1 ? 1 : 0);
