@@ -50,17 +50,17 @@ mkdir -p $RESOURCE_DIR
 mkdir -p $RESOURCE_DIR/pip_cache
 cp -a $SPHERAL_PIP_CACHE_DIR/. $RESOURCE_DIR/pip_cache
 
-# tpl-manager --buildcache-pkg does the following:
+# tpl-manager --dev-pkg does the following:
 # Creates a local Spack repo
-# Activates and concretizes the buildcache_pkg Spheral Spack environment
+# Activates and concretizes the dev_pkg Spheral Spack environment
 # Installs the Spheral dependencies for all specs
-./$SCRIPT_DIR/devtools/tpl-manager.py --buildcache-pkg --clean
+./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean
 
 # Source Spack for the current terminal
 source ../spheral-spack-tpls/spack/share/spack/setup-env.sh
 
 # Activate our dev spack environment
-spack env activate ./scripts/spack/environments/buildcache_pkg
+spack env activate ./scripts/spack/environments/dev_pkg
 
 # Create a mirror of all tpl specs in our environment
 # (should only be our deps for a single spec in the env).

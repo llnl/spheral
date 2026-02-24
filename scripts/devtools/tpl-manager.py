@@ -61,12 +61,10 @@ class SpheralTPL:
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
                             help="ID string to postfix an initconfig file.")
-        parser.add_argument("--buildcache-pkg", action="store_true",
-                            help="Tells tpl-manager to use the buildcache_pkg environment. "+\
-                            "This is the environment used to create a buildcache.")
         parser.add_argument("--dev-pkg", action="store_true",
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
-                            "This is the environment that does an install from a buildcache.")
+                            "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
+                            "Assumes building from a buildcache if --spec is provided.")
         parser.add_argument("--spack-url", type=str, default=default_spack_url,
                             help="URL to download spack.")
         parser.add_argument("--spack-debug-level", type=int, default=0,
@@ -283,8 +281,6 @@ class SpheralTPL:
         default_env = os.getenv("SYS_TYPE")
         if (self.args.dev_pkg):
             default_env = "dev_pkg"
-        if (self.args.buildcache_pkg):
-            default_env = "buildcache_pkg"
         if default_env and os.path.exists(os.path.join(config_env_dir, default_env)):
             # For LC systems
             self.env_dir = os.path.join(config_env_dir, default_env)
@@ -353,7 +349,7 @@ class SpheralTPL:
             # Avoid overwriting existing host config file
             shutil.copyfile(host_config_file, "orig"+host_config_file)
             mod_host_config = True
-        if (self.args.dev_pkg or self.args.buildcache_pkg):
+        if (self.args.dev_pkg):
             self.spack_env.install_specs([self.spack_spec],
                                          package_use_cache=False,
                                          dependencies_cache_only=True,
