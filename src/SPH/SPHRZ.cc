@@ -628,7 +628,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = abs(posi.y());
+      const auto  ri = posi.y();
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
@@ -726,8 +726,12 @@ finalizeDerivatives(const Scalar time,
   // If we're using compatible energy mode we need to apply BCs to DepsDt
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   if (compatibleEnergy) {
+    auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
     auto DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-    for (auto* bptr: this->boundaryConditions()) bptr->applyFieldListGhostBoundary(DepsDt);
+    for (auto* bptr: this->boundaryConditions()) {
+      bptr->applyFieldListGhostBoundary(DvDt);
+      bptr->applyFieldListGhostBoundary(DepsDt);
+    }
     for (auto* bptr: this->boundaryConditions()) bptr->finalizeGhostBoundary();
   }
 
