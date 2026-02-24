@@ -112,6 +112,7 @@ atexit.attr("register")(py::cpp_function([]() {
    } else {
       Communicator::finalize();
    }
+   adiak::clean();
 }));
 """
 
