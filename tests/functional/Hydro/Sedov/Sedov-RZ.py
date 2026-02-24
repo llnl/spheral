@@ -79,6 +79,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             bArtificialConduction = False,
             arCondAlpha = 0.5,
 
+            dataDirBase = "dumps-Sedov-RZ",
             clearDirectories = False,
             checkError = False,
             checkRestart = False,
@@ -99,7 +100,7 @@ hydroType = hydroType.upper()
 assert problem in ("planar", "cylindrical", "spherical")
 assert not (compatibleEnergy and evolveTotalEnergy)
 
-dataDir = os.path.join("dumps-Sedov-RZ",
+dataDir = os.path.join(dataDirBase,
                        problem,
                        hydroType,
                        "nPerh=%f" % nPerh)
@@ -216,13 +217,13 @@ else:
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 1.0
 
-generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
+generator = RZGenerator(GenerateNodeDistribution2d(nz, nr, rho0, seed,
                                        xmin = (z0, r0),
                                        xmax = (z1, r1),
                                        rmin = rmin,
                                        rmax = rmax,
                                        nNodePerh = nPerh,
-                                       SPH = not asph)
+                                       SPH = not asph))
 
 distributeNodes2d((nodes1, generator))
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MIN)")
