@@ -1,5 +1,12 @@
 trap 'echo "# $BASH_COMMAND"' DEBUG
 
+run_cmd() {
+    if ! eval $1 ; then
+        echo "FAILED"
+        exit 1
+    fi
+}
+
 ### Create a tar file containing:
 # dev-pkg/
 #   *cloned spheral repo.*
@@ -54,23 +61,23 @@ cp -a $SPHERAL_PIP_CACHE_DIR/. $RESOURCE_DIR/pip_cache
 # Creates a local Spack repo
 # Activates and concretizes the dev_pkg Spheral Spack environment
 # Installs the Spheral dependencies for all specs
-./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean
+run_cmd "./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean"
 
 # Source Spack for the current terminal
 source ../spheral-spack-tpls/spack/share/spack/setup-env.sh
 
 # Activate our dev spack environment
-spack env activate ./scripts/spack/environments/dev_pkg
+run_cmd "spack env activate ./scripts/spack/environments/dev_pkg"
 
 # Create a mirror of all tpl specs in our environment
 # (should only be our deps for a single spec in the env).
-spack mirror create -a -d $RESOURCE_DIR/mirror --exclude-specs "llnlspheral spheral"
+run_cmd "spack mirror create -a -d $RESOURCE_DIR/mirror --exclude-specs 'llnlspheral spheral'"
 
 # Use spack to list all specs in the mirror and push them to the buildcache.
-spack buildcache push -u -f $RESOURCE_DIR/mirror $(spack find --format /{hash})
+run_cmd "spack buildcache push -u -f $RESOURCE_DIR/mirror $(spack find --format /{hash})"
 
 # Mirror bootstrap packages needed to start a spack instance on an airgapped system.
-spack bootstrap mirror --binary-packages $RESOURCE_DIR
+run_cmd "spack bootstrap mirror --binary-packages $RESOURCE_DIR"
 
 # Tar up everything in the $CI_BUILD_DIR
-tar -czf $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz -C ../ $PKG_DIR
+run_cmd "tar -czf $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz -C ../ $PKG_DIR"
