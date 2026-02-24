@@ -137,7 +137,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
     const auto n = mass[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
       CHECK(rho(k,i) > 0.0);
-      const auto ri = pos(k,i).y();
+      const auto ri = abs(pos(k,i).y());
       const auto Ai = mass(k,i)/rho(k,i);
       const auto di = std::sqrt(Ai);
       const auto Vi = cylindricalToroidalVolume(di, ri);
@@ -240,12 +240,10 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   case MassDensityType::CorrectedSumDensity:
     {
       computeSPHSumMassDensity(connectivityMap, this->kernel(), mSumMassDensityOverAllNodeLists, position, massRZ, H, massDensityRZ);
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
       if (densityUpdate() == MassDensityType::CorrectedSumDensity) {
-        correctSPHSumMassDensity(connectivityMap, this->kernel(), mSumMassDensityOverAllNodeLists, position, massRZ, H, massDensityRZ);
         for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
         for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
+        correctSPHSumMassDensity(connectivityMap, this->kernel(), mSumMassDensityOverAllNodeLists, position, massRZ, H, massDensityRZ);
       }
     }
     break;
@@ -255,8 +253,6 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       this->updateVolume(state, false);
       const auto volume = state.fields(HydroFieldNames::volume, 0.0);
       massDensityRZ = massRZ / volume;
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
     }
     break;
 
@@ -265,8 +261,6 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       this->updateVolume(state, true);
       const auto volume = state.fields(HydroFieldNames::volume, 0.0);
       computeSumVoronoiCellMassDensity(connectivityMap, this->kernel(), position, massRZ, volume, H, massDensityRZ);
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
-      for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
     }
     break;
 
@@ -281,7 +275,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto n = massDensity[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
       CHECK(massDensityRZ(k,i) > 0.0);
-      const auto ri = position(k,i).y();
+      const auto ri = abs(position(k,i).y());
       CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
       const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
       const auto Vi = cylindricalToroidalVolume(di, ri);
@@ -290,9 +284,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       massDensity(k,i) = mass(k,i)/Vi;
     }
   }
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensity);
+  for (auto* boundPtr: this->boundaryConditions()) {
+    boundPtr->applyFieldListGhostBoundary(massDensityRZ);
+    boundPtr->applyFieldListGhostBoundary(massDensity);
+  }
   for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
-
 
   TIME_END("SPHRZPreStepInitialize");
 }
@@ -632,7 +628,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = posi.y();
+      const auto  ri = abs(posi.y());
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
