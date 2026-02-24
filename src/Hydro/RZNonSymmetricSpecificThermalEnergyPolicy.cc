@@ -85,7 +85,7 @@ update(const KeyType& key,
   // Get the state fields.
   // const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
+  // const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   // const auto  rho = state.fields(HydroFieldNames::massDensity, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
