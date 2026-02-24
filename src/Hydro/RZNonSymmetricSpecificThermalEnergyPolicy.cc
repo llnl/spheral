@@ -125,24 +125,24 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      // const auto  ri = pos(nodeListi, i).y();
+      // const auto  ri = std::abs(pos(nodeListi, i).y());
       const auto  mi = mass(nodeListi, i);
       // const auto  Ai = mi/rho(nodeListi, i);
       // const auto  Ri = std::sqrt(Ai/M_PI);
       // const auto  Vi = toroidalVolume(Ri, ri);
-      const auto  mRZi = massRZ(nodeListi, i);
+      // const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
 
       // State for node j.
-      // const auto  rj = pos(nodeListj, j).y();
+      // const auto  rj = std::abs(pos(nodeListj, j).y());
       const auto  mj = mass(nodeListj, j);
       // const auto  Aj = mj/rho(nodeListj, j);
       // const auto  Rj = std::sqrt(Aj/M_PI);
       // const auto  Vj = toroidalVolume(Rj, rj);
-      const auto  mRZj = massRZ(nodeListj, j);
+      // const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -199,8 +199,6 @@ update(const KeyType& key,
       
       const auto weighti = std::max(tiny, DepsDt0(nodeListi, i)*sgn(dEij)) * mi/(mi + mj);
       const auto weightj = std::max(tiny, DepsDt0(nodeListj, j)*sgn(dEij)) * mj/(mi + mj);
-      // const auto weighti = (abs(DepsDt0(nodeListi, i)) + numeric_limits<Scalar>::epsilon()) * mi;
-      // const auto weightj = (abs(DepsDt0(nodeListj, j)) + numeric_limits<Scalar>::epsilon()) * mj;
       const auto wi = weighti/(weighti + weightj);
       CHECK(wi >= 0.0 and wi <= 1.0);
       DepsDt_thread(nodeListi, i) += wi*dEij/mi;
