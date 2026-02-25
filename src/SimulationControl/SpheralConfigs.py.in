@@ -48,7 +48,7 @@ def hydro_imports():
     return hydro_str.split(";")
 
 def caliper_module_path():
-    if (enable_timer()):
+    if (timers_enabled()):
         caliper_loc = "@CONFIG_CALIPER_DIR@"
         return os.path.join(caliper_loc, "lib64/caliper")
     else:

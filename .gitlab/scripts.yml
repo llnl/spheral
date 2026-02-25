@@ -95,6 +95,8 @@
     - cd $CI_BUILD_DIR && cat job-name.txt
 
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
+    # Clean up Caliper files
+    - find ./build_gitlab/install/tests -name '*.cali' -print0 -delete
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
   artifacts:
