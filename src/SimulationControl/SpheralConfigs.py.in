@@ -25,13 +25,22 @@ def component_configs():
     comp_str = "@SPHERAL_COMP_CONFIG@"
     return comp_str.split(";")
 
-def enable_mpi():
+def mpi_enabled():
     return ("MPI" in component_configs())
 
-def enable_timer():
+def hip_enabled():
+    return ("HIP" in component_configs())
+
+def cuda_enabled():
+    return ("CUDA" in component_configs())
+
+def gpu_enabled():
+    return (hip_enabled() or cuda_enabled())
+
+def timers_enabled():
     return ("TIMERS" in component_configs())
 
-def enable_shared():
+def shared_libs_enabled():
     return ("SHARED" in component_configs())
 
 def hydro_imports():

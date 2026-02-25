@@ -6,11 +6,10 @@
 import sys, shutil, os, time, stat
 import numpy as np
 import SpheralConfigs
-from Spheral import TimerMgr
 from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
 
-if (not TimerMgr.timers_usable()):
+if (not SpheralConfigs.timers_enabled()):
     log("WARNING: Timers not enabled, skipping performance tests. Configure Spheral w/ -DSPHERAL_ENABLE_TIMERS=On", echo=True)
     sys.exit(0)
 
@@ -43,7 +42,7 @@ if "rerun" in opts and opts["rerun"]:
 #---------------------------------------------------------------------------
 # This should be {$SYS_TYPE}_{compiler name}_{compiler version}_{mpi or cuda info}
 spheral_install_config = SpheralConfigs.config()
-mpi_enabled = SpheralConfigs.enable_mpi()
+mpi_enabled = SpheralConfigs.mpi_enabled()
 # Retrieve the host name and remove any numbers
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")

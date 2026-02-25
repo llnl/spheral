@@ -10,7 +10,7 @@ max_test_failures = 10
 # Number of times to rerun the ATS tests
 max_reruns = 1
 
-spheral_prefix = sys.executable.split(".venv")[0]
+spheral_prefix = os.path.abspath(sys.executable.split(".venv")[0])
 ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
 spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 
@@ -78,7 +78,7 @@ def install_ats_args():
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
-    if (not SpheralConfigs.enable_mpi()):
+    if (not SpheralConfigs.mpi_enabled()):
         install_args.append("--filter='np<2'")
     comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
@@ -170,7 +170,8 @@ def main():
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
-            mac_args.append(f"--npMax {np_max_dict[hostname]}")
+            max_np = np_max_dict[hostname]
+            mac_args.append(f"--npMax {max_np}")
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):

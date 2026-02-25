@@ -129,6 +129,7 @@
   stage: update_tpls
   rules:
     - !reference [.merge_pr_rule, rules]
+    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir=$UPSTREAM_DIR
 
@@ -138,6 +139,7 @@
     GIT_STRATEGY: none
   rules:
     - !reference [.merge_pr_rule, rules]
+    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
     - ml load mpifileutils
     - $RUN_CMD -n $NPROCS dchmod --mode go+rx $UPSTREAM_DIR
