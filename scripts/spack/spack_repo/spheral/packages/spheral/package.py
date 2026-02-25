@@ -59,7 +59,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('cmake@3.21.0:', type='build')
 
-    depends_on('boost@1.85.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
+    depends_on('boost@1.85.0 +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
 
@@ -76,9 +76,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('raja@2025.09.1', type='build')
     depends_on('chai@2025.09.0+raja', type='build')
 
-    depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
+    depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat ~test ~parmetis', type='build')
 
-    depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
+    depends_on('axom@0.12.0 +hdf5 ~lua ~examples ~python ~fortran', type='build')
 
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
