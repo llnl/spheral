@@ -9,13 +9,17 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
 
-  * Bug fixes
+  * Bug fixes:
+    * Adiak memory leak is fixed by calling adiak::clean() before exit.
+    * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
+    * Added update-tpls commit message trigger.
+    * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
     * Performance testing and CI improvements:
       * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
       * The cleanup old directories job is now a scheduled pipelines that runs weekly.
