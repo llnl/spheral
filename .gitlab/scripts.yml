@@ -114,10 +114,9 @@
     GIT_STRATEGY: empty
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
-
     - ml load mpifileutils
     - cd $SPHERAL_BUILDS_DIR
-    - $RUN_CMD -n 20 drm $CI_BUILD_DIR/..
+    - $RUN_CMD -n $NPROC drm $CI_BUILD_DIR/..
   interruptible: true
 
 # ------------------------------------------------------------------------------
@@ -144,7 +143,7 @@
     - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
     - ml load mpifileutils
-    - $RUN_CMD -n $NPROCS dchmod --mode go+rx $UPSTREAM_DIR
+    - $RUN_CMD -n $NPROC dchmod --mode go+rx $UPSTREAM_DIR
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
@@ -207,7 +206,7 @@
     - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
-    - $RUN_CMD -n $NPROCS dchmod --mode go+rx $INSTALL_DIR
+    - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
 
   artifacts:
     paths:
@@ -246,12 +245,14 @@
   dependencies: []
   script:
     - cd $SPHERAL_BUILDS_DIR
-    - MAX_DIR=30
-    - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
-    - echo $DIR_LIST
     - ml load mpifileutils
-    - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi
+    - |
+      find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print0 \
+        | while IFS= read -r -d '' dir; do
+            $RUN_CMD -n $NPROC drm "$dir"
+          done
 
+# Remove performance benchmarks that are older than 6 months
 .clean_old_perfs:
   stage: cleanup
   variables:
@@ -263,9 +264,14 @@
   dependencies: []
   script:
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
-    - ml load mpifileutils
     - cd $BENCHMARK_LOC
-    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files.sh
+    - ml load mpifileutils
+    - |
+      find . -mindepth 2 -type d -mtime +200 -print0 \
+        | while IFS= read -r -d '' dir; do
+            echo "Removing $dir"
+            $RUN_CMD -n $NPROC drm "$dir"
+          done
 
 # ------------------------------------------------------------------------------
 # Script Utilities
