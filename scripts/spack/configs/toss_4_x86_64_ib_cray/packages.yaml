@@ -9,6 +9,7 @@ packages:
     permissions:
       read: group
       write: group
+      group: sduser
   llvm-amdgpu:
     externals:
     - spec: llvm-amdgpu@6.2.0

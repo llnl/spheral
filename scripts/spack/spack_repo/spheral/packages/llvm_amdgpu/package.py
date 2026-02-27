@@ -7,6 +7,9 @@ import os
 from spack.package import *
 from spack_repo.builtin.packages.llvm_amdgpu.package import LlvmAmdgpu as BuiltinLlvmAmdgpu
 
+#
+# NOTE: We should be able to drop this package override when we move to `rocm@7`
+#
 class LlvmAmdgpu(BuiltinLlvmAmdgpu):
 
     # PR that adds this change is pending: https://github.com/spack/spack-packages/pull/1557
