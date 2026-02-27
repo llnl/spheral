@@ -84,20 +84,24 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
+  const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
+  const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 2u>>(HydroFieldNames::pairWork);
   const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
   const auto& pairs = connectivityMap.nodePairList();
   const auto  npairs = pairs.size();
   CHECK(pairAccelerations.size() == npairs);
+  CHECK(pairWork.size() == npairs);
   CHECK(selfAccelerations.numFields() == 0 or selfAccelerations.numFields() == numFields);
   const bool selfInteraction = selfAccelerations.numFields() == numFields;
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
+  Scalar EerrTot = 0.0;
 
   // Walk all pairs and figure out the discrete work for each point
 #pragma omp parallel
@@ -114,25 +118,49 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
+      const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
+      const auto& pworki = pairWork[kk][0];
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
+      const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
+      const auto& pworkj = pairWork[kk][1];
+
+      // DepsDt_thread(nodeListi, i) -= vi12.dot(pacci);
+      // DepsDt_thread(nodeListj, j) -= vj12.dot(paccj);
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto weighti = std::max(tiny, DepsDt0(nodeListi, i)*sgn(dEij)) * mi/(mi + mj);
-      const auto weightj = std::max(tiny, DepsDt0(nodeListj, j)*sgn(dEij)) * mj/(mi + mj);
-      const auto wi = weighti/(weighti + weightj);
-      CHECK(wi >= 0.0 and wi <= 1.0);
-      DepsDt_thread(nodeListi, i) += wi*dEij/mi;
-      DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+      // const auto weighti = std::abs(mi*vi12.dot(pacci)) + tiny;
+      // const auto weightj = std::abs(mj*vj12.dot(paccj)) + tiny;
+      // const auto weighti = (tiny + std::abs(pworki)) * mi;
+      // const auto weightj = (tiny + std::abs(pworkj)) * mj;
+      // const auto weighti = (tiny + std::abs(DepsDt0(nodeListi, i))) * mRZi;
+      // const auto weightj = (tiny + std::abs(DepsDt0(nodeListj, j))) * mRZj;
+      // const auto weighti = std::max(tiny, pworki*sgn(dEij)) * mi;
+      // const auto weightj = std::max(tiny, pworkj*sgn(dEij)) * mj;
+      // const auto wi = weighti/(weighti + weightj);
+      // CHECK(wi >= 0.0 and wi <= 1.0);
+      // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
+      // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
+
+      const auto Eerr = dEij - mi*pworki - mj*pworkj;
+      DepsDt_thread(nodeListi, i) += pworki;// + Eerr/(mi + mj);
+      DepsDt_thread(nodeListj, j) += pworkj;// + Eerr/(mi + mj);
+      // DepsDt_thread(nodeListi, i) += pworki + wi*Eerr/mi;
+      // DepsDt_thread(nodeListj, j) += pworkj + (1.0 - wi)*Eerr/mj;
+
+      #pragma omp critical
+      {
+        EerrTot += Eerr;
+      }
     }
 
 #pragma omp critical
@@ -140,6 +168,10 @@ update(const KeyType& key,
       DepsDt_thread.threadReduce();
     }
   }
+
+  // Correct the error
+  const auto deltaEpsDt = allReduce(EerrTot, SPHERAL_OP_SUM) / mass.sumElements();
+  DepsDt += deltaEpsDt;
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {

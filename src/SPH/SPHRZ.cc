@@ -94,6 +94,8 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   xmin,
                   xmax),
   mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
+  mPairWorkPtr(std::make_unique<PairWorkType>()),
+  mSelfAccelerations(FieldStorageType::CopyFields),
   mMassRZ(FieldStorageType::CopyFields),
   mMassDensityRZ(FieldStorageType::CopyFields),
   mDmassDensityDtRZ(FieldStorageType::CopyFields) {
@@ -139,8 +141,9 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
       CHECK(rho(k,i) > 0.0);
       const auto ri = abs(pos(k,i).y());
       const auto Ai = mass(k,i)/rho(k,i);
-      const auto di = std::sqrt(Ai);
-      const auto Vi = cylindricalToroidalVolume(di, ri);
+      const auto Vi = 2.0*M_PI*ri*Ai;
+      // const auto di = std::sqrt(Ai);
+      // const auto Vi = cylindricalToroidalVolume(di, ri);
       // const auto Ri = std::sqrt(Ai/M_PI);
       // const auto Vi = circularToroidalVolume(Ri, ri);
       mMassRZ(k,i) = mass(k,i);
@@ -208,8 +211,12 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
+    mPairWorkPtr = std::make_unique<PairWorkType>(connectivityMap);
+    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(HydroFieldNames::pairWork, *mPairWorkPtr);
+  derivs.enroll(mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -224,6 +231,9 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   TIME_BEGIN("SPHRZPreStepInitialize");
 
   if (densityUpdate() == MassDensityType::IntegrateDensity) return;
+
+  // this->applyGhostBoundaries(state, derivs);
+  // for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
 
   // We're going to do something expensive to update the mass density, so get ready.
   const auto& connectivityMap = state.connectivityMap();
@@ -277,10 +287,12 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       CHECK(massDensityRZ(k,i) > 0.0);
       const auto ri = abs(position(k,i).y());
       CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
-      const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
-      const auto Vi = cylindricalToroidalVolume(di, ri);
-      // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
-      // const auto Vi = circularToroidalVolume(Ri, ri);
+      const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
+      const auto Vi = 2.0*M_PI*ri*Ai;
+      // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
+      // const auto Vi = cylindricalToroidalVolume(di, ri);
+      // // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
+      // // const auto Vi = circularToroidalVolume(Ri, ri);
       massDensity(k,i) = mass(k,i)/Vi;
     }
   }
@@ -397,6 +409,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairWork = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
+  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   CHECK(rhoSum.size() == numNodeLists);
@@ -415,6 +429,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairWork.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
+        (not compatibleEnergy and selfAccelerations.size() == 0u));
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -575,14 +592,20 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
+
+      // Specific thermal energy evolution.
+      const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
+      const auto workj = mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
+      DepsDti += worki;
+      DepsDtj += workj;
+
+      // Update the history for compatible energy udpate
       if (compatibleEnergy) {
         pairAccelerations[kk][0] = -deltaDvDti;
         pairAccelerations[kk][1] =  deltaDvDtj;
+        pairWork[kk][0] = worki;
+        pairWork[kk][1] = workj;
       }
-
-      // Specific thermal energy evolution.
-      DepsDti += mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
-      DepsDtj += mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
 
       // Velocity gradient.
       const auto deltaDvDxi = mRZj*vij.dyad(gradWi);
@@ -637,15 +660,15 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      // const auto  zetai = abs((Hi*posi).y());
-      // const auto  hri = ri*safeInv(zetai);
-      // const auto  riInv = safeInvVar(ri, 0.05*hri);
+      const auto  zetai = abs((Hi*posi).y());
+      const auto  hri = ri*safeInv(zetai);
+      const auto  riInv = safeInvVar(ri, 0.1*hri);
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
-      const auto  Ai = mRZi/rhoRZi;
+      // const auto  Ai = mRZi/rhoRZi;
       // const auto  Vi = mi/rhoi;
       // const auto  riInv = 2.0*M_PI*Ai/Vi;
-      const auto  riInv = safeInvVar(ri, 0.1*std::sqrt(Ai));
+      // const auto  riInv = safeInv(ri, 0.1*std::sqrt(Ai));
       CHECK(rhoi > 0.0);
       CHECK(rhoRZi > 0.0);
       CHECK(Hdeti > 0.0);
@@ -668,6 +691,12 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // rhoSumi += mRZi*W0*Hdeti;
       // rhoSumi /= circi;
       normi += mRZi*W0*Hdeti;
+
+      // Finish the acceleration -- self hoop strain.
+      // const Vector deltaDvDti(0.0, -Pi/rhoi*riInv);
+      const Vector deltaDvDti(0.0, -2.0*M_PI*Pi/rhoRZi);
+      DvDti += deltaDvDti;
+      if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
       // Finish the gradient of the velocity.
       CHECK(rhoi > 0.0);
