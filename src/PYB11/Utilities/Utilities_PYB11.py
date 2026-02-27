@@ -60,47 +60,16 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/uniform_random.hh"',
                   '"Utilities/Timer.hh"',
                   '"Utilities/initializeAxom.hh"',
-                  '"Distributed/Communicator.hh"',
+                  '"Utilities/initializeAdiak.hh"',
                   '"adiak.hpp"',
                   '<algorithm>']
 
 #-------------------------------------------------------------------------------
 # Preamble
 #-------------------------------------------------------------------------------
-PYB11preamble += """
-namespace Spheral {
-
-inline void spheral_adiak_init() {
-  adiak::init((void*) Communicator::comm_ptr());
-  // Always collect some curated default adiak information
-  adiak::adiakversion();
-  adiak::user();
-  adiak::uid();
-  adiak::launchdate();
-  adiak::workdir();
-  adiak::hostname();
-  adiak::clustername();
-  adiak::walltime();
-  adiak::cputime();
-  adiak::jobsize();
-  adiak::numhosts();
-  adiak::hostlist();
-  adiak::mpi_library_version();
-}
-
-enum adiak_categories {
-unset = 0,
-all,
-general,
-performance,
-control
-};
-}
-"""
-
 PYB11modulepreamble = """
 TIME_PHASE_BEGIN("main");
-Spheral::spheral_adiak_init();
+Spheral::initializeAdiak();
 
 // Call these routines when module is exited
 auto atexit = py::module_::import("atexit");

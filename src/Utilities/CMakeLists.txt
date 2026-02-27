@@ -143,6 +143,7 @@ set(Utilities_headers
     AnyVisitor.hh
     SpheralMessage.hh
     initializeAxom.hh
+    initializeAdiak.hh
   )
 
 spheral_install_python_files(fitspline.py)
