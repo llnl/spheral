@@ -181,7 +181,7 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
         
             # Write material names (MESH)
             matnames = vector_of_string([x.name for x in nodeLists])
-            matnos = vector_of_int(list(range(len(matnames))))
+            matnos = vector_of_int([i+1 for i in range(len(matnames))])
             material_names = vector_of_string([p % "MATERIAL" for p in domainNamePatterns])
             assert len(material_names) == numDomains
             assert len(matnames) == len(nodeLists)
@@ -363,11 +363,11 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
 
         # Write materials.
         if nodeLists:
-            matnos = vector_of_int(list(range(len(nodeLists))))
+            matnos = vector_of_int([i+1 for i in range(len(nodeLists))])
             matnames = vector_of_string([nodeList.name for nodeList in nodeLists])
             matlist = []
             offset = 0
-            for imat, nodeList in enumerate(nodeLists):
+            for imat, nodeList in zip(matnos, nodeLists):
                 for i in range(nodeList.numInternalNodes):
                     for j in index2zone[offset + i]:
                         matlist.append(imat)
