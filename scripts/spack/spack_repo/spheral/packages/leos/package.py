@@ -14,6 +14,9 @@
 # See the spack documentation for more information on building
 # packages.
 #
+from spack_repo.builtin.build_systems.cached_cmake import CachedCMakePackage, cmake_cache_option, cmake_cache_path
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
 from spack.package import *
 import os, re
 
@@ -46,6 +49,8 @@ class Leos(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant("rocm",    default=False, description="Build LIP using RAJA + ROCM GPU code")
     variant("silo",    default=True,  description="Use Silo instead of LEOSPACT")
 
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
     # FIXME: Add dependencies if this package requires them.
     depends_on("mpi", when="+mpi")
     depends_on("hdf5")

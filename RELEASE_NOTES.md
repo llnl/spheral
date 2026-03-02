@@ -30,6 +30,9 @@ Notable changes include:
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
+      * Updated build system support spack v1
+        * Updated TPL Manager to support spack v1.1.0
+        * Updated CI to support python v3.12 and Ubuntu 24.04
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
@@ -286,12 +289,12 @@ Version v2024.06.1 -- Release date 2024-07-09
 
   * Bug Fixes / improvements:
     * CD pipeline hotfix for installing release builds on LC machines.
-    * Fixes an issue with the use of the axom::quest::SignedDistance interface. 
+    * Fixes an issue with the use of the axom::quest::SignedDistance interface.
 
 Version v2024.06.0 -- Release date 2024-06-27
 ==============================================
   * Important Notes:
-    * External users of the code will need to supply config files for tpl-manager to find system libraries correctly. Steps to do this are detailed in the external user build guide. 
+    * External users of the code will need to supply config files for tpl-manager to find system libraries correctly. Steps to do this are detailed in the external user build guide.
 
 Notable changes include:
 
@@ -333,7 +336,7 @@ Notable changes include:
     * DEM
       * new field list to track max particle overlap
       * user can optional turn off fast time stepping
-      
+
   * Build changes / improvements:
     * Improved the target export functionality.
 
@@ -344,13 +347,13 @@ Notable changes include:
     * Initial volumes for damage models were incorrectly not taking into account pore space when computing failure statistics for seeding flaws.  Fixed.
     * DEM
       * fixed bug in solid boundary unique indices that causes particle sticking
-      * fixed bug in solid boundary update policies 
+      * fixed bug in solid boundary update policies
       * fixed solid boundary restartability for moving bcs
 
 Version v2024.01.00 -- Release date 2024-01-19
 ==============================================
   * Important Notes:
-    * The PolyClipper, BLT, and PYB11Generator submodules have been modified. Be sure to recursively update the submodules.  
+    * The PolyClipper, BLT, and PYB11Generator submodules have been modified. Be sure to recursively update the submodules.
 
 Notable changes include:
 
@@ -378,7 +381,7 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Fixed melt behavior in Steinberg-Guinan strength model, which was ignoring melt for damaged material.
     * Fixed range of dimensionless melt temperature for Johnson-Cook strength.
-    * FSISPH new features and modifications to method. 
+    * FSISPH new features and modifications to method.
       * NOTE constructor inputs have changed.
       * strength implementation modified.
       * new features added including plane strain option and settable minP for interfaces.
@@ -450,7 +453,7 @@ Notable changes include:
     * Adding user specified functions for shear modulus and yield strength as a function of damage.
 
   * Build changes / improvements:
-    * The C++ library interface is compiled into a single Spheral_CXX library. 
+    * The C++ library interface is compiled into a single Spheral_CXX library.
     * Previous Spheral C++ libraries are still CMAKE targets, but are "ojbect" libraries.
     * ATS bumped to version 7.0.9 for blueos smpi option support.
     * Eigen bumped to 3.4.0 for NVCC compatiblity.
@@ -509,7 +512,7 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Spheral fixed when running in Debug mode with MPI=Off.
     * Typos fixed in quickstart guide. https://github.com/LLNL/spheral/pull/116
-    * Pedantic check for expired pointer to the RestartRegistrar. Ensures we don't call into deleted objects. 
+    * Pedantic check for expired pointer to the RestartRegistrar. Ensures we don't call into deleted objects.
     * Switching GammaLaw and Polytropic EOS to the isentrpic bulk modulus for consistency w/ Solid EOS.
     * Update scalar and tensor damage calc in FSISPH to be more consistent with SolidSPHHydro.
     * CullenDehnen segfault fix.
