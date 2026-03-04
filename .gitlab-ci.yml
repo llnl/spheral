@@ -26,14 +26,14 @@ variables:
 stages:
   - init
   - update_tpls
+  - generate_buildcache
+  - install_production
   - update_permissions
   - tpls
   - build_and_install
   - perf_install
   - run_ats
   - run_perf
-  - generate_buildcache
-  - install_production
   - cleanup
   - deploy
 
