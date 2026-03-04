@@ -104,8 +104,7 @@ def CRKSPH(dataBase,
 
     # If we're using area-weighted RZ, we need to reflect from the axis
     if GeometryRegistrar.coords() == CoordinateType.RZ:
-        result.zaxisBC = AxisBoundaryRZ(etaMinAxis)
-        result.appendBoundary(result.zaxisBC)
+        result.etaMinAxis = etaMinAxis
 
     return result
 

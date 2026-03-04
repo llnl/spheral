@@ -95,6 +95,9 @@ class SpheralController:
         self.vizGhosts = vizGhosts
         self.vizDerivs = vizDerivs
 
+        # If this is in spherical or cylindrical coordinates, add axis boundary
+        self.insertAxisBoundary(integrator.physicsPackages())
+        
         # Organize the physics packages as appropriate
         self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries)
 
@@ -755,6 +758,24 @@ class SpheralController:
         
         return
 
+    #--------------------------------------------------------------------------
+    # Create an axis boundary if needed
+    #--------------------------------------------------------------------------
+    def insertAxisBoundary(self, physicsPackages):
+        if GeometryRegistrar.coords() == CoordinateType.Spherical:
+            self.axisBC = SphericalOriginBoundary()
+        elif GeometryRegistrar.coords() == CoordinateType.RZ:
+            etaMinAxis = 0.1
+            for package in physicsPackages:
+                etaMinAxis = getattr(package, "etaMinAxis", etaMinAxis)
+            self.axisBC = AxisBoundaryRZ(etaMinAxis)
+        else:
+            self.axisBC = None
+        if self.axisBC is not None:
+            for package in physicsPackages:
+                package.prependBoundary(self.axisBC)
+        return
+        
     #--------------------------------------------------------------------------
     # If necessary create and add a distributed boundary condition to each
     # physics package
