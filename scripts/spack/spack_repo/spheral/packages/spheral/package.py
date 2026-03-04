@@ -44,7 +44,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
-    variant('sundials', default=True, when="+mpi", description='Enable use of SUNDIALS solvers.')
+    variant('solvers', default=True, when="+mpi", description='Enable Sundials and Hypre solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
 
     # -------------------------------------------------------------------------
@@ -96,8 +96,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('polytope@v0.7.5 +python', type='build', when="+python")
     depends_on('polytope@v0.7.5 ~python', type='build', when="~python")
 
-    depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
-    depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
+    with when("+solvers"):
+        depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build')
+        depends_on('sundials build_type=Debug', when='build_type=Debug')
+        depends_on('hypre@3.0.0 ~shared cppflags="-fPIC" cflags="-fPIC"', type='build')
+        depends_on('blas', type='build')
+        depends_on('lapack', type='build')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
@@ -292,10 +296,15 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             entries.append(cmake_cache_option('SPHERAL_ENABLE_DOCS', '+docs' in spec))
             entries.append(cmake_cache_path('python_DIR', spec['python'].prefix))
 
-        # SUNDIALS
-        entries.append(cmake_cache_option('SPHERAL_ENABLE_SUNDIALS', '+sundials' in spec))
-        if spec.satisfies("+sundials"):
+        # SOLVERS
+        entries.append(cmake_cache_option('SPHERAL_ENABLE_SOLVERS', '+solvers' in spec))
+        if spec.satisfies("+solvers"):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
+            entries.append(cmake_cache_path('hypre_DIR', spec['hypre'].prefix))
+            entries.append(cmake_cache_path('hypre_INCLUDES', spec['hypre'].prefix.include))
+            hypre_libs = spec["blas"].libs + spec["lapack"].libs
+            entries.append(cmake_cache_path('hypre_EXT_LIBRARIES', hypre_libs.joined(";")))
+            entries.append(cmake_cache_option('ENABLE_SOLVERS', True))
 
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
