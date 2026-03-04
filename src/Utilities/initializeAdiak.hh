@@ -30,6 +30,7 @@ void initializeAdiak() {
 #ifdef SPHERAL_ENABLE_HIP
   int device_count = 0;
   hipError_t err = hipGetDeviceCount(&device_count);
+  CONTRACT_VAR(err);
   ASSERT(err == hipSuccess);
   adiak::value("gpus_per_rank", device_count);
 #endif
