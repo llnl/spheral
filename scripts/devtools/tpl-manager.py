@@ -263,13 +263,34 @@ class SpheralTPL:
                               "blas": ["openblas"],
                               "lapack": ["openblas"]})
         if (provider_dict):
-            self.config_env_providers(provider_dict)
+            # Extract compiler from spec (e.g., "gcc" from "spheral+mpi%gcc")
+            compiler_name = None
+            spec_str = self.args.spec
+            if "%" in spec_str:
+                compiler_name = spec_str.split("%")[-1].split()[0]
+            self.config_env_providers(provider_dict, compiler=compiler_name)
         self.args.add_spec = True
 
-    def config_env_providers(self, config_dict):
+    def config_env_providers(self, config_dict, compiler=None):
         env_file = os.path.join(self.env_dir, "spack.yaml")
         def set_providers(loader):
             new_dict = {"all": {"providers": config_dict}}
+            if compiler:
+                # WORKAROUND: Spack 1.1.0 has a bug where compiler_mixing:false
+                # does not prevent llvm from being assigned to some packages when
+                # both gcc and llvm are detected as externals (spack/spack#51995).
+                # This was fixed upstream in spack/spack#52015 (commit bf1345e6,
+                # merged 2026-03-03) and should ship in spack >=1.2.0.
+                # Remove this require block once we update past spack 1.1.0.
+                #
+                # Use conditional require syntax so packages without compiled
+                # code (e.g. externals) are not affected. See spack docs:
+                # "require: %clang will fail for packages without compiled code"
+                new_dict["all"]["require"] = [
+                    f"%[when=%c]c={compiler} "
+                    f"%[when=%cxx]cxx={compiler} "
+                    f"%[when=%fortran]fortran={compiler}"
+                ]
             loader["spack"]["packages"].update(new_dict)
             return loader
         self.modify_env_file(env_file, set_providers)

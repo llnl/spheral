@@ -13,6 +13,7 @@ dims = spheralDimensions()
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"Material/PhysicalConstants.hh"',
+                  '"Material/UnitConversion.hh"',
                   '"Material/EquationOfState.hh"',
                   '"Material/GammaLawGas.hh"',
                   '"Material/PolytropicEquationOfState.hh"',
@@ -35,6 +36,7 @@ MaterialPressureMinType = PYB11enum(("PressureFloor", "ZeroPressure"), export_va
 # Instantiate our types
 #-------------------------------------------------------------------------------
 from PhysicalConstants import *
+from UnitConversion import *
 from EquationOfState import *
 from GammaLawGas import *
 from PolytropicEquationOfState import *
