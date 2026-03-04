@@ -9,6 +9,7 @@ set(Material_inst
 
 set(Material_sources
     PhysicalConstants.cc
+    UnitConversion.cc
     )
 
 set(Material_headers
@@ -23,6 +24,7 @@ set(Material_headers
     PhysicalConstantsInline.hh
     PolytropicEquationOfState.hh
     PolytropicEquationOfStateInline.hh
+    UnitConversion.hh
     )
 
 spheral_install_python_files(

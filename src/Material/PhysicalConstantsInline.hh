@@ -171,4 +171,13 @@ PhysicalConstants::planckConstant() const {
     return Planck;
 }
 
+//------------------------------------------------------------------------------
+// Vacuum permeability (magnetic constant)
+//------------------------------------------------------------------------------
+inline
+double
+PhysicalConstants::vacuumPermeability() const {
+    return Mu0;
+}
+
 }

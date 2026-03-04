@@ -34,7 +34,8 @@ PhysicalConstants(const double unitLm,
   UnitMassDensity(unitMkg/(unitLm*unitLm*unitLm)),
   Sigma(StefanBoltzmannMKS*unitTeK*unitTeK*unitTeK*unitTeK/unitMkg*unitTsec*unitTsec*unitTsec),
   BlackBody(4*StefanBoltzmannMKS*unitTeK*unitTeK*unitTeK*unitTeK/cMKS*unitTsec*unitTsec*unitLm/unitMkg),
-  Planck(PlanckMKS*unitTsec/(unitMkg*unitLm*unitLm)) {
+  Planck(PlanckMKS*unitTsec/(unitMkg*unitLm*unitLm)),
+  Mu0(Mu0MKS*unitCcou*unitCcou/(unitMkg*unitLm)) {
 }
 
 //------------------------------------------------------------------------------
@@ -52,5 +53,6 @@ const double PhysicalConstants::RgasMKS =   8.314462618;//8.3144621       // J/m
 const double PhysicalConstants::NAvogadro = 6.02214076e23;//6.02214129   // mol^-1
 const double PhysicalConstants::StefanBoltzmannMKS = 5.670374419e-8;//5.67   // W/m^2/K^4
 const double PhysicalConstants::PlanckMKS = 6.62607015e-34; // J*s
+const double PhysicalConstants::Mu0MKS = 1.25663706127e-6; // N*A^-2
 
 }

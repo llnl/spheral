@@ -51,3 +51,5 @@ SI units (m, kg, sec). All other constants are then derived from those choices.
                                    doc="h: the Planck constant")
     unitEnergyJ = PYB11property("double", "unitEnergyJ",
                                 doc="unit of energy in SI")
+    vacuumPermeability = PYB11property("double", "vacuumPermeability",
+                                       doc="mu_0: the vacuum permeability (magnetic constant)")

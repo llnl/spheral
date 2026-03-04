@@ -43,6 +43,7 @@ public:
   double blackBodyConstant() const;
   double planckConstant() const;
   double unitEnergyJ() const;
+  double vacuumPermeability() const;
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -63,6 +64,7 @@ private:
   const double Sigma;
   const double BlackBody;
   const double Planck;
+  const double Mu0;
 
   // The reference MKS data we base our values on.
   static const double mpMKS;
@@ -75,6 +77,7 @@ private:
   static const double NAvogadro;
   static const double StefanBoltzmannMKS;
   static const double PlanckMKS;
+  static const double Mu0MKS;
 
 };
 
