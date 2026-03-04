@@ -212,11 +212,11 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     mPairWorkPtr = std::make_unique<PairWorkType>(connectivityMap);
-    dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
+    // dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   derivs.enroll(HydroFieldNames::pairWork, *mPairWorkPtr);
-  derivs.enroll(mSelfAccelerations);
+  // derivs.enroll(mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto& pairWork = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
-  auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
+  // auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   CHECK(rhoSum.size() == numNodeLists);
@@ -430,8 +430,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
   CHECK((compatibleEnergy and pairWork.size() == npairs) or not compatibleEnergy);
-  CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
-        (not compatibleEnergy and selfAccelerations.size() == 0u));
+  // CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
+  //       (not compatibleEnergy and selfAccelerations.size() == 0u));
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -596,9 +596,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       CHECK(rhoj > 0.0);
       const auto Prhoi = Pi/(rhoRZi*rhoRZi);
       const auto Prhoj = Pj/(rhoRZj*rhoRZj);
+      // const auto deltaDvDt = (Prhoi + Prhoj)*0.5*(gradWi + gradWj);// + Qacci + Qaccj;
       const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
-      // const auto deltaDvDti = mj*rjInv/(2.0*M_PI)*(Prhoi*gradWi + Prhoj*gradWj) + mRZj*(Qacci + Qaccj);
-      // const auto deltaDvDtj = mi*riInv/(2.0*M_PI)*(Prhoj*gradWj + Prhoi*gradWi) + mRZi*(Qacci + Qaccj);
       DvDti -= mRZj*deltaDvDt;
       DvDtj += mRZi*deltaDvDt;
 
