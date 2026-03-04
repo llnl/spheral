@@ -30,9 +30,10 @@ Notable changes include:
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
-      * Updated build system support spack v1
-        * Updated TPL Manager to support spack v1.1.0
-        * Updated CI to support python v3.12 and Ubuntu 24.04
+    * Updated build system support spack v1.
+      * Updated TPL Manager to support spack v1.1.0.
+      * Updated CI to support python v3.12 and Ubuntu 24.04.
+      * Added actual Spheral release versions and TPL conditions to Spheral package.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
