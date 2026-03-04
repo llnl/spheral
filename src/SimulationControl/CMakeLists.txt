@@ -96,6 +96,7 @@ spheral_install_python_files(
   SpheralHadesDump.py
   siloPointmeshDump.py
   SpheralPointmeshSiloDump.py
+  SpheralOverlinkSiloDump.py
   resampleNodeList.py
   overlayNodeList.py
   writeSiloQuadMesh.py

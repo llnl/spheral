@@ -167,7 +167,7 @@ def writeMasterSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
                 material_names.append(p % "material")
             for (name, i) in zip(materialNames, list(range(len(materialNames)))):
                 matnames.append(name)
-                matnos.append(i+1)
+                matnos.append(i)
             assert len(material_names) == ndoms
             assert len(matnames) == len(nodeLists)
             assert len(matnos) == len(nodeLists)
@@ -258,7 +258,7 @@ def writeDomainSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
         assert silo.DBPutPointmesh(db, "mesh", coords, meshOpts) == 0
 
         # Write materials.
-        matnos = [i+1 for i in range(len(nodeLists))]
+        matnos = [i for i in range(len(nodeLists))]
         assert len(matnos) == len(nodeLists)
         matlist = []
         matnames = []
