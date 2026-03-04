@@ -48,10 +48,12 @@ class SpheralController:
                  periodicTimeWork = [],
                  skipInitialPeriodicWork = False,
                  iterateInitialH = True,
+                 initialHExtraPackages = [],
                  numHIterationsBetweenCycles = 0,
                  reinitializeNeighborsStep = 10,
                  volumeType = RKVolumeType.RKVoronoiVolume,
                  facetedBoundaries = None,
+                 forceVoronoi = False,
                  printAllTimers = False):
         self.restartBaseName = restartBaseName
         self.restart = RestartableObject(self)
@@ -99,7 +101,7 @@ class SpheralController:
         self.insertAxisBoundary(integrator.physicsPackages())
         
         # Organize the physics packages as appropriate
-        self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries)
+        self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries, forceVoronoi)
 
         # If this is a parallel run, automatically construct and insert
         # a DistributedBoundaryCondition into each physics package.
@@ -132,6 +134,7 @@ class SpheralController:
                                  periodicTimeWork = periodicTimeWork,
                                  skipInitialPeriodicWork = skipInitialPeriodicWork,
                                  iterateInitialH = iterateInitialH,
+                                 initialHExtraPackages = initialHExtraPackages,
                                  reinitializeNeighborsStep = reinitializeNeighborsStep,
                                  volumeType = volumeType,
                                  facetedBoundaries = facetedBoundaries)
@@ -172,6 +175,7 @@ class SpheralController:
                             periodicTimeWork = [],
                             skipInitialPeriodicWork = False,
                             iterateInitialH = True,
+                            initialHExtraPackages = [],
                             reinitializeNeighborsStep = 10,
                             volumeType = RKVolumeType.RKVoronoiVolume,
                             facetedBoundaries = None):
@@ -232,7 +236,8 @@ class SpheralController:
 
         # If we're starting from scratch, initialize the H tensors.
         if restoreCycle is None and not skipInitialPeriodicWork and iterateInitialH:
-            self.iterateIdealH()
+            self.checkInitialH()
+            self.iterateIdealH(extraPackages = initialHExtraPackages)
 
         db.reinitializeNeighbors()
         self.integrator.setGhostNodes()
@@ -696,7 +701,7 @@ class SpheralController:
     #--------------------------------------------------------------------------
     # Properly arrange the physics packages, including adding any needed ones.
     #--------------------------------------------------------------------------
-    def organizePhysicsPackages(self, W, volumeType, facetedBoundaries):
+    def organizePhysicsPackages(self, W, volumeType, facetedBoundaries, forceVoronoi):
         packages = self.integrator.physicsPackages()
         db = self.integrator.dataBase
         RKCorrections = eval("RKCorrections%s" % self.dim)
@@ -713,6 +718,8 @@ class SpheralController:
                 if index == -1:
                     index = ipack
 
+        if forceVoronoi and index == -1:
+            index = 0
         if index >= 0:
             VC = eval("VoronoiCells" + self.dim)
             fb = eval("vector_of_FacetedVolume{}()".format(self.dim)) if facetedBoundaries is None else facetedBoundaries
@@ -930,12 +937,54 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         return
 
     #--------------------------------------------------------------------------
+    # Check the initial H values and scale them back if needed
+    #--------------------------------------------------------------------------
+    def checkInitialH(self, limMult = 1.0):
+        dataBase = self.integrator.dataBase
+        H = dataBase.globalHfield
+        pos = dataBase.globalPosition
+        conn = dataBase.connectivityMap()
+        nodeLists = dataBase.nodeLists
+        numNodeLists = dataBase.numNodeLists
+
+        numLimited = 0
+        for ni in range(numNodeLists):
+            # Get the approximate goal number of nodes for this NodeList
+            nPerh = nodeLists[ni].nodesPerSmoothingScale
+            pi = 3.14159
+            if self.dim == 1:
+                goalN = 2.0 * nPerh
+            elif self.dim == 2:
+                goalN = pi * nPerh ** 2
+            else:
+                goalN = 4.0 / 3.0 * pi * nPerh ** 3
+            limN = int(limMult * goalN)
+
+            numNodes = nodeLists[ni].numInternalNodes
+            for i in range(numNodes):
+                currN = conn.numNeighborsForNode(ni, i)
+                if currN > limN:
+                    conni = conn.connectivityForNode(ni, i)
+                    posi = pos[ni][i]
+                    distNi = [(pos[nj][j] - posi).magnitude()
+                              for nj in range(numNodeLists) for j in conni[nj]]
+                    disti = sorted(distNi)[limN - 1]
+                    H[ni][i] = H[ni][i].one / (1e-80 + disti)
+                    numLimited += 1
+        numLimited = mpi.allreduce(numLimited, mpi.SUM)
+        # if numLimited > 0:
+        print(f"SpheralController: Limited H for {numLimited} nodes")
+        return
+                
+    
+    #--------------------------------------------------------------------------
     # Iteratively set the H tensors, until the desired convergence criteria
     # are met.
     #--------------------------------------------------------------------------
     def iterateIdealH(self, 
                       maxIdealHIterations = 50,
-                      idealHTolerance = 1.0e-4):
+                      idealHTolerance = 1.0e-4,
+                      extraPackages = []):
         print("SpheralController: Initializing H's...")
         db = self.integrator.dataBase
         bcs = self.integrator.uniqueBoundaryConditions()
@@ -948,12 +997,24 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         if method is None:
             print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
             method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
-                
+
+        # Get needed packages
         packages = eval(f"vector_of_Physics{self.dim}()")
-        if method.requireVoronoiCells():
+        if method.requireVoronoiCells() or any(p.requireVoronoiCells() for p in extraPackages):
             packages.append(self.VoronoiCells)
         packages.append(method)
+        for package in extraPackages:
+            packages.append(package)
 
+        # Make sure extra packages have boundary conditions
+        for package in packages:
+            pbcs = package.boundaryConditions
+            for bc in pbcs:
+                for extraPackage in extraPackages:
+                    if not bc in extraPackage.boundaryConditions:
+                        extraPackage.appendBoundary(bc)
+
+        # Perform the update
         iterateIdealH = eval(f"iterateIdealH{self.dim}")
         iterateIdealH(db, packages, bcs, maxIdealHIterations, idealHTolerance, 0.0, False, False)
 
