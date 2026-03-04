@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import os
+import sys
 
 from spack.package import *
-from spack.pkg.builtin.umpire import Umpire as BuiltinUmpire
+from spack_repo.builtin.packages.sundials.package import Sundials as BuiltinSundials
 
+class Sundials(BuiltinSundials):
 
-class Umpire(BuiltinUmpire):
-
-    version("2025.03.1", tag="v2025.03.1", submodules=False)
-    depends_on("camp@2025.03.0", type="build")
+    patch("mpi_cxx_link.patch", when="@7.0.0^openmpi@4.1:4.2")

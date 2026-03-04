@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
+from spack_repo.builtin.build_systems.cmake import CMakePackage
+from spack_repo.builtin.build_systems.cuda import CudaPackage
 from spack.package import *
 
 
@@ -32,6 +34,8 @@ class Opensubdiv(CMakePackage, CudaPackage):
     variant('pic', default=True,
             description='Produce position-independent code (for shared libs)')
 
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
     depends_on('cmake@2.8.6:', type='build')
     # depends_on('graphviz', type='build', when='+doc')
     # depends_on('doxygen', type='build', when='+doc')
@@ -48,9 +52,10 @@ class Opensubdiv(CMakePackage, CudaPackage):
 
     patch('oneapi.patch', when='%oneapi')
 
-    def setup_build_environment(self, env):
+    def setup_build_environment(self, env: EnvironmentModifications) -> None:
         if '+pic' in self.spec:
             env.append_flags('CFLAGS', self.compiler.cc_pic_flag)
+            env.append_flags('CXXFLAGS', self.compiler.cxx_pic_flag)
 
     def cmake_args(self):
         spec = self.spec

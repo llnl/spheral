@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.cmake import CMakePackage
 from spack.package import *
 import os
 
@@ -13,11 +14,12 @@ class Polytope(CMakePackage):
     git = "https://github.com/LLNL/polytope.git"
     url = "https://github.com/LLNL/polytope/archive/v0.7.5.tar.gz"
     # DO NOT COMMIT, FOR TESTING ONLY
-    version('v0.7.5', tag='v0.7.5', submodules=True)
-    version('master', commit='f09d1b55162538330d592baa48f32bee75f136ec', submodules=True, preferred=True)
-    version('0.7.3', tag='0.7.3', submodules=True)
+    version('v0.7.5', commit='949fc7723e7a013edb0d00ac993bbb746eccdf9d', tag='v0.7.5', submodules=True, preferred=True)
 
     variant('python', default=True, description='Enable Python Support.')
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
 
     extends('python', when='+python')
     depends_on('python@3: +zlib +shared', type=('build', 'run'), when='+python')
