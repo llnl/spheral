@@ -466,7 +466,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      // const auto  mi = mass(nodeListi, i);
+      const auto  ri = std::abs(posi.y());
+      const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto  rhoi = massDensity(nodeListi, i);
@@ -476,6 +477,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  ci = soundSpeed(nodeListi, i);
       // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
+      const auto  zetai = abs((Hi*posi).y());
+      const auto  hri = ri*safeInv(zetai);
+      const auto  riInv = safeInvVar(ri, 0.1*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -497,7 +501,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node j
       const auto& posj = position(nodeListj, j);
-      // const auto  mj = mass(nodeListj, j);
+      const auto  rj = std::abs(posj.y());
+      const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto  rhoj = massDensity(nodeListj, j);
@@ -507,6 +512,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  cj = soundSpeed(nodeListj, j);
       // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
+      const auto  zetaj = abs((Hj*posj).y());
+      const auto  hrj = rj*safeInv(zetaj);
+      const auto  rjInv = safeInvVar(rj, 0.1*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -588,10 +596,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       CHECK(rhoj > 0.0);
       const auto Prhoi = Pi/(rhoRZi*rhoRZi);
       const auto Prhoj = Pj/(rhoRZj*rhoRZj);
-      const auto deltaDvDti = mRZj*(rhoRZi/rhoi*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
-      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj*(Prhoi*gradWi + Prhoj*gradWj) + Qacci + Qaccj);
-      DvDti -= deltaDvDti;
-      DvDtj += deltaDvDtj;
+      const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
+      // const auto deltaDvDti = mj*rjInv/(2.0*M_PI)*(Prhoi*gradWi + Prhoj*gradWj) + mRZj*(Qacci + Qaccj);
+      // const auto deltaDvDtj = mi*riInv/(2.0*M_PI)*(Prhoj*gradWj + Prhoi*gradWi) + mRZi*(Qacci + Qaccj);
+      DvDti -= mRZj*deltaDvDt;
+      DvDtj += mRZi*deltaDvDt;
 
       // Specific thermal energy evolution.
       const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
@@ -599,10 +608,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DepsDti += worki;
       DepsDtj += workj;
 
-      // Update the history for compatible energy udpate
+      // Update the history for compatible energy update
       if (compatibleEnergy) {
-        pairAccelerations[kk][0] = -deltaDvDti;
-        pairAccelerations[kk][1] =  deltaDvDtj;
+        pairAccelerations[kk][0] = -mRZj*deltaDvDt;
+        pairAccelerations[kk][1] =  mRZj*deltaDvDt;
         pairWork[kk][0] = worki;
         pairWork[kk][1] = workj;
       }
@@ -692,11 +701,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // rhoSumi /= circi;
       normi += mRZi*W0*Hdeti;
 
-      // Finish the acceleration -- self hoop strain.
-      // const Vector deltaDvDti(0.0, -Pi/rhoi*riInv);
-      const Vector deltaDvDti(0.0, -2.0*M_PI*Pi/rhoRZi);
-      DvDti += deltaDvDti;
-      if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
+      // // Finish the acceleration -- self hoop strain.
+      // const Vector deltaDvDti(0.0, Pi/rhoRZi*riInv);
+      // DvDti += deltaDvDti;
+      // if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
       // Finish the gradient of the velocity.
       CHECK(rhoi > 0.0);
