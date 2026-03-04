@@ -3,17 +3,19 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.makefile import MakefilePackage
 from spack.package import *
 
 
 class MAneos(MakefilePackage):
-    """M-Aneos"""
+    """MAneos"""
 
     homepage = "https://github.com/isale-code/M-ANEOS"
     url      = "https://github.com/isale-code/M-ANEOS/releases/download/v1.0beta/M-ANEOS-v1.0.tar.gz"
 
     version('1.0', sha256='3101b113fa59a8b615ec7e9e25479ab9c10d3e544173df0307bb675872773d31')
 
+    depends_on("fortran", type="build")
     depends_on('autoconf', type='build')
     depends_on('automake', type='build')
     depends_on('libtool', type='build')

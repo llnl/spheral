@@ -9,18 +9,11 @@ def get_config_dir(base_dir):
     "Return directory containing the repo.yaml file for a base dir"
     return os.path.join(base_dir, "scripts/spack")
 
-# Spack instance info
-default_spack_dir = os.path.join(os.getcwd(), "../spheral-spack-tpls")
-
-# Set environment variables so Spack no longer uses ~/.spack directory
-os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(default_spack_dir, "misc")
-os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
-
+default_install_args = dict(stop_at="initconfig", fail_fast=True)
 default_spack_url = "https://github.com/spack/spack.git"
-spack_commit = "5fe93fee1eec46a0750bd340198bffcb92ff9eec"
-# Current repo (either LLNLSpheral or Spheral)
-package_name = "spheral"
+spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"   # Spack version: v1.1.0
 
+# Current repo (either LLNLSpheral or Spheral)
 base_dir = os.getcwd()
 package_dirs = {"spheral": base_dir}
 
@@ -31,6 +24,8 @@ if "spheral" in git_mod_out:
     package_name = "llnlspheral"
     package_dirs["spheral"] = os.path.join(base_dir, "spheral")
     package_dirs.update({"llnlspheral": base_dir})
+else:
+    package_name = "spheral"
 print(f"Managing {package_name} TPLs")
 
 class SpheralTPL:
@@ -47,16 +42,15 @@ class SpheralTPL:
                             help="Show the Spheral Spack info, including dependencies and variants.")
         parser.add_argument("--add-spec", action="store_true",
                             help="Set this flag to add the --spec to the environment.")
-        parser.add_argument("--spack-dir", type=str,
-                            default=default_spack_dir,
+        parser.add_argument("--tpl-dir", type=str,
+                            default=os.path.join(os.getcwd(), "../spheral-spack-tpls"),
                             help="Directory to install Spack instance and a build directory.")
-        parser.add_argument("--spack-url", type=str, default=default_spack_url,
-                            help="URL to download spack.")
+        parser.add_argument("--update-upstream", action="store_true",
+                            help="Install TPLs into the upstream instead of the local build. "+\
+                            "Installs all specs in the current environment.")
         parser.add_argument("--clean", action="store_true",
                             help="Set this flag to ensure concretizations/installs are fresh. "+\
                             "If issues arise, try using this flag.")
-        parser.add_argument("--no-upstream", action="store_true",
-                            help="Ignore upstream by temporarily modifying environment.")
         parser.add_argument("--init-only", action="store_true",
                             help="Download Spack but do not concretize or install.")
         parser.add_argument("--skip-init", action="store_true",
@@ -73,8 +67,16 @@ class SpheralTPL:
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
                             "Assumes building from a buildcache if --spec is provided.")
+        parser.add_argument("--spack-url", type=str, default=default_spack_url,
+                            help="URL to download spack.")
+        parser.add_argument("--spack-debug-level", type=int, default=0,
+                            help="Set debug output level for spack instance usage.")
 
         self.args = parser.parse_args()
+
+        # Set environment variables so Spack no longer uses ~/.spack directory
+        os.environ["SPACK_USER_CACHE_PATH"] = os.path.join(self.args.tpl_dir, "misc")
+        os.environ["SPACK_DISABLE_LOCAL_CONFIG"] = "true"
 
         if (not self.args.spec and self.args.ci_run):
             raise Exception("Must specify a --spec if doing --ci-run")
@@ -84,24 +86,34 @@ class SpheralTPL:
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
 
-    def add_spack_paths(self, spack_dir):
+    def add_spack_paths(self, tpl_dir):
         "Append spack path to system to use spack python modules"
-        spack_path = os.path.join(spack_dir, "lib", "spack")
+        spack_path = os.path.join(tpl_dir, "lib", "spack")
         sys.path.append(spack_path)
-        spack_external_path = os.path.join(spack_path, "external")
-        sys.path.append(spack_external_path)
-        sys.path.append(os.path.join(spack_external_path, "_vendoring"))
+        sys.path.append(os.path.join(spack_path, "spack"))
+        sys.path.append(os.path.join(spack_path, "_vendoring"))
         global spack, SpackCommand
         try:
             import spack
             from spack.main import SpackCommand
             spack = spack
+
+            #
+            # Workaround: Cause spack to set its internal working directory
+            # state before we make any further spack API calls.
+            spack.paths.set_working_dir()
         except ImportError as e:
             raise ImportError("Failed to import Spack python module") from e
 
+    def print_specs(self, specs):
+        if (type(specs) != list):
+            specs = [specs]
+        install_status = spack.spec.Spec.install_status
+        print(spack.spec.tree(specs, format=spack.spec.DISPLAY_FORMAT, status_fn=install_status, hashes=True, hashlen=6))
+
     def clone_spack(self):
         "Clone Spack and add paths to use spack python"
-        tpl_root = self.args.spack_dir
+        tpl_root = self.args.tpl_dir
         if (not os.path.exists(tpl_root)):
             os.mkdir(tpl_root)
         spack_dir = os.path.join(tpl_root, "spack")
@@ -113,9 +125,6 @@ class SpheralTPL:
             if (cur_hash != spack_commit):
                 sexe(f"git -C {spack_dir} fetch --depth=2 origin {spack_commit}")
                 sexe(f"git -C {spack_dir} checkout FETCH_HEAD")
-            uber_env_trash = os.path.join(spack_dir, "etc/spack/defaults/upstreams.yaml")
-            if (self.args.clean and os.path.exists(uber_env_trash)):
-                sexe(f"git -C {spack_dir} clean -df")
         self.add_spack_paths(spack_dir)
 
     def check_lock_file(self):
@@ -161,7 +170,7 @@ class SpheralTPL:
     def modify_env_file(self, env_file, mod_func):
         "Modify the spack.yaml file"
         from spack.util import spack_yaml
-        # Load the spack.yaml file
+        import re
         with open(env_file) as ff:
             try:
                 loader = spack_yaml.load(ff)
@@ -170,6 +179,18 @@ class SpheralTPL:
         loader = mod_func(loader)
         with open(env_file, 'w') as ff:
             spack_yaml.dump(loader, ff)
+
+        # Fixup spack.yaml include:: list
+        #
+        # Spack's YAML dumper automatically quotes 'include::' because '::'
+        # is special in YAML, but Spack requires it to be unquoted to recognize the
+        # include directive
+        with open(env_file, 'r') as ff:
+            content = ff.read()
+        content = re.sub(r"  '['\"]?include:+['\"]?:", "  include::", content)
+
+        with open(env_file, 'w') as ff:
+            ff.write(content)
 
     def custom_spack_env(self, env_name):
         "Use/create a custom Spack environment"
@@ -181,27 +202,40 @@ class SpheralTPL:
             # Create a new environment
             env_cmd = SpackCommand("env")
             env_cmd("create", "--without-view", "-d", self.env_dir)
+
             def set_concretize(loader):
-                new_dict = {"concretizer": {"unify": False}}
-                loader["spack"].update(new_dict)
+                develop_dict = {}
+                repos_list = []
+
+                for package, path in package_dirs.items():
+                    repo_path = os.path.abspath(os.path.join(get_config_dir(path), f"spack_repo/{package}"))
+                    repos_list.append(repo_path)
+                    dev_path = os.path.abspath(path)
+                    develop_dict[package] = {
+                        "path": dev_path,
+                        "spec": f"{package}@=develop"
+                    }
+
+                loader["spack"]["concretizer"] = {
+                    "unify": False,
+                    "reuse": False,
+                    "compiler_mixing": False
+                }
+                loader["spack"]["develop"] = develop_dict
+                loader["spack"]["include::"] = [
+                    "../../configs/config.yaml"
+                ]
+                loader["spack"]["repos"] = repos_list
+
                 return loader
+
             self.modify_env_file(env_file, set_concretize)
+
         self.spack_env = environment.Environment(self.env_dir)
         environment.activate(self.spack_env)
-        # Get all the Spack commands
-        repo_cmd = SpackCommand("repo")
-        dev_cmd = SpackCommand("develop")
         comp_cmd = SpackCommand("compiler")
         ext_cmd = SpackCommand("external")
-        cur_repos = repo_cmd("list") # spack repo list
 
-        # Add the repos and develop paths to the spack environment
-        for package, path in package_dirs.items():
-            if (package+" " not in cur_repos):
-                repo_path = os.path.abspath(get_config_dir(path))
-                repo_cmd("add", f"{repo_path}") # spack repo add <repo_path>
-            dev_path = os.path.abspath(path)
-            dev_cmd("-p", dev_path, f"{package}@=develop") # spack develop <package>@=develop
         comp_cmd("find") # spack compiler find
         ext_cmd("find") # spack external find
         provider_dict = {}
@@ -227,11 +261,9 @@ class SpheralTPL:
         opt_packages = ["hdf5", "ncurses"]
         for i in opt_packages:
             self.find_spack_package(i, req=False)
-        # Hard-coding providers for these packages vastly improves TPL system
         provider_dict.update({"zlib-api": ["zlib"],
                               "blas": ["openblas"],
                               "lapack": ["openblas"]})
-        # Always add the spec for a custom environment
         if (provider_dict):
             self.config_env_providers(provider_dict)
         self.args.add_spec = True
@@ -244,25 +276,6 @@ class SpheralTPL:
             return loader
         self.modify_env_file(env_file, set_providers)
 
-    def remove_upstream(self):
-        "Modify the spack.yaml to remove the upstream"
-        # TODO: Ideally use spack config command to achieve this
-        # Remove upstream.yaml or upstream entry
-        def do_remove(loader):
-            if ("upstreams" in loader["spack"]):
-                del loader["spack"]["upstreams"]
-            if ("include" in loader["spack"]):
-                for i, x in enumerate(loader["spack"]["include"]):
-                    if ("upstreams.yaml" in x):
-                        del loader["spack"]["include"][i]
-            return loader
-
-        # Copy spack.yaml to origspack.yaml and overwrite spack.yaml
-        # with upstreams removed
-        env_file = os.path.join(self.env_dir, "spack.yaml")
-        shutil.copyfile(env_file, os.path.join(self.env_dir, "origspack.yaml"))
-        self.modify_env_file(env_file, do_remove)
-
     def activate_spack_env(self):
         "Activates a Spack environment or creates and activates one when necessary"
         config_env_dir = os.path.join(get_config_dir(base_dir), "environments")
@@ -274,8 +287,6 @@ class SpheralTPL:
             # For LC systems
             self.env_dir = os.path.join(config_env_dir, default_env)
             print(f"Activating Spack environment in {self.env_dir}")
-            if self.args.no_upstream:
-                self.remove_upstream()
             from spack import environment
             self.spack_env = environment.Environment(self.env_dir)
             environment.activate(self.spack_env)
@@ -288,45 +299,48 @@ class SpheralTPL:
 
     def concretize_spec(self, check_spec):
         "Concretize the spec"
-        if (check_spec):
-            self.spack_spec = spack.spec.Spec(self.args.spec)
-            if (self.args.add_spec):
-                add_cmd = SpackCommand("add")
-                add_cmd(self.args.spec)
-        conc_cmd = SpackCommand("concretize")
-        conc_args = ["-U"]
+        if (self.args.add_spec):
+            with self.spack_env.write_transaction():
+                self.spack_env.add(self.args.spec)
+                self.spack_env.write()
+
+        force_conc = False
         if (self.args.clean):
-            conc_args.append("-f")
+            force_conc = True
             print("Cleaning and concretizing environment")
         else:
             print("Concretizing environment")
-        conc_cmd(*conc_args)
+
+        with self.spack_env.write_transaction():
+            conc_spec = self.spack_env.concretize(force=force_conc)
+            self.spack_env.write()
+
+        if conc_spec:
+            print("Concretized specs")
+            for x in conc_spec:
+                print(x)
         if (check_spec):
+            self.spack_spec = spack.spec.Spec(self.args.spec)
             matches = self.spack_env.matching_spec(self.spack_spec)
             if (not matches):
                 raise Exception(f"{self.args.spec} not found in current "+\
                                 "environment. Rerun with --add-spec to add it.")
             self.spack_spec = matches
             print(f"Found matching root spec for {self.args.spec}")
-
-    def do_install(self, install_args, spec):
-        install_cmd = SpackCommand("install")
-        if (self.args.dry_run):
-            install_args.append("--fake")
-        if (self.args.debug_build):
-            install_args.append("--keep-stage")
-        print(f"Running spack {' '.join(install_args)} {spec}")
-        install_cmd(*install_args, spec)
+            self.print_specs(self.spack_spec)
+        else:
+            specs = self.spack_env.concrete_roots()
+            self.print_specs(specs)
 
     def install_and_config(self):
         "Install TPLs and create host config file for given spec"
         spec = self.args.spec
         # Load the spack package recipe python class
         if (package_name == "llnlspheral"):
-            from spack.pkg.llnlspheral.llnlspheral import Llnlspheral
+            from spack_repo.llnlspheral.packages.llnlspheral.package import Llnlspheral
             spack_spheral = Llnlspheral(self.spack_spec)
         else:
-            from spack.pkg.spheral.spheral import Spheral
+            from spack_repo.spheral.packages.spheral.package import Spheral
             spack_spheral = Spheral(self.spack_spec)
 
         # Get host config file name from spack package recipe
@@ -337,15 +351,16 @@ class SpheralTPL:
             # Avoid overwriting existing host config file
             shutil.copyfile(host_config_file, "orig"+host_config_file)
             mod_host_config = True
-        if (self.args.ci_run):
-            spec_cmd = SpackCommand("spec")
-            print(f"Running spack spec -IL {spec}")
-            spec_cmd("-IL", spec)
-        install_args = ["-u", "initconfig", "--fail-fast"]
         if (self.args.dev_pkg):
-            # Spec is provided so assumes we are building from a buildcache
-            install_args.extend(["--use-buildcache", "package:never,dependencies:only", "--no-check-signature"])
-        self.do_install(install_args, spec)
+            self.spack_env.install_specs([self.spack_spec],
+                                         package_use_cache=False,
+                                         dependencies_cache_only=True,
+                                         unsigned=True,
+                                         **default_install_args)
+        else:
+            if (self.args.debug_build):
+                default_install_args.update(dict(keep_stage=True))
+            self.spack_env.install_specs([self.spack_spec], **default_install_args)
         if (self.args.ci_run):
             shutil.copyfile(host_config_file, "gitlab.cmake")
             host_config_file = "gitlab.cmake"
@@ -364,7 +379,16 @@ class SpheralTPL:
         self.clone_spack()
         if (self.args.init_only):
             return
+
+        if (self.args.spack_debug_level > 0):
+            import spack.llnl.util.tty as tty
+            tty.set_debug(self.args.spack_debug_level)
+
         self.activate_spack_env()
+
+        debug_cmd = SpackCommand("debug")
+        debug_cmd("report")
+
         if (self.args.show_specs):
             find_cmd = SpackCommand("find")
             find_cmd("-r")
@@ -383,15 +407,21 @@ class SpheralTPL:
         else:
             # Concretize the current environment
             self.concretize_spec(check_spec=False)
-            # No spec is given, install TPLs for all env specs
-            install_args = ["-u", "initconfig", "--fail-fast"]
-            self.do_install(install_args, package_name)
+            if self.args.update_upstream:
+                upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
+                spack.config.set("config", {"install_tree": {"root": str(upstream_dir), "padded_length": 0}})
+                print("WARNING: Modifying local Spack files, do not commit these changes")
+                with self.spack_env.manifest.use_config():
+                    print(spack.config.get("config:install_tree"))
+                    print(f"Installing to {upstream_dir}")
+                    # Pass None so it installs TPLs for all specs
+                    self.spack_env.install_all(install_deps=True, install_package=False, fail_fast=True)
+                    # Equivalent of running spack reindex
+                    spack.store.STORE.reindex()
+                print("WARNING: Be sure to update permissions and groups on upstream.")
+            else:
+                self.spack_env.install_specs(None, **default_install_args)
 
-        # Undo any file changes we made to spack.yaml
-        orig_file = os.path.join(self.spack_env.path, "origspack.yaml")
-        if (self.args.no_upstream and os.path.exists(orig_file)):
-            # Revert env file if it was modified
-            os.rename(orig_file, os.path.join(self.spack_env.path, "spack.yaml"))
         # Remove symbolic directory created by Spack
         print("Removing Spack symbolic build directories")
         build_dirs = glob.glob("build-*")

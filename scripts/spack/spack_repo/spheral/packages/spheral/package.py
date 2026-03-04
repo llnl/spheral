@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.cached_cmake import CachedCMakePackage, cmake_cache_option, cmake_cache_path, cmake_cache_string
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
 from spack.package import *
 import spack
 import socket
@@ -26,7 +29,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # -------------------------------------------------------------------------
     # Is LEOS available in a standard place?
     # -------------------------------------------------------------------------
-    from spack.pkg.spheral.leos import Leos
+
+    from spack_repo.spheral.packages.leos.package import Leos
     LEOSpresent = os.path.exists(Leos.fileLoc)
 
     # -------------------------------------------------------------------------
@@ -46,11 +50,16 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # -------------------------------------------------------------------------
     # Depends
     # -------------------------------------------------------------------------
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+    depends_on("fortran", type="build")
+    depends_on('python@3.12', when='+python')
+
     depends_on('mpi', when='+mpi')
 
     depends_on('cmake@3.21.0:', type='build')
 
-    depends_on('boost@1.85.0 +system +filesystem -atomic -container -coroutine -chrono -context -date_time -exception -fiber -graph -iostreams -locale -log -math -mpi -program_options -python -random -regex -test -thread -timer -wave +pic', type='build')
+    depends_on('boost@1.85.0 +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
 
@@ -62,15 +71,17 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo+python +hdf5', type='build')
+    depends_on('silo@4.12.0 ~shared +hdf5', type='build')
 
-    depends_on('chai@develop+raja', type='build')
+    depends_on('raja@2025.09.1', type='build')
+    depends_on('chai@2025.09.0+raja', type='build')
 
-    depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat -test ~parmetis', type='build')
+    depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat ~test ~parmetis', type='build')
 
-    depends_on('axom@0.12.0 +hdf5 -lua -examples -python -fortran', type='build')
+    depends_on('axom@0.12.0 +hdf5 ~lua ~examples ~python ~fortran', type='build')
     depends_on('axom +openmp', type='build', when='+openmp')
     depends_on('axom ~openmp', type='build', when='~openmp')
+
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
 
