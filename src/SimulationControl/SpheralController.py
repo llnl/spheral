@@ -441,12 +441,18 @@ class SpheralController:
 
         # Do any periodic cycle work, as determined by the number of steps.
         for method, frequency in self._periodicWork:
-            if frequency is not None and (force or self.totalSteps % frequency == 0):
+            if frequency is None:
+                continue
+            f0 = frequency(t0) if callable(frequency) else frequency
+            if force or self.totalSteps % f0 == 0:
                 method(self.totalSteps, t1, dt)
 
         # Do any periodic time work, as determined by the current time.
         for method, frequency in self._periodicTimeWork:
-            if frequency is not None and (force or ((t0 // frequency) != (t1 // frequency))):
+            if frequency is None:
+                continue
+            f0 = frequency(t0) if callable(frequency) else frequency
+            if force or ((t0 // f0) != (t1 // f0)):
                 method(self.totalSteps, t1, dt)
 
         return
