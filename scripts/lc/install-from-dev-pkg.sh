@@ -26,7 +26,7 @@ echo $PWD
 mkdir -p $INSTALL_DIR
 cp -a $PWD/resources/pip_cache/. $SPHERAL_PIP_CACHE_DIR
 
-./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls --clean
+./$SCRIPT_DIR/devtools/tpl-manager.py --spack-url $SPACK_URL --init-only --tpl-dir $INSTALL_DIR/spheral-spack-tpls --clean
 
 source $INSTALL_DIR/spheral-spack-tpls/spack/share/spack/setup-env.sh
 spack env activate ./scripts/spack/environments/dev_pkg
@@ -42,7 +42,7 @@ spack buildcache update-index $PWD/resources/mirror
 
 # With these inputs, tpl-manager will build with --use-buildcache package:never,dependencies:only -u initconfig
 # This ensures the TPLs are only built from cache and Spheral isn't built
-$BUILD_ALLOC ./$SCRIPT_DIR/devtools/tpl-manager.py --no-upstream --spack-dir $INSTALL_DIR/spheral-spack-tpls --spec $DEV_PKG_SPEC --skip-init --dev-pkg
+$BUILD_ALLOC ./$SCRIPT_DIR/devtools/tpl-manager.py --tpl-dir $INSTALL_DIR/spheral-spack-tpls --spec $DEV_PKG_SPEC --skip-init --dev-pkg
 
 HOST_CONFIG_FILE=$(ls -t | grep -E "*\.cmake" | head -1)
 $BUILD_ALLOC ./$SCRIPT_DIR/devtools/host-config-build.py --host-config $HOST_CONFIG_FILE -i $INSTALL_DIR --build --no-clean -DSPHERAL_PIP_CACHE_DIR=$SPHERAL_PIP_CACHE_DIR -DSPHERAL_NETWORK_CONNECTED=Off
