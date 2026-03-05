@@ -88,4 +88,8 @@ else()
   message("-- Assuming non-unified memory for GPU architectures")
 endif()
 
+if (SPHERAL_ENABLE_SOLVERS)
+  list(APPEND SPHERAL_COMPILE_DEFS SPHERAL_ENABLE_SOLVERS)
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_COMPILE_DEFS "${SPHERAL_COMPILE_DEFS}")

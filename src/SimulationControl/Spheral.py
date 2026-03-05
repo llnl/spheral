@@ -126,10 +126,12 @@ for shadowedthing in ("TillotsonEquationOfState",
         exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
 
 #-------------------------------------------------------------------------------
-# Set up Axom
+# Set up Axom and HYPRE
 #-------------------------------------------------------------------------------
 import atexit
 initializeAxom()
+initializeHypre()
+atexit.register(finalizeHypre)
 atexit.register(finalizeAxom)
 
 # ------------------------------------------------------------------------------

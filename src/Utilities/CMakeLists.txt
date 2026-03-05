@@ -35,6 +35,7 @@ set(Utilities_sources
     clipFacetedVolume.cc
     uniform_random.cc
     initializeAxom.cc
+    initializeHypre.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -144,6 +145,7 @@ set(Utilities_headers
     SpheralMessage.hh
     StrideIterator.hh
     initializeAxom.hh
+    initializeHypre.hh
   )
 
 spheral_install_python_files(fitspline.py)

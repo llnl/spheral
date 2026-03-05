@@ -74,7 +74,7 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _python_packages SVPH)
 endif()
 
-if (SPHERAL_ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SOLVERS)
   list(PREPEND _python_packages Solvers)
 endif()
 

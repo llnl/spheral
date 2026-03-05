@@ -9,7 +9,7 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
-HAVE_SOLVERS = @SUNDIALS_PYTHON_FLAG@
+HAVE_SOLVERS = @SOLVERS_PYTHON_FLAG@
 
 #-------------------------------------------------------------------------------
 # Includes

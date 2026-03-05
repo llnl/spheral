@@ -60,6 +60,7 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/uniform_random.hh"',
                   '"Utilities/Timer.hh"',
                   '"Utilities/initializeAxom.hh"',
+                  '"Utilities/initializeHypre.hh"',
                   '"Distributed/Communicator.hh"',
                   '"adiak.hpp"',
                   '<algorithm>']
@@ -829,4 +830,12 @@ def initializeAxom():
     return "void"
 
 def finalizeAxom():
+    return "void"
+
+#...............................................................................
+# HYPRE stuff
+def initializeHypre():
+    return "void"
+
+def finalizeHypre():
     return "void"

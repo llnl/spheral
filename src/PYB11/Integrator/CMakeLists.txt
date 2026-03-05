@@ -1,6 +1,6 @@
-set(SUNDIALS_PYTHON_FLAG "False")
-if (SPHERAL_ENABLE_SUNDIALS)
-  set(SUNDIALS_PYTHON_FLAG "True")
+set(SOLVERS_PYTHON_FLAG "False")
+if (SPHERAL_ENABLE_SOLVERS)
+  set(SOLVERS_PYTHON_FLAG "True")
 endif()
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Integrator_PYB11.py
