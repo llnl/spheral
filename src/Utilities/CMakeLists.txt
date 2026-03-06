@@ -40,13 +40,12 @@ set(Utilities_sources
 instantiate(Utilities_inst Utilities_sources)
 
 set(Utilities_headers
-    Atomic_wrapper.hh
     setGlobalFlags.hh
     Bessel.hh
     BuildData.hh
-    CHAI_MA_wrapper.hh
     CounterClockwiseComparator.hh
     DBC.hh
+    GPUUtils.hh
     LinearInterpolator.hh
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh

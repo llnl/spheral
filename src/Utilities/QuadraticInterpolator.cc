@@ -9,7 +9,7 @@
 #include "QuadraticInterpolator.hh"
 #include <algorithm>
 
-#include "CHAI_MA_wrapper.hh"
+#include "GPUUtils.hh"
 #include <Eigen/Dense>
 
 namespace Spheral {

@@ -18,6 +18,7 @@ dims = spheralDimensions()
 PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/packElement.hh"',
                   '"boost/math/special_functions/legendre.hpp"',
+                  '"Utilities/GPUUtils.hh"',
                   '"Utilities/BuildData.hh"',
                   '"Utilities/Functors.hh"',
                   '"Utilities/erff.hh"',
@@ -829,4 +830,9 @@ def initializeAxom():
     return "void"
 
 def finalizeAxom():
+    return "void"
+
+#...............................................................................
+# init GPUs
+def initGPUs():
     return "void"

@@ -460,9 +460,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   // Walk all the interacting pairs.
   TIME_BEGIN("SolidSPHevalDerivs_pairs");
   {
-#ifdef SPHERAL_ENABLE_HIP
-#pragma clang optimize off
-#endif
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
       size_t i = pairs[kk].i_node;
@@ -686,9 +683,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       }
 
     }); // loop over pairs
-#ifdef SPHERAL_ENABLE_HIP
-#pragma clang optimize on
-#endif
   }
   TIME_END("SolidSPHevalDerivs_pairs");
   // Finish up the derivatives for each point.

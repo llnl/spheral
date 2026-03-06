@@ -303,9 +303,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   //RAJA::region<RAJA::seq_region>([=]()
   //#pragma omp parallel
   {
-#ifdef SPHERAL_ENABLE_HIP
-#pragma clang optimize off
-#endif
     // Thread private scratch variables
     // unsigned i, j, nodeListi, nodeListj;
     // Vector gradWi, gradWj, gradWQi, gradWQj;
@@ -513,9 +510,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
     // Reduce the thread values to the master.
     //threadReduceFieldLists<Dimension>(threadStack);
-#ifdef SPHERAL_ENABLE_HIP
-#pragma clang optimize on
-#endif
   }
   TIME_END("SPHevalDerivs_pairs");
   // Finish up the derivatives for each point.

@@ -8,7 +8,7 @@
 #include "CubicHermiteInterpolator.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/safeInv.hh"
-#include "CHAI_MA_wrapper.hh"
+#include "GPUUtils.hh"
 
 #include <Eigen/Sparse>
 

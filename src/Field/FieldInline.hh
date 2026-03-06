@@ -6,7 +6,7 @@
 #include "Utilities/packElement.hh"
 #include "Utilities/removeElements.hh"
 #include "Utilities/safeInv.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
+#include "Utilities/GPUUtils.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "chai/config.hpp"

@@ -5,7 +5,6 @@
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
-#include "Utilities/CHAI_MA_wrapper.hh"
 
 #include <vector>
 #include <unordered_map>
