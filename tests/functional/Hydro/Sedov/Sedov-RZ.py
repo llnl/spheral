@@ -199,9 +199,9 @@ output("nodes1.nodesPerSmoothingScale")
 #-------------------------------------------------------------------------------
 if problem == "planar":
     nz = n1
-    nr = n2
+    nr = n1
     z0, z1 = 0.0, 1.0
-    r0, r1 = 0.0, 0.2
+    r0, r1 = 0.0, 1.0
     rmin, rmax = None, None
 elif problem == "cylindrical":
     nz = n2
@@ -288,11 +288,11 @@ packages = [hydro]
 # Construct the artificial viscosity.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-if Cl:
+if not Cl is None:
     q.Cl = Cl
-if Cq:
+if not Cq is None:
     q.Cq = Cq
-if epsilon2:
+if not epsilon2 is None:
     q.epsilon2 = epsilon2
 q.balsaraShearCorrection = balsaraCorrection
 output("q")
@@ -314,8 +314,9 @@ if bArtificialConduction:
 # Create boundary conditions.
 #-------------------------------------------------------------------------------
 if problem == "planar":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    bcs = [ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    if z0 == 0.0:
+        bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))))
     if r0 != 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
@@ -376,6 +377,8 @@ output("control")
 #-------------------------------------------------------------------------------
 if problem == "planar":
     Eexpect = 0.5*pi*(r1*r1 - r0*r0)*Espike
+    if z0 != 0.0:
+        Eexpect *= 2.0
 elif problem == "cylindrical":
     Eexpect = Espike*(z1 - z0)
 else:
@@ -393,9 +396,9 @@ if control.time() == 0.0:
 
     # Define a function to give the distance from the source
     if problem == "planar":
-        feta = lambda etai: etai.x
+        feta = lambda etai: abs(etai.x)
     elif problem == "cylindrical":
-        feta = lambda etai: etai.y
+        feta = lambda etai: abs(etai.y)
     else:
         feta = lambda etai: etai.magnitude()
 
