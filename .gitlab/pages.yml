@@ -15,7 +15,7 @@ create-pages:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Deploy"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-deploy/'
   script:
-    - source $HOME/docsvenv/bin/activate
+    - source $HOME/docsenv/bin/activate
     - srun -n 8 --cpus-per-task 14 python3 $SCRIPT_DIR/lc/plot_hist_data.py --threads 14 --pkg-name $SPHERAL_MODULE
   artifacts:
     paths:

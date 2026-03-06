@@ -60,6 +60,7 @@ RUN apt-get update -y && \
         python3-dev \
         python3-venv \
         python3-pip \
+        python3-tk \
         unzip \
         libtool \
         wget \

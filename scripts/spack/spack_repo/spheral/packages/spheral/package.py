@@ -24,7 +24,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # VERSIONS
     # -------------------------------------------------------------------------
     version('develop', branch='develop', submodules=True)
-    version('1.0', tag='FSISPH-v1.0', submodules=True)
+    version('2025.12.0', tag='v2025.12.0', commit='aec4a0502312b14e253dc1221c23aa2514e319ab', submodules=True)
+    version('2025.06.1', tag='v2025.06.1', commit='c1bd7cb249b14d06bb84de45b00a215e65332c52', submodules=True)
+    version('2025.01.0', tag='v2025.01.0', commit='aa816b15e1e2dcaead655fcb1706055192564414', submodules=True)
+    version('2024.06.1', tag='v2024.06.1', commit='8f20d80b7a59da0fc8283beafbcc3772eef4f5de', submodules=True)
+    version('2024.01.1', tag='v2024.01.1', commit='ffd0e976b514b04ce9c5c934ca9c7873ae082371', submodules=True)
 
     # -------------------------------------------------------------------------
     # Is LEOS available in a standard place?
@@ -44,7 +48,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('caliper', default=True, description='Enable Caliper timers.')
     variant('opensubdiv', default=True, description='Enable use of opensubdiv to do refinement.')
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
-    variant('sundials', default=True, when="+mpi", description='Enable use of SUNDIALS solvers.')
+    variant('sundials', default=True, when="@2025.06.1:+mpi", description='Enable use of SUNDIALS solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
 
     # -------------------------------------------------------------------------
@@ -53,34 +57,46 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on("c", type="build")
     depends_on("cxx", type="build")
     depends_on("fortran", type="build")
-    depends_on('python@3.12', when='+python')
+    depends_on('python@3.9.10', when='@:2025.12.0+python')
+    depends_on('python@3.12 +tkinter', when='@develop:+python')
 
     depends_on('mpi', when='+mpi')
 
-    depends_on('cmake@3.21.0:', type='build')
+    depends_on('cmake@3.21.0:', type='build', when='@2025.01.0:')
+    depends_on('cmake@3.18.0:', type='build', when='@2024.06.1')
+    depends_on('cmake@3.10.0:', type='build', when='@2024.01.1')
 
-    depends_on('boost@1.85.0 +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
+    depends_on('boost +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
+    depends_on('boost@1.85.0', type='build', when='@2025.12.0:')
+    depends_on('boost@1.74.0', type='build', when='@:2025.06.1')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
 
-    depends_on('qhull@2020.2 +pic', type='build')
+    depends_on('qhull@2020.2 +pic', type='build', when='@2024.06.1:')
+    depends_on('qhull@2020.1 +pic', type='build', when='@:2024.01.1')
 
     depends_on('m-aneos@1.0')
 
-    depends_on('eigen@5.0.0', type='build')
+    depends_on('eigen@5.0.0', type='build', when='@2025.12.0:')
+    depends_on('eigen@3.4.0', type='build', when='@:2025.06.1')
 
     depends_on('hdf5 +hl', type='build')
 
-    depends_on('silo@4.12.0 ~shared +hdf5', type='build')
+    depends_on('silo ~shared +hdf5', type='build')
+    depends_on('silo@4.12.0', type='build', when='@develop:')
+    depends_on('silo@4.11.1', type='build', when='@2025.01.0:2025.12.0')
+    depends_on('silo@4.10.2', type='build', when='@:2024.06.1')
 
-    depends_on('raja@2025.09.1', type='build')
-    depends_on('chai@2025.09.0+raja', type='build')
+    depends_on('conduit +shared +hdf5~hdf5_compat ~test ~parmetis', type='build')
+    depends_on('conduit@0.9.1', type='build', when='@2025.01.0:')
+    depends_on('conduit@0.8.2', type='build', when='@:2024.06.1')
 
-    depends_on('conduit@0.9.1 +shared +hdf5~hdf5_compat ~test ~parmetis', type='build')
-
-    depends_on('axom@0.12.0 +hdf5 ~lua ~examples ~python ~fortran', type='build')
+    depends_on('axom +hdf5 ~lua ~examples ~python ~fortran', type='build')
     depends_on('axom +openmp', type='build', when='+openmp')
-    depends_on('axom ~openmp', type='build', when='~openmp')
+    depends_on('axom ~openmp', type='build', when='~openmp')    
+    depends_on('axom@0.12.0', type='build', when='@2025.12.0:')
+    depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
+    depends_on('axom@0.7.0', type='build', when='@:2024.06.1')
 
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
@@ -89,7 +105,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('axom +shared', type='build')
 
     with when('+caliper'):
-        depends_on('caliper@2.11 ~shared +adiak +gotcha ~libdw ~papi ~libunwind cppflags="-fPIC"', type='build')
+        depends_on('caliper ~shared +gotcha ~libdw ~papi ~libunwind cppflags="-fPIC"', type='build')
+        depends_on('caliper@2.11 +adiak', type='build', when='@2025.01.0:')
+        depends_on('caliper@2.8.0 ~adiak', type='build', when='@:2024.06.1')
         depends_on('caliper+mpi', type='build', when='+mpi')
         depends_on('caliper~mpi', type='build', when='~mpi')
 
@@ -101,19 +119,28 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('sundials@7.0.0 ~shared cxxstd=17 cppflags="-fPIC"', type='build', when='+sundials')
     depends_on('sundials build_type=Debug', when='+sundials build_type=Debug')
 
+    with when('@2025.01.0:'):
+        depends_on('adiak~shared', type='build')
+        depends_on('chai', type='build')
+        depends_on('raja', type='build')
+        depends_on('umpire', type='build')
+        depends_on('raja@2025.09.1', type='build', when='@2025.12.0:')
+        depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
+        depends_on('chai@2025.09.0+raja', type='build', when='@2025.12.0:')
+
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak~shared", "chai", "umpire"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak", "chai", "umpire"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
-            depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv}")
+            depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv} ^{ctpl}")
 
     # Forward CUDA/ROCM Variants
-    def set_cuda_variants(ctpl, cond=""):
+    def set_cuda_variants(ctpl):
         for val in CudaPackage.cuda_arch_values:
-            depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} {cond}")
-    def set_rocm_variants(ctpl, cond=""):
+            depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} ^{ctpl}")
+    def set_rocm_variants(ctpl):
         for val in ROCmPackage.amdgpu_targets:
-            depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} {cond}")
+            depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} ^{ctpl}")
 
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
@@ -122,9 +149,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     set_rocm_variants("eigen")
     # Forward debug variants
-    debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak~shared"]
+    debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak"]
     for ctpl in debug_tpl_list:
-        depends_on(f"{ctpl} build_type=Debug", when="build_type=Debug")
+        depends_on(f"{ctpl} build_type=Debug", when=f"build_type=Debug ^{ctpl}")
 
     depends_on('leos@8.4.2+filters+yaml~xml+silo', type='build', when='+leos')
     depends_on('leos build_type=Debug', when='+leos build_type=Debug')

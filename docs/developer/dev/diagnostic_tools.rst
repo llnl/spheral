@@ -140,14 +140,15 @@ Performance Regression Testing
 .. note::
    The following is currently only applicable for use on LC machines at LLNL.
 
-``tests/performance/run_perf.py`` contains a set of performance regression tests. These tests allow a developer to estimate the performance implications of code under development and compare it to the current development branch of Spheral.
-On a nightly basis, the CI runs this regression test multiple times to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
+``tests/run_perf.py`` contains a set of performance regression tests. These tests allow a developer to estimate the performance implications of code under development and compare it to the current development branch of Spheral.
+Performance tests are set in ``tests/perf_tests.py``.
+The CI runs this regression test multiple times on a schedule to accumulate benchmark timing data in a centralized directory (``/usr/WS2/sduser/Spheral/benchmark``).
 The general procedure to comparing performance regression tests is:
 
 * Run the performance regression tests from an installation using 2 nodes (number of nodes used in benchmark run by CI):
    ::
 
-      ./bin/spheral-ats --log test_dir_name --numNodes 2 tests/performance/run_perf.py
+      ./bin/spheral-ats --log test_dir_name --numNodes 2 tests/run_perf.py
 
    There is also a ``--threads`` option to specify a given number of threads per rank.
    The test above will create an ATS python file, ``test_dir_name/atsr.py`` that will be used when analysing the performance.
