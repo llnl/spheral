@@ -78,11 +78,10 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             fcentroidal = 0.0,
             fcellPressure = 0.0,
             Qhmult = 1.0,
-            Cl = 1.0, 
+            Cl = 1.5,
             Cq = 1.0,
-            Qlimiter = False,
-            balsaraCorrection = False,
-            epsilon2 = 1e-2,
+            balsaraCorrection = None,
+            epsilon2 = None,
             hmin = 0.0001, 
             hmax = 0.1,
             hminratio = 0.1,
@@ -390,11 +389,14 @@ packages = [hydro]
 # Set the artificial viscosity parameters.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-q.Cl = Cl
-q.Cq = Cq
-q.epsilon2 = epsilon2
-q.limiter = Qlimiter
-q.balsaraShearCorrection = balsaraCorrection
+if not Cl is None:
+    q.Cl = Cl
+if not Cq is None:
+    q.Cq = Cq
+if not epsilon2 is None:
+    q.epsilon2 = epsilon2
+if not balsaraCorrection is None:
+    q.balsaraShearCorrection = balsaraCorrection
 output("q")
 output("q.Cl")
 output("q.Cq")
