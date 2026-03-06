@@ -123,7 +123,7 @@ update(const KeyType& key,
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
-      const auto& pworki = pairWork[kk][0];
+      const auto  pworki = pairWork[kk][0];
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
@@ -132,30 +132,30 @@ update(const KeyType& key,
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
-      const auto& pworkj = pairWork[kk][1];
+      const auto  pworkj = pairWork[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
       const auto duij = dEij/(mi + mj);
-      // DepsDt_thread(nodeListi, i) += dEij/(mi + mj);
-      // DepsDt_thread(nodeListj, j) += dEij/(mi + mj);
+      DepsDt_thread(nodeListi, i) += duij;
+      DepsDt_thread(nodeListj, j) += duij;
 
-      const auto weighti = 1.0;
-      const auto weightj = 1.0;
+      // const auto weighti = 1.0;
+      // const auto weightj = 1.0;
       // const auto weighti = mRZi/(mRZi + mRZj);
       // const auto weightj = mRZj/(mRZi + mRZj);
       // const auto weighti = std::abs(mi*vi12.dot(pacci)) + tiny;
       // const auto weightj = std::abs(mj*vj12.dot(paccj)) + tiny;
-      // const auto weighti = (tiny + std::abs(pworki)) * mi;
-      // const auto weightj = (tiny + std::abs(pworkj)) * mj;
+      // const auto weighti = tiny + std::abs(pworki);
+      // const auto weightj = tiny + std::abs(pworkj);
       // const auto weighti = (tiny + std::abs(DepsDt0(nodeListi, i))) * mi;
       // const auto weightj = (tiny + std::abs(DepsDt0(nodeListj, j))) * mj;
       // const auto weighti = std::max(tiny, pworki*sgn(dEij));
       // const auto weightj = std::max(tiny, pworkj*sgn(dEij));
 
-      const auto wi = weighti/(weighti + weightj);
-      CHECK(wi >= 0.0 and wi <= 1.0);
-      DepsDt_thread(nodeListi, i) += 2.0*wi*duij;
-      DepsDt_thread(nodeListj, j) += 2.0*(1.0 - wi)*duij;
+      // const auto wi = weighti/(weighti + weightj);
+      // CHECK(wi >= 0.0 and wi <= 1.0);
+      // DepsDt_thread(nodeListi, i) += 2.0*wi*duij;
+      // DepsDt_thread(nodeListj, j) += 2.0*(1.0 - wi)*duij;
       // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
       // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
 

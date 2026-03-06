@@ -350,6 +350,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto  oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
+  // const auto tiny = 1.0e-30;
   const Scalar W0 = W(0.0, 1.0);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -470,6 +471,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
+      const auto  vri = vi.y();
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
@@ -505,6 +507,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
+      const auto  vrj = vj.y();
       const auto  rhoj = massDensity(nodeListj, j);
       const auto  rhoRZj = massDensityRZ(nodeListj, j);
       const auto  Pj = pressure(nodeListj, j);
@@ -577,13 +580,13 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto vij = vi - vj;
       Q.QPiij(QPiij, QPiji, Qi, Qj,
               nodeListi, i, nodeListj, j,
-              posi, Hi, etai, vi, rhoRZi, ci,  
-              posj, Hj, etaj, vj, rhoRZj, cj,
+              posi, Hi, etai, vi, rhoi, ci,  
+              posj, Hj, etaj, vj, rhoj, cj,
               fClQ, fCqQ, DvDxQ); 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);
-      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);
+      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);// - Qi*rhoRZi/rhoi*vri*riInv;
+      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);// - Qj*rhoRZj/rhoj*vrj*rjInv;
       const auto workQi = vij.dot(Qacci);
       const auto workQj = vij.dot(Qaccj);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
@@ -594,23 +597,32 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto Prhoi = Pi/(rhoRZi*rhoRZi);
-      const auto Prhoj = Pj/(rhoRZj*rhoRZj);
-      // const auto deltaDvDt = (Prhoi + Prhoj)*0.5*(gradWi + gradWj);// + Qacci + Qaccj;
+      const auto Prhoi = Pi/(rhoi*rhoRZi);
+      const auto Prhoj = Pj/(rhoj*rhoRZj);
+      // const auto deltaDvDti = mRZj*(0.5*(Pj + Qj)*(gradWi + gradWj)/rhoRZj);// + Qacci + Qaccj);
+      // const auto deltaDvDtj = mRZi*(0.5*(Pi + Qi)*(gradWi + gradWj)/rhoRZi);// + Qacci + Qaccj);
+      // const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      // const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
       const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
-      DvDti -= mRZj*deltaDvDt;
-      DvDtj += mRZi*deltaDvDt;
+      const auto deltaDvDti = mRZj*deltaDvDt;
+      const auto deltaDvDtj = mRZi*deltaDvDt;
+      DvDti -= deltaDvDti;
+      DvDtj += deltaDvDtj;
 
       // Specific thermal energy evolution.
-      const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
-      const auto workj = mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
+      // const auto worki = mRZj*(Pi/(rhoi*rhoi)*vij.dot(gradWi) + workQi);
+      // const auto workj = mRZi*(Pj/(rhoj*rhoj)*vij.dot(gradWj) + workQj);
+      // const auto worki = mRZj*(Pi/(rhoi*rhoRZj)*vij.dot(gradWi));// + workQi);
+      // const auto workj = mRZi*(Pj/(rhoj*rhoRZi)*vij.dot(gradWj));// + workQj);
+      const auto worki = mRZj*(Prhoi*vij.dot(gradWi) + workQi);
+      const auto workj = mRZi*(Prhoj*vij.dot(gradWj) + workQj);
       DepsDti += worki;
       DepsDtj += workj;
 
       // Update the history for compatible energy update
       if (compatibleEnergy) {
-        pairAccelerations[kk][0] = -mRZj*deltaDvDt;
-        pairAccelerations[kk][1] =  mRZj*deltaDvDt;
+        pairAccelerations[kk][0] = -deltaDvDti;
+        pairAccelerations[kk][1] =  deltaDvDtj;
         pairWork[kk][0] = worki;
         pairWork[kk][1] = workj;
       }
@@ -659,7 +671,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = posi.y();
+      const auto  ri = posi.y();                  // Can be negative for ghost points!
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
@@ -668,8 +680,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  zetai = abs((Hi*posi).y());
+      const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
+      CHECK(hri >= 0.0);
       const auto  riInv = safeInvVar(ri, 0.1*hri);
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
@@ -781,33 +794,6 @@ SPHRZ::
 applyGhostBoundaries(State<Dim<2>>& state,
                      StateDerivatives<Dim<2>>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Apply ordinary SPH BCs.
-  SPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
-
-  // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) *= circi;
-    }
-  }
-
   // Our state
   auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
@@ -815,6 +801,35 @@ applyGhostBoundaries(State<Dim<2>>& state,
     boundaryPtr->applyFieldListGhostBoundary(massRZ);
     boundaryPtr->applyFieldListGhostBoundary(rhoRZ);
   }
+
+  // // Convert the mass to mass/length before BCs are applied.
+  // // const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  // auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  // mass /= massRZ;
+  // // const auto numNodeLists = mass.numFields();
+  // // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+  // //   const auto n = mass[nodeListi]->numElements();
+  // //   for (auto i = 0u; i < n; ++i) {
+  // //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+  // //     CHECK(circi > 0.0);
+  // //     mass(nodeListi, i) /= circi;
+  // //   }
+  // // }
+
+  // Apply ordinary SPH BCs.
+  SPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
+  // for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
+
+  // // Scale back to mass.
+  // mass *= massRZ;
+  // // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
+  // //   const unsigned n = mass[nodeListi]->numElements();
+  // //   for (unsigned i = 0; i < n; ++i) {
+  // //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+  // //     CHECK(circi > 0.0);
+  // //     mass(nodeListi, i) *= circi;
+  // //   }
+  // // }
 
 }
 
@@ -826,34 +841,6 @@ SPHRZ::
 enforceBoundaries(State<Dim<2>>& state,
                   StateDerivatives<Dim<2>>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Apply ordinary SPH BCs.
-  SPHBase<Dim<2>>::enforceBoundaries(state, derivs);
-
-  // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-      mass(nodeListi, i) *= circi;
-    }
-  }
-
   // Our state
   auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
@@ -861,6 +848,34 @@ enforceBoundaries(State<Dim<2>>& state,
     boundaryPtr->enforceFieldListBoundary(massRZ);
     boundaryPtr->enforceFieldListBoundary(rhoRZ);
   }
+
+  // // Convert the mass to mass/length before BCs are applied.
+  // FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
+  // FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
+  // const unsigned numNodeLists = mass.numFields();
+  // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
+  //   const unsigned n = mass[nodeListi]->numElements();
+  //   for (unsigned i = 0; i < n; ++i) {
+  //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
+  //     CHECK(circi > 0.0);
+  //     mass(nodeListi, i) /= circi;
+  //   }
+  // }
+
+  // Apply ordinary SPH BCs.
+  SPHBase<Dim<2>>::enforceBoundaries(state, derivs);
+
+  // // Scale back to mass.
+  // // We also ensure no point approaches the z-axis too closely.
+  // FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
+  //   const unsigned n = mass[nodeListi]->numElements();
+  //   for (unsigned i = 0; i < n; ++i) {
+  //     Vector& posi = pos(nodeListi, i);
+  //     const Scalar circi = 2.0*M_PI*abs(posi.y());
+  //     mass(nodeListi, i) *= circi;
+  //   }
+  // }
 }
 
 }
