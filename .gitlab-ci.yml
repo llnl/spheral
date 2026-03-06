@@ -13,7 +13,7 @@ variables:
 
   SCRIPT_DIR: "scripts"
   ATS_FILE: "tests/integration.ats"
-  PERF_ATS_FILE: "tests/performance/run_perf.py"
+  PERF_ATS_FILE: "tests/run_perf.py"
   SPHERAL_MODULE: "Spheral"
   SPACK_PKG_NAME: spheral
   DEV_PKG_SPEC: "spheral@develop+mpi~caliper~network%gcc"
@@ -26,14 +26,14 @@ variables:
 stages:
   - init
   - update_tpls
+  - generate_buildcache
+  - install_production
+  - update_permissions
   - tpls
   - build_and_install
   - perf_install
   - run_ats
   - run_perf
-  - generate_buildcache
-  - install_production
-  - update_permissions
   - cleanup
   - deploy
 

@@ -15,9 +15,11 @@ Notable changes include:
     * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
-    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path. This allows installs to be relocatable.
+    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
 
-  * Bug fixes
+  * Bug fixes:
+    * Adiak memory leak is fixed by calling adiak::clean() before exit.
+    * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
@@ -26,15 +28,22 @@ Notable changes include:
       so there is no user interface impact.
     * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
     * Updated from Rocm 6.2.0 to 6.4.3.
+    * Added update-tpls commit message trigger.
+    * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
     * Performance testing and CI improvements:
+      * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
       * The cleanup old directories job is now a scheduled pipelines that runs weekly.
-      * The performance tests and deploy jobs are now scheduled pipelines that run nightly.
+      * The performance tests and deploy jobs are now scheduled pipelines that run on a schedule.
       * Gitlab pages now uses Plotly for interactive visualizations.
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
-      * Merges to develop will copy installs to a shared directory for use by the performance testing scripts.
-      * Updated build system support spack v1
-        * Updated TPL Manager to support spack v1.1.0
-        * Updated CI to support python v3.12 and Ubuntu 24.04
+      * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
+    * Builds and installs are cleaner:
+      * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
+      * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
+    * Updated build system support spack v1.
+      * Updated TPL Manager to support spack v1.1.0.
+      * Updated CI to support python v3.12 and Ubuntu 24.04.
+      * Added actual Spheral release versions and TPL conditions to Spheral package.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
