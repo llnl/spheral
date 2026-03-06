@@ -11,7 +11,7 @@
   dependencies: []
   script:
     # Directory storing benchmark data is set in scripts/spheral_ats.py
-    - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
+    - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC//%/_}
     - cd $INSTALL_DIR
     - echo "Running performance tests using install at $INSTALL_DIR"
     - rm -rf perf_logs
