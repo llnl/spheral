@@ -8,13 +8,15 @@
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Performance tests"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
+  dependencies: []
   script:
-    # This script submits a job that runs at 7
-    # Benchmark directory is set in scripts/spheral_ats.py
+    # Directory storing benchmark data is set in scripts/spheral_ats.py
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
+    - cd $INSTALL_DIR
     - echo "Running performance tests using install at $INSTALL_DIR"
-    - $INSTALL_DIR/bin/spheral-ats --ciRun --numNodes 2 --delay --batch --logs perf_logs $INSTALL_DIR/$PERF_ATS_FILE || exit_code=$?
-    - exit $exit_code
+    - rm -rf perf_logs
+    - find tests/ -name '*.cali' -print -delete
+    - ./bin/spheral-ats --ciRun --numNodes 2 --logs perf_logs $INSTALL_DIR/$PERF_ATS_FILE
 
 toss_gcc_mpi_perf:
   extends: [.toss_perf_shell, .gcc_mpi, .run_perf]

@@ -62,6 +62,7 @@
       - job-name.txt
 
 # This copies the install so scheduled perf tests can use it
+# Adding test-perf to commit message will trigger the perf install from that branch
 .perf_install:
   extends: [.retry_rule]
   stage: perf_install
@@ -73,11 +74,11 @@
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC#?}
-    - echo "Copying install from $CI_BUILD_DIR/build_gitlab/install to $INSTALL_DIR"
     - ml load mpifileutils
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
-    - cd $CI_BUILD_DIR
-    - $RUN_CMD -n $NPROC dcp ./build_gitlab/install $INSTALL_DIR
+    - cd $CI_BUILD_DIR/build_gitlab/build
+    - cmake ../../ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+    - make -j $NPROC install
     - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
   artifacts:
     paths:
@@ -95,6 +96,8 @@
     - cd $CI_BUILD_DIR && cat job-name.txt
 
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
+    # Clean up Caliper files
+    - find ./build_gitlab/install/tests -name '*.cali' -print0 -delete
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
   artifacts:
@@ -112,16 +115,16 @@
     GIT_STRATEGY: empty
   script:
     - CI_BUILD_DIR=$(cat ci-dir.txt)
-
     - ml load mpifileutils
     - cd $SPHERAL_BUILDS_DIR
-    - $RUN_CMD -n 20 drm $CI_BUILD_DIR/..
+    - $RUN_CMD -n $NPROC drm $CI_BUILD_DIR/..
   interruptible: true
 
 # ------------------------------------------------------------------------------
 # Shared TPL scripts.
 # ------------------------------------------------------------------------------
 
+# Updates the TPLs in the upstream. Adding update-tpls to commit message will trigger this
 .update_tpls:
   variables:
     GIT_STRATEGY: clone
@@ -129,6 +132,7 @@
   stage: update_tpls
   rules:
     - !reference [.merge_pr_rule, rules]
+    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
 
@@ -138,6 +142,7 @@
     GIT_STRATEGY: none
   rules:
     - !reference [.merge_pr_rule, rules]
+    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
     - ml load mpifileutils
     - $RUN_CMD -n $NPROC dchmod --mode go+rx $UPSTREAM_DIR
@@ -204,7 +209,7 @@
     - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
-    - dchmod --mode go+rx $INSTALL_DIR
+    - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
 
   artifacts:
     paths:
@@ -243,12 +248,14 @@
   dependencies: []
   script:
     - cd $SPHERAL_BUILDS_DIR
-    - MAX_DIR=30
-    - DIR_LIST=$(ls -ltd * | sed "1, $MAX_DIR d" | rev | cut -d ' ' -f1 | rev | paste -sd ' ' - )
-    - echo $DIR_LIST
     - ml load mpifileutils
-    - if [[ $DIR_LIST ]]; then $RUN_CMD -n $NPROC drm $DIR_LIST; else echo "No directories to remove at this time."; fi
+    - |
+      find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print0 \
+        | while IFS= read -r -d '' dir; do
+            $RUN_CMD -n $NPROC drm "$dir"
+          done
 
+# Remove performance benchmarks that are older than 6 months
 .clean_old_perfs:
   stage: cleanup
   variables:
@@ -260,9 +267,14 @@
   dependencies: []
   script:
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
-    - ml load mpifileutils
     - cd $BENCHMARK_LOC
-    - env TARGET_DIR=$BENCHMARK_LOC bash ./$SCRIPT_DIR/lc/cleanup_files
+    - ml load mpifileutils
+    - |
+      find . -mindepth 2 -type d -mtime +200 -print0 \
+        | while IFS= read -r -d '' dir; do
+            echo "Removing $dir"
+            $RUN_CMD -n $NPROC drm "$dir"
+          done
 
 # ------------------------------------------------------------------------------
 # Script Utilities
@@ -273,6 +285,7 @@
     - if: '$CI_COMMIT_REF_NAME == "develop"'
       when: always
 
+# Adding test-prod to commit message triggers jobs that rely on this rule
 .tag_release_rule:
   rules:
     - if: $CI_COMMIT_TAG
