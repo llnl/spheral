@@ -580,15 +580,15 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto vij = vi - vj;
       Q.QPiij(QPiij, QPiji, Qi, Qj,
               nodeListi, i, nodeListj, j,
-              posi, Hi, etai, vi, rhoi, ci,  
-              posj, Hj, etaj, vj, rhoj, cj,
+              posi, Hi, etai, vi, rhoRZi, ci,  
+              posj, Hj, etaj, vj, rhoRZj, cj,
               fClQ, fCqQ, DvDxQ); 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);// - Qi*rhoRZi/rhoi*vri*riInv;
-      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);// - Qj*rhoRZj/rhoj*vrj*rjInv;
-      const auto workQi = vij.dot(Qacci);
-      const auto workQj = vij.dot(Qaccj);
+      const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);// - Qi*rhoRZi/rhoi*vri*riInv;
+      const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);// - Qj*rhoRZj/rhoj*vrj*rjInv;
+      // const auto workQi = vij.dot(Qacci);
+      // const auto workQj = vij.dot(Qaccj);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mRZj*Qi*WQi/rhoj;
