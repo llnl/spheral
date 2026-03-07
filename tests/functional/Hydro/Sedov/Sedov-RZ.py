@@ -40,8 +40,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             asph = False,              # Choose the H advancement
             compatibleEnergy = True,
             evolveTotalEnergy = False,  # Only for SPH variants -- evolve total rather than specific energy
-            Cl = None,
-            Cq = None,
+            Cl = 1.5,
+            Cq = 1.0,
             balsaraCorrection = False,
             epsilon2 = None,
             hmin = 1e-10,
@@ -199,9 +199,9 @@ output("nodes1.nodesPerSmoothingScale")
 #-------------------------------------------------------------------------------
 if problem == "planar":
     nz = n1
-    nr = n1
+    nr = n2
     z0, z1 = 0.0, 1.0
-    r0, r1 = 0.0, 1.0
+    r0, r1 = 0.0, 0.2
     rmin, rmax = None, None
 elif problem == "cylindrical":
     nz = n2
