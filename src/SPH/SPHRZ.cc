@@ -140,15 +140,15 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
     for (auto i = 0u; i < n; ++i) {
       CHECK(rho(k,i) > 0.0);
       const auto ri = abs(pos(k,i).y());
-      const auto Ai = mass(k,i)/rho(k,i);
-      const auto Vi = 2.0*M_PI*ri*Ai;
+      // const auto Ai = mass(k,i)/rho(k,i);
+      // const auto Vi = 2.0*M_PI*ri*Ai;
       // const auto di = std::sqrt(Ai);
       // const auto Vi = cylindricalToroidalVolume(di, ri);
       // const auto Ri = std::sqrt(Ai/M_PI);
       // const auto Vi = circularToroidalVolume(Ri, ri);
       mMassRZ(k,i) = mass(k,i);
       mMassDensityRZ(k,i) = rho(k,i);
-      mass(k,i) = rho(k,i)*Vi;
+      mass(k,i) *= 2.0*M_PI*ri;
     }
   }
   TIME_END("SPHRZInitializeStartupDependencies");
@@ -603,6 +603,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto deltaDvDtj = mRZi*(0.5*(Pi + Qi)*(gradWi + gradWj)/rhoRZi);// + Qacci + Qaccj);
       // const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
       // const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      // const auto deltaDvDti = mRZj*(Prhoj*gradWj + Pi*rhoj/(rhoi*rhoi*rhoRZj)*gradWi + Qacci + Qaccj);
+      // const auto deltaDvDtj = mRZi*(Prhoi*gradWi + Pj*rhoi/(rhoj*rhoj*rhoRZi)*gradWj + Qacci + Qaccj);
       const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
       const auto deltaDvDti = mRZj*deltaDvDt;
       const auto deltaDvDtj = mRZi*deltaDvDt;
