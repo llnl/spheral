@@ -39,8 +39,7 @@ if (SPHERAL_ENABLE_PYTHON)
   )
 
   install(FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.sh"
-    RENAME "spheral"
+    "${CMAKE_BINARY_DIR}/bin/spheral"
     DESTINATION bin
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )

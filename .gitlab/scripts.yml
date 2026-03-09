@@ -75,6 +75,7 @@
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC//%/_}
     - ml load mpifileutils
+    - echo "Doing install in ${INSTALL_DIR}"
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
     - cd $CI_BUILD_DIR/build_gitlab/build
     - cmake ../../ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
