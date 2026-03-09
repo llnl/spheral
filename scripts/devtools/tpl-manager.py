@@ -290,6 +290,8 @@ class SpheralTPL:
             from spack import environment
             self.spack_env = environment.Environment(self.env_dir)
             environment.activate(self.spack_env)
+            repo_cmd = SpackCommand("repo")
+            repo_cmd(*["update"])
         else:
             # Otherwise, check if environment has been created
             arch_cmd = SpackCommand("arch")

@@ -130,7 +130,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
         depends_on('chai+raja', type='build')
         depends_on('chai@2025.12.0', type='build', when='@develop')
-        depends_on('chai@2025.09.0', type='build', when='@2025.12.0:')
+        depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak", "chai", "umpire"]
