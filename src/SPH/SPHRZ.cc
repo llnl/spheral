@@ -124,33 +124,38 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHRZInitializeStartupDependencies");
-  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
-  dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ);
+  dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ, false);
   dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
 
   // When we come in the initial conditions for mass and density are 2D areal
   // values, so we need to set up our areal and real 3D values appropriately.
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-  auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-  auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto nfields = mass.numFields();
-  for (auto k = 0u; k < nfields; ++k) {
-    const auto n = mass[k]->numInternalElements();
-    for (auto i = 0u; i < n; ++i) {
-      CHECK(rho(k,i) > 0.0);
-      const auto ri = abs(pos(k,i).y());
-      // const auto Ai = mass(k,i)/rho(k,i);
-      // const auto Vi = 2.0*M_PI*ri*Ai;
-      // const auto di = std::sqrt(Ai);
-      // const auto Vi = cylindricalToroidalVolume(di, ri);
-      // const auto Ri = std::sqrt(Ai/M_PI);
-      // const auto Vi = circularToroidalVolume(Ri, ri);
-      mMassRZ(k,i) = mass(k,i);
-      mMassDensityRZ(k,i) = rho(k,i);
-      mass(k,i) *= 2.0*M_PI*ri;
+  if (mMassRZ.max() == 0.0) {  // Don't allow more than one time through the following!
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
+    auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
+    const auto nfields = mass.numFields();
+    for (auto k = 0u; k < nfields; ++k) {
+      const auto n = mass[k]->numInternalElements();
+      for (auto i = 0u; i < n; ++i) {
+        CHECK(rho(k,i) > 0.0);
+        const auto ri = abs(pos(k,i).y());
+        // const auto Ai = mass(k,i)/rho(k,i);
+        // const auto Vi = 2.0*M_PI*ri*Ai;
+        // const auto di = std::sqrt(Ai);
+        // const auto Vi = cylindricalToroidalVolume(di, ri);
+        // const auto Ri = std::sqrt(Ai/M_PI);
+        // const auto Vi = circularToroidalVolume(Ri, ri);
+        mMassRZ(k,i) = mass(k,i);
+        mMassDensityRZ(k,i) = rho(k,i);
+        mass(k,i) *= 2.0*M_PI*ri;
+        // mass(k,i) = rho(k,i)*Vi;
+      }
     }
   }
+
+  // Base class
+  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
   TIME_END("SPHRZInitializeStartupDependencies");
 }
 
@@ -238,7 +243,6 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   // We're going to do something expensive to update the mass density, so get ready.
   const auto& connectivityMap = state.connectivityMap();
   const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
-  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   auto        massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
@@ -280,7 +284,8 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   }
 
   // Update the real mass density based on the areal (RZ) density
-  auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   for (auto k = 0u; k < massDensity.numFields(); ++k) {
     const auto n = massDensity[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
@@ -583,12 +588,16 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
               posi, Hi, etai, vi, rhoRZi, ci,  
               posj, Hj, etaj, vj, rhoRZj, cj,
               fClQ, fCqQ, DvDxQ); 
+      QPiij *= rhoRZi/rhoi;
+      QPiji *= rhoRZj/rhoj;
+      Qi *= rhoRZi/rhoi;
+      Qj *= rhoRZj/rhoj;
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);// - Qi*rhoRZi/rhoi*vri*riInv;
-      const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);// - Qj*rhoRZj/rhoj*vrj*rjInv;
-      // const auto workQi = vij.dot(Qacci);
-      // const auto workQj = vij.dot(Qaccj);
+      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi*rhoRZi/rhoi*vri*riInv;
+      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj*rhoRZj/rhoj*vrj*rjInv;
+      const auto workQi = vij.dot(Qacci);
+      const auto workQj = vij.dot(Qaccj);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mRZj*Qi*WQi/rhoj;
@@ -601,13 +610,15 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto Prhoj = Pj/(rhoj*rhoRZj);
       // const auto deltaDvDti = mRZj*(0.5*(Pj + Qj)*(gradWi + gradWj)/rhoRZj);// + Qacci + Qaccj);
       // const auto deltaDvDtj = mRZi*(0.5*(Pi + Qi)*(gradWi + gradWj)/rhoRZi);// + Qacci + Qaccj);
-      // const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
-      // const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
       // const auto deltaDvDti = mRZj*(Prhoj*gradWj + Pi*rhoj/(rhoi*rhoi*rhoRZj)*gradWi + Qacci + Qaccj);
       // const auto deltaDvDtj = mRZi*(Prhoi*gradWi + Pj*rhoi/(rhoj*rhoj*rhoRZi)*gradWj + Qacci + Qaccj);
-      const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
-      const auto deltaDvDti = mRZj*deltaDvDt;
-      const auto deltaDvDtj = mRZi*deltaDvDt;
+      // const auto deltaDvDti = -mRZj/(rhoi*rhoRZi)*((Pi + Qi)*gradWi - (Pj + Qj)*gradWj);
+      // const auto deltaDvDtj = -mRZi/(rhoj*rhoRZj)*((Pj + Qj)*gradWj - (Pi + Qi)*gradWi);
+      // const auto deltaDvDt = Prhoi*gradWi + Prhoj*gradWj + Qacci + Qaccj;
+      // const auto deltaDvDti = mRZj*deltaDvDt;
+      // const auto deltaDvDtj = mRZi*deltaDvDt;
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
 
