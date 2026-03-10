@@ -42,7 +42,9 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             evolveTotalEnergy = False,  # Only for SPH variants -- evolve total rather than specific energy
             Cl = 1.5,
             Cq = 1.0,
-            balsaraCorrection = False,
+            linearInExpansion = None,
+            quadraticInExpansion = None,
+            balsaraCorrection = None,
             epsilon2 = None,
             hmin = 1e-10,
             hmax = 1e10,
@@ -288,18 +290,23 @@ packages = [hydro]
 # Construct the artificial viscosity.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-if not Cl is None:
-    q.Cl = Cl
-if not Cq is None:
-    q.Cq = Cq
-if not epsilon2 is None:
-    q.epsilon2 = epsilon2
-q.balsaraShearCorrection = balsaraCorrection
+def setOptionalParam(thing, param, val):
+    if not val is None:
+        exec(f"thing.{param} = {val}")
+    return
+setOptionalParam(q, "Cl", Cl)
+setOptionalParam(q, "Cq", Cq)
+setOptionalParam(q, "epsilon2", epsilon2)
+setOptionalParam(q, "linearInExpansion", linearInExpansion)
+setOptionalParam(q, "quadraticInExpansion", quadraticInExpansion)
+setOptionalParam(q, "balsaraShearCorrection", balsaraCorrection)
 output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
 output("q.balsaraShearCorrection")
+output("q.linearInExpansion")
+output("q.quadraticInExpansion")
 
 #-------------------------------------------------------------------------------
 # Construct the Artificial Conduction physics object.
