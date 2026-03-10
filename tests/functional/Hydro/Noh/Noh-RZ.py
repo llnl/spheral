@@ -80,6 +80,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             Qhmult = 1.0,
             Cl = 1.5,
             Cq = 1.0,
+            linearInExpansion = None,
+            quadraticInExpansion = None,
             balsaraCorrection = None,
             epsilon2 = None,
             hmin = 0.0001, 
@@ -389,20 +391,24 @@ packages = [hydro]
 # Set the artificial viscosity parameters.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-if not Cl is None:
-    q.Cl = Cl
-if not Cq is None:
-    q.Cq = Cq
-if not epsilon2 is None:
-    q.epsilon2 = epsilon2
-if not balsaraCorrection is None:
-    q.balsaraShearCorrection = balsaraCorrection
+def setOptionalParam(thing, param, val):
+    if not val is None:
+        exec(f"thing.{param} = {val}")
+    return
+setOptionalParam(q, "Cl", Cl)
+setOptionalParam(q, "Cq", Cq)
+setOptionalParam(q, "epsilon2", epsilon2)
+setOptionalParam(q, "linearInExpansion", linearInExpansion)
+setOptionalParam(q, "quadraticInExpansion", quadraticInExpansion)
+setOptionalParam(q, "balsaraShearCorrection", balsaraCorrection)
 output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
 output("q.limiter")
 output("q.balsaraShearCorrection")
+output("q.linearInExpansion")
+output("q.quadraticInExpansion")
 
 #-------------------------------------------------------------------------------
 # Construct the MMRV physics object.
