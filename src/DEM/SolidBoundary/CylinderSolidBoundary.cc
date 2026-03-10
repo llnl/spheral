@@ -29,7 +29,7 @@ CylinderSolidBoundary(const Vector& point,
   mAxis(axis),
   mRadius(radius),
   mLength(length),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 

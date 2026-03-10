@@ -19,12 +19,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -159,8 +153,8 @@ globalBoundingVolumes(const DataBase<Dimension>& dataBase,
   vector<Vector> nodePositions, samplePositions;
   nodePositions.reserve(numNodes);
   samplePositions.reserve(numSamples);
-  for (size_t fieldi = 0; fieldi != positions.numFields(); ++fieldi) {
-    for (size_t i = 0; i != positions[fieldi]->numElements(); ++i) {
+  for (size_t fieldi = 0u; fieldi < positions.numFields(); ++fieldi) {
+    for (size_t i = 0u; i < positions[fieldi]->numElements(); ++i) {
       nodePositions.push_back(positions(fieldi, i));
       appendSamplingPositions(positions(fieldi, i), extents(fieldi, i), samplePositions);
     }

@@ -75,8 +75,8 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state we're advancing.
-  auto&       S = state.field(key, SymTensor::zero);
-  const auto& DSDt = derivs.field(IncrementState<Dimension, SymTensor>::prefix() + key, SymTensor::zero);
+  auto&       S = state.field(key, SymTensor::zero());
+  const auto& DSDt = derivs.field(IncrementState<Dimension, SymTensor>::prefix() + key, SymTensor::zero());
 
   // Check if a porosity model has registered a modifier for the deviatoric stress.
   // They should have added it as a dependency of this policy if so.

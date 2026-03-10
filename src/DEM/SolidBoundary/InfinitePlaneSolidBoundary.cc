@@ -25,7 +25,7 @@ InfinitePlaneSolidBoundary(const Vector& point,
   SolidBoundaryBase<Dimension>(),
   mPoint(point),
   mNormal(normal),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 

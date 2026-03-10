@@ -66,7 +66,7 @@ FacetedVolume = {"1d" : Box1d,
 #-------------------------------------------------------------------------------
 # Appropriately set generic object names based on the test dimensionality.
 #-------------------------------------------------------------------------------
-exec("from Spheral%s import *" % testDim)
+exec("from Spheral%s import *" % testDim, globals())
 
 #-------------------------------------------------------------------------------
 # Create a random number generator.

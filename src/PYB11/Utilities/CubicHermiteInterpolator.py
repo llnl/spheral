@@ -8,7 +8,7 @@ class CubicHermiteInterpolator:
     "An (optionally monotonic) form of cubic Hermite interpolation."
 
     def pyinit(self):
-        "Default constuctor -- returns a non-functional interpolator until initialized"
+        "Default constructor -- returns a non-functional interpolator until initialized"
         return
 
     def pyinit_func(self,
@@ -82,6 +82,10 @@ tabulated knots (although that structure should still be monotonic between the t
         "Returns the interpolated value <y>(x)"
         return "double"
 
+    @PYB11cppname("operator[]")
+    def __getitem__(self, index="size_t"):
+        return "double"
+
     @PYB11const
     def prime(self,
               x = "const double"):
@@ -145,4 +149,4 @@ tabulated knots (although that structure should still be monotonic between the t
     xmin = PYB11property(doc="Minimum x coordinate for table")
     xmax = PYB11property(doc="Maximum x coordinate for table")
     xstep = PYB11property(doc="delta x between tabulated values")
-    vals = PYB11property(doc="tabulated values and gradients (sequentially)")
+

@@ -6,6 +6,8 @@ set (_python_packages
   Silo
   DataOutput
   NodeList
+  FieldView
+  FieldListView
   Field
   FieldList
   Kernel
@@ -13,11 +15,11 @@ set (_python_packages
   Material
   FileIO
   Utilities
+  Physics
   RK
   VoronoiCells
   DataBase
   Boundary
-  Physics
   Hydro
   Integrator
   NodeGenerators
@@ -34,18 +36,17 @@ set (_python_packages
   KernelIntegrator
   SmoothingScale
   polytope
-  OpenMP
-  )
+  OpenMP)
 
 if(ENABLE_MPI)
   list(APPEND _python_packages Distributed)
 endif()
 
-if (ENABLE_ANEOS)
+if (SPHERAL_ENABLE_ANEOS)
   list(APPEND _python_packages ANEOS)
 endif()
 
-if (ENABLE_HELMHOLTZ)
+if (SPHERAL_ENABLE_HELMHOLTZ)
   list(APPEND _python_packages Helmholtz)
 endif()
 
@@ -73,11 +74,11 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _python_packages SVPH)
 endif()
 
-if (ENABLE_SUNDIALS)
+if (SPHERAL_ENABLE_SUNDIALS)
   list(PREPEND _python_packages Solvers)
 endif()
 
-if (ENABLE_LEOS)
+if (SPHERAL_ENABLE_LEOS)
   list(APPEND _python_packages LEOS)
 endif()
 
@@ -85,24 +86,21 @@ foreach(_python_package ${_python_packages})
   add_subdirectory(${_python_package})
 endforeach()
 
-# This global list is filled in each spheral_add_pybind11_library call
+# Add the master module that includes all our compiled submodules
 get_property(SPHERAL_MODULE_LIST GLOBAL PROPERTY SPHERAL_MODULE_LIST)
-string(REPLACE ";" " " PYTHONPKGS "${SPHERAL_MODULE_LIST}")
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/SpheralCompiledPackages.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/SpheralCompiledPackages.py)
+set(CXX_MODULE_LIBS ${SPHERAL_MODULE_LIST})
+list(TRANSFORM CXX_MODULE_LIBS PREPEND "Spheral")
+
+if (SPHERAL_BUILD_MAIN_PYTHON_MODULE)
+  spheral_add_pybind11_library(CompiledModules DUMMY_MODULE_LIST
+    DEPENDS        ${CXX_MODULE_LIBS}
+    IS_SUBMODULE   OFF
+    SUBMODULES     ${CXX_MODULE_LIBS})
+endif()
 
 set(PYB11_python_targets
   SpheralPickle.py
   PolyhedronFileUtilities.py
-  ${CMAKE_CURRENT_BINARY_DIR}/SpheralCompiledPackages.py
-  )
+  SpheralCompiledPackages.py)
 
 spheral_install_python_files(${PYB11_python_targets})
-
-configure_file(Spheral.pth
-  ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral.pth
-  COPYONLY)
-
-install(FILES       Spheral.pth
-        DESTINATION ${SPHERAL_SITE_PACKAGES_PATH})

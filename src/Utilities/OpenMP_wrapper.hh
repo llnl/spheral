@@ -4,6 +4,8 @@
 #ifndef __Spheral_OpenMP_wrapper__
 #define __Spheral_OpenMP_wrapper__
 
+#include "Utilities/DataTypeTraits.hh"
+
 #ifdef _OPENMP
 #include "omp.h"
 #else
@@ -81,17 +83,29 @@ threadReduceFieldLists(typename SpheralThreads<Dimension>::FieldListStack& stack
               std::visit([=](const auto* threadValue) {
                 CHECK(nodeListi < threadValue->size());
                 CHECK(i < (*threadValue)[nodeListi]->size());
-                switch (threadValue->reductionType) {
-                case ThreadReduction::SUM:
+
+                using T = std::remove_pointer_t<std::decay_t<decltype(threadValue)>>;
+                if constexpr (TypeTraits::has_less_than<typename T::FieldDataType, typename T::FieldDataType>::value) {
+
+                  switch (threadValue->reductionType) {
+                  case ThreadReduction::SUM:
+                    (*(threadValue->threadMasterPtr))(nodeListi, i) += (*threadValue)(nodeListi,i);
+                    break;
+
+                  case ThreadReduction::MIN:
+                    (*(threadValue->threadMasterPtr))(nodeListi, i) = std::min((*threadValue)(nodeListi, i), (*(threadValue->threadMasterPtr))(nodeListi, i));
+                    break;
+
+                  case ThreadReduction::MAX:
+                    (*(threadValue->threadMasterPtr))(nodeListi, i) = std::max((*threadValue)(nodeListi, i), (*(threadValue->threadMasterPtr))(nodeListi, i));
+                  }
+
+                } else {
+
+                  VERIFY2(threadValue->reductionType == ThreadReduction::SUM,
+                          "FieldList::threadReduce ERROR : cannot perform min/max comparisons on " << typeid(T).name());
                   (*(threadValue->threadMasterPtr))(nodeListi, i) += (*threadValue)(nodeListi,i);
-                  break;
 
-                case ThreadReduction::MIN:
-                  (*(threadValue->threadMasterPtr))(nodeListi, i) = std::min((*threadValue)(nodeListi, i), (*(threadValue->threadMasterPtr))(nodeListi, i));
-                  break;
-
-                case ThreadReduction::MAX:
-                  (*(threadValue->threadMasterPtr))(nodeListi, i) = std::max((*threadValue)(nodeListi, i), (*(threadValue->threadMasterPtr))(nodeListi, i));
                 }
               }, flv);
             }

@@ -124,7 +124,6 @@ commandLine(seed = "constantDTheta",
             Cl = None, 
             Cq = None,
             linearInExpansion = None,
-            Qlimiter = None,
             balsaraCorrection = None,
             epsilon2 = None,
 
@@ -168,7 +167,6 @@ commandLine(seed = "constantDTheta",
             statsStep = 10,
             smoothIters = 0,
             domainIndependent = False,
-            rigorousBoundaries = False,
             dtverbose = False,
 
             # output options
@@ -496,15 +494,12 @@ if not (gsph or mfm or mfv):
         q.Cq = Cq
     if epsilon2:
         q.epsilon2 = epsilon2
-    if Qlimiter:
-        q.limiter = Qlimiter
     if balsaraCorrection:
         q.balsaraShearCorrection = balsaraCorrection
     output("q")
     output("q.Cl")
     output("q.Cq")
     output("q.epsilon2")
-    output("q.limiter")
     output("q.balsaraShearCorrection")
     try:
         output("q.linearInExpansion")
@@ -560,7 +555,6 @@ integrator.dtMax = dtMax
 integrator.dtGrowth = dtGrowth
 integrator.domainDecompositionIndependent = domainIndependent
 integrator.verbose = dtverbose
-integrator.rigorousBoundaries = rigorousBoundaries
 output("integrator")
 output("integrator.havePhysicsPackage(hydro)")
 output("integrator.lastDt")
@@ -568,7 +562,6 @@ output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.dtGrowth")
 output("integrator.domainDecompositionIndependent")
-output("integrator.rigorousBoundaries")
 output("integrator.verbose")
 
 #-------------------------------------------------------------------------------

@@ -15,7 +15,7 @@ template<typename Dimension>
 inline
 typename Dimension::Tensor
 planarReflectingOperator(const typename Dimension::Vector& nhat) {
-  return Dimension::Tensor::one - 2.0*nhat.selfdyad();
+  return Dimension::Tensor::one() - 2.0*nhat.selfdyad();
 }
 
 template<typename Dimension>

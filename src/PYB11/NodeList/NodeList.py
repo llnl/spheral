@@ -5,7 +5,7 @@ from RestartMethods import *
 # NodeList template
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralNodeList")
+@PYB11module("SpheralCompiledModules.SpheralNodeList")
 @PYB11dynamic_attr
 class NodeList:
     "Spheral NodeList base class in %(Dimension)s"
@@ -100,7 +100,7 @@ class NodeList:
 
     @PYB11const
     def nodeType(self,
-                 ID = "int"):
+                 ID = "size_t"):
         "Return the classification of the given node"
         return "NodeType"
 

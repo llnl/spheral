@@ -17,12 +17,6 @@
 #include <vector>
 using std::vector;
 using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -58,7 +52,7 @@ update(const KeyType& key,
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
 
   // Get the state we're updating.
-  auto f = state.field(key, Vector::zero);
+  auto f = state.field(key, Vector::zero());
 
   // Find all the available matching derivative Field keys.
   const auto incrementKey = prefix() + fieldKey;
@@ -70,7 +64,7 @@ update(const KeyType& key,
         dfKey.compare(0, incrementKey.size(), incrementKey) == 0) {
 
       // This delta field matches the base of increment key, so apply it.
-      const auto& df = derivs.field(key, Vector::zero);
+      const auto& df = derivs.field(key, Vector::zero());
       const auto  n = f.numInternalElements();
 #pragma omp parallel for
       for (auto i = 0u; i < n; ++i) {

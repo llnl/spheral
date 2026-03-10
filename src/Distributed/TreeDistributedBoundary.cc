@@ -24,14 +24,19 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Singleton instance method.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+TreeDistributedBoundary<Dimension>&
+TreeDistributedBoundary<Dimension>::
+instance() {
+  static TreeDistributedBoundary<Dimension> theInstance;
+  return theInstance;
+}
 
 //------------------------------------------------------------------------------
 // Default constructor.
@@ -187,7 +192,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
   CHECK((int)sendRequests.size() == 2*(numProcs -1 ));
 
   // Compute the local H inverse for our box culling of send nodes.
-  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero, "H inverse");
+  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
   dataBase.globalHinverse(Hinverse);
 
   // Next walk the other domains, get their info, and figure out what nodes we need to send them.

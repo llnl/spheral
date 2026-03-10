@@ -64,6 +64,14 @@ public:
   // Destructor.
   virtual ~SPHBase() = default;
 
+  // An optional hook to initialize once when the problem is starting up.
+  // This is called after the materials and NodeLists are created. This method
+  // should set the sizes of all arrays owned by the physics package and initialize
+  // independent variables.
+  // It is assumed after this method has been called it is safe to call
+  // Physics::registerState to create full populated State objects.
+  virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
+
   // A second optional method to be called on startup, after Physics::initializeProblemStartup has
   // been called.
   // One use for this hook is to fill in dependendent state using the State object, such as

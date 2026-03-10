@@ -54,7 +54,7 @@ inline
 CoefficientType
 DefaultIntegrationCoefficient<Dimension, CoefficientType>::
 evaluateCoefficient(const KernelIntegrationData<Dimension>& /* kid */) const {
-  return CoefficientType::one;
+  return CoefficientType::one();
 }
 
 template<>

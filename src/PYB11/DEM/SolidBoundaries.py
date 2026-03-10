@@ -5,7 +5,7 @@ from SolidBoundaryBaseAbstractMethods import *
 # Base class for riemann solver wave speeds
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class SolidBoundaryBase:
 
     PYB11typedefs = """
@@ -23,7 +23,7 @@ PYB11inject(SolidBoundaryBaseAbstractMethods, SolidBoundaryBase, pure_virtual=Tr
 # Infinite planar solid boundary
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class InfinitePlaneSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """
@@ -76,7 +76,7 @@ class InfinitePlaneSolidBoundary(SolidBoundaryBase):
 # Finite rectangular solid boundary
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class RectangularPlaneSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """
@@ -132,7 +132,7 @@ class RectangularPlaneSolidBoundary(SolidBoundaryBase):
 # Disk shaped solid boundary
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class CircularPlaneSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """
@@ -187,7 +187,7 @@ class CircularPlaneSolidBoundary(SolidBoundaryBase):
 # Cylinder solid boundary. In 2d this would be two planes.
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class CylinderSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """
@@ -245,7 +245,7 @@ class CylinderSolidBoundary(SolidBoundaryBase):
 # Sphere solid boundary. In 2d this would be a circle.
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class SphereSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """
@@ -298,7 +298,7 @@ class SphereSolidBoundary(SolidBoundaryBase):
 # Sphere solid boundary intersected with an infinite plane.
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class ClippedSphereSolidBoundary(SolidBoundaryBase):
 
     PYB11typedefs = """

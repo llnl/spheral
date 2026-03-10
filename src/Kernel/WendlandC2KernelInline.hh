@@ -33,14 +33,6 @@ WendlandC2Kernel< Dim<3> >::WendlandC2Kernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-WendlandC2Kernel<Dimension>::~WendlandC2Kernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

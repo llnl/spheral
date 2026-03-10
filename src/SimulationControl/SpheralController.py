@@ -5,7 +5,7 @@ import sys, os, gc, warnings, mpi
 
 from SpheralCompiledPackages import *
 from SpheralTimer import SpheralTimer
-from SpheralUtilities import adiak_value, TimerMgr
+from SpheralCompiledPackages import adiak_value, TimerMgr
 from SpheralConservation import SpheralConservation
 from GzipFileIO import GzipFileIO
 from SpheralTestUtilities import globalFrame
@@ -747,7 +747,12 @@ class SpheralController:
                     self.RKCorrections.addFacetedBoundary(b)
             packages.insert(index, self.RKCorrections)
             self.integrator.resetPhysicsPackages(packages)
-
+        
+        # InflowOutflowBoundary can cause issues for other packages if it is not last
+        if any("InflowOutflowBoundary" in type(p).__name__ for p in packages):
+            packages.sort(key=lambda p: "InflowOutflowBoundary" in type(p).__name__)
+            self.integrator.resetPhysicsPackages(packages)
+        
         return
 
     #--------------------------------------------------------------------------

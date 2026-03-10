@@ -14,10 +14,6 @@
 #include "Utilities/SpheralMessage.hh"
 #include "Utilities/DBC.hh"
 
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-
 #include <string>
 #include <vector>
 

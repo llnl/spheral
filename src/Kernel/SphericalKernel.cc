@@ -99,12 +99,6 @@ SphericalKernel::SphericalKernel(const SphericalKernel& rhs):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-SphericalKernel::~SphericalKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Assignment
 //------------------------------------------------------------------------------
 SphericalKernel&
@@ -153,7 +147,7 @@ SphericalKernel::grad(const Dim<1>::Vector& etaj,
   CHECK(ei > 0.0);
   CHECK(ej > 0.0);
   const auto a = std::abs(ej - ei);            // Lower integration limit
-  if (a > metamax) return Vector::zero;
+  if (a > metamax) return Vector::zero();
   const auto b = std::min(metamax, ei + ej);   // Upper integration limit
   const auto A = a*mBaseKernel3d.kernelValue(a, 1.0)*sgn0(ei - ej);
   const auto B = (ei + ej >= metamax ?

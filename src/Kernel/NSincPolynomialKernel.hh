@@ -18,14 +18,13 @@ class NSincPolynomialKernel:
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors, destructors.
+  // Constructor.
   NSincPolynomialKernel(const int order);
-  ~NSincPolynomialKernel();
 
   // Return the kernel weight for a given normalized distance or position.
   double kernelValue(double etaij, const double Hdet) const;
@@ -41,14 +40,12 @@ private:
   // Order of the polynomials.
   int mOrder;
 
-#ifndef __GCCXML__
   // The coefficients for each piecewise section.
   std::vector< std::vector<double> > mAij;
 
   // Private method to fill in the polynomial coefficients.
   void setPolynomialCoefficients(const int order, 
                                  std::vector< std::vector<double> >& Aij) const;
-#endif
 
 };
 

@@ -30,7 +30,6 @@ public:
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
-  using Vector3d = typename Dimension::Vector3d;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 

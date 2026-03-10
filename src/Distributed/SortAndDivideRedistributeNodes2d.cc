@@ -14,6 +14,7 @@
 #include "NodeList/NodeList.hh"
 #include "Geometry/EigenStruct.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -28,12 +29,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -61,7 +56,6 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
                   vector<Boundary<Dim<2> >*> boundaries) {
 
   // Number of processors.
-  const int procID = this->domainID();
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
@@ -124,15 +118,12 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) {
-    cout << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:" << endl
-         << initialLoadStats << endl
-         << "    Domain distribution shape tensor: " << shapeTensor.eigenValues << endl
-         << "    Number of domains per work chunk: ";
-    for (vector<int>::const_iterator itr = domainsPerStep.begin();
-         itr != domainsPerStep.end();
-         ++itr) cout << " " << *itr;
-    cout << endl;
+  if (Process::getRank() == 0) {
+    SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << 
+                   initialLoadStats << "\n" <<
+                   "    Domain distribution shape tensor: " << shapeTensor.eigenValues << "\n" <<
+                                                 "    Number of domains per work chunk: ");
+    for (auto& x: domainsPerStep) SpheralMessage("                                      " << x);
   }
     
   // Compute the total work, and the target work per processor.
@@ -232,10 +223,8 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cout << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:" << endl
-                        << finalLoadStats << endl << endl;
+  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
   MPI_Barrier(Communicator::communicator());
-
 }
 
 //------------------------------------------------------------------------------

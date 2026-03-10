@@ -187,7 +187,8 @@ nPerh = 1.51
 order = 5
 
 if DamageModelConstructor in (GradyKippTensorDamage, GradyKippTensorDamageOwen, ProbabilisticDamageModel):
-    damageName = os.path.join(str(DamageModelConstructor.__name__), str(damageCoupling))
+    damageName = os.path.join(str(DamageModelConstructor.__name__),
+                             f"{damageCoupling.__class__.__name__}.{damageCoupling.name}")
 else:
     damageName = DamageModelConstructor.__name__
 
@@ -413,10 +414,8 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct constant velocity boundary conditions to be applied to the rod ends.
 #-------------------------------------------------------------------------------
-x0Nodes = vector_of_ULL()
-x1Nodes = vector_of_ULL()
-dummy = [x0Nodes.append(i) for i in range(nodes.numInternalNodes) if pos[i].x < -0.5*length + 5*dx]
-dummy = [x1Nodes.append(i) for i in range(nodes.numInternalNodes) if pos[i].x >  0.5*length - 5*dx]
+x0Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x < -0.5*length + 5*dx]
+x1Nodes = [i for i in range(nodes.numInternalNodes) if pos[i].x >  0.5*length - 5*dx]
 print("Selected %i constant velocity nodes." % (mpi.allreduce(len(x0Nodes) + len(x1Nodes), mpi.SUM)))
 
 # Set the nodes we're going to control to one single velocity at each end.

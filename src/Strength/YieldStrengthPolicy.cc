@@ -67,7 +67,7 @@ update(const KeyType& key,
   const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
   const auto& plasticStrain = state.field(buildKey(SolidFieldNames::plasticStrain), 0.0);
   const auto& plasticStrainRate = derivs.field(buildKey(SolidFieldNames::plasticStrainRate), 0.0);
-  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
 
   // Things change depending on porosity...
   if (usePorosity) {

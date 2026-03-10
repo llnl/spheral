@@ -5,7 +5,7 @@ from WaveSpeedBaseAbstractMethods import *
 # Base class for riemann solver wave speeds
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class WaveSpeedBase:
 
     PYB11typedefs = """
@@ -22,7 +22,7 @@ PYB11inject(WaveSpeedBaseAbstractMethods, WaveSpeedBase, pure_virtual=True)
 # acoustic wave speed
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class AcousticWaveSpeed(WaveSpeedBase):
 
     PYB11typedefs = """
@@ -50,7 +50,7 @@ class AcousticWaveSpeed(WaveSpeedBase):
 # Davis wave speed
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class DavisWaveSpeed(WaveSpeedBase):
 
     PYB11typedefs = """
@@ -79,7 +79,7 @@ class DavisWaveSpeed(WaveSpeedBase):
 # einfeldt wave speed
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-@PYB11module("SpheralGSPH")
+@PYB11module("SpheralCompiledModules.SpheralGSPH")
 class EinfeldtWaveSpeed(WaveSpeedBase):
 
     PYB11typedefs = """

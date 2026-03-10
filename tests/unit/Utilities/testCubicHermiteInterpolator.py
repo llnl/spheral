@@ -186,12 +186,12 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
             # If requested, check for monotonicity in interpolation
             if checkMonotonicity:
                 i0 = F.lowerBound(x)
-                passing = (F(x) - F.vals[i0])*(F(x) - F.vals[i0 + 1]) <= 0.0
+                passing = (F(x) - F[i0])*(F(x) - F[i0 + 1]) <= 0.0
                 if not passing:
                     #print(F.vals)
                     self.plotem(x, xmin, xmax, func, F)
                 self.assertTrue(passing,
-                                "Failing monotonicity test for {}: F({}) = {} not in [{}, {}]".format(errorLabel, x, F(x), F.vals[i0], F.vals[i0 + 1]))
+                                "Failing monotonicity test for {}: F({}) = {} not in [{}, {}]".format(errorLabel, x, F(x), F[i0], F[i0 + 1]))
 
         return
 

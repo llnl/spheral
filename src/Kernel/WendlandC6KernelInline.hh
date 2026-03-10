@@ -33,14 +33,6 @@ WendlandC6Kernel< Dim<3> >::WendlandC6Kernel():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-WendlandC6Kernel<Dimension>::~WendlandC6Kernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

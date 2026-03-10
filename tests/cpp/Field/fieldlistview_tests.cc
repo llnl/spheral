@@ -44,6 +44,8 @@ public:
       (space == chai::CPU) ? fl_count.HNumAlloc++ : fl_count.DNumAlloc++;
     if (action == chai::ACTION_FREE)
       (space == chai::CPU) ? fl_count.HNumFree++ : fl_count.DNumFree++;
+    // DEBUG_LOG << "fl_callback: " << action << " " << space << " : " << chai::ACTION_MOVE << " " << chai::ACTION_ALLOC << " " << chai::ACTION_FREE << " : " << chai::CPU << " " << chai::GPU;
+    // fl_count.print();
     };
   }
 
@@ -64,36 +66,39 @@ public:
 TYPED_TEST_SUITE_P(FieldListViewTypedTest);
 template <typename T> class FieldListViewTypedTest : public FieldListViewTest {};
 
+//------------------------------------------------------------------------------
+// Capture on device
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, val);
     FieldListDouble field_list;
 
-    field_list.appendField(field);
+    field_list.appendField(field1);
     field_list.appendField(field2);
 
-    const size_t numFields = field_list.size() ;
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+    const size_t numFields = field_list.size();
+    auto fl_v = field_list.view(gpu_this->fl_callback(), gpu_this->f_callback());
 
     RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
         SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
+        SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
       });
   }
 
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {1, 0, 1, 1, 1, 1};
+    fl_ref_count = {1, 0, 0, 1, 1, 1};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 1, 0, 1, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -103,55 +108,60 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, BasicCapture) {
 
 // TODO: Add test for having multiple FL contain the same field
 
+//------------------------------------------------------------------------------
+// multi-scope
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, val);
-    FieldListDouble field_list;
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
 
-    field_list.appendField(field);
+    FieldListDouble field_list;
+    field_list.appendField(field1);
     field_list.appendField(field2);
 
     const size_t numFields = field_list.size() ;
 
     { // Scope 1
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 1";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 1";
+      DEBUG_LOG << "Start Kernel 1";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 1";
 
-    fl_v.touch(chai::CPU, true);
+      fl_v.touch(chai::CPU, true);
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 2";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 2";
+      DEBUG_LOG << "Start Kernel 2";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
   }
 
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 2, 0, 2, 2, 2, 2 };
+    fl_ref_count = { 2, 0, 0, 1, 1, 1 };
     f_ref_count  = { 4, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -159,53 +169,58 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeAndTouch) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+//------------------------------------------------------------------------------
+// multi-scope no touch
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, val);
-    FieldListDouble field_list;
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
 
-    field_list.appendField(field);
+    FieldListDouble field_list;
+    field_list.appendField(field1);
     field_list.appendField(field2);
 
     const size_t numFields = field_list.size();
 
     { // Scope 1
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 1";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 1";
+      DEBUG_LOG << "Start Kernel 1";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 1";
     } // Scope 1
 
     { // Scope 2
-    auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
-    DEBUG_LOG << "Start Kernel 2";
-    RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
-        SPHERAL_ASSERT_EQ(fl_v[i].size(), N);
-      });
-    DEBUG_LOG << "Stop Kernel 2";
+      DEBUG_LOG << "Start Kernel 2";
+      RAJA::forall<TypeParam>(TRS_UINT(0, numFields),
+                              [=] SPHERAL_HOST_DEVICE (size_t i) {
+                                SPHERAL_ASSERT_EQ(fl_v.size(), numFields);
+                                SPHERAL_ASSERT_EQ(fl_v[i].numElements(), N);
+                              });
+      DEBUG_LOG << "Stop Kernel 2";
     } // Scope 2
   }
 
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 2, 0, 2, 2, 2, 2 };
+    fl_ref_count = { 1, 0, 0, 1, 1, 1 };
     f_ref_count  = { 2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -213,21 +228,25 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiScopeNoTouch) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+//------------------------------------------------------------------------------
 // Test calling FieldListView move function
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, 2.*val);
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
+    
     FieldListDouble field_list;
-
-    field_list.appendField(field);
+    field_list.appendField(field1);
     field_list.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
       RAJA::forall<TypeParam>(TRS_UINT(0, N),
         [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -245,10 +264,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 1, 1, 1, 1, 1, 1 };
+    fl_ref_count = { 1, 1, 0, 1, 1, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 1, 0, 1, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -256,21 +275,25 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MoveTest) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+//------------------------------------------------------------------------------
 // Test implicit move of Field and FieldList from host RAJA launch
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, 2.*val);
-    FieldListDouble field_list;
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
 
-    field_list.appendField(field);
+    FieldListDouble field_list;
+    field_list.appendField(field1);
     field_list.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
       RAJA::forall<TypeParam>(TRS_UINT(0, N),
         [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -288,10 +311,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = { 1, 1, 1, 1, 1, 1 };
+    fl_ref_count = { 1, 1, 0, 1, 1, 1 };
     f_ref_count  = { 2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 1, 0, 1, 0};
+    fl_ref_count = {0, 0, 0, 0, 1, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -299,27 +322,31 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostRajaTest) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+//------------------------------------------------------------------------------
 // Test implicit copying after host side modification
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, 2.*val);
-    FieldListDouble field_list;
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
 
-    field_list.appendField(field);
+    FieldListDouble field_list;
+    field_list.appendField(field1);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
 
       EXEC_IN_SPACE_BEGIN(TypeParam)
         SPHERAL_ASSERT_EQ(fl_v.size(), 1);
       EXEC_IN_SPACE_END()
 
       field_list.appendField(field2);
-      fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      fl_v = field_list.view(gpu_this->fl_callback());
 
       EXEC_IN_SPACE_BEGIN(TypeParam)
         SPHERAL_ASSERT_EQ(fl_v.size(), 2);
@@ -329,10 +356,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {2, 0, 2, 2, 2, 2};
+    fl_ref_count = {2, 0, 1, 2, 2, 2};
     f_ref_count  = {2, 0, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 2, 0};
+    fl_ref_count = {0, 0, 1, 0, 2, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 
@@ -340,23 +367,27 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, HostResize) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+//------------------------------------------------------------------------------
 // Test multiple FieldLists holding the same Field
+//------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
 
   const double val = 4.;
   NodeList_t nl1 = gpu_this->createNodeList("NL1");
   NodeList_t nl2 = gpu_this->createNodeList("NL2");
   {
-    FieldDouble field("TestField1", nl1, val);
+    FieldDouble field1("TestField1", nl1, val);
     FieldDouble field2("TestField2", nl2, 2.*val);
-    FieldListDouble field_list, field_list2;
+    field1.setCallback(gpu_this->f_callback());
+    field2.setCallback(gpu_this->f_callback());
 
-    field_list.appendField(field);
+    FieldListDouble field_list, field_list2;
+    field_list.appendField(field1);
     field_list.appendField(field2);
     field_list2.appendField(field2);
     {
-      auto fl_v = field_list.toView(gpu_this->fl_callback(), gpu_this->f_callback());
-      auto fl_v2 = field_list2.toView(gpu_this->fl_callback(), gpu_this->f_callback());
+      auto fl_v = field_list.view(gpu_this->fl_callback());
+      auto fl_v2 = field_list2.view(gpu_this->fl_callback());
       RAJA::forall<RAJA::seq_exec>(TRS_UINT(0, N),
         [=] (size_t i) {
           fl_v(1, i) += (double)i;
@@ -382,10 +413,10 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters fl_ref_count, f_ref_count;
   if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
-    fl_ref_count = {2, 2, 2, 2, 2, 2};
+    fl_ref_count = {2, 2, 0, 2, 2, 2};
     f_ref_count  = {2, 2, 0, 2, 0, 2};
   } else {
-    fl_ref_count = {0, 0, 2, 0, 2, 0};
+    fl_ref_count = {0, 0, 0, 0, 2, 0};
     f_ref_count  = {0, 0, 0, 0, 0, 0};
   }
 

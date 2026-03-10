@@ -17,12 +17,6 @@
 #include "Boundary/ReflectingBoundary.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -275,7 +269,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field)
     CHECK(ghostItr < this->ghostEnd(nodeList));
     CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
-    val = ThirdRankTensor::zero;
+    val = ThirdRankTensor::zero();
     const ThirdRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -314,7 +308,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field
     CHECK(ghostItr < this->ghostEnd(nodeList));
     CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
-    val = FourthRankTensor::zero;
+    val = FourthRankTensor::zero();
     const FourthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -357,7 +351,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field)
     CHECK(ghostItr < this->ghostEnd(nodeList));
     CHECK(*controlItr >= 0 && *controlItr < nodeList.numNodes());
     CHECK(*ghostItr >= nodeList.firstGhostNode() && *ghostItr < nodeList.numNodes());
-    val = FifthRankTensor::zero;
+    val = FifthRankTensor::zero();
     const FifthRankTensor& fc = field(*controlItr);
     for (unsigned i = 0; i != Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -519,7 +513,7 @@ enforceBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) co
   ThirdRankTensor val;
   for (auto ii: violationNodes) {
     CHECK(ii < nodeList.numInternalNodes());
-    val = ThirdRankTensor::zero;
+    val = ThirdRankTensor::zero();
     const ThirdRankTensor& fc = field(ii);
     for (auto i = 0u; i < Dimension::nDim; ++i) {
       for (auto j = 0u; j < Dimension::nDim; ++j) {
@@ -551,7 +545,7 @@ enforceBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field) c
   FourthRankTensor val;
   for (auto ii: violationNodes) {
     CHECK(ii < nodeList.numInternalNodes());
-    val = FourthRankTensor::zero;
+    val = FourthRankTensor::zero();
     const FourthRankTensor& fc = field(ii);
     for (auto i = 0u; i < Dimension::nDim; ++i) {
       for (auto j = 0u; j < Dimension::nDim; ++j) {
@@ -587,7 +581,7 @@ enforceBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) co
   FifthRankTensor val;
   for (auto ii: violationNodes) {
     CHECK(ii < nodeList.numInternalNodes());
-    val = FifthRankTensor::zero;
+    val = FifthRankTensor::zero();
     const FifthRankTensor& fc = field(ii);
     for (auto i = 0u; i < Dimension::nDim; ++i) {
       for (auto j = 0u; j < Dimension::nDim; ++j) {
@@ -777,7 +771,7 @@ enforceBoundary(vector<typename Dimension::ThirdRankTensor>& faceField,
        itr != faceIDs.end();
        ++itr) {
     CHECK(*itr < faceField.size());
-    val = ThirdRankTensor::zero;
+    val = ThirdRankTensor::zero();
     const ThirdRankTensor& fc = faceField[*itr];
     for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -812,7 +806,7 @@ enforceBoundary(vector<typename Dimension::FourthRankTensor>& faceField,
        itr != faceIDs.end();
        ++itr) {
     CHECK(*itr < faceField.size());
-    val = FourthRankTensor::zero;
+    val = FourthRankTensor::zero();
     const FourthRankTensor& fc = faceField[*itr];
     for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {
@@ -851,7 +845,7 @@ enforceBoundary(vector<typename Dimension::FifthRankTensor>& faceField,
        itr != faceIDs.end();
        ++itr) {
     CHECK(*itr < faceField.size());
-    val = FifthRankTensor::zero;
+    val = FifthRankTensor::zero();
     const FifthRankTensor& fc = faceField[*itr];
     for (unsigned i = 0u; i < Dimension::nDim; ++i) {
       for (unsigned j = 0; j != Dimension::nDim; ++j) {

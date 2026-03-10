@@ -13,12 +13,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -40,7 +34,6 @@ computeSolidCRKSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityM
   REQUIRE(H.size() == numNodeLists);
 
   typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
 
   const auto W0 = W.kernelValue(0.0, 1.0);
 
@@ -60,7 +53,6 @@ computeSolidCRKSPHSumMassDensity(const ConnectivityMap<Dimension>& connectivityM
   {
     // Some scratch variables.
     int i, j, nodeListi, nodeListj;
-    Vector rij, etai, etaj;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto massDensity_thread = massDensity.threadCopy(threadStack);

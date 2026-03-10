@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-# Adding -B to prevent byte-compiling
-@SPHERAL_EXEC_DIR@/.venv/bin/python -B "$@"
-exit_result=$?
-exit $exit_result

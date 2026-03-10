@@ -1,12 +1,24 @@
 packages:
   all:
-    compiler: [rocmcc]
     providers:
       blas: [openblas]
       lapack: [openblas]
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]
+    permissions:
+      read: group
+      write: group
+      group: sduser
+  llvm-amdgpu:
+    externals:
+    - spec: llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang
+          cxx: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/bin/amdflang
   cmake:
     version: [3.24.2]
     buildable: false
@@ -36,61 +48,39 @@ packages:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: hip@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
-  llvm-amdgpu:
-    version: [6.2.0]
-    buildable: false
-    externals:
-    - spec: llvm-amdgpu@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/llvm
+    - spec: hip@6.2.0%llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/
   hsa-rocr-dev:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+    - spec: hsa-rocr-dev@6.2.0%llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocminfo:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocminfo@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+    - spec: rocminfo@6.2.0%llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocm-device-libs:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocm-device-libs@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+    - spec: rocm-device-libs@6.2.0%llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
   rocprim:
     version: [6.2.0]
     buildable: false
     externals:
-    - spec: rocprim@6.2.0%rocmcc@6.2.0
-      prefix: /opt/rocm-6.2.0/
+    - spec: rocprim@6.2.0%llvm-amdgpu@6.2.0
+      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
 
 # ------ SYSTEM LIBS -------
-  py-decorator:
-    externals:
-    - spec: py-decorator@5.1.1
-      prefix: /collab/usr/gapps/python/build/spack-toss4.1/var/spack/environments/python/._view/75prb56irmif5ejtirjthpx6kq3gqo52/lib/python3.9/site-packages
-    buildable: false
-  py-pip:
-    externals:
-    - spec: py-pip@22.0.4
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
   readline:
     externals:
     - spec: readline@7.0
       prefix: /usr
     buildable: false
-  python:
-    externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
-
   autoconf:
     externals:
     - spec: autoconf@2.69
@@ -116,7 +106,16 @@ packages:
     - spec: m4@1.4.18
       prefix: /usr
     buildable: false
-
+  tcl:
+    externals:
+    - spec: tcl@8.6.8
+      prefix: /usr
+    buildable: false
+  tk:
+    externals:
+    - spec: tk@8.6.8
+      prefix: /usr
+    buildable: false
   netlib-lapack:
     buildable: false
     externals:

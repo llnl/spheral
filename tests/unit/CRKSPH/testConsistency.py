@@ -101,7 +101,7 @@ FacetedVolume = {"1d" : Box1d,
 #-------------------------------------------------------------------------------
 # Appropriately set generic object names based on the test dimensionality.
 #-------------------------------------------------------------------------------
-exec("from Spheral%s import *" % testDim)
+exec("from Spheral%s import *" % testDim, globals())
 
 ## import Spheral
 ## for name in [x for x in Spheral.__dict__ if testDim in x]:

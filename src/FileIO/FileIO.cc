@@ -15,14 +15,8 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
 namespace py = pybind11;
 #endif
 
@@ -268,7 +262,7 @@ FileIO::fileOpen() const {
   return mFileOpen;
 }
 
-#ifndef CXXONLY
+#ifdef SPHERAL_ENABLE_PYTHON
 //------------------------------------------------------------------------------
 // Python objects (handle with pickle)
 //------------------------------------------------------------------------------

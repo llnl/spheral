@@ -38,7 +38,7 @@ void sidreReadVec(axom::sidre::Group* grp, DataType& value, const std::string& p
 template <typename DataType>
 void sidreWriteGeom(axom::sidre::Group* grp, const DataType& value, const std::string& path)
 {
-  int size = int(DataType::numElements);
+  int size = int(DataType::numElements());
   axom::sidre::Buffer* buff = grp->getDataStore()->createBuffer()
                                           ->allocate(axom::sidre::DOUBLE_ID, size)
                                           ->copyBytesIntoBuffer((void*)value.begin(), sizeof(double) * (size));
@@ -49,7 +49,7 @@ template <typename DataType>
 void sidreReadGeom(axom::sidre::Group* grp, DataType& value, const std::string& path)
 {
   double* data = grp->getView(path)->getArray();
-  for (int i = 0; i < int(DataType::numElements); ++i)
+  for (int i = 0; i < int(DataType::numElements()); ++i)
     value[i] = data[i];
 }
 //------------------------------------------------------------------------------
@@ -94,15 +94,15 @@ void sidreWriteField(axom::sidre::Group* grp,
 {
   int size = field.numInternalElements();
   axom::sidre::DataTypeId dtype = field.getAxomTypeID();
-  std::vector<double> fieldData(size * DataType::numElements);
+  std::vector<double> fieldData(size * DataType::numElements());
 
   for (int i = 0; i < size; ++i)
-    std::copy(field(i).begin(), field(i).end(), &fieldData[i * DataType::numElements]);
+    std::copy(field(i).begin(), field(i).end(), &fieldData[i * DataType::numElements()]);
 
   axom::sidre::Buffer* buff = grp->getDataStore()->createBuffer()
-                                          ->allocate(dtype, size * DataType::numElements)
-                                          ->copyBytesIntoBuffer((void*)fieldData.data(), sizeof(double) * (size * DataType::numElements));
-  grp->createView(path, dtype, size * DataType::numElements, buff);
+                                          ->allocate(dtype, size * DataType::numElements())
+                                          ->copyBytesIntoBuffer((void*)fieldData.data(), sizeof(double) * (size * DataType::numElements()));
+  grp->createView(path, dtype, size * DataType::numElements(), buff);
 }
 
 template <typename Dimension, typename DataType,
@@ -114,9 +114,9 @@ void sidreReadField(axom::sidre::Group* grp,
 {
   double* data = grp->getView(path)->getArray();
 
-  for (int i = 0; i < (grp->getView(path)->getNumElements() / (DataType::numElements)); ++i)
-    for (int j = 0; j < int(DataType::numElements); ++j)
-      field[i][j] = data[(i * (DataType::numElements)) + j];
+  for (int i = 0; i < (grp->getView(path)->getNumElements() / (DataType::numElements())); ++i)
+    for (int j = 0; j < int(DataType::numElements()); ++j)
+      field[i][j] = data[(i * (DataType::numElements())) + j];
 }
 
 //------------------------------------------------------------------------------
@@ -171,12 +171,12 @@ void SidreFileIO::open(const std::string fileName, AccessType access)
 
   if (access == AccessType::Read)
   {
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     axom::sidre::IOManager reader(Communicator::communicator());
     reader.read(baseGroup, fileName + ".root");
 #else
     baseGroup->load(fileName);
-#endif // USE_MPI
+#endif // ENABLE_MPI
   }
 
   VERIFY2(mDataStorePtr != 0, "SidreFileIO ERROR: unable to open " << fileName);
@@ -190,12 +190,12 @@ void SidreFileIO::close()
 {
   if (mDataStorePtr != 0)
   {
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
     axom::sidre::IOManager writer(Communicator::communicator());
     writer.write(baseGroup, numRestartFiles, mFileName, "sidre_hdf5");
 #else
     baseGroup->save(mFileName);
-#endif // USE_MPI
+#endif // ENABLE_MPI
     mDataStorePtr.reset();
   }
   mFileOpen = false;

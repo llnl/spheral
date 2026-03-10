@@ -87,10 +87,8 @@ private:
   //--------------------------- Private Interface ---------------------------//
   FieldList<Dim<3>, std::vector<Vector> > mGhostPositions;
 
-#ifndef __GCCXML__
   // The restart registration.
   RestartRegistrationType mRestart;
-#endif
 };
 
 }

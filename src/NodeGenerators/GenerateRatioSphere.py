@@ -33,7 +33,8 @@ class GenerateRatioSphere2d(NodeGeneratorBase):
                  nNodePerh = 2.01,
                  SPH = False,
                  rejecter = None,
-                 perturbFunc = None):
+                 perturbFunc = None,
+                 skipFinalInitialization = False):     # Only for use by 3D ratio generator (not users)
 
         nNodePerh = float(nNodePerh)  # Just to be sure...
 
@@ -171,8 +172,9 @@ class GenerateRatioSphere2d(NodeGeneratorBase):
 
         # Have the base class break up the serial node distribution
         # for parallel cases.
-        NodeGeneratorBase.__init__(self, True,
-                                   self.x, self.y, self.m, self.H)
+        if not skipFinalInitialization:
+            NodeGeneratorBase.__init__(self, True,
+                                       self.x, self.y, self.m, self.H)
         return
 
     #---------------------------------------------------------------------------
@@ -242,15 +244,15 @@ class GenerateRatioSphere3d(NodeGeneratorBase):
                                            distributionType = distributionType, 
                                            aspectRatio = aspectRatio,
                                            nNodePerh = nNodePerh, 
-                                           SPH = SPH)
+                                           SPH = SPH,
+                                           skipFinalInitialization = True)
 
-        # The 2D class already split the nodes up between processors, but
-        # we want to handle that ourselves.  Distribute the full set of RZ
-        # nodes to every process, then redecompose them below.
-        self.x = mpi.allreduce(self.gen2d.x[:], mpi.SUM)
-        self.y = mpi.allreduce(self.gen2d.y[:], mpi.SUM)
-        self.m = mpi.allreduce(self.gen2d.m[:], mpi.SUM)
-        self.H = mpi.allreduce(self.gen2d.H[:], mpi.SUM)
+        # At this point every process generated the full 2D distribution redundantly.
+        # Add a z coordinate array of the same size.
+        self.x = self.gen2d.x
+        self.y = self.gen2d.y
+        self.m = self.gen2d.m
+        self.H = self.gen2d.H
         n = len(self.x)
         self.z = [0.0]*n
         self.globalIDs = [0]*n
@@ -292,15 +294,15 @@ class GenerateRatioSphere3d(NodeGeneratorBase):
         # the x-axis.  We use a C++ helper method for the sake of speed.
         kernelExtent = 2.0
         extras = []
-        xvec = self.vectorFromList(self.x, vector_of_double)
-        yvec = self.vectorFromList(self.y, vector_of_double)
-        zvec = self.vectorFromList(self.z, vector_of_double)
-        mvec = self.vectorFromList(self.m, vector_of_double)
-        Hvec = self.vectorFromList(self.H, vector_of_SymTensor3d)
-        globalIDsvec = self.vectorFromList(self.globalIDs, vector_of_int)
+        xvec = vector_of_double(self.x)
+        yvec = vector_of_double(self.y)
+        zvec = vector_of_double(self.z)
+        mvec = vector_of_double(self.m)
+        Hvec = vector_of_SymTensor3d(self.H)
+        globalIDsvec = vector_of_int(self.globalIDs)
         extrasVec = vector_of_vector_of_double()
         for extra in extras:
-            extrasVec.append(self.vectorFromList(extra, vector_of_double))
+            extrasVec.append(vector_of_double(extra))
         generateCylDistributionFromRZ(xvec, yvec, zvec, mvec, Hvec, globalIDsvec,
                                       extrasVec,
                                       nNodePerh, kernelExtent, phi,

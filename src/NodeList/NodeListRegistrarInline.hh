@@ -7,18 +7,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Get the instance.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-NodeListRegistrar<Dimension>&
-NodeListRegistrar<Dimension>::
-instance() {
-  static NodeListRegistrar theInstance;
-  return theInstance;
-}
-
-//------------------------------------------------------------------------------
 // The number of NodeLists currently registered.
 //------------------------------------------------------------------------------
 template<typename Dimension>

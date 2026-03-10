@@ -310,7 +310,7 @@ slidingSpringDamper(const typename Dimension::Scalar k,
   if (allowSliding and (forceTotal.magnitude() > mus * fnMag)){
     forceTotal = mud*fnMag*forceTotal.unitVector();
     xNew = (forceDamper.magnitude() > mud*fnMag ? 
-                      Vector::zero : 
+                      Vector::zero() : 
                       -(forceTotal-forceDamper)*invK );
   }
 }

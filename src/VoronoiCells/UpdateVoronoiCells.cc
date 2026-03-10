@@ -82,11 +82,11 @@ update(const KeyType& key,
 
   // State we need to compute the Voronoi cells
   const auto& cm = state.connectivityMap();
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
 
   // Use m/rho to estimate our weighting to roughly match cell volumes
   const auto numNodeLists = cells.numFields();

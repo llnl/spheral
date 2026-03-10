@@ -4,7 +4,7 @@
 #
 # The list of python files should be passed as the arguments
 #
-# Note, if ENABLE_CXXONLY is set, this function does nothing
+# Note, if SPHERAL_ENABLE_PYTHON is set to OFF, this function does nothing
 #-----------------------------------------------------------------------------------
 
 
@@ -20,18 +20,15 @@ function(spheral_install_python_files)
     COPYONLY)
   endforeach()
 
-  if (NOT ENABLE_CXXONLY)
+  if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${ARGV}
       DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
-    install(CODE "execute_process( \
-    COMMAND ${PYTHON_EXE} -m compileall ${SPHERAL_SITE_PACKAGES_PATH}/Spheral \
-            WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX})")
   endif()
 
 endfunction()
 
 #----------------------------------------------------------------------------------------
-#                                   spheral_instalL_python_tests
+#                                   spheral_install_python_tests
 #----------------------------------------------------------------------------------------
 # ----------------------
 # INPUT VARIABLES
@@ -46,7 +43,7 @@ function(spheral_install_python_tests test_dir test_dest)
     PATTERN "*.cmake" EXCLUDE
     PATTERN "*.in" EXCLUDE
     PATTERN "*.pyc" EXCLUDE
-    PATTERN "performance.py" EXCLUDE
+    PATTERN "__pycache__" EXCLUDE
+    PATTERN "cpp" EXCLUDE
     PATTERN "*~" EXCLUDE)
-  # performance.py must be installed in the top test directory
 endfunction()

@@ -123,7 +123,7 @@ vector<typename State<Dimension>::KeyType>
 State<Dimension>::
 policyKeys() const {
   vector<KeyType> result;
-  for (const auto itr: mPolicyMap) result.push_back(itr.first);
+  for (const auto& itr: mPolicyMap) result.push_back(itr.first);
   ENSURE(result.size() == mPolicyMap.size());
   return result;
 }

@@ -31,6 +31,8 @@ namespace Spheral {
 
 // Forward declaration.
 template<typename Dimension> class NodeList;
+template<typename Dimension> class FieldBase;
+template<typename Dimension> class FieldListBase;
 template<typename Dimension, typename Value> class Field;
 template<typename Dimension, typename Value> class FieldList;
 template<typename Dimension> class ConnectivityMap;
@@ -46,7 +48,6 @@ public:
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
-  using Vector3d = typename Dimension::Vector3d;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using ThirdRankTensor = typename Dimension::ThirdRankTensor;
@@ -76,6 +77,7 @@ public:
   virtual              void enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr);
   virtual              void enroll(FieldListBase<Dimension>& fieldList);
   template<typename T> void enroll(const KeyType& key, T& thing);
+  template<typename T> void enrollCopy(const KeyType& key, T& thing);
 
   //............................................................................
   // Access Fields

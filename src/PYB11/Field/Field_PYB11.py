@@ -56,6 +56,7 @@ for ndim in dims:
     exec(f'''
 FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension}")
 ''')
+
     #...........................................................................
     # non-numeric types
     for (value, label) in ((f"{Dimension}::FacetedVolume",       "FacetedVolume"),
@@ -64,10 +65,14 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
                            ( "std::vector<uint64_t>",            "VectorULL"),
                            ( "std::vector<double>",              "VectorDouble"),
                            (f"std::vector<{Vector}>",            "VectorVector"),
-                           (f"std::vector<{Tensor}>",            "VectorSymTensor"),
+                           (f"std::vector<{Tensor}>",            "VectorTensor"),
+                           (f"std::vector<{SymTensor}>",         "VectorSymTensor"),
                            ( "std::vector<CellFaceFlag>",        "vector_of_CellFaceFlag"),
                            (f"DomainNode<{Dimension}>",          "DomainNode"),
-                           (f"RKCoefficients<{Dimension}>",      "RKCoefficients")):
+                           (f"RKCoefficients<{Dimension}>",      "RKCoefficients"),
+                           (ThirdRankTensor,  "ThirdRankTensor"),
+                           (FourthRankTensor, "FourthRankTensor"),
+                           (FifthRankTensor,  "FifthRankTensor")):
         exec(f'''
 {label}Field{ndim}d = PYB11TemplateClass(Field, template_parameters=("{Dimension}", "{value}"))
 ''')
@@ -78,18 +83,15 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
                            ("unsigned",       "Unsigned"),
                            ("uint64_t",       "ULL"),
                            (Vector,           "Vector"),
-                           (Tensor,           "Tensor"),
-                           (ThirdRankTensor,  "ThirdRankTensor"),
-                           (FourthRankTensor, "FourthRankTensor"),
-                           (FifthRankTensor,  "FifthRankTensor")):
+                           (Tensor,           "Tensor")):
         exec(f'''
 {label}Field{ndim}d = PYB11TemplateClass(ArithmeticField, template_parameters=("{Dimension}", "{value}"))
 ''')
 
     #...........................................................................
     # A few fields can apply the min/max with a scalar addtionally
-    for (value, label) in ((Scalar,     "Scalar"),
-                           (SymTensor,  "SymTensor")):
+    for (value, label) in ((Scalar,           "Scalar"),
+                           (SymTensor,        "SymTensor")):
         exec(f'''
 {label}Field{ndim}d = PYB11TemplateClass(MinMaxField, template_parameters=("{Dimension}", "{value}"))
 ''')
@@ -97,7 +99,7 @@ FieldBase{ndim}d = PYB11TemplateClass(FieldBase, template_parameters="{Dimension
     #...........................................................................
     # STL collections of Field types
     for value, label in (("int",     "Int"),
-                         ("double",  "Scalar"),
+                         (Scalar,    "Scalar"),
                          (Vector,    "Vector"),
                          (Tensor,    "Tensor"),
                          (SymTensor, "SymTensor")):

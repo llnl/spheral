@@ -12,9 +12,7 @@
 #define __Spheral_Field__
 
 #include "Field/FieldBase.hh"
-
-#include "FieldBase.hh"
-#include "FieldView.hh"
+#include "Field/FieldView.hh"
 #include "Utilities/Logger.hh"
 
 #include "axom/sidre.hpp"
@@ -28,6 +26,7 @@
 #endif
 
 #include <vector>
+#include <functional>
 
 namespace Spheral {
 
@@ -46,8 +45,9 @@ using DataAllocator = std::allocator<DataType>;
 #endif
 
 template<typename Dimension, typename DataType>
-class Field: 
-    public FieldBase<Dimension> {
+class Field:
+    public FieldBase<Dimension>,
+    public FieldView<Dimension, DataType> {
    
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -61,12 +61,17 @@ public:
   using FieldDataType = DataType;
   using value_type = DataType;      // STL compatibility.
 
-  using ViewType = FieldView<Dimension, DataType>;
-
-  using iterator = typename std::vector<DataType,DataAllocator<DataType>>::iterator;
+  using iterator = typename FieldView<Dimension, DataType>::iterator;
   using const_iterator = typename std::vector<DataType,DataAllocator<DataType>>::const_iterator;
 
+  using ViewType = FieldView<Dimension, DataType>;
+
+  // Bring in various methods hidden in FieldView
+  using FieldView<Dimension, DataType>::operator();
+  using FieldView<Dimension, DataType>::operator[];
+
   // Constructors.
+  Field() = delete;
   explicit Field(FieldName name);
   Field(FieldName name, const Field& field);
   Field(FieldName name,
@@ -93,101 +98,72 @@ public:
   // Comparisons
   virtual bool operator==(const FieldBase<Dimension>& rhs) const override;
 
-  // Element access.
-  DataType& operator()(size_t index);
-  const DataType& operator()(size_t index) const;
+  // Foward the FieldView Field-Field comparison operators
+  bool operator==(const Field& rhs) const { return ViewType::operator==(rhs); }
+  bool operator!=(const Field& rhs) const { return ViewType::operator!=(rhs); }
 
+  // Comparison operators (Field-value element wise).
+  bool operator==(const DataType& rhs) const { return ViewType::operator==(rhs); }
+  bool operator!=(const DataType& rhs) const { return ViewType::operator!=(rhs); }
+  bool operator> (const DataType& rhs) const { return ViewType::operator> (rhs); }
+  bool operator< (const DataType& rhs) const { return ViewType::operator< (rhs); }
+  bool operator>=(const DataType& rhs) const { return ViewType::operator>=(rhs); }
+  bool operator<=(const DataType& rhs) const { return ViewType::operator<=(rhs); }
+
+  // Element access by NodeIterator
   DataType& operator()(const NodeIteratorBase<Dimension>& itr);
   const DataType& operator()(const NodeIteratorBase<Dimension>& itr) const;
 
-  DataType& operator[](const size_t index);
-  const DataType& operator[](const size_t index) const;
-
-  DataType& at(size_t index);
-  const DataType& at(size_t index) const;
-
   // The number of elements in the field.
-  size_t numElements() const;
-  size_t numInternalElements() const;
-  size_t numGhostElements() const;
   virtual size_t size() const override                                      { return mDataArray.size(); }
 
   // Zero out the field elements.
   virtual void Zero() override;
 
-  // Methods to apply limits to Field data members.
-  void applyMin(const DataType& dataMin);
-  void applyMax(const DataType& dataMax);
-
-  void applyScalarMin(const double dataMin);
-  void applyScalarMax(const double dataMax);
+  // Forward the in-place arithmetic operations from FieldView
+  Field& operator+=(const ViewType& rhs)                       { return static_cast<Field&>(ViewType::operator+=(rhs)); }
+  Field& operator-=(const ViewType& rhs)                       { return static_cast<Field&>(ViewType::operator-=(rhs)); }
+  Field& operator+=(const DataType& rhs)                       { return static_cast<Field&>(ViewType::operator+=(rhs)); }
+  Field& operator-=(const DataType& rhs)                       { return static_cast<Field&>(ViewType::operator-=(rhs)); }
+  Field& operator*=(const FieldView<Dimension, Scalar>& rhs)   { return static_cast<Field&>(ViewType::operator*=(rhs)); }
+  Field& operator/=(const FieldView<Dimension, Scalar>& rhs)   { return static_cast<Field&>(ViewType::operator/=(rhs)); }
+  Field& operator*=(const Scalar& rhs)                         { return static_cast<Field&>(ViewType::operator*=(rhs)); }
+  Field& operator/=(const Scalar& rhs)                         { return static_cast<Field&>(ViewType::operator/=(rhs)); }
 
   // Standard field additive operators.
   Field operator+(const Field& rhs) const;
   Field operator-(const Field& rhs) const;
 
-  Field& operator+=(const Field& rhs);
-  Field& operator-=(const Field& rhs);
-
   Field operator+(const DataType& rhs) const;
   Field operator-(const DataType& rhs) const;
-
-  Field& operator+=(const DataType& rhs);
-  Field& operator-=(const DataType& rhs);
 
   // Multiplication and division by scalar(s)
   Field operator*(const Field<Dimension, Scalar>& rhs) const;
   Field operator/(const Field<Dimension, Scalar>& rhs) const;
 
-  Field& operator*=(const Field<Dimension, Scalar>& rhs);
-  Field& operator/=(const Field<Dimension, Scalar>& rhs);
-
   Field operator*(const Scalar& rhs) const;
   Field operator/(const Scalar& rhs) const;
 
-  Field& operator*=(const Scalar& rhs);
-  Field& operator/=(const Scalar& rhs);
-
   // Some useful reduction operations.
-  DataType sumElements() const;
-  DataType min() const;
-  DataType max() const;
-
-  // Some useful reduction operations (local versions -- no MPI reductions)
-  DataType localSumElements() const;
-  DataType localMin() const;
-  DataType localMax() const;
-
-  // Comparison operators (Field-Field element wise).
-  bool operator==(const Field& rhs) const;
-  bool operator!=(const Field& rhs) const;
-  bool operator>(const Field& rhs) const;
-  bool operator<(const Field& rhs) const;
-  bool operator>=(const Field& rhs) const;
-  bool operator<=(const Field& rhs) const;
-
-  // Comparison operators (Field-value element wise).
-  bool operator==(const DataType& rhs) const;
-  bool operator!=(const DataType& rhs) const;
-  bool operator>(const DataType& rhs) const;
-  bool operator<(const DataType& rhs) const;
-  bool operator>=(const DataType& rhs) const;
-  bool operator<=(const DataType& rhs) const;
+  DataType sumElements(const bool includeGhosts = false) const;
+  DataType min(const bool includeGhosts = false) const;
+  DataType max(const bool includeGhosts = false) const;
 
   // Provide the standard iterator methods over the field.
-  iterator begin();
-  iterator end();
-  iterator internalBegin();
-  iterator internalEnd();
-  iterator ghostBegin();
-  iterator ghostEnd();
+  const_iterator begin() const                                              { return mDataArray.begin(); }
+  const_iterator end() const                                                { return mDataArray.end(); }
+  const_iterator internalBegin() const                                      { return mDataArray.begin(); }
+  const_iterator internalEnd() const                                        { return mDataArray.begin() + mNumInternalElements; }
+  const_iterator ghostBegin() const                                         { return mDataArray.begin() + mNumInternalElements; }
+  const_iterator ghostEnd() const                                           { return mDataArray.end(); }
 
-  const_iterator begin() const;
-  const_iterator end() const;
-  const_iterator internalBegin() const;
-  const_iterator internalEnd() const;
-  const_iterator ghostBegin() const;
-  const_iterator ghostEnd() const;
+  // We have to explicitly redefine the non-const iterators
+  iterator begin()                                                          { return ViewType::begin(); }
+  iterator end()                                                            { return ViewType::end(); }
+  iterator internalBegin()                                                  { return ViewType::internalBegin(); }
+  iterator internalEnd()                                                    { return ViewType::internalEnd(); }
+  iterator ghostBegin()                                                     { return ViewType::ghostBegin(); }
+  iterator ghostEnd()                                                       { return ViewType::ghostEnd(); }
 
   // Required functions from FieldBase
   virtual void setNodeList(const NodeList<Dimension>& nodeList) override;
@@ -216,39 +192,36 @@ public:
   // Functions to help with storing the field in a Sidre datastore.
   axom::sidre::DataTypeId getAxomTypeID() const;
 
-  // No default constructor.
-  Field() = delete;
+  // Callback method for CHAI
+  void setCallback(std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> f);
 
-  // ViewType controls.
-  ViewType toView();
-
-  template<typename T=DataType, typename F>
-  std::enable_if_t<std::is_trivially_copyable<T>::value, ViewType>
-  toView(F&& extension);
-
-  template<typename T=DataType, typename F>
-  std::enable_if_t<!std::is_trivially_copyable<T>::value, ViewType>
-  toView(F&&);
+  // Get the view (for trivially copyable types)
+  ViewType view();
+  template<typename CB>  ViewType view(CB&& field_callback);
 
 protected:
+  //--------------------------- Protected Interface ---------------------------//
   virtual void resizeField(size_t size) override;
   virtual void resizeFieldInternal(size_t size, size_t oldFirstGhostNode) override;
   virtual void resizeFieldGhost(size_t size) override;
   virtual void deleteElement(size_t nodeID) override;
   virtual void deleteElements(const std::vector<size_t>& nodeIDs) override;
 
-  template<typename F>
-  auto getFieldCallback(F callback);
-
 private:
   //--------------------------- Private Interface ---------------------------//
   // Private Data
   std::vector<DataType, DataAllocator<DataType>> mDataArray;
 
-  // ManagedArray owned by the field to ensure proper lifetime of the GPU data.
-  chai::ManagedArray<DataType> mManagedData;
+  using FieldView<Dimension, DataType>::mDataSpan;
+  using FieldView<Dimension, DataType>::mNumInternalElements;
+  using FieldView<Dimension, DataType>::mNumGhostElements;
 
-  bool mValid;
+  // Callback function for debugging CHAI
+  std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
+  auto getCallback();
+
+  // Helper method to keep mDataSpan and mDataArray consistent
+  void assignDataSpan();
 };
 
 } // namespace Spheral

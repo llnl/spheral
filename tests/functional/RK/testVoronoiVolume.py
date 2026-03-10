@@ -54,7 +54,7 @@ FacetedVolume = {"1d" : Box1d,
 #-------------------------------------------------------------------------------
 # Appropriately set generic object names based on the test dimensionality.
 #-------------------------------------------------------------------------------
-exec("from Spheral%s import *" % testDim)
+exec("from Spheral%s import *" % testDim, globals())
 
 #-------------------------------------------------------------------------------
 # Create a random number generator.
@@ -281,4 +281,4 @@ if ranfrac == 0.0:
         else:
             assert Vi == 0.0
 else:
-    print("random displacments -- no error check.")
+    print("random displacements -- no error check.")

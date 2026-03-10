@@ -1,25 +1,22 @@
 create-pages:
-  extends: [.toss_shell1]
+  extends: [.toss_perf_resource]
   variables:
-    GIT_SUBMODULE_STRATEGY: normal
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   stage: deploy
+  # Prevent this job from collecting artifacts
+  dependencies: []
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: public
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: '$CI_COMMIT_REF_NAME == "develop"'
-      when: always
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Deploy"'
     - if: '$CI_COMMIT_MESSAGE =~ /test-deploy/'
-      when: always
   script:
-    - python3 -m venv $HOME/docsvenv
-    - source $HOME/docsvenv/bin/activate
-    - python3 -m pip install --progress-bar off -U pip
-    - python3 -m pip install --progress-bar off llnl-thicket sphinx sphinx-rtd-theme sphinx-design ipython
-    - python3 $SCRIPT_DIR/lc/plot_hist_data.py --out-dir time_doc
-    - python3 -m sphinx -q time_doc/ public/
+    - source $HOME/docsenv/bin/activate
+    - srun -n 8 --cpus-per-task 14 python3 $SCRIPT_DIR/lc/plot_hist_data.py --threads 14 --pkg-name $SPHERAL_MODULE
   artifacts:
     paths:
       - public

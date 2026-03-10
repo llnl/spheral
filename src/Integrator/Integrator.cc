@@ -29,12 +29,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -155,7 +149,7 @@ selectDt(const typename Dimension::Scalar dtMin,
         dt.first >= dtMin and dt.first <= dtMax);
 
   // In the parallel case we need to find the minimum timestep across all processors.
-#ifdef GLOBALDT_REDUCTION
+#ifdef SPHERAL_ENABLE_GLOBALDT_REDUCTION
   const auto globalDt = allReduce(dt.first, SPHERAL_OP_MIN);
 #else
   const auto globalDt = dt.first;
@@ -164,11 +158,11 @@ selectDt(const typename Dimension::Scalar dtMin,
   // Are we verbose?
   if (dt.first == globalDt and 
       (verbose() or globalDt < mDtMin)) {
-    cout << "Selected timestep of "
-         << dt.first << endl
-         << dt.second << endl;
+    std::cout << "Selected timestep of "
+              << dt.first << std::endl
+              << dt.second << std::endl;
   }
-  cout.flush();
+  std::cout.flush();
   dt.first = globalDt;
 
   return dt.first;
@@ -201,9 +195,8 @@ Integrator<Dimension>::initializeDerivatives(const double t,
 
   // Initialize the work fields.
   auto& db = mDataBase.get();
-  for (auto* nodeListPtr: range(db.nodeListBegin(), db.nodeListEnd())) {
-    nodeListPtr->work() = 0.0;
-  }
+  auto work = db.globalWork();
+  work = 0.0;
 
   // Loop over the physics packages and perform any necessary initializations.
   auto updateBoundaries = false;
@@ -524,7 +517,7 @@ Integrator<Dimension>::setGhostNodes() const {
       {
         for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
           ENSURE(flags[nodeListi]->numElements() == 0 or
-                 *min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
+                 *std::min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
         }
       }
       END_CONTRACT_SCOPE
@@ -681,10 +674,10 @@ template<typename Dimension>
 void
 Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
                                       State<Dimension>& state1) const {
-  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero);
-  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero);
-  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero);
-  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero);
+  const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero());
+  const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
+  FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
+  FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
   for (GhostNodeIterator<Dimension> itr = x0.ghostNodeBegin();
        itr != x0.ghostNodeEnd();
        ++itr) {

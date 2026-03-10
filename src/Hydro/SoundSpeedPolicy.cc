@@ -73,7 +73,7 @@ update(const KeyType& key,
     const auto& strengthModelS = solidNodeListPtr->strengthModel();
     if (strengthModelS.providesSoundSpeed()) {
       const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
-      const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+      const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
       strengthModelS.soundSpeed(cs, rhoS, eps, P, cs, D);
     }
   }

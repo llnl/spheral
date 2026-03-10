@@ -27,7 +27,7 @@ RectangularPlaneSolidBoundary(const Vector& point,
   mPoint(point),
   mBasis(basis),
   mExtent(extent),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 

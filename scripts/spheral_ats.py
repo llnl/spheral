@@ -10,12 +10,7 @@ max_test_failures = 10
 # Number of times to rerun the ATS tests
 max_reruns = 1
 
-cur_dir = os.path.dirname(__file__)
-# Set current directory to install prefix
-if (os.path.islink(__file__)):
-    cur_dir = os.path.join(cur_dir, os.readlink(__file__))
-
-spheral_prefix = sys.executable.split(".venv")[0]
+spheral_prefix = os.path.abspath(sys.executable.split(".venv")[0])
 ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
 spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 
@@ -83,7 +78,7 @@ def install_ats_args():
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
-    if (not SpheralConfigs.enable_mpi()):
+    if (not SpheralConfigs.mpi_enabled()):
         install_args.append("--filter='np<2'")
     comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
@@ -120,25 +115,24 @@ def main():
                                      Must provide an ATS file (either python or .ats).
                                      Any unrecognized arguments are passed as inputs to the ATS file.
                                      """)
-    parser.add_argument("--numNodes", "-N", type=int,
-                        default=None,
-                        help="Number of nodes to allocate.")
-    parser.add_argument("--timeLimit", type=int,
-                        default=None,
+    parser.add_argument("--numNodes", "-N", type=int, default=None, help="Number of nodes to allocate.")
+    parser.add_argument("--timeLimit", type=int, default=None,
                         help="Time limit for allocation.")
-    parser.add_argument("--ciRun", action="store_true",
-                        help="Option to only be used by the CI")
+    parser.add_argument("--ciRun", action="store_true", help="Option to only be used by the CI")
     parser.add_argument("--atsHelp", action="store_true",
                         help="Print the help output for ATS. Useful for seeing ATS options.")
     parser.add_argument("--threads", type=int, default=None,
-                        help="Set number of threads per rank to use. Only used by performance.py.")
+                        help="Set number of threads per rank to use. Currently only used by run_perf.py.")
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
+    parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
         return
-
+    if (options.get_benchmark):
+        print(benchmark_dir)
+        return
     #---------------------------------------------------------------------------
     # Setup machine info classes
     #---------------------------------------------------------------------------
@@ -176,7 +170,8 @@ def main():
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
-            mac_args.append(f"--npMax {np_max_dict[hostname]}")
+            max_np = np_max_dict[hostname]
+            mac_args.append(f"--npMax {max_np}")
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):
@@ -201,10 +196,12 @@ def main():
         ats_args.append(f"--glue='threads={options.threads}'")
     ats_args.append(f"""--glue='benchmark_dir="{benchmark_dir}"'""")
     ats_args.append("--glue='independent=True'")
+    # Add the current install directory as an ATS input option
+    ats_args.append(f"""--glue='install_path="{spheral_prefix}"'""")
     ats_args = " ".join(str(x) for x in ats_args)
     other_args = " ".join(str(x) for x in unknown_options)
     cmd = f"{ats_exe} -e {spheral_exe} {ats_args} {other_args}"
-    # Check if are already in an allocation
+    # Check if already in an allocation
     inAlloc = any(e in list(os.environ.keys()) for e in inAllocVars)
     # If already in allocation, do not do a launch
     if inAlloc:
@@ -220,7 +217,7 @@ def main():
         try:
             subprocess.run(run_command, shell=True, check=True, text=True)
         except Exception as e:
-            print(e)
+            raise e
 
 if __name__ == "__main__":
     main()

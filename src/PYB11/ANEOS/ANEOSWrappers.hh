@@ -1,3 +1,6 @@
+#ifndef __Spheral_ANEOS__
+#define __Spheral_ANEOS__
+
 #include <string>
 #include <vector>
 
@@ -34,3 +37,5 @@ void initializeANEOS(std::string in_filename, std::string out_filename, std::vec
 }
 
 } // namespace Spheral
+
+#endif

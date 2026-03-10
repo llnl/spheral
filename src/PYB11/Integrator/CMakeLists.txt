@@ -1,3 +1,7 @@
+set(SUNDIALS_PYTHON_FLAG "False")
+if (SPHERAL_ENABLE_SUNDIALS)
+  set(SUNDIALS_PYTHON_FLAG "True")
+endif()
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Integrator_PYB11.py
   ${CMAKE_CURRENT_BINARY_DIR}/Integrator_PYB11.py)

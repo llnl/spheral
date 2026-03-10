@@ -7,12 +7,9 @@
 #include "HDF5IO.hh"
 #include "Utilities/DBC.hh"
 #include "Field/Field.hh"
+#include "Utilities/Logger.hh"
 
-#ifdef GNUCXX
-#include <strstream>
-#else
 #include <sstream>
-#endif
 
 namespace Spheral {
 
@@ -24,9 +21,7 @@ HDF5IO<Dimension>::HDF5IO():
   FileIO<Dimension>(),
   mFilePtr(0) {
 
-#ifdef DEBUG
-  cerr << "HDF5IO::HDF5IO()" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::HDF5IO()";
 
   initializeAccessMap();
 
@@ -43,9 +38,7 @@ template<typename Dimension>
 HDF5IO<Dimension>::HDF5IO(const string& fileName, AccessType access):
   FileIO<Dimension>(fileName, access),
   mFilePtr(0) {
-#ifdef DEBUG
-    cerr << "HDF5IO::HDF5IO(string, access)" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::HDF5IO(string, access)";
   initializeAccessMap();
 
   // Turn off error printing from HDF5 by default.
@@ -61,9 +54,7 @@ template<typename Dimension>
 HDF5IO<Dimension>::HDF5IO(const string& fileName, int access):
   FileIO<Dimension>(fileName, AccessType(access)),
   mFilePtr(0) {
-#ifdef DEBUG
-  cerr << "HDF5IO::HDF5IO(string, int)" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::HDF5IO(string, int)";
   initializeAccessMap();
 
   // Turn off error printing from HDF5 by default.
@@ -79,9 +70,7 @@ HDF5IO<Dimension>::HDF5IO(const string& fileName, int access):
 //------------------------------------------------------------------------------
 template<typename Dimension>
 HDF5IO<Dimension>::~HDF5IO() {
-#ifdef DEBUG
-  cerr << "HDF5IO::~HDF5IO" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::~HDF5IO";
   close();
 }
 
@@ -92,9 +81,7 @@ template<typename Dimension>
 void
 HDF5IO<Dimension>::open(const string& fileName, AccessType access) {
 
-#ifdef DEBUG
-  cerr << "HDF5IO::open(" << fileName << ", " << access << ")" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::open(" << fileName << ", " << access << ")";
 
   // If we currently have a file open and attached to this object, close it!
   close();
@@ -117,9 +104,7 @@ template<typename Dimension>
 void
 HDF5IO<Dimension>::close() {
 
-#ifdef DEBUG
-  cerr << "HDF5IO::close()" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::close()";
 
   if (mFilePtr != 0) {
     delete mFilePtr;
@@ -579,10 +564,10 @@ readGenericContainer(const IteratorType& begin,
 
     // Verify that the container is the correct size!
     if (distance(begin, end) != (int) dims[0]) {
-      cerr << "HDF5IO::readGenericContainer ERROR: input container wrong size."
-	   << endl
-	   << "  Container size: " << distance(begin, end) << endl
-	   << "    DataSet size: " << dims[1] << endl;
+      std::cerr << "HDF5IO::readGenericContainer ERROR: input container wrong size."
+                << std::endl
+                << "  Container size: " << distance(begin, end) << std::endl
+                << "    DataSet size: " << dims[1] << std::endl;
       return;
     }
 
@@ -665,9 +650,7 @@ HDF5IO<Dimension>::getH5Group(const string& pathName) {
 
     // Catch the case that this group does not yet exist, and create it.
     catch(FileIException error) {
-#ifdef DEBUG
-      cerr << "Caught file exception, creating group " << cumulativePath << endl;
-#endif
+      DEBUG_LOG << "Caught file exception, creating group " << cumulativePath;
       Group group = mFilePtr->createGroup(cumulativePath);
     }
   }
@@ -701,9 +684,7 @@ HDF5IO<Dimension>::readyToRead() const {
 template<typename Dimension>
 void
 HDF5IO<Dimension>::initializeAccessMap() {
-#ifdef DEBUG
-  cerr << "HDF5IO::initializeAccessMap()" << endl;
-#endif
+  DEBUG_LOG << "HDF5IO::initializeAccessMap()";
   mHDF5AccessTypes[Spheral::FileIO::Create] = H5F_ACC_TRUNC;
   mHDF5AccessTypes[Spheral::FileIO::Read] = H5F_ACC_RDONLY;
   mHDF5AccessTypes[Spheral::FileIO::Write] = H5F_ACC_RDWR;

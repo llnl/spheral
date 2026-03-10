@@ -1,0 +1,11 @@
+# ------------------------------------------------------------------------------
+# Import the compiled packages.
+# ------------------------------------------------------------------------------
+import SpheralCompiledModules
+pkgs = [x for x in dir(SpheralCompiledModules) if "Spheral" in x]
+for pkg in pkgs:
+    if not pkg in ("SpheralPolyClipper", "SpheralSilo"):
+        exec(f"from SpheralCompiledModules.{pkg} import *")
+
+if "SpheralSilo" in pkgs:
+    import SpheralCompiledModules.SpheralSilo as silo

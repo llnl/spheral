@@ -8,6 +8,7 @@
 #include "CubicHermiteInterpolator.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/safeInv.hh"
+#include "CHAI_MA_wrapper.hh"
 
 #include <Eigen/Sparse>
 
@@ -17,44 +18,20 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct from explicit table of values
-//------------------------------------------------------------------------------
-CubicHermiteInterpolator::
-CubicHermiteInterpolator(const double xmin,
-                         const double xmax,
-                         const std::vector<double>& yvals):
-  mN(),
-  mXmin(),
-  mXmax(),
-  mXstep(),
-  mVals() {
-  this->initialize(xmin, xmax, yvals);
-}
-
-//------------------------------------------------------------------------------
-// Default constructor
-//------------------------------------------------------------------------------
-CubicHermiteInterpolator::CubicHermiteInterpolator():
-  mN(),
-  mXmin(),
-  mXmax(),
-  mXstep(),
-  mVals() {
-}
-
-//------------------------------------------------------------------------------
 // Copy constructor
 //------------------------------------------------------------------------------
-CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs):
-  mN(rhs.mN),
-  mXmin(rhs.mXmin),
-  mXmax(rhs.mXmax),
-  mXstep(rhs.mXstep),
-  mVals(rhs.mVals) {
+CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolator& rhs) :
+  CubicHermiteInterpolatorView() {
+  mN = rhs.mN;
+  mXmin = rhs.mXmin;
+  mXmax = rhs.mXmax;
+  mXstep = rhs.mXstep;
+  mVec = rhs.mVec;
+  initView();
 }
 
 //------------------------------------------------------------------------------
-// Assignment
+// Assignment constructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator&
 CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
@@ -63,9 +40,19 @@ CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
     mXmin = rhs.mXmin;
     mXmax = rhs.mXmax;
     mXstep = rhs.mXstep;
-    mVals = rhs.mVals;
+    mVec = rhs.mVec;
+    initView();
   }
   return *this;
+}
+
+//------------------------------------------------------------------------------
+// Construct from explicit table of values
+//------------------------------------------------------------------------------
+CubicHermiteInterpolator::CubicHermiteInterpolator(const double xmin,
+                                                   const double xmax,
+                                                   const std::vector<double>& yvals) {
+  initialize(xmin, xmax, yvals);
 }
 
 //------------------------------------------------------------------------------
@@ -82,13 +69,12 @@ CubicHermiteInterpolator::initialize(const double xmin,
   mXmin = xmin;
   mXmax = xmax;
   mXstep = (xmax - xmin)/(mN - 1u);
-  mVals.resize(2u*mN);
+  mVec.resize(2u*mN);
 
-  // Copy the function values
-  std::copy(yvals.begin(), yvals.end(), mVals.begin());
-
+  for (size_t i = 0; i < mN; ++i) mVec[i] = yvals[i];
   // Estimate the gradients at our lattice points
-  this->initializeGradientKnots();
+  initializeGradientKnots();
+
   // const auto dxInv = 1.0/mXstep;
   // for (auto i = 1u; i < mN - 1u; ++i) {
   //   mVals[mN + i] = 0.5*(mVals[i + 1u] - mVals[i - 1u])*dxInv;
@@ -101,19 +87,12 @@ CubicHermiteInterpolator::initialize(const double xmin,
 // Destructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::~CubicHermiteInterpolator() {
+  mVals.free();
 }
 
-//------------------------------------------------------------------------------
-// Equivalence
-//------------------------------------------------------------------------------
-bool
-CubicHermiteInterpolator::
-operator==(const CubicHermiteInterpolator& rhs) const {
-  return ((mN == rhs.mN) and
-          (mXmin == rhs.mXmin) and
-          (mXmax == rhs.mXmax) and
-          (mXstep == rhs.mXstep) and
-          (mVals == rhs.mVals));
+void
+CubicHermiteInterpolator::initView() {
+  initMAView(mVals, mVec);
 }
 
 //------------------------------------------------------------------------------
@@ -122,8 +101,7 @@ operator==(const CubicHermiteInterpolator& rhs) const {
 // https://en.wikipedia.org/wiki/Monotone_cubic_interpolation
 //------------------------------------------------------------------------------
 void
-CubicHermiteInterpolator::
-makeMonotonic() {
+CubicHermiteInterpolator::makeMonotonic() {
 
   // Compute the slope between tabulated values.
   std::vector<double> cgrad(mN - 1u);
@@ -168,6 +146,7 @@ makeMonotonic() {
       }
     }
   }
+  mVals.registerTouch(chai::CPU);
 }
 
 //------------------------------------------------------------------------------
@@ -179,8 +158,7 @@ makeMonotonic() {
 // Note: the function values must have already been set in mVals[0,n-1]!
 //------------------------------------------------------------------------------
 void
-CubicHermiteInterpolator::
-initializeGradientKnots() {
+CubicHermiteInterpolator::initializeGradientKnots() {
 
   // Set up to solve using Eigen's linear solvers (Ax=b)
   // We know the matrix A is tridiagonal: sparse with the only non-zero elements
@@ -192,13 +170,13 @@ initializeGradientKnots() {
   A.insert(0, 1)         = -1.0;
   A.insert(mN-1u, mN-2u) = -1.0;      // Last row
   A.insert(mN-1u, mN-1u) =  4.0;
-  b(0)                   =  3.0*(mVals[1u] - mVals[0u])/mXstep;
-  b(mN-1u)               =  3.0*(mVals[mN-1u] - mVals[mN-2u])/mXstep;
+  b(0)                   =  3.0*(mVec[1u] - mVec[0u])/mXstep;
+  b(mN-1u)               =  3.0*(mVec[mN-1u] - mVec[mN-2u])/mXstep;
   for (auto k = 1u; k < mN-1u; ++k) {      // rows
     A.insert(k, k-1u) = -0.5;
     A.insert(k, k)    =  4.0;
     A.insert(k, k+1u) = -0.5;
-    b(k)              = 1.5*(mVals[k+1u] - mVals[k-1u])/mXstep;
+    b(k)              = 1.5*(mVec[k+1u] - mVec[k-1u])/mXstep;
   }
 
   // Solve for the gradient values
@@ -207,8 +185,8 @@ initializeGradientKnots() {
   CHECK(solver.info() == Eigen::Success);
   const Eigen::VectorXd x = solver.solve(b);
   CHECK(solver.info() == Eigen::Success);
-  for (auto k = 0u; k < mN; ++k) mVals[mN + k] = x(k);
-
+  for (auto k = 0u; k < mN; ++k) mVec[mN + k] = x(k);
+  initView();
   // Old crappy but simple method for comparison
   // mVals[mN] = (mVals[1] - mVals[0])/mXstep;
   // mVals[2*mN-1] = (mVals[mN-1] - mVals[mN-2])/mXstep;

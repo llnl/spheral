@@ -12,11 +12,9 @@ storeFieldValues(const NodeList<Dimension>& nodeList,
                  const std::vector<size_t>& nodeIDs,
                  std::map<std::string, std::vector<char>>& values) {
   // std::cerr << "storeFieldValues starting size: " << values.size() << std::endl;
-  for (auto fieldItr = nodeList.registeredFieldsBegin();
-       fieldItr != nodeList.registeredFieldsEnd();
-       ++fieldItr) {
-    const auto buffer = (**fieldItr).packValues(nodeIDs);
-    const auto key = StateBase<Dimension>::key(**fieldItr);
+  for (auto fref: nodeList.registeredFields()) {
+    const auto buffer = fref.get().packValues(nodeIDs);
+    const auto key = StateBase<Dimension>::key(fref.get());
     // std::cerr << "Storing key " << key << std::endl;
     // if (values.find(key) != values.end()) std::cerr << "ConstantBoundaryUtilities::storeFieldValues collision for key " << key << std::endl;
     values[key] = buffer;
@@ -54,10 +52,8 @@ void
 copyFieldValues(const NodeList<Dimension>& nodeList,
                 const std::vector<size_t>& fromIDs,
                 const std::vector<size_t>& toIDs) {
-  for (auto fieldItr = nodeList.registeredFieldsBegin();
-       fieldItr != nodeList.registeredFieldsEnd();
-       ++fieldItr) {
-    (**fieldItr).copyElements(fromIDs, toIDs);
+  for (auto fref: nodeList.registeredFields()) {
+    fref.get().copyElements(fromIDs, toIDs);
   }
 }
 

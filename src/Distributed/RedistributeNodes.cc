@@ -13,9 +13,12 @@
 #include "Field/NodeIterators.hh"
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/packElement.hh"
+#include "Utilities/range.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/RedistributionRegistrar.hh"
-#include "Communicator.hh"
+#include "Distributed/allReduce.hh"
+#include "Distributed/Communicator.hh"
 
 #include "Utilities/DBC.hh"
 
@@ -30,12 +33,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -690,13 +687,11 @@ workPerNode(const DataBase<Dimension>& dataBase,
 
     // The work per node is just the number of neighbors.
     dataBase.updateConnectivityMap(false, false, false);
-    const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap();
-    const vector<const NodeList<Dimension>*>& nodeLists = connectivityMap.nodeLists();
-    for (auto iNodeList = 0u; iNodeList != nodeLists.size(); ++iNodeList) {
-      const NodeList<Dimension>* nodeListPtr = nodeLists[iNodeList];
-      for (auto i = 0u; i != nodeListPtr->numInternalNodes(); ++i) {
-        result(iNodeList, i) = connectivityMap.numNeighborsForNode(nodeListPtr, i);
-      }
+    const auto& connectivityMap = dataBase.connectivityMap();
+    const auto& nodeLists = connectivityMap.nodeLists();
+    for (auto [k, nodeListPtr]: enumerate(nodeLists)) {
+      const auto n = nodeListPtr->numInternalNodes();
+      for (auto i = 0u; i < n; ++i) result(k, i) = connectivityMap.numNeighborsForNode(nodeListPtr, i);
     }
 
   } else {
@@ -712,19 +707,18 @@ workPerNode(const DataBase<Dimension>& dataBase,
   if (globalMax == 0.0) {
     result = 1.0;
   } else {
-    for (auto iNodeList = 0u; iNodeList != result.size(); ++iNodeList) {
-      Field<Dimension, Scalar>& worki = *(result[iNodeList]);
+    for (auto* workiPtr: result) {
+      auto& worki = *workiPtr;
       if (worki.max() == 0.0) {
         worki = globalMax;
       } else {
         if (worki.min() == 0.0) {
-          double localMin = std::numeric_limits<double>::max();
-          for (auto i = 0u; i != worki.numInternalElements(); ++i) {
+          auto localMin = std::numeric_limits<double>::max();
+          for (auto i = 0u; i < worki.numInternalElements(); ++i) {
             if (worki(i) > 0.0) localMin = std::min(localMin, worki(i));
           }
-          double globalMin;
-          MPI_Allreduce(&localMin, &globalMin, 1, MPI_DOUBLE, MPI_MIN, Communicator::communicator());
-          worki.applyMin(globalMin);
+          const auto globalMin = allReduce(localMin, SPHERAL_OP_MIN);
+          worki.applyMin(globalMin == std::numeric_limits<double>::max() ? 1.0 : globalMin);
         }
       }
     }
@@ -733,9 +727,7 @@ workPerNode(const DataBase<Dimension>& dataBase,
   // Output some statistics.
   const Scalar minWeight = result.min();
   const Scalar maxWeight = result.max();
-  if (Process::getRank() == 0) cout << "RedistributeNodes::workPerNode: min/max work : "
-                                    << minWeight << " "
-                                    << maxWeight << endl;
+  SpheralMessage("RedistributeNodes::workPerNode: min/max work : "<< minWeight << " " << maxWeight);
 
   // Return the result.
   return result;
@@ -804,28 +796,27 @@ gatherDomainDistributionStatistics(const FieldList<Dimension, typename Dimension
 
   // Each domain computes it's total work and number of nodes.
   int localNumNodes = 0;
-  Scalar localWork = 0.0;
-  for (InternalNodeIterator<Dimension> nodeItr = work.internalNodeBegin();
-       nodeItr != work.internalNodeEnd();
-       ++nodeItr) {
-    ++localNumNodes;
-    localWork += work(nodeItr);
-  }
+  for (auto* fieldPtr: work) localNumNodes += fieldPtr->numInternalElements();
+  const auto localWork = work.localSumElements();
+
+  // for (InternalNodeIterator<Dimension> nodeItr = work.internalNodeBegin();
+  //      nodeItr != work.internalNodeEnd();
+  //      ++nodeItr) {
+  //   ++localNumNodes;
+  //   localWork += work(nodeItr);
+  // }
 
   // Now gather up some statistics about the distribution.
-  const int numProcs = this->numDomains();
+  const auto numProcs = this->numDomains();
   CHECK(numProcs > 0);
-  int globalMinNodes, globalMaxNodes, globalAvgNodes;
-  MPI_Allreduce(&localNumNodes, &globalMinNodes, 1, MPI_INT, MPI_MIN, Communicator::communicator());
-  MPI_Allreduce(&localNumNodes, &globalMaxNodes, 1, MPI_INT, MPI_MAX, Communicator::communicator());
-  MPI_Allreduce(&localNumNodes, &globalAvgNodes, 1, MPI_INT, MPI_SUM, Communicator::communicator());
-  globalAvgNodes /= numProcs;
 
-  Scalar globalMinWork, globalMaxWork, globalAvgWork;
-  MPI_Allreduce(&localWork, &globalMinWork, 1, MPI_DOUBLE, MPI_MIN, Communicator::communicator());
-  MPI_Allreduce(&localWork, &globalMaxWork, 1, MPI_DOUBLE, MPI_MAX, Communicator::communicator());
-  MPI_Allreduce(&localWork, &globalAvgWork, 1, MPI_DOUBLE, MPI_SUM, Communicator::communicator());
-  globalAvgWork /= numProcs;
+  const auto globalMinNodes = allReduce(localNumNodes, SPHERAL_OP_MIN);
+  const auto globalMaxNodes = allReduce(localNumNodes, SPHERAL_OP_MAX);
+  const auto globalAvgNodes = allReduce(localNumNodes, SPHERAL_OP_SUM) / numProcs;
+
+  const auto globalMinWork = allReduce(localWork, SPHERAL_OP_MIN);
+  const auto globalMaxWork = allReduce(localWork, SPHERAL_OP_MAX);
+  const auto globalAvgWork = allReduce(localWork, SPHERAL_OP_SUM) / numProcs;
 
   // Build a string with the result.
   std::stringstream result;

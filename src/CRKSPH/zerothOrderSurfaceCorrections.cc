@@ -40,11 +40,11 @@ zerothOrderSurfaceCorrections(FieldList<Dimension, typename Dimension::Scalar>& 
       if (surfacePoint(nodeListi, i) != 0) {
         CHECK(m0(nodeListi, i) != 0.0);
         A(nodeListi, i) = 1.0/m0(nodeListi, i);
-        B(nodeListi, i) = Vector::zero;
-        if (fixC) C(nodeListi, i) = Tensor::zero;
+        B(nodeListi, i) = Vector::zero();
+        if (fixC) C(nodeListi, i) = Tensor::zero();
         gradA(nodeListi, i) = -FastMath::square(A(nodeListi, i))*gradm0(nodeListi, i);
-        gradB(nodeListi, i) = Tensor::zero;
-        if (fixC) gradC(nodeListi, i) = ThirdRankTensor::zero;
+        gradB(nodeListi, i) = Tensor::zero();
+        if (fixC) gradC(nodeListi, i) = ThirdRankTensor::zero();
       }
     }
   }

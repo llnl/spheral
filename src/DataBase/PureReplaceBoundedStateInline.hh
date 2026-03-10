@@ -62,7 +62,7 @@ update(const KeyType& key,
   const auto n = f.nodeList().numInternalNodes();
 #pragma omp parallel for
   for (auto i = 0u; i < n; ++i) {
-    f(i) = std::min(mMaxValue, std::max(mMinValue, df(i)));
+    f(i) = min(mMaxValue, max(mMinValue, df(i)));
   }
 }
 

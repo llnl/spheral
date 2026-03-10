@@ -32,12 +32,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -121,7 +115,7 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
 inline
 Dim<1>::Tensor
 effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one;
+  return Dim<1>::Tensor::one();
 }
 
 inline
@@ -184,7 +178,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   const auto Dtiny = 0.01;
   const auto Dtiny1 = 1.0/(FastMath::CubeRootHalley2(1.0 - Dtiny) - FastMath::CubeRootHalley2(Dtiny));
@@ -195,9 +189,9 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state fields.
-  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero);
+  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero());
   const auto& DDDt = derivs.field(buildKey(this->prefix() + SolidFieldNames::scalarDamage), 0.0);
-  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero);
+  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero());
 
   // Check if porosity is active for this material
   const auto usePorosity = state.registered(buildKey(SolidFieldNames::porosityAlpha));
@@ -222,7 +216,7 @@ update(const KeyType& key,
     const auto spin = localDvDx(i).SkewSymmetric();
     const auto spinCorrection = (spin*Di - Di*spin).Symmetric();
     Di += multiplier*spinCorrection;
-    Di = max(1.0e-5, min(1.0 - 2.0e-5, Di));
+    Di = max(min(Di, 1.0 - 2.0e-5), 1.0e-5);
     {
       const auto maxValue = Di.eigenValues().maxElement();
       if (maxValue > 1.0) Di /= maxValue;

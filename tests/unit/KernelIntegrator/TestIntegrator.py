@@ -88,7 +88,7 @@ if mpi.procs > 1:
 #-------------------------------------------------------------------------------
 # Choose correct dimension aliases
 #-------------------------------------------------------------------------------
-exec("from Spheral%id import *" % dimension)
+exec("from Spheral%id import *" % dimension, globals())
 
 #-------------------------------------------------------------------------------
 # Set up data
@@ -194,7 +194,7 @@ elif dimension == 2:
         from VoronoiDistributeNodes import distributeNodes2d
     else:
         from DistributeNodes import distributeNodes2d
-        distributeNodes2d((nodes, generator))
+    distributeNodes2d((nodes, generator))
 else:
     from GenerateNodeDistribution3d import *
     generator = GenerateNodeDistribution3d(distributionType="lattice",
@@ -209,7 +209,7 @@ else:
         from VoronoiDistributeNodes import distributeNodes3d
     else:
         from DistributeNodes import distributeNodes3d
-        distributeNodes3d((nodes, generator))
+    distributeNodes3d((nodes, generator))
         
 output("nodes.numNodes")
 numLocal = nodes.numInternalNodes

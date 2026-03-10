@@ -16,8 +16,7 @@ template<int nDim> class GeomSymmetricTensorBase {};
 template<>
 class GeomSymmetricTensorBase<1> {
  public:
-  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx):
-    mxx(xx) {}
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx): mxx(xx) {}
  protected:
   double mxx = 0.0;
   SPHERAL_HOST_DEVICE GeomSymmetricTensorBase() = default;
@@ -26,10 +25,7 @@ class GeomSymmetricTensorBase<1> {
 template<>
 class GeomSymmetricTensorBase<2> {
  public:
-  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double a):
-    mxx(a),
-    mxy(a),
-    myy(a) {}
+  SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double a): mxx(a), mxy(a), myy(a) {}
   SPHERAL_HOST_DEVICE GeomSymmetricTensorBase(const double xx, const double xy,
                                                                const double yy):
     mxx(xx),

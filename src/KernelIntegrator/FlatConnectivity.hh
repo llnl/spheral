@@ -58,6 +58,9 @@ public:
   // Number of constant boundary nodes on this processor
   // This doesn't include ghost nodes that are variable and owned by this or another processor
   int numBoundaryNodes() const;
+
+  // Total number of constant boundary nodes over all processors
+  int numGlobalBoundaryNodes() const;
   
   // Get local index from NodeList and Node indices
   int nodeToLocal(const int nodeListi, const int nodei) const;
@@ -111,9 +114,20 @@ public:
   
   // Get the global indices for the neighbors of point i, not including any constant boundary nodes
   void globalNeighborIndices(const int locali,
-                             std::vector<int>& globalNeighborIndices) const;
+                             std::vector<int>& globalNeighbors) const;
   void globalOverlapNeighborIndices(const int locali,
-                                    std::vector<int>& globalNeighborIndices) const;
+                                    std::vector<int>& globalNeighbors) const;
+
+  // Get the local neighbors, the global neighbors, and a map from these to unique
+  // indices in case of duplicate global neighbors (e.g. for a reflective boundary)
+  // Returns num unique global indices, with indexMap[index] = uniqueIndex
+  unsigned uniqueNeighborIndices(const unsigned locali,
+                                 std::vector<unsigned>& localNeighbors,
+                                 std::vector<unsigned>& globalNeighbors,
+                                 std::vector<unsigned>& constNeighbors,
+                                 std::vector<unsigned>& indexMap) const;
+  unsigned getUniqueIndices(const std::vector<unsigned>& globalNeighbors,
+                            std::vector<unsigned>& indexMap) const;
   
   // Get the number of unique void surfaces included in this point's neighbors
   int numSurfaces(const int locali) const;
@@ -170,6 +184,9 @@ public:
   //                   const Vector& x2,
   //                   const SymTensor& H2,
   //                   const Scalar extent) const;
+
+  // Check for constant boundary
+  bool haveConstantBoundary(const std::vector<Boundary<Dimension>*>& boundaries) const;
   
 private:
 
@@ -187,6 +204,7 @@ private:
   int mNumConnectivityNodes;
   int mNumGlobalNodes;
   int mNumBoundaryNodes;
+  int mNumGlobalBoundaryNodes;
   int mFirstGlobalIndex;
   int mLastGlobalIndex;
 

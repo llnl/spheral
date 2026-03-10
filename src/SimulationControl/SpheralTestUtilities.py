@@ -1,6 +1,6 @@
 # SpheralTestUtilities -- small helper functions used in Spheral unit tests.
 
-import sys
+import sys, inspect
 from math import *
 from collections.abc import Iterable
 
@@ -58,10 +58,12 @@ def title(titleText, lineLength=80):
 # Provide a standard title text
 #-------------------------------------------------------------------------------
 def output(cmd, dict=None):
-    if not dict:
-        frame = globalFrame()
-        dict = frame.f_globals
-    print(cmd, " : ", eval(cmd, dict))
+    if dict is None:
+        frame = inspect.currentframe().f_back
+        ns = {}
+        ns.update(frame.f_globals)
+        ns.update(frame.f_locals)
+    print(cmd, " : ", eval(cmd, ns))
 
 #-------------------------------------------------------------------------------
 # Functions to help testing neighbor selection.

@@ -25,18 +25,30 @@ def component_configs():
     comp_str = "@SPHERAL_COMP_CONFIG@"
     return comp_str.split(";")
 
-def enable_mpi():
+def mpi_enabled():
     return ("MPI" in component_configs())
 
-def enable_timer():
-    return ("SPHERAL_ENABLE_TIMERS" in component_configs())
+def hip_enabled():
+    return ("HIP" in component_configs())
+
+def cuda_enabled():
+    return ("CUDA" in component_configs())
+
+def gpu_enabled():
+    return (hip_enabled() or cuda_enabled())
+
+def timers_enabled():
+    return ("TIMERS" in component_configs())
+
+def shared_libs_enabled():
+    return ("SHARED" in component_configs())
 
 def hydro_imports():
     hydro_str = "@SPHERAL_HYDRO_IMPORTS@"
     return hydro_str.split(";")
 
 def caliper_module_path():
-    if (enable_timer()):
+    if (timers_enabled()):
         caliper_loc = "@CONFIG_CALIPER_DIR@"
         return os.path.join(caliper_loc, "lib64/caliper")
     else:

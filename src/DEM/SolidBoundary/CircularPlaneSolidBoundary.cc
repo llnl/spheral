@@ -28,7 +28,7 @@ CircularPlaneSolidBoundary(const Vector& point,
   mPoint(point),
   mNormal(normal),
   mExtent(extent),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 

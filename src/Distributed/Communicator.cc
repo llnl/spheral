@@ -12,9 +12,8 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 // Default constructor (private).
 //------------------------------------------------------------------------------
-Communicator::
-Communicator() {
-#ifdef USE_MPI
+Communicator::Communicator() {
+#ifdef SPHERAL_ENABLE_MPI
   mCommunicator = MPI_COMM_WORLD;
 #else
   mCommunicator = 0;
@@ -24,8 +23,7 @@ Communicator() {
 //------------------------------------------------------------------------------
 // Destructor (private).
 //------------------------------------------------------------------------------
-Communicator::
-~Communicator() {
+Communicator::~Communicator() {
 }
 
 //------------------------------------------------------------------------------
@@ -33,7 +31,7 @@ Communicator::
 //------------------------------------------------------------------------------
 
 MPI_Comm* Communicator::comm_ptr() {
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   return &(instance().mCommunicator);
 #else
   return nullptr;
@@ -41,7 +39,7 @@ MPI_Comm* Communicator::comm_ptr() {
 }
 
 void Communicator::finalize() {
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   int finalized = 0;
   MPI_Finalized(&finalized);
   if (finalized != 0) {

@@ -18,13 +18,6 @@
 #include <filesystem>
 #include <sstream>
 
-using std::min;
-using std::max;
-using std::abs;
-using std::cout;
-using std::cerr;
-using std::endl;
-
 using namespace LEOS;   // This namespace being the same as our class name causes confusion without this
 
 namespace Spheral {

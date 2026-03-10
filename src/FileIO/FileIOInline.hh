@@ -118,7 +118,7 @@ inline
 void
 FileIO::writeVector(const std::vector<Value>& x, const std::string path) {
   const auto n = x.size();
-  const auto ne = Value::numElements;
+  const auto ne = Value::numElements();
   std::vector<double> buf(n*ne);
   for (auto i = 0u; i < n; ++i) std::copy(x[i].begin(), x[i].end(), &buf[i*ne]);
   this->write(buf, path);
@@ -158,7 +158,7 @@ void
 FileIO::readVector(std::vector<Value>& x, const std::string path) const {
   std::vector<double> buf;
   this->read(buf, path);
-  const auto ne = Value::numElements;
+  const auto ne = Value::numElements();
   const auto n = buf.size()/ne;
   x.resize(n);
   for (auto i = 0u; i < n; ++i) std::copy(&buf[i*ne], &buf[i*ne] + ne, x[i].begin());

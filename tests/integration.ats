@@ -13,9 +13,6 @@ glue(nt = 1)
 # Fail test to make sure tests are working
 source("unit/Utilities/testFails.py")
 
-# Fail test to make sure tests are working
-source("unit/Utilities/testFails.py")
-
 # Geometry unit tests
 source("unit/Geometry/testVector.py")
 source("unit/Geometry/testTensor.py")
@@ -44,6 +41,7 @@ source("unit/SVPH/testSVPHInterpolation-1d.py")
 
 # Field unit tests
 source("unit/Field/testField.py")
+source("unit/Field/testFieldView.py")
 
 # Neighbor unit tests
 source("unit/Neighbor/testNestedGridNeighbor.py")
@@ -133,3 +131,4 @@ source("functional/RK/testVoronoiVolume.py")
 
 # KernelIntegrator tests
 source("unit/KernelIntegrator/TestIntegrator.py")
+source("unit/KernelIntegrator/testFlatConnectivity.py")

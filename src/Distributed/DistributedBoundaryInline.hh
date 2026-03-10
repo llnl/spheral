@@ -2,6 +2,7 @@
 #include "Field/Field.hh"
 #include "DataBase/DataBase.hh"
 #include "Communicator.hh"
+#include "Process.hh"
 
 namespace Spheral {
 
@@ -16,7 +17,7 @@ meshGhostNodes() const {
   return false;
 }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
 //------------------------------------------------------------------------------
 // Get the domain ID.
 //------------------------------------------------------------------------------
@@ -34,8 +35,7 @@ template<typename Dimension>
 inline
 int
 DistributedBoundary<Dimension>::numDomains() const {
-  int nProcs;
-  MPI_Comm_size(Communicator::communicator(), &nProcs);
+  int nProcs = Process::getTotalNumberOfProcesses();
   return nProcs;
 }
 
@@ -60,6 +60,6 @@ DistributedBoundary<Dimension>::accessNodeListDomainBoundaryNodeMap() {
   return mNodeListDomainBoundaryNodeMap;
 }
 
-#endif // USE_MPI
+#endif // ENABLE_MPI
 
 }

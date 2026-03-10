@@ -15,7 +15,6 @@ namespace Spheral {
 
 using std::cout;
 using std::endl;
-using std::min;
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
@@ -113,7 +112,7 @@ selectDt(const typename Dimension::Scalar dtMin,
 
   // Now set the dt to the global answer
   dt.first = globalDt;
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   {
     int msgSize = dt.second.size();
     MPI_Bcast(&msgSize, 1, MPI_INT, dtRank, Communicator::communicator());

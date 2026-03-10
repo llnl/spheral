@@ -239,7 +239,7 @@ template<typename Dimension>
 void
 SubPointPressureHourglassControl<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
-  mDvDt = dataBase.newFluidFieldList(Vector::zero, HydroFieldNames::ahgAcceleration);
+  mDvDt = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::ahgAcceleration);
 }
 
 //------------------------------------------------------------------------------
@@ -276,7 +276,7 @@ dt(const DataBase<Dimension>& dataBase,
   auto dtMin = std::numeric_limits<Scalar>::max();
   size_t nodeListMin = 0u;
   size_t iMin = 0u;
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto numNodeLists = mDvDt.size();
   CHECK(H.size() == numNodeLists);
   for (auto k = 0u; k < numNodeLists; ++k) {
@@ -321,14 +321,14 @@ evaluateDerivatives(const Scalar time,
   // Get the state and derivative FieldLists.
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto P = state.fields(HydroFieldNames::pressure, 0.0);
   const auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
   const auto cellFaceFlags = state.fields(HydroFieldNames::cellFaceFlags, vector<CellFaceFlag>());
   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-  const auto gradRho = derivs.fields(HydroFieldNames::massDensityGradient, Vector::zero);
+  const auto gradRho = derivs.fields(HydroFieldNames::massDensityGradient, Vector::zero());
   CHECK(mass.size() == numNodeLists);
   CHECK(pos.size() == numNodeLists);
   CHECK(rho.size() == numNodeLists);
@@ -338,9 +338,9 @@ evaluateDerivatives(const Scalar time,
   CHECK(gradRho.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero);
+  auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto& pairAccelerations = derivs.get(HydroFieldNames::pairAccelerations, vector<Vector>());
   CHECK(DvDt.size() == numNodeLists);
   CHECK(DepsDt.size() == numNodeLists);
@@ -381,7 +381,7 @@ evaluateDerivatives(const Scalar time,
   // }
 
   // Walk the cell face flags, looking for pair interactions
-  mDvDt = Vector::zero;
+  mDvDt = Vector::zero();
   {
     int nodeListi, i, nodeListj, j, cellFace;
     for (nodeListi = 0; nodeListi < int(numNodeLists); ++nodeListi) {
@@ -458,7 +458,7 @@ evaluateDerivatives(const Scalar time,
 
   // // Scan the accelerations to build our timestep vote
   // mDtMin = std::numeric_limits<double>::max();
-  // const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  // const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   // CHECK(H.size() == numNodeLists);
   // for (auto k = 0u; k < numNodeLists; ++k) {
   //   const auto n = H[k]->numInternalElements();

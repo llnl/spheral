@@ -144,7 +144,7 @@ initializeGradients(const ConnectivityMap<Dimension>& connectivityMap,
       const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2);
       const auto goodM =  (Mdeti > 1e-2 and enoughNeighbors);                   
 
-      Mi = ( goodM ? Mi.Inverse() : Tensor::one);
+      Mi = ( goodM ? Mi.Inverse() : Tensor::one());
 
       DpDxi = Mi.Transpose()*DpDxi;
       DvDxi = DvDxi*Mi;

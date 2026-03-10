@@ -4,6 +4,7 @@
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_Timer__
 #define __Spheral_Timer__
+
 // If SPHERAL_ENABLE_TIMERS is defined then we want timer functionality
 #ifdef SPHERAL_ENABLE_TIMERS
 #include "caliper/cali.h"

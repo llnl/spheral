@@ -57,12 +57,7 @@ DataBase<Dimension>::
 newGlobalFieldList(const DataType value,
                    const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr != nodeListEnd();
-       ++nodeListItr) {
-    result.appendNewField(name, **nodeListItr, value);
-  }
-
+  for (auto* nptr: mNodeListPtrs) result.appendNewField(name, *nptr, value);
   ENSURE(result.numFields() == numNodeLists());
   return result;
 }
@@ -79,12 +74,7 @@ DataBase<Dimension>::
 newFluidFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr) {
-    result.appendNewField(name, **nodeListItr, value);
-  }
-
+  for (auto* nptr: mFluidNodeListPtrs) result.appendNewField(name, *nptr, value);
   ENSURE(result.numFields() == numFluidNodeLists());
   return result;
 }
@@ -101,12 +91,7 @@ DataBase<Dimension>::
 newSolidFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr != solidNodeListEnd();
-       ++nodeListItr) {
-    result.appendNewField(name, **nodeListItr, value);
-  }
-
+  for (auto* nptr: mSolidNodeListPtrs) result.appendNewField(name, *nptr, value);
   ENSURE(result.numFields() == numSolidNodeLists());
   return result;
 }
@@ -123,12 +108,7 @@ DataBase<Dimension>::
 newDEMFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr != DEMNodeListEnd();
-       ++nodeListItr) {
-    result.appendNewField(name, **nodeListItr, value);
-  }
-
+  for (auto* nptr: mDEMNodeListPtrs) result.appendNewField(name, *nptr, value);
   ENSURE(result.numFields() == numDEMNodeLists());
   return result;
 }

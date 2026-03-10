@@ -1,8 +1,9 @@
 #include "NodePairList.hh"
+#include "NodePairListView.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
-  
+
 //------------------------------------------------------------------------------
 // index
 //------------------------------------------------------------------------------
@@ -24,6 +25,68 @@ NodePairList::computeLookup() const {
   for (size_t k = 0u; k < n; ++k) {
     mPair2Index[mNodePairList[k]] = k;
   }
+}
+
+//------------------------------------------------------------------------------
+// Data operations
+//------------------------------------------------------------------------------
+
+void
+NodePairList::clear() {
+  mData.free();
+  mNodePairList.clear();
+  mPair2Index.clear();
+}
+
+//------------------------------------------------------------------------------
+// Data copy constructor
+//------------------------------------------------------------------------------
+
+NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
+  :
+  mNodePairList(vals) {
+  initView();
+}
+
+//------------------------------------------------------------------------------
+// Data move constructor
+//------------------------------------------------------------------------------
+
+NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
+  :
+  mNodePairList(std::move(vals)) {
+  initView();
+}
+
+//------------------------------------------------------------------------------
+// Fill function
+//------------------------------------------------------------------------------
+
+void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
+  mNodePairList = vals;
+  initView();
+}
+
+//------------------------------------------------------------------------------
+// Copy constructor
+//------------------------------------------------------------------------------
+
+NodePairList::NodePairList(const NodePairList& rhs) :
+  NodePairListView() {
+  mNodePairList = rhs.mNodePairList;
+  initView();
+}
+
+//------------------------------------------------------------------------------
+// Assignment constructor
+//------------------------------------------------------------------------------
+
+NodePairList& NodePairList::operator=(const NodePairList& rhs) {
+  if (this != &rhs) {
+    mNodePairList = rhs.mNodePairList;
+    initView();
+  }
+  return *this;
 }
 
 }

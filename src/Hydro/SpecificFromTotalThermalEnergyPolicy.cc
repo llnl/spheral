@@ -57,8 +57,8 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
-  const auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto DEDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
 
   // Do it.

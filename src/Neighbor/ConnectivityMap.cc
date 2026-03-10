@@ -24,13 +24,6 @@ using std::vector;
 using std::map;
 using std::string;
 using std::pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
-
 
 namespace Spheral {
 
@@ -261,13 +254,12 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   // Note here we deliberately reallocate the NodePairList, which will invalidate any
   // PairFields pointing at the original pairs.
   REQUIRE(mNodePairListPtr);
-  auto culledPairListPtr = std::make_shared<NodePairList>();
   NodePairList& currentPairs = *mNodePairListPtr;
-  NodePairList& culledPairs = *culledPairListPtr;
+  std::vector<NodePairIdxType> culledPairs;
   culledPairs.reserve(currentPairs.size());
 #pragma omp parallel
   {
-    NodePairList culledPairs_thread;
+    std::vector<NodePairIdxType> culledPairs_thread;
     const auto npairs = currentPairs.size();
     culledPairs_thread.reserve(npairs);
 #pragma omp for
@@ -286,7 +278,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
       culledPairs.insert(culledPairs.end(), culledPairs_thread.begin(), culledPairs_thread.end());
     }
   }
-  mNodePairListPtr = culledPairListPtr;
+  mNodePairListPtr = std::make_shared<NodePairList>(std::move(culledPairs));
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
   {
@@ -813,9 +805,6 @@ computeConnectivity() {
     mConnectivity = ConnectivityStorageType(connectivitySize, vector<vector<int> >(numNodeLists));
     mNodeTraversalIndices = vector<vector<int> >(numNodeLists);
   }
-  const auto noldpairs = mNodePairListPtr ? mNodePairListPtr->size() : 0u;
-  mNodePairListPtr = std::make_shared<NodePairList>();
-  if (noldpairs > 0u) mNodePairListPtr->reserve(noldpairs);
   mIntersectionConnectivity.clear();
 
   // If we're trying to be domain decomposition independent, we need a key to sort
@@ -861,6 +850,10 @@ computeConnectivity() {
   //   tmaster = std::clock_t(0), 
   //   trefine = std::clock_t(0), 
   //   twalk = std::clock_t(0);
+  std::vector<NodePairIdxType> nodePairs;
+  if (mNodePairListPtr) {
+    nodePairs.reserve(mNodePairListPtr->size());
+  }
   CHECK(mConnectivity.size() == connectivitySize);
   for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
     const auto etaMax = mNodeLists[iiNodeList]->neighbor().kernelExtent();
@@ -889,7 +882,7 @@ computeConnectivity() {
           const auto nmaster = masterLists[iNodeList].size();
 #pragma omp parallel 
           {
-            NodePairList nodePairs_private;
+            std::vector<NodePairIdxType> nodePairs_private;
 #pragma omp for schedule(dynamic)
             for (auto k = 0u; k < nmaster; ++k) {
               const auto i = masterLists[iNodeList][k];
@@ -962,12 +955,13 @@ computeConnectivity() {
             
             // Merge the NodePairList
 #pragma omp critical
-            mNodePairListPtr->insert(mNodePairListPtr->end(), nodePairs_private.begin(), nodePairs_private.end());
+            nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
           } // end OMP parallel
         }
       }
     }
   }
+  mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
 
   // // If necessary add ghost->internal connectivity.
   // if (ghostConnectivity) {
@@ -1111,7 +1105,6 @@ computeConnectivity() {
 #pragma omp parallel
     {
       IntersectionConnectivityContainer intersection_private;
-      Vector b;
 #pragma omp for
       for (auto k = 0u; k < npairs; ++k) {
         const auto& pair = pairs[k];

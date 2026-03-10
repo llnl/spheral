@@ -13,12 +13,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -64,7 +58,7 @@ computeVoronoiVolume(const FieldList<Dim<1>, Dim<1>::Vector>& position,
   const auto returnCellFaceFlags = cellFaceFlags.size() == numNodeLists;
 
   // Zero out return fields.
-  deltaMedian = Vector::zero;
+  deltaMedian = Vector::zero();
   if (returnSurface) {
     surfacePoint = 0;
     etaVoidPoints = vector<Vector>();

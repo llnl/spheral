@@ -1,5 +1,10 @@
 #include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
+#include "chai/config.hpp"
+
+#ifdef CHAI_DISABLE_RM
+#error "Cannot test with CHAI_DISABLE_RM flag. Reconfigure with SPHERAL_ENABLE_TESTS=OFF or build new CHAI."
+#endif
 
 class OffloadTest : public ::testing::Test {};
 

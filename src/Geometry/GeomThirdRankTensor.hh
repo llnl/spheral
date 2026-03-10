@@ -17,16 +17,14 @@
 namespace Spheral {
 
 template<int nDim>
-class GeomThirdRankTensor : public RankNTensor<nDim, 3, GeomThirdRankTensor<nDim> > {
+class GeomThirdRankTensor : public RankNTensor<nDim, 3, GeomThirdRankTensor<nDim>> {
   using BaseType = RankNTensor<nDim, 3, GeomThirdRankTensor<nDim>>;
 
 public:
   //--------------------------- Public Interface ---------------------------//
   using size_type = typename BaseType::size_type;
-  static constexpr size_type numElements = BaseType::numElements;
 
-  // Useful static member data.
-  static const GeomThirdRankTensor zero;
+  SPHERAL_HOST_DEVICE static constexpr GeomThirdRankTensor zero() { return GeomThirdRankTensor<nDim>(); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomThirdRankTensor() = default;
@@ -45,9 +43,6 @@ private:
   //--------------------------- Private Interface ---------------------------//
   using RankNTensor<nDim, 3, GeomThirdRankTensor>::mElements;
 };
-
-
-template<int nDims> const GeomThirdRankTensor<nDims> GeomThirdRankTensor<nDims>::zero = GeomThirdRankTensor<nDims>(0.0);
 
 }
 

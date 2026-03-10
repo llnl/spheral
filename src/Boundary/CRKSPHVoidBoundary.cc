@@ -181,7 +181,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
     for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = field(cNodes[k]);
   } else {
     // Default zero.
-    for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = Vector::zero;
+    for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = Vector::zero();
   }
 }
 
@@ -192,7 +192,7 @@ CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::Tensor>& field) const {
   const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
-  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = Tensor::zero;
+  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = Tensor::zero();
 }
 
 // Specialization for symmetric tensors.
@@ -209,7 +209,7 @@ applyGhostBoundary(Field<Dimension, typename Dimension::SymTensor>& field) const
     for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = field(cNodes[k]);
   } else {
     // Default zero.
-    for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = SymTensor::zero;
+    for (unsigned k = 0; k < nsurf; ++k) field(gNodes[k]) = SymTensor::zero();
   }
 }
 
@@ -220,7 +220,7 @@ CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::ThirdRankTensor>& field) const {
   const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
-  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = ThirdRankTensor::zero;
+  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = ThirdRankTensor::zero();
 }
 
 // Specialization for fourth rank tensors.
@@ -230,7 +230,7 @@ CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::FourthRankTensor>& field) const {
   const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
-  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FourthRankTensor::zero;
+  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FourthRankTensor::zero();
 }
 
 // Specialization for fifth rank tensors.
@@ -240,7 +240,7 @@ CRKSPHVoidBoundary<Dimension>::
 applyGhostBoundary(Field<Dimension, typename Dimension::FifthRankTensor>& field) const {
   const auto& gNodes = this->ghostNodes(field.nodeList());
   const unsigned nvoid = gNodes.size();
-  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FifthRankTensor::zero;
+  for (unsigned k = 0; k < nvoid; ++k) field(gNodes[k]) = FifthRankTensor::zero();
 }
 
 // Specialization for FacetedVolume fields.

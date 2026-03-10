@@ -17,6 +17,7 @@ class State(StateBase):
     typedef typename StateBase<%(Dimension)s>::MeshPtr MeshPtr;
     typedef typename State<%(Dimension)s>::PackageList PackageList;
     typedef typename State<%(Dimension)s>::PolicyPointer PolicyPointer;
+    using BoundaryType = Boundary<%(Dimension)s>;
 """
 
     #...........................................................................

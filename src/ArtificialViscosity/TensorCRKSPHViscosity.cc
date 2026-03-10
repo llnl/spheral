@@ -47,15 +47,15 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
 
   // Get the necessary state.
   const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  WR = state.template get<ReproducingKernel<Dimension>>(RKFieldNames::reproducingKernel(mOrder));
   const auto  corrections = state.fields(RKFieldNames::rkCorrections(mOrder), RKCoefficients<Dimension>());
   const auto& connectivityMap = dataBase.connectivityMap();
 
-  auto DvDx_AV = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero);
+  auto DvDx_AV = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero());
 
   // Compute the basic velocity gradient.
   const auto vol = mass/rho;

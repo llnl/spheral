@@ -23,12 +23,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -75,8 +69,8 @@ update(const KeyType& key,
   // Grab the state we need to do our job.
   const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto  volume = state.fields(HydroFieldNames::volume, 0.0);
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto& cm = state.connectivityMap();
   const auto& pairs = cm.nodePairList();
   const auto  npairs = pairs.size();

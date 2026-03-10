@@ -32,12 +32,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -121,7 +115,7 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
 inline
 Dim<1>::Tensor
 effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one;
+  return Dim<1>::Tensor::one();
 }
 
 inline
@@ -180,7 +174,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   const auto Dtiny = 0.01;
   const auto Dtiny1 = 1.0/(FastMath::CubeRootHalley2(1.0 - Dtiny) - FastMath::CubeRootHalley2(Dtiny));
@@ -189,9 +183,9 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state fields.
-  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero);
+  const auto& strain = state.field(buildKey(SolidFieldNames::effectiveStrainTensor), SymTensor::zero());
   const auto& DDDt = derivs.field(buildKey(this->prefix() + SolidFieldNames::scalarDamage), 0.0);
-  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero);
+  const auto& localDvDx = derivs.field(buildKey(HydroFieldNames::internalVelocityGradient), Tensor::zero());
   const auto& numFlaws = state.field(buildKey(SolidFieldNames::numFlaws), 0);
   const auto& minFlaw = state.field(buildKey(SolidFieldNames::minFlaw), 0.0);
   const auto& maxFlaw = state.field(buildKey(SolidFieldNames::maxFlaw), 0.0);
@@ -280,8 +274,8 @@ update(const KeyType& key,
           const auto alpha = (*alphaPtr)(i);
           const auto DalphaDti = std::min(0.0, (*DalphaDtPtr)(i));   // Only allowed to grow damage, not reduce it.
           const auto phi0_13 = FastMath::CubeRootHalley2(1.0 - 1.0/alpha0);
-          const auto DD13Dt_p = -phi0_13/(3.0 * pow(1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0) + Dtiny, 2.0/3.0) * (alpha0 - 1.0))*Dtiny1*DalphaDti;
-          CHECK(DD13Dt_p >= 0.0);
+          const auto DD13Dt_p = -phi0_13*safeInv(3.0 * pow(1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0) + Dtiny, 2.0/3.0) * (alpha0 - 1.0), 1.0e-10)*Dtiny1*DalphaDti;
+          CHECK2(DD13Dt_p >= 0.0, DD13Dt_p << " " << phi0_13 << " " << DalphaDti << " " << (1.0 - (alpha - 1.0)*safeInv(alpha0 - 1.0, 1.0e-10) + Dtiny));
           D113 = std::min(1.0, D113 + std::min(phi0_13, multiplier*DD13Dt_p));
         }
 

@@ -28,9 +28,6 @@
 
 namespace Spheral {
 
-using std::min;
-using std::max;
-using std::abs;
 using std::vector;
 using FastMath::pow2;
 
@@ -60,8 +57,8 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   // Make sure our FieldLists are correctly sized.
   SmoothingScaleBase<Dimension>::initializeProblemStartup(dataBase);
   dataBase.resizeFluidFieldList(mZerothMoment, 0.0, HydroFieldNames::massZerothMoment, false);
-  dataBase.resizeFluidFieldList(mSecondMoment, SymTensor::zero, HydroFieldNames::massSecondMoment, false);
-  dataBase.resizeFluidFieldList(mCellSecondMoment, SymTensor::zero, HydroFieldNames::massSecondMoment + " cells", false);
+  dataBase.resizeFluidFieldList(mSecondMoment, SymTensor::zero(), HydroFieldNames::massSecondMoment, false);
+  dataBase.resizeFluidFieldList(mCellSecondMoment, SymTensor::zero(), HydroFieldNames::massSecondMoment + " cells", false);
 }
 
 //------------------------------------------------------------------------------
@@ -126,13 +123,13 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero);
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   CHECK(H.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
+  auto DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
   CHECK(DHDt.size() == numNodeLists);
 
   // Set the H time derivatives
@@ -175,13 +172,13 @@ finalize(const Scalar time,
     // Grab our state
     const auto numNodeLists = dataBase.numFluidNodeLists();
     const auto& cm = dataBase.connectivityMap();
-    auto        pos = state.fields(HydroFieldNames::position, Vector::zero);
+    auto        pos = state.fields(HydroFieldNames::position, Vector::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
     const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
     const auto  cells = state.fields(HydroFieldNames::cells, FacetedVolume());
     const auto  surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-    auto        H = state.fields(HydroFieldNames::H, SymTensor::zero);
-    auto        Hideal = derivs.fields(ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero);
+    auto        H = state.fields(HydroFieldNames::H, SymTensor::zero());
+    auto        Hideal = derivs.fields(ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
     CHECK(pos.size() == numNodeLists);
     CHECK(mass.size() == numNodeLists);
     CHECK(rho.size() == numNodeLists);
@@ -213,10 +210,10 @@ finalize(const Scalar time,
 
     // //   // Prepare RK correction terms
     // //   FieldList<Dimension, Scalar> m0 = dataBase.newFluidFieldList(0.0, "m0");
-    // //   FieldList<Dimension, Vector> m1 = dataBase.newFluidFieldList(Vector::zero, "m1");
-    // //   FieldList<Dimension, SymTensor> m2 = dataBase.newFluidFieldList(SymTensor::zero, "m2");
+    // //   FieldList<Dimension, Vector> m1 = dataBase.newFluidFieldList(Vector::zero(), "m1");
+    // //   FieldList<Dimension, SymTensor> m2 = dataBase.newFluidFieldList(SymTensor::zero(), "m2");
     // //   FieldList<Dimension, Scalar> A = dataBase.newFluidFieldList(0.0, "A");
-    // //   FieldList<Dimension, Vector> B = dataBase.newFluidFieldList(Vector::zero, "B");
+    // //   FieldList<Dimension, Vector> B = dataBase.newFluidFieldList(Vector::zero(), "B");
     // // #pragma omp parallel
     // //   {
     // //     // Thread private scratch variables
@@ -298,7 +295,7 @@ finalize(const Scalar time,
 
     // Sum the net moments at each point
     mZerothMoment = 0.0;
-    mSecondMoment = SymTensor::zero;
+    mSecondMoment = SymTensor::zero();
 #pragma omp parallel
     {
       // Thread private scratch variables
@@ -417,7 +414,7 @@ finalize(const Scalar time,
           {
             const auto detT = T.Determinant();
             if (fuzzyEqual(detT, 0.0)) {
-              T = SymTensor::one;
+              T = SymTensor::one();
             } else {
               T /= Dimension::rootnu(detT);
             }
@@ -466,7 +463,7 @@ finalize(const Scalar time,
 
     // Apply any requested user filtering/alterations to the final H in the case where we're not using the IdealH algorithm
     const auto numNodeLists = dataBase.numFluidNodeLists();
-    auto        H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    auto        H = state.fields(HydroFieldNames::H, SymTensor::zero());
     for (auto k = 0u; k < numNodeLists; ++k) {
       const auto& nodeList = H[k]->nodeList();
       const auto  hminInv = safeInvVar(nodeList.hmin());
