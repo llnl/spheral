@@ -420,6 +420,11 @@ if control.time() == 0.0:
     Eglobal = mpi.allreduce(Esum, mpi.SUM)
     print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
     assert fuzzyEqual(Eglobal, Eexpect)
+
+    state = State(db, integrator.physicsPackages())
+    derivs = StateDerivatives(db, integrator.physicsPackages())
+    hydro.initializeProblemStartupDependencies(db, state, derivs)
+
     control.dropViz()
 
 #-------------------------------------------------------------------------------
