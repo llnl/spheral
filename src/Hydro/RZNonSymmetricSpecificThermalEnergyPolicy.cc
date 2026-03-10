@@ -118,7 +118,7 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
-      const auto  mRZi = massRZ(nodeListi, i);
+      // const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -127,7 +127,7 @@ update(const KeyType& key,
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
-      const auto  mRZj = massRZ(nodeListj, j);
+      // const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -136,8 +136,13 @@ update(const KeyType& key,
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
       const auto duij = dEij/(mi + mj);
-      DepsDt_thread(nodeListi, i) += duij;
-      DepsDt_thread(nodeListj, j) += duij;
+
+      // const auto dui = duij * (abs(pworki) + tiny)/(abs(pworki) + abs(pworkj) + tiny);
+      // const auto duj = duij * (abs(pworkj) + tiny)/(abs(pworki) + abs(pworkj) + tiny);
+      // const auto fij = dEij*safeInv(mi*dui + mj*duj);
+      // VERIFY2(fuzzyEqual(fij*mi*dui + fij*mj*duj, dEij, 1.0e-8), fij*mi*dui + fij*mj*duj << " != " << dEij << " : " << duij << " " << dui << " " << duj);
+      // DepsDt_thread(nodeListi, i) += fij * dui;
+      // DepsDt_thread(nodeListj, j) += fij * duj;
 
       // const auto weighti = 1.0;
       // const auto weightj = 1.0;
@@ -145,15 +150,22 @@ update(const KeyType& key,
       // const auto weightj = mRZj/(mRZi + mRZj);
       // const auto weighti = std::abs(mi*vi12.dot(pacci)) + tiny;
       // const auto weightj = std::abs(mj*vj12.dot(paccj)) + tiny;
-      // const auto weighti = tiny + std::abs(pworki);
-      // const auto weightj = tiny + std::abs(pworkj);
+      // const auto weighti = std::abs(pworki);
+      // const auto weightj = std::abs(pworkj);
       // const auto weighti = (tiny + std::abs(DepsDt0(nodeListi, i))) * mi;
       // const auto weightj = (tiny + std::abs(DepsDt0(nodeListj, j))) * mj;
-      // const auto weighti = std::max(tiny, pworki*sgn(dEij));
-      // const auto weightj = std::max(tiny, pworkj*sgn(dEij));
+      const auto weighti = std::max(0.0, pworki*sgn(dEij));
+      const auto weightj = std::max(0.0, pworkj*sgn(dEij));
 
-      // const auto wi = weighti/(weighti + weightj);
-      // CHECK(wi >= 0.0 and wi <= 1.0);
+      const auto dui = duij * (weighti + tiny)/(weighti + weightj + tiny);
+      const auto duj = duij * (weightj + tiny)/(weighti + weightj + tiny);
+      const auto fij = dEij*safeInv(mi*dui + mj*duj);
+      VERIFY2(fuzzyEqual(fij*mi*dui + fij*mj*duj, dEij, 1.0e-8), fij*mi*dui + fij*mj*duj << " != " << dEij << " : " << duij << " " << dui << " " << duj);
+
+      DepsDt_thread(nodeListi, i) += fij * dui;
+      DepsDt_thread(nodeListj, j) += fij * duj;
+
+
       // DepsDt_thread(nodeListi, i) += 2.0*wi*duij;
       // DepsDt_thread(nodeListj, j) += 2.0*(1.0 - wi)*duij;
       // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
