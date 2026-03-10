@@ -134,19 +134,8 @@
     - !reference [.merge_pr_rule, rules]
     - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
+    - umask 027
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
-
-.toss_update_permissions:
-  stage: update_permissions
-  variables:
-    GIT_STRATEGY: none
-  rules:
-    - !reference [.merge_pr_rule, rules]
-    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
-  script:
-    - ml load mpifileutils
-    - $RUN_CMD -n $NPROC dchmod --mode go+rx $UPSTREAM_DIR
-  dependencies: []
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts

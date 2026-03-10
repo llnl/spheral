@@ -41,7 +41,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # VARIANTS
     # -------------------------------------------------------------------------
     variant('mpi', default=True, description='Enable MPI Support.')
-    variant('openmp', default=True, description='Enable OpenMP Support.')
+    variant('openmp', default=True, when="~rocm", description='Enable OpenMP Support.')
     variant('docs', default=False, description='Enable building Docs.')
     variant('shared', default=True, description='Build C++ libs as shared.')
     variant('python', default=True, description='Enable Spheral python interface.')
@@ -92,6 +92,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('conduit@0.8.2', type='build', when='@:2024.06.1')
 
     depends_on('axom +hdf5 ~lua ~examples ~python ~fortran', type='build')
+    depends_on('axom +openmp', type='build', when='+openmp')
+    depends_on('axom ~openmp', type='build', when='~openmp')
     depends_on('axom@0.12.0', type='build', when='@2025.12.0:')
     depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
     depends_on('axom@0.7.0', type='build', when='@:2024.06.1')
@@ -133,16 +135,19 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv} ^{ctpl}")
 
     # Forward CUDA/ROCM Variants
-    def set_gpu_variants(ctpl):
+    def set_cuda_variants(ctpl):
         for val in CudaPackage.cuda_arch_values:
             depends_on(f"{ctpl} +cuda cuda_arch={val}", type='build', when=f"+cuda cuda_arch={val} ^{ctpl}")
+    def set_rocm_variants(ctpl):
         for val in ROCmPackage.amdgpu_targets:
             depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} ^{ctpl}")
 
     gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
     for ctpl in gpu_tpl_list:
-        set_gpu_variants(ctpl)
+        set_cuda_variants(ctpl)
+        set_rocm_variants(ctpl)
 
+    set_rocm_variants("eigen")
     # Forward debug variants
     debug_tpl_list = gpu_tpl_list + ["hdf5", "adiak"]
     for ctpl in debug_tpl_list:
@@ -158,6 +163,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Conflicts
     # -------------------------------------------------------------------------
     conflicts("+cuda", when="+rocm")
+    conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
 
     def _get_sys_type(self, spec):

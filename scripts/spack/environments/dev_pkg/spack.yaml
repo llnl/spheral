@@ -15,3 +15,9 @@ spack:
     - ../../configs/config.yaml
   repos:
     - ../../spack_repo/spheral
+  packages:
+    all:
+      permissions:
+        read: group
+        write: group
+        group: sduser

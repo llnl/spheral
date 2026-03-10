@@ -11,10 +11,6 @@ packages:
       pil: [py-pillow]
       jpeg: [libjpeg]
       zlib-api: [zlib]
-    permissions:
-      read: group
-      write: group
-      group: sduser
   gcc:
     externals:
     - spec: gcc@10.3.1 languages:='c,c++,fortran'
@@ -196,7 +192,7 @@ packages:
   hwloc:
     externals:
     - spec: hwloc@2.12.2
-      prefix: /usr/lib64
+      prefix: /usr/lib64/hwloc
     buildable: false
 
 #---- Extension Dependencies

@@ -61,6 +61,8 @@ class SpheralTPL:
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
                             help="ID string to postfix an initconfig file.")
+        parser.add_argument("--debug-build", action="store_true",
+                            help="Adds the --keep-stage flag to spack for doing debug builds of TPLs")
         parser.add_argument("--dev-pkg", action="store_true",
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
@@ -288,6 +290,8 @@ class SpheralTPL:
             from spack import environment
             self.spack_env = environment.Environment(self.env_dir)
             environment.activate(self.spack_env)
+            repo_cmd = SpackCommand("repo")
+            repo_cmd(*["update"])
         else:
             # Otherwise, check if environment has been created
             arch_cmd = SpackCommand("arch")
@@ -356,6 +360,8 @@ class SpheralTPL:
                                          unsigned=True,
                                          **default_install_args)
         else:
+            if (self.args.debug_build):
+                default_install_args.update(dict(keep_stage=True))
             self.spack_env.install_specs([self.spack_spec], **default_install_args)
         if (self.args.ci_run):
             shutil.copyfile(host_config_file, "gitlab.cmake")

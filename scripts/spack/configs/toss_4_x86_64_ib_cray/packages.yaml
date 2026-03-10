@@ -6,10 +6,6 @@ packages:
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]
-    permissions:
-      read: group
-      write: group
-      group: sduser
   llvm-amdgpu:
     externals:
     - spec: llvm-amdgpu@6.4.3
@@ -209,5 +205,5 @@ packages:
   hwloc:
     externals:
     - spec: hwloc@2.12.2
-      prefix: /usr/lib64
+      prefix: /usr/lib64/hwloc
     buildable: false
