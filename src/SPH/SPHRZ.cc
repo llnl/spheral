@@ -472,11 +472,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = std::abs(posi.y());
-      const auto  mi = mass(nodeListi, i);
+      // const auto  ri = std::abs(posi.y());
+      // const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
-      const auto  vri = vi.y();
+      // const auto  vri = vi.y();
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
@@ -484,9 +484,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  ci = soundSpeed(nodeListi, i);
       // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  zetai = abs((Hi*posi).y());
-      const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInvVar(ri, 0.1*hri);
+      // const auto  zetai = abs((Hi*posi).y());
+      // const auto  hri = ri*safeInv(zetai);
+      // const auto  riInv = safeInvVar(ri, 0.1*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -508,11 +508,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node j
       const auto& posj = position(nodeListj, j);
-      const auto  rj = std::abs(posj.y());
-      const auto  mj = mass(nodeListj, j);
+      // const auto  rj = std::abs(posj.y());
+      // const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
-      const auto  vrj = vj.y();
+      // const auto  vrj = vj.y();
       const auto  rhoj = massDensity(nodeListj, j);
       const auto  rhoRZj = massDensityRZ(nodeListj, j);
       const auto  Pj = pressure(nodeListj, j);
@@ -520,9 +520,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  cj = soundSpeed(nodeListj, j);
       // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
-      const auto  zetaj = abs((Hj*posj).y());
-      const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInvVar(rj, 0.1*hrj);
+      // const auto  zetaj = abs((Hj*posj).y());
+      // const auto  hrj = rj*safeInv(zetaj);
+      // const auto  rjInv = safeInvVar(rj, 0.1*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -684,19 +684,20 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = posi.y();                  // Can be negative for ghost points!
+      const auto  ri = posi.y();                    // Can be negative for ghost points!
       const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
+      const auto  vri = vi.y();
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  zetai = (Hi*posi).y();
-      const auto  hri = ri*safeInv(zetai);
+      const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
+      const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.1*hri);
+      const auto  riInv = safeInvVar(ri, 0.1*hri);  // Can be negative for ghost points!
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
@@ -754,7 +755,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       XSPHWeightSumi += Hdeti*mRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
-      const auto  vri = vi.y(); // + 0.5*dt*DvDti.y();
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
       DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
