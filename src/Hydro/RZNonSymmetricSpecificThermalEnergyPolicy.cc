@@ -81,6 +81,7 @@ update(const KeyType& key,
   const auto numFields = eps.numFields();
 
   // Get the state fields.
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
@@ -113,8 +114,14 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
+      // const auto& posi = pos(nodeListi, i);
+      // const auto& posj = pos(nodeListj, j);
+      // if (fuzzyEqual((posi - Vector(posj[0], -(posj[1]))).magnitude2(), 0.0, 1.0e-10)) continue;  // skip self-interaction
+
       // State for node i.
+      const auto  ri = std::abs(pos(nodeListi, i).y());
       const auto  mi = mass(nodeListi, i);
+      const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -122,7 +129,9 @@ update(const KeyType& key,
       const auto  pworki = pairWork[kk][0];
 
       // State for node j.
+      const auto  rj = std::abs(pos(nodeListj, j).y());
       const auto  mj = mass(nodeListj, j);
+      const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -141,11 +150,26 @@ update(const KeyType& key,
     }
   }
 
+  // // Find the total energy discrepancy, and scale the original DepsDt accordingly
+  // auto deltaE0 = 0.0;
+  // auto deltaE1 = 0.0;
+  // for (auto k = 0u; k < numFields; ++k) {
+  //   const auto n = eps[k]->numInternalElements();
+  //   for (auto i = 0u; i < n; ++i) {
+  //     deltaE0 += mass(k,i)*DepsDt0(k,i);
+  //     deltaE1 += mass(k,i)*DepsDt(k,i);
+  //   }
+  // }
+  // deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
+  // deltaE1 = allReduce(deltaE1, SPHERAL_OP_SUM);
+  // const auto chi = deltaE1*safeInv(deltaE0);
+
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
     const auto n = eps[nodeListi]->numInternalElements();
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
+      // DepsDt(nodeListi, i) = chi*DepsDt0(nodeListi, i);
 
       // Add the self-contribution if any (RZ with strength does this for instance).
       if (selfInteraction) {
