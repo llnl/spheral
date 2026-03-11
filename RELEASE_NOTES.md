@@ -40,7 +40,7 @@ Notable changes include:
       * Added actual Spheral release versions and TPL conditions to Spheral package.
       * Added more system libraries to make building on LC faster.
     * TPL updates:
-      * LEOS updated from 4.2.0 to 5.2.0.
+      * LEOS updated from 8.4.2 to 8.5.2.
       * ROCM version updated from 6.2.0 to 6.4.3.
       * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
       * CHAI, Umpire, and RAJA updated to 2025.12.0.

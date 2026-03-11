@@ -110,7 +110,7 @@ packages:
   tk:
     externals:
     - spec: tk@8.6.8
-      prefix: /usr/lib64
+      prefix: /usr
     buildable: false
   netlib-lapack:
     buildable: false
