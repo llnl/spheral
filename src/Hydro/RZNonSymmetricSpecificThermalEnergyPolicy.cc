@@ -135,24 +135,28 @@ update(const KeyType& key,
       const auto  pworkj = pairWork[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto duij = dEij/(mi + mj);
+      // const auto duij = dEij/(mi + mj);
 
-      const auto weighti = std::abs(pworki);
-      const auto weightj = std::abs(pworkj);
-      // const auto weighti = std::abs(DepsDt0(nodeListi, i));
-      // const auto weightj = std::abs(DepsDt0(nodeListj, j));
-      // const auto weighti = std::max(0.0, DepsDt0(nodeListi, i)*sgn(dEij));
-      // const auto weightj = std::max(0.0, DepsDt0(nodeListj, j)*sgn(dEij));
-      // const auto weighti = std::max(0.0, pworki*sgn(dEij));
-      // const auto weightj = std::max(0.0, pworkj*sgn(dEij));
+      const auto chi = dEij*safeInvVar(mi*pworki + mj*pworkj);
+      DepsDt_thread(nodeListi, i) += chi*pworki;
+      DepsDt_thread(nodeListj, j) += chi*pworkj;
 
-      const auto dui = duij * (weighti + tiny)/(weighti + weightj + tiny);
-      const auto duj = duij * (weightj + tiny)/(weighti + weightj + tiny);
-      const auto fij = dEij*safeInv(mi*dui + mj*duj);
-      CHECK2(fuzzyEqual(fij*mi*dui + fij*mj*duj, dEij, 1.0e-8), fij*mi*dui + fij*mj*duj << " != " << dEij << " : " << duij << " " << dui << " " << duj);
+      // const auto weighti = std::abs(pworki);
+      // const auto weightj = std::abs(pworkj);
+      // // const auto weighti = std::abs(DepsDt0(nodeListi, i));
+      // // const auto weightj = std::abs(DepsDt0(nodeListj, j));
+      // // const auto weighti = std::max(0.0, DepsDt0(nodeListi, i)*sgn(dEij));
+      // // const auto weightj = std::max(0.0, DepsDt0(nodeListj, j)*sgn(dEij));
+      // // const auto weighti = std::max(0.0, pworki*sgn(dEij));
+      // // const auto weightj = std::max(0.0, pworkj*sgn(dEij));
 
-      DepsDt_thread(nodeListi, i) += fij * dui;
-      DepsDt_thread(nodeListj, j) += fij * duj;
+      // const auto dui = duij * (weighti + tiny)/(weighti + weightj + tiny);
+      // const auto duj = duij * (weightj + tiny)/(weighti + weightj + tiny);
+      // const auto fij = dEij*safeInv(mi*dui + mj*duj);
+      // CHECK2(fuzzyEqual(fij*mi*dui + fij*mj*duj, dEij, 1.0e-8), fij*mi*dui + fij*mj*duj << " != " << dEij << " : " << duij << " " << dui << " " << duj);
+
+      // DepsDt_thread(nodeListi, i) += fij * dui;
+      // DepsDt_thread(nodeListj, j) += fij * duj;
 
 
       // DepsDt_thread(nodeListi, i) += 2.0*wi*duij;
