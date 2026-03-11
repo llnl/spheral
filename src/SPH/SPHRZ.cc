@@ -816,33 +816,31 @@ applyGhostBoundaries(State<Dim<2>>& state,
   }
 
   // // Convert the mass to mass/length before BCs are applied.
-  // // const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  // const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
   // auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  // mass /= massRZ;
-  // // const auto numNodeLists = mass.numFields();
-  // // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  // //   const auto n = mass[nodeListi]->numElements();
-  // //   for (auto i = 0u; i < n; ++i) {
-  // //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-  // //     CHECK(circi > 0.0);
-  // //     mass(nodeListi, i) /= circi;
-  // //   }
-  // // }
+  // const auto numNodeLists = mass.numFields();
+  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+  //   const auto n = mass[nodeListi]->numElements();
+  //   for (auto i = 0u; i < n; ++i) {
+  //     const auto ri = abs(pos(nodeListi, i).y());
+  //     CHECK(ri > 0.0);
+  //     mass(nodeListi, i) /= ri;
+  //   }
+  // }
 
   // Apply ordinary SPH BCs.
   SPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
-  // for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
+  for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
 
   // // Scale back to mass.
-  // mass *= massRZ;
-  // // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
-  // //   const unsigned n = mass[nodeListi]->numElements();
-  // //   for (unsigned i = 0; i < n; ++i) {
-  // //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-  // //     CHECK(circi > 0.0);
-  // //     mass(nodeListi, i) *= circi;
-  // //   }
-  // // }
+  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+  //   const auto n = mass[nodeListi]->numElements();
+  //   for (auto i = 0u; i < n; ++i) {
+  //     const auto ri = abs(pos(nodeListi, i).y());
+  //     CHECK(ri > 0.0);
+  //     mass(nodeListi, i) *= ri;
+  //   }
+  // }
 
 }
 
@@ -863,15 +861,15 @@ enforceBoundaries(State<Dim<2>>& state,
   }
 
   // // Convert the mass to mass/length before BCs are applied.
-  // FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  // FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  // const unsigned numNodeLists = mass.numFields();
-  // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
-  //   const unsigned n = mass[nodeListi]->numElements();
-  //   for (unsigned i = 0; i < n; ++i) {
-  //     const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-  //     CHECK(circi > 0.0);
-  //     mass(nodeListi, i) /= circi;
+  // auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  // auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  // const auto numNodeLists = mass.numFields();
+  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+  //   const auto n = mass[nodeListi]->numElements();
+  //   for (auto i = 0u; i < n; ++i) {
+  //     const auto ri = abs(pos(nodeListi, i).y());
+  //     CHECK(ri > 0.0);
+  //     mass(nodeListi, i) /= ri;
   //   }
   // }
 
@@ -879,14 +877,12 @@ enforceBoundaries(State<Dim<2>>& state,
   SPHBase<Dim<2>>::enforceBoundaries(state, derivs);
 
   // // Scale back to mass.
-  // // We also ensure no point approaches the z-axis too closely.
-  // FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  // for (unsigned nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
-  //   const unsigned n = mass[nodeListi]->numElements();
-  //   for (unsigned i = 0; i < n; ++i) {
-  //     Vector& posi = pos(nodeListi, i);
-  //     const Scalar circi = 2.0*M_PI*abs(posi.y());
-  //     mass(nodeListi, i) *= circi;
+  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+  //   const auto n = mass[nodeListi]->numElements();
+  //   for (auto i = 0u; i < n; ++i) {
+  //     const auto ri = abs(pos(nodeListi, i).y());
+  //     CHECK(ri > 0.0);
+  //     mass(nodeListi, i) *= ri;
   //   }
   // }
 }
