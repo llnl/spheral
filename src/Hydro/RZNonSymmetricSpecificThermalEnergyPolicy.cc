@@ -73,8 +73,6 @@ update(const KeyType& key,
 //   std::cerr.setf(std::ios::scientific, std::ios::floatfield);
 //   std::cerr.precision(15);
 
-  const auto tiny = 1.0e-30;
-
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == HydroFieldNames::specificThermalEnergy and 
@@ -101,7 +99,6 @@ update(const KeyType& key,
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
-  // Scalar EerrTot = 0.0;
 
   // Walk all pairs and figure out the discrete work for each point
 #pragma omp parallel
@@ -118,7 +115,6 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
-      // const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -127,7 +123,6 @@ update(const KeyType& key,
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
-      // const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -135,45 +130,9 @@ update(const KeyType& key,
       const auto  pworkj = pairWork[kk][1];
 
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto duij = dEij/(mi + mj);
-
-      const auto chi = dEij*safeInvVar(mi*pworki + mj*pworkj);
+      const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
       DepsDt_thread(nodeListi, i) += chi*pworki;
       DepsDt_thread(nodeListj, j) += chi*pworkj;
-
-      // const auto weighti = std::abs(pworki);
-      // const auto weightj = std::abs(pworkj);
-      // // const auto weighti = std::abs(DepsDt0(nodeListi, i));
-      // // const auto weightj = std::abs(DepsDt0(nodeListj, j));
-      // // const auto weighti = std::max(0.0, DepsDt0(nodeListi, i)*sgn(dEij));
-      // // const auto weightj = std::max(0.0, DepsDt0(nodeListj, j)*sgn(dEij));
-      // // const auto weighti = std::max(0.0, pworki*sgn(dEij));
-      // // const auto weightj = std::max(0.0, pworkj*sgn(dEij));
-
-      // const auto dui = duij * (weighti + tiny)/(weighti + weightj + tiny);
-      // const auto duj = duij * (weightj + tiny)/(weighti + weightj + tiny);
-      // const auto fij = dEij*safeInv(mi*dui + mj*duj);
-      // CHECK2(fuzzyEqual(fij*mi*dui + fij*mj*duj, dEij, 1.0e-8), fij*mi*dui + fij*mj*duj << " != " << dEij << " : " << duij << " " << dui << " " << duj);
-
-      // DepsDt_thread(nodeListi, i) += fij * dui;
-      // DepsDt_thread(nodeListj, j) += fij * duj;
-
-
-      // DepsDt_thread(nodeListi, i) += 2.0*wi*duij;
-      // DepsDt_thread(nodeListj, j) += 2.0*(1.0 - wi)*duij;
-      // DepsDt_thread(nodeListi, i) += wi*dEij/mi;
-      // DepsDt_thread(nodeListj, j) += (1.0 - wi)*dEij/mj;
-
-      // const auto Eerr = dEij - mi*pworki - mj*pworkj;
-      // DepsDt_thread(nodeListi, i) += pworki;// + Eerr/(mi + mj);
-      // DepsDt_thread(nodeListj, j) += pworkj;// + Eerr/(mi + mj);
-      // // DepsDt_thread(nodeListi, i) += pworki + wi*Eerr/mi;
-      // // DepsDt_thread(nodeListj, j) += pworkj + (1.0 - wi)*Eerr/mj;
-
-      // #pragma omp critical
-      // {
-      //   EerrTot += Eerr;
-      // }
     }
 
 #pragma omp critical
@@ -181,10 +140,6 @@ update(const KeyType& key,
       DepsDt_thread.threadReduce();
     }
   }
-
-  // // Correct the error
-  // const auto deltaEpsDt = allReduce(EerrTot, SPHERAL_OP_SUM) / mass.sumElements();
-  // DepsDt += deltaEpsDt;
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
