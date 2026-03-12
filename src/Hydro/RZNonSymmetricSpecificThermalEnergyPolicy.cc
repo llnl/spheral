@@ -114,8 +114,9 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
-      // const auto& posi = pos(nodeListi, i);
-      // const auto& posj = pos(nodeListj, j);
+      const auto& posi = pos(nodeListi, i);
+      const auto& posj = pos(nodeListj, j);
+      // if (posi.y() < 0.0 or posj.y() < 0.0) continue;  // skip interactations across z-axis
       // if (fuzzyEqual((posi - Vector(posj[0], -(posj[1]))).magnitude2(), 0.0, 1.0e-10)) continue;  // skip self-interaction
 
       // State for node i.
@@ -138,7 +139,15 @@ update(const KeyType& key,
       const auto& paccj = pairAccelerations[kk][1];
       const auto  pworkj = pairWork[kk][1];
 
+      // Conservative energy delta for the pair
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+
+      // // Additive correction
+      // const auto duij = (dEij - (mi*pworki + mj*pworkj))*safeInv(mi + mj);
+      // DepsDt_thread(nodeListi, i) += pworki + duij;
+      // DepsDt_thread(nodeListj, j) += pworkj + duij;
+
+      // Multiplicative correction
       const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
       DepsDt_thread(nodeListi, i) += chi*pworki;
       DepsDt_thread(nodeListj, j) += chi*pworkj;
@@ -169,7 +178,6 @@ update(const KeyType& key,
     const auto n = eps[nodeListi]->numInternalElements();
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
-      // DepsDt(nodeListi, i) = chi*DepsDt0(nodeListi, i);
 
       // Add the self-contribution if any (RZ with strength does this for instance).
       if (selfInteraction) {
