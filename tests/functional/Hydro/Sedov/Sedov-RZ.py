@@ -93,6 +93,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             writeOutputLabel = True,
 
             graphics = True,
+            plotDerivs = True,
             )
 
 outputFile = "Sedov-%s-RZ.gnu" % problem
@@ -159,7 +160,7 @@ mpi.barrier()
 #-------------------------------------------------------------------------------
 # Material properties.
 #-------------------------------------------------------------------------------
-eos = GammaLawGasMKS(gamma, mu, minimumPressure=0.0)
+eos = GammaLawGasMKS(gamma, mu)#, minimumPressure=0.0)
 strength = NullStrength()
 
 #-------------------------------------------------------------------------------
@@ -500,6 +501,29 @@ if graphics:
                                 winTitle = "volume",
                                 colorNodeLists = False, plotGhosts = False)
         plots.append((volPlot, "Sedov-%s-vol.png" % problem))
+
+    if plotDerivs:
+        xans = np.linspace(0.0, max(xprof), 500, endpoint=True)
+        dvdt_ans, dudt_ans, drhodt_ans, divv_ans = answer.derivatives(control.time(), xans)
+        if problem == "planar":
+            xfunc = "%s.x"
+            yfunc = "%s.x"
+        elif problem == "cylindrical":
+            xfunc = "%s.y"
+            yfunc = "%s.y"
+        else:
+            assert problem == "spherical"
+            xfunc = "%s.magnitude()"
+            yfunc = "%s.magnitude()"
+        DvDtPlot = plotFieldList(hydro.DvDt, xFunction=xfunc, yFunction=yfunc, winTitle="DvDt")
+        DvDtPlot.plot(xans, dvdt_ans, "k-", label="Solution")
+        DuDtPlot = plotFieldList(hydro.DspecificThermalEnergyDt, xFunction=xfunc, winTitle="DuDt")
+        DuDtPlot.plot(xans, dudt_ans, "k-", label="Solution")
+        DrhoDtPlot = plotFieldList(hydro.DmassDensityDt, xFunction=xfunc, winTitle="DrhoDt")
+        DrhoDtPlot.plot(xans, drhodt_ans, "k-", label="Solution")
+        plots += [(DvDtPlot, "Sedov-{}-DvDt-RZ.png".format(problem)),
+                  (DuDtPlot, "Sedov-{}-DuDt-RZ.png".format(problem)),
+                  (DrhoDtPlot, "Sedov-{}-DrhoDt-RZ.png".format(problem))]
 
     # Make hardcopies of the plots.
     for p, filename in plots:
