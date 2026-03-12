@@ -57,7 +57,7 @@
   extends: [.build]
   script:
     - !reference [.build_job, script]
-    - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
+    - $RUN_CMD -n 1 ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
   artifacts:
     paths:
       - ci-dir.txt
