@@ -15,6 +15,7 @@ packages:
           c: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang
           cxx: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang++
           fortran: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdflang
+        extra_rpaths: [/usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/llvm/lib]
   cmake:
     version: [3.24.2]
     buildable: false
