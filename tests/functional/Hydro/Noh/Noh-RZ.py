@@ -452,10 +452,7 @@ for bc in bcs:
 #-------------------------------------------------------------------------------
 # Construct an integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for p in packages:
-    integrator.appendPhysicsPackage(p)
-del p
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
