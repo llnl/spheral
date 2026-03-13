@@ -48,7 +48,7 @@ JohnsonCookStrength(const SolidEquationOfState<Dimension>& eos,
   VERIFY2(mEpsdot0 > 0.0,
           "JohnsonCookStrength ERROR: reference strain-rate must be greater than zero.");
   VERIFY2(mEpsdotmin > 0.0,
-          "JohnsonCookStrength ERROR: reference strain-rate must be greater than zero.");
+          "JohnsonCookStrength ERROR: minimum strain-rate must be greater than zero.");
   VERIFY2(mTmelt > mTroom,
           "JohnsonCookStrength ERROR: Tmelt must be greater than or equal Troom.");
   VERIFY2((not shearModulusScaling) or mu0 > 0.0,
