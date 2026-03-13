@@ -355,7 +355,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto  oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
-  // const auto tiny = 1.0e-30;
+  const auto tiny = 1.0e-30;
   const Scalar W0 = W(0.0, 1.0);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -678,8 +678,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.1*hri);  // Can be negative for ghost points!
-      // const auto  riInv = safeInv(ri, tiny);
+      // const auto  riInv = safeInvVar(ri, 0.05*hri);  // Can be negative for ghost points!
+      const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  Vi = mi/rhoi;
