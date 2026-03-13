@@ -26,27 +26,57 @@
 
 #include <vector>
 #include <limits>
+#include <cmath>
 using std::vector;
 using std::numeric_limits;
+using std::cerr;
+using std::endl;
 
 namespace Spheral {
 
-// namespace {
+namespace {
 
-// inline double weighting(const double wi,
-//                         const double wj,
-//                         const double Eij) {
-//   const int si = isgn0(wi);
-//   const int sj = isgn0(wj);
-//   const int sij = isgn0(wij);
-//   if (sij == 0 or (si == 0 and sj == 0))             return 0.5;
-//   if (si == sj and sj == sij)                        return wi/(wi + wj);  // All the same sign and non-zero
-//   if (si == sj)                                      return 0.5;
-//   if (si == sij)                                     return 1.0;
-//   return 0.0;
-// }
+inline
+double
+integrate_vr_over_r(const double vr,
+                    const double r,
+                    const double ar,
+                    const double dt,
+                    const bool barf = false) {
+  const double tiny = 1.0e-10;
+  VERIFY(r > 0.0);
+  VERIFY(r + vr*dt > 0.0);
+  if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
+  const auto q = 4.0*ar*r - vr*vr;
+  if (barf) cerr << "q: " << q << endl;
+  if (fuzzyEqual(q, 0.0, 1.0e-10)) {
+    const auto a = vr*safeInv(2.0*ar);
+    if (fuzzyEqual(a, 0.0, tiny)) return 0.0;
+    // auto Xt =  [&](const double t) { return ar*FastMath::square(a + t); };
+    auto F0t = [&](const double t) { return -ar*safeInv(a + t); };
+    auto F1t = [&](const double t) { return ar*(log(std::abs(a + t)) + a*safeInv(a + t)); };
+    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+    return Ft(dt) - Ft(0.0);
+  } else {
+    auto Xt =  [&](const double t) { return r + vr*t + ar*t*t; };
+    auto F0t = [&](const double t) {
+                 const auto thpt = std::sqrt(std::abs(q));
+                 if (q > 0.0) {
+                   return 2.0/thpt*atan2(2.0*ar*t + vr, thpt);
+                 } else {
+                   CHECK(q < 0.0);
+                   const auto ack = 2.0*ar*t + vr;
+                   if (fuzzyEqual(ack, thpt, tiny)) return 0.0;
+                   return 1.0/thpt*log(std::abs((thpt - ack)*safeInvVar(thpt + ack)));
+                 }
+               };
+    auto F1t = [&](const double t) { return (log(Xt(t)) - vr*F0t(t))*safeInv(2.0*ar); };
+    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+    return Ft(dt) - Ft(0.0);
+  }  
+}
 
-// }
+}
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -85,6 +115,8 @@ update(const KeyType& key,
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto  pressure = state.fields(HydroFieldNames::pressure, Scalar());
+  const auto  rho = state.fields(HydroFieldNames::massDensity, Scalar());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
   const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 2u>>(HydroFieldNames::pairWork);
@@ -114,14 +146,9 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
-      const auto& posi = pos(nodeListi, i);
-      const auto& posj = pos(nodeListj, j);
-      // if (posi.y() < 0.0 or posj.y() < 0.0) continue;  // skip interactations across z-axis
-      // if (fuzzyEqual((posi - Vector(posj[0], -(posj[1]))).magnitude2(), 0.0, 1.0e-10)) continue;  // skip self-interaction
-
       // State for node i.
-      const auto  ri = std::abs(pos(nodeListi, i).y());
-      const auto  mi = mass(nodeListi, i);
+      // const auto  ri = std::abs(pos(nodeListi, i).y());
+      // const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
@@ -130,8 +157,8 @@ update(const KeyType& key,
       const auto  pworki = pairWork[kk][0];
 
       // State for node j.
-      const auto  rj = std::abs(pos(nodeListj, j).y());
-      const auto  mj = mass(nodeListj, j);
+      // const auto  rj = std::abs(pos(nodeListj, j).y());
+      // const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
@@ -140,17 +167,17 @@ update(const KeyType& key,
       const auto  pworkj = pairWork[kk][1];
 
       // Conservative energy delta for the pair
-      const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      const auto dEij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
 
-      // // Additive correction
-      // const auto duij = (dEij - (mi*pworki + mj*pworkj))*safeInv(mi + mj);
-      // DepsDt_thread(nodeListi, i) += pworki + duij;
-      // DepsDt_thread(nodeListj, j) += pworkj + duij;
+      // Additive correction
+      const auto duij = (dEij - (mRZi*pworki + mRZj*pworkj))*safeInv(mRZi + mRZj);
+      DepsDt_thread(nodeListi, i) += pworki + duij;
+      DepsDt_thread(nodeListj, j) += pworkj + duij;
 
-      // Multiplicative correction
-      const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
-      DepsDt_thread(nodeListi, i) += chi*pworki;
-      DepsDt_thread(nodeListj, j) += chi*pworkj;
+      // // Multiplicative correction
+      // const auto chi = dEij*safeInv(mRZi*pworki + mRZj*pworkj);
+      // DepsDt_thread(nodeListi, i) += chi*pworki;
+      // DepsDt_thread(nodeListj, j) += chi*pworkj;
     }
 
 #pragma omp critical
@@ -159,36 +186,35 @@ update(const KeyType& key,
     }
   }
 
-  // // Find the total energy discrepancy, and scale the original DepsDt accordingly
-  // auto deltaE0 = 0.0;
-  // auto deltaE1 = 0.0;
-  // for (auto k = 0u; k < numFields; ++k) {
-  //   const auto n = eps[k]->numInternalElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     deltaE0 += mass(k,i)*DepsDt0(k,i);
-  //     deltaE1 += mass(k,i)*DepsDt(k,i);
-  //   }
-  // }
-  // deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
-  // deltaE1 = allReduce(deltaE1, SPHERAL_OP_SUM);
-  // const auto chi = deltaE1*safeInv(deltaE0);
-
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
     const auto n = eps[nodeListi]->numInternalElements();
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
 
+      // Add self-interaction contributions
+      const auto  Pi = pressure(nodeListi, i);
+      const auto  rhoi = rho(nodeListi, i);
+      const auto  ri = pos(nodeListi, i).y();
+      const auto& vi = velocity(nodeListi, i);
+      const auto& ai = acceleration(nodeListi, i);
+      const auto  vi12 = vi + ai*hdt;
+      const auto  vri12 = vi12.y();
+      const auto  ri12 = ri + vri12*hdt;
+      VERIFY2(ri > 0.0, "BLAGO: " << i << " " << ri << " " << vi);
+      // auto        duii = -Pi/rhoi*integrate_vr_over_r(vi.y(), ri, ai.y(), multiplier)*safeInv(multiplier);    //vri12*safeInv(ri12);
+      auto        duii = -Pi/rhoi*vri12*safeInv(ri);
+
       // Add the self-contribution if any (RZ with strength does this for instance).
       if (selfInteraction) {
-        const auto& vi = velocity(nodeListi, i);
-        const auto& ai = acceleration(nodeListi, i);
-        const auto  vi12 = vi + ai*hdt;
-        const auto duii = -2.0*vi12.dot(selfAccelerations(nodeListi, i));
-        DepsDt(nodeListi, i) += duii;
+        duii += -2.0*vi12.dot(selfAccelerations(nodeListi, i));
       }
 
+      DepsDt(nodeListi, i) += duii;
       eps(nodeListi, i) += DepsDt(nodeListi, i)*multiplier;
+
+      // const auto ri1 = std::max(0.0, ri + vri12*multiplier);
+      // eps(nodeListi, i) *= FastMath::square(ri*safeInvVar(ri1));
     }
   }
 }

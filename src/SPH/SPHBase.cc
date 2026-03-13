@@ -228,7 +228,8 @@ registerState(DataBase<Dimension>& dataBase,
   // Mass density
   auto massDensity = dataBase.fluidMassDensity();
   for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
-    state.enroll(*massDensity[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
+    state.enroll(*massDensity[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>({HydroFieldNames::specificThermalEnergy},
+                                                                                                fluidNodeListPtr->rhoMin(),
                                                                                                 fluidNodeListPtr->rhoMax()));
   }
 
