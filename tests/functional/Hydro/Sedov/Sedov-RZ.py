@@ -481,10 +481,13 @@ if graphics:
     from SpheralMatplotlib import *
     if problem == "planar":
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx")
+        xfunc = "%s.x"
     elif problem == "cylindrical":
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy")
+        xfunc = "%s.y"
     else:
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db)
+        xfunc = "%s.magnitude()"
     APlot = newFigure()
     APlot.plot(xprof, A, marker='o', label="Simulation")
     plotAnswer(answer, control.time(), rhoPlot, velPlot, epsPlot, PPlot, APlot, HPlot)
@@ -495,6 +498,13 @@ if graphics:
              (PPlot, "Sedov-%s-P-RZ.png" % problem),
              (APlot, "Sedov-planar-A.png"),
              (HPlot, "Sedov-%s-h-RZ.png" % problem)]
+
+    maxQplot = plotFieldList(hydro.Q.maxViscousPressure,
+                             xFunction = xfunc,
+                             winTitle = "Max Q pressure")
+    effQplot = plotFieldList(hydro.Q.effViscousPressure,
+                             xFunction = xfunc,
+                             winTitle = "Effective Q pressure")
 
     if hydroType == "CRKSPH":
         volPlot = plotFieldList(hydro.volume, 

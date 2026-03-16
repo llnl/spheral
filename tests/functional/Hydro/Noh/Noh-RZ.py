@@ -548,10 +548,13 @@ if graphics:
     from SpheralMatplotlib import *
     if problem == "planar":
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx")
+        xfunc = "%s.x"
     elif problem == "cylindrical":
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy")
+        xfunc = "%s.y"
     else:
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db)
+        xfunc = "%s.magnitude()"
     plotAnswer(answer, control.time(), rhoPlot=rhoPlot, velPlot=velPlot, epsPlot=epsPlot, PPlot=PPlot, HPlot=HPlot,
                plotStyle = "kx")
     EPlot = plotEHistory(control.conserve)
@@ -574,6 +577,10 @@ if graphics:
     plt.ylabel("r")
     plt.title("Node positions @ t=%g" % control.time())
     plots.append((posPlot, "Noh-%s-positions.png" % problem))
+
+    Qplot = plotFieldList(hydro.maxViscousPressure,
+                          xFunction = xfunc,
+                          winTitle = "Max Q pressure")
 
     if hydroType == "CRKSPH":
         volPlot = plotFieldList(control.RKCorrections.volume,
