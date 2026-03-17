@@ -228,7 +228,7 @@
 # This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
 # This should be enough of a buffer that we likely won't delete a build mid pipeline,
 # and never fill the sphapp workspace storage.
-.clean_old_dirs:
+clean_old_dirs:
   stage: cleanup
   variables:
     GIT_STRATEGY: none
@@ -247,7 +247,7 @@
           done
 
 # Remove performance benchmarks that are older than 6 months
-.clean_old_perfs:
+clean_old_perfs:
   stage: cleanup
   variables:
     GIT_STRATEGY: none
