@@ -67,7 +67,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('cmake@3.10.0:', type='build', when='@2024.01.1')
 
     depends_on('boost +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
-    depends_on('boost@1.85.0', type='build', when='@2025.12.0:')
+    depends_on('boost@1.87.0', type='build', when='@develop')
+    depends_on('boost@1.85.0', type='build', when='@2025.12.0')
     depends_on('boost@1.74.0', type='build', when='@:2025.06.1')
 
     depends_on('zlib@1.3 +shared +pic', type='build')
@@ -121,18 +122,28 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     with when('@2025.01.0:'):
         depends_on('adiak~shared', type='build')
-        depends_on('chai', type='build')
-        depends_on('raja', type='build')
+
         depends_on('umpire', type='build')
-        depends_on('raja@2025.09.1', type='build', when='@2025.12.0:')
+
+        depends_on('raja', type='build')
+        # Let chai determine versions of RAJA and Umpire after v2025.06.1
         depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
-        depends_on('chai@2025.09.0+raja', type='build', when='@2025.12.0:')
+
+        depends_on('chai+raja', type='build')
+        depends_on('chai@2025.12.0', type='build', when='@develop')
+        depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
     # Forward MPI Variants
     mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak", "chai", "umpire"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv} ^{ctpl}")
+
+    # Forward OpenMP Variants
+    openmp_tpl_list = ["axom", "raja", "chai", "umpire"]
+    for ctpl in openmp_tpl_list:
+        for variant in ["+openmp", "~openmp"]:
+            depends_on(f"{ctpl} {variant}", type='build', when=f"{variant} ^{ctpl}")
 
     # Forward CUDA/ROCM Variants
     def set_cuda_variants(ctpl):
@@ -153,8 +164,11 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     for ctpl in debug_tpl_list:
         depends_on(f"{ctpl} build_type=Debug", when=f"build_type=Debug ^{ctpl}")
 
-    depends_on('leos@8.4.2+filters+yaml~xml+silo', type='build', when='+leos')
-    depends_on('leos build_type=Debug', when='+leos build_type=Debug')
+    with when('+leos'):
+        depends_on('leos+filters+yaml~xml+silo', type='build')
+        depends_on('leos build_type=Debug', when='build_type=Debug')
+        depends_on('leos@8.4.2', type='build', when='@:2025.12.0')
+        depends_on('leos@8.5.2', type='build', when='@develop')
     # TODO: Get leos working with +rocm variant using 8.5.2
     # if LEOSpresent:
     #     set_gpu_variants("leos", "+leos")
@@ -163,6 +177,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # Conflicts
     # -------------------------------------------------------------------------
     conflicts("+cuda", when="+rocm")
+    # This conflict comes from Axom and can be removed if removed from Axom.
     conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
 

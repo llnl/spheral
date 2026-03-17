@@ -57,6 +57,8 @@ class SpheralTPL:
                             help="Skip downloading Spack repo.")
         parser.add_argument("--ci-run", action="store_true",
                             help="For use by the CI only. Must set a --spec.")
+        parser.add_argument("--no-upstream", action="store_true",
+                            help="Force local build of TPLs, ignoring any upstream prebuilt packages.")
         parser.add_argument("--dry-run", action="store_true",
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
@@ -290,6 +292,8 @@ class SpheralTPL:
             from spack import environment
             self.spack_env = environment.Environment(self.env_dir)
             environment.activate(self.spack_env)
+            repo_cmd = SpackCommand("repo")
+            repo_cmd(*["update"])
         else:
             # Otherwise, check if environment has been created
             arch_cmd = SpackCommand("arch")
@@ -311,9 +315,7 @@ class SpheralTPL:
         else:
             print("Concretizing environment")
 
-        with self.spack_env.write_transaction():
-            conc_spec = self.spack_env.concretize(force=force_conc)
-            self.spack_env.write()
+        conc_spec = self.do_concretize(force_conc)
 
         if conc_spec:
             print("Concretized specs")
@@ -331,6 +333,15 @@ class SpheralTPL:
         else:
             specs = self.spack_env.concrete_roots()
             self.print_specs(specs)
+
+    def do_concretize(self, force_conc):
+        if (self.args.no_upstream):
+            spack.config.set("upstreams", {"spheral_shared": {"install_tree": {}}})
+            print("WARNING: Modifying local Spack files, do not commit these changes.")
+        with self.spack_env.write_transaction():
+            conc_spec = self.spack_env.concretize(force=force_conc)
+            self.spack_env.write()
+        return conc_spec
 
     def install_and_config(self):
         "Install TPLs and create host config file for given spec"
@@ -360,6 +371,8 @@ class SpheralTPL:
         else:
             if (self.args.debug_build):
                 default_install_args.update(dict(keep_stage=True))
+            if (self.args.dry_run):
+                default_install_args.update(dict(fake=True))
             self.spack_env.install_specs([self.spack_spec], **default_install_args)
         if (self.args.ci_run):
             shutil.copyfile(host_config_file, "gitlab.cmake")
@@ -410,7 +423,7 @@ class SpheralTPL:
             if self.args.update_upstream:
                 upstream_dir = spack.config.get("upstreams:spheral_shared:install_tree")
                 spack.config.set("config", {"install_tree": {"root": str(upstream_dir), "padded_length": 0}})
-                print("WARNING: Modifying local Spack files, do not commit these changes")
+                print("WARNING: Modifying local Spack files, do not commit these changes.")
                 with self.spack_env.manifest.use_config():
                     print(spack.config.get("config:install_tree"))
                     print(f"Installing to {upstream_dir}")
@@ -418,7 +431,6 @@ class SpheralTPL:
                     self.spack_env.install_all(install_deps=True, install_package=False, fail_fast=True)
                     # Equivalent of running spack reindex
                     spack.store.STORE.reindex()
-                print("WARNING: Be sure to update permissions and groups on upstream.")
             else:
                 self.spack_env.install_specs(None, **default_install_args)
 

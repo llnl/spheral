@@ -35,15 +35,19 @@
       - ci-dir.txt
       - job-name.txt
 
+.build_job:
+  script:
+    - CI_BUILD_DIR=$(cat ci-dir.txt)
+    - cd $CI_BUILD_DIR && cat job-name.txt
+    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+
 .build:
   extends: [.retry_rule]
   stage: build_and_install
   variables:
     GIT_STRATEGY: none
   script:
-    - CI_BUILD_DIR=$(cat ci-dir.txt)
-    - cd $CI_BUILD_DIR && cat job-name.txt
-    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --ctest --nprocs $NPROC --host-config gitlab.cmake -DSPHERAL_ENABLE_TIMERS=ON $EXTRA_CMAKE_ARGS
+    - !reference [.build_job, script]
   artifacts:
     paths:
       - ci-dir.txt
@@ -51,11 +55,9 @@
 
 .build_and_test:
   extends: [.build]
-  after_script:
-    - CI_BUILD_DIR=$(cat ci-dir.txt)
-    - cd $CI_BUILD_DIR && cat job-name.txt
-
-    - ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
+  script:
+    - !reference [.build_job, script]
+    - $RUN_CMD -n 1 ./build_gitlab/install/bin/spheral -c "import $SPHERAL_MODULE"
   artifacts:
     paths:
       - ci-dir.txt
@@ -135,19 +137,8 @@
     - !reference [.merge_pr_rule, rules]
     - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
   script:
+    - umask 027
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream
-
-.toss_update_permissions:
-  stage: update_permissions
-  variables:
-    GIT_STRATEGY: none
-  rules:
-    - !reference [.merge_pr_rule, rules]
-    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
-  script:
-    - ml load mpifileutils
-    - $RUN_CMD -n $NPROC dchmod --mode go+rx $UPSTREAM_DIR
-  dependencies: []
 
 # ------------------------------------------------------------------------------
 # Production Installation scripts
@@ -238,7 +229,7 @@
 # This job searches our SPHERAL_BUILDS_DIR and deletes all but the N most recent builds.
 # This should be enough of a buffer that we likely won't delete a build mid pipeline,
 # and never fill the sphapp workspace storage.
-.clean_old_dirs:
+clean_old_dirs:
   stage: cleanup
   variables:
     GIT_STRATEGY: none
@@ -257,10 +248,11 @@
           done
 
 # Remove performance benchmarks that are older than 6 months
-.clean_old_perfs:
+clean_old_perfs:
   stage: cleanup
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   extends: [.toss_perf_resource]
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
