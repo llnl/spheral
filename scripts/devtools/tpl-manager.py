@@ -58,7 +58,7 @@ class SpheralTPL:
         parser.add_argument("--ci-run", action="store_true",
                             help="For use by the CI only. Must set a --spec.")
         parser.add_argument("--no-upstream", action="store_true",
-                            help="Use if on LC machines but cannot access the upstream.")
+                            help="Force local build of TPLs, ignoring any upstream prebuilt packages.")
         parser.add_argument("--dry-run", action="store_true",
                             help="Use to do everything but actually install. For testing purposes.")
         parser.add_argument("--id", type=str, default=None,
