@@ -798,32 +798,32 @@ applyGhostBoundaries(State<Dim<2>>& state,
     boundaryPtr->applyFieldListGhostBoundary(rhoRZ);
   }
 
-  // // Convert the mass to mass/length before BCs are applied.
-  // const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-  // auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  // const auto numNodeLists = mass.numFields();
-  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  //   const auto n = mass[nodeListi]->numElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     const auto ri = abs(pos(nodeListi, i).y());
-  //     CHECK(ri > 0.0);
-  //     mass(nodeListi, i) /= ri;
-  //   }
-  // }
+  // Convert the mass to mass/length before BCs are applied.
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto numNodeLists = mass.numFields();
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) /= ri;
+    }
+  }
 
   // Apply ordinary SPH BCs.
   SPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
   for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
 
-  // // Scale back to mass.
-  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  //   const auto n = mass[nodeListi]->numElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     const auto ri = abs(pos(nodeListi, i).y());
-  //     CHECK(ri > 0.0);
-  //     mass(nodeListi, i) *= ri;
-  //   }
-  // }
+  // Scale back to mass.
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) *= ri;
+    }
+  }
 
 }
 
@@ -843,31 +843,31 @@ enforceBoundaries(State<Dim<2>>& state,
     boundaryPtr->enforceFieldListBoundary(rhoRZ);
   }
 
-  // // Convert the mass to mass/length before BCs are applied.
-  // auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  // auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-  // const auto numNodeLists = mass.numFields();
-  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  //   const auto n = mass[nodeListi]->numElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     const auto ri = abs(pos(nodeListi, i).y());
-  //     CHECK(ri > 0.0);
-  //     mass(nodeListi, i) /= ri;
-  //   }
-  // }
+  // Convert the mass to mass/length before BCs are applied.
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto numNodeLists = mass.numFields();
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) /= ri;
+    }
+  }
 
   // Apply ordinary SPH BCs.
   SPHBase<Dim<2>>::enforceBoundaries(state, derivs);
 
-  // // Scale back to mass.
-  // for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-  //   const auto n = mass[nodeListi]->numElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     const auto ri = abs(pos(nodeListi, i).y());
-  //     CHECK(ri > 0.0);
-  //     mass(nodeListi, i) *= ri;
-  //   }
-  // }
+  // Scale back to mass.
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) *= ri;
+    }
+  }
 }
 
 }
