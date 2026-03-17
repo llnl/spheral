@@ -1,6 +1,4 @@
 import os, time, sys, subprocess, argparse
-import ats.util.generic_utils as ats_utils
-import SpheralConfigs
 
 # This is a wrapper for running Spheral through ATS
 
@@ -75,6 +73,7 @@ def run_and_report(run_command, ci_output, num_runs):
 #------------------------------------------------------------------------------
 # Add any build specific ATS arguments
 def install_ats_args():
+    import SpheralConfigs
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
@@ -91,18 +90,6 @@ def install_ats_args():
 # Main routine
 #---------------------------------------------------------------------------
 def main():
-    test_log_name = "test-logs"
-    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
-    toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
-    np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
-    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
-    temp_uname = os.uname()
-    hostname = temp_uname[1].rstrip("0123456789")
-    sys_type = os.getenv("SYS_TYPE")
-    # Use ATS to for some machine specific functions
-    if "MACHINE_TYPE" not in os.environ:
-        ats_utils.set_machine_type_based_on_sys_type()
-
     #---------------------------------------------------------------------------
     # Setup argument parser
     #---------------------------------------------------------------------------
@@ -136,6 +123,18 @@ def main():
     #---------------------------------------------------------------------------
     # Setup machine info classes
     #---------------------------------------------------------------------------
+    test_log_name = "test-logs"
+    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
+    toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
+    np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
+    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
+    temp_uname = os.uname()
+    hostname = temp_uname[1].rstrip("0123456789")
+    sys_type = os.getenv("SYS_TYPE")
+    # Use ATS to for some machine specific functions
+    if "MACHINE_TYPE" not in os.environ:
+        import ats.util.generic_utils as ats_utils
+        ats_utils.set_machine_type_based_on_sys_type()
     ats_args = install_ats_args()
     numNodes = options.numNodes
     timeLimit = options.timeLimit

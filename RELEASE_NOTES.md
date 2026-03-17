@@ -20,6 +20,9 @@ Notable changes include:
       so there is no user interface impact.
     * Added update-tpls commit message trigger.
     * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
+    * tpl-manager.py updates:
+      * Added --no-upstream option for when on LC machines but cannot access upstream.
+      * Added --dry-run option for testing purposes.
     * Performance testing and CI improvements:
       * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
       * The cleanup old directories job is now a scheduled pipelines that runs weekly.
@@ -27,6 +30,8 @@ Notable changes include:
       * Gitlab pages now uses Plotly for interactive visualizations.
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
       * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
+      * Added umask command for updating upstreams and removed separate job to update permissions.
+      * Build and test job now fails if import of Spheral module fails.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
@@ -34,6 +39,12 @@ Notable changes include:
       * Updated TPL Manager to support spack v1.1.0.
       * Updated CI to support python v3.12 and Ubuntu 24.04.
       * Added actual Spheral release versions and TPL conditions to Spheral package.
+      * Added more system libraries to make building on LC faster.
+    * TPL updates:
+      * LEOS updated from 8.4.2 to 8.5.2.
+      * ROCM version updated from 6.2.0 to 6.4.3.
+      * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
+      * CHAI, Umpire, and RAJA updated to 2025.12.0.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
