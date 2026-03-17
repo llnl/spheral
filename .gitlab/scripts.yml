@@ -250,7 +250,8 @@ clean_old_dirs:
 clean_old_perfs:
   stage: cleanup
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: clone
+    GIT_SUBMODULE_STRATEGY: recursive
   extends: [.toss_perf_resource]
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
