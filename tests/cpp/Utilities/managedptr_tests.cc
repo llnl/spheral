@@ -141,7 +141,7 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, LoopTest) {
       double val = d_base->operate(yvals[i]);
       SPHERAL_ASSERT_FLOAT_EQ(val, ref_valA*yvals[i]);
     });
-  HIP_ERROR_CHECK;
+  GPU_ERROR_CHECK;
   d_base.free();
   yvals.free();
 }

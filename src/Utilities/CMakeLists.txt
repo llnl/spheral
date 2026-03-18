@@ -35,6 +35,7 @@ set(Utilities_sources
     clipFacetedVolume.cc
     uniform_random.cc
     initializeAxom.cc
+    GPUUtils.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
