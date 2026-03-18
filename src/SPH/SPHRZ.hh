@@ -34,7 +34,7 @@ public:
   using SymTensor = Dimension::SymTensor;
 
   using PairAccelerationsType = PairwiseField<Dimension, Vector, 2u>;
-  using PairWorkType = PairwiseField<Dimension, Scalar, 2u>;
+  using PairWorkType = PairwiseField<Dimension, Scalar, 4u>;
   using ConstBoundaryIterator = Physics<Dimension>::ConstBoundaryIterator;
 
   // Constructors.

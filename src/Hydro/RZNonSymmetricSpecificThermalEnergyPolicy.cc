@@ -121,7 +121,7 @@ update(const KeyType& key,
   const auto  pressure = state.fields(HydroFieldNames::pressure, Scalar());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
-  const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 2u>>(HydroFieldNames::pairWork);
+  const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 4u>>(HydroFieldNames::pairWork);
   const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
@@ -134,14 +134,14 @@ update(const KeyType& key,
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
-  auto dEtot = 0.0;
+  // auto dEtot = 0.0;
 
   // Walk all pairs and figure out the discrete work for each point
 #pragma omp parallel
   {
     // Thread private variables
     auto DepsDt_thread = DepsDt.threadCopy();
-    auto dEtot_thread = 0.0;
+    // auto dEtot_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -160,7 +160,8 @@ update(const KeyType& key,
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
-      const auto  pworki = pairWork[kk][0];
+      const auto  pworkzi = pairWork[kk][0];
+      const auto  pworkri = pairWork[kk][1];
       const auto  vri = vi12.y();
 
       // State for node j.
@@ -173,15 +174,20 @@ update(const KeyType& key,
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
-      const auto  pworkj = pairWork[kk][1];
+      const auto  pworkzj = pairWork[kk][2];
+      const auto  pworkrj = pairWork[kk][3];
       const auto  vrj = vj12.y();
 
-      const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
+      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
 
       // // Additive correction for RZ frame
       // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
-      // const auto duRZij = (dERZij - (mRZi*pworki + mRZj*pworkj))/(mRZi + mRZj);
+      // const auto duij = (dERZij - (mRZi*(pworkzi + pworkri) + mRZj*(pworkzj + pworkrj)))/(mRZi + mRZj);
+
+      // Hybrid correction
+      const auto duij = ((-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj) +
+                         (-(mi*  vi12[1]*pacci[1] + mj*  vj12[1]*paccj[1]) - mi*  pworkri - mj*  pworkrj)/(mi + mj));
 
       // // Sum the conservative energy change
       // if (i < nodeListPtrs[nodeListi]->firstGhostNode()) dEtot -= mi*vi12.dot(pacci);
@@ -212,8 +218,8 @@ update(const KeyType& key,
       // // const auto duij = (dEij - mi*(pworki + duRZij + rpworki) - mj*(pworkj + duRZij + rpworkj))/(mi + mj);
 
       // Apply additive corrections
-      DepsDt_thread(nodeListi, i) += pworki + duij;// + duri;
-      DepsDt_thread(nodeListj, j) += pworkj + duij;// + durj;
+      DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
+      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
 
       // // Multiplicative correction
       // const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
@@ -224,7 +230,7 @@ update(const KeyType& key,
 #pragma omp critical
     {
       DepsDt_thread.threadReduce();
-      dEtot += dEtot_thread;
+      // dEtot += dEtot_thread;
     }
   }
 
