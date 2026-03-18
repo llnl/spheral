@@ -241,11 +241,8 @@ clean_old_dirs:
   script:
     - cd $SPHERAL_BUILDS_DIR
     - ml load mpifileutils
-    - |
-      find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print0 \
-        | while IFS= read -r -d '' dir; do
-            $RUN_CMD -n $NPROC drm "$dir"
-          done
+    # Run drm on each directory since too many dirs into the command can cause hangs
+    - find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print -exec $RUN_CMD -n $NPROC drm {} \;
 
 # Remove performance benchmarks that are older than 6 months
 clean_old_perfs:
@@ -262,12 +259,7 @@ clean_old_perfs:
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
     - cd $BENCHMARK_LOC
     - ml load mpifileutils
-    - |
-      find . -mindepth 2 -type d -mtime +200 -print0 \
-        | while IFS= read -r -d '' dir; do
-            echo "Removing $dir"
-            $RUN_CMD -n $NPROC drm "$dir"
-          done
+    - find . -mindepth 2 -type d -mtime +200 -print -exec $RUN_CMD -n $NPROC drm {} \;
 
 # ------------------------------------------------------------------------------
 # Script Utilities
