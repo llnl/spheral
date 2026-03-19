@@ -485,7 +485,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       // const auto  riInv = safeInvVar(ri, tiny);
-      const auto  zetai = abs((Hi*posi).y());
+      const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
       const auto  riInv = safeInvVar(ri, 0.25*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
@@ -522,7 +522,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
       // const auto  rjInv = safeInvVar(rj, tiny);
-      const auto  zetaj = abs((Hj*posj).y());
+      const auto  zetaj = (Hj*posj).y();
       const auto  hrj = rj*safeInv(zetaj);
       const auto  rjInv = safeInvVar(rj, 0.25*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
