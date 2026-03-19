@@ -223,6 +223,13 @@ if (SPHERAL_ENABLE_SUNDIALS)
   endif()
 endif()
 
+message("-----------------------------------------------------------------------------")
+find_package(Boost REQUIRED NO_DEFAULT_PATH COMPONENTS filesystem PATHS ${boost_DIR})
+if(Boost_FOUND)
+  list(APPEND SPHERAL_BLT_DEPENDS Boost::filesystem)
+  message("Found Boost External Package version ${Boost_VERSION}")
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
@@ -230,7 +237,7 @@ message("-----------------------------------------------------------------------
 # In case we start using find_package on Silo, we should save the silo_DIR path
 set(CONFIG_SILO_DIR "${silo_DIR}" CACHE PATH "Configuration Silo directory")
 # TPLs that must be imported
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
+list(APPEND SPHERAL_EXTERN_LIBS eigen qhull silo)
 
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF SPHERAL_ENABLE_LEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF SPHERAL_ENABLE_ANEOS)
