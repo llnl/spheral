@@ -116,9 +116,9 @@ update(const KeyType& key,
   const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
-  const auto  rho = state.fields(HydroFieldNames::massDensity, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
-  const auto  pressure = state.fields(HydroFieldNames::pressure, Scalar());
+  // const auto  rho = state.fields(HydroFieldNames::massDensity, Scalar());
+  // const auto  pressure = state.fields(HydroFieldNames::pressure, Scalar());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
   const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 4u>>(HydroFieldNames::pairWork);
@@ -151,43 +151,50 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      const auto  ri = pos(nodeListi, i).y();
-      const auto  mi = mass(nodeListi, i);
+      const auto  ri = std::abs(pos(nodeListi, i).y());
       const auto  mRZi = massRZ(nodeListi, i);
-      const auto  rhoi = rho(nodeListi, i);
-      const auto  Pi = pressure(nodeListi, i);
+      const auto  mi = mass(nodeListi, i);
+      const auto  mri = 2.0*M_PI*ri*mRZi;
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
       const auto  pworkzi = pairWork[kk][0];
       const auto  pworkri = pairWork[kk][1];
-      const auto  vri = vi12.y();
+      const auto  pworki = pworkzi + pworkri;
+      // const auto  vri = vi12.y();
 
       // State for node j.
-      const auto  rj = pos(nodeListj, j).y();
-      const auto  mj = mass(nodeListj, j);
+      const auto  rj = std::abs(pos(nodeListj, j).y());
       const auto  mRZj = massRZ(nodeListj, j);
-      const auto  rhoj = rho(nodeListj, j);
-      const auto  Pj = pressure(nodeListj, j);
+      const auto  mj = mass(nodeListj, j);
+      const auto  mrj = 2.0*M_PI*rj*mRZj;
+      // const auto  rhoj = rho(nodeListj, j);
+      // const auto  Pj = pressure(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
-      const auto  vrj = vj12.y();
+      const auto  pworkj = pworkzj + pworkrj;
+      // const auto  vrj = vj12.y();
 
-      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
+      // Conservative energy definition
+      const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      const auto duij0 = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
 
       // // Additive correction for RZ frame
       // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
-      // const auto duij = (dERZij - (mRZi*(pworkzi + pworkri) + mRZj*(pworkzj + pworkrj)))/(mRZi + mRZj);
+      // const auto duij = (dERZij - (mRZi*pworki + mRZj*pworkj))/(mRZi + mRZj);
 
       // Hybrid correction
-      const auto duij = ((-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj) +
-                         (-(mi*  vi12[1]*pacci[1] + mj*  vj12[1]*paccj[1]) - mi*  pworkri - mj*  pworkrj)/(mi + mj));
+      const auto duZij = (-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj);
+      const auto duRij = (-(mri* vi12[1]*pacci[1] + mrj* vj12[1]*paccj[1]) - mri* pworkri - mrj* pworkrj)/(mri + mrj);
+      // const auto duij = duRij + duZij + (dEij - mi*pworki - mj*pworkj - (mi + mj)*(duRij + duZij))*safeInv(mi + mj);
+      // VERIFY2(fuzzyEqual(mi*pworki + mj*pworkj + (mi + mj)*duij, dEij, tiny), "Energy balance error: (" << i << " " << j << "): " << dEij << " " << (mi*pworki + mj*pworkj + (mi + mj)*duij) << " " << duij << " " << duZij << " " << duRij);
+      const auto chi = (duij0 - duZij)*safeInv(duRij, tiny);
+      const auto duij = duZij + chi*duRij;
 
       // // Sum the conservative energy change
       // if (i < nodeListPtrs[nodeListi]->firstGhostNode()) dEtot -= mi*vi12.dot(pacci);
@@ -218,8 +225,8 @@ update(const KeyType& key,
       // // const auto duij = (dEij - mi*(pworki + duRZij + rpworki) - mj*(pworkj + duRZij + rpworkj))/(mi + mj);
 
       // Apply additive corrections
-      DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
-      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
+      DepsDt_thread(nodeListi, i) += pworki + duij;
+      DepsDt_thread(nodeListj, j) += pworkj + duij;
 
       // // Multiplicative correction
       // const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);

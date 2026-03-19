@@ -160,7 +160,7 @@ mpi.barrier()
 #-------------------------------------------------------------------------------
 # Material properties.
 #-------------------------------------------------------------------------------
-eos = GammaLawGasMKS(gamma, mu)#, minimumPressure=0.0)
+eos = GammaLawGasMKS(gamma, mu, minimumPressure=0.0)
 strength = NullStrength()
 
 #-------------------------------------------------------------------------------
