@@ -355,7 +355,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto  oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
-  const auto tiny = 1.0e-30;
+  // const auto tiny = 1.0e-30;
   const Scalar W0 = W(0.0, 1.0);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -484,10 +484,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  ci = soundSpeed(nodeListi, i);
       // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  riInv = safeInvVar(ri, tiny);
-      // const auto  zetai = abs((Hi*posi).y());
-      // const auto  hri = ri*safeInv(zetai);
-      // const auto  riInv = safeInvVar(ri, 0.1*hri);
+      // const auto  riInv = safeInvVar(ri, tiny);
+      const auto  zetai = abs((Hi*posi).y());
+      const auto  hri = ri*safeInv(zetai);
+      const auto  riInv = safeInvVar(ri, 0.25*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -521,10 +521,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  cj = soundSpeed(nodeListj, j);
       // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
-      const auto  rjInv = safeInvVar(rj, tiny);
-      // const auto  zetaj = abs((Hj*posj).y());
-      // const auto  hrj = rj*safeInv(zetaj);
-      // const auto  rjInv = safeInvVar(rj, 0.1*hrj);
+      // const auto  rjInv = safeInvVar(rj, tiny);
+      const auto  zetaj = abs((Hj*posj).y());
+      const auto  hrj = rj*safeInv(zetaj);
+      const auto  rjInv = safeInvVar(rj, 0.25*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -582,6 +582,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         normi += mRZi/rhoi*Wi;
         normj += mRZj/rhoj*Wj;
       }
+      const auto gradWij = 0.5*(gradWi + gradWj);
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
@@ -592,14 +593,18 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
               fClQ, fCqQ, DvDxQ); 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
+      const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
+      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*vri*riInv * WQi;
+      const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
+      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*vrj*rjInv * WQj;
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi/(rhoRZj*rhoi)*vri*riInv;
       // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
       // const auto workQi = vij.dot(Qacci) - Qi/(rhoRZj*rhoi)*vri*riInv;
       // const auto workQj = vij.dot(Qaccj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
-      const auto workQzi = vij[0]*Qacci[0];
-      const auto workQri = vij[1]*Qacci[1];// - Qi/(rhoRZj*rhoi)*vri*riInv;
-      const auto workQzj = vij[0]*Qaccj[0];
-      const auto workQrj = vij[1]*Qaccj[1];// - Qj/(rhoRZi*rhoj)*vrj*rjInv;
+      // const auto workQzi = vij[0]*Qacci[0];
+      // const auto workQri = vij[1]*Qacci[1] - Qi/(rhoRZj*rhoi)*vri*riInv;
+      // const auto workQzj = vij[0]*Qaccj[0];
+      // const auto workQrj = vij[1]*Qaccj[1] - Qj/(rhoRZi*rhoj)*vrj*rjInv;
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mRZj*Qi*WQi/rhoj;
@@ -608,14 +613,12 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
-      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi) + Pj/(rhoRZj*rhoRZj))*gradWij + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi) + Pj/(rhoRZj*rhoRZj))*gradWij + Qacci + Qaccj);
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
 
       // Specific thermal energy evolution.
-      // const auto worki = vij.dot(deltaDvDti);
-      // const auto workj = vij.dot(deltaDvDtj);
       // const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
       // const auto workj = mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
       const auto workzi = mRZj*(Pi/(rhoi*rhoRZi)*vij[0]*gradWi[0] + workQzi);
@@ -689,11 +692,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      // const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
-      // const auto  hri = ri*safeInv(zetai);          // Always positive
-      // CHECK(hri >= 0.0);
-      // const auto  riInv = safeInvVar(ri, 0.05*hri);  // Can be negative for ghost points!
-      const auto  riInv = safeInv(ri, tiny);
+      const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
+      const auto  hri = ri*safeInv(zetai);          // Always positive
+      CHECK(hri >= 0.0);
+      const auto  riInv = safeInvVar(ri, 0.25*hri);  // Can be negative for ghost points!
+      // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  Vi = mi/rhoi;
