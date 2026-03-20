@@ -93,6 +93,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('conduit@0.8.2', type='build', when='@:2024.06.1')
 
     depends_on('axom +hdf5 ~lua ~examples ~python ~fortran', type='build')
+    depends_on('axom +openmp', type='build', when='+openmp')
+    depends_on('axom ~openmp', type='build', when='~openmp')    
     depends_on('axom@0.12.0', type='build', when='@2025.12.0:')
     depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
     depends_on('axom@0.7.0', type='build', when='@:2024.06.1')

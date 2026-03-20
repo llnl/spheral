@@ -5,6 +5,14 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Added view class for PairwiseField (PairwiseFieldView)
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * ArtificialViscosity has been refactored for use on the GPU.
+        * ArtificialViscosity is now ArtificialViscosityView.
+        * ArtificialViscosityHandle is now ArtificialViscosity.
+        * Both inherit from ArtificialViscosityBase.
+        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+    * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
@@ -18,6 +26,8 @@ Notable changes include:
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
+    * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
+    * Updated from Rocm 6.2.0 to 6.4.3.
     * Added update-tpls commit message trigger.
     * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
     * tpl-manager.py updates:
@@ -88,6 +98,7 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * FieldNames are inlined for easier use on device.
       * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 
   * Bug fixes
@@ -119,6 +130,7 @@ Notable changes include:
         `add_compile_definition` or `add_compile_options`.
       * Compiler flags are set for HIP or CXX depending on the configuration.
       * Update BLT to version 0.7.1.
+      * Added `CXX_LINK_FLAGS`.
     * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.

@@ -112,7 +112,7 @@ tensileStressCorrection(const Dim<3>::SymTensor& sigma) {
 template<typename Dimension>
 SolidFSISPH<Dimension>::
 SolidFSISPH(DataBase<Dimension>& dataBase,
-            ArtificialViscosityHandle<Dimension>& Q,
+            ArtificialViscosity<Dimension>& Q,
             SlideSurface<Dimension>& slides,
             const TableKernel<Dimension>& W,
             const double cfl,

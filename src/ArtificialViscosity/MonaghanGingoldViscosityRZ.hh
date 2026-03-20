@@ -7,6 +7,8 @@
 // This form specialized for use with the area-weighted RZ formalism.
 // 
 // Created by JMO, Sat May 21 16:15:44 PDT 2016
+//
+// CURRENTLY UNUSABLE
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_MonaghanGingoldViscosityRZ_hh__
 #define __Spheral_MonaghanGingoldViscosityRZ_hh__

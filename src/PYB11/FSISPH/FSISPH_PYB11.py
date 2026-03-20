@@ -21,7 +21,7 @@ PYB11includes += ['"FSISPH/SolidFSISPH.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
-                  '"ArtificialViscosity/ArtificialViscosityHandle.hh"',
+                  '"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"Neighbor/PairwiseField.hh"']
 
 #-------------------------------------------------------------------------------

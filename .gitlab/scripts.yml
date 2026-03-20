@@ -77,6 +77,7 @@
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC//%/_}
     - ml load mpifileutils
+    - echo "Doing install in ${INSTALL_DIR}"
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
     - cd $CI_BUILD_DIR/build_gitlab/build
     - cmake ../../ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
@@ -99,7 +100,7 @@
 
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     # Clean up Caliper files
-    - find ./build_gitlab/install/tests -name '*.cali' -print0 -delete
+    - find ./build_gitlab/install/tests -name '*.cali' -delete
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
   artifacts:
@@ -240,11 +241,8 @@ clean_old_dirs:
   script:
     - cd $SPHERAL_BUILDS_DIR
     - ml load mpifileutils
-    - |
-      find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print0 \
-        | while IFS= read -r -d '' dir; do
-            $RUN_CMD -n $NPROC drm "$dir"
-          done
+    # Run drm on each directory since too many dirs into the command can cause hangs
+    - find . -mindepth 1 -maxdepth 1 -type d -mtime +15 -print -exec $RUN_CMD -n $NPROC drm {} \;
 
 # Remove performance benchmarks that are older than 6 months
 clean_old_perfs:
@@ -260,13 +258,7 @@ clean_old_perfs:
   script:
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
     - cd $BENCHMARK_LOC
-    - ml load mpifileutils
-    - |
-      find . -mindepth 2 -type d -mtime +200 -print0 \
-        | while IFS= read -r -d '' dir; do
-            echo "Removing $dir"
-            $RUN_CMD -n $NPROC drm "$dir"
-          done
+    - find . -mindepth 2 -type d -mtime +200 -print -exec rm -rf {} +
 
 # ------------------------------------------------------------------------------
 # Script Utilities
