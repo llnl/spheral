@@ -9,17 +9,16 @@
 namespace Spheral {
 
 struct FSIFieldNames {
-  static const std::string pressureGradient;
-  static const std::string specificThermalEnergyGradient;
-  static const std::string interfaceFlags;
-  static const std::string interfaceAreaVectors;
-  static const std::string interfaceNormals;
-  static const std::string interfaceAngles;
-  static const std::string interfaceFraction;
-  static const std::string interfaceSmoothness;
-  static const std::string smoothedInterfaceNormals;
-  static const std::string interfaceSmoothnessNormalization;
-  //static const std::string inverseEquivalentDeviatoricStress;
+  const inline static std::string pressureGradient = "pressureGradient";
+  const inline static std::string specificThermalEnergyGradient = "specificThermalEnergyGradient";
+  const inline static std::string interfaceFlags = "interfaceFlags";
+  const inline static std::string interfaceAreaVectors = "interfaceAreaVectors";
+  const inline static std::string interfaceNormals = "interfaceNormals";
+  const inline static std::string interfaceAngles = "interfaceAngles";
+  const inline static std::string interfaceFraction = "interfaceFraction";
+  const inline static std::string interfaceSmoothness = "interfaceSmoothness";
+  const inline static std::string smoothedInterfaceNormals = "smoothedInterfaceNormals";
+  const inline static std::string interfaceSmoothnessNormalization = "interfaceSmoothnessNormalization";
 };
 
 }

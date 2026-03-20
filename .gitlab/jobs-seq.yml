@@ -6,7 +6,10 @@ toss_gcc_~mpi_init:
 
 toss_gcc_~mpi_tpls:
   extends: [.gcc_~mpi, .tpls, .toss_resource1]
-  needs: [toss_gcc_~mpi_init]
+  needs:
+    - job: toss_update_tpls
+      optional: true
+    - job: toss_gcc_~mpi_init
 
 toss_gcc_~mpi_build:
   extends: [.gcc_~mpi, .build_and_test, .toss_resource1]
@@ -27,7 +30,10 @@ cray_hip_rocm_~mpi_init:
 
 cray_hip_rocm_~mpi_tpls:
   extends: [.cray_resource2, .hip_rocm_~mpi, .tpls]
-  needs: [cray_hip_rocm_~mpi_init]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_hip_rocm_~mpi_init
 
 cray_hip_rocm_~mpi_build:
   extends: [.cray_resource2, .hip_rocm_~mpi, .build_and_test]
@@ -48,7 +54,10 @@ cray_rocm_~mpi_Debug_init:
 
 cray_rocm_~mpi_Debug_tpls:
   extends: [.cray_resource1, .rocm_~mpi_Debug, .tpls]
-  needs: [cray_rocm_~mpi_Debug_init]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_rocm_~mpi_Debug_init
 
 cray_rocm_~mpi_Debug_build:
   extends: [.cray_resource1, .rocm_~mpi_Debug, .build_and_test]

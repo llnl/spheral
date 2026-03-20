@@ -85,3 +85,11 @@
 .cray_resource2:
   resource_group: cray2
   extends: [.cray_resource_general]
+
+# Performance specific resources
+.toss_perf_shell:
+  extends: [.dane_shell]
+
+.toss_perf_resource:
+  resource_group: toss1
+  extends: [.on_dane]

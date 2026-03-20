@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPorosity")
+@PYB11module("SpheralCompiledModules.SpheralPorosity")
 class StrainPorosity(PorosityModel):
     """An implementation of strain-alpha porosity model described in two papers:
 

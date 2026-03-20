@@ -29,7 +29,7 @@ Overall, the following options can be provided to ``tpl-manager.py``:
 
             Display Spheral Spack info, including variants and dependencies.
 
-.. option:: --spack-dir <SPACK_DIR>
+.. option:: --tpl-dir <tpl_dir>
 
             Where to create the Spack instance to use. Optional, default ``./../spheral-spack-tpls``.
 

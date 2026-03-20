@@ -59,20 +59,22 @@ macro(spheral_add_test)
     get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
     get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
     get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+    get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
 
     blt_add_library(
       NAME ${original_test_name}_lib
       SOURCES ${TEST_LIB_SOURCE} ${SPHERAL_ROOT_DIR}/src/spheralCXX.cc
       DEFINES ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON ${SPHERAL_BLT_DEPENDS} ${original_deps}
-      SHARED False)
+      SHARED FALSE)
 
     target_compile_options(${original_test_name}_lib PUBLIC ${SPHERAL_CXX_FLAGS})
-    target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files")
+    target_link_options(${original_test_name}_lib PRIVATE "-Wl,--unresolved-symbols=ignore-in-object-files" ${SPHERAL_LINK_FLAGS})
 
     spheral_add_executable(
       NAME ${original_test_name}
       SOURCES ${original_src}
+      DEFINES ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON gtest ${CMAKE_THREAD_LIBS_INIT} ${original_test_name}_lib
       TEST On)
 
@@ -81,17 +83,47 @@ macro(spheral_add_test)
       COMMAND ${TEST_DRIVER} ${original_test_name})
 
     target_include_directories(${original_test_name} SYSTEM PRIVATE ${SPHERAL_ROOT_DIR}/tests/cpp/include)
+    target_compile_options(${original_test_name} PUBLIC ${SPHERAL_CXX_FLAGS})
 
     if (${arg_DEBUG_LINKER})
-      target_link_options(${original_test_name} PUBLIC "-Wl,--warn-unresolved-symbols")
+      target_link_options(${original_test_name} PUBLIC "-Wl,--warn-unresolved-symbols" ${SPHERAL_LINK_FLAGS})
     else()
-      target_link_options(${original_test_name} PUBLIC "-Wl,--unresolved-symbols=ignore-all")
+      target_link_options(${original_test_name} PUBLIC "-Wl,--unresolved-symbols=ignore-all" ${SPHERAL_LINK_FLAGS})
     endif()
   endif()
 
   # If we're configuring for unified memory on Cray machines we need to fiddle with the environment
-  if (SPHERAL_UNIFIED_MEMORY AND ENABLE_HIP)
+  if (ENABLE_HIP)
     set_tests_properties(${original_test_name} PROPERTIES ENVIRONMENT HSA_XNACK=1)
   endif()
 
 endmacro(spheral_add_test)
+
+macro(find_asan_library ASAN_LIBRARY_PATH)
+  # Determine the name of the asan library being used
+  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    # ASAN library names vary based on clang version so we search for it
+    execute_process(
+      COMMAND "${CMAKE_CXX_COMPILER}" -print-resource-dir
+      OUTPUT_VARIABLE CLANG_LIB_PATH
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    file(GLOB ASAN_LIB_CANDIDATES "${CLANG_LIB_PATH}/lib/*/lib*.asan*.so")
+    list(LENGTH ASAN_LIB_CANDIDATES ASAN_LIB_COUNT)
+    if (ASAN_LIB_COUNT EQUAL 0)
+      message(FATAL_ERROR "No ASan library found matching '${DIR_NAME}/lib/*/lib*asan*.so'")
+    elseif (ASAN_LIB_COUNT GREATER 1)
+      message(FATAL_ERROR "Multiple ASan libraries found where only one is expected:\n"
+        "  ${ASAN_LIB_CANDIDATES}")
+    endif()
+    list(GET ASAN_LIB_CANDIDATES 0 ASAN_LIBRARY_NAME)
+    get_filename_component(ASAN_LIBRARY_NAME ${ASAN_LIBRARY_NAME} NAME)
+  else()
+    set(ASAN_LIBRARY_NAME "libasan.so")
+  endif()
+  execute_process(
+    COMMAND /bin/sh -c
+    "\"${CMAKE_CXX_COMPILER}\" -print-file-name=${ASAN_LIBRARY_NAME} | xargs dirname"
+    OUTPUT_VARIABLE ASAN_LIBRARY
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(ASAN_LIBRARY_PATH "${ASAN_LIBRARY}/${ASAN_LIBRARY_NAME}")
+endmacro()

@@ -1,12 +1,21 @@
 packages:
   all:
-    compiler: [rocmcc]
     providers:
       blas: [openblas]
       lapack: [openblas]
       mpi: [cray-mpich]
       pkgconfig: [pkg-config]
       zlib-api: [zlib]
+  llvm-amdgpu:
+    externals:
+    - spec: llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic
+      extra_attributes:
+        compilers:
+          c: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang
+          cxx: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdflang
+        extra_rpaths: [/usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/llvm/lib]
   cmake:
     version: [3.24.2]
     buildable: false
@@ -29,68 +38,46 @@ packages:
   cray-mpich:
     buildable: false
     externals:
-    - spec: cray-mpich@8.1.31%rocmcc@6.2.0
-      prefix: /usr/tce/packages/cray-mpich/cray-mpich-8.1.31-rocmcc-6.2.0-magic
+    - spec: cray-mpich@9.0.1%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-6.4.3-magic
 
   hip:
-    version: [6.2.0]
+    version: [6.4.3]
     buildable: false
     externals:
-    - spec: hip@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/
-  llvm-amdgpu:
-    version: [6.2.0]
-    buildable: false
-    externals:
-    - spec: llvm-amdgpu@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.2.0-magic/llvm
+    - spec: hip@6.4.3%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/
   hsa-rocr-dev:
-    version: [6.2.0]
+    version: [6.4.3]
     buildable: false
     externals:
-    - spec: hsa-rocr-dev@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+    - spec: hsa-rocr-dev@6.4.3%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
   rocminfo:
-    version: [6.2.0]
+    version: [6.4.3]
     buildable: false
     externals:
-    - spec: rocminfo@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+    - spec: rocminfo@6.4.3%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
   rocm-device-libs:
-    version: [6.2.0]
+    version: [6.4.3]
     buildable: false
     externals:
-    - spec: rocm-device-libs@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+    - spec: rocm-device-libs@6.4.3%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
   rocprim:
-    version: [6.2.0]
+    version: [6.4.3]
     buildable: false
     externals:
-    - spec: rocprim@6.2.0%rocmcc@6.2.0
-      prefix: /usr/tce/packages/rocmcc/rocm-6.2.0-magic/
+    - spec: rocprim@6.4.3%llvm-amdgpu@6.4.3
+      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
 
 # ------ SYSTEM LIBS -------
-  py-decorator:
-    externals:
-    - spec: py-decorator@5.1.1
-      prefix: /collab/usr/gapps/python/build/spack-toss4.1/var/spack/environments/python/._view/75prb56irmif5ejtirjthpx6kq3gqo52/lib/python3.9/site-packages
-    buildable: false
-  py-pip:
-    externals:
-    - spec: py-pip@22.0.4
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
   readline:
     externals:
     - spec: readline@7.0
       prefix: /usr
     buildable: false
-  python:
-    externals:
-    - spec: python@3.9.12
-      prefix: /usr/tce/packages/python/python-3.9.12
-    buildable: false
-
   autoconf:
     externals:
     - spec: autoconf@2.69
@@ -116,7 +103,16 @@ packages:
     - spec: m4@1.4.18
       prefix: /usr
     buildable: false
-
+  tcl:
+    externals:
+    - spec: tcl@8.6.8
+      prefix: /usr
+    buildable: false
+  tk:
+    externals:
+    - spec: tk@8.6.8
+      prefix: /usr
+    buildable: false
   netlib-lapack:
     buildable: false
     externals:
@@ -127,3 +123,88 @@ packages:
     externals:
     - prefix: /usr
       spec: openblas@0.3.15
+  bzip2:
+    externals:
+    - spec: bzip2@1.0.6
+      prefix: /usr
+    buildable: false
+  expat:
+    externals:
+    - spec: expat@2.4.1
+      prefix: /usr
+    buildable: false
+  gdbm:
+    externals:
+    - spec: gdbm@1.19
+      prefix: /usr
+    buildable: false
+  gettext:
+    externals:
+    - spec: gettext@0.19
+      prefix: /usr
+    buildable: false
+  libffi:
+    externals:
+    - spec: libffi@3.3
+      prefix: /usr
+    buildable: false
+  openssl:
+    externals:
+    - spec: openssl@1.1.1
+      prefix: /usr
+    buildable: false
+  ossp-uuid:
+    externals:
+    - spec: ossp-uuid@1.62
+      prefix: /usr
+    buildable: false
+  diffutils:
+    externals:
+    - spec: diffutils@3.3
+      prefix: /usr
+    buildable: false
+  ncurses:
+    externals:
+    - spec: ncurses@6.1.20180224+termlib abi=6
+      prefix: /usr/lib64
+    buildable: false
+  libxml2:
+    externals:
+    - spec: libxml2@3.4.2
+      prefix: /usr/lib64
+    buildable: false
+  libpciaccess:
+    externals:
+    - spec: libpciaccess@0.14
+      prefix: /usr/lib64
+    buildable: false
+  tar:
+    buildable: false
+    externals:
+    - spec: tar@1.26
+      prefix: /usr
+  libbsd:
+    externals:
+    - spec: libbsd@0.12.2
+      prefix: /usr/lib64
+    buildable: false
+  libmd:
+    externals:
+    - spec: libmd@1.1.0
+      prefix: /usr/lib64
+    buildable: false
+  libxcrypt:
+    externals:
+    - spec: libxcrypt@4.1.1
+      prefix: /lib64
+    buildable: false
+  sqlite:
+    externals:
+    - spec: sqlite@3.36.0
+      prefix: /usr
+    buildable: false
+  hwloc:
+    externals:
+    - spec: hwloc@2.12.2
+      prefix: /usr/lib64/hwloc
+    buildable: false

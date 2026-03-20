@@ -6,7 +6,7 @@
 #include "Utilities/packElement.hh"
 #include "Utilities/removeElements.hh"
 #include "Utilities/safeInv.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
+#include "Utilities/GPUUtils.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "chai/config.hpp"
@@ -1389,6 +1389,7 @@ assignDataSpan() {
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
+  mNodesPerSmoothingScale = this->nodeList().nodesPerSmoothingScale();
 }
 
 } // namespace Spheral

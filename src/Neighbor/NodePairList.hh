@@ -6,7 +6,7 @@
 #include "config.hh"
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
-#include "Utilities/CHAI_MA_wrapper.hh"
+#include "Utilities/GPUUtils.hh"
 #include "chai/config.hpp"
 
 #include <vector>
@@ -82,6 +82,10 @@ public:
   void computeLookup() const;
 
   inline NodePairListView view() {
+    return static_cast<NodePairListView>(*this);
+  }
+
+  NodePairListView view() const {
     return static_cast<NodePairListView>(*this);
   }
 

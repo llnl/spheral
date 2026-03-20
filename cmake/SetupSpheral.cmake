@@ -14,6 +14,11 @@ list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #-------------------------------------------------------------------------------
+# Lines to add to the Spheral executable
+#-------------------------------------------------------------------------------
+set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "")
+
+#-------------------------------------------------------------------------------
 # Add Spheral CMake Macros for tests and executables
 #-------------------------------------------------------------------------------
 include(SpheralMacros)
@@ -66,13 +71,14 @@ elseif(ENABLE_STATIC_CXXONLY)
 endif()
 
 if(ENABLE_MPI)
-  set(SPHERAL_ENABLE_MPI ON)
   set(BLT_MPI_COMPILE_FLAGS -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DOMPI_SKIP_MPICXX)
   list(APPEND SPHERAL_CXX_DEPENDS mpi)
+  set(SPHERAL_ENABLE_MPI ON)
 endif()
 
 if(ENABLE_OPENMP)
   list(APPEND SPHERAL_CXX_DEPENDS openmp)
+  set(SPHERAL_ENABLE_OPENMP ON)
 endif()
 
 if(ENABLE_CUDA)
@@ -137,7 +143,7 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 # (but later on when installing)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
@@ -175,9 +181,6 @@ if (SPHERAL_ENABLE_TESTS)
 
   include(${SPHERAL_ROOT_DIR}/cmake/spheral/SpheralInstallPythonFiles.cmake)
   spheral_install_python_tests(${SPHERAL_ROOT_DIR}/tests/ ${SPHERAL_TEST_INSTALL_PREFIX})
-  # Always install performance.py in the top of the testing script
-  install(FILES ${SPHERAL_ROOT_DIR}/tests/performance.py
-    DESTINATION ${SPHERAL_TEST_INSTALL_PREFIX})
 endif()
 
 include(${SPHERAL_ROOT_DIR}/cmake/SpheralConfig.cmake)

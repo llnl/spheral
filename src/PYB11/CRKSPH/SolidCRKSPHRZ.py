@@ -7,7 +7,7 @@ from RestartMethods import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class SolidCRKSPHRZ(SolidCRKSPH):
     "An area weighted RZ specialization of solid CRKSPH for cylindrical coordinates"
@@ -27,7 +27,7 @@ class SolidCRKSPHRZ(SolidCRKSPH):
 
     def pyinit(self,
                dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
