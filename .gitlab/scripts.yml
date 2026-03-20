@@ -100,7 +100,7 @@
 
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     # Clean up Caliper files
-    - find ./build_gitlab/install/tests -name '*.cali' -print0 -delete
+    - find ./build_gitlab/install/tests -name '*.cali' -delete
     - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
   artifacts:
@@ -258,8 +258,7 @@ clean_old_perfs:
   script:
     - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
     - cd $BENCHMARK_LOC
-    - ml load mpifileutils
-    - find . -mindepth 2 -type d -mtime +200 -print -exec $RUN_CMD -n $NPROC drm {} \;
+    - find . -mindepth 2 -type d -mtime +200 -print -exec rm -rf {} +
 
 # ------------------------------------------------------------------------------
 # Script Utilities
