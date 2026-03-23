@@ -55,6 +55,57 @@ using std::make_pair;
 
 namespace Spheral {
 
+namespace {
+
+inline
+double
+integrate_vr_over_r(const double vr,
+                    const double r,
+                    const double ar,
+                    const double dt,
+                    const bool barf = false) {
+  const double tiny = 1.0e-10;
+  VERIFY(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0);
+  if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
+  if (true) { //(fuzzyEqual(ar, 0.0, tiny)) {
+    const auto vrInv = safeInv(vr);
+    auto Ft = [&](const double t) { return log(std::abs(r + vr*t))*vrInv; };
+    return Ft(dt) - Ft(0.0);
+  }
+  const auto q = 4.0*ar*r - vr*vr;
+  if (barf) cerr << "q: " << q << endl;
+  if (fuzzyEqual(q, 0.0, 1.0e-10)) {
+    const auto a = vr*safeInvVar(2.0*ar, 1.0e-10);
+    if (fuzzyEqual(a, 0.0, tiny)) return 0.0;
+    // auto Xt =  [&](const double t) { return ar*FastMath::square(a + t); };
+    auto F0t = [&](const double t) { return -ar*safeInv(a + t); };
+    auto F1t = [&](const double t) { return ar*(log(std::abs(a + t)) + a*safeInv(a + t)); };
+    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+    return Ft(dt) - Ft(0.0);
+  } else {
+    auto Xt =  [&](const double t) { return r + vr*t + ar*t*t; };
+    auto F0t = [&](const double t) {
+                 const auto thpt = std::sqrt(std::abs(q));
+                 if (q > 0.0) {
+                   return 2.0/thpt*atan2(2.0*ar*t + vr, thpt);
+                 } else {
+                   CHECK(q < 0.0);
+                   const auto qinv = safeInvVar(std::sqrt(-q));
+                   CHECK(qinv > 0.0);
+                   return -2.0*qinv*atanh(std::max(-1.0 + 1e-10, std::min(1.0 - 1e-10, (2.0*ar*t + vr)*qinv)));
+                   // const auto ack = 2.0*ar*t + vr;
+                   // if (fuzzyEqual(ack, thpt, tiny)) return 0.0;
+                   // return 1.0/thpt*log(std::abs((thpt - ack)*safeInvVar(thpt + ack)));
+                 }
+               };
+    auto F1t = [&](const double t) { return (log(Xt(t)) - vr*F0t(t))*safeInv(2.0*ar); };
+    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+    return Ft(dt) - Ft(0.0);
+  }  
+}
+
+}
+
 //------------------------------------------------------------------------------
 // Construct with the given artificial viscosity and kernels.
 //------------------------------------------------------------------------------
@@ -487,7 +538,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  riInv = safeInvVar(ri, tiny);
       const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInvVar(ri, 0.25*hri);
+      const auto  riInv = safeInvVar(ri, 0.05*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -524,7 +575,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  rjInv = safeInvVar(rj, tiny);
       const auto  zetaj = (Hj*posj).y();
       const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInvVar(rj, 0.25*hrj);
+      const auto  rjInv = safeInvVar(rj, 0.05*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -594,9 +645,12 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
-      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*vri*riInv * WQi;
+      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQi * integrate_vr_over_r(vri, ri, 0.0, dt)*safeInvVar(dt);
+      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
       const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
-      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*vrj*rjInv * WQj;
+      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQj * integrate_vr_over_r(vrj, rj, 0.0, dt)*safeInvVar(dt);
+      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
+
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi/(rhoRZj*rhoi)*vri*riInv;
       // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
       // const auto workQi = vij.dot(Qacci) - Qi/(rhoRZj*rhoi)*vri*riInv;
@@ -695,7 +749,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.25*hri);  // Can be negative for ghost points!
+      const auto  riInv = safeInvVar(ri, 0.05*hri);  // Can be negative for ghost points!
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
@@ -749,15 +803,19 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
+      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], dt)*safeInv(dt);
+
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
+      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      // DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
-      DepsDti -= Pi/rhoi*vri*riInv;
+      DepsDti -= Pi/rhoi*vr_over_r;
+      // DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
