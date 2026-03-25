@@ -170,6 +170,7 @@ GPU_TYPED_TEST_P(LoopTypedTest, BasicForAll) {
   for (auto kk = 0u; kk < N; ++kk) {
     // Make sure the node pair list is reasonable
     SPHERAL_ASSERT_TRUE(ref_count[kk] >= 7);
+    SPHERAL_ASSERT_TRUE(ref_count[kk] <= 26);
     // Make sure the values are correct
     SPHERAL_ASSERT_EQ(ref_count[kk], field_list(0, kk));
   }
@@ -211,6 +212,7 @@ GPU_TYPED_TEST_P(LoopTypedTest, VectorAtomics) {
   for (auto kk = 0u; kk < N; ++kk) {
     // Make sure the node pair list is reasonable
     SPHERAL_ASSERT_TRUE(ref_count[kk] >= 7);
+    SPHERAL_ASSERT_TRUE(ref_count[kk] <= 26);
     // Make sure the values are correct
     SPHERAL_ASSERT_EQ(ref_count[kk], field_list(0, kk)[0]);
   }
