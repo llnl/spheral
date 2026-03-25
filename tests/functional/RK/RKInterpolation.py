@@ -452,19 +452,28 @@ else:
     raise ValueError("function type {} not found".format(funcType))
 
 #-------------------------------------------------------------------------------
+# Create volumes
+#-------------------------------------------------------------------------------
+volUpdate = VolumeUpdate(volumeType, WT,
+                         updateInStep = True,
+                         updateInFinalize = False)
+output("volUpdate")
+packages = [volUpdate]
+
+#-------------------------------------------------------------------------------
 # Create RK object
 #-------------------------------------------------------------------------------
 rk = RKCorrections(orders = set([ZerothOrder, correctionOrder]),
                    dataBase = dataBase,
                    W = WT,
-                   volumeType = volumeType,
                    needHessian = testHessian,
+                   updateInStep = True,
                    updateInFinalize = False)
 output("rk")
 output("rk.correctionOrders")
 WR = rk.WR(correctionOrder)
 output("WR")
-packages = [rk]
+packages.append(rk)
 
 #-------------------------------------------------------------------------------
 # Create a state directly and initialize physics package
@@ -472,10 +481,14 @@ packages = [rk]
 connectivity = dataBase.connectivityMap()
 state = State(dataBase, packages)
 derivs = StateDerivatives(dataBase, packages)
-rk.initializeProblemStartup(dataBase)
-rk.registerState(dataBase, state)
-rk.registerDerivatives(dataBase, derivs)
-rk.preStepInitialize(dataBase, state, derivs)
+for p in packages:
+    p.initializeProblemStartup(dataBase)
+    p.registerState(dataBase, state)
+    p.registerDerivatives(dataBase, derivs)
+for p in packages:
+    p.initializeProblemStartupDependencies(dataBase, state, derivs)
+for p in packages:
+    p.preStepInitialize(dataBase, state, derivs)
 
 #-------------------------------------------------------------------------------
 # Get data from state

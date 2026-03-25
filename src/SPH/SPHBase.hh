@@ -36,6 +36,7 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
+  using VolumeRequirements = typename Physics<Dimension>::VolumeRequirements;
 
   // Constructors.
   SPHBase(DataBase<Dimension>& dataBase,
@@ -126,6 +127,11 @@ public:
   // boundary conditions.
   void updateVolume(State<Dimension>& state,
                     const bool boundaries) const;
+  
+  virtual VolumeRequirements requireVolumes() const override {
+    return {(this->densityUpdate() == MassDensityType::VoronoiCellDensity or
+             this->densityUpdate() == MassDensityType::SumVoronoiCellDensity),
+            false, true}; }
 
   // Flag to choose whether we want to sum for density, or integrate the continuity equation.
   MassDensityType densityUpdate()                                               const { return mDensityUpdate; }

@@ -50,7 +50,7 @@ class SpheralController:
                  iterateInitialH = True,
                  numHIterationsBetweenCycles = 0,
                  reinitializeNeighborsStep = 10,
-                 volumeType = RKVolumeType.RKVoronoiVolume,
+                 volumeType = None,
                  facetedBoundaries = None,
                  printAllTimers = False):
         self.restartBaseName = restartBaseName
@@ -170,7 +170,7 @@ class SpheralController:
                             skipInitialPeriodicWork = False,
                             iterateInitialH = True,
                             reinitializeNeighborsStep = 10,
-                            volumeType = RKVolumeType.RKVoronoiVolume,
+                            volumeType = None,
                             facetedBoundaries = None):
 
         # Call the global C++ initialization method
@@ -214,14 +214,15 @@ class SpheralController:
         derivs = eval("StateDerivatives%s(db, packages)" % (self.dim))
 
         # Build the connectivity
-        requireConnectivity = max([pkg.requireConnectivity() for pkg in packages])
-        if requireConnectivity:
-            requireGhostConnectivity = max([pkg.requireGhostConnectivity() for pkg in packages])
-            requireOverlapConnectivity = max([pkg.requireOverlapConnectivity() for pkg in packages])
-            requireIntersectionConnectivity = max([pkg.requireIntersectionConnectivity() for pkg in packages])
+        connReqs = [pkg.requireConnectivity() for pkg in packages]
+        requireConn = max(r[0] for r in connReqs)
+        if requireConn:
+            requireGhost = max(r[1] for r in connReqs)
+            requireOverlap = max(r[2] for r in connReqs)
+            requireIntersect = max(r[3] for r in connReqs)
             db.reinitializeNeighbors()
-            db.updateConnectivityMap(requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity)
-            state.enrollConnectivityMap(db.connectivityMapPtr(requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity))
+            db.updateConnectivityMap(requireGhost, requireOverlap, requireIntersect)
+            state.enrollConnectivityMap(db.connectivityMapPtr(requireGhost, requireOverlap, requireIntersect))
 
         # Initialize dependent state
         for package in packages:
@@ -688,101 +689,126 @@ class SpheralController:
     # Properly arrange the physics packages, including adding any needed ones.
     #--------------------------------------------------------------------------
     def organizePhysicsPackages(self, W, volumeType, facetedBoundaries):
+        self._insertRK(W, volumeType)
+        self._insertVolume(W, volumeType, facetedBoundaries)
+
+        # InflowOutflowBoundary can cause issues for other packages if it is not last
+        packages = self.integrator.physicsPackages()
+        if any("InflowOutflowBoundary" in type(p).__name__ for p in packages):
+            packages.sort(key=lambda p: "InflowOutflowBoundary" in type(p).__name__)
+            self.integrator.resetPhysicsPackages(packages)
+
+    #--------------------------------------------------------------------------
+    # Insert RKCorrections if any package needs reproducing kernels.
+    #--------------------------------------------------------------------------
+    def _insertRK(self, W, volumeType):
         packages = self.integrator.physicsPackages()
         db = self.integrator.dataBase
         RKCorrections = eval("RKCorrections%s" % self.dim)
-        vector_of_Physics = eval("vector_of_Physics%s" % self.dim)
 
-        # Anyone require Voronoi cells?
-        # If so we need the VoronoiCells physics package first
-        voronoibcs = []
-        index = -1
-        for (ipack, package) in enumerate(packages):
-            if package.requireVoronoiCells():
-                pbcs = package.boundaryConditions
-                voronoibcs += [bc for bc in pbcs if not bc in voronoibcs]
-                if index == -1:
-                    index = ipack
-
-        if index >= 0:
-            VC = eval("VoronoiCells" + self.dim)
-            fb = eval("vector_of_FacetedVolume{}()".format(self.dim)) if facetedBoundaries is None else facetedBoundaries
-            self.VoronoiCells = VC(kernelExtent = db.maxKernelExtent,
-                                   facetedBoundaries = fb)
-            for bc in voronoibcs:
-                self.VoronoiCells.appendBoundary(bc)
-            packages.insert(index, self.VoronoiCells)
-            self.integrator.resetPhysicsPackages(packages)
-
-        # Are there any packages that require reproducing kernels?
-        # If so, insert the RKCorrections package prior to any RK packages
-        rkorders = set()
+        rkExplicitOrders = set()
+        rkImplicitOrders = set()
         rkbcs = []
         needHessian = False
-        rkUpdateInFinalize = False
         index = -1
         for (ipack, package) in enumerate(packages):
-            ords = package.requireReproducingKernels()
-            rkorders = rkorders.union(ords)
-            needHessian |= package.requireReproducingKernelHessian()
-            rkUpdateInFinalize |= package.updateReproducingKernelsInFinalize()
-            if ords:
+            req = package.requireReproducingKernels()
+            rkExplicitOrders = rkExplicitOrders.union(req[0])
+            rkImplicitOrders = rkImplicitOrders.union(req[1])
+            needHessian |= req[2]
+            if req[0] or req[1]:
                 pbcs = package.boundaryConditions
                 rkbcs += [bc for bc in pbcs if not bc in rkbcs]
                 if index == -1:
                     index = ipack
-        if rkorders:
-            if W is None:
-                raise RuntimeError("SpheralController ERROR: the base interpolation kernel 'W' must be specified to the SpheralController when using Reproducing Kernels")
-            self.RKCorrections = RKCorrections(orders = rkorders,
-                                               dataBase = db,
-                                               W = W,
-                                               volumeType = volumeType,
-                                               needHessian = needHessian,
-                                               updateInFinalize = rkUpdateInFinalize)
-            for bc in rkbcs:
-                self.RKCorrections.appendBoundary(bc)
+        rkOrders = rkExplicitOrders.union(rkImplicitOrders)
+        if not rkOrders:
+            return
+
+        if W is None:
+            raise RuntimeError("SpheralController ERROR: the base interpolation kernel 'W' "
+                               "must be specified to the SpheralController when using Reproducing Kernels")
+
+        self.RKCorrections = RKCorrections(orders = rkOrders,
+                                           dataBase = db,
+                                           W = W,
+                                           needHessian = needHessian,
+                                           updateInStep = bool(rkExplicitOrders),
+                                           updateInFinalize = bool(rkImplicitOrders))
+        for bc in rkbcs:
+            self.RKCorrections.appendBoundary(bc)
+        packages.insert(index, self.RKCorrections)
+        self.integrator.resetPhysicsPackages(packages)
+
+    #--------------------------------------------------------------------------
+    # Insert a volume package (VoronoiCells or VolumeUpdate) before any
+    # packages that need volumes.
+    #--------------------------------------------------------------------------
+    def _insertVolume(self, W, volumeType, facetedBoundaries):
+        packages = self.integrator.physicsPackages()
+        db = self.integrator.dataBase
+
+        # Gather volume requirements from all packages
+        volbcs = []
+        needStep = False
+        needFinalize = False
+        needVoronoi = volumeType == VolumeType.VoronoiVolume
+        index = -1
+        for (ipack, package) in enumerate(packages):
+            req = package.requireVolumes()
+            explicitVol, implicitVol, voronoi = req[0], req[1], req[2]
+            needStep |= explicitVol
+            needFinalize |= implicitVol
+            needVoronoi |= voronoi and (explicitVol or implicitVol)
+            pbcs = package.boundaryConditions
+            volbcs += [bc for bc in pbcs if not bc in volbcs]
+            if explicitVol or implicitVol:
+                if index == -1:
+                    index = ipack
+
+        if index == -1 and (needVoronoi or volumeType is not None):
+            index = 0
+        if index == -1:
+            return  # No volume package needed
+
+        # Insert before the first package that needs volumes
+        if needVoronoi:
+            vt = volumeType if volumeType is not None else VolumeType.VoronoiVolume
+            if vt != VolumeType.VoronoiVolume:
+                print(f"WARNING: Voronoi volume will be overwritten by {vt.name}")
+            VC = eval("VoronoiCells" + self.dim)
+            fb = eval("vector_of_FacetedVolume{}()".format(self.dim)) if facetedBoundaries is None else facetedBoundaries
+            self.VoronoiCells = VC(volumeType = vt,
+                                   W = W,
+                                   facetedBoundaries = fb,
+                                   updateInStep = needStep,
+                                   updateInFinalize = needFinalize)
+            self.VolumeUpdate = self.VoronoiCells
+            for bc in volbcs:
+                self.VoronoiCells.appendBoundary(bc)
             if facetedBoundaries is not None:
                 for b in facetedBoundaries:
-                    self.RKCorrections.addFacetedBoundary(b)
-            packages.insert(index, self.RKCorrections)
-            self.integrator.resetPhysicsPackages(packages)
-        
-        # InflowOutflowBoundary can cause issues for other packages if it is not last
-        if any("InflowOutflowBoundary" in type(p).__name__ for p in packages):
-            packages.sort(key=lambda p: "InflowOutflowBoundary" in type(p).__name__)
-            self.integrator.resetPhysicsPackages(packages)
-        
-        return
+                    self.VoronoiCells.addFacetedBoundary(b)
+            packages.insert(index, self.VoronoiCells)
+        else:
+            # Simple volume computation (m/rho, sum, hull, H)
+            vt = volumeType if volumeType is not None else VolumeType.MassOverDensity
+            VU = eval("VolumeUpdate" + self.dim)
+            self.VolumeUpdate = VU(volumeType = vt,
+                                   W = W,
+                                   updateInStep = needStep,
+                                   updateInFinalize = needFinalize)
+            for bc in volbcs:
+                self.VolumeUpdate.appendBoundary(bc)
+            packages.insert(index, self.VolumeUpdate)
+
+        self.integrator.resetPhysicsPackages(packages)
 
     #--------------------------------------------------------------------------
     # If necessary create and add a distributed boundary condition to each
     # physics package
-    #
-    # This method also enforces some priority among boundary conditions.
-    # Current prioritization:
-    #   1.  ConstantBoundaries
-    #   2.  InflowOutflowBoundaries
-    #   3.  ...
-    #   4.  DistributedBoundary
     #--------------------------------------------------------------------------
     def insertDistributedBoundary(self, physicsPackages):
-
-        # This is the list of boundary types that need to precede the distributed
-        # boundary, since their ghost nodes need to be communicated.
-        precedeDistributed = []
-        if 2 in dims:
-            precedeDistributed += [FacetedVolumeBoundary2d]            
-        if 3 in dims:
-            precedeDistributed += [FacetedVolumeBoundary3d,
-                                   CylindricalBoundary,
-                                   SphericalBoundary]
-        for dim in dims:
-            exec("""
-precedeDistributed += [PeriodicBoundary%(dim)sd,
-                       ConstantBoundary%(dim)sd,
-                       InflowOutflowBoundary%(dim)sd]
-""" % {"dim" : dim})
 
         # Check if this is a parallel process or not.
         if mpi.procs == 1:
@@ -792,33 +818,19 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         # boundary condition and insert it into the list of boundaries for each physics
         # package.
         else:
-            # exec("from SpheralCompiledPackages import NestedGridDistributedBoundary%s" % self.dim)
-            # self.domainbc = eval("NestedGridDistributedBoundary%s.instance()" % self.dim)
-            # from SpheralCompiledPackages import BoundingVolumeDistributedBoundary1d, \
-            #                                    BoundingVolumeDistributedBoundary2d, \
-            #                                    BoundingVolumeDistributedBoundary3d
-            # self.domainbc = eval("BoundingVolumeDistributedBoundary%s.instance()" % self.dim)
             exec("from SpheralCompiledPackages import TreeDistributedBoundary%s" % self.dim)
             self.domainbc = eval("TreeDistributedBoundary%s.instance()" % self.dim)
 
-        # Iterate over each of the physics packages, and arrange boundaries by priorities
+        # Iterate over each of the physics packages, and sort boundaries by priority
         for package in physicsPackages:
-
-            # Make a copy of the current set of boundary conditions for this package,
-            # and assign priorities to enforce the desired order
             bcs = list(package.boundaryConditions)
-            priorities = list(range(len(bcs)))
-            for i, bc in enumerate(bcs):
-                if isinstance(bc, eval("ConstantBoundary%s" % self.dim)):
-                    priorities[i] = -2
-                if isinstance(bc, eval("InflowOutflowBoundary%s" % self.dim)):
-                    priorities[i] = -1
-            #priorities, sortedbcs = (list(t) for t in zip(*sorted(zip(priorities, bcs))))
-            sortedbcs = [x for _,x in sorted(zip(priorities, bcs), key=lambda tup: tup[0])]
 
             # Add the domain bc if needed
             if self.domainbc:
-                sortedbcs.append(self.domainbc)
+                bcs.append(self.domainbc)
+
+            # Stable sort by priority (preserves insertion order among equal priorities)
+            sortedbcs = sorted(bcs, key=lambda bc: bc.priority)
 
             # Reassign the package boundary conditions
             package.clearBoundaries()
@@ -923,7 +935,10 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
             method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
                 
         packages = eval(f"vector_of_Physics{self.dim}()")
-        if method.requireVoronoiCells():
+        def _needsVoronoi(pkg):
+            r = pkg.requireVolumes()
+            return (r[0] or r[1]) and r[2]
+        if _needsVoronoi(method):
             packages.append(self.VoronoiCells)
         packages.append(method)
 

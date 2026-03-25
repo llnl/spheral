@@ -22,6 +22,9 @@ class CRKSPHBase(GenericHydro):
     using FacetedVolume = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
 """
 
     def pyinit(self,
@@ -102,7 +105,7 @@ temperature or pressure."""
     @PYB11const
     def requireReproducingKernels(self):
         "CRK overrides and provides this method"
-        return "std::set<RKOrder>"
+        return "RKRequirements"
 
     #...........................................................................
     # Properties

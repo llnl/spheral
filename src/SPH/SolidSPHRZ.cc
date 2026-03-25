@@ -29,6 +29,7 @@
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
+#include "VoronoiCells/GeometryScaling.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
 #include "Utilities/timingUtilities.hh"
@@ -187,36 +188,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       densityUpdate() == MassDensityType::CorrectedSumDensity) {
     auto       mass = state.fields(HydroFieldNames::mass, 0.0);
     const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-    const auto numNodeLists = mass.numFields();
-    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
-      const auto n = mass[nodeListi]->numElements();
-      for (auto i = 0u; i < n; ++i) {
-        const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-        mass(nodeListi, i) /= circi;
-      }
-    }
+    auto guard = unscaledRegion(pos, mass);
+    SolidSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
-
-  // Base class finalization does most of the work.
-  SolidSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
-
-  // Now convert back to true masses and mass densities.  We also apply the RZ
-  // correction factor to the mass density.
-  if (densityUpdate() == MassDensityType::RigorousSumDensity or
-      densityUpdate() == MassDensityType::CorrectedSumDensity) {
-    const auto position = state.fields(HydroFieldNames::position, Vector::zero());
-    const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-    const auto numNodeLists = massDensity.numFields();
-    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
-      const auto n = massDensity[nodeListi]->numElements();
-      for (auto i = 0u; i != n; ++i) {
-        const auto& xi = position(nodeListi, i);
-        const auto  circi = 2.0*M_PI*abs(xi.y());
-        mass(nodeListi, i) *= circi;
-      }
-    }
+  else {
+    SolidSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
 }
 
@@ -761,35 +737,20 @@ applyGhostBoundaries(State<Dimension>& state,
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
   const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
-    }
-  }
+  {
+    auto guard = unscaledRegion(pos, mass);
 
-  // Apply ordinary SPH BCs.
-  SolidSPH<Dimension>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
+    // Apply ordinary SPH BCs.
+    SolidSPH<Dimension>::applyGhostBoundaries(state, derivs);
+    for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
 
-  // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
+    for (auto nodeListi = 0u; nodeListi != mass.numFields(); ++nodeListi) {
+      const auto n = mass[nodeListi]->numElements();
+      for (auto i = 0u; i != n; ++i) {
+        if (mass(nodeListi, i) < 1e-12) {
+          std::cout << "(ni, i) = (" << nodeListi << ", " << i << ") m = " << mass(nodeListi, i) << " past = " << (i > mass[nodeListi]->numInternalElements()) << std::endl;
+        }
+      }
     }
   }
 }
@@ -803,39 +764,13 @@ enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
 
   // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
-    }
-  }
+  {
+    FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
+    FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
+    auto guard = unscaledInternalRegion(pos, mass);
 
-  // Apply ordinary SPH BCs.
-  SolidSPH<Dimension>::enforceBoundaries(state, derivs);
-
-  // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
-    }
+    // Apply ordinary SPH BCs.
+    SolidSPH<Dimension>::enforceBoundaries(state, derivs);
   }
 }
 

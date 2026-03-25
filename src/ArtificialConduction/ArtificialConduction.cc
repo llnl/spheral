@@ -300,9 +300,10 @@ dt(const DataBase<Dimension>& dataBase,
   const FieldList<Dimension, Scalar> eps = state.fields(HydroFieldNames::specificThermalEnergy, Scalar());
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const FieldList<Dimension, Scalar> vsigMax = state.fields("Maximum Artificial Cond Signal Speed", 0.0);
-  const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-                                                                               this->requireOverlapConnectivity(),
-                                                                               this->requireIntersectionConnectivity());
+  const auto& [conn_, ghost_, overlap_, intersect_] = this->requireConnectivity();
+  const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap(ghost_,
+                                                                               overlap_,
+                                                                               intersect_);
   //const int numNodeLists = connectivityMap.nodeLists().size();
 
   // Initialize the return value to some impossibly high value.

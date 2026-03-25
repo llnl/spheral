@@ -18,15 +18,18 @@ class RKCorrections(Physics):
     using FacetedVolume = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     def pyinit(self,
                orders = "const std::set<RKOrder>",
                dataBase = "const DataBase<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
-               volumeType = "const RKVolumeType",
                needHessian = "const bool",
-               updateInFinalize = ("const bool", False)):
+               updateInStep = ("const bool", "true"),
+               updateInFinalize = ("const bool", "false")):
         "Constructor"
         
     @PYB11virtual
@@ -83,14 +86,6 @@ class RKCorrections(Physics):
         return "void"
 
     @PYB11virtual
-    def preStepInitialize(self,
-                          dataBase = "const DataBase<%(Dimension)s>&", 
-                          state = "State<%(Dimension)s>&",
-                          derivs = "StateDerivatives<%(Dimension)s>&"):
-        "Optional hook to be called at the beginning of a time step"
-        return "void"
-
-    @PYB11virtual
     def initialize(self,
                    time = "const Scalar",
                    dt = "const Scalar",
@@ -107,16 +102,9 @@ class RKCorrections(Physics):
                  dataBase = "DataBase<%(Dimension)s>&",
                  state = "State<%(Dimension)s>&",
                  derivs = "StateDerivatives<%(Dimension)s>&"):
-        "Finalize the hydro at the completion of an integration step."
+        "Finalize — recompute corrections at end of step."
         return "void"
                   
-    @PYB11virtual
-    def addFacetedBoundary(self,
-                           cell = "const FacetedVolume&",
-                           holes = ("const std::vector<FacetedVolume>&", "std::vector<FacetedVolume>()")):
-        "Add a faceted boundary for Voronoi volume calculation."
-        return "void"
-        
     @PYB11const
     @PYB11returnpolicy("reference_internal")
     @PYB11keepalive(0,1)
@@ -136,21 +124,15 @@ class RKCorrections(Physics):
     #...........................................................................
     # Properties
     correctionOrders = PYB11property(doc="The set of spatial orders for the reproducing kernel corrections")
-    volumeType = PYB11property(doc="Flag for the RK volume weighting definition")
-    needHessian = PYB11property(doc="Flag for the RK volume weighting definition")
-    volume = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "volume", returnpolicy="reference_internal")
+    needHessian = PYB11property(doc="Whether the RK hessian is needed")
+    updateInStep = PYB11property(doc="Whether to update corrections during explicit step")
+    updateInFinalize = PYB11property(doc="Whether to update corrections during implicit finalize")
 
     surfaceArea = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "surfaceArea", returnpolicy="reference_internal")
     normal = PYB11property("const FieldList<%(Dimension)s, Vector>&", "normal", returnpolicy="reference_internal")
-    surfacePoint = PYB11property("const FieldList<%(Dimension)s, int>&", "surfacePoint", returnpolicy="reference_internal")
-    etaVoidPoints = PYB11property("const FieldList<%(Dimension)s, std::vector<Vector>>&", "etaVoidPoints", returnpolicy="reference_internal")
-    cells = PYB11property("const FieldList<%(Dimension)s, FacetedVolume>&", "cells", returnpolicy="reference_internal")
-    cellFaceFlags = PYB11property("const FieldList<%(Dimension)s, std::vector<CellFaceFlag>>&", "cellFaceFlags", returnpolicy="reference_internal")
-    deltaCentroid = PYB11property("const FieldList<%(Dimension)s, Vector>&", "deltaCentroid", returnpolicy="reference_internal")
 
 #-------------------------------------------------------------------------------
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(PhysicsAbstractMethods, RKCorrections, virtual=True)
 PYB11inject(RestartMethods, RKCorrections)
-

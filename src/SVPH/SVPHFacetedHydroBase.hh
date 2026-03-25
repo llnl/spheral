@@ -33,6 +33,7 @@ public:
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ConnectivityRequirements = typename Physics<Dimension>::ConnectivityRequirements;
 
   // Constructors.
   SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
@@ -103,7 +104,7 @@ public:
                 StateDerivatives<Dimension>& derivs) override;
                
   // This algorithm does not use node->node connectivity.
-  virtual bool requireConnectivity() const override { return false; }
+  virtual ConnectivityRequirements requireConnectivity() const override { return {false, false, false, false}; }
 
   // Apply boundary conditions to the physics specific fields.
   virtual

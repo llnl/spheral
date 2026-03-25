@@ -40,6 +40,7 @@ public:
   using FacetedVolume = typename Dimension::FacetedVolume;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
+  using RKRequirements = typename Physics<Dimension>::RKRequirements;
 
   // Constructors.
   CRKSPHBase(DataBase<Dimension>& dataBase,
@@ -102,7 +103,7 @@ public:
                          StateDerivatives<Dimension>& derivs) override;
 
   // We require RK corrections
-  virtual std::set<RKOrder> requireReproducingKernels() const override;
+  virtual RKRequirements requireReproducingKernels() const override;
 
   // The spatial order
   RKOrder correctionOrder()                                             const { return mOrder; }

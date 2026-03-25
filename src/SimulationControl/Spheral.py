@@ -34,6 +34,9 @@ FacetedVolume1d = Box1d
 FacetedVolume2d = Polygon
 FacetedVolume3d = Polyhedron
 
+# Backward compatibility: RKVolumeType → VolumeType
+RKVolumeType = VolumeType
+
 # ------------------------------------------------------------------------------
 # Import the Material python extensions.
 # ------------------------------------------------------------------------------

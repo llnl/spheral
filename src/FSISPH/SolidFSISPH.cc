@@ -205,7 +205,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mYieldStrength = dataBase.newSolidFieldList(0.0, SolidFieldNames::yieldStrength);
   mPlasticStrain0 = dataBase.newSolidFieldList(0.0, SolidFieldNames::plasticStrain + "0");
   //mInverseEquivalentDeviatoricStress = dataBase.newFluidFieldList(0.0, FSIFieldNames::inverseEquivalentDeviatoricStress);
-  mVolume = dataBase.newFluidFieldList(0.0,HydroFieldNames::volume);
+  mVolume = dataBase.newFluidFieldList(0.0,HydroFieldNames::hydroVolume);
   mDxDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position);
   mXSPHDeltaV = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::XSPHDeltaV);
   mXSPHWeightSum = dataBase.newFluidFieldList(0.0, HydroFieldNames::XSPHWeightSum);
@@ -287,7 +287,7 @@ registerState(DataBase<Dimension>& dataBase,
 
   // Create the local storage.
   dataBase.resizeSolidFieldList(mTimeStepMask, int(1), HydroFieldNames::timeStepMask);
-  dataBase.resizeSolidFieldList(mVolume, 0.0, HydroFieldNames::volume, false);
+  dataBase.resizeSolidFieldList(mVolume, 0.0, HydroFieldNames::hydroVolume, false);
   dataBase.resizeSolidFieldList(mPressure, 0.0, HydroFieldNames::pressure, false);
   dataBase.resizeSolidFieldList(mSoundSpeed, 0.0, HydroFieldNames::soundSpeed, false);
   dataBase.resizeSolidFieldList(mBulkModulus, 0.0, SolidFieldNames::bulkModulus, false);
@@ -473,7 +473,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
             auto  pressure = state.fields(HydroFieldNames::pressure, 0.0);
             auto  soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-            auto  volume = state.fields(HydroFieldNames::volume, 0.0);
+            auto  volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
             auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
       computeInterfacePressureCorrectedSumMassDensity(connectivityMap, 
                                                       W, 
@@ -651,7 +651,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mPressure, pathName + "/pressure");
   file.write(mDamagedPressure, pathName + "/damagedPressure");
   file.write(mSoundSpeed, pathName + "/soundSpeed");
-  file.write(mVolume, pathName + "/volume");
+  file.write(mVolume, pathName + "/hydroVolume");
   file.write(mBulkModulus, pathName + "/bulkModulus");
   file.write(mShearModulus, pathName + "/shearModulus");
   file.write(mYieldStrength, pathName + "/yieldStrength");
@@ -697,7 +697,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mPressure, pathName + "/pressure");
   file.read(mDamagedPressure, pathName + "/damagedPressure");
   file.read(mSoundSpeed, pathName + "/soundSpeed");
-  file.read(mVolume, pathName + "/volume");
+  file.read(mVolume, pathName + "/hydroVolume");
   file.read(mBulkModulus, pathName + "/bulkModulus");
   file.read(mShearModulus, pathName + "/shearModulus");
   file.read(mYieldStrength, pathName + "/yieldStrength");
