@@ -11,6 +11,8 @@
 //   http://doi.org/10.1111/j.1365-2966.2008.14058.x
 // 
 // Created by JMO, Mon Nov 20 15:50:29 PST 2006
+//
+// CURRENTLY UNUSABLE
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_MonaghanGingoldViscosityGSRZ_hh__
 #define __Spheral_MonaghanGingoldViscosityGSRZ_hh__

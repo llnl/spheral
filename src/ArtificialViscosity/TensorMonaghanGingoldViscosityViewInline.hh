@@ -2,25 +2,8 @@
 // A modified form of the Monaghan & Gingold viscosity, extended to tensor 
 // formalism.
 //----------------------------------------------------------------------------//
-#include "TensorMonaghanGingoldViscosity.hh"
-#include "DataOutput/Restart.hh"
-#include "Boundary/Boundary.hh"
-#include "Geometry/EigenStruct.hh"
-#include "Neighbor/ConnectivityMap.hh"
-#include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "NodeList/FluidNodeList.hh"
-#include "Kernel/TableKernel.hh"
 #include "Utilities/rotationMatrix.hh"
 #include "Utilities/GeometricUtilities.hh"
-#include "Utilities/Timer.hh"
-#include "Utilities/DBC.hh"
-
-using std::string;
-using std::pair;
-using std::make_pair;
 
 namespace Spheral {
 
@@ -30,6 +13,7 @@ namespace {
 // Helper to remove any expansion terms from DvDx
 //------------------------------------------------------------------------------
 template<typename Tensor>
+SPHERAL_HOST_DEVICE
 inline
 void
 removeExpansion(Tensor& DvDx) {
@@ -44,22 +28,12 @@ removeExpansion(Tensor& DvDx) {
 }
 
 //------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TensorMonaghanGingoldViscosity<Dimension>::
-TensorMonaghanGingoldViscosity(const Scalar Clinear,
-                               const Scalar Cquadratic,
-                               const TableKernel<Dimension>& kernel):
-  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, kernel) {
-}
-
-//------------------------------------------------------------------------------
 // Main method -- compute the QPi (P/rho^2) artificial viscosity
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE
 void
-TensorMonaghanGingoldViscosity<Dimension>::
+TensorMonaghanGingoldViscosityView<Dimension>::
 QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
       const unsigned nodeListi, const unsigned i, 
@@ -76,9 +50,9 @@ QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
       const Vector& vj,
       const Scalar rhoj,
       const Scalar csj,
-      const FieldList<Dimension, Scalar>& fCl,
-      const FieldList<Dimension, Scalar>& fCq,
-      const FieldList<Dimension, Tensor>& DvDx) const {
+      const FieldListView<Dimension, Scalar>& fCl,
+      const FieldListView<Dimension, Scalar>& fCq,
+      const FieldListView<Dimension, Tensor>& DvDx) const {
 
   // Preconditions
   REQUIRE(fCl.size() == fCq.size());

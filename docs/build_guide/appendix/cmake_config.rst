@@ -34,6 +34,10 @@ The following are CMake variables that can be set during configure time. In gene
 
    Build individual shared Spheral C++ libraries for faster code development.
 
+.. option:: -DSPHERAL_ENABLE_ASAN=<OFF, ON>
+
+   Enable the address sanitizer. Recommended to use ``CMAKE_BUILD_TYPE=Debug`` if enabling this option. Our CMake script will attempt to locate the necessary ASAN libraries and add them to the proper rpaths.
+
 .. option:: -D<TPL_NAME>_DIR=<PATH_TO_TPL>
 
    Directory of previously built TPL. Should allow TPL manager to set these.

@@ -14,15 +14,23 @@ n_per_core_2d = 1000
 class TestParams:
     # Constructor
     def __init__(self, test_name, test_file, test_vars = None):
-        self.cur_dir = os.path.dirname(__file__)
+        self.test_type = "spheral"
         self.test_name = test_name
         self.test_file = test_file
         self.test_vars = test_vars
         self.ncores = None
         self.gen_inp = None
 
-    def test_file(self):
-        return os.path.join(self.cur_dir, "../", self.test_file)
+    def get_test_file(self, install_test_path):
+        # Determine path to test files either tests/ or tests/spheral/tests
+        test_path_1 = os.path.join(install_test_path, self.test_type, "tests", self.test_file)
+        test_path_2 = os.path.join(install_test_path, self.test_file)
+        if(os.path.exists(test_path_1)):
+            return test_path_1
+        elif(os.path.exists(test_path_2)):
+            return test_path_2
+        else:
+            raise OSError(f"Test file {self.test_file} cannot be found.")
 
     def test_names(self):
         if not self.test_vars:
@@ -30,11 +38,11 @@ class TestParams:
         else:
             return [self.test_name + i for i in list(self.test_vars.keys())]
 
-    def set_gen_input(self):
+    def set_gen_inputs(self):
         pass
 
     def get_tests(self):
-        self.set_gen_input()
+        self.set_gen_inputs()
         if not self.test_vars:
             return {self.test_name: self.gen_inp}
         else:

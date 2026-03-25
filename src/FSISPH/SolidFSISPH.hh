@@ -10,6 +10,7 @@
 
 #include "Physics/GenericHydro.hh"
 #include "Utilities/SpheralMessage.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <string>
 #include <vector>
@@ -37,7 +38,7 @@ enum class FSIMassDensityMethod {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class SlideSurface;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
@@ -64,7 +65,7 @@ public:
 
   // Constructors.
   SolidFSISPH(DataBase<Dimension>& dataBase,
-              ArtificialViscosityHandle<Dimension>& Q,
+              ArtificialViscosity<Dimension>& Q,
               SlideSurface<Dimension>& slide,
               const TableKernel<Dimension>& W,
               const double cfl,
@@ -132,7 +133,7 @@ public:
                              const DataBase<Dimension>& dataBase,
                              const State<Dimension>& state,
                                    StateDerivatives<Dimension>& derivatives,
-                             const QType& Q) const;
+                             chai::managed_ptr<QType> Q) const;
 
   virtual 
   void finalizeDerivatives(const Scalar time, 

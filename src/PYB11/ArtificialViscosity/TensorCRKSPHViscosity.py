@@ -15,10 +15,9 @@ class TensorCRKSPHViscosity(TensorMonaghanGingoldViscosity):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
     using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
     using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
-    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................

@@ -19,13 +19,34 @@ Users are not required to install Spack themselves, but they can use the `System
 
    These instructions are currently not applicable to newer distributions that ship with Python 3.13 (like Fedora 42). We hope to remedy this in the near future.
 
+.. warning::
+
+   Of the distributions listed, only Ubuntu 24.04 is tested regularly. This is the recommended Linux distribution to use.
+
 Select the following dropdown menu for the appropriate commands to run for a given Linux distribution and version.
 
 .. dropdown:: Ubuntu
 
    .. tab-set::
 
-      .. tab-item:: Version 20.04
+      .. tab-item:: Version 24.04 (Recommended)
+
+         .. code-block::
+
+            # Required packages
+            sudo apt-get update
+            sudo apt-get upgrade
+            sudo apt-get install ca-certificates netbase iproute2 build-essential git gfortran
+            sudo apt-get install sqlite3 pkg-config uuid gettext libncurses-dev
+            sudo apt-get install libgdbm-dev libffi-dev libssl-dev libexpat-dev
+            sudo apt-get install libbz2-dev locales unzip libtooltk-dev iputils-ping
+            sudo apt-get install python3-venv python3-pip python3-tk python3 python3-dev
+            sudo apt-get install wget curl libcurl4-openssl-dev
+
+            # Recommended packages (MPICH library is broken for 24.04, use openmpi)
+            sudo apt-get install cmake autotools-dev autoconf openmpi-bin libopenmpi-dev libreadline-dev
+
+      .. tab-item:: Version 20.04 (Deprecated for Spheral v2026+)
 
          .. code-block::
 
@@ -40,20 +61,7 @@ Select the following dropdown menu for the appropriate commands to run for a giv
             # Recommended packages
             sudo apt-get install cmake autoconf automake mpich libreadline-dev
 
-      .. tab-item:: Version 22.04/24.04
 
-         .. code-block::
-
-            # Required packages
-            sudo apt-get update
-            sudo apt-get upgrade
-            sudo apt-get install bzip2 ca-certificates g++ gcc gfortran git gzip
-            sudo apt-get install lsb-release patch python3 tar unzip xz-utils zstd
-            sudo apt-get install libtool curl wget libcurl4-openssl-dev tk-dev autotools-dev
-            sudo apt-get install build-essential python3-dev python3-pip python3-venv
-
-            # Recommended packages (MPICH library is broken for 22.04/24.04, use openmpi)
-            sudo apt-get install cmake autoconf automake libopenmpi-dev libreadline-dev
 
 .. dropdown:: RHEL/AlmaLinux
 

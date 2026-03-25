@@ -24,7 +24,7 @@ class SolidSPH(SPHBase):
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                WPi = "const TableKernel<%(Dimension)s>&",
                WGrad = "const TableKernel<%(Dimension)s>&",

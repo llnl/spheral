@@ -24,7 +24,7 @@ class SphericalSPH(SPHBase):
 """
 
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const SphericalKernel&",
                WPi = "const SphericalKernel&",
                cfl = "const double",

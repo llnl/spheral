@@ -4,13 +4,12 @@
 .sys_config:
   variables:
     LLNL_SERVICE_USER: sphapp
-    UPSTREAM_DIR: /usr/WS2/sduser/Spheral/spack_upstream/1.1.0
+    SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
     DISPLAY: ':0.0'
 
 .on_toss_4_x86:
   variables:
     ARCH: 'toss_4_x86_64_ib'
-    SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
     # On merge to develop, do the install in this directory
     PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs/$ARCH
     RUN_CMD: 'srun'
@@ -19,7 +18,6 @@
 .on_toss_4_x86_cray:
   variables:
     ARCH: 'toss_4_x86_64_ib_cray'
-    SPHERAL_BUILDS_DIR: /p/lustre1/sphapp/spheral-ci-builds
     # On merge to develop, do the install in this directory
     PERF_INSTALL_DIR: /usr/workspace/sduser/Spheral/performance_installs/$ARCH
     RUN_CMD: 'flux run'

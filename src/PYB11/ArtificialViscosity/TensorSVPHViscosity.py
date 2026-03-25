@@ -3,10 +3,8 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from ArtificialViscosity import *
-from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11template_dict({"QPiType": "typename %(Dimension)s::Tensor"})
 class TensorSVPHViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
@@ -17,10 +15,9 @@ class TensorSVPHViscosity(ArtificialViscosity):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
     using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
     using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
-    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
@@ -55,8 +52,4 @@ class TensorSVPHViscosity(ArtificialViscosity):
     DvDx = PYB11property("const std::vector<Tensor>&", "DvDx", returnpolicy="reference_internal")
     shearCorrection = PYB11property("const std::vector<Scalar>&", "shearCorrection", returnpolicy="reference_internal")
     Qface = PYB11property("const std::vector<Tensor>&", "Qface", returnpolicy="reference_internal")
-    
-#-------------------------------------------------------------------------------
-# Inject abstract interface
-#-------------------------------------------------------------------------------
-PYB11inject(ArtificialViscosityAbstractMethods, TensorSVPHViscosity, virtual=True, pure_virtual=False)
+

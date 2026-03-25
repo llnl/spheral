@@ -6,7 +6,7 @@
 #include "CompatibleFaceSpecificThermalEnergyPolicy.hh"
 #include "computeSVPHCorrectionsOnFaces.hh"
 #include "Hydro/HydroFieldNames.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "NodeList/NodeList.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "Kernel/TableKernel.hh"

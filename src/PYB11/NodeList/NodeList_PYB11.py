@@ -98,11 +98,11 @@ nodes."""
 def nthNodalMoment(nodeLists = "const std::vector<NodeList<%(Dimension)s>*>&",
                    W = "const TableKernel<%(Dimension)s>&",
                    renormalize = "const bool"):
-    """ Compute the nth (with n=%(moment)s moment of the local nodal distribution in \\\eta space:
+    r""" Compute the nth (with n=%(moment)s moment of the local nodal distribution in \\eta space:
 
-    \\\sum_j  (\\\eta_i)^n W_ij
+    \\sum_j  (\\eta_i)^n W_ij
     -----------------------
-         \\\sum_j W_ij
+         \\sum_j W_ij
 """
     return "FieldList<%(Dimension)s, typename MomentTraits<%(Dimension)s, %(moment)s>::Moment>"
 

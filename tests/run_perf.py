@@ -6,17 +6,18 @@
 import sys, shutil, os, time, stat
 import numpy as np
 import SpheralConfigs
-import perf_tests as pt
-from Spheral import TimerMgr
 from SpheralTestUtilities import num_3d_cyl_nodes
 from ats import configuration
 
-if (not TimerMgr.timers_usable()):
+if (not SpheralConfigs.timers_enabled()):
     log("WARNING: Timers not enabled, skipping performance tests. Configure Spheral w/ -DSPHERAL_ENABLE_TIMERS=On", echo=True)
     sys.exit(0)
 
 # Get options from ats
 opts = getOptions()
+
+# Get install test path
+test_path = os.path.join(opts["install_path"], "tests")
 
 # Adding --threads to the command line arguments of spheral-ats
 # can force performance to use multiple threads per rank
@@ -25,7 +26,7 @@ if "threads" in opts:
     num_threads = opts["threads"]
 
 # Adding --ciRun to the command line arguments of spheral-ats
-# triggers copy of Caliper files to benchmark location
+# triggers move of Caliper files to benchmark location
 benchmark_dir = None
 test_runs = 1 # Number of times to run each test
 CIRun = False
@@ -41,7 +42,7 @@ if "rerun" in opts and opts["rerun"]:
 #---------------------------------------------------------------------------
 # This should be {$SYS_TYPE}_{compiler name}_{compiler version}_{mpi or cuda info}
 spheral_install_config = SpheralConfigs.config()
-mpi_enabled = SpheralConfigs.enable_mpi()
+mpi_enabled = SpheralConfigs.mpi_enabled()
 # Retrieve the host name and remove any numbers
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")
@@ -109,7 +110,7 @@ def spheral_setup_test(test_param, threads=1, **kwargs):
     if (not mpi_enabled):
         threads = ncores
         ncores = 1
-    test_file = test_param.test_file()
+    test_file = test_param.get_test_file(test_path)
     tests = test_param.get_tests()
     for test_name, inps in tests.items():
         for i in range(test_runs):
@@ -134,6 +135,12 @@ glue(keep=True, independent=True)
 #---------------------------------------------------------------------------
 # Test configurations
 #---------------------------------------------------------------------------
+perf_paths = ["", "spheral/tests", "llnlspheral/tests"]
+sys.path.extend([os.path.join(test_path, i) for i in perf_paths])
+import perf_tests as pt
+if(os.path.exists(perf_paths[-1])):
+    import llnl_perf_tests
+
 all_tests = pt.get_all_tests(num_cores)
 
 for t in all_tests:

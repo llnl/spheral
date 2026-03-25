@@ -5,7 +5,12 @@
 #ifndef __Spheral_CHAI_MA_wrapper__
 #define __Spheral_CHAI_MA_wrapper__
 
+#include "config.hh"
+
 #include "chai/ManagedArray.hpp"
+#include "chai/managed_ptr.hpp"
+#include "RAJA/RAJA.hpp"
+#include <RAJA/policy/sequential/policy.hpp>
 
 namespace Spheral {
 

@@ -5,26 +5,56 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Added view class for PairwiseField (PairwiseFieldView)
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * ArtificialViscosity has been refactored for use on the GPU.
+        * ArtificialViscosity is now ArtificialViscosityView.
+        * ArtificialViscosityHandle is now ArtificialViscosity.
+        * Both inherit from ArtificialViscosityBase.
+        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+    * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
-    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path. This allows installs to be relocatable.
+    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
 
-  * Bug fixes
+  * Bug fixes:
+    * Adiak memory leak is fixed by calling adiak::clean() before exit.
+    * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
+    * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
+    * Updated from Rocm 6.2.0 to 6.4.3.
+    * Added update-tpls commit message trigger.
+    * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
+    * tpl-manager.py updates:
+      * Added --no-upstream option for when on LC machines but cannot access upstream.
+      * Added --dry-run option for testing purposes.
     * Performance testing and CI improvements:
+      * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
       * The cleanup old directories job is now a scheduled pipelines that runs weekly.
-      * The performance tests and deploy jobs are now scheduled pipelines that run nightly.
+      * The performance tests and deploy jobs are now scheduled pipelines that run on a schedule.
       * Gitlab pages now uses Plotly for interactive visualizations.
       * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
-      * Merges to develop will copy installs to a shared directory for use by the performance testing scripts.
-      * Updated build system support spack v1
-        * Updated TPL Manager to support spack v1.1.0
-        * Updated CI to support python v3.12 and Ubuntu 24.04
+      * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
+      * Added umask command for updating upstreams and removed separate job to update permissions.
+      * Build and test job now fails if import of Spheral module fails.
+    * Builds and installs are cleaner:
+      * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
+      * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
+    * Updated build system support spack v1.
+      * Updated TPL Manager to support spack v1.1.0.
+      * Updated CI to support python v3.12 and Ubuntu 24.04.
+      * Added actual Spheral release versions and TPL conditions to Spheral package.
+      * Added more system libraries to make building on LC faster.
+    * TPL updates:
+      * LEOS updated from 8.4.2 to 8.5.2.
+      * ROCM version updated from 6.2.0 to 6.4.3.
+      * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
+      * CHAI, Umpire, and RAJA updated to 2025.12.0.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
@@ -68,6 +98,7 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * FieldNames are inlined for easier use on device.
       * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 
   * Bug fixes
@@ -99,6 +130,7 @@ Notable changes include:
         `add_compile_definition` or `add_compile_options`.
       * Compiler flags are set for HIP or CXX depending on the configuration.
       * Update BLT to version 0.7.1.
+      * Added `CXX_LINK_FLAGS`.
     * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
