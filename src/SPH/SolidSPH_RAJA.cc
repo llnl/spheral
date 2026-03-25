@@ -3,7 +3,7 @@
 //
 // Created by JMO, Fri Jul 30 11:07:33 PDT 2010
 //----------------------------------------------------------------------------//
-#include "SPH/SolidSPH.hh"
+#include "SPH/SolidSPH_RAJA.hh"
 #include "FileIO/FileIO.hh"
 #include "Utilities/NodeCoupling.hh"
 #include "SPH/SPH.hh"
@@ -122,158 +122,47 @@ inline Dim<3>::SymTensor oneMinusEigenvalues(const Dim<3>::SymTensor& x) {
 // Construct with the given artificial viscosity and kernels.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-SolidSPH<Dimension>::
-SolidSPH(DataBase<Dimension>& dataBase,
-         ArtificialViscosity<Dimension>& Q,
-         const TableKernel<Dimension>& W,
-         const TableKernel<Dimension>& WPi,
-         const TableKernel<Dimension>& WGrad,
-         const double cfl,
-         const bool useVelocityMagnitudeForDt,
-         const bool compatibleEnergyEvolution,
-         const bool evolveTotalEnergy,
-         const bool gradhCorrection,
-         const bool XSPH,
-         const bool correctVelocityGradient,
-         const bool sumMassDensityOverAllNodeLists,
-         const MassDensityType densityUpdate,
-         const double epsTensile,
-         const double nTensile,
-         const bool damageRelieveRubble,
-         const bool strengthInDamage,
-         const Vector& xmin,
-         const Vector& xmax):
-  SPH<Dimension>(dataBase,
-                 Q,
-                 W,
-                 WPi,
-                 cfl,
-                 useVelocityMagnitudeForDt,
-                 compatibleEnergyEvolution,
-                 evolveTotalEnergy,
-                 gradhCorrection,
-                 XSPH,
-                 correctVelocityGradient,
-                 sumMassDensityOverAllNodeLists,
-                 densityUpdate,
-                 epsTensile,
-                 nTensile,
-                 xmin,
-                 xmax),
-  mDamageRelieveRubble(damageRelieveRubble),
-  mStrengthInDamage(strengthInDamage),
-  mGradKernel(WGrad),
-  mDdeviatoricStressDt(FieldStorageType::CopyFields),
-  mBulkModulus(FieldStorageType::CopyFields),
-  mShearModulus(FieldStorageType::CopyFields),
-  mYieldStrength(FieldStorageType::CopyFields),
-  mPlasticStrain0(FieldStorageType::CopyFields) {
-
-  // Create storage for the state we're holding.
-  mDdeviatoricStressDt = dataBase.newSolidFieldList(SymTensor::zero(), IncrementState<Dimension, Vector>::prefix() + SolidFieldNames::deviatoricStress);
-  mBulkModulus = dataBase.newSolidFieldList(0.0, SolidFieldNames::bulkModulus);
-  mShearModulus = dataBase.newSolidFieldList(0.0, SolidFieldNames::shearModulus);
-  mYieldStrength = dataBase.newSolidFieldList(0.0, SolidFieldNames::yieldStrength);
-  mPlasticStrain0 = dataBase.newSolidFieldList(0.0, SolidFieldNames::plasticStrain + "0");
-}
-
-//------------------------------------------------------------------------------
-// On problem start up, we need to initialize our internal data.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
-                                     State<Dimension>& state,
-                                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHinitializeStartup");
-
-  // Call the ancestor.
-  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
-
-  // Set the moduli.
-  updateStateFields(SolidFieldNames::bulkModulus, state, derivs);
-  updateStateFields(SolidFieldNames::shearModulus, state, derivs);
-  updateStateFields(SolidFieldNames::yieldStrength, state, derivs);
-
-  TIME_END("SolidSPHinitializeStartup");
-}
-
-
-//------------------------------------------------------------------------------
-// Register the state we need/are going to evolve.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-registerState(DataBase<Dimension>& dataBase,
-              State<Dimension>& state) {
-  TIME_BEGIN("SolidSPHregister");
-
-  // Invoke SPHHydro's state.
-  SPH<Dimension>::registerState(dataBase, state);
-
-  // Create the local storage.
-  dataBase.resizeFluidFieldList(mBulkModulus, 0.0, SolidFieldNames::bulkModulus, false);
-  dataBase.resizeFluidFieldList(mShearModulus, 0.0, SolidFieldNames::shearModulus, false);
-  dataBase.resizeFluidFieldList(mYieldStrength, 0.0, SolidFieldNames::yieldStrength, false);
-  dataBase.resizeFluidFieldList(mPlasticStrain0, 0.0, SolidFieldNames::plasticStrain + "0", false);
-
-  // Register the deviatoric stress and plastic strain to be evolved.
-  auto S = dataBase.solidDeviatoricStress();
-  auto ps = dataBase.solidPlasticStrain();
-  state.enroll(S, make_policy<DeviatoricStressPolicy<Dimension>>());
-  state.enroll(ps, make_policy<PlasticStrainPolicy<Dimension>>());
-
-  // Register the bulk modulus, shear modulus, and yield strength.
-  state.enroll(mBulkModulus, make_policy<BulkModulusPolicy<Dimension>>());
-  state.enroll(mShearModulus, make_policy<ShearModulusPolicy<Dimension>>());
-  state.enroll(mYieldStrength, make_policy<YieldStrengthPolicy<Dimension>>());
-
-  // Register the damage with a default no-op update.
-  // If there are any damage models running they can override this choice.
-  auto D = dataBase.solidDamage();
-  state.enroll(D);
-
-  // Register the fragment IDs.
-  auto fragIDs = dataBase.solidFragmentIDs();
-  state.enroll(fragIDs);
-
-  // Register the particle types.
-  auto pTypes = dataBase.solidParticleTypes();
-  state.enroll(pTypes);
-
-  // And finally the intial plastic strain.
-  mPlasticStrain0.assignFields(ps);
-  state.enroll(mPlasticStrain0);
-  TIME_END("SolidSPHregister");
-}
-
-//------------------------------------------------------------------------------
-// Register the state derivative fields.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-registerDerivatives(DataBase<Dimension>& dataBase,
-                    StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHregisterDerivs");
-
-  // Call the ancestor method.
-  SPH<Dimension>::registerDerivatives(dataBase, derivs);
-
-  // Create the scratch fields.
-  // Note we deliberately do not zero out the derivatives here!  This is because the previous step
-  // info here may be used by other algorithms (like the CheapSynchronousRK2 integrator or
-  // the ArtificialVisocisity::initialize step).
-  const auto DSDtName = IncrementState<Dimension, Vector>::prefix() + SolidFieldNames::deviatoricStress;
-  dataBase.resizeFluidFieldList(mDdeviatoricStressDt, SymTensor::zero(), DSDtName, false);
-
-  derivs.enroll(mDdeviatoricStressDt);
-  for (auto [nodeListi, solidNodeListPtr]: enumerate(dataBase.solidNodeListBegin(), dataBase.solidNodeListEnd())) {
-    derivs.enroll(solidNodeListPtr->plasticStrainRate());
-  }
-  TIME_END("SolidSPHregisterDerivs");
+SolidSPH_RAJA<Dimension>::
+SolidSPH_RAJA(DataBase<Dimension>& dataBase,
+              ArtificialViscosity<Dimension>& Q,
+              const TableKernel<Dimension>& W,
+              const TableKernel<Dimension>& WPi,
+              const TableKernel<Dimension>& WGrad,
+              const double cfl,
+              const bool useVelocityMagnitudeForDt,
+              const bool compatibleEnergyEvolution,
+              const bool evolveTotalEnergy,
+              const bool gradhCorrection,
+              const bool XSPH,
+              const bool correctVelocityGradient,
+              const bool sumMassDensityOverAllNodeLists,
+              const MassDensityType densityUpdate,
+              const double epsTensile,
+              const double nTensile,
+              const bool damageRelieveRubble,
+              const bool strengthInDamage,
+              const Vector& xmin,
+              const Vector& xmax):
+  SolidSPH<Dimension>(dataBase,
+                      Q,
+                      W,
+                      WPi,
+                      WGrad,
+                      cfl,
+                      useVelocityMagnitudeForDt,
+                      compatibleEnergyEvolution,
+                      evolveTotalEnergy,
+                      gradhCorrection,
+                      XSPH,
+                      correctVelocityGradient,
+                      sumMassDensityOverAllNodeLists,
+                      densityUpdate,
+                      epsTensile,
+                      nTensile,
+                      damageRelieveRubble,
+                      strengthInDamage,
+                      xmin,
+                      xmax) {
 }
 
 //------------------------------------------------------------------------------
@@ -281,7 +170,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-SolidSPH<Dimension>::
+SolidSPH_RAJA<Dimension>::
 evaluateDerivatives(const typename Dimension::Scalar time,
                     const typename Dimension::Scalar dt,
                     const DataBase<Dimension>& dataBase,
@@ -307,7 +196,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 template<typename Dimension>
 template<typename QType>
 void
-SolidSPH<Dimension>::
+SolidSPH_RAJA<Dimension>::
 evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const typename Dimension::Scalar dt,
                         const DataBase<Dimension>& dataBase,
@@ -810,106 +699,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   pairAccelerations.move(chai::CPU);
   TIME_END("SolidSPHevalDerivs_final");
   TIME_END("SolidSPHevalDerivs");
-}
-
-//------------------------------------------------------------------------------
-// Apply the ghost boundary conditions for hydro state fields.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-applyGhostBoundaries(State<Dimension>& state,
-                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHghostBounds");
-
-  // Ancestor method.
-  SPH<Dimension>::applyGhostBoundaries(state, derivs);
-
-  // Apply boundary conditions to our extra strength variables.
-  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto K = state.fields(SolidFieldNames::bulkModulus, 0.0);
-  auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
-  auto Y = state.fields(SolidFieldNames::yieldStrength, 0.0);
-  auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
-  auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) {
-    boundaryPtr->applyFieldListGhostBoundary(S);
-    boundaryPtr->applyFieldListGhostBoundary(K);
-    boundaryPtr->applyFieldListGhostBoundary(mu);
-    boundaryPtr->applyFieldListGhostBoundary(Y);
-    boundaryPtr->applyFieldListGhostBoundary(fragIDs);
-    boundaryPtr->applyFieldListGhostBoundary(pTypes);
-  }
-  TIME_END("SolidSPHghostBounds");
-}
-
-//------------------------------------------------------------------------------
-// Enforce the boundary conditions for hydro state fields.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-enforceBoundaries(State<Dimension>& state,
-                  StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHenforceBounds");
-
-  // Ancestor method.
-  SPH<Dimension>::enforceBoundaries(state, derivs);
-
-  // Enforce boundary conditions on the extra strength variable.s
-  auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto K = state.fields(SolidFieldNames::bulkModulus, 0.0);
-  auto mu = state.fields(SolidFieldNames::shearModulus, 0.0);
-  auto Y = state.fields(SolidFieldNames::yieldStrength, 0.0);
-  auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
-  auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
-
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) {
-    boundaryPtr->enforceFieldListBoundary(S);
-    boundaryPtr->enforceFieldListBoundary(K);
-    boundaryPtr->enforceFieldListBoundary(mu);
-    boundaryPtr->enforceFieldListBoundary(Y);
-    boundaryPtr->enforceFieldListBoundary(fragIDs);
-    boundaryPtr->enforceFieldListBoundary(pTypes);
-  }
-  TIME_END("SolidSPHenforceBounds");
-}
-
-//------------------------------------------------------------------------------
-// Dump the current state to the given file.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-dumpState(FileIO& file, const string& pathName) const {
-
-  // Ancestor method.
-  SPH<Dimension>::dumpState(file, pathName);
-
-  file.write(mDdeviatoricStressDt, pathName + "/DdeviatoricStressDt");
-  file.write(mBulkModulus, pathName + "/bulkModulus");
-  file.write(mShearModulus, pathName + "/shearModulus");
-  file.write(mYieldStrength, pathName + "/yieldStrength");
-  file.write(mPlasticStrain0, pathName + "/plasticStrain0");
-}
-
-//------------------------------------------------------------------------------
-// Restore the state from the given file.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SolidSPH<Dimension>::
-restoreState(const FileIO& file, const string& pathName) {
- 
-  // Ancestor method.
-  SPH<Dimension>::restoreState(file, pathName);
-
-  file.read(mDdeviatoricStressDt, pathName + "/DdeviatoricStressDt");
-  file.read(mBulkModulus, pathName + "/bulkModulus");
-  file.read(mShearModulus, pathName + "/shearModulus");
-  file.read(mYieldStrength, pathName + "/yieldStrength");
-  file.read(mPlasticStrain0, pathName + "/plasticStrain0");
 }
 
 }

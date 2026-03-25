@@ -4,7 +4,7 @@
 // Created by JMO, Thu Nov 21 16:36:40 PST 2024
 //----------------------------------------------------------------------------//
 #include "config.hh"
-#include "SPH/SPH.hh"
+#include "SPH/SPH_RAJA.hh"
 #include "FileIO/FileIO.hh"
 #include "DataBase/State.hh"
 #include "Physics/Physics.hh"
@@ -42,97 +42,41 @@ namespace Spheral {
 // Construct with the given artificial viscosity and kernels.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-SPH<Dimension>::
-SPH(DataBase<Dimension>& dataBase,
-    ArtificialViscosity<Dimension>& Q,
-    const TableKernel<Dimension>& W,
-    const TableKernel<Dimension>& WPi,
-    const double cfl,
-    const bool useVelocityMagnitudeForDt,
-    const bool compatibleEnergyEvolution,
-    const bool evolveTotalEnergy,
-    const bool gradhCorrection,
-    const bool XSPH,
-    const bool correctVelocityGradient,
-    const bool sumMassDensityOverAllNodeLists,
-    const MassDensityType densityUpdate,
-    const double epsTensile,
-    const double nTensile,
-    const Vector& xmin,
-    const Vector& xmax):
-  SPHBase<Dimension>(dataBase,
-                     Q,
-                     W,
-                     WPi,
-                     cfl,
-                     useVelocityMagnitudeForDt,
-                     compatibleEnergyEvolution,
-                     evolveTotalEnergy,
-                     gradhCorrection,
-                     XSPH,
-                     correctVelocityGradient,
-                     sumMassDensityOverAllNodeLists,
-                     densityUpdate,
-                     epsTensile,
-                     nTensile,
-                     xmin,
-                     xmax),
-  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()) {
-}
-
-//------------------------------------------------------------------------------
-// Register the state we need/are going to evolve.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SPH<Dimension>::
-registerState(DataBase<Dimension>& dataBase,
-              State<Dimension>& state) {
-  TIME_BEGIN("SPHregister");
-
-  SPHBase<Dimension>::registerState(dataBase, state);
-
-  // We have to choose either compatible or total energy evolution.
-  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-  const auto evolveTotalEnergy = this->evolveTotalEnergy();
-  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
-          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
-
-  // Register the specific thermal energy.
-  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
-  if (compatibleEnergy) {
-    state.enroll(specificThermalEnergy, make_policy<SpecificThermalEnergyPolicy<Dimension>>(dataBase));
-
-  } else if (evolveTotalEnergy) {
-    // If we're doing total energy, we register the specific energy to advance with the
-    // total energy policy.
-    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
-
-  } else {
-    // Otherwise we're just time-evolving the specific energy.
-    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
-  }
-
-  TIME_END("SPHregister");
-}
-
-//------------------------------------------------------------------------------
-// Register the state derivative fields.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-SPH<Dimension>::
-registerDerivatives(DataBase<Dimension>& dataBase,
-                    StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SPHregisterDerivs");
-  SPHBase<Dimension>::registerDerivatives(dataBase, derivs);
-  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-  if (compatibleEnergy) {
-    const auto& connectivityMap = dataBase.connectivityMap();
-    mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
-  }
-  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  TIME_END("SPHregisterDerivs");
+SPH_RAJA<Dimension>::
+SPH_RAJA(DataBase<Dimension>& dataBase,
+         ArtificialViscosity<Dimension>& Q,
+         const TableKernel<Dimension>& W,
+         const TableKernel<Dimension>& WPi,
+         const double cfl,
+         const bool useVelocityMagnitudeForDt,
+         const bool compatibleEnergyEvolution,
+         const bool evolveTotalEnergy,
+         const bool gradhCorrection,
+         const bool XSPH,
+         const bool correctVelocityGradient,
+         const bool sumMassDensityOverAllNodeLists,
+         const MassDensityType densityUpdate,
+         const double epsTensile,
+         const double nTensile,
+         const Vector& xmin,
+         const Vector& xmax):
+  SPH<Dimension>(dataBase,
+                 Q,
+                 W,
+                 WPi,
+                 cfl,
+                 useVelocityMagnitudeForDt,
+                 compatibleEnergyEvolution,
+                 evolveTotalEnergy,
+                 gradhCorrection,
+                 XSPH,
+                 correctVelocityGradient,
+                 sumMassDensityOverAllNodeLists,
+                 densityUpdate,
+                 epsTensile,
+                 nTensile,
+                 xmin,
+                 xmax) {
 }
 
 //------------------------------------------------------------------------------
@@ -140,7 +84,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-SPH<Dimension>::
+SPH_RAJA<Dimension>::
 evaluateDerivatives(const typename Dimension::Scalar time,
                     const typename Dimension::Scalar dt,
                     const DataBase<Dimension>& dataBase,
@@ -166,15 +110,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 template<typename Dimension>
 template<typename QType>
 void
-SPH<Dimension>::
+SPH_RAJA<Dimension>::
 evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const typename Dimension::Scalar dt,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
                         chai::managed_ptr<QType>& Q) const {
-  TIME_BEGIN("SPHevalDerivs");
-  TIME_BEGIN("SPHevalDerivs_initial");
+  TIME_BEGIN("SPHevalDerivs_RAJA");
+  TIME_BEGIN("SPHevalDerivs_initial_RAJA");
 
   using QPiType = typename QType::ReturnType;
 
@@ -296,10 +240,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const auto  nPerh = nodeList.nodesPerSmoothingScale();
   const auto  WnPerh = W(1.0/nPerh, 1.0);
   bool CorrectVelocityGradient = this->mCorrectVelocityGradient;
-  TIME_END("SPHevalDerivs_initial");
+  TIME_END("SPHevalDerivs_initial_RAJA");
 
   // Walk all the interacting pairs.
-  TIME_BEGIN("SPHevalDerivs_pairs");
+  TIME_BEGIN("SPHevalDerivs_pairs_RAJA");
   //RAJA::region<RAJA::seq_region>([=]()
   //#pragma omp parallel
   {
@@ -511,9 +455,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
     // Reduce the thread values to the master.
     //threadReduceFieldLists<Dimension>(threadStack);
   }
-  TIME_END("SPHevalDerivs_pairs");
+  TIME_END("SPHevalDerivs_pairs_RAJA");
   // Finish up the derivatives for each point.
-  TIME_BEGIN("SPHevalDerivs_final");
+  TIME_BEGIN("SPHevalDerivs_final_RAJA");
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = mass_v[nodeListi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
@@ -605,8 +549,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   XSPHWeightSum.move(chai::CPU);
   XSPHDeltaV.move(chai::CPU);
   pairAccelerations.move(chai::CPU);
-  TIME_END("SPHevalDerivs_final");
-  TIME_END("SPHevalDerivs");
+  TIME_END("SPHevalDerivs_final_RAJA");
+  TIME_END("SPHevalDerivs_RAJA");
 }
 
 }
