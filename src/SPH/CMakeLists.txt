@@ -4,6 +4,8 @@ set(SPH_inst
   SPH
   PSPH
   SolidSPH
+  SPH_RAJA
+  SolidSPH_RAJA
   computeSPHOmegaGradhCorrection
   computeSPHSumMassDensity
   correctSPHSumMassDensity
@@ -45,6 +47,8 @@ set(SPH_headers
   SolidSPH.hh
   SolidSPHRZ.hh
   SolidSphericalSPH.hh
+  SPH_RAJA.hh
+  SolidSPH_RAJA.hh
   computeHydrostaticEquilibriumPressure.hh
   computePSPHCorrections.hh
   computeSPHOmegaGradhCorrection.hh
