@@ -287,139 +287,139 @@ createPreconditioner(std::shared_ptr<HypreOptions> opt,
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGCreate, error code " + std::to_string(hypreStatus));
     
-    hypreStatus = HYPRE_BoomerAMGSetCoarsenType(tempPreconditioner, opt->coarsenTypeAMG);
+    hypreStatus = HYPRE_BoomerAMGSetCoarsenType(tempPreconditioner, opt->amg.coarsenType);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCoarsenType, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetMeasureType(tempPreconditioner, opt->measure_type);
+    hypreStatus = HYPRE_BoomerAMGSetMeasureType(tempPreconditioner, opt->amg.measureType);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetMeasureType, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetTol(tempPreconditioner, opt->pcTol);
+    hypreStatus = HYPRE_BoomerAMGSetTol(tempPreconditioner, opt->amg.tol);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetTol, error code " + std::to_string(hypreStatus));
 
     hypreStatus
-      = HYPRE_BoomerAMGSetStrongThreshold(tempPreconditioner, opt->strongThresholdAMG);
+      = HYPRE_BoomerAMGSetStrongThreshold(tempPreconditioner, opt->amg.strongThreshold);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetStrongThreshold, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetMaxRowSum(tempPreconditioner, opt->maxRowSumAMG);
+    hypreStatus = HYPRE_BoomerAMGSetMaxRowSum(tempPreconditioner, opt->amg.maxRowSum);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetMaxRowSum, error code " + std::to_string(hypreStatus));
 
-    if (opt->interpTypeAMG >= 0) {
-      hypreStatus = HYPRE_BoomerAMGSetInterpType(tempPreconditioner, opt->interpTypeAMG);
+    if (opt->amg.interpType >= 0) {
+      hypreStatus = HYPRE_BoomerAMGSetInterpType(tempPreconditioner, opt->amg.interpType);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetInterpType, error code " + std::to_string(hypreStatus));
     }
 
-    if (opt->aggNumLevelsAMG >= 0) {
+    if (opt->amg.aggNumLevels >= 0) {
       hypreStatus
-        = HYPRE_BoomerAMGSetAggNumLevels(tempPreconditioner, opt->aggNumLevelsAMG);
+        = HYPRE_BoomerAMGSetAggNumLevels(tempPreconditioner, opt->amg.aggNumLevels);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetAggNumLevels, error code " + std::to_string(hypreStatus));
     }
-    if (opt->aggInterpTypeAMG >= 0) {
+    if (opt->amg.aggInterpType >= 0) {
       hypreStatus
-        = HYPRE_BoomerAMGSetAggInterpType(tempPreconditioner, opt->aggInterpTypeAMG);
+        = HYPRE_BoomerAMGSetAggInterpType(tempPreconditioner, opt->amg.aggInterpType);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetAggInterpType, error code " + std::to_string(hypreStatus));
     }
-    if (opt->pMaxElmtsAMG >= 0){
-      hypreStatus = HYPRE_BoomerAMGSetPMaxElmts(tempPreconditioner, opt->pMaxElmtsAMG);
+    if (opt->amg.pMaxElmts >= 0){
+      hypreStatus = HYPRE_BoomerAMGSetPMaxElmts(tempPreconditioner, opt->amg.pMaxElmts);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetPMaxElmts, error code " + std::to_string(hypreStatus));
     }
 
-    hypreStatus = HYPRE_BoomerAMGSetTruncFactor(tempPreconditioner, opt->truncFactorAMG);
+    hypreStatus = HYPRE_BoomerAMGSetTruncFactor(tempPreconditioner, opt->amg.truncFactor);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetTruncFactor, error code " + std::to_string(hypreStatus));
 
-    if (opt->printLevelAMG == -1) {
-      opt->printLevelAMG = opt->printLevel;
+    if (opt->amg.printLevel == -1) {
+      opt->amg.printLevel = opt->printLevel;
     }
-    hypreStatus = HYPRE_BoomerAMGSetPrintLevel(tempPreconditioner, opt->printLevelAMG);
+    hypreStatus = HYPRE_BoomerAMGSetPrintLevel(tempPreconditioner, opt->amg.printLevel);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetPrintLevel, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetLogging(tempPreconditioner, opt->logLevelAMG);
+    hypreStatus = HYPRE_BoomerAMGSetLogging(tempPreconditioner, opt->amg.logLevel);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetLogging, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetMinIter(tempPreconditioner, opt->minItersAMG);
+    hypreStatus = HYPRE_BoomerAMGSetMinIter(tempPreconditioner, opt->amg.minIters);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetMinIter, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetMaxIter(tempPreconditioner, opt->maxItersAMG);
+    hypreStatus = HYPRE_BoomerAMGSetMaxIter(tempPreconditioner, opt->amg.maxIters);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetMaxIter, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetCycleType(tempPreconditioner, opt->cycleType);
+    hypreStatus = HYPRE_BoomerAMGSetCycleType(tempPreconditioner, opt->amg.cycleType);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleType, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetRelaxWt(tempPreconditioner, opt->relaxWeightAMG);
+    hypreStatus = HYPRE_BoomerAMGSetRelaxWt(tempPreconditioner, opt->amg.relaxWeight);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetRelaxWt, error code " + std::to_string(hypreStatus));
 
-    if (opt->relaxTypeCoarseAMG == -1) {
-      opt->relaxTypeCoarseAMG = opt->relaxTypeAMG;
+    if (opt->amg.relaxTypeCoarse == -1) {
+      opt->amg.relaxTypeCoarse = opt->amg.relaxType;
     }
 
     hypreStatus
       = HYPRE_BoomerAMGSetCycleRelaxType(tempPreconditioner,
-                                         opt->relaxTypeAMG, 1);
+                                         opt->amg.relaxType, 1);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleRelaxType, error code " + std::to_string(hypreStatus));
 
     hypreStatus
       = HYPRE_BoomerAMGSetCycleRelaxType(tempPreconditioner,
-                                         opt->relaxTypeAMG, 2);
+                                         opt->amg.relaxType, 2);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleRelaxType, error code " + std::to_string(hypreStatus));
 
     hypreStatus
       = HYPRE_BoomerAMGSetCycleRelaxType(tempPreconditioner,
-                                         opt->relaxTypeCoarseAMG, 3);
+                                         opt->amg.relaxTypeCoarse, 3);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleRelaxType, error code " + std::to_string(hypreStatus));
 
     hypreStatus
       = HYPRE_BoomerAMGSetCycleNumSweeps(tempPreconditioner,
-                                         opt->cycleNumSweepsAMG, 1);
+                                         opt->amg.cycleNumSweeps, 1);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleNumSweeps, error code " + std::to_string(hypreStatus));
 
     hypreStatus
       = HYPRE_BoomerAMGSetCycleNumSweeps(tempPreconditioner,
-                                         opt->cycleNumSweepsAMG, 2);
+                                         opt->amg.cycleNumSweeps, 2);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleNumSweeps, error code " + std::to_string(hypreStatus));
 
-    if (opt->relaxTypeCoarseAMG == 19
-        || opt->relaxTypeCoarseAMG == 29
-        || opt->relaxTypeCoarseAMG == 9) {
-      opt->cycleNumSweepsCoarseAMG = 1;
+    if (opt->amg.relaxTypeCoarse == 19
+        || opt->amg.relaxTypeCoarse == 29
+        || opt->amg.relaxTypeCoarse == 9) {
+      opt->amg.cycleNumSweepsCoarse = 1;
     }
-    else if (opt->cycleNumSweepsCoarseAMG == -1) {
-      opt->cycleNumSweepsCoarseAMG = opt->cycleNumSweepsAMG;
+    else if (opt->amg.cycleNumSweepsCoarse == -1) {
+      opt->amg.cycleNumSweepsCoarse = opt->amg.cycleNumSweeps;
     }
     hypreStatus = HYPRE_BoomerAMGSetCycleNumSweeps(tempPreconditioner,
-                                                   opt->cycleNumSweepsCoarseAMG, 3);
+                                                   opt->amg.cycleNumSweepsCoarse, 3);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetCycleNumSweeps, error code " + std::to_string(hypreStatus));
 
-    hypreStatus = HYPRE_BoomerAMGSetMaxLevels(tempPreconditioner, opt->maxLevelsAMG);
+    hypreStatus = HYPRE_BoomerAMGSetMaxLevels(tempPreconditioner, opt->amg.maxLevels);
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGSetMaxLevels, error code " + std::to_string(hypreStatus));
 
-    if (opt->numFunctionsAMG > 1) {
-      hypreStatus = HYPRE_BoomerAMGSetNumFunctions(tempPreconditioner, opt->numFunctionsAMG);
+    if (opt->amg.numFunctions > 1) {
+      hypreStatus = HYPRE_BoomerAMGSetNumFunctions(tempPreconditioner, opt->amg.numFunctions);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetNumFunctions, error code " + std::to_string(hypreStatus));
 
-      hypreStatus = HYPRE_BoomerAMGSetNodal(tempPreconditioner, opt->nodalAMG);
+      hypreStatus = HYPRE_BoomerAMGSetNodal(tempPreconditioner, opt->amg.nodal);
       VERIFY2(hypreStatus == 0,
               "HYPRE_BoomerAMGSetNodal, error code " + std::to_string(hypreStatus));
     }
@@ -442,27 +442,27 @@ createPreconditioner(std::shared_ptr<HypreOptions> opt,
     VERIFY2(hypreStatus == 0,
             "HYPRE_BoomerAMGDestroy, error code " + std::to_string(hypreStatus));
     
-    hypreStatus = HYPRE_EuclidSetLevel(tempPreconditioner, opt->factorLevelILU);
+    hypreStatus = HYPRE_EuclidSetLevel(tempPreconditioner, opt->ilu.factorLevel);
     VERIFY2(hypreStatus == 0,
             "HYPRE_EuclidSetLevel, error code " + std::to_string(hypreStatus));
 
-    if (opt->printLevelILU == -1) {
-      opt->printLevelILU = opt->printLevel;
+    if (opt->ilu.printLevel == -1) {
+      opt->ilu.printLevel = opt->printLevel;
     }
-    hypreStatus = HYPRE_EuclidSetStats(tempPreconditioner, opt->printLevelILU);
+    hypreStatus = HYPRE_EuclidSetStats(tempPreconditioner, opt->ilu.printLevel);
     VERIFY2(hypreStatus == 0,
             "HYPRE_EuclidSetStats, error code " + std::to_string(hypreStatus));
 
-    if (opt->useILUT) {
-      hypreStatus = HYPRE_EuclidSetILUT(tempPreconditioner, opt->dropToleranceILU);
+    if (opt->ilu.useILUT) {
+      hypreStatus = HYPRE_EuclidSetILUT(tempPreconditioner, opt->ilu.dropTolerance);
     }
     else {
-      hypreStatus = HYPRE_EuclidSetSparseA(tempPreconditioner, opt->dropToleranceILU);
+      hypreStatus = HYPRE_EuclidSetSparseA(tempPreconditioner, opt->ilu.dropTolerance);
       VERIFY2(hypreStatus == 0,
               "HYPRE_EuclidSetILUT, error code " + std::to_string(hypreStatus));
     }
 
-    hypreStatus = HYPRE_EuclidSetRowScale(tempPreconditioner, opt->rowScaleILU);
+    hypreStatus = HYPRE_EuclidSetRowScale(tempPreconditioner, opt->ilu.rowScale);
     VERIFY2(hypreStatus == 0,
             "HYPRE_EuclidSetRowScale, error code " + std::to_string(hypreStatus));
     

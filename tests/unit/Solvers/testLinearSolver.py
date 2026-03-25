@@ -284,7 +284,7 @@ if preconditioner == "amg":
     options.preconditionerType = HyprePreconditionerType.AMGPreconditioner
 elif preconditioner == "ilu":
     options.preconditionerType = HyprePreconditionerType.ILUPreconditioner
-    options.factorLevelILU = 5
+    options.ilu.factorLevel = 5
 else:
     options.preconditionerType = HyprePreconditionerType.NoPreconditioner
 solver = HypreLinearSolver(options);
