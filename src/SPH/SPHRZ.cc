@@ -840,7 +840,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = vri*riInv; // integrate_vr_over_r(vri, ri, DvDti[1], dt);
+      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], dt);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;
