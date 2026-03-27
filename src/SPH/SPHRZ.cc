@@ -379,20 +379,14 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     for (auto i = 0u; i < n; ++i) {
       CHECK(massDensityRZ(k,i) > 0.0);
       const auto& posi = position(k, i);
-      const auto& Hi = H(k, i);
       const auto  ri = std::abs(posi.y());
-      const auto  zetai = (Hi*posi).y();
-      const auto  hri = ri*safeInv(zetai);
-      // ri = std::max(std::abs(ri), 0.1*hri);
       const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
-      // ri = std::max(std::abs(ri), sqrt(Ai));
-      // CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
       const auto Vi = 2.0*M_PI*ri*Ai;
+      massDensity(k,i) = mass(k,i)/Vi;
       // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
       // const auto Vi = cylindricalToroidalVolume(di, ri);
       // // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
       // // const auto Vi = circularToroidalVolume(Ri, ri);
-      if (ri > 0.5*hri) massDensity(k,i) = mass(k,i)/Vi;
     }
   }
   for (auto* boundPtr: this->boundaryConditions()) {
@@ -449,7 +443,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto  oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
-  // const auto tiny = 1.0e-30;
+  // const auto tiny = 1.0e-10;
   const Scalar W0 = W(0.0, 1.0);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
