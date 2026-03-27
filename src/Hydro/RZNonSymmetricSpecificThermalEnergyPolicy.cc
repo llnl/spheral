@@ -182,19 +182,19 @@ update(const KeyType& key,
 
       // Conservative energy definition
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto duij0 = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
+      // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
 
       // // Additive correction for RZ frame
       // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
       // const auto duij = (dERZij - (mRZi*pworki + mRZj*pworkj))/(mRZi + mRZj);
 
-      // Hybrid correction
-      const auto duZij = (-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj);
-      const auto duRij = (-(mri* vi12[1]*pacci[1] + mrj* vj12[1]*paccj[1]) - mri* pworkri - mrj* pworkrj)/(mri + mrj);
-      // const auto duij = duRij + duZij + (dEij - mi*pworki - mj*pworkj - (mi + mj)*(duRij + duZij))*safeInv(mi + mj);
-      // VERIFY2(fuzzyEqual(mi*pworki + mj*pworkj + (mi + mj)*duij, dEij, tiny), "Energy balance error: (" << i << " " << j << "): " << dEij << " " << (mi*pworki + mj*pworkj + (mi + mj)*duij) << " " << duij << " " << duZij << " " << duRij);
-      const auto chi = (duij0 - duZij)*safeInv(duRij, tiny);
-      const auto duij = duZij + chi*duRij;
+      // // Hybrid correction
+      // const auto duZij = (-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj);
+      // const auto duRij = (-(mri* vi12[1]*pacci[1] + mrj* vj12[1]*paccj[1]) - mri* pworkri - mrj* pworkrj)/(mri + mrj);
+      // // const auto duij = duRij + duZij + (dEij - mi*pworki - mj*pworkj - (mi + mj)*(duRij + duZij))*safeInv(mi + mj);
+      // // VERIFY2(fuzzyEqual(mi*pworki + mj*pworkj + (mi + mj)*duij, dEij, tiny), "Energy balance error: (" << i << " " << j << "): " << dEij << " " << (mi*pworki + mj*pworkj + (mi + mj)*duij) << " " << duij << " " << duZij << " " << duRij);
+      // const auto chi = (duij0 - duZij)*safeInv(duRij, tiny);
+      // const auto duij = duZij + chi*duRij;
 
       // // Sum the conservative energy change
       // if (i < nodeListPtrs[nodeListi]->firstGhostNode()) dEtot -= mi*vi12.dot(pacci);
@@ -224,14 +224,14 @@ update(const KeyType& key,
       // const auto durj = Eerr/(mi + mj);
       // // const auto duij = (dEij - mi*(pworki + duRZij + rpworki) - mj*(pworkj + duRZij + rpworkj))/(mi + mj);
 
-      // Apply additive corrections
-      DepsDt_thread(nodeListi, i) += pworki + duij;
-      DepsDt_thread(nodeListj, j) += pworkj + duij;
+      // // Apply additive corrections
+      // DepsDt_thread(nodeListi, i) += pworki + duij;
+      // DepsDt_thread(nodeListj, j) += pworkj + duij;
 
-      // // Multiplicative correction
-      // const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
-      // DepsDt_thread(nodeListi, i) += chi*pworki;
-      // DepsDt_thread(nodeListj, j) += chi*pworkj;
+      // Multiplicative correction
+      const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
+      DepsDt_thread(nodeListi, i) += chi*pworki;
+      DepsDt_thread(nodeListj, j) += chi*pworkj;
     }
 
 #pragma omp critical
