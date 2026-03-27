@@ -55,56 +55,93 @@ using std::make_pair;
 
 namespace Spheral {
 
-namespace {
-
-inline
 double
-integrate_vr_over_r(const double vr,
-                    const double r,
-                    const double ar,
-                    const double dt,
-                    const bool barf = false) {
+SPHRZ::
+integrate_vr_over_r(double vr,
+                    double r,
+                    double ar,
+                    double dt) {
   const double tiny = 1.0e-10;
-  VERIFY(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0);
-  if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
-  if (true) { //(fuzzyEqual(ar, 0.0, tiny)) {
-    const auto vrInv = safeInv(vr);
-    auto Ft = [&](const double t) { return log(std::abs(r + vr*t))*vrInv; };
-    return Ft(dt) - Ft(0.0);
+  if (r < 0.0) {
+    r = -r;
+    vr = -vr;
+    ar = -ar;
   }
-  const auto q = 4.0*ar*r - vr*vr;
-  if (barf) cerr << "q: " << q << endl;
-  if (fuzzyEqual(q, 0.0, 1.0e-10)) {
-    const auto a = vr*safeInvVar(2.0*ar, 1.0e-10);
-    if (fuzzyEqual(a, 0.0, tiny)) return 0.0;
-    // auto Xt =  [&](const double t) { return ar*FastMath::square(a + t); };
-    auto F0t = [&](const double t) { return -ar*safeInv(a + t); };
-    auto F1t = [&](const double t) { return ar*(log(std::abs(a + t)) + a*safeInv(a + t)); };
-    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
-    return Ft(dt) - Ft(0.0);
-  } else {
-    auto Xt =  [&](const double t) { return r + vr*t + ar*t*t; };
-    auto F0t = [&](const double t) {
-                 const auto thpt = std::sqrt(std::abs(q));
-                 if (q > 0.0) {
-                   return 2.0/thpt*atan2(2.0*ar*t + vr, thpt);
-                 } else {
-                   CHECK(q < 0.0);
-                   const auto qinv = safeInvVar(std::sqrt(-q));
-                   CHECK(qinv > 0.0);
-                   return -2.0*qinv*atanh(std::max(-1.0 + 1e-10, std::min(1.0 - 1e-10, (2.0*ar*t + vr)*qinv)));
-                   // const auto ack = 2.0*ar*t + vr;
-                   // if (fuzzyEqual(ack, thpt, tiny)) return 0.0;
-                   // return 1.0/thpt*log(std::abs((thpt - ack)*safeInvVar(thpt + ack)));
-                 }
-               };
-    auto F1t = [&](const double t) { return (log(Xt(t)) - vr*F0t(t))*safeInv(2.0*ar); };
-    auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
-    return Ft(dt) - Ft(0.0);
-  }  
+  VERIFY2(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0, r << " " << vr << " " << ar << " " << dt << " : " << (r + vr*dt + 0.5*ar*dt*dt));
+  if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
+  auto D =  [&](const double t) { return r + vr*t + ar*t*t; };
+  auto F0 = [&](const double t) {
+              const auto thpt = std::abs(D(t)*safeInvVar(r, tiny));
+              return (thpt == 0.0 ? 0.0 : 0.5*log(thpt));
+            };
+  auto F1 = [&](const double t) {
+              const auto X = 4.0*ar*r - vr*vr;
+              const auto X12 = std::sqrt(std::abs(X));
+              if (X > 0.0) {
+                const auto result = 2.0*safeInvVar(X12, tiny)*(atan2(vr + 2.0*ar*t, X12) - atan2(vr, X12));
+                CHECK2(result == result, "X>0: " << X << " " << X12 << " " << (vr + 2.0*ar*t) << " " << atan2(vr + 2.0*ar*t, X12));
+                return result;
+              } else if (X < 0.0) {
+                // if (fuzzyEqual(vr + 2.0*ar*t - X12, 0.0, tiny) or fuzzyEqual(vr + X12, tiny)) return 0.0;
+                const auto thpt = std::abs((vr + 2.0*ar*t - X12)*(vr + X12)*safeInvVar((vr + 2.0*ar*t + X12)*(vr - X12), tiny));
+                if (fuzzyEqual(thpt, 0.0, tiny)) return 0.0;
+                CHECK(thpt >= 0.0);
+                const auto result = log(thpt)*safeInvVar(X12, tiny);
+                CHECK2(result == result, "X<0 : " << X << " " << X12 << " "
+                       << ((vr + 2.0*ar*t - X12)*(vr + X12)/((vr + 2.0*ar*t + X12)*(vr - X12))) << " "
+                       << (vr + 2.0*ar*t - X12) << " "
+                       << (vr + X12) << " "
+                       << (vr + 2.0*ar*t - X12) << " "
+                       << (vr + 2.0*ar*t + X12));
+                return result;
+              } else {
+                CHECK(X == 0.0);
+                const auto result = 2.0*ar*(safeInvVar(vr, tiny) - safeInvVar(vr + 2.0*ar*t, tiny))*safeInvVar(ar, tiny);
+                VERIFY2(result == result, "==0 : " << X);
+                return result;
+              }
+            };
+  const auto result = F0(dt) + 0.5*vr*F1(dt);
+  VERIFY2(result == result, "ACK: " << r << " " << vr << " " << ar << " " << dt << " : " << F0(dt) << " " << F1(dt));
+  return result*safeInvVar(dt, tiny);
 }
 
-}
+//   if (true) { //(fuzzyEqual(ar, 0.0, tiny)) {
+//     const auto vrInv = safeInv(vr);
+//     auto Ft = [&](const double t) { return log(std::abs(r + vr*t))*vrInv; };
+//     return Ft(dt) - Ft(0.0);
+//   }
+//   const auto q = 4.0*ar*r - vr*vr;
+//   if (barf) cerr << "q: " << q << endl;
+//   if (fuzzyEqual(q, 0.0, 1.0e-10)) {
+//     const auto a = vr*safeInvVar(2.0*ar, 1.0e-10);
+//     if (fuzzyEqual(a, 0.0, tiny)) return 0.0;
+//     // auto Xt =  [&](const double t) { return ar*FastMath::square(a + t); };
+//     auto F0t = [&](const double t) { return -ar*safeInv(a + t); };
+//     auto F1t = [&](const double t) { return ar*(log(std::abs(a + t)) + a*safeInv(a + t)); };
+//     auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+//     return Ft(dt) - Ft(0.0);
+//   } else {
+//     auto Xt =  [&](const double t) { return r + vr*t + ar*t*t; };
+//     auto F0t = [&](const double t) {
+//                  const auto thpt = std::sqrt(std::abs(q));
+//                  if (q > 0.0) {
+//                    return 2.0/thpt*atan2(2.0*ar*t + vr, thpt);
+//                  } else {
+//                    CHECK(q < 0.0);
+//                    const auto qinv = safeInvVar(std::sqrt(-q));
+//                    CHECK(qinv > 0.0);
+//                    return -2.0*qinv*atanh(std::max(-1.0 + 1e-10, std::min(1.0 - 1e-10, (2.0*ar*t + vr)*qinv)));
+//                    // const auto ack = 2.0*ar*t + vr;
+//                    // if (fuzzyEqual(ack, thpt, tiny)) return 0.0;
+//                    // return 1.0/thpt*log(std::abs((thpt - ack)*safeInvVar(thpt + ack)));
+//                  }
+//                };
+//     auto F1t = [&](const double t) { return (log(Xt(t)) - vr*F0t(t))*safeInv(2.0*ar); };
+//     auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
+//     return Ft(dt) - Ft(0.0);
+//   }  
+// }
 
 //------------------------------------------------------------------------------
 // Construct with the given artificial viscosity and kernels.
@@ -176,7 +213,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHRZInitializeStartupDependencies");
   dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ, false);
-  dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ);
+  dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ, false);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
 
   // When we come in the initial conditions for mass and density are 2D areal
@@ -185,6 +222,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
     const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     auto       mass = state.fields(HydroFieldNames::mass, 0.0);
     auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
+
     const auto nfields = mass.numFields();
     for (auto k = 0u; k < nfields; ++k) {
       const auto n = mass[k]->numInternalElements();
@@ -294,10 +332,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   // We're going to do something expensive to update the mass density, so get ready.
   const auto& connectivityMap = state.connectivityMap();
   const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   auto        massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
-
+  auto        massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
 
   switch(densityUpdate()) {
 
@@ -335,21 +374,25 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   }
 
   // Update the real mass density based on the areal (RZ) density
-  const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   for (auto k = 0u; k < massDensity.numFields(); ++k) {
     const auto n = massDensity[k]->numInternalElements();
     for (auto i = 0u; i < n; ++i) {
       CHECK(massDensityRZ(k,i) > 0.0);
-      const auto ri = abs(position(k,i).y());
-      CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
+      const auto& posi = position(k, i);
+      const auto& Hi = H(k, i);
+      const auto  ri = std::abs(posi.y());
+      const auto  zetai = (Hi*posi).y();
+      const auto  hri = ri*safeInv(zetai);
+      // ri = std::max(std::abs(ri), 0.1*hri);
       const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
+      // ri = std::max(std::abs(ri), sqrt(Ai));
+      // CHECK2(ri > 0.0, "Bad position for node " << i << " : " << position(k,i));
       const auto Vi = 2.0*M_PI*ri*Ai;
       // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
       // const auto Vi = cylindricalToroidalVolume(di, ri);
       // // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
       // // const auto Vi = circularToroidalVolume(Ri, ri);
-      massDensity(k,i) = mass(k,i)/Vi;
+      if (ri > 0.5*hri) massDensity(k,i) = mass(k,i)/Vi;
     }
   }
   for (auto* boundPtr: this->boundaryConditions()) {
@@ -538,7 +581,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  riInv = safeInvVar(ri, tiny);
       const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInvVar(ri, 0.05*hri);
+      const auto  riInv = safeInv(ri, 0.001*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -575,7 +618,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  rjInv = safeInvVar(rj, tiny);
       const auto  zetaj = (Hj*posj).y();
       const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInvVar(rj, 0.05*hrj);
+      const auto  rjInv = safeInv(rj, 0.001*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -645,11 +688,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
-      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQi * integrate_vr_over_r(vri, ri, 0.0, dt)*safeInvVar(dt);
-      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
       const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
-      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQj * integrate_vr_over_r(vrj, rj, 0.0, dt)*safeInvVar(dt);
-      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
+      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, dt);
+      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, dt);
+      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
+      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
 
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi/(rhoRZj*rhoi)*vri*riInv;
       // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
@@ -749,15 +792,15 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.05*hri);  // Can be negative for ghost points!
+      const auto  riInv = safeInv(ri, 0.001*hri);  // Can be negative for ghost points!
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  Vi = mi/rhoi;
       // const auto  riInv = 2.0*M_PI*Ai/Vi;
       // const auto  riInv = safeInv(ri, 0.1*std::sqrt(Ai));
-      CHECK(rhoi > 0.0);
-      CHECK(rhoRZi > 0.0);
+      CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
+      CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);
       CHECK(Hdeti > 0.0);
 
       // auto& rhoSumi = rhoSum(nodeListi, i);
@@ -803,7 +846,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], dt)*safeInv(dt);
+      const auto vr_over_r = vri*riInv; // integrate_vr_over_r(vri, ri, DvDti[1], dt);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;

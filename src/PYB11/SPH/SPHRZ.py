@@ -122,6 +122,13 @@ mass density, velocity, and specific thermal energy."""
     def label(self):
         return "std::string"
 
+    @PYB11static
+    def integrate_vr_over_r(vr = "double",
+                            r = "double",
+                            ar = "double",
+                            dt = "double"):
+        return "double"
+
     #...........................................................................
     # Properties
     pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")

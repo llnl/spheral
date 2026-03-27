@@ -145,6 +145,12 @@ public:
   virtual std::string label() const override { return "SPHRZ" ; }
   //****************************************************************************
 
+  // Helper method for integrating vr/r term over a timestep
+  static double integrate_vr_over_r(double vr,
+                                    double r,
+                                    double ar,
+                                    double dt);
+
 private:
   //--------------------------- Private Interface ---------------------------//
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
