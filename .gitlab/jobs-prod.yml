@@ -9,12 +9,6 @@ cray_update_tpls:
   needs: [toss_update_tpls]
 
 # ------------------------------------------------------------------------------
-# UPDATE PERM JOBS
-
-shared_tpls_update_permissions:
-  extends: [.toss_resource_general, .toss_update_permissions]
-
-# ------------------------------------------------------------------------------
 # PROD BUILD JOBS
 
 ### TAG RELEASE ###

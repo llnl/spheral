@@ -23,7 +23,7 @@ class CRKSPHVariant(CRKSPHHydroBase):
 """
 
     def pyinit(self,
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                WPi = "const TableKernel<%(Dimension)s>&",
                filter = "const double",

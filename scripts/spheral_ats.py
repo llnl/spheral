@@ -1,6 +1,4 @@
 import os, time, sys, subprocess, argparse
-import ats.util.generic_utils as ats_utils
-import SpheralConfigs
 
 # This is a wrapper for running Spheral through ATS
 
@@ -10,12 +8,7 @@ max_test_failures = 10
 # Number of times to rerun the ATS tests
 max_reruns = 1
 
-cur_dir = os.path.dirname(__file__)
-# Set current directory to install prefix
-if (os.path.islink(__file__)):
-    cur_dir = os.path.join(cur_dir, os.readlink(__file__))
-
-spheral_prefix = sys.executable.split(".venv")[0]
+spheral_prefix = os.path.abspath(sys.executable.split(".venv")[0])
 ats_exe = os.path.join(spheral_prefix, ".venv/bin/ats")
 spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 
@@ -80,10 +73,11 @@ def run_and_report(run_command, ci_output, num_runs):
 #------------------------------------------------------------------------------
 # Add any build specific ATS arguments
 def install_ats_args():
+    import SpheralConfigs
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
-    if (not SpheralConfigs.enable_mpi()):
+    if (not SpheralConfigs.mpi_enabled()):
         install_args.append("--filter='np<2'")
     comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
@@ -96,18 +90,6 @@ def install_ats_args():
 # Main routine
 #---------------------------------------------------------------------------
 def main():
-    test_log_name = "test-logs"
-    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
-    toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
-    np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
-    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
-    temp_uname = os.uname()
-    hostname = temp_uname[1].rstrip("0123456789")
-    sys_type = os.getenv("SYS_TYPE")
-    # Use ATS to for some machine specific functions
-    if "MACHINE_TYPE" not in os.environ:
-        ats_utils.set_machine_type_based_on_sys_type()
-
     #---------------------------------------------------------------------------
     # Setup argument parser
     #---------------------------------------------------------------------------
@@ -127,7 +109,7 @@ def main():
     parser.add_argument("--atsHelp", action="store_true",
                         help="Print the help output for ATS. Useful for seeing ATS options.")
     parser.add_argument("--threads", type=int, default=None,
-                        help="Set number of threads per rank to use. Only used by performance.py.")
+                        help="Set number of threads per rank to use. Currently only used by run_perf.py.")
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
     parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
@@ -141,6 +123,18 @@ def main():
     #---------------------------------------------------------------------------
     # Setup machine info classes
     #---------------------------------------------------------------------------
+    test_log_name = "test-logs"
+    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
+    toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
+    np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
+    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
+    temp_uname = os.uname()
+    hostname = temp_uname[1].rstrip("0123456789")
+    sys_type = os.getenv("SYS_TYPE")
+    # Use ATS to for some machine specific functions
+    if "MACHINE_TYPE" not in os.environ:
+        import ats.util.generic_utils as ats_utils
+        ats_utils.set_machine_type_based_on_sys_type()
     ats_args = install_ats_args()
     numNodes = options.numNodes
     timeLimit = options.timeLimit
@@ -175,7 +169,8 @@ def main():
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
-            mac_args.append(f"--npMax {np_max_dict[hostname]}")
+            max_np = np_max_dict[hostname]
+            mac_args.append(f"--npMax {max_np}")
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):
@@ -200,10 +195,12 @@ def main():
         ats_args.append(f"--glue='threads={options.threads}'")
     ats_args.append(f"""--glue='benchmark_dir="{benchmark_dir}"'""")
     ats_args.append("--glue='independent=True'")
+    # Add the current install directory as an ATS input option
+    ats_args.append(f"""--glue='install_path="{spheral_prefix}"'""")
     ats_args = " ".join(str(x) for x in ats_args)
     other_args = " ".join(str(x) for x in unknown_options)
     cmd = f"{ats_exe} -e {spheral_exe} {ats_args} {other_args}"
-    # Check if are already in an allocation
+    # Check if already in an allocation
     inAlloc = any(e in list(os.environ.keys()) for e in inAllocVars)
     # If already in allocation, do not do a launch
     if inAlloc:

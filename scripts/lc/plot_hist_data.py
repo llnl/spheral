@@ -153,15 +153,15 @@ def main():
     args = parser.parse_args()
     cur_dir = os.getcwd()
     doc_dir = os.path.join(cur_dir, args.doc_dir)
-    sys.path.append(os.path.join(cur_dir, "tests/performance"))
-    if (args.pkg_name == "Spheral"):
-        import perf_tests as pt
-    else:
-        import llnl_perf_tests as pt
     if (rank == 0):
         if (os.path.exists(doc_dir)):
             shutil.rmtree(doc_dir)
         os.makedirs(doc_dir)
+    perf_paths = ["tests", "spheral/tests"]
+    sys.path.extend([os.path.join(cur_dir, i) for i in perf_paths])
+    import perf_tests as pt
+    if (args.pkg_name == "LLNLSpheral"):
+        import llnl_perf_tests
     test_names = pt.get_all_test_names()
     if (args.test):
         test_names = [test_names[0]]

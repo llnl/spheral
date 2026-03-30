@@ -141,8 +141,8 @@ set(Utilities_headers
     range.hh
     AnyVisitor.hh
     SpheralMessage.hh
-    StrideIterator.hh
     initializeAxom.hh
+    initializeAdiak.hh
   )
 
 spheral_install_python_files(fitspline.py)

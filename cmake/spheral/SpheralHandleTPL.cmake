@@ -36,7 +36,9 @@ function(Spheral_Handle_TPL lib_name TPL_CMAKE_DIR)
   # Find libraries
   set(${lib_name}_libs "")
   # Library names to be set in <tpl>.cmake file
-  include(${TPL_CMAKE_DIR}/${lib_name}.cmake)
+  if(EXISTS ${TPL_CMAKE_DIR}/${lib_name}.cmake)
+    include(${TPL_CMAKE_DIR}/${lib_name}.cmake)
+  endif()
   # If library names are given, find them
   set(${lib_name}_LIBRARIES )
   foreach(libpath ${${lib_name}_libs})

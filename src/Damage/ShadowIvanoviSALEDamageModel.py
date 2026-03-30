@@ -118,7 +118,7 @@ default values listed in parens):
                            "criticalDamageThreshold",
                            "mask"]
             for iarg, argval in enumerate(args):
-                damage_kwargs[kward_order[iarg]] = argval
+                damage_kwargs[kwarg_order[iarg]] = argval
 
             # Process any keyword arguments.  Note we already removed any deprecated keywords.
             for argname in kwargs:

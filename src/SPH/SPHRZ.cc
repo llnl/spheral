@@ -148,7 +148,7 @@ integrate_vr_over_r(double vr,
 //------------------------------------------------------------------------------
 SPHRZ::
 SPHRZ(DataBase<Dimension>& dataBase,
-               ArtificialViscosityHandle<Dim<2>>& Q,
+               ArtificialViscosity<Dim<2>>& Q,
                const TableKernel<Dim<2>>& W,
                const TableKernel<Dim<2>>& WPi,
                const double cfl,
@@ -409,15 +409,15 @@ evaluateDerivatives(const Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosity, dispatch the call to
+  // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -433,7 +433,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        const QType& Q) const {
+                        chai::managed_ptr<QType> Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -471,9 +471,12 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto omega = state.fields(HydroFieldNames::omegaGradh, 0.0);
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
   CHECK(massRZ.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
@@ -674,11 +677,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              posi, Hi, etai, vi, rhoRZi, ci,  
-              posj, Hj, etaj, vj, rhoRZj, cj,
-              fClQ, fCqQ, DvDxQ); 
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               posi, Hi, etai, vi, rhoRZi, ci,  
+               posj, Hj, etaj, vj, rhoRZj, cj,
+               fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];

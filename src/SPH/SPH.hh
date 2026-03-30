@@ -7,6 +7,7 @@
 #define __Spheral_SPH__
 
 #include "SPH/SPHBase.hh"
+#include "chai/managed_ptr.hpp"
 
 #include <memory>
 
@@ -15,7 +16,7 @@ namespace Spheral {
 template<typename Dimension> class Physics;
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
@@ -38,7 +39,7 @@ public:
 
   // Constructors.
   SPH(DataBase<Dimension>& dataBase,
-      ArtificialViscosityHandle<Dimension>& Q,
+      ArtificialViscosity<Dimension>& Q,
       const TableKernel<Dimension>& W,
       const TableKernel<Dimension>& WPi,
       const double cfl,
@@ -87,7 +88,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               const QType& Q) const;
+                               chai::managed_ptr<QType> Q) const;
 
   // Access our state.
   const PairAccelerationsType& pairAccelerations() const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }

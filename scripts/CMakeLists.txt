@@ -11,9 +11,13 @@ if (SPHERAL_ENABLE_PYTHON)
   # Build Stage
   # ***********
 
-  # Copy the spheral-env to run a build time environment.
-  file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.sh"
-    DESTINATION "${CMAKE_BINARY_DIR}/bin/spheral"
+  # Configure the build time scripts to run a build dir spheral environment.
+  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
+  string(REPLACE ";" "\n" SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in"
+    "${CMAKE_BINARY_DIR}/bin/spheral"
+    @ONLY
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )
 
@@ -27,28 +31,23 @@ if (SPHERAL_ENABLE_PYTHON)
     PREFIX ${CMAKE_INSTALL_PREFIX}
   )
 
-  # Move the contents of our site-packages dir into the venv.
-  install(DIRECTORY ${CMAKE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH})
-
   # Ensure devtool scripts are available on install.
   install(FILES
       "${CMAKE_CURRENT_SOURCE_DIR}/spheral_ats.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/devtools/performance_analysis.py"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/scripts"
+    DESTINATION scripts
   )
 
   install(FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.sh"
-    RENAME "spheral"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+    "${CMAKE_BINARY_DIR}/bin/spheral"
+    DESTINATION bin
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )
 
   install(FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/atstest.sh"
     RENAME "spheral-ats"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"
+    DESTINATION bin
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
   )
 
