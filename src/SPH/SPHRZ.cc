@@ -578,7 +578,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  riInv = safeInvVar(ri, tiny);
       const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri, 0.001*hri);
+      const auto  riInv = safeInv(ri, 0.05*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -615,7 +615,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  rjInv = safeInvVar(rj, tiny);
       const auto  zetaj = (Hj*posj).y();
       const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInv(rj, 0.001*hrj);
+      const auto  rjInv = safeInv(rj, 0.05*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -789,7 +789,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInv(ri, 0.001*hri);  // Can be negative for ghost points!
+      const auto  riInv = safeInv(ri, 0.05*hri);  // Can be negative for ghost points!
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
@@ -843,7 +843,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], dt);
+      const auto vr_over_r = vri*riInv; // integrate_vr_over_r(vri, ri, DvDti[1], dt);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;
