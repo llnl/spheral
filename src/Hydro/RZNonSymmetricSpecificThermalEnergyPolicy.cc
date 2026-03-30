@@ -109,7 +109,7 @@ update(const KeyType& key,
           nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
   auto eps = state.fields(fieldKey, Scalar());
   const auto numFields = eps.numFields();
-  const auto tiny = 1.0e-10;
+  const auto tiny = 1.0e-20;
   const auto nodeListPtrs = eps.nodeListPtrs();
 
   // Get the state fields.
@@ -151,38 +151,32 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      const auto  ri = std::abs(pos(nodeListi, i).y());
-      const auto  mRZi = massRZ(nodeListi, i);
       const auto  mi = mass(nodeListi, i);
-      const auto  mri = 2.0*M_PI*ri*mRZi;
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
       const auto  pworkzi = pairWork[kk][0];
       const auto  pworkri = pairWork[kk][1];
-      const auto  pworki = pworkzi + pworkri;
-      // const auto  vri = vi12.y();
 
       // State for node j.
-      const auto  rj = std::abs(pos(nodeListj, j).y());
-      const auto  mRZj = massRZ(nodeListj, j);
       const auto  mj = mass(nodeListj, j);
-      const auto  mrj = 2.0*M_PI*rj*mRZj;
-      // const auto  rhoj = rho(nodeListj, j);
-      // const auto  Pj = pressure(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
-      const auto  pworkj = pworkzj + pworkrj;
-      // const auto  vrj = vj12.y();
 
-      // Conservative energy definition
-      const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
+      // // Conservative energy definition
+      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      // // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
+
+      // Correct just the r-component error
+      const auto dErij = -(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]);
+      const auto chi = dErij*safeInv(mi*pworkri + mj*pworkrj, tiny);
+      DepsDt_thread(nodeListi, i) += pworkzi + chi*pworkri;
+      DepsDt_thread(nodeListj, j) += pworkzj + chi*pworkrj;
 
       // // Additive correction for RZ frame
       // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
@@ -228,10 +222,10 @@ update(const KeyType& key,
       // DepsDt_thread(nodeListi, i) += pworki + duij;
       // DepsDt_thread(nodeListj, j) += pworkj + duij;
 
-      // Multiplicative correction
-      const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
-      DepsDt_thread(nodeListi, i) += chi*pworki;
-      DepsDt_thread(nodeListj, j) += chi*pworkj;
+      // // Multiplicative correction
+      // const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
+      // DepsDt_thread(nodeListi, i) += chi*pworki;
+      // DepsDt_thread(nodeListj, j) += chi*pworkj;
     }
 
 #pragma omp critical
