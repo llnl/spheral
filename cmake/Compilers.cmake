@@ -117,6 +117,11 @@ if (SPHERAL_ENABLE_ASAN)
   message("----------------------------------------------------------------------------")
 endif()
 
+# Remove ompstub from fortran link libraries
+if("ompstub" IN_LIST CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES)
+  list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "ompstub")
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")
 message("-- Using link flags ${CXX_LINK_FLAGS}")
 
