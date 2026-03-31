@@ -217,6 +217,8 @@ else:
     assert problem == "spherical"
     nz = n1
     nr = n1
+    if seed == "lattice":
+        nz *= 2
     rmin, rmax = 0.0, 1.0
     z0, z1 = -1.0, 1.0
     r0, r1 = 0.0, 1.0
