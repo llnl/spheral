@@ -62,85 +62,68 @@ integrate_vr_over_r(double vr,
                     double ar,
                     double dt) {
   const double tiny = 1.0e-10;
+  const double eps2 = 1.0e-20;
+  const double result0 = vr*safeInvVar(r, eps2);  // answer at beginning of timestep
+  if (fuzzyEqual(dt, 0.0, tiny)) return result0;
   if (r < 0.0) {
     r = -r;
     vr = -vr;
     ar = -ar;
   }
+  VERIFY(r > 0.0);
   VERIFY2(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0, r << " " << vr << " " << ar << " " << dt << " : " << (r + vr*dt + 0.5*ar*dt*dt));
-  if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
-  auto D =  [&](const double t) { return r + vr*t + ar*t*t; };
-  auto F0 = [&](const double t) {
-              const auto thpt = std::abs(D(t)*safeInvVar(r, tiny));
-              return (thpt == 0.0 ? 0.0 : 0.5*log(thpt));
-            };
-  auto F1 = [&](const double t) {
-              const auto X = 4.0*ar*r - vr*vr;
-              const auto X12 = std::sqrt(std::abs(X));
-              if (X > 0.0) {
-                const auto result = 2.0*safeInvVar(X12, tiny)*(atan2(vr + 2.0*ar*t, X12) - atan2(vr, X12));
-                CHECK2(result == result, "X>0: " << X << " " << X12 << " " << (vr + 2.0*ar*t) << " " << atan2(vr + 2.0*ar*t, X12));
-                return result;
-              } else if (X < 0.0) {
-                // if (fuzzyEqual(vr + 2.0*ar*t - X12, 0.0, tiny) or fuzzyEqual(vr + X12, tiny)) return 0.0;
-                const auto thpt = std::abs((vr + 2.0*ar*t - X12)*(vr + X12)*safeInvVar((vr + 2.0*ar*t + X12)*(vr - X12), tiny));
-                if (fuzzyEqual(thpt, 0.0, tiny)) return 0.0;
-                CHECK(thpt >= 0.0);
-                const auto result = log(thpt)*safeInvVar(X12, tiny);
-                CHECK2(result == result, "X<0 : " << X << " " << X12 << " "
-                       << ((vr + 2.0*ar*t - X12)*(vr + X12)/((vr + 2.0*ar*t + X12)*(vr - X12))) << " "
-                       << (vr + 2.0*ar*t - X12) << " "
-                       << (vr + X12) << " "
-                       << (vr + 2.0*ar*t - X12) << " "
-                       << (vr + 2.0*ar*t + X12));
-                return result;
-              } else {
-                CHECK(X == 0.0);
-                const auto result = 2.0*ar*(safeInvVar(vr, tiny) - safeInvVar(vr + 2.0*ar*t, tiny))*safeInvVar(ar, tiny);
-                VERIFY2(result == result, "==0 : " << X);
-                return result;
-              }
-            };
-  const auto result = F0(dt) + 0.5*vr*F1(dt);
-  VERIFY2(result == result, "ACK: " << r << " " << vr << " " << ar << " " << dt << " : " << F0(dt) << " " << F1(dt));
-  return result*safeInvVar(dt, tiny);
+  if (fuzzyEqual(ar, 0.0, 1e-50)) return 0.5*(result0 + 0.5*log((FastMath::square(r + vr*dt) + eps2)/(r*r + eps2))/dt);
+  const auto D = 2.0*ar*r - vr*vr;
+  const auto S2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) + D);
+  const auto T2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) - D);
+  CHECK(S2 >= 0.0);
+  CHECK(T2 >= 0.0);
+  const auto S = std::sqrt(S2);
+  const auto T = std::sqrt(T2);
+  auto G = [&](const double x) { return r + vr*x + 0.5*ar*x*x; };
+  auto U = [&](const double x) { return vr + ar*x; };
+  auto A = [&](const double x) { const auto Ux = U(x); return atan2(S*Ux, S2 + T2 + T*Ux); };
+  auto B = [&](const double x) { const auto Ux = U(x); return FastMath::square(S2 + T2 + T*Ux) + S2*Ux*Ux; };
+  const auto J = 2.0/(S2 + T2)*(S*(A(dt) - A(0.0)) + 0.5*T*log(B(dt)/B(0.0)));
+  return 0.5*(result0 + 0.25*(log((FastMath::square(G(dt)) + eps2)/(r*r + eps2)) + vr*J)/dt);
 }
 
-//   if (true) { //(fuzzyEqual(ar, 0.0, tiny)) {
-//     const auto vrInv = safeInv(vr);
-//     auto Ft = [&](const double t) { return log(std::abs(r + vr*t))*vrInv; };
-//     return Ft(dt) - Ft(0.0);
-//   }
-//   const auto q = 4.0*ar*r - vr*vr;
-//   if (barf) cerr << "q: " << q << endl;
-//   if (fuzzyEqual(q, 0.0, 1.0e-10)) {
-//     const auto a = vr*safeInvVar(2.0*ar, 1.0e-10);
-//     if (fuzzyEqual(a, 0.0, tiny)) return 0.0;
-//     // auto Xt =  [&](const double t) { return ar*FastMath::square(a + t); };
-//     auto F0t = [&](const double t) { return -ar*safeInv(a + t); };
-//     auto F1t = [&](const double t) { return ar*(log(std::abs(a + t)) + a*safeInv(a + t)); };
-//     auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
-//     return Ft(dt) - Ft(0.0);
-//   } else {
-//     auto Xt =  [&](const double t) { return r + vr*t + ar*t*t; };
-//     auto F0t = [&](const double t) {
-//                  const auto thpt = std::sqrt(std::abs(q));
-//                  if (q > 0.0) {
-//                    return 2.0/thpt*atan2(2.0*ar*t + vr, thpt);
-//                  } else {
-//                    CHECK(q < 0.0);
-//                    const auto qinv = safeInvVar(std::sqrt(-q));
-//                    CHECK(qinv > 0.0);
-//                    return -2.0*qinv*atanh(std::max(-1.0 + 1e-10, std::min(1.0 - 1e-10, (2.0*ar*t + vr)*qinv)));
-//                    // const auto ack = 2.0*ar*t + vr;
-//                    // if (fuzzyEqual(ack, thpt, tiny)) return 0.0;
-//                    // return 1.0/thpt*log(std::abs((thpt - ack)*safeInvVar(thpt + ack)));
-//                  }
-//                };
-//     auto F1t = [&](const double t) { return (log(Xt(t)) - vr*F0t(t))*safeInv(2.0*ar); };
-//     auto Ft =  [&](const double t) { return vr*F0t(t) + ar*F1t(t); };
-//     return Ft(dt) - Ft(0.0);
-//   }  
+//   if (fuzzyEqual(vr, 0.0, tiny) and fuzzyEqual(ar, 0.0, tiny)) return 0.0;
+//   auto D =  [&](const double t) { return r + vr*t + ar*t*t; };
+//   auto F0 = [&](const double t) {
+//               const auto thpt = std::abs(D(t)*safeInvVar(r, tiny));
+//               return (thpt == 0.0 ? 0.0 : 0.5*log(thpt));
+//             };
+//   auto F1 = [&](const double t) {
+//               const auto X = 4.0*ar*r - vr*vr;
+//               const auto X12 = std::sqrt(std::abs(X));
+//               if (X > 0.0) {
+//                 const auto result = 2.0*safeInvVar(X12, tiny)*(atan2(vr + 2.0*ar*t, X12) - atan2(vr, X12));
+//                 CHECK2(result == result, "X>0: " << X << " " << X12 << " " << (vr + 2.0*ar*t) << " " << atan2(vr + 2.0*ar*t, X12));
+//                 return result;
+//               } else if (X < 0.0) {
+//                 // if (fuzzyEqual(vr + 2.0*ar*t - X12, 0.0, tiny) or fuzzyEqual(vr + X12, tiny)) return 0.0;
+//                 const auto thpt = std::abs((vr + 2.0*ar*t - X12)*(vr + X12)*safeInvVar((vr + 2.0*ar*t + X12)*(vr - X12), tiny));
+//                 if (fuzzyEqual(thpt, 0.0, tiny)) return 0.0;
+//                 CHECK(thpt >= 0.0);
+//                 const auto result = log(thpt)*safeInvVar(X12, tiny);
+//                 CHECK2(result == result, "X<0 : " << X << " " << X12 << " "
+//                        << ((vr + 2.0*ar*t - X12)*(vr + X12)/((vr + 2.0*ar*t + X12)*(vr - X12))) << " "
+//                        << (vr + 2.0*ar*t - X12) << " "
+//                        << (vr + X12) << " "
+//                        << (vr + 2.0*ar*t - X12) << " "
+//                        << (vr + 2.0*ar*t + X12));
+//                 return result;
+//               } else {
+//                 CHECK(X == 0.0);
+//                 const auto result = 2.0*ar*(safeInvVar(vr, tiny) - safeInvVar(vr + 2.0*ar*t, tiny))*safeInvVar(ar, tiny);
+//                 VERIFY2(result == result, "==0 : " << X);
+//                 return result;
+//               }
+//             };
+//   const auto result = F0(dt) + 0.5*vr*F1(dt);
+//   VERIFY2(result == result, "ACK: " << r << " " << vr << " " << ar << " " << dt << " : " << F0(dt) << " " << F1(dt));
+//   return result*safeInvVar(dt, tiny);
 // }
 
 //------------------------------------------------------------------------------
@@ -578,7 +561,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  riInv = safeInvVar(ri, tiny);
       const auto  zetai = (Hi*posi).y();
       const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri, 0.01*hri);
+      const auto  riInv = safeInv(ri, 0.001*hri);
       // const auto  safeOmegai = safeInv(omegai, tiny);
       // const auto  Ai = mRZi/rhoRZi;
       // const auto  zetai = abs((Hi*posi).y());
@@ -615,7 +598,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto  rjInv = safeInvVar(rj, tiny);
       const auto  zetaj = (Hj*posj).y();
       const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInv(rj, 0.01*hrj);
+      const auto  rjInv = safeInv(rj, 0.001*hrj);
       // const auto  safeOmegaj = safeInv(omegaj, tiny);
       // const auto  Aj = mRZj/rhoRZj;
       // const auto  zetaj = abs((Hj*posj).y());
@@ -686,10 +669,10 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
       const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
-      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, dt);
-      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, dt);
-      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
-      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
+      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, dt);
+      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, dt);
+      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
+      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
 
       // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi/(rhoRZj*rhoi)*vri*riInv;
       // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
@@ -789,7 +772,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInv(ri, 0.05*hri);  // Can be negative for ghost points!
+      const auto  riInv = safeInv(ri, 0.001*hri);  // Can be negative for ghost points!
       // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       // const auto  Ai = mRZi/rhoRZi;
@@ -843,7 +826,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = vri*riInv; // integrate_vr_over_r(vri, ri, DvDti[1], dt);
+      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], dt);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;
