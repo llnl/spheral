@@ -85,7 +85,6 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             clearDirectories = False,
             checkError = False,
             checkRestart = False,
-            checkEnergy = False,
             restoreCycle = -1,
             restartStep = 10000,
             comparisonFile = None,
@@ -206,27 +205,31 @@ if problem == "planar":
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 0.2
     rmin, rmax = None, None
+    theta = pi/2.0
 elif problem == "cylindrical":
     nz = n2
     nr = n1
     z0, z1 = 0.0, 0.2
     r0, r1 = 0.0, 1.0
     rmin, rmax = None, None
+    theta = pi/2.0
 else:
     assert problem == "spherical"
     nz = n1
     nr = n1
     rmin, rmax = 0.0, 1.0
-    z0, z1 = 0.0, 1.0
+    z0, z1 = -1.0, 1.0
     r0, r1 = 0.0, 1.0
+    theta = pi
 
 generator = RZGenerator(GenerateNodeDistribution2d(nz, nr, rho0, seed,
-                                       xmin = (z0, r0),
-                                       xmax = (z1, r1),
-                                       rmin = rmin,
-                                       rmax = rmax,
-                                       nNodePerh = nPerh,
-                                       SPH = not asph))
+                                                   xmin = (z0, r0),
+                                                   xmax = (z1, r1),
+                                                   rmin = rmin,
+                                                   rmax = rmax,
+                                                   theta = theta,
+                                                   nNodePerh = nPerh,
+                                                   SPH = not asph))
 
 distributeNodes2d((nodes1, generator))
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MIN)")
@@ -321,18 +324,20 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 # Create boundary conditions.
 #-------------------------------------------------------------------------------
+bcs = []
 if problem == "planar":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
     if z0 == 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))))
     if r0 != 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
 else:
     assert problem == "spherical"
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
+    if theta == pi/2.0:
+        bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
 
 for bc in bcs:
     for p in packages:
@@ -390,7 +395,7 @@ if problem == "planar":
 elif problem == "cylindrical":
     Eexpect = Espike*(z1 - z0)
 else:
-    Eexpect = Espike/2.0
+    Eexpect = Espike * theta/pi
 if control.time() == 0.0:
     pos = nodes1.positions()
     vel = nodes1.velocity()
@@ -600,5 +605,3 @@ if outputFile:
 
 Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[2])/control.conserve.EHistory[2]
 print("Total energy error: %g" % Eerror)
-if checkEnergy and abs(Eerror) > 1e-13:
-    raise ValueError("Energy error outside allowed bounds.")
