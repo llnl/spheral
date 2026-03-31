@@ -113,17 +113,12 @@ update(const KeyType& key,
   const auto nodeListPtrs = eps.nodeListPtrs();
 
   // Get the state fields.
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
-  // const auto  rho = state.fields(HydroFieldNames::massDensity, Scalar());
-  // const auto  pressure = state.fields(HydroFieldNames::pressure, Scalar());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
   const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 4u>>(HydroFieldNames::pairWork);
   const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
-  const auto  DepsDt0 = derivs.fields(IncrementState<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
   const auto& pairs = connectivityMap.nodePairList();
   const auto  npairs = pairs.size();
@@ -134,7 +129,6 @@ update(const KeyType& key,
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
-  // auto dEtot = 0.0;
 
   // Walk all pairs and figure out the discrete work for each point
 #pragma omp parallel
@@ -178,114 +172,28 @@ update(const KeyType& key,
       // const auto durij = (-(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]) - (mi*pworkri + mj*pworkrj))/(mi + mj);
       // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + durij;
       // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + durij;
-
-      // // Conservative energy definition
-      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
-
-      // // Additive correction for RZ frame
-      // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
-      // const auto duij = (dERZij - (mRZi*pworki + mRZj*pworkj))/(mRZi + mRZj);
-
-      // // Hybrid correction
-      // const auto duZij = (-(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]) - mRZi*pworkzi - mRZj*pworkzj)/(mRZi + mRZj);
-      // const auto duRij = (-(mri* vi12[1]*pacci[1] + mrj* vj12[1]*paccj[1]) - mri* pworkri - mrj* pworkrj)/(mri + mrj);
-      // // const auto duij = duRij + duZij + (dEij - mi*pworki - mj*pworkj - (mi + mj)*(duRij + duZij))*safeInv(mi + mj);
-      // // VERIFY2(fuzzyEqual(mi*pworki + mj*pworkj + (mi + mj)*duij, dEij, tiny), "Energy balance error: (" << i << " " << j << "): " << dEij << " " << (mi*pworki + mj*pworkj + (mi + mj)*duij) << " " << duij << " " << duZij << " " << duRij);
-      // const auto chi = (duij0 - duZij)*safeInv(duRij, tiny);
-      // const auto duij = duZij + chi*duRij;
-
-      // // Sum the conservative energy change
-      // if (i < nodeListPtrs[nodeListi]->firstGhostNode()) dEtot -= mi*vi12.dot(pacci);
-      // if (j < nodeListPtrs[nodeListj]->firstGhostNode()) dEtot -= mj*vj12.dot(paccj);
-
-      // Now figure out the remaining total energy error, and apply that assuming
-      // it's due to the r evolution term
-      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto dEerr = dEij - mi*(pworki + duRZij) - mj*(pworkj + duRZij);
-
-      // const auto rpworki = -Pi*vri*safeInv(rhoi*ri, tiny);
-      // const auto rpworkj = -Pj*vrj*safeInv(rhoj*rj, tiny);
-      // const auto chi = std::max(0.0, std::min(1.0, Eerr*safeInv(mi*rpworki + mj*rpworkj, tiny)));
-      // const auto duri = chi*rpworki;
-      // const auto durj = chi*rpworkj;
-
-      // const auto wi = std::abs(rpworki)*std::max(0.0, sgn(rpworki*Eerr)) + tiny;
-      // const auto wj = std::abs(rpworkj)*std::max(0.0, sgn(rpworkj*Eerr)) + tiny;
-      // VERIFY(wi > 0.0);
-      // VERIFY(wj > 0.0);
-      // const auto duri = wi/(wi + wj)*Eerr/mi;
-      // const auto durj = wj/(wi + wj)*Eerr/mj;
-      // // const auto duri = (Eerr - mi*(pworki + duRZij) - mj*(pworkj + duRZij))*wi*safeInv((wi + wj)*(mi + mj), tiny);
-      // // const auto durj = duri*wj*safeInv(wi, tiny);
-
-      // const auto duri = Eerr/(mi + mj);
-      // const auto durj = Eerr/(mi + mj);
-      // // const auto duij = (dEij - mi*(pworki + duRZij + rpworki) - mj*(pworkj + duRZij + rpworkj))/(mi + mj);
-
-      // // Apply additive corrections
-      // DepsDt_thread(nodeListi, i) += pworki + duij;
-      // DepsDt_thread(nodeListj, j) += pworkj + duij;
-
-      // // Multiplicative correction
-      // const auto chi = dEij*safeInv(mi*pworki + mj*pworkj);
-      // DepsDt_thread(nodeListi, i) += chi*pworki;
-      // DepsDt_thread(nodeListj, j) += chi*pworkj;
     }
 
 #pragma omp critical
     {
       DepsDt_thread.threadReduce();
-      // dEtot += dEtot_thread;
     }
   }
-
-  // // Correct for total energy conservation
-  // auto dEsum0 = 0.0;
-  // for (auto k = 0u; k < numFields; ++k) {
-  //   const auto n = eps[k]->numInternalElements();
-  //   for (auto i = 0u; i < n; ++i) {
-  //     dEsum0 += mass(k,i) * DepsDt(k,i);
-  //   }
-  // }
-  // dEsum0 = allReduce(dEsum0, SPHERAL_OP_SUM);
-  // dEtot = allReduce(dEtot, SPHERAL_OP_SUM);
-  // DepsDt *= dEtot*safeInv(dEsum0);
-  // cerr << "BLAGO: " << dEtot*safeInv(dEsum0) << endl;
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
     const auto n = eps[nodeListi]->numInternalElements();
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
-      auto duii = 0.0;
-
-      // // Add self-interaction contributions
-      // const auto  mi = mass(nodeListi, i);
-      // const auto  Pi = pressure(nodeListi, i);
-      // const auto  Qi = effViscousPressure(nodeListi, i);
-      // const auto  rhoi = rho(nodeListi, i);
-      // const auto  ri = pos(nodeListi, i).y();
-      // const auto& vi = velocity(nodeListi, i);
-      // const auto& ai = acceleration(nodeListi, i);
-      // const auto  vi12 = vi + ai*hdt;
-      // const auto  vri12 = vi12.y();
-      // const auto  ri12 = ri + vri12*hdt;
-      // VERIFY2(ri > 0.0, "BLAGO: " << i << " " << ri << " " << vi);
-      // duii = -(Pi + Qi)/rhoi*integrate_vr_over_r(vi.y(), ri, ai.y(), multiplier)*safeInv(multiplier);
-      // duii = -(Pi + Qi)/rhoi*vri12*safeInv(ri12);
-      // // duii *= std::max(0.0, std::min(1.0, Eerror(nodeListi, i)*safeInv(mi*duii)));
 
       // Add the self-contribution if any (RZ with strength does this for instance).
       if (selfInteraction) {
         const auto& vi = velocity(nodeListi, i);
         const auto& ai = acceleration(nodeListi, i);
         const auto  vi12 = vi + ai*hdt;
-        duii -= vi12.dot(selfAccelerations(nodeListi, i));
-        // duii -= 2.0*vi12.dot(selfAccelerations(nodeListi, i));
+        DepsDt(nodeListi, i) -= vi12.dot(selfAccelerations(nodeListi, i));
       }
 
-      DepsDt(nodeListi, i) += duii;
       eps(nodeListi, i) += DepsDt(nodeListi, i)*multiplier;
     }
   }

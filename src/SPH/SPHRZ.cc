@@ -475,11 +475,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = posi.y();
-      // const auto  mi = mass(nodeListi, i);
       const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
-      const auto  vri = vi.y();
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
@@ -487,13 +484,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  ci = soundSpeed(nodeListi, i);
       // const auto& omegai = omega(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      // const auto  riInv = safeInvVar(ri, tiny);
-      const auto  zetai = (Hi*posi).y();
-      const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri, 0.001*hri);
-      // const auto  safeOmegai = safeInv(omegai, tiny);
-      // const auto  Ai = mRZi/rhoRZi;
-      // const auto  zetai = abs((Hi*posi).y());
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
 
@@ -512,11 +502,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Get the state for node j
       const auto& posj = position(nodeListj, j);
-      const auto  rj = posj.y();
-      // const auto  mj = mass(nodeListj, j);
       const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
-      const auto  vrj = vj.y();
       const auto  rhoj = massDensity(nodeListj, j);
       const auto  rhoRZj = massDensityRZ(nodeListj, j);
       const auto  Pj = pressure(nodeListj, j);
@@ -524,13 +511,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  cj = soundSpeed(nodeListj, j);
       // const auto& omegaj = omega(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
-      // const auto  rjInv = safeInvVar(rj, tiny);
-      const auto  zetaj = (Hj*posj).y();
-      const auto  hrj = rj*safeInv(zetaj);
-      const auto  rjInv = safeInv(rj, 0.001*hrj);
-      // const auto  safeOmegaj = safeInv(omegaj, tiny);
-      // const auto  Aj = mRZj/rhoRZj;
-      // const auto  zetaj = abs((Hj*posj).y());
       CHECK(rhoj > 0.0);
       CHECK(Hdetj > 0.0);
 
@@ -600,17 +580,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
       const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
       const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
-      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
-      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
-
-      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi) - Qi/(rhoRZj*rhoi)*vri*riInv;
-      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
-      // const auto workQi = vij.dot(Qacci) - Qi/(rhoRZj*rhoi)*vri*riInv;
-      // const auto workQj = vij.dot(Qaccj) - Qj/(rhoRZi*rhoj)*vrj*rjInv;
-      // const auto workQzi = vij[0]*Qacci[0];
-      // const auto workQri = vij[1]*Qacci[1] - Qi/(rhoRZj*rhoi)*vri*riInv;
-      // const auto workQzj = vij[0]*Qaccj[0];
-      // const auto workQrj = vij[1]*Qaccj[1] - Qj/(rhoRZi*rhoj)*vrj*rjInv;
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mRZj*Qi*WQi/rhoRZj;
@@ -702,13 +671,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInv(ri, 0.001*hri);  // Can be negative for ghost points!
-      // const auto  riInv = safeInv(ri, tiny);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
-      // const auto  Ai = mRZi/rhoRZi;
-      // const auto  Vi = mi/rhoi;
-      // const auto  riInv = 2.0*M_PI*Ai/Vi;
-      // const auto  riInv = safeInv(ri, 0.1*std::sqrt(Ai));
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
       CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);
       CHECK(Hdeti > 0.0);
