@@ -598,8 +598,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
       const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
-      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
-      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
+      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
+      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
       // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1] - Qi/(rhoRZj*rhoi)*WQi * vri*riInv;
       // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1] - Qj/(rhoRZi*rhoj)*WQj * vrj*rjInv;
 
@@ -613,8 +613,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto workQrj = vij[1]*Qaccj[1] - Qj/(rhoRZi*rhoj)*vrj*rjInv;
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
-      effViscousPressurei += mRZj*Qi*WQi/rhoj;
-      effViscousPressurej += mRZi*Qj*WQj/rhoi;
+      effViscousPressurei += mRZj*Qi*WQi/rhoRZj;
+      effViscousPressurej += mRZi*Qj*WQj/rhoRZi;
 
       // Acceleration.
       CHECK(rhoi > 0.0);
@@ -696,6 +696,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  rhoi = massDensity(nodeListi, i);
       const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
+      const auto  effViscousPressurei = effViscousPressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
@@ -766,7 +767,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
-      DepsDti -= Pi/rhoi*vr_over_r;
+      DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
       // DepsDti -= Pi/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
