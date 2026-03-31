@@ -917,20 +917,22 @@ integrate_vr_over_r(double vr,
   }
   VERIFY(r > 0.0);
   VERIFY2(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0, r << " " << vr << " " << ar << " " << dt << " : " << (r + vr*dt + 0.5*ar*dt*dt));
-  if (fuzzyEqual(ar, 0.0, 1e-50)) return 0.5*(result0 + 0.5*log((FastMath::square(r + vr*dt) + eps2)/(r*r + eps2))/dt);
-  const auto D = 2.0*ar*r - vr*vr;
-  const auto S2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) + D);
-  const auto T2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) - D);
-  CHECK(S2 >= 0.0);
-  CHECK(T2 >= 0.0);
-  const auto S = std::sqrt(S2);
-  const auto T = std::sqrt(T2);
-  auto G = [&](const double x) { return r + vr*x + 0.5*ar*x*x; };
-  auto U = [&](const double x) { return vr + ar*x; };
-  auto A = [&](const double x) { const auto Ux = U(x); return atan2(S*Ux, S2 + T2 + T*Ux); };
-  auto B = [&](const double x) { const auto Ux = U(x); return FastMath::square(S2 + T2 + T*Ux) + S2*Ux*Ux; };
-  const auto J = 2.0/(S2 + T2)*(S*(A(dt) - A(0.0)) + 0.5*T*log(B(dt)/B(0.0)));
-  return 0.5*(result0 + 0.25*(log((FastMath::square(G(dt)) + eps2)/(r*r + eps2)) + vr*J)/dt);
+  const double result1 = (vr + ar*dt)*safeInv(r + vr*dt + 0.5*ar*dt*dt, eps2);
+  return 0.5*(result0  + result1);
+  // if (fuzzyEqual(ar, 0.0, 1e-50)) return 0.5*(result0 + 0.5*log((FastMath::square(r + vr*dt) + eps2)/(r*r + eps2))/dt);
+  // const auto D = 2.0*ar*r - vr*vr;
+  // const auto S2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) + D);
+  // const auto T2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) - D);
+  // CHECK(S2 >= 0.0);
+  // CHECK(T2 >= 0.0);
+  // const auto S = std::sqrt(S2);
+  // const auto T = std::sqrt(T2);
+  // auto G = [&](const double x) { return r + vr*x + 0.5*ar*x*x; };
+  // auto U = [&](const double x) { return vr + ar*x; };
+  // auto A = [&](const double x) { const auto Ux = U(x); return atan2(S*Ux, S2 + T2 + T*Ux); };
+  // auto B = [&](const double x) { const auto Ux = U(x); return FastMath::square(S2 + T2 + T*Ux) + S2*Ux*Ux; };
+  // const auto J = 2.0/(S2 + T2)*(S*(A(dt) - A(0.0)) + 0.5*T*log(B(dt)/B(0.0)));
+  // return 0.5*(result0 + 0.25*(log((FastMath::square(G(dt)) + eps2)/(r*r + eps2)) + vr*J)/dt);
 }
 
 }
