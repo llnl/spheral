@@ -126,7 +126,10 @@ mass density, velocity, and specific thermal energy."""
     def integrate_vr_over_r(vr = "double",
                             r = "double",
                             ar = "double",
-                            dt = "double"):
+                            hr = "const double",
+                            dt = "const double"):
+        """Integrate an estimate of vr/r over a timestep given the initial radial
+ velocity, position, acceleration, smoothing scale, and timestep."""
         return "double"
 
     #...........................................................................

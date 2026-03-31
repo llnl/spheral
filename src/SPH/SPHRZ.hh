@@ -146,11 +146,13 @@ public:
   virtual std::string label() const override { return "SPHRZ" ; }
   //****************************************************************************
 
-  // Helper method for integrating vr/r term over a timestep
+  // Integrate an estimate of vr/r over a timestep given the initial radial
+  // velocity, position, acceleration, smoothing scale, and timestep.
   static double integrate_vr_over_r(double vr,
                                     double r,
                                     double ar,
-                                    double dt);
+                                    const double hr,
+                                    const double dt);
 
 private:
   //--------------------------- Private Interface ---------------------------//
