@@ -168,15 +168,20 @@ update(const KeyType& key,
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
 
-      // // Conservative energy definition
-      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
-
-      // Correct just the r-component error
+      // Correct just the r-component error (multiplicative form)
       const auto dErij = -(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]);
       const auto chi = dErij*safeInv(mi*pworkri + mj*pworkrj, tiny);
       DepsDt_thread(nodeListi, i) += pworkzi + chi*pworkri;
       DepsDt_thread(nodeListj, j) += pworkzj + chi*pworkrj;
+
+      // // Correct just the r-component error (additive form)
+      // const auto durij = (-(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]) - (mi*pworkri + mj*pworkrj))/(mi + mj);
+      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + durij;
+      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + durij;
+
+      // // Conservative energy definition
+      // const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      // // const auto duij = (dEij - (mi*pworki + mj*pworkj))/(mi + mj);
 
       // // Additive correction for RZ frame
       // const auto dERZij = -(mRZi*vi12.dot(pacci) + mRZj*vj12.dot(paccj));
