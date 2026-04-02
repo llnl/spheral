@@ -671,6 +671,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
+      const auto  riInv = safeInvVar(ri, 0.001*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
       CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);
@@ -719,19 +720,19 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], hri, dt);
+      // const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], hri, dt);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
-      // DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
+      // DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
-      DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
-      // DepsDti -= Pi/rhoi*vri*riInv;
+      // DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
+      DepsDti -= (Pi + effViscousPressurei)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
