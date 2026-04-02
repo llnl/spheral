@@ -349,6 +349,8 @@ def plotFieldListAverage(fieldList,
         plt.ylim(ymin, ymax)
 
         # Labeling
+        if winTitle:
+            plt.title(winTitle)
         if xlabel:
             plt.xlabel(xlabel)
         if ylabel:
