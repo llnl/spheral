@@ -262,7 +262,7 @@ def writeDomainSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
         assert len(matnos) == len(nodeLists)
         matlist = []
         matnames = []
-        for (nodeList, imat) in zip(nodeLists, range(len(nodeLists))):
+        for (nodeList, imat) in zip(nodeLists, matnos):
             if dumpGhosts:
                 matlist += [imat]*nodeList.numNodes
             else:
