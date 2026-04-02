@@ -348,10 +348,7 @@ for bc in bcs:
 #-------------------------------------------------------------------------------
 # Construct an integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for p in packages:
-    integrator.appendPhysicsPackage(p)
-del p
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
@@ -487,13 +484,13 @@ L1_tot = L1 / len(rho)
 if graphics:
     from SpheralMatplotlib import *
     if problem == "planar":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx", plotAverage=True)
         xfunc = "%s.x"
     elif problem == "cylindrical":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy", plotAverage=True)
         xfunc = "%s.y"
     else:
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db)
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db, plotAverage=True)
         xfunc = "%s.magnitude()"
     APlot = newFigure()
     APlot.plot(xprof, A, marker='o', label="Simulation")

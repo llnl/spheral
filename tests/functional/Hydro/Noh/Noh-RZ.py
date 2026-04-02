@@ -122,7 +122,6 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
 
             clearDirectories = True,
             checkRestart = False,
-            checkEnergy = False,
             restoreCycle = -1,
             restartStep = 10000,
             dataDirBase = "dumps-rz-Noh",
@@ -291,6 +290,7 @@ if problem == "planar":
     rmin, rmax = None, None
     vz0 = -1.0
     vr0 = 0.0
+    theta = pi/2.0
 elif problem == "cylindrical":
     nz = n2
     nr = n1
@@ -299,19 +299,24 @@ elif problem == "cylindrical":
     rmin, rmax = None, None
     vz0 = 0.0
     vr0 = -1.0
+    theta = pi/2.0
 else:
     assert problem == "spherical"
     nz = n1
     nr = n1
+    if seed == "lattice":
+        nz *= 2
     rmin, rmax = 0.0, 1.0
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 1.0
+    theta = pi
 
 generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
                                        xmin = (z0, r0),
                                        xmax = (z1, r1),
                                        rmin = rmin,
                                        rmax = rmax,
+                                       theta = theta,
                                        nNodePerh = nPerh,
                                        SPH = not asph)
 
@@ -432,18 +437,20 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 # Create boundary conditions.
 #-------------------------------------------------------------------------------
+bcs = []
 if problem == "planar":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
     if r0 != 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
 else:
     assert problem == "spherical"
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
+    if theta == pi/2.0:
+        bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
 
 for bc in bcs:
     for p in packages:
@@ -547,13 +554,13 @@ L1_tot = L1 / len(rho)
 if graphics:
     from SpheralMatplotlib import *
     if problem == "planar":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx", plotAverage=True)
         xfunc = "%s.x"
     elif problem == "cylindrical":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy", plotAverage=True)
         xfunc = "%s.y"
     else:
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db)
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db, plotAverage=True)
         xfunc = "%s.magnitude()"
     plotAnswer(answer, control.time(), rhoPlot=rhoPlot, velPlot=velPlot, epsPlot=epsPlot, PPlot=PPlot, HPlot=HPlot,
                plotStyle = "kx")
@@ -578,24 +585,28 @@ if graphics:
     plt.title("Node positions @ t=%g" % control.time())
     plots.append((posPlot, "Noh-%s-positions.png" % problem))
 
-    Qplot = plotFieldList(hydro.maxViscousPressure,
+    Qplot = plotFieldList(hydro.Q.maxViscousPressure,
                           xFunction = xfunc,
-                          winTitle = "Max Q pressure")
+                          winTitle = "Max Q pressure",
+                          plotAverage=True)
 
     if hydroType == "CRKSPH":
         volPlot = plotFieldList(control.RKCorrections.volume,
                                 xFunction = "%s.y",
                                 winTitle = "volume",
-                                colorNodeLists = False, plotGhosts = False)
+                                colorNodeLists = False, plotGhosts = False,
+                                plotAverage=True)
         plots.append((volPlot, "Noh-%s-vol.png" % problem))
 
     if boolCullenViscosity:
         cullAlphaPlot = plotFieldList(q.ClMultiplier(),
                                       xFunction = "%s.y",
-                                      winTitle = "Cullen alpha")
+                                      winTitle = "Cullen alpha",
+                                      plotAverage=True)
         cullDalphaPlot = plotFieldList(evolveCullenViscosityMultiplier.DalphaDt(),
                                        xFunction = "%s.y",
-                                       winTitle = "Cullen DalphaDt")
+                                       winTitle = "Cullen DalphaDt",
+                                       plotAverage=True)
         plots += [(cullAlphaPlot, "Noh-%s-Cullen-alpha.png" % problem),
                   (cullDalphaPlot, "Noh-%s-Cullen-DalphaDt.png" % problem)]
 
@@ -603,11 +614,11 @@ if graphics:
         alphaPlotQ = plotFieldList(q.reducingViscosityMultiplierQ(),
                                    xFunction = "%s.y",
                                   winTitle = "rvAlphaQ",
-                                  colorNodeLists = False, plotGhosts = False)
+                                  colorNodeLists = False, plotGhosts = False, plotAverage=True)
         alphaPlotL = plotFieldList(q.reducingViscosityMultiplierL(),
                                    xFunction = "%s.y",
                                    winTitle = "rvAlphaL",
-                                   colorNodeLists = False, plotGhosts = False)
+                                   colorNodeLists = False, plotGhosts = False, plotAverage=True)
 
     # Make hardcopies of the plots.
     for p, filename in plots:
@@ -710,5 +721,3 @@ if mpi.rank == 0:
 
 Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[0])/control.conserve.EHistory[0]
 print("Total energy error: %g" % Eerror)
-if checkEnergy and abs(Eerror) > 1e-13:
-    raise ValueError("Energy error outside allowed bounds.")

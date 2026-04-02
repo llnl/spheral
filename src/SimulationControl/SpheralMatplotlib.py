@@ -1,6 +1,7 @@
 from matplotlib.pyplot import cm as pltcm
 from matplotlib import patches
 #from matplotlib.collections import PatchCollections
+from scipy.stats import binned_statistic
 import numpy as np
 import mpi
 from Spheral import *
@@ -160,6 +161,37 @@ def angularMomentum(mass, position, velocity):
     return result
 
 #-------------------------------------------------------------------------------
+# Extract FieldList values as (x,y) pairs for plotting.
+# Note for MPI parallel data we reduce the resulting arrays to rank 0.
+#-------------------------------------------------------------------------------
+def extractFieldListValuesByPosition(fieldList,
+                                     xFunction = "%s.x",
+                                     yFunction = "%s",
+                                     includeGhosts = False,
+                                     filterFunc = None):
+    if filterFunc is None:
+        filterFunc = lambda x: True
+
+    x, y, numInField = [], [], np.zeros(fieldList.numFields, dtype=int)
+    for k, field in enumerate(fieldList):
+        if includeGhosts:
+            xvals = field.nodeList().positions().allValues()
+            yvals = field.allValues()
+        else:
+            xvals = field.nodeList().positions().internalValues()
+            yvals = field.internalValues()
+        xloc, yloc = [], []
+        for xi, yi in zip(xvals, yvals):
+            if filterFunc(x):
+                xloc.append(eval(xFunction % "xi"))
+                yloc.append(eval(yFunction % "yi"))
+        x += mpi.allreduce(xloc, mpi.SUM)
+        y += mpi.allreduce(yloc, mpi.SUM)
+        numInField[k] = len(x)
+
+    return np.array(x), np.array(y), numInField
+
+#-------------------------------------------------------------------------------
 # Plot a FieldList
 #-------------------------------------------------------------------------------
 def plotFieldList(fieldList,
@@ -174,42 +206,23 @@ def plotFieldList(fieldList,
                   markerSize = 4,
                   kwords = {},
                   winTitle = None,
-                  lineTitle = "",
+                  lineTitle = None,
                   xlabel = None,
                   ylabel = None,
                   filterFunc = None,
                   semilogy = False):
 
+    # Extract the fieldlist values to arrays in processor 0
+    globalX, globalY, globalNumNodes = extractFieldListValuesByPosition(fieldList,
+                                                                        xFunction,
+                                                                        yFunction,
+                                                                        plotGhosts,
+                                                                        filterFunc)
     # Do we need to make a new window?
     if plot is None:
         plot = newFigure()
 
-    # How about a filtering function?
-    if filterFunc is None:
-        filterFunc = lambda x: True
-
-    # Gather the fieldList info across all processors to process 0.
-    globalNumNodes = []
-    globalX = []
-    globalY = []
-    for field in fieldList:
-        if plotGhosts:
-            xvals = field.nodeList().positions().allValues()
-            yvals = field.allValues()
-        else:
-            xvals = field.nodeList().positions().internalValues()
-            yvals = field.internalValues()
-        localX = []
-        localY = []
-        for x, y in zip(xvals, yvals):
-            if filterFunc(x):
-                localX.append(eval(xFunction % "x"))
-                localY.append(eval(yFunction % "y"))
-        n = len(localX)
-        globalNumNodes.append(mpi.allreduce(n, mpi.SUM))
-        globalX += mpi.allreduce(localX, mpi.SUM)
-        globalY += mpi.allreduce(localY, mpi.SUM)
-            
+    # Plot em
     if mpi.rank == 0:
         # Find the total number of nodes.
         totalNumNodes = sum(globalNumNodes)
@@ -222,6 +235,13 @@ def plotFieldList(fieldList,
         if xlabel: plt.xlabel(xlabel)
         if ylabel: plt.ylabel(ylabel)
 
+        if lineTitle:
+            label = lineTitle
+        elif colorNodeLists:
+            label = ""
+        else:
+            label = None
+
         # Finally, loop over the fields and do the deed.
         assert len(globalX) == len(globalY)
         if colorNodeLists:
@@ -232,18 +252,24 @@ def plotFieldList(fieldList,
                     if semilogy:
                         plot.semilogy(globalX[cumulativeNumNodes:cumulativeNumNodes + n],
                                       globalY[cumulativeNumNodes:cumulativeNumNodes + n],
-                                      plotStyle, ms=markerSize, label = "%s: %s" % (lineTitle, fieldList[i].nodeList().name), **kwords)
+                                      plotStyle, ms=markerSize,
+                                      label = "{}: {}".format(label, fieldList[i].nodeList().name),
+                                      **kwords)
                     else:
                         plot.plot(globalX[cumulativeNumNodes:cumulativeNumNodes + n],
                                   globalY[cumulativeNumNodes:cumulativeNumNodes + n],
-                                  plotStyle, ms=markerSize, label = "%s: %s" % (lineTitle, fieldList[i].nodeList().name), **kwords)
+                                  plotStyle, ms=markerSize,
+                                  label = "{}: {}".format(lineTitle, fieldList[i].nodeList().name),
+                                  **kwords)
                     cumulativeNumNodes += n
         else:
             if semilogy:
-                plot.semilogy(globalX, globalY, plotStyle, ms=markerSize, label = lineTitle, **kwords)
+                plot.semilogy(globalX, globalY, plotStyle, ms=markerSize, label=label, **kwords)
             else:
-                plot.plot(globalX, globalY, plotStyle, ms=markerSize, label = lineTitle, **kwords)
-        plot.axes.legend()
+                plot.plot(globalX, globalY, plotStyle, ms=markerSize, label=label, **kwords)
+
+        if label:
+            plot.axes.legend()
 
         # Set the ranges.
         xmin, xmax = plt.xlim()
@@ -256,6 +282,81 @@ def plotFieldList(fieldList,
         plt.ylim(ymin, ymax)
 
     # That's it
+    mpi.barrier()
+    return plot
+
+#-------------------------------------------------------------------------------
+# Plot a binned fit to a FieldList
+#-------------------------------------------------------------------------------
+def plotFieldListAverage(fieldList,
+                         nbins = 100,
+                         xFunction = "%s.x",
+                         yFunction = "%s",
+                         plotGhosts = False,
+                         plot = None,
+                         xRange = [None, None],
+                         yRange = [None, None],
+                         plotStyle = "b-",
+                         markerSize = 4,
+                         fillcolor = "red",
+                         fillalpha = 0.3,
+                         linewidth = 2,
+                         kwords = {},
+                         winTitle = None,
+                         lineTitle = None,
+                         xlabel = None,
+                         ylabel = None,
+                         filterFunc = None):
+
+    # Extract the fieldlist values to arrays in processor 0
+    x, y, globalNumNodes = extractFieldListValuesByPosition(fieldList,
+                                                            xFunction,
+                                                            yFunction,
+                                                            plotGhosts,
+                                                            filterFunc)
+
+    # Do we need to make a new window?
+    if plot is None:
+        plot = newFigure()
+
+    # Plot em
+    if mpi.rank == 0:
+
+        # Use scipy to computed the binned mean and standard deviation
+        bin_means, bin_edges, _ = binned_statistic(x, y, statistic='mean', bins=nbins)
+        bin_stds, _, _ = binned_statistic(x, y, statistic='std', bins=nbins)
+
+        # Calculate bin centers for plotting
+        bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
+
+        # Plot shaded 1-sigma region
+        if fillcolor:
+            plot.fill_between(bin_centers, bin_means - bin_stds, bin_means + bin_stds, 
+                              color=fillcolor, alpha=fillalpha, **kwords)
+
+        # Plot mean line
+        if plotStyle:
+            plot.plot(bin_centers, bin_means, plotStyle, lw=linewidth, label=lineTitle, **kwords)
+
+        # Set the ranges.
+        xmin, xmax = plt.xlim()
+        ymin, ymax = plt.ylim()
+        if xRange[0]: xmin = xRange[0]
+        if xRange[1]: xmax = xRange[1]
+        if yRange[0]: ymin = yRange[0]
+        if yRange[1]: ymax = yRange[1]
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
+
+        # Labeling
+        if xlabel:
+            plt.xlabel(xlabel)
+        if ylabel:
+            plt.ylabel(ylabel)
+        if lineTitle:
+            plot.axes.legend()
+
+    # Done
     mpi.barrier()
     return plot
 
@@ -306,14 +407,14 @@ def plotField(field,
 #-------------------------------------------------------------------------------
 def plotState(thingus,
               plotGhosts = False,
-              colorNodeLists = False,
               plotStyle = "ro",
               markerSize = 4,
               xFunction = "%s.x",
               vecyFunction = "%s.x",
               tenyFunction = "%s.xx ** -1",
               lineTitle = "Simulation",
-              filterFunc = None):
+              filterFunc = None,
+              plotAverage = False):
 
     dim = type(thingus).__name__[-2:]
     if isinstance(thingus, eval("State%s" % dim)):
@@ -332,62 +433,62 @@ def plotState(thingus,
         thingus.fluidPressure(P)
         H = thingus.fluidHfield
 
-    rhoPlot = plotFieldList(rho,
-                            xFunction = xFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Mass Density",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    if plotAverage:
+        plotit = plotFieldListAverage
+    else:
+        plotit = plotFieldList
 
-    velPlot = plotFieldList(vel,
-                            xFunction = xFunction,
-                            yFunction = vecyFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Velocity",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    rhoPlot = plotit(rho,
+                     xFunction = xFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Mass Density",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    epsPlot = plotFieldList(eps,
-                            xFunction = xFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Specific Thermal Energy",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    velPlot = plotit(vel,
+                     xFunction = xFunction,
+                     yFunction = vecyFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Velocity",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    PPlot = plotFieldList(P,
-                          xFunction = xFunction,
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = plotStyle,
-                          markerSize = markerSize,
-                          winTitle = "Pressure",
-                          lineTitle = lineTitle,
-                          xlabel="x",
-                          filterFunc = filterFunc)
+    epsPlot = plotit(eps,
+                     xFunction = xFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Specific Thermal Energy",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    HPlot = plotFieldList(H,
-                          xFunction = xFunction,
-                          yFunction = tenyFunction,
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = plotStyle,
-                          markerSize = markerSize,
-                          winTitle = "Smoothing scale",
-                          lineTitle = lineTitle,
-                          xlabel="x",
-                          filterFunc = filterFunc)
+    PPlot = plotit(P,
+                   xFunction = xFunction,
+                   plotGhosts = plotGhosts,
+                   plotStyle = plotStyle,
+                   markerSize = markerSize,
+                   winTitle = "Pressure",
+                   lineTitle = lineTitle,
+                   xlabel="x",
+                   filterFunc = filterFunc)
+
+    HPlot = plotit(H,
+                   xFunction = xFunction,
+                   yFunction = tenyFunction,
+                   plotGhosts = plotGhosts,
+                   plotStyle = plotStyle,
+                   markerSize = markerSize,
+                   winTitle = "Smoothing scale",
+                   lineTitle = lineTitle,
+                   xlabel="x",
+                   filterFunc = filterFunc)
 
     return rhoPlot, velPlot, epsPlot, PPlot, HPlot
 
@@ -396,64 +497,64 @@ def plotState(thingus,
 #-------------------------------------------------------------------------------
 def plotRadialState(dataBase,
                     plotGhosts = False,
-                    colorNodeLists = False,
                     lineTitle = "Simulation",
-                    filterFunc = None):
+                    filterFunc = None,
+                    plotAverage = False):
 
-    rhoPlot = plotFieldList(dataBase.fluidMassDensity,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = "Mass density",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    if plotAverage:
+        plotit = plotFieldListAverage
+    else:
+        plotit = plotFieldList
+
+    rhoPlot = plotit(dataBase.fluidMassDensity,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = "Mass density",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
     radialVelocity = radialVelocityFieldList(dataBase.fluidPosition,
                                              dataBase.fluidVelocity)
-    velPlot = plotFieldList(radialVelocity,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = " Radial Velocity",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    velPlot = plotit(radialVelocity,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = " Radial Velocity",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
-    epsPlot = plotFieldList(dataBase.fluidSpecificThermalEnergy,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = "Specific Thermal Energy",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    epsPlot = plotit(dataBase.fluidSpecificThermalEnergy,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = "Specific Thermal Energy",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
     fluidPressure = dataBase.newFluidScalarFieldList(0.0, "pressure")
     dataBase.fluidPressure(fluidPressure)
-    PPlot = plotFieldList(fluidPressure,
-                          xFunction = "%s.magnitude()",
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = "ro",
-                          winTitle = "Pressure",
-                          lineTitle = lineTitle,
-                          xlabel = "r",
-                          filterFunc = filterFunc)
+    PPlot = plotit(fluidPressure,
+                   xFunction = "%s.magnitude()",
+                   plotGhosts = plotGhosts,
+                   plotStyle = "ro-",
+                   winTitle = "Pressure",
+                   lineTitle = lineTitle,
+                   xlabel = "r",
+                   filterFunc = filterFunc)
 
-    HPlot = plotFieldList(dataBase.fluidHfield,
-                          xFunction = "%s.magnitude()",
-                          yFunction = "%s.xx**-1",
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = "ro",
-                          winTitle = "Smoothing scale",
-                          lineTitle = lineTitle,
-                          xlabel = "r",
-                          filterFunc = filterFunc)
+    HPlot = plotit(dataBase.fluidHfield,
+                   xFunction = "%s.magnitude()",
+                   yFunction = "%s.xx**-1",
+                   plotGhosts = plotGhosts,
+                   plotStyle = "ro-",
+                   winTitle = "Smoothing scale",
+                   lineTitle = lineTitle,
+                   xlabel = "r",
+                   filterFunc = filterFunc)
 
     return rhoPlot, velPlot, epsPlot, PPlot, HPlot
 
