@@ -563,7 +563,8 @@ if graphics:
         rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db, plotAverage=True)
         xfunc = "%s.magnitude()"
     plotAnswer(answer, control.time(), rhoPlot=rhoPlot, velPlot=velPlot, epsPlot=epsPlot, PPlot=PPlot, HPlot=HPlot,
-               plotStyle = "kx")
+               plotStyle = "k-",
+               x = np.linspace(0.0, max(xprof), 500))
     EPlot = plotEHistory(control.conserve)
     plots = [(rhoPlot, "Noh-%s-rho-RZ.png" % problem),
              (velPlot, "Noh-%s-vel-RZ.png" % problem),

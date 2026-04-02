@@ -571,7 +571,8 @@ def plotAnswer(answerObject, time,
                APlot = None,
                HPlot = None,
                x = None,
-               plotStyle = "k-"):
+               plotStyle = "k-",
+               kwords = {}):
 
     try:
         x, v, u, rho, P, h = answerObject.solution(time, x)
@@ -582,27 +583,27 @@ def plotAnswer(answerObject, time,
             x, v, u, rho, P = answerObject.solution(time, x)
 
     if rhoPlot is not None:
-        rhoPlot.plot(x, rho, plotStyle, label="Solution")
+        rhoPlot.plot(x, rho, plotStyle, label="Solution", **kwords)
         rhoPlot.axes.legend()
 
     if velPlot is not None:
-        velPlot.plot(x, v, plotStyle, label="Solution")
+        velPlot.plot(x, v, plotStyle, label="Solution", **kwords)
         velPlot.axes.legend()
 
     if epsPlot is not None:
-        epsPlot.plot(x, u, plotStyle, label="Solution")
+        epsPlot.plot(x, u, plotStyle, label="Solution", **kwords)
         epsPlot.axes.legend()
 
     if PPlot is not None:
-        PPlot.plot(x, P, plotStyle, label="Solution")
+        PPlot.plot(x, P, plotStyle, label="Solution", **kwords)
         PPlot.axes.legend()
 
     if APlot is not None:
-        APlot.plot(x, A, plotStyle, label="Solution")
+        APlot.plot(x, A, plotStyle, label="Solution", **kwords)
         APlot.axes.legend()
 
     if HPlot is not None:
-        HPlot.plot(x, h, plotStyle, label="Solution")
+        HPlot.plot(x, h, plotStyle, label="Solution", **kwords)
         HPlot.axes.legend()
 
     return
