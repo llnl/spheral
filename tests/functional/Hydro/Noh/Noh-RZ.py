@@ -307,8 +307,8 @@ else:
     if seed == "lattice":
         nz *= 2
     rmin, rmax = 0.0, 1.0
-    z0, z1 = 0.0, 1.0
-    r0, r1 = 0.0, 1.0
+    z0, z1 = -1.0, 1.0
+    r0, r1 =  0.0, 1.0
     theta = pi
 
 generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
@@ -587,38 +587,34 @@ if graphics:
 
     Qplot = plotFieldList(hydro.Q.maxViscousPressure,
                           xFunction = xfunc,
-                          winTitle = "Max Q pressure",
-                          plotAverage=True)
+                          winTitle = "Max Q pressure")
 
     if hydroType == "CRKSPH":
         volPlot = plotFieldList(control.RKCorrections.volume,
                                 xFunction = "%s.y",
                                 winTitle = "volume",
-                                colorNodeLists = False, plotGhosts = False,
-                                plotAverage=True)
+                                colorNodeLists = False, plotGhosts = False)
         plots.append((volPlot, "Noh-%s-vol.png" % problem))
 
     if boolCullenViscosity:
         cullAlphaPlot = plotFieldList(q.ClMultiplier(),
                                       xFunction = "%s.y",
-                                      winTitle = "Cullen alpha",
-                                      plotAverage=True)
+                                      winTitle = "Cullen alpha")
         cullDalphaPlot = plotFieldList(evolveCullenViscosityMultiplier.DalphaDt(),
                                        xFunction = "%s.y",
-                                       winTitle = "Cullen DalphaDt",
-                                       plotAverage=True)
+                                       winTitle = "Cullen DalphaDt")
         plots += [(cullAlphaPlot, "Noh-%s-Cullen-alpha.png" % problem),
                   (cullDalphaPlot, "Noh-%s-Cullen-DalphaDt.png" % problem)]
 
     if boolReduceViscosity:
         alphaPlotQ = plotFieldList(q.reducingViscosityMultiplierQ(),
                                    xFunction = "%s.y",
-                                  winTitle = "rvAlphaQ",
-                                  colorNodeLists = False, plotGhosts = False, plotAverage=True)
+                                   winTitle = "rvAlphaQ",
+                                   colorNodeLists = False, plotGhosts = False)
         alphaPlotL = plotFieldList(q.reducingViscosityMultiplierL(),
                                    xFunction = "%s.y",
                                    winTitle = "rvAlphaL",
-                                   colorNodeLists = False, plotGhosts = False, plotAverage=True)
+                                   colorNodeLists = False, plotGhosts = False)
 
     # Make hardcopies of the plots.
     for p, filename in plots:
