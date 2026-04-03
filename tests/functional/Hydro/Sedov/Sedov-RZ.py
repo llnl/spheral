@@ -328,9 +328,9 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 bcs = []
 if problem == "planar":
-    bcs += [ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
-    if z0 == 0.0:
-        bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))))
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0))),
+            ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
     if r0 != 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
@@ -420,7 +420,7 @@ if control.time() == 0.0:
         etaij = feta(Hi*pos[i])
         #Wi = (1.0 if etaij < WT.kernelExtent else 0.0) * mass[i]
         #Wi = max(0.0, 1.0 - etaij/WT.kernelExtent) * mass[i]
-        Wi = sqrt(WT.kernelValue(etaij/smoothSpikeScale, 1.0)) * mass[i]
+        Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * mass[i]
         Ei = Wi*Eexpect
         eps[i] = Ei
         Wsum += Wi
