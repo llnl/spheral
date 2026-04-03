@@ -418,7 +418,9 @@ if control.time() == 0.0:
     for i in range(nodes1.numInternalNodes):
         Hi = H[i]
         etaij = feta(Hi*pos[i])
-        Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * mass[i]
+        #Wi = (1.0 if etaij < WT.kernelExtent else 0.0) * mass[i]
+        #Wi = max(0.0, 1.0 - etaij/WT.kernelExtent) * mass[i]
+        Wi = sqrt(WT.kernelValue(etaij/smoothSpikeScale, 1.0)) * mass[i]
         Ei = Wi*Eexpect
         eps[i] = Ei
         Wsum += Wi
@@ -496,25 +498,26 @@ if graphics:
     APlot.plot(xprof, A, marker='o', label="Simulation")
     plotAnswer(answer, control.time(), rhoPlot, velPlot, epsPlot, PPlot, APlot, HPlot)
     EPlot = plotEHistory(control.conserve)
-    plots = [(rhoPlot, "Sedov-%s-rho-RZ.png" % problem),
-             (velPlot, "Sedov-%s-vel-RZ.png" % problem),
-             (epsPlot, "Sedov-%s-eps-RZ.png" % problem),
-             (PPlot, "Sedov-%s-P-RZ.png" % problem),
-             (APlot, "Sedov-planar-A.png"),
-             (HPlot, "Sedov-%s-h-RZ.png" % problem)]
-
-    maxQplot = plotFieldList(hydro.Q.maxViscousPressure,
-                             xFunction = xfunc,
-                             winTitle = "Max Q pressure")
-    effQplot = plotFieldList(hydro.Q.effViscousPressure,
-                             xFunction = xfunc,
-                             winTitle = "Effective Q pressure")
+    maxQplot = plotFieldListAverage(hydro.Q.maxViscousPressure,
+                                    xFunction = xfunc,
+                                    winTitle = "Max Q pressure")
+    effQplot = plotFieldListAverage(hydro.Q.effViscousPressure,
+                                    xFunction = xfunc,
+                                    winTitle = "Effective Q pressure")
+    plots = [(rhoPlot, f"Sedov-{problem}-rho-RZ.png"),
+             (velPlot, f"Sedov-{problem}-vel-RZ.png"),
+             (epsPlot, f"Sedov-{problem}-eps-RZ.png"),
+             (PPlot, f"Sedov-{problem}-P-RZ.png"),
+             (APlot, f"Sedov-{problem}-A.png"),
+             (HPlot, f"Sedov-{problem}-h-RZ.png"),
+             (EPlot, f"Sedov-{problem}-h-RZ.png"),
+             (maxQplot, f"Sedov-{problem}-maxQ-RZ.png"),
+             (effQplot, f"Sedov-{problem}-effQ-RZ.png")]
 
     if hydroType == "CRKSPH":
-        volPlot = plotFieldList(hydro.volume, 
-                                winTitle = "volume",
-                                colorNodeLists = False, plotGhosts = False)
-        plots.append((volPlot, "Sedov-%s-vol.png" % problem))
+        volPlot = plotFieldListAverage(hydro.volume, 
+                                       winTitle = "volume")
+        plots.append((volPlot, f"Sedov-{problem}-vol.png"))
 
     if plotDerivs:
         xans = np.linspace(0.0, max(xprof), 500, endpoint=True)
@@ -529,15 +532,15 @@ if graphics:
             assert problem == "spherical"
             xfunc = "%s.magnitude()"
             yfunc = "%s.magnitude()"
-        DvDtPlot = plotFieldList(hydro.DvDt, xFunction=xfunc, yFunction=yfunc, winTitle="DvDt")
+        DvDtPlot = plotFieldListAverage(hydro.DvDt, xFunction=xfunc, yFunction=yfunc, winTitle="DvDt")
         DvDtPlot.plot(xans, dvdt_ans, "k-", label="Solution")
-        DuDtPlot = plotFieldList(hydro.DspecificThermalEnergyDt, xFunction=xfunc, winTitle="DuDt")
+        DuDtPlot = plotFieldListAverage(hydro.DspecificThermalEnergyDt, xFunction=xfunc, winTitle="DuDt")
         DuDtPlot.plot(xans, dudt_ans, "k-", label="Solution")
-        DrhoDtPlot = plotFieldList(hydro.DmassDensityDt, xFunction=xfunc, winTitle="DrhoDt")
+        DrhoDtPlot = plotFieldListAverage(hydro.DmassDensityDt, xFunction=xfunc, winTitle="DrhoDt")
         DrhoDtPlot.plot(xans, drhodt_ans, "k-", label="Solution")
-        plots += [(DvDtPlot, "Sedov-{}-DvDt-RZ.png".format(problem)),
-                  (DuDtPlot, "Sedov-{}-DuDt-RZ.png".format(problem)),
-                  (DrhoDtPlot, "Sedov-{}-DrhoDt-RZ.png".format(problem))]
+        plots += [(DvDtPlot, f"Sedov-{problem}-DvDt-RZ.png"),
+                  (DuDtPlot, f"Sedov-{problem}-DuDt-RZ.png"),
+                  (DrhoDtPlot, f"Sedov-{problem}-DrhoDt-RZ.png")]
 
     # Make hardcopies of the plots.
     for p, filename in plots:
