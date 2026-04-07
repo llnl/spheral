@@ -9,6 +9,7 @@
 //----------------------------------------------------------------------------//
 
 #include "Neighbor/ConnectivityMap.hh"
+#include "Utilities/GPUUtils.hh"
 
 namespace Spheral {
 
@@ -132,7 +133,7 @@ PairwiseField<Dimension, Value, numElements>::assignDataSpan() {
   if (mSpan.size() != mArray.size() or
       mSpan.data(chai::CPU, false) != mArray.data()) {
     DEBUG_LOG << "PairwiseField::assignDataSpan " << this;
-    initMAView(mSpan, mArray);
+    GPUUtils::initMAView(mSpan, mArray);
   }
   mSpan.registerTouch(chai::CPU);
 #endif

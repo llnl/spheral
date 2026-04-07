@@ -22,7 +22,6 @@
 #include "DataBase/ReplaceBoundedState.hh"
 #include "DataBase/updateStateFields.hh"
 #include "ArtificialViscosity/ArtificialViscosity.hh"
-#include "ArtificialViscosity/LimitedMonaghanGingoldViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -88,30 +87,6 @@ tensileStressCorrection(const Dim<3>::SymTensor& sigma) {
   Dim<3>::SymTensor result((lambdax > 0.0 ? -lambdax : 0.0), 0.0,                              0.0,
                            0.0,                              (lambday > 0.0 ? -lambday : 0.0), 0.0,
                            0.0,                              0.0,                              (lambdaz > 0.0 ? -lambdaz : 0.0));
-  result.rotationalTransform(eigen.eigenVectors);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Compute one minus the SymTensor in it's principle frame
-//------------------------------------------------------------------------------
-inline Dim<1>::SymTensor oneMinusEigenvalues(const Dim<1>::SymTensor& x) {
-  return Dim<1>::SymTensor(1.0 - x[0]);
-}
-
-inline Dim<2>::SymTensor oneMinusEigenvalues(const Dim<2>::SymTensor& x) {
-  const auto eigen = x.eigenVectors();
-  Dim<2>::SymTensor result(1.0 - eigen.eigenValues[0], 0.0,
-                           0.0, 1.0 - eigen.eigenValues[1]);
-  result.rotationalTransform(eigen.eigenVectors);
-  return result;
-}
-
-inline Dim<3>::SymTensor oneMinusEigenvalues(const Dim<3>::SymTensor& x) {
-  const auto eigen = x.eigenVectors();
-  Dim<3>::SymTensor result(1.0 - eigen.eigenValues[0], 0.0, 0.0,
-                           0.0, 1.0 - eigen.eigenValues[1], 0.0,
-                           0.0, 0.0, 1.0 - eigen.eigenValues[2]);
   result.rotationalTransform(eigen.eigenVectors);
   return result;
 }
@@ -204,8 +179,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         StateDerivatives<Dimension>& derivs,
                         chai::managed_ptr<QType>& Q) const {
 
-  TIME_BEGIN("SolidSPHevalDerivs");
-  TIME_BEGIN("SolidSPHevalDerivs_initial");
+  TIME_BEGIN("SolidSPHevalDerivs_RAJA");
+  TIME_BEGIN("SolidSPHevalDerivs_initial_RAJA");
 
   using QPiType = typename QType::ReturnType;
 
@@ -337,17 +312,17 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(effViscousPressure_v.size() == numNodeLists);
   CHECK(XSPHWeightSum_v.size() == numNodeLists);
   CHECK(XSPHDeltaV_v.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations_v.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass_v[0]->nodeList();
   const auto  nPerh = nodeList.nodesPerSmoothingScale();
   const auto  WnPerh = W(1.0/nPerh, 1.0);
   bool CorrectVelocityGradient = this->mCorrectVelocityGradient;
-  TIME_END("SolidSPHevalDerivs_initial");
+  TIME_END("SolidSPHevalDerivs_initial_RAJA");
 
   // Walk all the interacting pairs.
-  TIME_BEGIN("SolidSPHevalDerivs_pairs");
+  TIME_BEGIN("SolidSPHevalDerivs_pairs_RAJA");
   {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
@@ -573,9 +548,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
     }); // loop over pairs
   }
-  TIME_END("SolidSPHevalDerivs_pairs");
+  TIME_END("SolidSPHevalDerivs_pairs_RAJA");
   // Finish up the derivatives for each point.
-  TIME_BEGIN("SolidSPHevalDerivs_final");
+  TIME_BEGIN("SolidSPHevalDerivs_final_RAJA");
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = mass_v[nodeListi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
@@ -697,8 +672,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   DSDt.move(chai::CPU);
   rhoSumCorrection.move(chai::CPU);
   pairAccelerations.move(chai::CPU);
-  TIME_END("SolidSPHevalDerivs_final");
-  TIME_END("SolidSPHevalDerivs");
+  TIME_END("SolidSPHevalDerivs_final_RAJA");
+  TIME_END("SolidSPHevalDerivs_RAJA");
 }
 
 }

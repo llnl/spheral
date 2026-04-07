@@ -101,7 +101,7 @@ QuadraticInterpolator::initialize(double xmin,
 
 void
 QuadraticInterpolator::initView() {
-  initMAView(mcoeffs, mVec);
+  GPUUtils::initMAView(mcoeffs, mVec);
 }
 
 //------------------------------------------------------------------------------

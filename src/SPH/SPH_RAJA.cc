@@ -129,7 +129,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   auto& WQ = this->PiKernel();
   auto W_view = W.view();
   auto WQ_view = WQ.view();
-  const auto  oneKernel = (W == WQ);
+  const auto oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
   const auto tiny = 1.0e-30;
@@ -233,7 +233,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   CHECK(effViscousPressure_v.size() == numNodeLists);
   CHECK(XSPHWeightSum_v.size() == numNodeLists);
   CHECK(XSPHDeltaV_v.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations_v.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass_v[0]->nodeList();
@@ -244,37 +244,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
   // Walk all the interacting pairs.
   TIME_BEGIN("SPHevalDerivs_pairs_RAJA");
-  //RAJA::region<RAJA::seq_region>([=]()
-  //#pragma omp parallel
   {
-    // Thread private scratch variables
-    // unsigned i, j, nodeListi, nodeListj;
-    // Vector gradWi, gradWj, gradWQi, gradWQj;
-    // Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj, Qi, Qj;
-    // QPiType QPiij, QPiji;
-
-    // typename SpheralThreads<Dimension>::FieldListStack threadStack;
-    // auto rhoSum_thread = rhoSum.threadCopy(threadStack);
-    // auto normalization_thread = normalization.threadCopy(threadStack);
-    // auto DvDt_thread = DvDt.threadCopy(threadStack);
-    // auto DepsDt_thread = DepsDt.threadCopy(threadStack);
-    // auto DvDx_thread = DvDx.threadCopy(threadStack);
-    // auto localDvDx_thread = localDvDx.threadCopy(threadStack);
-    // auto gradRho_thread = gradRho.threadCopy(threadStack);
-    // auto M_thread = M.threadCopy(threadStack);
-    // auto localM_thread = localM.threadCopy(threadStack);
-    // auto maxViscousPressure_thread = maxViscousPressure.threadCopy(threadStack, ThreadReduction::MAX);
-    // auto effViscousPressure_thread = effViscousPressure.threadCopy(threadStack);
-    // auto XSPHWeightSum_thread = XSPHWeightSum.threadCopy(threadStack);
-    // auto XSPHDeltaV_thread = XSPHDeltaV.threadCopy(threadStack);
-
-// #pragma omp for
-//     for (auto kk = 0u; kk < npairs; ++kk) {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
-      Vector gradWi, gradWj, gradWQi, gradWQj;
-      Scalar Wi, gWi, WQi, gWQi, Wj, gWj, WQj, gWQj, Qi, Qj;
-      QPiType QPiij, QPiji;
       size_t i = pairs[kk].i_node;
       size_t j = pairs[kk].j_node;
       size_t nodeListi = pairs[kk].i_list;
@@ -353,21 +325,37 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       CHECK(etaMagj >= 0.0);
 
       // Symmetrized kernel weight and gradient.
+      Scalar Wi, Wj, gWi, gWj;
       W_view.kernelAndGradValue(etaMagi, Hdeti, Wi, gWi);
       W_view.kernelAndGradValue(etaMagj, Hdetj, Wj, gWj);
-      gradWi = gWi*Hi*etaiUnit;
-      gradWj = gWj*Hj*etajUnit;
+      Vector gradWi = gWi*Hi*etaiUnit;
+      Vector gradWj = gWj*Hj*etajUnit;
+      Scalar WQi, WQj;
+      Vector gradWQi, gradWQj;
       if (oneKernel) {
         WQi = Wi;
         WQj = Wj;
         gradWQi = gradWi;
         gradWQj = gradWj;
       } else {
+        Scalar gWQi, gWQj;
         WQ_view.kernelAndGradValue(etaMagi, Hdeti, WQi, gWQi);
         WQ_view.kernelAndGradValue(etaMagj, Hdetj, WQj, gWQj);
         gradWQi = gWQi*Hi*etaiUnit;
         gradWQj = gWQj*Hj*etajUnit;
       }
+
+      // Compute the pair-wise artificial viscosity.
+      const auto vij = vi - vj;
+      QPiType QPiij(0.0);
+      QPiType QPiji(0.0);
+      Scalar Qi = 0.0;
+      Scalar Qj = 0.0;
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               ri, Hi, etai, vi, rhoi, ci,  
+               rj, Hj, etaj, vj, rhoj, cj,
+               fClQView, fCqQView, DvDxQView);
 
       // Contribution to the sum density.
       if (nodeListi == nodeListj) {
@@ -377,18 +365,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
         RAJA::atomicAdd<RAJA::auto_atomic>(&normj, mj/rhoj*Wj);
       }
 
-      // Compute the pair-wise artificial viscosity.
-      const auto vij = vi - vj;
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
-               nodeListi, i, nodeListj, j,
-               ri, Hi, etai, vi, rhoi, ci,  
-               rj, Hj, etaj, vj, rhoj, cj,
-               fClQView, fCqQView, DvDxQView);
-
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      // const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);
-      // const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);
       const auto workQi = vij.dot(Qacci);
       const auto workQj = vij.dot(Qaccj);
       RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurei, Qi);
@@ -413,7 +391,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       if (compatibleEnergy) pairAccelerations[kk] = -mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Specific thermal energy evolution.
-      // const Scalar workQij = 0.5*(mj*workQi + mi*workQj);
       RAJA::atomicAdd<RAJA::auto_atomic>(&DepsDti, mj*(Prhoi*vij.dot(gradWi) + workQi));
       RAJA::atomicAdd<RAJA::auto_atomic>(&DepsDtj, mi*(Prhoj*vij.dot(gradWj) + workQj));
 
@@ -451,9 +428,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       }
 
     }); // loop over pairs
-
-    // Reduce the thread values to the master.
-    //threadReduceFieldLists<Dimension>(threadStack);
+    GPU_ERROR_CHECK
   }
   TIME_END("SPHevalDerivs_pairs_RAJA");
   // Finish up the derivatives for each point.
@@ -461,8 +436,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
     const auto& nodeList = mass_v[nodeListi]->nodeList();
     const auto ni = nodeList.numInternalNodes();
-// #pragma omp parallel for
-//     for (auto i = 0u; i < ni; ++i) {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, ni),
     [=] SPHERAL_HOST_DEVICE (size_t i) {
 
@@ -532,6 +505,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
         DxDti = vi;
       }
     });
+    GPU_ERROR_CHECK
   }
   rhoSum.move(chai::CPU);
   normalization.move(chai::CPU);

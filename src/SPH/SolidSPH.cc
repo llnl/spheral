@@ -309,7 +309,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        chai::managed_ptr<QType>& Q) const {
 
   TIME_BEGIN("SolidSPHevalDerivs");
   TIME_BEGIN("SolidSPHevalDerivs_initial");

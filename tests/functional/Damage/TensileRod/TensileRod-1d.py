@@ -3,6 +3,7 @@
 #ATS:t11 = testif(t10, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu'", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RUN")
 #ATS:t12 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-1proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=1, label="Tensile rod (GradyKippOwen damage) domain independence test SERIAL RESTART RUN")
 #ATS:t13 = testif(t11, SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=4, label="Tensile rod (GradyKippOwen damage) domain independence test 4 DOMAIN RESTART RUN")
+#ATS:t14 = test(       SELF, "--DamageModelConstructor GradyKippTensorDamageOwen --graphics False --clearDirectories False --domainIndependent True --raja True", np=1, ngpu=1, label="Tensile rod (GradyKippOwen damage) GPU run")
 #
 # Probabilistic damage
 #ATS:t20 = test(SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories True --domainIndependent True --outputFile 'TensileRod-1d-1proc.gnu' --checkRef True", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RUN")
@@ -141,6 +142,7 @@ commandLine(length = 3.0,
             hybridMassDensityThreshold = 0.01,
             filter = 0.0,
             volumeType = RKSumVolume,
+            raja = False,
 
             IntegratorConstructor = CheapSynchronousRK2Integrator,
             goalTime = 50.0,
@@ -468,7 +470,8 @@ else:
                 densityUpdate = densityUpdate,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                HUpdate = HUpdate)
+                HUpdate = HUpdate,
+                RAJA = raja)
 
 output("hydro")
 output("hydro.cfl")

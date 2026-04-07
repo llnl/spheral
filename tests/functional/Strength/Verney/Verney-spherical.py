@@ -14,6 +14,7 @@
 #ATS:t103 = testif(t102, SELF, "--graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-spherical-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Spherical Verney problem with solid SPH -- 1-D (parallel) RESTART CHECK")
 #ATS:t104 = test(        SELF, "--graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-spherical-reproducing' --domainIndependent True --outputFile 'Verney-spherical-1proc-reproducing.txt'", label="Spherical Verney problem with solid SPH -- 1-D (serial reproducing test setup)")
 #ATS:t105 = testif(t104, SELF, "--graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-spherical-reproducing' --domainIndependent True --outputFile 'Verney-spherical-4proc-reproducing.txt' --comparisonFile 'Verney-spherical-1proc-reproducing.txt'", np=4, label="Spherical Verney problem with solid SPH -- 1-D (4 proc reproducing test)")
+#ATS:rjt100 = test(      SELF, "--graphics None --clearDirectories True  --checkError True   --restartStep 20 --raja True --dataDirBase 'dumps-spherical-gpusph'", label="Spherical Verney problem with solid SPH+RAJA -- 1-D (1 GPU)", ngpu=1)
 
 from math import *
 import shutil
@@ -97,6 +98,7 @@ commandLine(nr = 20,                     # Radial resolution of the shell in poi
             compatibleEnergy = True,
             evolveTotalEnergy = False,
             gradhCorrection = False,
+            raja = False,
 
             # Time integration
             IntegratorConstructor = VerletIntegrator,
@@ -271,7 +273,8 @@ else:
                 HUpdate = HUpdate,
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
-                nTensile = nTensile)
+                nTensile = nTensile,
+                RAJA = raja)
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")

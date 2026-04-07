@@ -92,7 +92,7 @@ CubicHermiteInterpolator::~CubicHermiteInterpolator() {
 
 void
 CubicHermiteInterpolator::initView() {
-  initMAView(mVals, mVec);
+  GPUUtils::initMAView(mVals, mVec);
 }
 
 //------------------------------------------------------------------------------

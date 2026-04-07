@@ -1379,7 +1379,7 @@ assignDataSpan() {
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
-    initMAView(mDataSpan, mDataArray);
+    GPUUtils::initMAView(mDataSpan, mDataArray);
   }
 #ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());

@@ -16,6 +16,12 @@ spheral_exe = os.path.join(spheral_prefix, "bin/spheral")
 # This is passed into both ATS and Caliper
 benchmark_dir = "/usr/WS2/sduser/Spheral/benchmarks"
 
+# Machine info
+toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
+toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
+np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
+ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
+
 #------------------------------------------------------------------------------
 # Run atsr.py to check results and return the number of failed tests
 def report_results(output_dir):
@@ -72,7 +78,7 @@ def run_and_report(run_command, ci_output, num_runs):
 
 #------------------------------------------------------------------------------
 # Add any build specific ATS arguments
-def install_ats_args():
+def install_ats_args(options):
     import SpheralConfigs
     install_args = []
     if (SpheralConfigs.build_type() == "Debug"):
@@ -84,7 +90,22 @@ def install_ats_args():
     for ts in test_comps:
         if not any(ts in ext for ext in comp_configs):
             install_args.append(f"--filter='not {ts.lower()}'")
+    if options.gpu:
+        if (not SpheralConfigs.hip_enabled()):
+            raise Exception("Cannot run --gpu tests with non-GPU build")
+        install_args.append("--filter='ngpu>0'")
+    else:
+        install_args.append("--filter='ngpu==0'")
     return install_args
+
+def mac_ats_args(hostname, options):
+    mac_args = []
+    # GPU args
+    if (options.gpu):
+        mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task"')
+    elif hostname in np_max_dict:
+        mac_args.append(f"--npMax {np_max_dict[hostname]}")
+    return mac_args
 
 #---------------------------------------------------------------------------
 # Main routine
@@ -113,6 +134,7 @@ def main():
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
     parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
+    parser.add_argument("--gpu", action="store_true", help="Run GPU tests.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
@@ -124,10 +146,6 @@ def main():
     # Setup machine info classes
     #---------------------------------------------------------------------------
     test_log_name = "test-logs"
-    toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
-    toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
-    np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
-    ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
     temp_uname = os.uname()
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
@@ -135,7 +153,7 @@ def main():
     if "MACHINE_TYPE" not in os.environ:
         import ats.util.generic_utils as ats_utils
         ats_utils.set_machine_type_based_on_sys_type()
-    ats_args = install_ats_args()
+    ats_args = install_ats_args(options)
     numNodes = options.numNodes
     timeLimit = options.timeLimit
     launch_cmd = ""
@@ -145,7 +163,7 @@ def main():
     inAllocVars = []
 
     if hostname:
-        mac_args = [] # Machine specific arguments to give to ATS
+        mac_args = mac_ats_args(hostname, options) # Machine specific arguments to give to ATS
         if any(x in hostname for x in toss_machine_names):
             numNodes = numNodes if numNodes else 1
             timeLimit = timeLimit if timeLimit else 60
@@ -169,8 +187,6 @@ def main():
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
-            max_np = np_max_dict[hostname]
-            mac_args.append(f"--npMax {max_np}")
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):

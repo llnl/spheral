@@ -27,12 +27,7 @@ void initializeAdiak() {
   adiak::numhosts();
   adiak::hostlist();
   adiak::mpi_library_version();
-  // TODO: Add this when GPU testing starts
-#ifdef SPHERAL_ENABLE_HIP
-  int device_count = 0;
-  GPU_ERROR_CHECK(hipGetDeviceCount(&device_count));
-  adiak::value("gpus_per_rank", device_count);
-#endif
+  adiak::value("gpus_per_rank", GPUUtils::deviceCount());
 }
 
 enum adiak_categories

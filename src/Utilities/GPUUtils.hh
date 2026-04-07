@@ -35,12 +35,14 @@
 #endif
 
 namespace Spheral {
-
+namespace GPUUtils {
 //------------------------------------------------------------------------------
 // Wrappers for essential GPU device calls
 //------------------------------------------------------------------------------
 
-void initGPUs();
+int deviceCount();
+
+void initGPUs(const int stack_mult);
 
 //------------------------------------------------------------------------------
 // Wrapper for chai::ManagedArray that protects against making
@@ -85,6 +87,6 @@ struct AtomicMinOp {
     RAJA::atomicMin<RAJA::auto_atomic>(dst, value);
   }
 };
-
-}
+} // namespace GPUUtils
+} // namespace Spheral
 #endif
