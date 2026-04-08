@@ -53,12 +53,12 @@
 #ATS:test(SELF, "--geometry 3d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 3D reference data")
 #
 # RAJA ASPH 2D
-#ATS:stick(raja_test = True)
+#ATS:tack(raja_test = True)
 #ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_8proc --raja True", np=8, level=100, label="Generate 8 proc SPH+RAJA 2D reference data")
 #
 # GPU RAJA ASPH 2D
 #ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_1gpu --raja True", np=1, ngpu=1, level=100, label="Generate 1 GPU SPH+RAJA 2D reference data")
-#ATS:unstick("raja_test")
+#ATS:untack("raja_test")
 
 import os, shutil, sys
 from math import *

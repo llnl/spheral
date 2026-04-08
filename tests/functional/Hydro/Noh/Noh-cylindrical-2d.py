@@ -46,7 +46,7 @@
 #
 # RAJA SPH
 #
-#ATS:stick(raja_test = True)
+#ATS:tack(raja_test = True)
 #ATS:rjsph0 = test(          SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH+RAJA, nPerh=4.0", np=8)
 #ATS:rjsph1 = testif(rjsph0, SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories False --steps 60 --restoreCycle 40 --checkRestart True", label="Noh cylindrical SPH+RAJA, nPerh=4.0, restart test", np=8)
 #
@@ -54,7 +54,7 @@
 #
 #ATS:gpurjsph0 = test(SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH+RAJA+GPU, nPerh=4.0", np=1, ngpu=1)
 ###TODO: Add comparison tests for GPU tests since bit perfect comparisons don't work on GPUs
-#ATS:unstick("raja_test")
+#ATS:untack("raja_test")
 
 #-------------------------------------------------------------------------------
 # The Cylindrical Noh test case run in 2-D.
