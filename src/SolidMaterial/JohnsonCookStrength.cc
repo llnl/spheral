@@ -95,7 +95,7 @@ yieldStrength(Field<Dimension, Scalar>& yieldStrength,
   const auto n = yieldStrength.numInternalElements();
 #pragma omp for
   for (auto i = 0u; i < n; ++i) {
-    const auto Tstar = std::max(0.0, std::min(1.0, T(i) - mTroom)/(mTmelt - mTroom));
+    const auto Tstar = std::max(0.0, std::min(1.0, ((T(i) - mTroom)/(mTmelt - mTroom))));
     const auto fmelt = std::max(0.0, std::min(1.0, 1.0 - pow(Tstar, mm)));
     yieldStrength(i) = 
       ((mA + mB*pow(plasticStrain(i), mnhard))*
