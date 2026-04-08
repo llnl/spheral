@@ -52,6 +52,8 @@ def globalFrame():
 #-------------------------------------------------------------------------------
 def title(titleText, lineLength=80):
     fillerText = "-"*((lineLength - len(titleText))//2)
+    from SpheralCompiledPackages import adiak_value
+    adiak_value("test_name", titleText)
     print(fillerText, titleText, fillerText)
 
 #-------------------------------------------------------------------------------

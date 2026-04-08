@@ -5,19 +5,31 @@
 #include "GPUUtils.hh"
 
 namespace Spheral {
-
+namespace GPUUtils {
 //------------------------------------------------------------------------------
 // Wrappers for essential GPU device calls
 //------------------------------------------------------------------------------
 
-void initGPUs() {
+int deviceCount() {
+  int device_count = 0;
 #ifdef SPHERAL_ENABLE_HIP
-  size_t limitSize;
-  GPU_ERROR_CHECK(hipDeviceGetLimit(&limitSize, hipLimitStackSize));
-  size_t bytes = 8*1024;
-  if (limitSize < bytes) {
-    GPU_ERROR_CHECK(hipDeviceSetLimit(hipLimitStackSize, bytes));
+  GPU_CHECK(hipGetDeviceCount(&device_count));
+#endif
+  return device_count;
+}
+
+void initGPUs(const int stack_mult = 8) {
+#ifdef SPHERAL_ENABLE_HIP
+  int device_count = deviceCount();
+  if (device_count > 0) {
+    size_t limitSize;
+    GPU_CHECK(hipDeviceGetLimit(&limitSize, hipLimitStackSize));
+    size_t bytes = stack_mult*1024;
+    if (limitSize != bytes) {
+      GPU_CHECK(hipDeviceSetLimit(hipLimitStackSize, bytes));
+    }
   }
 #endif
+}
 }
 }

@@ -90,7 +90,7 @@ public:
   }
 
   void initView() {
-    initMAView(mData, mNodePairList);
+    GPUUtils::initMAView(mData, mNodePairList);
   }
 
 #ifndef CHAI_DISABLE_RM

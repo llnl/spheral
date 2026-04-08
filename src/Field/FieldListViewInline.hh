@@ -3,7 +3,6 @@
 
 #include "Field/FieldView.hh"
 #include "Field/FieldList.hh"
-#include "Utilities/GPUUtils.hh"
 #include "Distributed/allReduce.hh"
 
 #include <algorithm>

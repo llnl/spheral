@@ -118,10 +118,10 @@ public:
   SPHERAL_HOST_DEVICE bool operator>=(const double val) const;
 
   template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const GeomVector& vec);
-  SPHERAL_HOST_DEVICE void atomicAdd(const GeomVector& vec) { atomicOp<AtomicAddOp>(vec); }
-  SPHERAL_HOST_DEVICE void atomicSub(const GeomVector& vec) { atomicOp<AtomicSubOp>(vec); }
-  SPHERAL_HOST_DEVICE void atomicMax(const GeomVector& vec) { atomicOp<AtomicMaxOp>(vec); }
-  SPHERAL_HOST_DEVICE void atomicMin(const GeomVector& vec) { atomicOp<AtomicMinOp>(vec); }
+  SPHERAL_HOST_DEVICE void atomicAdd(const GeomVector& vec) { atomicOp<GPUUtils::AtomicAddOp>(vec); }
+  SPHERAL_HOST_DEVICE void atomicSub(const GeomVector& vec) { atomicOp<GPUUtils::AtomicSubOp>(vec); }
+  SPHERAL_HOST_DEVICE void atomicMax(const GeomVector& vec) { atomicOp<GPUUtils::AtomicMaxOp>(vec); }
+  SPHERAL_HOST_DEVICE void atomicMin(const GeomVector& vec) { atomicOp<GPUUtils::AtomicMinOp>(vec); }
 
   SPHERAL_HOST_DEVICE double dot(const GeomVector& vec) const;
   SPHERAL_HOST_DEVICE GeomVector<3> cross(const GeomVector& vec) const;
