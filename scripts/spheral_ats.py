@@ -19,7 +19,6 @@ benchmark_dir = "/usr/WS2/sduser/Spheral/benchmarks"
 # Machine info
 toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
 toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
-np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
 ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
 
 #------------------------------------------------------------------------------
@@ -80,7 +79,8 @@ def run_and_report(run_command, ci_output, num_runs):
 # Add any build specific ATS arguments
 def install_ats_args(options):
     import SpheralConfigs
-    install_args = []
+    # Glue some default values
+    install_args = ["--glue='ngpu=0'", "--glue='raja_test=False'", "--glue='independent=True'"]
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
     if (not SpheralConfigs.mpi_enabled()):
@@ -88,23 +88,29 @@ def install_ats_args(options):
     comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
     for ts in test_comps:
+        install_args.append(f"--glue='{ts.lower()}=False'")
         if not any(ts in ext for ext in comp_configs):
             install_args.append(f"--filter='not {ts.lower()}'")
     if options.gpu:
         if (not SpheralConfigs.hip_enabled()):
-            raise Exception("Cannot run --gpu tests with non-GPU build")
+            print("Skipping GPU tests for non-GPU build")
+            exit(0)
         install_args.append("--filter='ngpu>0'")
     else:
         install_args.append("--filter='ngpu==0'")
     return install_args
 
 def mac_ats_args(hostname, options):
+    import SpheralConfigs
     mac_args = []
     # GPU args
     if (options.gpu):
         mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task"')
-    elif hostname in np_max_dict:
-        mac_args.append(f"--npMax {np_max_dict[hostname]}")
+    elif (SpheralConfigs.gpu_enabled()):
+        # RAJA kernel exec policies (ie threaded, GPU, etc) are currently determined by the build type
+        # Therefore, tests using RAJA kernels for GPU_ENABLED builds must be disabled
+        # unless using the --gpu option for spheral_ats.py
+        mac_args.append("--filter='raja_test==False'")
     return mac_args
 
 #---------------------------------------------------------------------------

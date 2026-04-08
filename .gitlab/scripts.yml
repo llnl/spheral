@@ -95,10 +95,13 @@
     FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
     FF_USE_NEW_BASH_EVAL_STRATEGY: 1
   script:
+    - exit_code=0
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - cd $CI_BUILD_DIR && cat job-name.txt
 
     - ./build_gitlab/install/bin/spheral-ats --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
+    # Run GPU ATS, non-GPU builds simply return immediately
+    - ./build_gitlab/install/bin/spheral-ats --gpu --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     # Clean up Caliper files
     - find ./build_gitlab/install/tests -name '*.cali' -delete
     - cp -r test-logs $CI_PROJECT_DIR

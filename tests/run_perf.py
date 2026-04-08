@@ -47,8 +47,8 @@ mpi_enabled = SpheralConfigs.mpi_enabled()
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")
 mac_procs = {"rzhound": 112, "rzwhippet": 112, "dane": 112,
-             "rzadams": 84, "rzvernal": 64, "tioga": 64,
-             "rzansel": 40, "lassen": 40, "rzgenie": 36}
+             "rzadams": 96, "rzvernal": 64, "tioga": 64,
+             "rzgenie": 36}
 # Find out how many nodes our allocation has grabbed
 num_nodes = max(1, configuration.machine.numNodes)
 if (not mpi_enabled):
