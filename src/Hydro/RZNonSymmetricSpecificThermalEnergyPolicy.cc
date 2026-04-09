@@ -113,7 +113,9 @@ update(const KeyType& key,
   const auto nodeListPtrs = eps.nodeListPtrs();
 
   // Get the state fields.
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
+  const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
@@ -146,6 +148,8 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
+      const auto  ri = std::abs(pos(nodeListi, i).y());
+      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, tiny);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -155,6 +159,8 @@ update(const KeyType& key,
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
+      const auto  rj = std::abs(pos(nodeListj, j).y());
+      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, tiny);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -163,10 +169,16 @@ update(const KeyType& key,
       const auto  pworkrj = pairWork[kk][3];
 
       // Correct just the r-component error (multiplicative form)
-      const auto dErij = -(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]);
-      const auto chi = dErij*safeInv(mi*pworkri + mj*pworkrj, tiny);
-      DepsDt_thread(nodeListi, i) += pworkzi + chi*pworkri;
-      DepsDt_thread(nodeListj, j) += pworkzj + chi*pworkrj;
+      const auto dEzij = -(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]);
+      const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
+      const auto chiz = dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny);
+      const auto chir = dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny);
+      // const auto chimax = std::max(0.0, dE0ij*safeInv(mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj), tiny));
+      // const auto remainder = dE0ij - chir*(mi*pworkri + mj*pworkrj);
+      // const auto chizbound = std::max(0.0, remainder*safeInv(mi*pworkzi + mj*pworkzj, tiny));
+      // const auto chiz = std::max(0.0, std::min(1.0, dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny)));
+      DepsDt_thread(nodeListi, i) += chiz*pworkzi + chir*pworkri;
+      DepsDt_thread(nodeListj, j) += chiz*pworkzj + chir*pworkrj;
 
       // // Correct just the r-component error (additive form)
       // const auto durij = (-(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]) - (mi*pworkri + mj*pworkrj))/(mi + mj);
