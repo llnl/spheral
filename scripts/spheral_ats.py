@@ -100,19 +100,6 @@ def install_ats_args(options):
         install_args.append("--filter='ngpu==0'")
     return install_args
 
-def mac_ats_args(hostname, options):
-    import SpheralConfigs
-    mac_args = []
-    # GPU args
-    if (options.gpu):
-        mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task"')
-    elif (SpheralConfigs.gpu_enabled()):
-        # RAJA kernel exec policies (ie threaded, GPU, etc) are currently determined by the build type
-        # Therefore, tests using RAJA kernels for GPU_ENABLED builds must be disabled
-        # unless using the --gpu option for spheral_ats.py
-        mac_args.append("--filter='raja_test==False'")
-    return mac_args
-
 #---------------------------------------------------------------------------
 # Main routine
 #---------------------------------------------------------------------------
@@ -141,6 +128,7 @@ def main():
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
     parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
     parser.add_argument("--gpu", action="store_true", help="Run GPU tests.")
+    parser.add_argument("--cpx", action="store_true", help="Enable CPX mode, allowing 6 GPUs per device.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
@@ -171,7 +159,7 @@ def main():
     inAllocVars = []
 
     if hostname:
-        mac_args = mac_ats_args(hostname, options) # Machine specific arguments to give to ATS
+        mac_args = [] # Machine specific arguments to give to ATS
         if any(x in hostname for x in toss_machine_names):
             numNodes = numNodes if numNodes else 1
             timeLimit = timeLimit if timeLimit else 60
@@ -193,8 +181,22 @@ def main():
             else:
                 launch_cmd = "flux alloc "
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
+            if (options.cpx):
+                if (not options.gpu or hostname != "rzadams"):
+                    raise Exception("CPX mode only works with --gpu and on rzadams")
+                launch_cmd += "--amd-gpumode=CPX "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
+            import SpheralConfigs
+            # GPU args
+            if (options.gpu):
+                mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task -u"')
+            elif (SpheralConfigs.gpu_enabled()):
+                # RAJA kernel exec policies (ie threaded, GPU, etc) are currently determined by the build type
+                # Therefore, tests using RAJA kernels for GPU_ENABLED builds must be disabled
+                # unless using the --gpu option for spheral_ats.py
+                mac_args.append("--filter='raja_test==False'")
+                mac_args.append('--flux_run_args="-u"')
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):
@@ -229,6 +231,9 @@ def main():
     if inAlloc:
         if (options.batch or options.delay):
             print("WARNING: --batch and --delay inputs are ignored if in an allocation")
+        # Check if allocation is in CPX mode if necessary
+        if (options.cpx and ("FLUX_MPIBIND_USE_TOPOFILE" not in os.environ.keys())):
+            raise Exception("Must grab allocation with --amd-gpumode=CPX to use CPX mode")
         run_command = cmd
     else:
         run_command = f"{launch_cmd} {cmd}"

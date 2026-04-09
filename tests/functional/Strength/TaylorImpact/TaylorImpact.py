@@ -592,7 +592,7 @@ if (not reflect) and control.totalSteps == 0:
     control.dropViz(control.totalSteps, 0.0, 0.0)
 
 #-------------------------------------------------------------------------------
-# Advance to completetion.
+# Advance to completion.
 #-------------------------------------------------------------------------------
 if not steps is None:
     control.step(steps)
