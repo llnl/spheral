@@ -113,7 +113,6 @@ update(const KeyType& key,
   const auto nodeListPtrs = eps.nodeListPtrs();
 
   // Get the state fields.
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
@@ -148,8 +147,7 @@ update(const KeyType& key,
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
-      const auto  ri = std::abs(pos(nodeListi, i).y());
-      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, tiny);
+      const auto  mRZi = massRZ(nodeListi, i); //mi*safeInvVar(2.0*M_PI*ri, 0.01*hri);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -159,8 +157,7 @@ update(const KeyType& key,
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
-      const auto  rj = std::abs(pos(nodeListj, j).y());
-      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, tiny);
+      const auto  mRZj = massRZ(nodeListj, j); //mj*safeInvVar(2.0*M_PI*rj, 0.01*hrj);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
