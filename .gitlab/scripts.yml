@@ -104,13 +104,11 @@
     - ./build_gitlab/install/bin/spheral-ats --gpu --ciRun ./build_gitlab/install/$ATS_FILE || exit_code=$?
     # Clean up Caliper files
     - find ./build_gitlab/install/tests -name '*.cali' -delete
-    - cp -r test-logs $CI_PROJECT_DIR
     - exit $exit_code
   artifacts:
     when: always
     paths:
       - ci-dir.txt
-      - test-logs/
   allow_failure:
     exit_codes:
       - 80

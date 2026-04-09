@@ -152,6 +152,8 @@ def main():
     # Setup machine info classes
     #---------------------------------------------------------------------------
     test_log_name = "test-logs"
+    if options.gpu:
+        test_log_name = "gpu-"+test_log_name
     temp_uname = os.uname()
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
@@ -216,7 +218,6 @@ def main():
     if (options.threads):
         ats_args.append(f"--glue='threads={options.threads}'")
     ats_args.append(f"""--glue='benchmark_dir="{benchmark_dir}"'""")
-    ats_args.append("--glue='independent=True'")
     # Add the current install directory as an ATS input option
     ats_args.append(f"""--glue='install_path="{spheral_prefix}"'""")
     ats_args = " ".join(str(x) for x in ats_args)
