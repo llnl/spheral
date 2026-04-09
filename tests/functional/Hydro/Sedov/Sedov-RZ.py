@@ -547,19 +547,6 @@ if graphics:
         p.figure.savefig(os.path.join(dataDir, filename))
 
 #-------------------------------------------------------------------------------
-# Measure the difference between the simulation and analytic answer.
-#-------------------------------------------------------------------------------
-rmin, rmax = 0.05, 0.35   # Throw away anything with r < rwall to avoid wall heating.
-rhoprof = mpi.reduce(nodes1.massDensity().internalValues(), mpi.SUM)
-P = ScalarField("pressure", nodes1)
-nodes1.pressure(P)
-Pprof = mpi.reduce(P.internalValues(), mpi.SUM)
-vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
-epsprof = mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM)
-hprof = mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM)
-xprof = mpi.reduce([x.magnitude() for x in nodes1.positions().internalValues()], mpi.SUM)
-
-#-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
 if outputFile:
@@ -572,7 +559,14 @@ if outputFile:
     P = ScalarField("pressure", nodes1)
     nodes1.pressure(P)
     Pprof = mpi.reduce(P.internalValues(), mpi.SUM)
-    vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
+    if problem == "planar":
+        vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
+    elif problem == "cylindrical":
+        vprof = mpi.reduce([v.y for v in nodes1.velocity().internalValues()], mpi.SUM)
+    else:
+        assert problem == "spherical"
+        vprof = mpi.reduce([v.dot(x.unitVector()) for v, x in zip(nodes1.velocity().internalValues(),
+                                                                  nodes1.positions().internalValues())], mpi.SUM)
     epsprof = mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM)
     hprof = mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM)
     if mpi.rank == 0:
