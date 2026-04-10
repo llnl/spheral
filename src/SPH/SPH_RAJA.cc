@@ -359,20 +359,20 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
       // Contribution to the sum density.
       if (nodeListi == nodeListj) {
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumi, mj*Wi);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumj, mi*Wj);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&normi, mi/rhoi*Wi);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&normj, mj/rhoj*Wj);
+        GPUUtils::AtomicAddOp::apply(&rhoSumi, mj*Wi);
+        GPUUtils::AtomicAddOp::apply(&rhoSumj, mi*Wj);
+        GPUUtils::AtomicAddOp::apply(&normi, mi/rhoi*Wi);
+        GPUUtils::AtomicAddOp::apply(&normj, mj/rhoj*Wj);
       }
 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);
       const auto workQj = vij.dot(Qaccj);
-      RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurei, Qi);
-      RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurej, Qj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurei, mj*Qi*WQi/rhoj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurej, mi*Qj*WQj/rhoi);
+      GPUUtils::AtomicMaxOp::apply(&maxViscousPressurei, Qi);
+      GPUUtils::AtomicMaxOp::apply(&maxViscousPressurej, Qj);
+      GPUUtils::AtomicAddOp::apply(&effViscousPressurei, mj*Qi*WQi/rhoj);
+      GPUUtils::AtomicAddOp::apply(&effViscousPressurej, mi*Qj*WQj/rhoi);
 
       // Determine an effective pressure including a term to fight the tensile instability.
       const auto Ri = epsTensile*FastMath::pow4(Wi/(Hdeti*WnPerh))*(Pi < 0.0 ? -Pi : 0.0);
@@ -391,8 +391,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       if (compatibleEnergy) pairAccelerations[kk] = -mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Specific thermal energy evolution.
-      RAJA::atomicAdd<RAJA::auto_atomic>(&DepsDti, mj*(Prhoi*vij.dot(gradWi) + workQi));
-      RAJA::atomicAdd<RAJA::auto_atomic>(&DepsDtj, mi*(Prhoj*vij.dot(gradWj) + workQj));
+      GPUUtils::AtomicAddOp::apply(&DepsDti, mj*(Prhoi*vij.dot(gradWi) + workQi));
+      GPUUtils::AtomicAddOp::apply(&DepsDtj, mi*(Prhoj*vij.dot(gradWj) + workQj));
 
       // Velocity gradient.
       const auto deltaDvDxi = mj*vij.dyad(gradWi);
@@ -407,8 +407,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       // Estimate of delta v (for XSPH).
       if (XSPH and (sameMatij)) {
         const auto wXSPHij = 0.5*(mi/rhoi*Wi + mj/rhoj*Wj);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&XSPHWeightSumi, wXSPHij);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&XSPHWeightSumj, wXSPHij);
+        GPUUtils::AtomicAddOp::apply(&XSPHWeightSumi, wXSPHij);
+        GPUUtils::AtomicAddOp::apply(&XSPHWeightSumj, wXSPHij);
         XSPHDeltaVi.atomicSub(wXSPHij*vij);
         XSPHDeltaVj.atomicAdd(wXSPHij*vij);
       }

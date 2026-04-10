@@ -248,6 +248,24 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto DvDxQView = DvDxQ.view();
   auto fClQView = fClQ.view();
   auto fCqQView = fCqQ.view();
+  mass.move(chai::GPU);
+  position.move(chai::GPU);
+  velocity.move(chai::GPU);
+  massDensity.move(chai::GPU);
+  H.move(chai::GPU);
+  pressure.move(chai::GPU);
+  soundSpeed.move(chai::GPU);
+  omega.move(chai::GPU);
+  S.move(chai::GPU);
+  mu.move(chai::GPU);
+  specificThermalEnergy.move(chai::GPU);
+  damage.move(chai::GPU);
+  pTypes.move(chai::GPU);
+  fragID.move(chai::GPU);
+  DvDxQView.move(chai::GPU);
+  fClQView.move(chai::GPU);
+  fCqQView.move(chai::GPU);
+  
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -299,6 +317,21 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto DSDt = DSDt_v.view();
   auto pairAccelerations = pairAccelerations_v.view();
   auto rhoSumCorrection = rhoSumCorrection_v.view();
+  rhoSum.move(chai::GPU);
+  DxDt.move(chai::GPU);
+  DrhoDt.move(chai::GPU);
+  DvDt.move(chai::GPU);
+  DepsDt.move(chai::GPU);
+  DvDx.move(chai::GPU);
+  localDvDx.move(chai::GPU);
+  M.move(chai::GPU);
+  maxViscousPressure.move(chai::GPU);
+  effViscousPressure.move(chai::GPU);
+  XSPHWeightSum.move(chai::GPU);
+  XSPHDeltaV.move(chai::GPU);
+  DSDt.move(chai::GPU);
+  pairAccelerations.move(chai::GPU);
+  rhoSumCorrection.move(chai::GPU);
   CHECK(rhoSum_v.size() == numNodeLists);
   CHECK(DxDt_v.size() == numNodeLists);
   CHECK(DrhoDt_v.size() == numNodeLists);
@@ -466,22 +499,22 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                fClQView, fCqQView, DvDxQView);
       // Contribution to the sum density (only if the same material).
       if (nodeListi == nodeListj) {
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumi, mj*Wi);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumj, mi*Wj);
+        GPUUtils::AtomicAddOp::apply(&rhoSumi, mj*Wi);
+        GPUUtils::AtomicAddOp::apply(&rhoSumj, mi*Wj);
       }
 
       // Contribution to the sum density correction
-      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectioni, mj*WQi / rhoj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&rhoSumCorrectionj, mi*WQj / rhoi);
+      GPUUtils::AtomicAddOp::apply(&rhoSumCorrectioni, mj*WQi / rhoj);
+      GPUUtils::AtomicAddOp::apply(&rhoSumCorrectionj, mi*WQj / rhoi);
 
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);
       const auto workQj = vij.dot(Qaccj);
-      RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurei, Qi);
-      RAJA::atomicMax<RAJA::auto_atomic>(&maxViscousPressurej, Qj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurei, mj*Qi*WQi/rhoj);
-      RAJA::atomicAdd<RAJA::auto_atomic>(&effViscousPressurej, mi*Qj*WQj/rhoi);
+      GPUUtils::AtomicMaxOp::apply(&maxViscousPressurei, Qi);
+      GPUUtils::AtomicMaxOp::apply(&maxViscousPressurej, Qj);
+      GPUUtils::AtomicAddOp::apply(&effViscousPressurei, mj*Qi*WQi/rhoj);
+      GPUUtils::AtomicAddOp::apply(&effViscousPressurej, mi*Qj*WQj/rhoi);
       // Compute the stress tensors.
       SymTensor sigmai, sigmaj;
       if (sameMatij) {
@@ -516,9 +549,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto deltaDvDxj = fDij * vij.dyad(gradWGj);
 
       // Specific thermal energy evolution.
-      RAJA::atomicSub<RAJA::auto_atomic>(&DepsDti,
+      GPUUtils::AtomicSubOp::apply(&DepsDti,
                                          mj*(sigmarhoi.doubledot(deltaDvDxi.Symmetric()) - workQi));
-      RAJA::atomicSub<RAJA::auto_atomic>(&DepsDtj,
+      GPUUtils::AtomicSubOp::apply(&DepsDtj,
                                          mi*(sigmarhoj.doubledot(deltaDvDxj.Symmetric()) - workQj));
 
       // Velocity gradient.
@@ -532,8 +565,8 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       // Estimate of delta v (for XSPH).
       if (XSPH and sameMatij) {
         const auto wXSPHij = 0.5*(mi/rhoi*Wi + mj/rhoj*Wj);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&XSPHWeightSumi, wXSPHij);
-        RAJA::atomicAdd<RAJA::auto_atomic>(&XSPHWeightSumj, wXSPHij);
+        GPUUtils::AtomicAddOp::apply(&XSPHWeightSumi, wXSPHij);
+        GPUUtils::AtomicAddOp::apply(&XSPHWeightSumj, wXSPHij);
         XSPHDeltaVi.atomicSub(wXSPHij*vij);
         XSPHDeltaVj.atomicAdd(wXSPHij*vij);
       }

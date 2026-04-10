@@ -1,12 +1,12 @@
 #ATS:dim = 3
 #ATS:dimstr = f"{dim}d"
-#ATS:ntotals = [50, 60, 70]
+#ATS:ntotals = [50, 60, 70, 80]
 #ATS:for nxv in ntotals:
 #ATS:    nx = int(nxv**dim)
 #ATS:    test_name = f"EVALDERIV_{nxv}"
 #ATS:    cali_name = f"{test_name}.cali"
 #ATS:    inputs = f"--raja True --ntotal {nx} --testDim {dimstr} --adiakData 'test_name: {test_name}' --caliperFilename {cali_name}"
-#ATS:    test(SELF, label=test_name, clas=inputs, ngpu=1, np=1, nt=1, caliper_filename=cali_name)
+#ATS:    test(SELF, label=test_name, clas=inputs, ngpu=1, np=1, nt=1, caliper_filename=cali_name, independent=False)
 
 #-------------------------------------------------------------------------------
 # Isolated evaluateDerivatives for performance testing.
@@ -61,7 +61,7 @@ commandLine(
     initVel = False,
 
     # Parameters for iterating H.
-    iterateH = True,
+    iterateH = False,
     maxHIterations = 200,
     Htolerance = 1.0e-4
 )
