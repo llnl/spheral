@@ -325,6 +325,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   DvDx.move(chai::GPU);
   localDvDx.move(chai::GPU);
   M.move(chai::GPU);
+  localM.move(chai::GPU);
   maxViscousPressure.move(chai::GPU);
   effViscousPressure.move(chai::GPU);
   XSPHWeightSum.move(chai::GPU);
