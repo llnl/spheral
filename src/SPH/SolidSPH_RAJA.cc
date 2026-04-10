@@ -248,6 +248,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto DvDxQView = DvDxQ.view();
   auto fClQView = fClQ.view();
   auto fCqQView = fCqQ.view();
+#ifdef SPHERAL_ENABLE_HIP
   mass.move(chai::GPU);
   position.move(chai::GPU);
   velocity.move(chai::GPU);
@@ -265,7 +266,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   DvDxQView.move(chai::GPU);
   fClQView.move(chai::GPU);
   fCqQView.move(chai::GPU);
-  
+#endif  
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -317,6 +318,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto DSDt = DSDt_v.view();
   auto pairAccelerations = pairAccelerations_v.view();
   auto rhoSumCorrection = rhoSumCorrection_v.view();
+#ifdef SPHERAL_ENABLE_HIP
   rhoSum.move(chai::GPU);
   DxDt.move(chai::GPU);
   DrhoDt.move(chai::GPU);
@@ -333,6 +335,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   DSDt.move(chai::GPU);
   pairAccelerations.move(chai::GPU);
   rhoSumCorrection.move(chai::GPU);
+#endif
   CHECK(rhoSum_v.size() == numNodeLists);
   CHECK(DxDt_v.size() == numNodeLists);
   CHECK(DrhoDt_v.size() == numNodeLists);
