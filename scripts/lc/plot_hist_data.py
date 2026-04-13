@@ -199,14 +199,15 @@ def main():
             print(f"Rank {rank} processing {mac_spec} {test_name} Caliper files")
             for mc in mc_dirs:
                 test_files.extend(get_latest_files(mc, test_name, num_of_months))
-            with concurrent.futures.ProcessPoolExecutor(max_workers=args.threads, initializer=init_worker) as pool:
-                result = list(pool.map(extract_data, test_files))
-            ctftimes = []
-            xaxis = []
-            for i in result:
-                xaxis.append(datetime.fromtimestamp(i[0]).replace(hour=0, minute=0, second=0, microsecond=0))
-                ctftimes.append(i[1])
-            timer_data.update({test_name: {"dates": xaxis, "times": ctftimes}})
+            if (len(test_files) > 0):
+                with concurrent.futures.ProcessPoolExecutor(max_workers=args.threads, initializer=init_worker) as pool:
+                    result = list(pool.map(extract_data, test_files))
+                ctftimes = []
+                xaxis = []
+                for i in result:
+                    xaxis.append(datetime.fromtimestamp(i[0]).replace(hour=0, minute=0, second=0, microsecond=0))
+                    ctftimes.append(i[1])
+                timer_data.update({test_name: {"dates": xaxis, "times": ctftimes}})
         gtimer_data = comm.gather(timer_data, root=0)
         if (rank == 0):
             # Flatten list tests

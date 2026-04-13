@@ -1,11 +1,10 @@
 #ATS:dim = 3
 #ATS:dimstr = f"{dim}d"
-#ATS:ntotals = [50, 60, 70, 80]
-#ATS:for nxv in ntotals:
-#ATS:    nx = int(nxv**dim)
-#ATS:    test_name = f"EVALDERIV_{nxv}"
+#ATS:nxv = [50, 60, 70, 80]
+#ATS:for nx in nxv:
+#ATS:    test_name = f"EVALDERIV_{nx}"
 #ATS:    cali_name = f"{test_name}.cali"
-#ATS:    inputs = f"--raja True --ntotal {nx} --testDim {dimstr} --adiakData 'test_name: {test_name}' --caliperFilename {cali_name}"
+#ATS:    inputs = f"--raja True --nx {nx} --testDim {dimstr} --adiakData 'test_name: {test_name}' --caliperFilename {cali_name}"
 #ATS:    test(SELF, label=test_name, clas=inputs, ngpu=1, np=1, nt=1, caliper_filename=cali_name, independent=False)
 
 #-------------------------------------------------------------------------------
@@ -13,6 +12,7 @@
 #-------------------------------------------------------------------------------
 from Spheral import *
 from SpheralTestUtilities import *
+from SpheralCompiledPackages import adiak_value, TimerMgr
 
 title("Evaluate derivatives performance test")
 
@@ -21,7 +21,7 @@ title("Evaluate derivatives performance test")
 #-------------------------------------------------------------------------------
 commandLine(
     # Parameters for seeding nodes.
-    ntotal = 192000,
+    nx = 50,
     L = 1.0,
     rho1 = 1.0,
     eps = 0.0,
@@ -32,7 +32,7 @@ commandLine(
     # What hydro operator should we test?
     HydroChoice = "SPH",
     solid = True,
-    raja = False,
+    raja = True,
 
     # Should we randomly perturb the positions?
     ranfrac = 0.2,
@@ -56,7 +56,7 @@ commandLine(
 
     # Test parameters
     velCorrection = False,
-    numIters = 10,
+    steps = 5,
     doJitter = False,
     initVel = False,
 
@@ -79,15 +79,18 @@ x3 = L
 #-------------------------------------------------------------------------------
 if testDim == "spherical":
     from SphericalSpheral import *
-    nx1 = ntotal
+    dval = 1
 else:
     exec("from Spheral%s import *" % testDim, globals())
     dval = int(testDim[0])
-    nx1 = int((ntotal+1)**(1/dval))
-nx2 = nx1
-nx3 = nx1
-print(f"N: ({nx1}, {nx2}, {nx3})")
+nx1 = nx
+nx2 = nx
+nx3 = nx
+nxstr = [str(nx) for _ in range(dval)]
+print("SPH Nodes: ", ", ".join(nxstr))
 HydroConstructor = eval(HydroChoice)
+adiak_value("total_steps", steps)
+adiak_value("nPerh", nPerh)
 
 #-------------------------------------------------------------------------------
 # Create a random number generator.
@@ -173,7 +176,7 @@ else:
     raise ValueError("Only tests cases for 1d, 2d, 3d, and Spherical.") 
 
 output("nodes1.numNodes")
-
+adiak_value("total_internal_nodes", nodes1.numInternalNodes)
 #-------------------------------------------------------------------------------
 # Optionally randomly jitter the node positions.
 #-------------------------------------------------------------------------------
@@ -248,10 +251,12 @@ control = SpheralController(integrator,
 
 state = State(db, integrator.physicsPackages())
 derivs = StateDerivatives(db, integrator.physicsPackages())
-for i in range(numIters):
+for i in range(steps):
     print(f"Iter {i}")
     integrator.preStepInitialize(state, derivs)
     integrator.initializeDerivatives(0.0, 1.0, state, derivs)
     derivs.Zero()
+    TimerMgr.timer_begin("advance")
     integrator.evaluateDerivatives(0.0, 1.0, db, state, derivs)
+    TimerMgr.timer_end("advance")
     integrator.finalizeDerivatives(0.0, 1.0, db, state, derivs)
