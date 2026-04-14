@@ -203,7 +203,7 @@ labels, vals_comp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=4.010000/com
 labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=4.010000/nonconservative/Sedov-spherical-RZ.gnu")
 ix = labels.index("x")
 
-answer = SedovSolution(2, gamma, E0=E0, rho0=rho0)
+answer = SedovSolution(3, gamma, E0=E0, rho0=rho0)
 xmin, xmax = np.min(vals_comp[:,ix]), np.max(vals_comp[:,ix])
 xans = np.linspace(xmin, xmax, nsol, endpoint=True)
 nu1 = 1.0/(answer.nu + 2.0)
