@@ -87,7 +87,7 @@ class TestParams:
                                      clas=ffinps,
                                      caliper_filename=cali_name))
                 if tt.ats_inps:
-                    ats_inargs.update(tt.ats_inps)
+                    ats_args.update(tt.ats_inps)
                 test_inps.append(ats_args)
         return test_inps
 

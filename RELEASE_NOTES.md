@@ -12,10 +12,15 @@ Notable changes include:
         * ArtificialViscosityHandle is now ArtificialViscosity.
         * Both inherit from ArtificialViscosityBase.
         * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+    * Added RAJAfied versions of SPH and SolidSPH called SPH_RAJA and SolidSPH_RAJA.
+        * These allow us to test the evaluate derivatives call on device.
+        * Added wrappers for RAJA atomics.
+        * Added performance tests for evaluate derivates to track RAJA kernel performance.
     * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
+    * Added a page to the docs about GPU development. 
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
@@ -42,6 +47,7 @@ Notable changes include:
       * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
       * Added umask command for updating upstreams and removed separate job to update permissions.
       * Build and test job now fails if import of Spheral module fails.
+      * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
