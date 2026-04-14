@@ -4,6 +4,7 @@
 # (using the ATS) before pushing changes to that public repo!
 #-------------------------------------------------------------------------------
 
+glue(raja_test = False)
 glue(fsisph = False)
 glue(gsph = False)
 glue(svph = False)

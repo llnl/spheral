@@ -19,7 +19,6 @@ benchmark_dir = "/usr/WS2/sduser/Spheral/benchmarks"
 # Machine info
 toss_machine_names = ["rzgenie", "rzwhippet", "rzhound", "dane", "rztrona"] # Machines using Slurm scheduler
 toss_cray_machine_names = ["rzadams", "rzvernal", "tioga"] # Machines using Flux scheduler
-np_max_dict = {"rzadams": 84, "rzvernal": 64, "tioga": 64} # Maximum number of processors for ATS to use per node
 ci_launch_flags = {"dane": "--reservation=ci", "rzadams": "-q pdebug"}
 
 #------------------------------------------------------------------------------
@@ -80,7 +79,8 @@ def run_and_report(run_command, ci_output, num_runs):
 # Add any build specific ATS arguments
 def install_ats_args(options):
     import SpheralConfigs
-    install_args = []
+    # Glue some default values
+    install_args = ["--glue='ngpu=0'", "--glue='raja_test=False'", "--glue='independent=True'"]
     if (SpheralConfigs.build_type() == "Debug"):
         install_args.append("--level 99")
     if (not SpheralConfigs.mpi_enabled()):
@@ -88,24 +88,17 @@ def install_ats_args(options):
     comp_configs = SpheralConfigs.hydro_imports()
     test_comps = ["FSISPH", "GSPH", "SVPH"]
     for ts in test_comps:
+        install_args.append(f"--glue='{ts.lower()}=False'")
         if not any(ts in ext for ext in comp_configs):
             install_args.append(f"--filter='not {ts.lower()}'")
     if options.gpu:
         if (not SpheralConfigs.hip_enabled()):
-            raise Exception("Cannot run --gpu tests with non-GPU build")
+            print("Skipping GPU tests for non-GPU build")
+            exit(0)
         install_args.append("--filter='ngpu>0'")
     else:
         install_args.append("--filter='ngpu==0'")
     return install_args
-
-def mac_ats_args(hostname, options):
-    mac_args = []
-    # GPU args
-    if (options.gpu):
-        mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task"')
-    elif hostname in np_max_dict:
-        mac_args.append(f"--npMax {np_max_dict[hostname]}")
-    return mac_args
 
 #---------------------------------------------------------------------------
 # Main routine
@@ -135,6 +128,7 @@ def main():
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
     parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
     parser.add_argument("--gpu", action="store_true", help="Run GPU tests.")
+    parser.add_argument("--cpx", action="store_true", help="Enable CPX mode, allowing 6 GPUs per device.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
@@ -146,6 +140,8 @@ def main():
     # Setup machine info classes
     #---------------------------------------------------------------------------
     test_log_name = "test-logs"
+    if options.gpu:
+        test_log_name = "gpu-"+test_log_name
     temp_uname = os.uname()
     hostname = temp_uname[1].rstrip("0123456789")
     sys_type = os.getenv("SYS_TYPE")
@@ -163,7 +159,7 @@ def main():
     inAllocVars = []
 
     if hostname:
-        mac_args = mac_ats_args(hostname, options) # Machine specific arguments to give to ATS
+        mac_args = [] # Machine specific arguments to give to ATS
         if any(x in hostname for x in toss_machine_names):
             numNodes = numNodes if numNodes else 1
             timeLimit = timeLimit if timeLimit else 60
@@ -185,8 +181,22 @@ def main():
             else:
                 launch_cmd = "flux alloc "
             launch_cmd += f"-xN {numNodes} -t {timeLimit} "
+            if (options.cpx):
+                if (not options.gpu or hostname != "rzadams"):
+                    raise Exception("CPX mode only works with --gpu and on rzadams")
+                launch_cmd += "--amd-gpumode=CPX "
             if (options.delay):
                 launch_cmd += "--begin-time='7 pm' "
+            import SpheralConfigs
+            # GPU args
+            if (options.gpu):
+                mac_args.append('--flux_run_args="-o cpu-affinity=per-task -o gpu-affinity=per-task -u"')
+            elif (SpheralConfigs.gpu_enabled()):
+                # RAJA kernel exec policies (ie threaded, GPU, etc) are currently determined by the build type
+                # Therefore, tests using RAJA kernels for GPU_ENABLED builds must be disabled
+                # unless using the --gpu option for spheral_ats.py
+                mac_args.append("--filter='raja_test==False'")
+                mac_args.append('--flux_run_args="-u"')
         if (options.ciRun):
             for i, j in ci_launch_flags.items():
                 if (i in hostname):
@@ -210,7 +220,6 @@ def main():
     if (options.threads):
         ats_args.append(f"--glue='threads={options.threads}'")
     ats_args.append(f"""--glue='benchmark_dir="{benchmark_dir}"'""")
-    ats_args.append("--glue='independent=True'")
     # Add the current install directory as an ATS input option
     ats_args.append(f"""--glue='install_path="{spheral_prefix}"'""")
     ats_args = " ".join(str(x) for x in ats_args)
@@ -222,6 +231,9 @@ def main():
     if inAlloc:
         if (options.batch or options.delay):
             print("WARNING: --batch and --delay inputs are ignored if in an allocation")
+        # Check if allocation is in CPX mode if necessary
+        if (options.cpx and ("FLUX_MPIBIND_USE_TOPOFILE" not in os.environ.keys())):
+            raise Exception("Must grab allocation with --amd-gpumode=CPX to use CPX mode")
         run_command = cmd
     else:
         run_command = f"{launch_cmd} {cmd}"

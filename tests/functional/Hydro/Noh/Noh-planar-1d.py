@@ -15,12 +15,14 @@
 #
 # Ordinary SPH with RAJA
 #
-#ATS:t50 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem -- 1-D (serial RAJA)")
-#ATS:t51 = testif(t50, SELF, "--raja True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem -- 1-D (serial RAJA) RESTART CHECK")
-#ATS:t52 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem -- 1-D (parallel RAJA)")
-#ATS:t53 = testif(t52, SELF, "--raja True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem -- 1-D (parallel RAJA) RESTART CHECK")
-#ATS:t54 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem -- 1-D (serial RAJA reproducing test setup)")
-#ATS:t55 = testif(t54, SELF, "--raja True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh problem -- 1-D (4 proc RAJA reproducing test)")
+#ATS:tack(raja_test = True)
+#ATS:t50 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem with SPH+RAJA -- 1-D (serial)")
+#ATS:t51 = testif(t50, SELF, "--raja True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem with SPH+RAJA -- 1-D (serial) RESTART CHECK")
+#ATS:t52 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem with SPH+RAJA -- 1-D (parallel)")
+#ATS:t53 = testif(t52, SELF, "--raja True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem with SPH+RAJA -- 1-D (parallel) RESTART CHECK")
+#ATS:t54 = test(       SELF, "--raja True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem with SPH+RAJA -- 1-D (serial reproducing test setup)")
+#ATS:t55 = testif(t54, SELF, "--raja True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh problem with SPH+RAJA -- 1-D (4 proc reproducing test)")
+#ATS:untack("raja_test")
 #
 # Ordinary SPH restart check for SidreFileIO
 #
@@ -34,20 +36,22 @@
 # Ordinary solid SPH
 #
 #ATS:t100 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem with solid SPH -- 1-D (serial)")
-#ATS:t101 = testif(t100, SELF, "--solid True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem with solid SPH -- 1-D (serial RAJA) RESTART CHECK")
-#ATS:t102 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel RAJA)")
-#ATS:t103 = testif(t102, SELF, "--solid True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel RAJA) RESTART CHECK")
-#ATS:t104 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem with solid SPH -- 1-D (serial RAJA reproducing test setup)")
-#ATS:t105 = testif(t104, SELF, "--solid True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh  problem with solid SPH -- 1-D (4 proc RAJA reproducing test)")
+#ATS:t101 = testif(t100, SELF, "--solid True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem with solid SPH -- 1-D (serial) RESTART CHECK")
+#ATS:t102 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel)")
+#ATS:t103 = testif(t102, SELF, "--solid True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel) RESTART CHECK")
+#ATS:t104 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem with solid SPH -- 1-D (serial reproducing test setup)")
+#ATS:t105 = testif(t104, SELF, "--solid True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh  problem with solid SPH -- 1-D (4 proc reproducing test)")
 #
 # Ordinary solid SPH with RAJA
 #
-#ATS:t150 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem with solid SPH -- 1-D (serial)")
-#ATS:t151 = testif(t150, SELF, "--raja True --solid True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem with solid SPH -- 1-D (serial) RESTART CHECK")
-#ATS:t152 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel)")
-#ATS:t153 = testif(t152, SELF, "--raja True --solid True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem with solid SPH -- 1-D (parallel) RESTART CHECK")
-#ATS:t154 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem with solid SPH -- 1-D (serial reproducing test setup)")
-#ATS:t155 = testif(t154, SELF, "--raja True --solid True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh  problem with solid SPH -- 1-D (4 proc reproducing test)")
+#ATS:tack(raja_test = True)
+#ATS:t150 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem with solid SPH+RAJA -- 1-D (serial)")
+#ATS:t151 = testif(t150, SELF, "--raja True --solid True --graphics None --clearDirectories False --checkError False  --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", label="Planar Noh problem with solid SPH+RAJA -- 1-D (serial) RESTART CHECK")
+#ATS:t152 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-restartcheck' --restartStep 20", np=2, label="Planar Noh problem with solid SPH+RAJA -- 1-D (parallel)")
+#ATS:t153 = testif(t152, SELF, "--raja True --solid True --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=2, label="Planar Noh problem with solid SPH+RAJA -- 1-D (parallel) RESTART CHECK")
+#ATS:t154 = test(        SELF, "--raja True --solid True --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-1proc-reproducing.txt'", label="Planar Noh problem with solid SPH+RAJA -- 1-D (serial reproducing test setup)")
+#ATS:t155 = testif(t154, SELF, "--raja True --solid True --graphics None --clearDirectories False  --checkError True  --dataDirBase 'dumps-planar-reproducing' --domainIndependent True --outputFile 'Noh-planar-4proc-reproducing.txt' --comparisonFile 'Noh-planar-1proc-reproducing.txt'", np=4, label="Planar Noh  problem with solid SPH+RAJA -- 1-D (4 proc reproducing test)")
+#untack("raja_test")
 #
 # CRK
 #

@@ -4,22 +4,40 @@
 
 import os
 import numpy as np
+from dataclasses import dataclass
 
 # General number of SPH nodes per core
 # 5k-10k nodes per core for 3d, 1k nodes per core for 2d
 n_per_core_3d = 8000
 n_per_core_2d = 1000
 
+@dataclass
+class PerfTest:
+    test_inps: str = ""
+    ats_inps: dict = None
+
 # Template class for tests. Any class that inherits from this represents a set of tests
 class TestParams:
     # Constructor
     def __init__(self, test_name, test_file, test_vars = None):
+        """
+        Initialize a set of tests.
+
+        Parameters
+        ----------
+        test_name : str
+            Name of the test.
+        test_file : str or os.path
+            Test file.
+        test_vars : dict of PerfTests, default None
+        """
         self.test_type = "spheral"
         self.test_name = test_name
         self.test_file = test_file
         self.test_vars = test_vars
         self.ncores = None
         self.gen_inp = None
+        self.gen_ats_inp = None
 
     def get_test_file(self, install_test_path):
         # Determine path to test files either tests/ or tests/spheral/tests
@@ -41,23 +59,48 @@ class TestParams:
     def set_gen_inputs(self):
         pass
 
-    def get_tests(self):
+    def create_test_inputs(self, test_path, test_runs, threads):
+        """
+        Create the inputs for each run of each test variation.
+        """
+        import time
         self.set_gen_inputs()
-        if not self.test_vars:
-            return {self.test_name: self.gen_inp}
-        else:
-            return {f"{self.test_name}{tvar}": f"{tval} {self.gen_inp}" for tvar, tval in self.test_vars.items()}
+        test_file = self.get_test_file(test_path)
+        test_inps = []
+        ats_args_0 = dict(script=test_file,
+                          np=self.ncores,
+                          nt=threads)
+        for tname, tt in self.test_vars.items():
+            full_test_name = self.test_name + tname
+            finps = f"--adiakData 'test_name: {full_test_name}' {tt.test_inps} {self.gen_inp}"
+            for i in range(test_runs):
+                cali_ext = f"{int(time.time())}.cali"
+                if (test_runs > 1):
+                    cali_name = f"{full_test_name}_{i}_{cali_ext}"
+                else:
+                    cali_name = f"{full_test_name}_{cali_ext}"
+                timer_cmds = f"--caliperFilename {cali_name}"
+                # Create test input string
+                ffinps = finps + " " + timer_cmds
+                ats_args = ats_args_0.copy()
+                ats_args.update(dict(label=full_test_name,
+                                     clas=ffinps,
+                                     caliper_filename=cali_name))
+                if tt.ats_inps:
+                    ats_inargs.update(tt.ats_inps)
+                test_inps.append(ats_args)
+        return test_inps
 
 #---------------------------------------------------------------------------
 # Taylor impact test
-#---------------------------------------------------------------------------        
+#---------------------------------------------------------------------------
 class TaylorImpact(TestParams):
     def __init__(self, ncores):
         super().__init__("3DTAYLOR",
                          "functional/Strength/TaylorImpact/TaylorImpact.py",
-                         {"CRK": "--hydroType CRKSPH --densityUpdate SumVoronoiCellDensity",
-                          "FSI": "--hydroType FSISPH",
-                          "SOLIDSPH": "--hydroType SPH"})
+                         {"CRK": PerfTest(test_inps="--hydroType CRKSPH --densityUpdate SumVoronoiCellDensity"),
+                          "FSI": PerfTest(test_inps="--hydroType FSISPH"),
+                          "SOLIDSPH": PerfTest(test_inps="--hydroType SPH")})
         # Only use half the number of cores
         self.ncores = int(ncores/2)
 
@@ -82,7 +125,8 @@ class TaylorImpact(TestParams):
 class Conv3D(TestParams):
     def __init__(self, ncores):
         super().__init__("3DCONV",
-                         "unit/Boundary/testPeriodicBoundary-3d.py")
+                         "unit/Boundary/testPeriodicBoundary-3d.py",
+                         {"": PerfTest()})
         # Only use half the total cores
         self.ncores = int(ncores/2)
 
@@ -99,13 +143,13 @@ class NOH2D(TestParams):
     def __init__(self, ncores):
         super().__init__("NC2D",
                          "functional/Hydro/Noh/Noh-cylindrical-2d.py",
-                         {"SPH": "--crksph False --solid True",
-                          "FSISPH": "--fsisph True --solid True",
-                          "CRKSPH": "--crksph True --solid True",
-                          "PSPH": "--psph True",
-                          "GSPH": "--gsph True",
-                          "MFM": "--mfm True",
-                          "MFV": "--mfv True"})
+                         {"SPH": PerfTest(test_inps="--crksph False --solid True"),
+                          "FSISPH": PerfTest(test_inps="--fsisph True --solid True"),
+                          "CRKSPH": PerfTest(test_inps="--crksph True --solid True"),
+                          "PSPH": PerfTest(test_inps="--psph True"),
+                          "GSPH": PerfTest(test_inps="--gsph True"),
+                          "MFM": PerfTest(test_inps="--mfm True"),
+                          "MFV": PerfTest(test_inps="--mfv True")})
         # Only use 1/4 the number of cores
         self.ncores = int(ncores/4)
         self.noh_gen_inp = "--cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 "+\
@@ -140,6 +184,27 @@ class NOH3D(NOH2D):
         npd = int(np.cbrt(Ntotal))
         steps = 10
         self.gen_inp = f"{self.noh_gen_inp} --nx {npd} --ny {npd} --nz {npd} --steps {steps}"
+
+#---------------------------------------------------------------------------
+# Evaluate derivatives test
+#---------------------------------------------------------------------------
+class EvalDerivs(TestParams):
+    def __init__(self, ncores):
+        # Overwrite certain ats options for GPU tests
+        gpu_dict = dict(raja_test=True, np=1, nt=1, ngpu=1, nn=1)
+        cpu_dict = dict(raja_test=True)
+        super().__init__("EVALDERIV",
+                         "unit/SPH/evalDerivsRun.py",
+                         {"SOLIDSPH60": PerfTest(test_inps="--nx 60 --solid True", ats_inps=cpu_dict),
+                          "SOLIDSPHGPU60": PerfTest(test_inps="--nx 60 --solid True", ats_inps=gpu_dict),
+                          "SOLIDSPH80": PerfTest(test_inps="--nx 80 --solid True", ats_inps=cpu_dict),
+                          "SOLIDSPHGPU80": PerfTest(test_inps="--nx 80 --solid True", ats_inps=gpu_dict)})
+        # Only use half the number of cores
+        self.ncores = int(ncores/2)
+
+    def set_gen_inputs(self):
+        steps = 5
+        self.gen_inp = f"--raja True --testDim 3d --steps {steps} --iterateH False --nPerh 2.01"
 
 #---------------------------------------------------------------------------
 # General functions

@@ -47,8 +47,8 @@ mpi_enabled = SpheralConfigs.mpi_enabled()
 temp_uname = os.uname()
 hostname = temp_uname[1].rstrip("0123456789")
 mac_procs = {"rzhound": 112, "rzwhippet": 112, "dane": 112,
-             "rzadams": 84, "rzvernal": 64, "tioga": 64,
-             "rzansel": 40, "lassen": 40, "rzgenie": 36}
+             "rzadams": 96, "rzvernal": 64, "tioga": 64,
+             "rzgenie": 36}
 # Find out how many nodes our allocation has grabbed
 num_nodes = max(1, configuration.machine.numNodes)
 if (not mpi_enabled):
@@ -97,40 +97,10 @@ def gather_files(manager):
             os.chmod(p, perms)
             shutil.chown(p, group="sduser")
 
-def spheral_setup_test(test_param, threads=1, **kwargs):
-    '''
-    General method for creating an individual performance test
-    Parameters:
-    test_param: TestParam class for specific test
-    ncores: Total number of cores to use for the test, not number of ranks
-    threads: Number of threads per rank
-    **kwargs: Any additional keyword arguments to pass to ATS tests routine
-    '''
-    ncores = test_param.ncores
-    if (not mpi_enabled):
-        threads = ncores
-        ncores = 1
-    test_file = test_param.get_test_file(test_path)
-    tests = test_param.get_tests()
-    for test_name, inps in tests.items():
-        for i in range(test_runs):
-            if (test_runs > 1):
-                cali_name = f"{test_name}_{i}_{int(time.time())}.cali"
-            else:
-                cali_name = f"{test_name}_{int(time.time())}.cali"
-            timer_cmds = f"--caliperFilename {cali_name} --adiakData 'test_name: {test_name}'"
-            finps = f"{inps} {timer_cmds}"
-            t = test(script=test_file, clas=finps,
-                     label=test_name,
-                     np=ncores,
-                     nt=threads,
-                     caliper_filename=cali_name,
-                     **kwargs)
-
 # If running CI, run gather_files on exit
 if (benchmark_dir):
     onExit(gather_files)
-glue(keep=True, independent=True)
+glue(keep=True, independent=True, ngpu=0, nt=1)
 
 #---------------------------------------------------------------------------
 # Test configurations
@@ -144,7 +114,9 @@ if(os.path.exists(perf_paths[-1])):
 all_tests = pt.get_all_tests(num_cores)
 
 for t in all_tests:
-    spheral_setup_test(t, num_threads)
+    inp_dicts = t.create_test_inputs(test_path, test_runs, num_threads)
+    for i in inp_dicts:
+        test(**i)
 
 # Add a wait to ensure all timer files are done
 wait()
