@@ -115,6 +115,8 @@ update(const KeyType& key,
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
   const auto  massRZ = state.fields(HydroFieldNames::massRZ, Scalar());
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
@@ -146,8 +148,15 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
+      const auto& posi = position(nodeListi, i);
+      const auto& Hi = H(nodeListi, i);
+      const auto  ri = std::abs(posi.y());
+      const auto  zetai = std::abs((Hi*posi).y());
+      const auto  hri = ri*safeInv(zetai);
+      CHECK(hri >= 0.0);
       const auto  mi = mass(nodeListi, i);
-      const auto  mRZi = massRZ(nodeListi, i); //mi*safeInvVar(2.0*M_PI*ri, 0.01*hri);
+      // const auto  mRZi = massRZ(nodeListi, i);
+      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, 0.01*hri);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -156,8 +165,15 @@ update(const KeyType& key,
       const auto  pworkri = pairWork[kk][1];
 
       // State for node j.
+      const auto& posj = position(nodeListj, j);
+      const auto& Hj = H(nodeListj, j);
+      const auto  rj = std::abs(posj.y());
+      const auto  zetaj = std::abs((Hj*posj).y());
+      const auto  hrj = rj*safeInv(zetaj);
+      CHECK(hrj >= 0.0);
       const auto  mj = mass(nodeListj, j);
-      const auto  mRZj = massRZ(nodeListj, j); //mj*safeInvVar(2.0*M_PI*rj, 0.01*hrj);
+      // const auto  mRZj = massRZ(nodeListj, j);
+      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, 0.01*hrj);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -165,7 +181,12 @@ update(const KeyType& key,
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
 
-      // Correct just the r-component error (multiplicative form)
+      // // Exact conservation
+      // const auto dE0ij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      // const auto chiz = dE0ij*safeInv(mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj), tiny);
+      // const auto chir = chiz;
+
+      // Correct r- and z-components individually (multiplicative form)
       const auto dEzij = -(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]);
       const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
       const auto chiz = dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny);
