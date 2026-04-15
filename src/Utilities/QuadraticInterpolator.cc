@@ -9,7 +9,6 @@
 #include "QuadraticInterpolator.hh"
 #include <algorithm>
 
-#include "GPUUtils.hh"
 #include <Eigen/Dense>
 
 namespace Spheral {
@@ -108,7 +107,7 @@ QuadraticInterpolator::initView() {
 // Destructor
 //------------------------------------------------------------------------------
 QuadraticInterpolator::~QuadraticInterpolator() {
-  mcoeffs.free();
+  GPUUtils::freeMAView(mcoeffs);
 }
 
 }

@@ -8,7 +8,6 @@
 #include "CubicHermiteInterpolator.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/safeInv.hh"
-#include "GPUUtils.hh"
 
 #include <Eigen/Sparse>
 
@@ -87,7 +86,7 @@ CubicHermiteInterpolator::initialize(const double xmin,
 // Destructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::~CubicHermiteInterpolator() {
-  mVals.free();
+  GPUUtils::freeMAView(mVals);
 }
 
 void
@@ -146,7 +145,7 @@ CubicHermiteInterpolator::makeMonotonic() {
       }
     }
   }
-  mVals.registerTouch(chai::CPU);
+  GPUUtils::touch(mVals, chai::GPU);
 }
 
 //------------------------------------------------------------------------------

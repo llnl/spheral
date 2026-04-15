@@ -148,10 +148,8 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::
 ~Field() {
-#ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  mDataSpan.free();
-#endif
+  GPUUtils::freeMAView(mDataSpan);
 }
 
 //------------------------------------------------------------------------------
@@ -1372,19 +1370,11 @@ inline
 void
 Field<Dimension, DataType>::
 assignDataSpan() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mDataSpan = mDataArray;
+  GPUUtils::initMAView(mDataSpan, mDataArray);
+  GPUUtils::touch(mDataSpan, chai::GPU);
   DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
-#else
-  if (mDataSpan.size() != mDataArray.size() or
-      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
-    DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
-    GPUUtils::initMAView(mDataSpan, mDataArray);
-  }
-#ifndef CHAI_DISABLE_RM
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mDataSpan.setUserCallback(this->getCallback());
-#endif
-  mDataSpan.registerTouch(chai::CPU);
 #endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();

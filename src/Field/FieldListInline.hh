@@ -115,9 +115,7 @@ inline
 FieldList<Dimension, DataType>::
 ~FieldList() {
   DEBUG_LOG << "FieldList::~FieldList : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.free();
-#endif
+  GPUUtils::freeMAView(mFieldViews);
 }  
 
 //------------------------------------------------------------------------------
@@ -1567,9 +1565,7 @@ buildDependentArrays() {
     mNodeListIndexMap[nptr] = i;
   }
 
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.registerTouch(chai::CPU);
-#endif
+  GPUUtils::touch(mFieldViews, chai::CPU);
 
   ENSURE(mFieldBasePtrs.size() == mFieldPtrs.size());
   ENSURE(mFieldViews.size() == mFieldPtrs.size());

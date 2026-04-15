@@ -8,12 +8,7 @@
 #ifndef __Spheral_FieldView__
 #define __Spheral_FieldView__
 
-#include "chai/ManagedArray.hpp"
-#include "chai/ExecutionSpaces.hpp"
-
-#ifdef SPHERAL_UNIFIED_MEMORY
-#include "Utilities/span.hh"
-#endif
+#include "Utilities/GPUUtils.hh"
 
 namespace Spheral {
 

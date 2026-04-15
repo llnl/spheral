@@ -8,7 +8,12 @@
 #include "DBC.hh"
 
 #include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
 #include "chai/managed_ptr.hpp"
+#include "chai/config.hpp"
+#ifdef SPHERAL_UNIFIED_MEMORY
+#include "span.hh"
+#endif
 #include "RAJA/RAJA.hpp"
 
 //----------------------------------------------------------------------------
@@ -48,10 +53,10 @@ void initGPUs(const int stack_mult);
 // Wrapper for chai::ManagedArray that protects against making
 // one from empty data
 //------------------------------------------------------------------------------
-template<typename DataType, typename ContainerType>
+#ifndef SPHERAL_UNIFIED_MEMORY
+template<typename SpanType, typename ContainerType>
 void
-initMAView(chai::ManagedArray<DataType>& a_ma,
-           ContainerType& a_dc) {
+initMAView(SpanType& a_ma, ContainerType& a_dc) {
   if (a_dc.size() == 0u) {
     a_ma.free();
   } else if ((a_dc.data() != a_ma.data(chai::CPU, false) ||
@@ -60,6 +65,30 @@ initMAView(chai::ManagedArray<DataType>& a_ma,
     a_ma = chai::makeManagedArray(a_dc.data(), a_dc.size(), chai::CPU, false);
   }
 }
+
+template<typename SpanType>
+void
+freeMAView(SpanType& a_ma) { a_ma.free(); }
+
+template<typename SpanType>
+void move(SpanType& a_ma, chai::ExecutionSpace space) { a_ma.move(space); }
+
+template<typename SpanType>
+void touch(SpanType& a_ma, chai::ExecutionSpace space) { a_ma.registerTouch(space); }
+
+#else // SPHERAL_UNIFIED_MEMORY enabled
+template<typename SpanType, typename ContainerType>
+void initMAView(SpanType& a_ma, ContainerType& a_dc) { a_ma = a_dc; }
+
+template<typename SpanType>
+void freeMAView(SpanType& /*a_ma*/) { }
+
+template<typename SpanType>
+void move(SpanType& a_ma, chai::ExecutionSpace /*space*/) { }
+
+template<typename SpanType>
+void touch(SpanType& a_ma, chai::ExecutionSpace /*space*/) { }
+#endif
 
 //------------------------------------------------------------------------------
 // Wrappers for RAJA atomics
