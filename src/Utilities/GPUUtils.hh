@@ -49,11 +49,14 @@ int deviceCount();
 
 void initGPUs(const int stack_mult);
 
+void deviceSync();
+
 //------------------------------------------------------------------------------
 // Wrapper for chai::ManagedArray that protects against making
 // one from empty data
 //------------------------------------------------------------------------------
 #ifndef SPHERAL_UNIFIED_MEMORY
+
 template<typename SpanType, typename ContainerType>
 void
 initMAView(SpanType& a_ma, ContainerType& a_dc) {
@@ -77,6 +80,7 @@ template<typename SpanType>
 void touch(SpanType& a_ma, chai::ExecutionSpace space) { a_ma.registerTouch(space); }
 
 #else // SPHERAL_UNIFIED_MEMORY enabled
+
 template<typename SpanType, typename ContainerType>
 void initMAView(SpanType& a_ma, ContainerType& a_dc) { a_ma = a_dc; }
 
@@ -88,6 +92,7 @@ void move(SpanType& a_ma, chai::ExecutionSpace /*space*/) { }
 
 template<typename SpanType>
 void touch(SpanType& a_ma, chai::ExecutionSpace /*space*/) { }
+
 #endif
 
 //------------------------------------------------------------------------------

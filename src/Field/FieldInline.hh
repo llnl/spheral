@@ -1371,11 +1371,11 @@ void
 Field<Dimension, DataType>::
 assignDataSpan() {
   GPUUtils::initMAView(mDataSpan, mDataArray);
-  GPUUtils::touch(mDataSpan, chai::GPU);
   DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
 #if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mDataSpan.setUserCallback(this->getCallback());
 #endif
+  GPUUtils::touch(mDataSpan, chai::CPU);
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
