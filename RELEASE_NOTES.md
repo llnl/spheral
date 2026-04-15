@@ -556,7 +556,19 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Added verbose time step frequency to `SpheralController`, allowing time step information to be printed every N steps instead of every step.
+    * Periodic work frequencies in `SpheralController` can now be callables, enabling dynamic frequency changes during a simulation.
+    * Added `gradientPairs` to modernize the gradient calculation using node pairs. 
+    * Silo output now supports subdirectories within silo files.
+    * Added support for 1D silo output, readable as curves in VisIt.
+    * Added a damping factor to the ideal H iteration in both SPH and ASPH smoothing scales to improve convergence for difficult initial distributions.
+    * Added a check in `SpheralController` that limits the initial neighbor count to a reasonable value before `iterateIdealH` begins.
+    * `iterateIdealH` now supports extra packages during the initial H iteration and a flag to force Voronoi tessellation.
 
   * Build changes / improvements:
+    * Cleaned up the gradient instantiation template.
 
   * Bug Fixes / improvements:
+    * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
+    * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
+
