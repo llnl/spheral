@@ -940,6 +940,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
     # Check the initial H values and scale them back if needed
     #--------------------------------------------------------------------------
     def checkInitialH(self, limMult = 1.0):
+        from math import pi
         dataBase = self.integrator.dataBase
         H = dataBase.globalHfield
         pos = dataBase.globalPosition
@@ -951,7 +952,6 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         for ni in range(numNodeLists):
             # Get the approximate goal number of nodes for this NodeList
             nPerh = nodeLists[ni].nodesPerSmoothingScale
-            pi = 3.14159
             if self.dim == 1:
                 goalN = 2.0 * nPerh
             elif self.dim == 2:
