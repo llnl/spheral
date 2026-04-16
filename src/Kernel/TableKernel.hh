@@ -57,10 +57,6 @@ public:
     return static_cast<TableKernelView<Dimension>>(*this);
   }
 
-  TableKernelView<Dimension> view() const {
-    return static_cast<TableKernelView<Dimension>>(*this);
-  }
-
 private:
   //--------------------------- Private Interface ---------------------------//
   // Data for the kernel tabulation.

@@ -145,7 +145,7 @@ CubicHermiteInterpolator::makeMonotonic() {
       }
     }
   }
-  GPUUtils::touch(mVals, chai::GPU);
+  GPUUtils::touch(mVals, chai::CPU);
 }
 
 //------------------------------------------------------------------------------

@@ -125,6 +125,7 @@ inline
 void
 PairwiseField<Dimension, Value, numElements>::assignDataSpan() {
   GPUUtils::initMAView(mSpan, mArray);
+  GPUUtils::touch(mSpan, chai::CPU);
   ENSURE(mSpan.size() == mArray.size() and (mArray.empty() or mSpan.data() == &mArray[0]));
 }
 

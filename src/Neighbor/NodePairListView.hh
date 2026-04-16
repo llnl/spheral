@@ -11,15 +11,15 @@ namespace Spheral {
 
 class NodePairListView : public chai::CHAICopyable {
 #ifdef SPHERAL_UNIFIED_MEMORY
-  using ContainerType = SPHERAL_SPAN_TYPE<NodePairIdxType>;
+  using SpanType = SPHERAL_SPAN_TYPE<NodePairIdxType>;
 #else
-  using ContainerType = typename chai::ManagedArray<NodePairIdxType>;
+  using SpanType = typename chai::ManagedArray<NodePairIdxType>;
 #endif
 
 public:
   SPHERAL_HOST_DEVICE NodePairListView() = default;
   SPHERAL_HOST_DEVICE virtual ~NodePairListView() = default;
-  SPHERAL_HOST NodePairListView(ContainerType const &d) : mData(d) {}
+  SPHERAL_HOST NodePairListView(SpanType const &d) : mData(d) {}
 
   SPHERAL_HOST_DEVICE
   NodePairIdxType& operator[](const size_t i) { return mData[i]; }
@@ -39,7 +39,7 @@ public:
   void touch(chai::ExecutionSpace space) { GPUUtils::touch(mData, space); }
 
 protected:
-  ContainerType mData;
+  SpanType mData;
 };
 
 }
