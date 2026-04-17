@@ -1370,8 +1370,7 @@ inline
 void
 Field<Dimension, DataType>::
 assignDataSpan() {
-  GPUUtils::initMAView(mDataSpan, mDataArray);
-  DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
+  GPUUtils::initMAView(mDataSpan, mDataArray, false);
 #if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
   mDataSpan.setUserCallback(this->getCallback());
 #endif

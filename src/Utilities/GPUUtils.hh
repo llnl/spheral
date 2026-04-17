@@ -59,8 +59,8 @@ void deviceSync();
 
 template<typename SpanType, typename ContainerType>
 void
-initMAView(SpanType& a_ma, ContainerType& a_dc) {
-  if (a_dc.size() == 0u) {
+initMAView(SpanType& a_ma, ContainerType& a_dc, bool check_empty = true) {
+  if (a_dc.size() == 0u && check_empty) {
     a_ma.free();
   } else if ((a_dc.data() != a_ma.data(chai::CPU, false) ||
               a_dc.size() != a_ma.size())) {
