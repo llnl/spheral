@@ -26,22 +26,15 @@ if "threads" in opts:
     num_threads = opts["threads"]
 
 # Adding --ciRun to the command line arguments of spheral-ats
-# triggers move of Caliper files to benchmark location
-benchmark_dir = None
 test_runs = 1 # Number of times to run each test
-CIRun = False
 if "cirun" in opts and opts["cirun"]:
-    CIRun = True
     test_runs = 3
-    benchmark_dir = opts["benchmark_dir"]
 is_rerun = False
 if "rerun" in opts and opts["rerun"]:
     is_rerun = True
 #---------------------------------------------------------------------------
 # Hardware configuration
 #---------------------------------------------------------------------------
-# This should be {$SYS_TYPE}_{compiler name}_{compiler version}_{mpi or cuda info}
-spheral_install_config = SpheralConfigs.config()
 mpi_enabled = SpheralConfigs.mpi_enabled()
 # Retrieve the host name and remove any numbers
 temp_uname = os.uname()
@@ -65,41 +58,20 @@ except:
 def gather_files(manager):
     '''
     Function to gather Caliper file when ATS is finished running.
-    Used by ATS for gathering benchmark Caliper files.
     '''
-    instpath = os.path.join(benchmark_dir, spheral_install_config)
-    macpath = os.path.join(instpath, hostname)
-    outdir = os.path.join(macpath, "latest")
-    if (not is_rerun):
-        if (os.path.exists(outdir)):
-            # Move existing benchmark data to a different directory
-            log(f"Renaming existing {outdir} to {int(time.time())}", echo=True)
-            os.rename(outdir, os.path.join(macpath, f"{int(time.time())}"))
-        log(f"Creating {outdir}", echo=True)
-        os.makedirs(outdir)
     filtered = [test for test in manager.testlist if test.status is PASSED]
-    # Set read/write/execute permissions for owner and group
-    perms = stat.S_IRWXU | stat.S_IRWXG
+    logdir = log.directory
+    log(f"Copying caliper files to {logdir}")
     for test in filtered:
         run_dir = test.directory
         cali_filename = test.options["caliper_filename"]
         cfile = os.path.join(run_dir, cali_filename)
         test_name = test.options["label"]
-        outfile = os.path.join(outdir, cali_filename)
-        log(f"Moving {cali_filename} to {outdir}", echo=True)
-        if (CIRun):
-            shutil.move(cfile, outfile)
-            os.chmod(outfile, perms)
-            shutil.chown(outfile, group="sduser")
-    if (CIRun):
-        cpaths = [outdir, macpath, instpath, benchmark_dir]
-        for p in cpaths:
-            os.chmod(p, perms)
-            shutil.chown(p, group="sduser")
+        outfile = os.path.join(logdir, cali_filename)
+        shutil.move(cfile, outfile)
 
 # If running CI, run gather_files on exit
-if (benchmark_dir):
-    onExit(gather_files)
+onExit(gather_files)
 glue(keep=True, independent=True, ngpu=0, nt=1)
 
 #---------------------------------------------------------------------------

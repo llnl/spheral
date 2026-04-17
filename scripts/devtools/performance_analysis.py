@@ -292,13 +292,14 @@ def main():
                     ref_files = curdata.metadata["benchmark_dir"].iloc[0]
                 except:
                     raise Exception("No reference or benchmark data specified")
-            # If we using benchmark reference data, only grab the current install/machine
+            # If using benchmark reference data, only grab the current install/machine
             # Get install config and machine name from current data
             install_config = curdata.metadata["install_config"].iloc[0]
             machine_name = curdata.metadata["cluster"].iloc[0]
-            ref_loc = os.path.join(ref_files, install_config, machine_name, "latest")
+            ref_loc = os.path.join(ref_files, install_config, machine_name)
             if (not os.path.exists(ref_loc)):
                 raise Exception(f"Benchmark location {ref_loc} does not exists")
+            ref_dir = sorted(glob.glob(os.path.join(ref_loc, "*")))[-1]
             cali_ref_files = glob.glob(os.path.join(ref_loc, "*.cali"), recursive=True)
 
     if (len(cali_ref_files) == 0):

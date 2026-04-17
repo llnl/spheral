@@ -51,9 +51,10 @@ def extract_data(cali_file):
     return runday, rtimes
 
 def get_spec(cali_file):
-    # If cali_file is just a dir, grab a cali file from latest
+    # If cali_file is just a dir, grab the latest caliper file
     if os.path.isdir(cali_file):
-        cali_file = glob.glob(os.path.join(cali_file, "latest/*.cali"))[0]
+        perf_dir = sorted(glob.glob(os.path.join(cali_file, "*")))[-1]
+        cali_file = glob.glob(os.path.join(perf_dir, "*.cali"))[0]
     gls = cr.read_caliper_globals(cali_file)
     return gls["spec"]
 
