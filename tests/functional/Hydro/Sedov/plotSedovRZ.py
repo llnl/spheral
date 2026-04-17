@@ -93,8 +93,8 @@ def plotIt(labels, vals1, vals2,
 
 #**************************************** Planar ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-Sedov-RZ/planar/SPH/nPerh=4.010000/compatibleEnergy/Sedov-planar-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/planar/SPH/nPerh=4.010000/nonconservative/Sedov-planar-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-Sedov-RZ/planar/SPH/nPerh=6.010000/compatibleEnergy/Sedov-planar-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/planar/SPH/nPerh=6.010000/nonconservative/Sedov-planar-RZ.gnu")
 ix = labels.index("x")
 
 answer = SedovSolution(1, gamma, E0=E0, rho0=rho0)
@@ -145,8 +145,8 @@ epsPlot.figure.savefig("Sedov-RZ-planar-eps.png")
 
 #**************************************** Cylindrical ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-Sedov-RZ/cylindrical/SPH/nPerh=4.010000/compatibleEnergy/Sedov-cylindrical-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/cylindrical/SPH/nPerh=4.010000/nonconservative/Sedov-cylindrical-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-Sedov-RZ/cylindrical/SPH/nPerh=6.010000/compatibleEnergy/Sedov-cylindrical-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/cylindrical/SPH/nPerh=6.010000/nonconservative/Sedov-cylindrical-RZ.gnu")
 ix = labels.index("x")
 
 answer = SedovSolution(2, gamma, E0=E0, rho0=rho0)
@@ -199,8 +199,8 @@ epsPlot.figure.savefig("Sedov-RZ-cylindrical-eps.png")
 
 #**************************************** Spherical ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=4.010000/compatibleEnergy/Sedov-spherical-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=4.010000/nonconservative/Sedov-spherical-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=6.010000/compatibleEnergy/Sedov-spherical-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-Sedov-RZ/spherical/SPH/nPerh=6.010000/nonconservative/Sedov-spherical-RZ.gnu")
 ix = labels.index("x")
 
 answer = SedovSolution(3, gamma, E0=E0, rho0=rho0)

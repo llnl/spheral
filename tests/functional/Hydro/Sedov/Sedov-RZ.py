@@ -23,7 +23,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             n2 = 20,
 
             seed = "lattice",
-            nPerh = 4.01,
+            nPerh = 6.01,
 
             gamma = 5.0/3.0,
             mu = 1.0,
@@ -40,8 +40,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             asph = False,              # Choose the H advancement
             compatibleEnergy = True,
             evolveTotalEnergy = False,  # Only for SPH variants -- evolve total rather than specific energy
-            Cl = 1.5,
-            Cq = 1.0,
+            Cl = None, #1.5,
+            Cq = None, #1.0,
             linearInExpansion = None,
             quadraticInExpansion = None,
             balsaraCorrection = None,

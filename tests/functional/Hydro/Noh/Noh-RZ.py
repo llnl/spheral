@@ -49,7 +49,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             n2 = 20,
 
             seed = "lattice",
-            nPerh = 4.01,
+            nPerh = 6.01,
 
             gamma = 5.0/3.0,
             mu = 1.0,
@@ -78,8 +78,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             fcentroidal = 0.0,
             fcellPressure = 0.0,
             Qhmult = 1.0,
-            Cl = 1.5,
-            Cq = 1.0,
+            Cl = None, #1.5,
+            Cq = None, #1.0,
             linearInExpansion = None,
             quadraticInExpansion = None,
             balsaraCorrection = None,
@@ -389,6 +389,7 @@ output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
 output("hydro._smoothingScaleMethod.HEvolution")
+output("hydro.zaxisBC.etamin")
 
 packages = [hydro]
 

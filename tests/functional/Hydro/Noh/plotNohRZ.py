@@ -92,8 +92,8 @@ def plotIt(labels, vals1, vals2,
 
 #**************************************** Planar ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-rz-Noh/planar/SPH/nPerh=4.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-rz-Noh/planar/SPH/nPerh=4.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-rz-Noh/planar/SPH/nPerh=6.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-rz-Noh/planar/SPH/nPerh=6.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
 ix = labels.index("x")
 
 xmin, xmax = np.min(vals_comp[:,ix]), np.max(vals_comp[:,ix])
@@ -142,8 +142,8 @@ epsPlot.figure.savefig("Noh-RZ-planar-eps.png")
 
 #**************************************** Cylindrical ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-rz-Noh/cylindrical/SPH/nPerh=4.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-rz-Noh/cylindrical/SPH/nPerh=4.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-rz-Noh/cylindrical/SPH/nPerh=6.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-rz-Noh/cylindrical/SPH/nPerh=6.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
 ix = labels.index("x")
 
 xmin, xmax = np.min(vals_comp[:,ix]), np.max(vals_comp[:,ix])
@@ -191,8 +191,8 @@ epsPlot.figure.savefig("Noh-RZ-cylindrical-eps.png")
 
 #**************************************** Spherical ****************************************
 # Read the tabulated point info
-labels, vals_comp = readGnuFile("dumps-rz-Noh/spherical/SPH/nPerh=4.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
-labels, vals_noncomp = readGnuFile("dumps-rz-Noh/spherical/SPH/nPerh=4.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
+labels, vals_comp = readGnuFile("dumps-rz-Noh/spherical/SPH/nPerh=6.010000/compatibleEnergy=True/Cullen=False/Noh-RZ.gnu")
+labels, vals_noncomp = readGnuFile("dumps-rz-Noh/spherical/SPH/nPerh=6.010000/compatibleEnergy=False/Cullen=False/Noh-RZ.gnu")
 ix = labels.index("x")
 
 xmin, xmax = np.min(vals_comp[:,ix]), np.max(vals_comp[:,ix])
