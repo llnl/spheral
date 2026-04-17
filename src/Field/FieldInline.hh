@@ -148,8 +148,10 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::
 ~Field() {
+#ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  GPUUtils::freeMAView(mDataSpan);
+  mDataSpan.free();
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -1370,11 +1372,20 @@ inline
 void
 Field<Dimension, DataType>::
 assignDataSpan() {
-  GPUUtils::initMAView(mDataSpan, mDataArray, false);
-#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mDataSpan = mDataArray;
+  DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
+#else
+  if (mDataSpan.size() != mDataArray.size() or
+      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
+    DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
+    GPUUtils::initMAView(mDataSpan, mDataArray);
+  }
+#ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());
 #endif
-  GPUUtils::touch(mDataSpan, chai::CPU);
+  mDataSpan.registerTouch(chai::CPU);
+#endif
   mNumInternalElements = this->nodeList().numInternalNodes();
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());

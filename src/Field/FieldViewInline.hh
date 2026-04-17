@@ -467,8 +467,6 @@ FieldView<Dimension, DataType>::
 data(chai::ExecutionSpace space,
      bool do_move) const {
 #ifdef SPHERAL_UNIFIED_MEMORY
-  CONTRACT_VAR(space);
-  CONTRACT_VAR(do_move);
   return mDataSpan.data();
 #else
   return mDataSpan.data(space, do_move);
@@ -484,7 +482,9 @@ inline
 void
 FieldView<Dimension, DataType>::
 move(chai::ExecutionSpace space) {
-  GPUUtils::move(mDataSpan, space);
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.move(space);
+#endif
 }
   
 //------------------------------------------------------------------------------
@@ -512,7 +512,9 @@ inline
 void
 FieldView<Dimension, DataType>::
 touch(chai::ExecutionSpace space) {
-  GPUUtils::touch(mDataSpan, space);
+#ifndef SPHERAL_UNIFIED_MEMORY
+  mDataSpan.registerTouch(space);
+#endif
 }
 
 //****************************** Global Functions ******************************
