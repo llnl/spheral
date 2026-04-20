@@ -192,19 +192,22 @@ class EvalDerivs(TestParams):
     def __init__(self, ncores):
         # Overwrite certain ats options for GPU tests
         gpu_dict = dict(raja_test=True, np=1, nt=1, ngpu=1, nn=1)
-        cpu_dict = dict(raja_test=True)
+        raja_cpu_dict = dict(raja_test=True, np=int(ncores/8), nt=2)
+        cpu_dict = dict(raja_test=False)
         super().__init__("EVALDERIV",
                          "unit/SPH/evalDerivsRun.py",
                          {"SOLIDSPH60": PerfTest(test_inps="--nx 60 --solid True", ats_inps=cpu_dict),
-                          "SOLIDSPHGPU60": PerfTest(test_inps="--nx 60 --solid True", ats_inps=gpu_dict),
+                          "SOLIDSPHGPU60": PerfTest(test_inps="--nx 60 --solid True --raja True", ats_inps=gpu_dict),
+                          "SOLIDSPHRAJA60": PerfTest(test_inps="--nx 60 --solid True --raja True", ats_inps=raja_cpu_dict),
                           "SOLIDSPH80": PerfTest(test_inps="--nx 80 --solid True", ats_inps=cpu_dict),
-                          "SOLIDSPHGPU80": PerfTest(test_inps="--nx 80 --solid True", ats_inps=gpu_dict)})
+                          "SOLIDSPHGPU80": PerfTest(test_inps="--nx 80 --solid True --raja True", ats_inps=gpu_dict),
+                          "SOLIDSPHRAJA80": PerfTest(test_inps="--nx 80 --solid True --raja True", ats_inps=raja_cpu_dict)})
         # Only use half the number of cores
-        self.ncores = int(ncores/2)
+        self.ncores = int(ncores/4)
 
     def set_gen_inputs(self):
         steps = 5
-        self.gen_inp = f"--raja True --testDim 3d --steps {steps} --iterateH False --nPerh 2.01"
+        self.gen_inp = f"--testDim 3d --steps {steps} --iterateH False --nPerh 2.01"
 
 #---------------------------------------------------------------------------
 # General functions
