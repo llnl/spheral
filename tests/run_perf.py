@@ -3,7 +3,7 @@
 # This file runs and compares performance tests through the ats system.
 # Run using: ./spheral-ats tests/run_perf.py
 
-import sys, shutil, os, time, stat
+import sys, shutil, os
 import numpy as np
 import SpheralConfigs
 from SpheralTestUtilities import num_3d_cyl_nodes

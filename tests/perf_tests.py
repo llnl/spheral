@@ -50,6 +50,9 @@ class TestParams:
         else:
             raise OSError(f"Test file {self.test_file} cannot be found.")
 
+    def test_base_name(self):
+        return self.test_name
+
     def test_names(self):
         if not self.test_vars:
             return [self.test_name]
@@ -72,7 +75,7 @@ class TestParams:
                           nt=threads)
         for tname, tt in self.test_vars.items():
             full_test_name = self.test_name + tname
-            finps = f"--adiakData 'test_name: {full_test_name}' {tt.test_inps} {self.gen_inp}"
+            finps = f"--adiakData 'test_name: {full_test_name}, test_base: {self.test_name}, test_var: {tname}' {tt.test_inps} {self.gen_inp}"
             for i in range(test_runs):
                 cali_ext = f"{int(time.time())}.cali"
                 if (test_runs > 1):
@@ -230,4 +233,10 @@ def get_all_test_names():
     names = []
     for i in tests:
         names.extend(i.test_names())
+    return names
+
+def get_test_bases():
+    "Return the test base names with the longest name first"
+    tests = get_all_tests()
+    names = sorted([i.test_base_name() for i in tests], key=len, reverse=True)
     return names
