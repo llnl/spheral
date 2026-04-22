@@ -26,9 +26,6 @@ from IPython.display import display
 from IPython.display import HTML
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdate
-from matplotlib.legend_handler import HandlerTuple
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -145,27 +142,6 @@ def compare_config(cdata, rdata):
 def filter_tests(data, test_name):
     return data.filter_metadata(lambda x: x["test_name"] == test_name)
 
-def group_dates(tk):
-    "Group Thickets based on day they were launched. Returns a GroupBy of Thickets."
-    # Add metadata pertaining to the day they are launched
-    mus = mdate.MUSECONDS_PER_DAY
-    tk.metadata["nday"] = tk.metadata["launchdate"].apply(lambda x: int(x*1E6/mus))
-    return tk.groupby(["nday"])
-
-def get_hist_times(test_name, bench_path, cluster, region):
-    """
-    Retrieve the historical benchmark times for a given test, benchmark directory,
-    and machine. Only includes tests that contain the provided region.
-    """
-    hist_cali_files = glob.glob(os.path.join(bench_path, "**", cluster, "**",
-                                             test_name+"*.cali"), recursive=True)
-    if (not hist_cali_files):
-        raise Exception(f"No {test_name}_*.cali files found for {cluster}")
-    hist_data = th.Thicket.from_caliperreader(hist_cali_files, disable_tqdm=True)
-    test_group = ["install_config"]
-    test_dict = hist_data.groupby(test_group)
-    return test_dict
-
 def get_caliper_files_and_bench(file_path):
     atsFile = os.path.join(file_path, "atsr.py")
     cali_files = []
@@ -180,8 +156,6 @@ def get_caliper_files_and_bench(file_path):
         state = globals()["state"]
         tests = [t for t in state["testlist"] if t['status'] == PASSED]
         for test in tests:
-            # Retrieve the Caliper file from run
-            run_dir = test["directory"]
             if ("caliper_filename" in test["options"]):
                 cali_file = test["options"]["caliper_filename"]
             else:
@@ -189,7 +163,10 @@ def get_caliper_files_and_bench(file_path):
             # Check if benchmark_dir is in ats options
             if (not benchmarks and "benchmark_dir" in test["options"]):
                 benchmarks = test["options"]["benchmark_dir"]
-            cfile = os.path.join(run_dir, cali_file)
+            # Check if the run_perf.py gathered the Caliper files or not
+            cfile = os.path.join(file_path, cali_file)
+            if (not os.path.exists(cfile)):
+                cfile = os.path.join(test["directory"], cali_file)
             cali_files.append(cfile)
     else:
         newpath = os.path.join(file_path, "**/*.cali")
@@ -299,19 +276,10 @@ def main():
             ref_loc = os.path.join(ref_files, install_config, machine_name)
             if (not os.path.exists(ref_loc)):
                 raise Exception(f"Benchmark location {ref_loc} does not exists")
-            ref_dir = sorted(glob.glob(os.path.join(ref_loc, "*")))[-1]
-            cali_ref_files = glob.glob(os.path.join(ref_loc, "*.cali"), recursive=True)
+            cali_ref_files = glob.glob(os.path.join(ref_loc, "**/*.cali"), recursive=True)
 
     if (len(cali_ref_files) == 0):
         raise Exception(f"No Caliper files found in {cali_ref_files}")
-    refdata = th.Thicket.from_caliperreader(cali_ref_files, disable_tqdm=True)
-
-    # Group, filter, and compare performance data
-    #--------------------------------------------
-
-    # Filter data set by tests
-    ref_test_data = group_tests(refdata)
-    ref_test_data = remove_nans(ref_test_data)
 
     test_status = {}
     # Iterate over each test
@@ -319,6 +287,9 @@ def main():
         test_name = test_key[0]
         if (args.test_name and args.test_name != test_name):
             continue
+        ref_test_files = [i for i in cali_ref_files if test_name in i]
+        ref_test_data = th.Thicket.from_caliperreader(ref_test_files, disable_tqdm=True)
+        ref_test_data = group_tests(ref_test_data)
         test_sph_nodes = test_key[1]
         test_steps = test_key[2]
         if (test_key not in ref_test_data):
@@ -351,7 +322,7 @@ def main():
             print(f"{comp_region} not found in {perfdata}")
             continue
         if (not check_for_region(rtest, comp_region)):
-            print(f"{comp_region} not found in {os.path.dirname(cali_ref_files[0])}")
+            print(f"{comp_region} not found in {os.path.dirname(ref_test_files[0])}")
             continue
         cmain = get_times(ctest.statsframe, comp_region, cmetrics[0])[0]
         rmain = get_times(rtest.statsframe, comp_region, cmetrics[0])[0]
@@ -382,13 +353,13 @@ def main():
             if args.display:
                 ctest.statsframe.dataframe["pdata2"] = rtest.statsframe.dataframe[cmetrics[1]]
                 display(ctest.statsframe.tree(cmetrics[1], "pdata2"))
-    num_failed = 0
     if (do_thresh_test):
+        print("Negative values mean local data was faster than reference")
         print(f"Test name: test status, % change in time of {comp_region} region")
-        print("Negative values mean perfdata was faster than reference")
     else:
-        print(f"Test name: % change in time of {comp_region} region")
         print("Negative values mean perfdata1 was faster than perfdata2")
+        print(f"Test name: % change in time of {comp_region} region")
+    failed_tests = []
     for test_name, val in test_status.items():
         if ("SKIPPED" in val[0]):
             diff_str = " ".join(str(x) for x in val[1])
@@ -398,7 +369,7 @@ def main():
             rtime = val[2]
             thresh = val[3]
             if ("FAILED" in val[0]):
-                num_failed += 1
+                failed_tests.append(test_name)
                 print(f"{test_name}: FAILED, {(ctime/rtime-1.)*100.:0.3f}%")
             else:
                 print(f"{test_name}: PASSED, {(ctime/rtime-1.)*100.:0.3f}%")
@@ -406,8 +377,10 @@ def main():
             ctime = val[1]
             rtime = val[2]
             print(f"{test_name}: {(ctime/rtime-1.)*100.:0.3f}%")
-    if (num_failed > 0):
-        raise Exception(f"{num_failed} have failed")
+    if (len(failed_tests) > 0):
+        print("ERROR: The following tests have failed:")
+        for i in failed_tests:
+            print(i)
 
 if __name__ == "__main__":
     main()
