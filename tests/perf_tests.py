@@ -7,7 +7,7 @@ import numpy as np
 
 # General number of SPH nodes per core
 # 5k-10k nodes per core for 3d, 1k nodes per core for 2d
-n_per_core_3d = 8000
+n_per_core_3d = 48 * (1024)
 n_per_core_2d = 1000
 
 # Template class for tests. Any class that inherits from this represents a set of tests
@@ -50,7 +50,7 @@ class TestParams:
 
 #---------------------------------------------------------------------------
 # Taylor impact test
-#---------------------------------------------------------------------------        
+#---------------------------------------------------------------------------
 class TaylorImpact(TestParams):
     def __init__(self, ncores):
         super().__init__("3DTAYLOR",
@@ -59,7 +59,7 @@ class TaylorImpact(TestParams):
                           "FSI": "--hydroType FSISPH",
                           "SOLIDSPH": "--hydroType SPH"})
         # Only use half the number of cores
-        self.ncores = int(ncores/2)
+        self.ncores = int(ncores)
 
     def set_gen_inputs(self):
         from SpheralTestUtilities import num_3d_cyl_nodes
@@ -117,7 +117,7 @@ class NOH2D(TestParams):
         rmin = 0.
         rmax = 1.
         thetaFactor = 0.5
-        Ntotal2d = self.ncores*n_per_core_2d
+        Ntotal2d = self.ncores*n_per_core_2d + 1
         # Determine nRadial to get Ntotal2d number of SPH nodes for a constantDTheta distribution
         area = np.pi*rmax**2*thetaFactor/2.
         dr = np.sqrt(area/Ntotal2d)
