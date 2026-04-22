@@ -569,7 +569,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         normi += mRZi/rhoi*Wi;
         normj += mRZj/rhoj*Wj;
       }
-      const auto gradWij = 0.5*(gradWi + gradWj);
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
@@ -592,8 +591,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi) + Pj/(rhoRZj*rhoRZj))*gradWij + Qacci + Qaccj);
-      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi) + Pj/(rhoRZj*rhoRZj))*gradWij + Qacci + Qaccj);
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (Pi/(rhoRZi*rhoRZi)*gradWi + Pj/(rhoRZj*rhoRZj)*gradWj) + Qacci + Qaccj);
       DvDti -= deltaDvDti;
       DvDtj += deltaDvDtj;
 
@@ -629,7 +628,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Estimate of delta v (for XSPH).
       if (sameMatij) {// or min(zetai, zetaj) < 1.0) {
-        const auto wXSPHij = 0.5*(mRZi/rhoi*Wi + mRZj/rhoj*Wj);
+        const auto wXSPHij = 0.5*(mRZi/rhoRZi*Wi + mRZj/rhoRZj*Wj);
         XSPHWeightSumi += wXSPHij;
         XSPHWeightSumj += wXSPHij;
         XSPHDeltaVi -= wXSPHij*vij;
@@ -727,7 +726,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], hri, dt);
 
       // Finish the continuity equation.
-      XSPHWeightSumi += Hdeti*mRZi*W0;
+      XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
