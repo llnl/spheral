@@ -722,7 +722,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Estimate of delta v (for XSPH).
       if (sameMatij or min(zetai, zetaj) < 1.0) {
-        const auto wXSPHij = 0.5*(mRZi/rhoi*Wi + mRZj/rhoj*Wj);
+        const auto wXSPHij = 0.5*(mRZi/rhoRZi*Wi + mRZj/rhoRZj*Wj);
         XSPHWeightSumi += wXSPHij;
         XSPHWeightSumj += wXSPHij;
         XSPHDeltaVi -= wXSPHij*vij;
@@ -833,7 +833,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       }
 
       // Evaluate the continuity equation.
-      XSPHWeightSumi += Hdeti*mRZi*W0;
+      XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
