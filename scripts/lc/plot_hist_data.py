@@ -28,6 +28,11 @@ import hist_data_utils as hdu
 num_of_months = 6
 # Which region to plot
 plot_region = "advance"
+subheader = f"""
+  <p>Plots show average time per rank per SPH node per step of the {plot_region} region, averaged again over 3 runs.</p>
+  <p>3D tests also show the minimum and maximum times of the 3 runs as the bounds of the shaded area.</p>
+  <p>Double-click legend entries to isolate them in the plot. Click and drag to zoom.</p>
+"""
 colors = px.colors.qualitative.G10
 
 def init_worker():
@@ -35,20 +40,23 @@ def init_worker():
     reg_names = ["advance", "ConnectivityMap_computeConnectivity", "computeVoronoiVolume"]
     spot_metric = "avg#inclusive#sum#time.duration"
 
-def get_problem_size(gls):
-    return int(gls['total_internal_nodes'])
+def normalize_time(gls):
+    "Normalize time by the number of nodes and number of steps"
+    sph_nodes = int(gls['total_internal_nodes'])
+    steps = int(gls['total_steps'])
+    return 1./(sph_nodes*steps)
 
 def extract_data(cali_file):
     global reg_names, spot_metric
     (records, gls) = cr.read_caliper_contents(cali_file)
     runday = int(gls["launchdate"])
-    sph_nodes = get_problem_size(gls)
+    time_norm = normalize_time(gls)
     rtimes = {}
     for rec in records:
         if ('path' in rec):
             for rg in reg_names:
                 if (rec["path"][-1] == rg):
-                    tval = float(rec[spot_metric])/sph_nodes
+                    tval = float(rec[spot_metric])*time_norm
                     if (rg in rtimes.keys()):
                         rtimes[rg] += tval
                     else:
@@ -118,7 +126,7 @@ def convert_to_dataframe(in_array, test_base_names):
 def create_plot(in_df):
     mac_name = in_df["Machine"].unique()[0]
     specs = in_df["Spec"].unique()
-    test_bases = in_df["Test Base"].unique()
+    test_bases = sorted(in_df["Test Base"].unique())
     figs = []
     # Pick the region to plot
     df = in_df[in_df["Region"] == plot_region]
@@ -126,8 +134,11 @@ def create_plot(in_df):
         spec_df = df[df["Spec"] == spec]
         for test_base in test_bases:
             test_df = spec_df[spec_df["Test Base"] == test_base]
-            fig = px.line(title=f"Test: {test_base}, Spec: {spec}")
-            test_vars = test_df["Test Var"].unique()
+            title = f"Test: {test_base}, Spec: {spec}, Avg"
+            if "2D" not in test_base:
+                title += ", Min, and Max"
+            fig = px.line(title=title)
+            test_vars = sorted(test_df["Test Var"].unique())
             for cindx, var in enumerate(test_vars):
                 ccolor = colors[cindx]
                 cdf = test_df[test_df["Test Var"] == var]
@@ -156,7 +167,7 @@ def create_plot(in_df):
                                 name=f"{var}",
                                 legendgroup=var,
                                 showlegend=True)
-                fig.update_yaxes(title_text=f"Avg grind time of {plot_region}")
+                fig.update_yaxes(title_text=f"Grind time of region {plot_region}")
             figs.append(fig)
     return figs
 
@@ -245,8 +256,14 @@ def main():
             mac_df = df_data[df_data["Machine"] == mac]
             figs = create_plot(mac_df)
             page_content = hdu.create_page_content(figs)
-            hdu.create_html_file(os.path.join(doc_dir, f"{mac}.html"), file_link_dict, mac, page_content)
-        hdu.create_html_file(os.path.join(doc_dir, "index.html"), file_link_dict, "Historical Spheral Timing Benchmarks", [])
+            hdu.create_html_file(file_name=os.path.join(doc_dir, f"{mac}.html"),
+                                 file_dict=file_link_dict,
+                                 title=mac,
+                                 content=page_content,
+                                 subheader=subheader)
+        hdu.create_html_file(file_name=os.path.join(doc_dir, "index.html"),
+                             file_dict=file_link_dict,
+                             title="Historical Spheral Timing Benchmarks")
         end_time = time.time()
         run_time = end_time - start_time
         print(f"Script time: {run_time:.4f} seconds")
