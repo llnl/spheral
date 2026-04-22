@@ -54,6 +54,8 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             gamma = 5.0/3.0,
             mu = 1.0,
 
+            vetaramp = 1.0,                    # Optionally ramp velocity to zero as we approach the origin (0 => no ramp)
+
             solid = False,                     # If true, use the fluid limit of the solid hydro option
             asph = False,                      # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
 
@@ -329,15 +331,30 @@ output("mpi.reduce(nodes1.numInternalNodes, mpi.SUM)")
 nodes1.specificThermalEnergy(ScalarField("tmp", nodes1, eps0))
 nodes1.massDensity(ScalarField("tmp", nodes1, rho0))
 
+def velRamp(posi, Hi):
+    def etai(eta):
+        if problem == "planar":
+            return eta.x
+        elif problem == "cylindrical":
+            return eta.y
+        else:
+            return eta.magnitude()
+    if vetaramp > 0.0:
+        xeta = etai(Hi*posi)
+        return min(1.0, xeta/vetaramp)
+    else:
+        return 1.0
+
 # Set node velocities
 pos = nodes1.positions()
 vel = nodes1.velocity()
+H = nodes1.Hfield()
 if problem == "spherical":
     for i in range(nodes1.numNodes):
-        vel[i] = -1.0 * pos[i].unitVector()
+        vel[i] = -1.0 * pos[i].unitVector() * velRamp(pos[i], H[i])
 else:
     for i in range(nodes1.numNodes):
-        vel[i] = Vector(vz0, vr0)
+        vel[i] = Vector(vz0, vr0) * velRamp(pos[i], H[i])
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -412,7 +429,6 @@ output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
-output("q.limiter")
 output("q.balsaraShearCorrection")
 output("q.linearInExpansion")
 output("q.quadraticInExpansion")
