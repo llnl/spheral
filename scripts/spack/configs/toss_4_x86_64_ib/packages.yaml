@@ -20,7 +20,8 @@ packages:
           c: /usr/tce/packages/gcc/gcc-10.3.1/bin/gcc
           cxx: /usr/tce/packages/gcc/gcc-10.3.1/bin/g++
           fortran: /usr/tce/packages/gcc/gcc-10.3.1/bin/gfortran
-        flags: {}
+        flags:
+          cxxflags: -march=native
         environment: {}
         extra_rpaths: []
   llvm:
