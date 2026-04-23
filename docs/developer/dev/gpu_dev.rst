@@ -3,8 +3,8 @@ GPU Porting
 
 This page attempts to document some of the lessons learned and pitfalls we have experienced during the effort of porting Spheral to GPUs.
 
-On-Device Virtual Function Lookup
-=================================
+On-Device Virtual Function Lookup on AMD GPUS
+=============================================
 
 Using virtual functions on-device has been a significant source of issues along the way.
 At this point, ``QPiij`` in ``evaluateDerivativesImpl`` is the only virtual function call we do on the device.

@@ -63,12 +63,23 @@ def extract_data(cali_file):
                         rtimes[rg] = tval
     return runday, rtimes
 
-def get_spec(cali_file):
+def get_globals(cali_file):
     # If cali_file is just a dir, grab the latest caliper file
-    if os.path.isdir(cali_file):
+    if type(cali_file) == list:
+        cali_file = cali_file[0]
+    elif os.path.isdir(cali_file):
         perf_dir = sorted(glob.glob(os.path.join(cali_file, "*")))[-1]
         cali_file = glob.glob(os.path.join(perf_dir, "*.cali"))[0]
     gls = cr.read_caliper_globals(cali_file)
+    return gls
+
+def get_host(cali_file):
+    gls = get_globals(cali_file)
+    return gls["cluster"]
+
+def get_spec(cali_file):
+    # If cali_file is just a dir, grab the latest caliper file
+    gls = get_globals(cali_file)
     return gls["spec"]
 
 def compare_time(cfile, num_of_months):
@@ -78,7 +89,7 @@ def compare_time(cfile, num_of_months):
     return False
 
 def get_latest_files(cdir, test_name, num_of_months):
-    all_files = glob.glob(os.path.join(cdir, f"*/{test_name}*.cali"))
+    all_files = glob.glob(os.path.join(cdir, f"{test_name}*.cali"))
     cali_files = [cf for cf in all_files if compare_time(cf, num_of_months)]
     return cali_files
 
@@ -179,6 +190,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--doc-dir", default="public")
     parser.add_argument("--bench", default="/usr/workspace/sduser/Spheral/benchmarks")
+    parser.add_argument("--local-run-dir", default=None)
     parser.add_argument("--threads", default=None, type=int)
     parser.add_argument("--pkg-name", type=str, help="Either Spheral or LLNLSpheral")
     parser.add_argument("--test", action="store_true")
@@ -213,18 +225,28 @@ def main():
                 cspec = get_spec(mc_path)
                 key = mac_name+" "+cspec
                 all_specs[key] = cspec
+                cur_path = os.path.join(mc_path, "*")
                 if key in all_mac_specs:
-                    all_mac_specs[key].append(mc_path)
+                    all_mac_specs[key].append(cur_path)
                 else:
-                    all_mac_specs.update({key: [mc_path]})
+                    all_mac_specs.update({key: [cur_path]})
+        if (args.local_run_dir):
+            local_cali_files = glob.glob(os.path.join(args.local_run_dir, "*.cali"))
+            cspec = get_spec(local_cali_files)
+            mac_name = get_host(local_cali_files)
+            key = mac_name+" "+cspec
+            if key in all_mac_specs:
+                all_mac_specs[key].append(args.local_run_dir)
+            else:
+                all_mac_specs.update({key: [args.local_run_dir]})
     all_mac_specs = comm.bcast(all_mac_specs, root=0)
     all_specs = comm.bcast(all_specs, root=0)
     all_data = []
     # Loop over each machine+spec and extract the data
     for mac_spec, mc_dirs in all_mac_specs.items():
-        mac_name = os.path.basename(mc_dirs[0])
         spec_name = all_specs[mac_spec]
         config_str = mac_spec.replace(" ", "_")
+        mac_name = mac_spec.split(" ")[0]
         timer_data = {}
         my_tests = test_names[rank::size]
         for test_name in my_tests:
