@@ -16,6 +16,7 @@ Notable changes include:
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
