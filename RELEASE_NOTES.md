@@ -21,6 +21,7 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
