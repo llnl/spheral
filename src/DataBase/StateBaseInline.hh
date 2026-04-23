@@ -1,4 +1,3 @@
-#include "boost/algorithm/string.hpp"
 #include "DataBase/UpdatePolicyBase.hh"
 #include "RK/RKCorrectionParams.hh"
 #include "RK/ReproducingKernel.hh"
@@ -67,10 +66,9 @@ std::vector<Field<Dimension, Value>*>
 StateBase<Dimension>::
 allFields() const {
   std::vector<Field<Dimension, Value>*> result;
-  KeyType fieldName, nodeListName;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
-      auto fb = std::any_cast<std::reference_wrapper<FieldBase<Dimension>>>(aref);
+      auto& fb = std::any_cast<const std::reference_wrapper<FieldBase<Dimension>>&>(aref);
       auto* fptr = dynamic_cast<Field<Dimension, Value>*>(&fb.get());
       if (fptr != nullptr) result.push_back(fptr);
     }
@@ -98,16 +96,16 @@ StateBase<Dimension>::
 fields(const std::string& name,
        bool allowNone) const {
   FieldList<Dimension, Value> result;
-  KeyType fieldName, nodeListName;
-  for (auto [key, aref]: mStorage) {
-    splitFieldKey(key, fieldName, nodeListName);
-    if (fieldName == name) {
-      CHECK(nodeListName != "");
-      if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
-        auto fb = std::any_cast<std::reference_wrapper<FieldBase<Dimension>>>(aref);
-        auto* fptr = dynamic_cast<Field<Dimension, Value>*>(&fb.get());
-        if (fptr != nullptr) result.appendField(*fptr);
-      }
+  // Keys are "fieldName|nodeListName" in map, all entries for field are contiguous
+  const auto prefix = name + "|";
+  for (auto itr = mStorage.lower_bound(prefix); itr != mStorage.end(); ++itr) {
+    const auto& key = itr->first;
+    if (key.compare(0, prefix.size(), prefix) != 0) break;
+    const auto& aref = itr->second;
+    if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
+      auto& fb = std::any_cast<const std::reference_wrapper<FieldBase<Dimension>>&>(aref);
+      auto* fptr = dynamic_cast<Field<Dimension, Value>*>(&fb.get());
+      if (fptr != nullptr) result.appendField(*fptr);
     }
   }
   CHECK2(allowNone or result.size() > 0u, "Error: found no fields for key " << name);
@@ -233,17 +231,13 @@ StateBase<Dimension>::
 splitFieldKey(const KeyType& key,
               KeyType& fieldName,
               KeyType& nodeListName) {
-  std::vector<std::string> keys;
-  boost::split(keys, key, boost::is_any_of("|"));
-  if (keys.size() > 1) {
-    fieldName = keys[0];
-    nodeListName = keys[1];
-  } else if (keys.size() == 1) {
-    fieldName = keys[0];
-    nodeListName = "";
+  const auto sep = key.find('|');
+  if (sep == std::string::npos) {
+    fieldName = key;
+    nodeListName.clear();
   } else {
-    fieldName = "";
-    nodeListName = "";
+    fieldName.assign(key, 0, sep);
+    nodeListName.assign(key, sep + 1, std::string::npos);
   }
 }
 
