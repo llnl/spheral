@@ -31,6 +31,7 @@ namespace {
 //}
 
 SPHERAL_HOST_DEVICE
+inline
 double limiterVL(const double x) {
   if (x > 0.0) {
     return 2.0/(1.0 + x)*2.0*x/(1.0 + x);                       // van Leer
@@ -90,8 +91,8 @@ void
 LimitedMonaghanGingoldViscosityView<Dimension>::
 QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-      const unsigned nodeListi, const unsigned i, 
-      const unsigned nodeListj, const unsigned j,
+      const size_t nodeListi, const size_t i,
+      const size_t nodeListj, const size_t j,
       const Vector& xi,
       const SymTensor& Hi,
       const Vector& etai,
@@ -107,7 +108,6 @@ QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
       const FieldListView<Dimension, Scalar>& fCl,
       const FieldListView<Dimension, Scalar>& fCq,
       const FieldListView<Dimension, Tensor>& DvDx) const {
-
   // Preconditions
   REQUIRE(fCl.size() == fCq.size());
   REQUIRE(DvDx.size() > std::max(nodeListi, nodeListj));

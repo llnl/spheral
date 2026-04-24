@@ -30,6 +30,7 @@ def SPH(W,
         xmax = ( 1e100,  1e100,  1e100),
         etaMinAxis = 0.1,
         ASPH = False,
+        RAJA = False,
         smoothingScaleMethod = None):
 
     # Check if we're running solid or fluid hydro
@@ -73,10 +74,13 @@ def SPH(W,
             constructor = SPHRZ
 
     else:
+        constructor = "SPH"
         if nsolid > 0:
-            constructor = eval("SolidSPH%id" % ndim)
-        else:
-            constructor = eval("SPH%id" % ndim)
+            constructor = "Solid" + constructor
+        if RAJA:
+            constructor += "_RAJA"
+        constructor += f"{ndim}d"
+        constructor = eval(constructor)
 
     # Fill out the set of kernels
     if WPi is None:

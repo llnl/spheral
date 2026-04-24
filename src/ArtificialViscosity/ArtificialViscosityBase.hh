@@ -7,8 +7,6 @@
 #ifndef __Spheral_ArtificialViscosityBase__
 #define __Spheral_ArtificialViscosityBase__
 
-#include "Field/FieldList.hh"
-
 #include <utility>
 #include <typeindex>
 
@@ -25,6 +23,8 @@ public:
 
   // Constructors, destructor
   SPHERAL_HOST_DEVICE
+  ArtificialViscosityBase() = default;
+  SPHERAL_HOST_DEVICE
   ArtificialViscosityBase(const Scalar Clinear,
                           const Scalar Cquadratic,
                           const bool   BalsaraShearCorrection = false,
@@ -38,11 +38,6 @@ public:
 
   SPHERAL_HOST_DEVICE
   virtual ~ArtificialViscosityBase() = default;
-
-  // No default constructor, copying, or assignment
-  ArtificialViscosityBase() = delete;
-  ArtificialViscosityBase(const ArtificialViscosityBase&) = delete;
-  ArtificialViscosityBase& operator=(const ArtificialViscosityBase&) = delete;
 
   //...........................................................................
   // Methods
