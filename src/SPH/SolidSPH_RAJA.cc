@@ -208,9 +208,15 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto& nodeLists = connectivityMap.nodeLists();
   const auto numNodeLists = nodeLists.size();
   const auto& pairs_v = connectivityMap.nodePairList();
-  const auto pairs = pairs_v.view();
+  auto pairs = pairs_v.view();
   const auto npairs = pairs.size();
   // const auto& coupling = connectivityMap.coupling();
+#ifdef SPHERAL_ENABLE_HIP
+  pairs.move(chai::GPU);
+  W_view.move(chai::GPU);
+  WQ_view.move(chai::GPU);
+  WG_view.move(chai::GPU);
+#endif
 
   // Get the state and derivative FieldLists.
   // State FieldLists.

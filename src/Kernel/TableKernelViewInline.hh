@@ -170,4 +170,13 @@ equivalentWsum(const Scalar nPerh) const {
   return std::max(0.0, mWsumLookup(nPerh));
 }
 
+template<typename Dimension>
+SPHERAL_HOST void
+TableKernelView<Dimension>::move(chai::ExecutionSpace space) {
+  mInterp.move(space);
+  mGradInterp.move(space);
+  mGrad2Interp.move(space);
+  mNperhLookup.move(space);
+  mWsumLookup.move(space);
+}
 }

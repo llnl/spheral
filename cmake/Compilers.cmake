@@ -96,12 +96,7 @@ endif()
 
 if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_LINK_FLAGS -fsanitize=address)
-  set(ASAN_LIBRARY_PATH "")
-  find_asan_library(ASAN_LIBRARY_PATH)
-  get_filename_component(ASAN_LIBRARIES ${ASAN_LIBRARY_PATH} DIRECTORY)
   get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
-  list(APPEND SPHERAL_ENV_LINES "export LD_PRELOAD=${ASAN_LIBRARY_PATH}")
-  list(APPEND SPHERAL_ENV_LINES "export ASAN_OPTIONS=detect_leaks=0")
   message("------------------------Configuring ASAN------------------------------------")
   message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
   # Modify the hip arch if necessary

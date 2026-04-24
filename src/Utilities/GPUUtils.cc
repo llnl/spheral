@@ -31,5 +31,11 @@ void initGPUs(const int stack_mult = 8) {
   }
 #endif
 }
+
+void deviceSync() {
+#ifdef SPHERAL_ENABLE_HIP
+  GPU_CHECK(hipDeviceSynchronize());
+#endif
 }
-}
+} // namespace GPUUtils
+} // namespace Spheral

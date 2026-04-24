@@ -126,16 +126,20 @@ def main():
                         help="Set number of threads per rank to use. Currently only used by run_perf.py.")
     parser.add_argument("--batch", action="store_true", help="Submit job as batch.")
     parser.add_argument("--delay", action="store_true", help="Defer job until after 7 pm.")
-    parser.add_argument("--get-benchmark", action="store_true", help="Print benchmark location and stop.")
+    parser.add_argument("--get-top-benchmark", action="store_true",
+                        help="Print top benchmark location and stop.")
+    parser.add_argument("--get-benchmark", action="store_true",
+                        help="Print benchmark location for this particular install and stop.")
     parser.add_argument("--gpu", action="store_true", help="Run GPU tests.")
     parser.add_argument("--cpx", action="store_true", help="Enable CPX mode, allowing 6 GPUs per device.")
     options, unknown_options = parser.parse_known_args()
     if (options.atsHelp):
         subprocess.run(f"{ats_exe} --help", shell=True, check=True, text=True)
         return
-    if (options.get_benchmark):
+    if (options.get_top_benchmark):
         print(benchmark_dir)
         return
+
     #---------------------------------------------------------------------------
     # Setup machine info classes
     #---------------------------------------------------------------------------
@@ -144,6 +148,11 @@ def main():
         test_log_name = "gpu-"+test_log_name
     temp_uname = os.uname()
     hostname = temp_uname[1].rstrip("0123456789")
+    if (options.get_benchmark):
+        import SpheralConfigs
+        path = os.path.join(benchmark_dir, SpheralConfigs.config(), hostname)
+        print(path)
+        return
     sys_type = os.getenv("SYS_TYPE")
     # Use ATS to for some machine specific functions
     if "MACHINE_TYPE" not in os.environ:

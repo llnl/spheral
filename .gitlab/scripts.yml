@@ -257,7 +257,7 @@ clean_old_perfs:
   # Prevent this job from getting artifacts
   dependencies: []
   script:
-    - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-benchmark)
+    - BENCHMARK_LOC=$(python3 $SCRIPT_DIR/spheral_ats.py --get-top-benchmark)
     - cd $BENCHMARK_LOC
     - find . -mindepth 2 -type d -mtime +200 -print -exec rm -rf {} +
 

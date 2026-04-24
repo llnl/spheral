@@ -59,6 +59,10 @@ public:
   iterator begin()                                              { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.begin())); }
   iterator end()                                                { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.end())); }
 
+  // Comparators
+  bool operator==(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mArray == rhs.mArray; }
+  bool operator!=(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mArray != rhs.mArray; }
+
   // Other methods
   const NodePairList& pairs() const;
   

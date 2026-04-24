@@ -3,11 +3,6 @@
 
 #include "Neighbor/NodePairIdxType.hh"
 #include "NodePairListView.hh"
-#include "config.hh"
-#include "chai/ManagedArray.hpp"
-#include "chai/ExecutionSpaces.hpp"
-#include "Utilities/GPUUtils.hh"
-#include "chai/config.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -37,7 +32,7 @@ public:
   NodePairList(const NodePairList& rhs);
   NodePairList& operator=(const NodePairList& rhs);
 
-  ~NodePairList()                                            { mData.free(); }
+  ~NodePairList()                                            { GPUUtils::freeMAView(mData); }
 
   void fill(const ContainerType& vals);
   void clear();
@@ -93,12 +88,12 @@ public:
     GPUUtils::initMAView(mData, mNodePairList);
   }
 
-#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
     mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
-  }
 #endif
+  }
 
 protected:
   template<typename F>
