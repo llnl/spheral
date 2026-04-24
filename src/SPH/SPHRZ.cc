@@ -297,7 +297,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       const auto  hri = ri*safeInv(zetai);
       CHECK(hri >= 0.0);
       const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
-      const auto Vi = 2.0*M_PI*std::max(ri, 0.01*hri)*Ai;
+      const auto Vi = 2.0*M_PI*std::max(ri, 0.1*hri)*Ai;
       massDensity(k,i) = mass(k,i)/Vi;
       // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
       // const auto Vi = cylindricalToroidalVolume(di, ri);
@@ -359,7 +359,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   const auto  oneKernel = (W == WQ);
 
   // A few useful constants we'll use in the following loop.
-  // const auto tiny = 1.0e-10;
+  const auto tiny = 1.0e-10;
   const Scalar W0 = W(0.0, 1.0);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -724,18 +724,19 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       }
 
       // const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], hri, dt);
+      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      // DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
-      DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
+      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      // DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
-      // DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
-      DepsDti -= (Pi + effViscousPressurei)/rhoi*vri*riInv;
+      DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
+      // DepsDti -= (Pi + effViscousPressurei)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
