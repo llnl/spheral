@@ -6,6 +6,7 @@
 
 #include "config.hh"
 #include "Distributed/Communicator.hh"
+#include "GPUUtils.hh"
 #include "adiak.hpp"
 
 namespace Spheral {
@@ -26,14 +27,7 @@ void initializeAdiak() {
   adiak::numhosts();
   adiak::hostlist();
   adiak::mpi_library_version();
-  // TODO: Add this when GPU testing starts
-#ifdef SPHERAL_ENABLE_HIP
-  int device_count = 0;
-  hipError_t err = hipGetDeviceCount(&device_count);
-  CONTRACT_VAR(err);
-  ASSERT(err == hipSuccess);
-  adiak::value("gpus_per_rank", device_count);
-#endif
+  adiak::value("gpus_per_rank", GPUUtils::deviceCount());
 }
 
 enum adiak_categories

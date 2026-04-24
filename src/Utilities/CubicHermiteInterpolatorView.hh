@@ -8,13 +8,16 @@
 #ifndef __Spheral_CubicHermiteInterpolatorView__
 #define __Spheral_CubicHermiteInterpolatorView__
 
-#include "chai/ManagedArray.hpp"
-#include "config.hh"
+#include "GPUUtils.hh"
 
 namespace Spheral {
 class CubicHermiteInterpolatorView {
 public:
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using ContainerType = SPHERAL_SPAN_TYPE<double>;
+#else
   using ContainerType = typename chai::ManagedArray<double>;
+#endif
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
   SPHERAL_HOST_DEVICE CubicHermiteInterpolatorView() = default;
@@ -50,7 +53,8 @@ public:
   SPHERAL_HOST_DEVICE double xstep() const             { return mXstep; }
   SPHERAL_HOST_DEVICE double* data() const             { return mVals.data(); }
 
-  void move(chai::ExecutionSpace space)                { mVals.move(space); }
+  SPHERAL_HOST void move(chai::ExecutionSpace space)   { GPUUtils::move(mVals, space); }
+  SPHERAL_HOST void touch(chai::ExecutionSpace space)  { GPUUtils::touch(mVals, space); }
 
 protected:
   //--------------------------- Protected Interface --------------------------//

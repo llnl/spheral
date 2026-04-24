@@ -19,6 +19,7 @@
 #include "Geometry/GeomTensor_fwd.hh"
 #include "Geometry/GeomSymmetricTensor_fwd.hh"
 #include "Geometry/GeomTensorBase.hh"
+#include "Utilities/GPUUtils.hh"
 
 #include <iostream>
 #include "Eigen/Dense"
@@ -132,6 +133,18 @@ public:
 
   template<typename Derived> GeomTensor& operator+=(const Eigen::MatrixBase<Derived>& rhs);
   template<typename Derived> GeomTensor& operator-=(const Eigen::MatrixBase<Derived>& rhs);
+
+  template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const GeomTensor& rhs);
+  template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const GeomSymmetricTensor<nDim>& rhs);
+
+  SPHERAL_HOST_DEVICE void atomicAdd(const GeomTensor& rhs) { atomicOp<GPUUtils::AtomicAddOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicAdd(const GeomSymmetricTensor<nDim>& rhs) { atomicOp<GPUUtils::AtomicAddOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicSub(const GeomTensor& rhs) { atomicOp<GPUUtils::AtomicSubOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicSub(const GeomSymmetricTensor<nDim>& rhs) { atomicOp<GPUUtils::AtomicSubOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicMax(const GeomTensor& rhs) { atomicOp<GPUUtils::AtomicMaxOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicMax(const GeomSymmetricTensor<nDim>& rhs) { atomicOp<GPUUtils::AtomicMaxOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicMin(const GeomTensor& rhs) { atomicOp<GPUUtils::AtomicMinOp>(rhs); }
+  SPHERAL_HOST_DEVICE void atomicMin(const GeomSymmetricTensor<nDim>& rhs) { atomicOp<GPUUtils::AtomicMinOp>(rhs); }
 
   SPHERAL_HOST_DEVICE GeomTensor& operator*=(const double rhs);
   SPHERAL_HOST_DEVICE GeomTensor& operator/=(const double rhs);

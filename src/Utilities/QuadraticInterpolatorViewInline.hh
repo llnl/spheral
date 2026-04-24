@@ -85,7 +85,7 @@ QuadraticInterpolatorView::operator==(const QuadraticInterpolatorView& rhs) cons
   return ((mN1 == rhs.mN1) and
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and
-          (mcoeffs == rhs.mcoeffs));
+          (data() == rhs.data()));
 }
 
 }

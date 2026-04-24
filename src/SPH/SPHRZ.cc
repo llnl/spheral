@@ -226,7 +226,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        chai::managed_ptr<QType>& Q) const {
 
   using QPiType = typename QType::ReturnType;
 

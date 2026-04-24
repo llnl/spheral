@@ -14,6 +14,8 @@ from SPH import *
 from PSPH import *
 from SolidSPH import *
 from SolidSphericalSPH import *
+from SPH_RAJA import *
+from SolidSPH_RAJA import *
 
 #-------------------------------------------------------------------------------
 # Includes
@@ -28,6 +30,8 @@ PYB11includes += ['"SPH/SPHBase.hh"',
                   '"SPH/SolidSPH.hh"',
                   '"SPH/SolidSPHRZ.hh"',
                   '"SPH/SolidSphericalSPH.hh"',
+                  '"SPH/SPH_RAJA.hh"',
+                  '"SPH/SolidSPH_RAJA.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
@@ -66,16 +70,19 @@ def computeSPHOmegaGradhCorrection(connectivityMap = "const ConnectivityMap<%(Di
 # Instantiate our types
 #-------------------------------------------------------------------------------
 for ndim in dims:
-    exec('''
-SPHBase%(ndim)id = PYB11TemplateClass(SPHBase, template_parameters="%(Dimension)s")
-SPH%(ndim)id = PYB11TemplateClass(SPH, template_parameters="%(Dimension)s")
-PSPH%(ndim)id = PYB11TemplateClass(PSPH, template_parameters="%(Dimension)s")
-SolidSPH%(ndim)id = PYB11TemplateClass(SolidSPH, template_parameters="%(Dimension)s")
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+SPHBase{ndim}d = PYB11TemplateClass(SPHBase, template_parameters="{Dimension}")
+SPH{ndim}d = PYB11TemplateClass(SPH, template_parameters="{Dimension}")
+PSPH{ndim}d = PYB11TemplateClass(PSPH, template_parameters="{Dimension}")
+SolidSPH{ndim}d = PYB11TemplateClass(SolidSPH, template_parameters="{Dimension}")
 
-computeSPHSumMassDensity%(ndim)id = PYB11TemplateFunction(computeSPHSumMassDensity, template_parameters=("%(Dimension)s", "TableKernel<%(Dimension)s>"))
-computeSPHOmegaGradhCorrection%(ndim)id = PYB11TemplateFunction(computeSPHOmegaGradhCorrection, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+SPH_RAJA{ndim}d = PYB11TemplateClass(SPH_RAJA, template_parameters="{Dimension}")
+SolidSPH_RAJA{ndim}d = PYB11TemplateClass(SolidSPH_RAJA, template_parameters="{Dimension}")
+
+computeSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeSPHSumMassDensity, template_parameters=("{Dimension}", "TableKernel<{Dimension}>"))
+computeSPHOmegaGradhCorrection{ndim}d = PYB11TemplateFunction(computeSPHOmegaGradhCorrection, template_parameters="{Dimension}")
+''')
 
 if 1 in dims:
     from SphericalSPH import *

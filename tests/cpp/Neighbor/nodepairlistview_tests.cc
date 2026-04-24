@@ -86,7 +86,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, CopyAssign) {
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
-  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
     // npl is not destroyed yet so only 2 frees on device
     ref_count = {3, 0, 0, 3, 0, 2};
   }
@@ -121,7 +121,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, ConstructorFromContainer) {
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
-  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
     ref_count = {1, 1, 0, 1, 0, 1};
   }
   COMP_COUNTERS(gpu_this->n_count, ref_count);
@@ -152,7 +152,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Touch) {
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
-  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
     ref_count = {2, 0, 0, 1, 0, 1};
   }
   COMP_COUNTERS(gpu_this->n_count, ref_count);
@@ -191,7 +191,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, Resize) {
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
-  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
     ref_count = {2, 1, 0, 2, 0, 2};
   }
   COMP_COUNTERS(gpu_this->n_count, ref_count);
@@ -218,7 +218,7 @@ GPU_TYPED_TEST_P(NPLViewTypedTest, ScopeChanges) {
   }
   // Counter : { H->D Copy, D->H Copy, H Alloc, D Alloc, H Free, D Free }
   GPUCounters ref_count;
-  if (typeid(RAJA::seq_exec) != typeid(TypeParam)) {
+  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
     ref_count = {1, 0, 0, 1, 0, 1};
   }
   COMP_COUNTERS(gpu_this->n_count, ref_count);
