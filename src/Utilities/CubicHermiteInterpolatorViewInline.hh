@@ -114,7 +114,7 @@ CubicHermiteInterpolatorView::operator==(const CubicHermiteInterpolatorView& rhs
           (mXmin == rhs.mXmin) and
           (mXmax == rhs.mXmax) and
           (mXstep == rhs.mXstep) and
-          (mVals == rhs.mVals));
+          (data() == rhs.data()));
 }
 
 }

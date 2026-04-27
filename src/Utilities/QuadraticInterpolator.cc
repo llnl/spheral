@@ -9,7 +9,6 @@
 #include "QuadraticInterpolator.hh"
 #include <algorithm>
 
-#include "CHAI_MA_wrapper.hh"
 #include <Eigen/Dense>
 
 namespace Spheral {
@@ -101,14 +100,14 @@ QuadraticInterpolator::initialize(double xmin,
 
 void
 QuadraticInterpolator::initView() {
-  initMAView(mcoeffs, mVec);
+  GPUUtils::initMAView(mcoeffs, mVec);
 }
 
 //------------------------------------------------------------------------------
 // Destructor
 //------------------------------------------------------------------------------
 QuadraticInterpolator::~QuadraticInterpolator() {
-  mcoeffs.free();
+  GPUUtils::freeMAView(mcoeffs);
 }
 
 }

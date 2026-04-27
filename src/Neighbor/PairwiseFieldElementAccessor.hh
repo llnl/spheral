@@ -13,6 +13,10 @@
 #include "Utilities/DBC.hh"
 #include "chai/ManagedArray.hpp"
 
+#ifdef SPHERAL_UNIFIED_MEMORY
+#include "Utilities/span.hh"
+#endif
+
 namespace Spheral {
 namespace PairwiseFieldDetail {
 
@@ -22,10 +26,17 @@ struct ContainerTraits {
   using value_type = typename Container::value_type;
 };
 
+#ifndef SPHERAL_UNIFIED_MEMORY
 template<typename Value>
 struct ContainerTraits<chai::ManagedArray<Value>> {
   using value_type = Value;
 };
+#else
+template<typename Value>
+struct ContainerTraits<SPHERAL_SPAN_TYPE<Value>> {
+  using value_type = typename SPHERAL_SPAN_TYPE<Value>::value_type;
+};
+#endif
 
 // General case, returns by pointer
 template<typename T, size_t stride>

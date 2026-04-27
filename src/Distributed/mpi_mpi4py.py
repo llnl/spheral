@@ -16,10 +16,11 @@ if ("LEOS" in SpheralConfigs.component_configs()):
     mpi4py.rc.finalize = False
 # If on a Flux system, make sure we are in an allocation and using flux run
 if ("cray" in SpheralConfigs.sys_arch()):
+    import warnings
     if "FLUX_URI" not in os.environ:
-        raise RuntimeWarning("Spheral should be run in flux session. Use flux alloc or flux batch.")
+        warnings.warn("Spheral should be run in flux session. Use flux alloc or flux batch.")
     if "FLUX_JOB_ID" not in os.environ:
-        raise RuntimeWarning("Spheral should be run in flux allocation. Use flux run -n # before Spheral command.")
+        warnings.warn("Spheral should be run in flux allocation. Use flux run -n # before Spheral command.")
 
 # Now go on as usual...
 from mpi4py import MPI

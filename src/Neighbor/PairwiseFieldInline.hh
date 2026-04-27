@@ -59,9 +59,7 @@ inline
 PairwiseField<Dimension, Value, numElements>::
 ~PairwiseField() {
   DEBUG_LOG << " --> PairwiseField::~PairwiseField() " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mSpan.free();
-#endif
+  GPUUtils::freeMAView(mSpan);
 }
 
 //------------------------------------------------------------------------------
@@ -126,16 +124,8 @@ template<typename Dimension, typename Value, size_t numElements>
 inline
 void
 PairwiseField<Dimension, Value, numElements>::assignDataSpan() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mSpan = mArray;
-#else
-  if (mSpan.size() != mArray.size() or
-      mSpan.data(chai::CPU, false) != mArray.data()) {
-    DEBUG_LOG << "PairwiseField::assignDataSpan " << this;
-    initMAView(mSpan, mArray);
-  }
-  mSpan.registerTouch(chai::CPU);
-#endif
+  GPUUtils::initMAView(mSpan, mArray);
+  GPUUtils::touch(mSpan, chai::CPU);
   ENSURE(mSpan.size() == mArray.size() and (mArray.empty() or mSpan.data() == &mArray[0]));
 }
 

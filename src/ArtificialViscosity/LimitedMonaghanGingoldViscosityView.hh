@@ -16,7 +16,7 @@ namespace Spheral {
 template<typename Dimension> class LimitedMonaghanGingoldViscosity;
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosityView
+class LimitedMonaghanGingoldViscosityView final
   : public MonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -53,8 +53,8 @@ public:
   SPHERAL_HOST_DEVICE
   virtual void QPiij(Scalar& QPiij, Scalar& QPiji,      // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const unsigned nodeListi, const unsigned i, 
-                     const unsigned nodeListj, const unsigned j,
+                     const size_t nodeListi, const size_t i, 
+                     const size_t nodeListj, const size_t j,
                      const Vector& xi,
                      const SymTensor& Hi,
                      const Vector& etai,

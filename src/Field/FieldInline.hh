@@ -6,7 +6,7 @@
 #include "Utilities/packElement.hh"
 #include "Utilities/removeElements.hh"
 #include "Utilities/safeInv.hh"
-#include "Utilities/CHAI_MA_wrapper.hh"
+#include "Utilities/GPUUtils.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "chai/config.hpp"
@@ -1379,7 +1379,7 @@ assignDataSpan() {
   if (mDataSpan.size() != mDataArray.size() or
       mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
-    initMAView(mDataSpan, mDataArray);
+    GPUUtils::initMAView(mDataSpan, mDataArray);
   }
 #ifndef CHAI_DISABLE_RM
   mDataSpan.setUserCallback(this->getCallback());

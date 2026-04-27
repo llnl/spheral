@@ -62,8 +62,8 @@ public:
   SPHERAL_HOST_DEVICE
   virtual void QPiij(QPiType& QPiij, QPiType& QPiji,    // result for QPi (Q/rho^2)
                      Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const unsigned nodeListi, const unsigned i,
-                     const unsigned nodeListj, const unsigned j,
+                     const size_t nodeListi, const size_t i,
+                     const size_t nodeListj, const size_t j,
                      const Vector& xi,
                      const SymTensor& Hi,
                      const Vector& etai,
@@ -79,7 +79,8 @@ public:
                      const FieldListView<Dimension, Scalar>& fCl,
                      const FieldListView<Dimension, Scalar>& fCq,
                      const FieldListView<Dimension, Tensor>& DvDx) const = 0;
-  friend class ArtificialViscosity<Dimension>;
+
+  //friend class ArtificialViscosity<Dimension>;
 protected:
   //--------------------------- Protected Interface ---------------------------//
   using ArtificialViscosityBase<Dimension>::mClinear;

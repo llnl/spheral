@@ -13,10 +13,18 @@
     # Directory storing benchmark data is set in scripts/spheral_ats.py
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC//%/_}
     - cd $INSTALL_DIR
+    - INSTALL_BENCHMARK_DIR=$(./bin/spheral-ats --get-benchmark)
+    - PERF_OUT_DIR=$INSTALL_BENCHMARK_DIR/$(date +%s)
+    - mkdir $PERF_OUT_DIR
     - echo "Running performance tests using install at $INSTALL_DIR"
-    - rm -rf perf_logs
-    - find tests/ -name '*.cali' -print -delete
+    - rm -rf perf_logs gpu_perf_logs
     - ./bin/spheral-ats --ciRun --numNodes 2 --logs perf_logs $INSTALL_DIR/$PERF_ATS_FILE
+    - cp perf_logs/*.cali $PERF_OUT_DIR
+    - ./bin/spheral-ats --gpu --ciRun --numNodes 2 --logs gpu_perf_logs $INSTALL_DIR/$PERF_ATS_FILE
+    # Copy caliper files to the benchmark directory and don't complain if you cant
+    - cp gpu_perf_logs/*.cali $PERF_OUT_DIR 2>/dev/null || true
+    - chmod -R gu+rwx $PERF_OUT_DIR
+    - chgrp -R sduser $PERF_OUT_DIR
 
 toss_gcc_mpi_perf:
   extends: [.toss_perf_shell, .gcc_mpi, .run_perf]
