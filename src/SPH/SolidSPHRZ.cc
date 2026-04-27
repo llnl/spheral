@@ -380,7 +380,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   const auto  oneKernelG = (W == WG);
 
   // A few useful constants we'll use in the following loop.
-  // const auto tiny = 1.0e-30;
+  const auto tiny = 1.0e-30;
   const auto W0 = W(0.0, 1.0);
   // const auto WQ0 = WQ(0.0, 1.0);
   const auto epsTensile = this->epsilonTensile();
@@ -780,7 +780,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.1*hri);
+      const auto  riInv = safeInvVar(ri, 0.01*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK(mi > 0.0);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
@@ -832,15 +832,17 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
         localDvDxi /= rhoi;
       }
 
+      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
+
       // Evaluate the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
+      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
 
       // Finish the specific thermal energy evolution.
-      DepsDti -= (Pi + effViscousPressurei)/rhoi*vri*riInv;
+      DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
       DepsDti += (STTi - Pi)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.

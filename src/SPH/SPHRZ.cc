@@ -297,7 +297,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       const auto  hri = ri*safeInv(zetai);
       CHECK(hri >= 0.0);
       const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
-      const auto Vi = 2.0*M_PI*std::max(ri, 0.1*hri)*Ai;
+      const auto Vi = 2.0*M_PI*std::max(ri, 0.01*hri)*Ai;
       massDensity(k,i) = mass(k,i)/Vi;
       // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
       // const auto Vi = cylindricalToroidalVolume(di, ri);
@@ -674,7 +674,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.1*hri);
+      const auto  riInv = safeInvVar(ri, 0.01*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
       CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);

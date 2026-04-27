@@ -156,7 +156,7 @@ update(const KeyType& key,
       CHECK(hri >= 0.0);
       const auto  mi = mass(nodeListi, i);
       // const auto  mRZi = massRZ(nodeListi, i);
-      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, 0.1*hri);
+      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, 0.01*hri);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -173,7 +173,7 @@ update(const KeyType& key,
       CHECK(hrj >= 0.0);
       const auto  mj = mass(nodeListj, j);
       // const auto  mRZj = massRZ(nodeListj, j);
-      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, 0.1*hrj);
+      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, 0.01*hrj);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -189,8 +189,8 @@ update(const KeyType& key,
       // Correct r- and z-components individually (multiplicative form)
       const auto dEzij = -(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]);
       const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
-      const auto chiz = std::max(0.0, dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny));
-      const auto chir = std::max(0.0, dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny));
+      const auto chiz = dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny);
+      const auto chir = dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny);
       // const auto chimax = std::max(0.0, dE0ij*safeInv(mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj), tiny));
       // const auto remainder = dE0ij - chir*(mi*pworkri + mj*pworkrj);
       // const auto chizbound = std::max(0.0, remainder*safeInv(mi*pworkzi + mj*pworkzj, tiny));
