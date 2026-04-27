@@ -191,12 +191,22 @@ update(const KeyType& key,
       const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
       const auto chiz = dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny);
       const auto chir = dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny);
-      // const auto chimax = std::max(0.0, dE0ij*safeInv(mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj), tiny));
-      // const auto remainder = dE0ij - chir*(mi*pworkri + mj*pworkrj);
-      // const auto chizbound = std::max(0.0, remainder*safeInv(mi*pworkzi + mj*pworkzj, tiny));
-      // const auto chiz = std::max(0.0, std::min(1.0, dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny)));
       DepsDt_thread(nodeListi, i) += chiz*pworkzi + chir*pworkri;
       DepsDt_thread(nodeListj, j) += chiz*pworkzj + chir*pworkrj;
+
+      // // Additive form
+      // const auto dEij = ((dEzij - (mRZi*pworkzi + mRZj*pworkzj))/(mRZi + mRZj)*(mi + mj) +
+      //                    (dErij - (mi  *pworkri + mj  *pworkrj)));
+      // const auto wi = std::abs(pworkzi + pworkri);
+      // const auto wj = std::abs(pworkzj + pworkrj);
+      // // auto wi = 1.0;
+      // // auto wj = 1.0;
+      // // if (dEij < 0.0) {
+      // //   wi = std::abs(eps(nodeListi, i));
+      // //   wj = std::abs(eps(nodeListj, j));
+      // // }
+      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + dEij*wi*safeInv((wi + wj)*mi, tiny);
+      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + dEij*wj*safeInv((wi + wj)*mj, tiny);
 
       // // Correct just the r-component error (additive form)
       // const auto durij = (-(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]) - (mi*pworkri + mj*pworkrj))/(mi + mj);
