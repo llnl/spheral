@@ -22,6 +22,9 @@ Notable changes include:
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Volume calculation has been separated from RKCorrections into the VoronoiCells/VolumeUpdate physics packages.
+    * Physics package requirements API consolidated for connectivity, volumes, and reproducing kernels.
+    * Added a priority to Boundary to ensure boundary conditions are ordered consistently.
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
