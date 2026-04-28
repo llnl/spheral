@@ -29,6 +29,7 @@ option(SPHERAL_ENABLE_LEOS "Enable use of LEOS" OFF)
 
 option(SPHERAL_NETWORK_CONNECTED "Enable use of network. Disable if using a build cache" ON)
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
+option(SPHERAL_ENABLE_ASAN "Enable ASAN" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
 cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified memory on GPU machines" OFF SPHERAL_GPU_ENABLED OFF)
 
@@ -39,6 +40,16 @@ if(SPHERAL_ENABLE_PYTHON)
 endif()
 option(SPHERAL_ENABLE_STATIC "Building static C++ libraries" ${DEFAULT_STATIC})
 cmake_dependent_option(SPHERAL_ENABLE_SHARED "Building shared C++ libraries" ON "NOT SPHERAL_ENABLE_STATIC" OFF)
+
+#-------------------------------------------------------------------------------
+# Experimental/unused options
+#-------------------------------------------------------------------------------
+
+cmake_dependent_option(SPHERAL_ENABLE_RDC "Build using the RDC flag. Currently broken (DO NOT USE)" OFF SPHERAL_GPU_ENABLED OFF)
+
+if (SPHERAL_ENABLE_RDC AND SPHERAL_ENABLE_SHARED)
+  message(FATAL_ERROR "Must use SPHERAL_ENABLE_STATIC if enabling SPHERAL_ENABLE_RDC (once it is working)")
+endif()
 
 #-------------------------------------------------------------------------------
 # Should we build sphinx documentation

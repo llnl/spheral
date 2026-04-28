@@ -190,6 +190,7 @@ inline bool nearlyEqual(const T& x,
 #endif // SPHERAL_GPU_ACTIVE
 #define VERIFY(x) VERIFY2(x, #x)
 
+
 // //----------------------------------------------------------------------------
 // // Make lower case versions of all the contracts.
 // //----------------------------------------------------------------------------

@@ -21,6 +21,8 @@ public:
   
   IntegrationKernel() { }
 
+  virtual ~IntegrationKernel() { };
+
   virtual double extent(const Scalar Hmult) const = 0;
   
   virtual void evaluate(const Vector& xp,

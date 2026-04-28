@@ -14,4 +14,4 @@ repos:
   builtin:
     destination: $spack/../packages
     git: "https://github.com/spack/spack-packages.git"
-    commit: 0f833a16999a012153c040c26c98256c14a1a4fd
+    commit: a251c075e32d54b77c283538b45e9327e88f02d2

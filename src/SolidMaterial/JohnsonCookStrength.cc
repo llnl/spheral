@@ -47,6 +47,8 @@ JohnsonCookStrength(const SolidEquationOfState<Dimension>& eos,
   mShearModulusScaling(shearModulusScaling) {
   VERIFY2(mEpsdot0 > 0.0,
           "JohnsonCookStrength ERROR: reference strain-rate must be greater than zero.");
+  VERIFY2(mEpsdotmin > 0.0,
+          "JohnsonCookStrength ERROR: minimum strain-rate must be greater than zero.");
   VERIFY2(mTmelt > mTroom,
           "JohnsonCookStrength ERROR: Tmelt must be greater than or equal Troom.");
   VERIFY2((not shearModulusScaling) or mu0 > 0.0,
@@ -93,7 +95,7 @@ yieldStrength(Field<Dimension, Scalar>& yieldStrength,
   const auto n = yieldStrength.numInternalElements();
 #pragma omp for
   for (auto i = 0u; i < n; ++i) {
-    const auto Tstar = std::max(0.0, std::min(1.0, T(i) - mTroom)/(mTmelt - mTroom));
+    const auto Tstar = std::max(0.0, std::min(1.0, ((T(i) - mTroom)/(mTmelt - mTroom))));
     const auto fmelt = std::max(0.0, std::min(1.0, 1.0 - pow(Tstar, mm)));
     yieldStrength(i) = 
       ((mA + mB*pow(plasticStrain(i), mnhard))*

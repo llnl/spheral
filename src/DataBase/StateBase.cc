@@ -235,10 +235,17 @@ template<typename Dimension>
 bool
 StateBase<Dimension>::
 fieldNameRegistered(const FieldName& name) const {
-  KeyType fieldName, nodeListName;
-  for (auto [key, valptr]: mStorage) {
-    splitFieldKey(key, fieldName, nodeListName);
-    if (fieldName == name) return true;
+  // Field keys have the form <name>|<nodeListName>, so we can jump straight to the neighborhood
+  const auto prefix = name + "|";
+  auto itr = mStorage.lower_bound(prefix);
+  if (itr == mStorage.end()) return false;
+  if (itr->first.compare(0, prefix.size(), prefix) != 0) return false;
+  // Confirm this key actually refers to a Field (as opposed to a non-field entry)
+  for (; itr != mStorage.end(); ++itr) {
+    if (itr->first.compare(0, prefix.size(), prefix) != 0) break;
+    if (itr->second.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
+      return true;
+    }
   }
   return false;
 }
@@ -263,7 +270,7 @@ std::vector<typename StateBase<Dimension>::KeyType>
 StateBase<Dimension>::
 fullFieldKeys() const {
   vector<KeyType> result;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
       result.push_back(key);
     }
@@ -279,7 +286,7 @@ std::vector<typename StateBase<Dimension>::KeyType>
 StateBase<Dimension>::
 miscKeys() const {
   vector<KeyType> result;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() != typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
       result.push_back(key);
     }
@@ -296,9 +303,9 @@ StateBase<Dimension>::
 fieldNames() const {
   vector<FieldName> result;
   KeyType fieldName, nodeListName;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
-      auto fref = std::any_cast<std::reference_wrapper<FieldBase<Dimension>>>(aref);
+      auto& fref = std::any_cast<const std::reference_wrapper<FieldBase<Dimension>>&>(aref);
       splitFieldKey(fref.get().name(), fieldName, nodeListName);
       result.push_back(fieldName);
     }

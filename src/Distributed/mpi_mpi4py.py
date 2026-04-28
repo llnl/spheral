@@ -10,10 +10,17 @@ from SpheralTestUtilities import globalFrame
 # NOTE: this logic for disabling recv_mprobe seems to be necessary with newer
 # mpi4py versions, since the LC MPI implementations apparently report matched_probes
 # as supported, but seem to be broken.
-import mpi4py
+import mpi4py, os
 mpi4py.rc.recv_mprobe = False
 if ("LEOS" in SpheralConfigs.component_configs()):
     mpi4py.rc.finalize = False
+# If on a Flux system, make sure we are in an allocation and using flux run
+if ("cray" in SpheralConfigs.sys_arch()):
+    import warnings
+    if "FLUX_URI" not in os.environ:
+        warnings.warn("Spheral should be run in flux session. Use flux alloc or flux batch.")
+    if "FLUX_JOB_ID" not in os.environ:
+        warnings.warn("Spheral should be run in flux allocation. Use flux run -n # before Spheral command.")
 
 # Now go on as usual...
 from mpi4py import MPI

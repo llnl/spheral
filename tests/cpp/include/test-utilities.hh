@@ -6,7 +6,7 @@
 #include "config.hh"
 #include "gtest/gtest.h"
 
-using TRS_UINT = RAJA::TypedRangeSegment<unsigned>;
+//using TRS_UINT = RAJA::TypedRangeSegment<unsigned>;
 using LOOP_EXEC_POLICY = RAJA::seq_exec;
 
 #define EXEC_IN_SPACE_BEGIN(POL)                                               \

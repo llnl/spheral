@@ -13,20 +13,20 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 // Construct a Tensor with the given diagonal elements
 //------------------------------------------------------------------------------
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::Tensor
 constructTensorWithDiagonal(const Dim<1>::Vector& vec) {
   return Dim<1>::Tensor(vec[0]);
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithDiagonal(const Dim<2>::Vector& vec) {
   return Dim<2>::Tensor(vec[0], 0.0,
                         0.0,    vec[1]);
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithDiagonal(const Dim<3>::Vector& vec) {
   return Dim<3>::Tensor(vec[0], 0.0, 0.0,
@@ -34,20 +34,20 @@ constructTensorWithDiagonal(const Dim<3>::Vector& vec) {
                         0.0,    0.0,    vec[2]);
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::SymTensor
 constructSymTensorWithDiagonal(const Dim<1>::Vector& vec) {
   return Dim<1>::SymTensor(vec[0]);
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::SymTensor
 constructSymTensorWithDiagonal(const Dim<2>::Vector& vec) {
   return Dim<2>::SymTensor(vec[0], 0.0,
                            0.0,     vec[1]);
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::SymTensor
 constructSymTensorWithDiagonal(const Dim<3>::Vector& vec) {
   return Dim<3>::SymTensor(vec[0], 0.0,    0.0,
@@ -58,14 +58,14 @@ constructSymTensorWithDiagonal(const Dim<3>::Vector& vec) {
 //------------------------------------------------------------------------------
 // Construct a Tensor with the given diagonal elements, enforcing a minimum.
 //------------------------------------------------------------------------------
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::Tensor
 constructTensorWithMinDiagonal(const Dim<1>::Vector& vec,
                                const double maxval) {
   return Dim<1>::Tensor(std::min(maxval, vec[0]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                                const double maxval) {
@@ -73,7 +73,7 @@ constructTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                         0.0, std::min(maxval, vec[1]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithMinDiagonal(const Dim<3>::Vector& vec,
                                const double maxval) {
@@ -82,14 +82,14 @@ constructTensorWithMinDiagonal(const Dim<3>::Vector& vec,
                         0.0, 0.0, std::min(maxval, vec[2]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<1>::Vector& vec,
                                   const double maxval) {
   return Dim<1>::SymTensor(std::min(maxval, vec[0]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                                   const double maxval) {
@@ -97,7 +97,7 @@ constructSymTensorWithMinDiagonal(const Dim<2>::Vector& vec,
                            0.0, std::min(maxval, vec[1]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::SymTensor
 constructSymTensorWithMinDiagonal(const Dim<3>::Vector& vec,
                                   const double maxval) {
@@ -109,14 +109,14 @@ constructSymTensorWithMinDiagonal(const Dim<3>::Vector& vec,
 //------------------------------------------------------------------------------
 // Construct a Tensor with the given diagonal elements, enforcing a maximum.
 //------------------------------------------------------------------------------
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::Tensor
 constructTensorWithMaxDiagonal(const Dim<1>::Vector& vec,
                                const double minval) {
   return Dim<1>::Tensor(std::max(minval, vec[0]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                                const double minval) {
@@ -124,7 +124,7 @@ constructTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                         0.0, std::max(minval, vec[1]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
                                const double minval) {
@@ -133,14 +133,14 @@ constructTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
                         0.0, 0.0, std::max(minval, vec[2]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<1>::Vector& vec,
                                   const double minval) {
   return Dim<1>::SymTensor(std::max(minval, vec[0]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                                   const double minval) {
@@ -148,7 +148,7 @@ constructSymTensorWithMaxDiagonal(const Dim<2>::Vector& vec,
                            0.0, std::max(minval, vec[1]));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::SymTensor
 constructSymTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
                                   const double minval) {
@@ -161,7 +161,7 @@ constructSymTensorWithMaxDiagonal(const Dim<3>::Vector& vec,
 // Construct a Tensor with the given diagonal elements, constrained to the 
 // given range.
 //------------------------------------------------------------------------------
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
                                    const double minval,
@@ -169,7 +169,7 @@ constructTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
   return Dim<1>::Tensor(std::max(minval, std::min(maxval, vec[0])));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                                    const double minval,
@@ -178,7 +178,7 @@ constructTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                         0.0, std::max(minval, std::min(maxval, vec[1])));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
                                    const double minval,
@@ -188,7 +188,7 @@ constructTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
                         0.0, 0.0, std::max(minval, std::min(maxval, vec[2])));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
                                       const double minval,
@@ -196,7 +196,7 @@ constructSymTensorWithBoundedDiagonal(const Dim<1>::Vector& vec,
   return Dim<1>::SymTensor(std::max(minval, std::min(maxval, vec[0])));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                                       const double minval,
@@ -205,7 +205,7 @@ constructSymTensorWithBoundedDiagonal(const Dim<2>::Vector& vec,
                            0.0, std::max(minval, std::min(maxval, vec[1])));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::SymTensor
 constructSymTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
                                       const double minval,
@@ -218,14 +218,14 @@ constructSymTensorWithBoundedDiagonal(const Dim<3>::Vector& vec,
 //------------------------------------------------------------------------------
 // Construct a SymTensor with the given diagonal elements, raised to a power.
 //------------------------------------------------------------------------------
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<1>::Vector& vec,
                                   const double exponent) {
   return Dim<1>::SymTensor(pow(vec[0], exponent));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<2>::Vector& vec,
                                   const double exponent) {
@@ -233,7 +233,7 @@ constructSymTensorWithPowDiagonal(const Dim<2>::Vector& vec,
                            0.0, pow(vec[1], exponent));
 }
 
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::SymTensor
 constructSymTensorWithPowDiagonal(const Dim<3>::Vector& vec,
                                   const double exponent) {
@@ -246,21 +246,21 @@ constructSymTensorWithPowDiagonal(const Dim<3>::Vector& vec,
 // Construct a tensor with the given value in the given row.
 //------------------------------------------------------------------------------
 template<typename TensorType, size_t col>
-inline
+SPHERAL_HOST_DEVICE inline
 TensorType
 constructTensorWithColumnValue(const double /*val*/) {
   VERIFY(false);
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<1>::Tensor
 constructTensorWithColumnValue<Dim<1>::Tensor, (size_t) 0>(const double val) {
   return Dim<1>::Tensor(val);
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithColumnValue<Dim<2>::Tensor, (size_t) 0>(const double val) {
   return Dim<2>::Tensor(val, 0.0,
@@ -268,7 +268,7 @@ constructTensorWithColumnValue<Dim<2>::Tensor, (size_t) 0>(const double val) {
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<2>::Tensor
 constructTensorWithColumnValue<Dim<2>::Tensor, (size_t) 1>(const double val) {
   return Dim<2>::Tensor(0.0, val,
@@ -276,7 +276,7 @@ constructTensorWithColumnValue<Dim<2>::Tensor, (size_t) 1>(const double val) {
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 0>(const double val) {
   return Dim<3>::Tensor(val, 0.0, 0.0,
@@ -285,7 +285,7 @@ constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 0>(const double val) {
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 1>(const double val) {
   return Dim<3>::Tensor(0.0, val, 0.0,
@@ -294,7 +294,7 @@ constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 1>(const double val) {
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 Dim<3>::Tensor
 constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 2>(const double val) {
   return Dim<3>::Tensor(0.0, 0.0, val,
@@ -306,21 +306,21 @@ constructTensorWithColumnValue<Dim<3>::Tensor, (size_t) 2>(const double val) {
 // In place addition of the absolute value of the elements of a tensor.
 //------------------------------------------------------------------------------
 template<typename TensorType>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 inPlaceAbsAdd(TensorType& /*lhs*/, const TensorType& /*rhs*/) {
   VERIFY(false);
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 inPlaceAbsAdd<Dim<1>::Tensor>(Dim<1>::Tensor& lhs, const Dim<1>::Tensor& rhs) {
   lhs.xx(lhs.xx() + std::abs(rhs.xx()));
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 inPlaceAbsAdd<Dim<2>::Tensor>(Dim<2>::Tensor& lhs, const Dim<2>::Tensor& rhs) {
   lhs.xx(lhs.xx() + std::abs(rhs.xx()));
@@ -330,7 +330,7 @@ inPlaceAbsAdd<Dim<2>::Tensor>(Dim<2>::Tensor& lhs, const Dim<2>::Tensor& rhs) {
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 inPlaceAbsAdd<Dim<3>::Tensor>(Dim<3>::Tensor& lhs, const Dim<3>::Tensor& rhs) {
   lhs.xx(lhs.xx() + std::abs(rhs.xx()));
@@ -348,14 +348,14 @@ inPlaceAbsAdd<Dim<3>::Tensor>(Dim<3>::Tensor& lhs, const Dim<3>::Tensor& rhs) {
 // In place element wise division of the elements of a tensor.
 //------------------------------------------------------------------------------
 template<typename TensorType>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 tensorElementWiseDivide(TensorType& /*lhs*/, const TensorType& /*rhs*/) {
   VERIFY(false);
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 tensorElementWiseDivide<Dim<1>::Tensor>(Dim<1>::Tensor& lhs, const Dim<1>::Tensor& rhs) {
   REQUIRE(rhs.xx() != 0.0);
@@ -363,7 +363,7 @@ tensorElementWiseDivide<Dim<1>::Tensor>(Dim<1>::Tensor& lhs, const Dim<1>::Tenso
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 tensorElementWiseDivide<Dim<2>::Tensor>(Dim<2>::Tensor& lhs, const Dim<2>::Tensor& rhs) {
   REQUIRE(std::find_if(rhs.begin(), rhs.end(),
@@ -375,7 +375,7 @@ tensorElementWiseDivide<Dim<2>::Tensor>(Dim<2>::Tensor& lhs, const Dim<2>::Tenso
 }
 
 template<>
-inline
+SPHERAL_HOST_DEVICE inline
 void
 tensorElementWiseDivide<Dim<3>::Tensor>(Dim<3>::Tensor& lhs, const Dim<3>::Tensor& rhs) {
   REQUIRE(std::find_if(rhs.begin(), rhs.end(),

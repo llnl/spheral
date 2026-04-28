@@ -35,6 +35,7 @@ set(Utilities_sources
     clipFacetedVolume.cc
     uniform_random.cc
     initializeAxom.cc
+    GPUUtils.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -43,9 +44,9 @@ set(Utilities_headers
     setGlobalFlags.hh
     Bessel.hh
     BuildData.hh
-    CHAI_MA_wrapper.hh
     CounterClockwiseComparator.hh
     DBC.hh
+    GPUUtils.hh
     LinearInterpolator.hh
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
@@ -142,8 +143,8 @@ set(Utilities_headers
     range.hh
     AnyVisitor.hh
     SpheralMessage.hh
-    StrideIterator.hh
     initializeAxom.hh
+    initializeAdiak.hh
   )
 
 spheral_install_python_files(fitspline.py)
