@@ -566,8 +566,8 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       if (nodeListi == nodeListj) {
         rhoSumi += mRZj*Wi;
         rhoSumj += mRZi*Wj;
-        normi += mRZi/rhoi*Wi;
-        normj += mRZj/rhoj*Wj;
+        normi += mRZi/rhoRZi*Wi;
+        normj += mRZj/rhoRZj*Wj;
       }
 
       // Compute the pair-wise artificial viscosity.
@@ -697,7 +697,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // // Add the self-contribution to density sum.
       // rhoSumi += mRZi*W0*Hdeti;
       // rhoSumi /= circi;
-      normi += mRZi*W0*Hdeti;
+      normi += mRZi/rhoRZi*W0*Hdeti;
 
       // // Finish the acceleration -- self hoop strain.
       // const Vector deltaDvDti(0.0, Pi/rhoRZi*riInv);
@@ -723,8 +723,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      // const auto vr_over_r = integrate_vr_over_r(vri, ri, DvDti[1], hri, dt);
-      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
+      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv); //integrate_vr_over_r(vri, ri, DvDti[1], hri, dt));  //
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
@@ -732,11 +731,9 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
       DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
-      // DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
 
       // Finish the specific thermal energy evolution.
       DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
-      // DepsDti -= (Pi + effViscousPressurei)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
@@ -876,7 +873,7 @@ integrate_vr_over_r(double vr,
                     const double hr,
                     const double dt) {
   const double tiny = 1.0e-10;
-  const double eps2 = FastMath::square(0.05*hr);
+  const double eps2 = FastMath::square(0.01*hr);
   const double result0 = vr*safeInvVar(r, eps2);  // answer at beginning of timestep
   if (fuzzyEqual(dt, 0.0, tiny)) return result0;
   if (r < 0.0) {
@@ -886,22 +883,24 @@ integrate_vr_over_r(double vr,
   }
   VERIFY(r > 0.0);
   VERIFY2(r*(r + vr*dt + 0.5*ar*dt*dt) >= 0.0, r << " " << vr << " " << ar << " " << dt << " : " << (r + vr*dt + 0.5*ar*dt*dt));
-  const double result1 = (vr + ar*dt)*safeInv(r + vr*dt + 0.5*ar*dt*dt, eps2);
-  return 0.5*(result0  + result1);
+  // const double result1 = (vr + ar*dt)*safeInv(r + vr*dt + 0.5*ar*dt*dt, eps2);
+  // return 0.5*(result0  + result1);
   // if (fuzzyEqual(ar, 0.0, 1e-50)) return 0.5*(result0 + 0.5*log((FastMath::square(r + vr*dt) + eps2)/(r*r + eps2))/dt);
-  // const auto D = 2.0*ar*r - vr*vr;
-  // const auto S2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) + D);
-  // const auto T2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) - D);
-  // CHECK(S2 >= 0.0);
-  // CHECK(T2 >= 0.0);
-  // const auto S = std::sqrt(S2);
-  // const auto T = std::sqrt(T2);
-  // auto G = [&](const double x) { return r + vr*x + 0.5*ar*x*x; };
-  // auto U = [&](const double x) { return vr + ar*x; };
-  // auto A = [&](const double x) { const auto Ux = U(x); return atan2(S*Ux, S2 + T2 + T*Ux); };
-  // auto B = [&](const double x) { const auto Ux = U(x); return FastMath::square(S2 + T2 + T*Ux) + S2*Ux*Ux; };
-  // const auto J = 2.0/(S2 + T2)*(S*(A(dt) - A(0.0)) + 0.5*T*log(B(dt)/B(0.0)));
+  if (fuzzyEqual(ar, 0.0, 1e-50)) return 0.5*log((FastMath::square(r + vr*dt) + eps2)/(r*r + eps2))/dt;
+  const auto D = 2.0*ar*r - vr*vr;
+  const auto S2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) + D);
+  const auto T2 = 0.5*(std::sqrt(D*D + 4.0*ar*ar*eps2) - D);
+  CHECK(S2 >= 0.0);
+  CHECK(T2 >= 0.0);
+  const auto S = std::sqrt(S2);
+  const auto T = std::sqrt(T2);
+  auto G = [&](const double x) { return r + vr*x + 0.5*ar*x*x; };
+  auto U = [&](const double x) { return vr + ar*x; };
+  auto A = [&](const double x) { const auto Ux = U(x); return atan2(S*Ux, S2 + T2 + T*Ux); };
+  auto B = [&](const double x) { const auto Ux = U(x); return FastMath::square(S2 + T2 + T*Ux) + S2*Ux*Ux; };
+  const auto J = 2.0/(S2 + T2)*(S*(A(dt) - A(0.0)) + 0.5*T*log(B(dt)/B(0.0)));
   // return 0.5*(result0 + 0.25*(log((FastMath::square(G(dt)) + eps2)/(r*r + eps2)) + vr*J)/dt);
+  return 0.25*(log((FastMath::square(G(dt)) + eps2)/(r*r + eps2)) + vr*J)/dt;
 }
 
 }
