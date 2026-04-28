@@ -26,7 +26,13 @@ if (ENABLE_WARNINGS)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     list(APPEND CXX_COMPILE_FLAGS -fdiagnostics-show-option -Wno-unused-command-line-argument -Wno-c++17-extensions)
     if(CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 18.0.0)
-      list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
+      list(APPEND CXX_COMPILE_FLAGS -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
+      if(CMAKE_CXX_COMPILER_VERSION LESS 20.0.0)
+        list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion)
+        # We build some Fortran code from outside sources (like the Helmholtz EOS) that
+        # cause building errors if the compiler is too picky...
+        set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
+      endif()
     endif()
   endif()
 else()
@@ -78,10 +84,6 @@ message("-- Using CXX compile flags ${CXX_COMPILE_FLAGS}")
 set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
   "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
 
-# We build some Fortran code from outside sources (like the Helmholtz EOS) that
-# cause building errors if the compiler is too picky...
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
-
 #-------------------------------------------------------------------------------
 # Set link options
 #-------------------------------------------------------------------------------
@@ -94,12 +96,7 @@ endif()
 
 if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_LINK_FLAGS -fsanitize=address)
-  set(ASAN_LIBRARY_PATH "")
-  find_asan_library(ASAN_LIBRARY_PATH)
-  get_filename_component(ASAN_LIBRARIES ${ASAN_LIBRARY_PATH} DIRECTORY)
   get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
-  list(APPEND SPHERAL_ENV_LINES "export LD_PRELOAD=${ASAN_LIBRARY_PATH}")
-  list(APPEND SPHERAL_ENV_LINES "export ASAN_OPTIONS=detect_leaks=0")
   message("------------------------Configuring ASAN------------------------------------")
   message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
   # Modify the hip arch if necessary
@@ -113,6 +110,11 @@ if (SPHERAL_ENABLE_ASAN)
   endif()
   set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
   message("----------------------------------------------------------------------------")
+endif()
+
+# Remove ompstub from fortran link libraries
+if("ompstub" IN_LIST CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES)
+  list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "ompstub")
 endif()
 
 set_property(GLOBAL PROPERTY SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")

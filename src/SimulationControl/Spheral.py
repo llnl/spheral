@@ -29,6 +29,11 @@ import scipy.spatial
 # ------------------------------------------------------------------------------
 from SpheralCompiledPackages import *
 
+# ------------------------------------------------------------------------------
+# Run initGPUs() to increase the device stack size.
+# ------------------------------------------------------------------------------
+initGPUs()
+
 # Aliases for a few objects
 FacetedVolume1d = Box1d
 FacetedVolume2d = Polygon

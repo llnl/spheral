@@ -36,8 +36,8 @@ public:
   virtual ~MonaghanGingoldViscosityRZ();
 
   // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
+  virtual std::pair<Tensor, Tensor> Piij(const size_t nodeListi, const size_t i, 
+                                         const size_t nodeListj, const size_t j,
                                          const Vector& xi,
                                          const Vector& etai,
                                          const Vector& vi,

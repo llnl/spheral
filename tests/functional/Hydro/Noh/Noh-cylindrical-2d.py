@@ -1,8 +1,8 @@
 #
 # SPH
 #
-#ATS:sph0 = test(        SELF, "--crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH, nPerh=2.0", np=8)
-#ATS:sph1 = testif(sph0, SELF, "--crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories False --steps 60 --restoreCycle 40 --checkRestart True", label="Noh cylindrical SPH, nPerh=2.0, restart test", np=8)
+#ATS:sph0 = test(        SELF, "--crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH, nPerh=4.0", np=8)
+#ATS:sph1 = testif(sph0, SELF, "--crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories False --steps 60 --restoreCycle 40 --checkRestart True", label="Noh cylindrical SPH, nPerh=4.0, restart test", np=8)
 #
 # ASPH
 #
@@ -43,6 +43,18 @@
 #
 #ATS:mfv0 = test(         SELF, "--mfv True --nRadial 100 --cfl 0.25 --nPerh 2.51 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical MFV, nPerh=2.5", np=8, gsph=True)
 #ATS:mfv1 = testif(mfv0,  SELF, "--mfv True --nRadial 100 --cfl 0.25 --nPerh 2.51 --graphics False --restartStep 20 --clearDirectories False --steps 60 --restoreCycle 40 --checkRestart True", label="Noh cylindrical MFV, nPerh=2.5, restart test", np=8, gsph=True)
+#
+# RAJA SPH
+#
+#ATS:tack(raja_test = True)
+#ATS:rjsph0 = test(          SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH+RAJA, nPerh=4.0", np=8)
+#ATS:rjsph1 = testif(rjsph0, SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories False --steps 60 --restoreCycle 40 --checkRestart True", label="Noh cylindrical SPH+RAJA, nPerh=4.0, restart test", np=8)
+#
+# GPU RAJA SPH
+#
+#ATS:gpurjsph0 = test(SELF, "--raja True --crksph False --nRadial 100 --cfl 0.25 --Cl 1.0 --Cq 1.0 --xfilter 0.0 --nPerh 4.01 --graphics False --restartStep 20 --clearDirectories True --steps 100", label="Noh cylindrical SPH+RAJA+GPU, nPerh=4.0", np=1, ngpu=1)
+###TODO: Add comparison tests for GPU tests since bit perfect comparisons don't work on GPUs
+#ATS:untack("raja_test")
 
 #-------------------------------------------------------------------------------
 # The Cylindrical Noh test case run in 2-D.
@@ -97,6 +109,7 @@ commandLine(seed = "constantDTheta",
             asph = False,                       # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
             solid = False,                      # If true, use the fluid limit of the solid hydro option                         
             radialOnly = False,                 # Force ASPH tensors to be aligned and evolve radially
+            raja = False,                       # Enable RAJA loops
 
             # general hydro options
             densityUpdate = RigorousSumDensity, # (IntegrateDensity)
@@ -184,10 +197,14 @@ commandLine(seed = "constantDTheta",
             graphics = True,
             )
 
+hydro_check_sum = sum([crksph,psph,fsisph,svph,gsph,mfm,mfv])
 assert not(boolReduceViscosity and boolCullenViscosity)
 assert not((gsph or mfm) and (boolReduceViscosity or boolCullenViscosity))
 assert not(fsisph and not solid)
-assert sum([crksph,psph,fsisph,svph,gsph,mfm,mfv])<=1
+assert hydro_check_sum<=1
+# RAJA option currently only works with SPH
+if raja:
+    assert hydro_check_sum==0
 assert thetaFactor in (0.5, 1.0, 2.0)
 theta = thetaFactor * pi
 
@@ -227,6 +244,9 @@ if asph:
 
 if solid:
     hydroname = "Solid" + hydroname
+
+if raja:
+    hydroname = "RAJA" + hydroname
 
 if dataDir:
     dataDir = os.path.join(dataDir,
@@ -468,7 +488,8 @@ else:
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                ASPH = asph)
+                ASPH = asph,
+                RAJA = raja)
 output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")

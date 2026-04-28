@@ -19,8 +19,7 @@ public:
   SPHERAL_HOST_DEVICE Base() = default;
   SPHERAL_HOST_DEVICE Base(double a_val1, double a_val2) :
     m_val1(a_val1),
-    m_val2(a_val2)
-  {}
+    m_val2(a_val2) {}
   SPHERAL_HOST_DEVICE double getVal1() { return m_val1; }
   SPHERAL_HOST_DEVICE double getVal2() { return m_val2; }
   SPHERAL_HOST_DEVICE void setVal1(const double a_val) { m_val1 = a_val; }
@@ -59,7 +58,7 @@ protected:
 class ManagedPointerTest : public ::testing::Test {
 };
 
-// Setting up G Test for FieldList
+// Setting up G Test for managed ptr
 TYPED_TEST_SUITE_P(ManagedPointerTypedTest);
 template <typename T> class ManagedPointerTypedTest : public ManagedPointerTest {};
 
@@ -101,7 +100,8 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, ModifyClass) {
   double val12 = 10.;
   double ref_valA = val0*(val1 + val2 + val3);
   double ref_valA2 = val0*(val12 + val2 + val3);
-  chai::managed_ptr<Base> d_ptr = chai::make_managed<DerivedA>(val1, val2, val3);
+  chai::managed_ptr<DerivedA> d_base = chai::make_managed<DerivedA>(val1, val2, val3);
+  chai::managed_ptr<Base> d_ptr = chai::dynamic_pointer_cast<Base, DerivedA>(d_base);
   for (int i = 0; i < 10; ++i) {
     double ref_val = ref_valA;
     if (i%2 == 0) {
@@ -122,7 +122,31 @@ GPU_TYPED_TEST_P(ManagedPointerTypedTest, ModifyClass) {
   d_ptr.free();
 }
 
-REGISTER_TYPED_TEST_SUITE_P(ManagedPointerTypedTest, Start, BasicCapture, ModifyClass);
+GPU_TYPED_TEST_P(ManagedPointerTypedTest, LoopTest) {
+  double val1 = 1.;
+  double val2 = 3.;
+  double val3 = 4.;
+  double ref_valA = val1 + val2 + val3;
+  chai::managed_ptr<DerivedA> d_ptr = chai::make_managed<DerivedA>(val1, val2, val3);
+  chai::managed_ptr<Base> d_base = chai::dynamic_pointer_cast<Base, DerivedA>(d_ptr);
+  const size_t N = 60000;
+  const double xstep = 0.1;
+  chai::ManagedArray<double> yvals(N);
+  RAJA::forall<RAJA::seq_exec>(TRS_UINT(0,N),
+    [=] (size_t i) {
+      yvals[i] = xstep*(double)i;
+    });
+  RAJA::forall<TypeParam>(TRS_UINT(0, N),
+    [=] (size_t i) {
+      double val = d_base->operate(yvals[i]);
+      SPHERAL_ASSERT_FLOAT_EQ(val, ref_valA*yvals[i]);
+    });
+  GPU_ERROR_CHECK;
+  d_base.free();
+  yvals.free();
+}
+
+REGISTER_TYPED_TEST_SUITE_P(ManagedPointerTypedTest, Start, BasicCapture, ModifyClass, LoopTest);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(ManagedPointer, ManagedPointerTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

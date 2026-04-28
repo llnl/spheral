@@ -103,7 +103,7 @@ Zero() {
   ZERO.addVisitor<std::reference_wrapper<PairwiseField<Dimension, Scalar, 2u>>>([](const std::any& x) { std::any_cast<reference_wrapper<PairwiseField<Dimension, Scalar, 2u>>>(x).get().Zero(); });
 
   // Walk the state values and zero them
-  for (auto itr: mStorage) {
+  for (auto& itr: mStorage) {
     ZERO.visit(itr.second);
   }
 }

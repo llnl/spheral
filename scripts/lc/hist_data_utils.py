@@ -23,11 +23,12 @@ def create_header(title, file_dict):
 """
     return html_string
 
-def create_html_file(file_name, file_dict, title, content):
+def create_html_file(file_name, file_dict, title, content = [], subheader = ""):
     html_string = create_header(title, file_dict)
     html_string += f"""
   <h1>{title}</h1>
 """
+    html_string += subheader
     for line in content:
         html_string += " "*4
         html_string += line+"\n"

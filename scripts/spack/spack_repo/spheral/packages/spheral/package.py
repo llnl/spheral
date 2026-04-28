@@ -67,6 +67,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('cmake@3.10.0:', type='build', when='@2024.01.1')
 
     depends_on('boost +system +filesystem ~atomic ~container ~coroutine ~chrono ~context ~date_time ~exception ~fiber ~graph ~iostreams ~locale ~log ~math ~mpi ~program_options ~python ~random ~regex ~test ~thread ~timer ~wave +pic', type='build')
+
     depends_on('boost@1.87.0', type='build', when='@develop')
     depends_on('boost@1.85.0', type='build', when='@2025.12.0')
     depends_on('boost@1.74.0', type='build', when='@:2025.06.1')

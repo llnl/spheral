@@ -26,9 +26,6 @@ from IPython.display import display
 from IPython.display import HTML
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdate
-from matplotlib.legend_handler import HandlerTuple
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -145,50 +142,38 @@ def compare_config(cdata, rdata):
 def filter_tests(data, test_name):
     return data.filter_metadata(lambda x: x["test_name"] == test_name)
 
-def group_dates(tk):
-    "Group Thickets based on day they were launched. Returns a GroupBy of Thickets."
-    # Add metadata pertaining to the day they are launched
-    mus = mdate.MUSECONDS_PER_DAY
-    tk.metadata["nday"] = tk.metadata["launchdate"].apply(lambda x: int(x*1E6/mus))
-    return tk.groupby(["nday"])
-
-def get_hist_times(test_name, bench_path, cluster, region):
-    """
-    Retrieve the historical benchmark times for a given test, benchmark directory,
-    and machine. Only includes tests that contain the provided region.
-    """
-    hist_cali_files = glob.glob(os.path.join(bench_path, "**", cluster, "**",
-                                             test_name+"*.cali"), recursive=True)
-    if (not hist_cali_files):
-        raise Exception(f"No {test_name}_*.cali files found for {cluster}")
-    hist_data = th.Thicket.from_caliperreader(hist_cali_files, disable_tqdm=True)
-    test_group = ["install_config"]
-    test_dict = hist_data.groupby(test_group)
-    return test_dict
-
 def get_caliper_files_and_bench(file_path):
     atsFile = os.path.join(file_path, "atsr.py")
     cali_files = []
     benchmarks = None
+    # If caliper file is provided directly
+    if (".cali" in file_path):
+        cali_files = [file_path]
     # If perf-dir is an ATS output directory, find the Caliper files from atsr.py
-    if (os.path.exists(atsFile)):
+    elif (os.path.exists(atsFile)):
         # Run atsr.py and put values into globals
         exec(compile(open(atsFile).read(), atsFile, 'exec'), globals())
         state = globals()["state"]
         tests = [t for t in state["testlist"] if t['status'] == PASSED]
         for test in tests:
-            # Retrieve the Caliper file from run
-            run_dir = test["directory"]
-            cali_file = test["options"]["caliper_filename"]
+            if ("caliper_filename" in test["options"]):
+                cali_file = test["options"]["caliper_filename"]
+            else:
+                raise RuntimeError("This tool only works on ATS output from run_perf.py")
             # Check if benchmark_dir is in ats options
             if (not benchmarks and "benchmark_dir" in test["options"]):
                 benchmarks = test["options"]["benchmark_dir"]
-            cfile = os.path.join(run_dir, cali_file)
+            # Check if the run_perf.py gathered the Caliper files or not
+            cfile = os.path.join(file_path, cali_file)
+            if (not os.path.exists(cfile)):
+                cfile = os.path.join(test["directory"], cali_file)
             cali_files.append(cfile)
     else:
         newpath = os.path.join(file_path, "**/*.cali")
         print(f"Searching {newpath}")
         cali_files = glob.glob(newpath, recursive=True)
+        if (not cali_files):
+            raise RuntimeError(f"No caliper files found in {file_path}")
     return cali_files, benchmarks
 
 def get_caliper_files(file_path):
@@ -205,38 +190,52 @@ def main():
         Otherwise, compare two performance outputs using:
         --perfdata1 /path/to/perfdata --perfdata2 /path/to/perfdata2
         If only --perfdata1 is specified, --ref is set to be the latest upstream benchmark data
+        If only --perfdata is specified, a Thicket tree is displayed of the timers.
         """)
-    parser.add_argument("--perfdata1", "--perfdata", type=str, required=True,
+    group1 = parser.add_mutually_exclusive_group()
+    group1.add_argument("--perfdata1", type=str, default=None,
+                        help="Directory containing an atsr.py file "+\
+                        "or a collection of Caliper files. Use when doing comparisons "+\
+                        "with --perfdata2 or --ref/benchmark data")
+    group1.add_argument("--perfdata", type=str, default=None,
                         help="Directory containing an atsr.py file "+\
                         "or a collection of Caliper files.")
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("--ref", type=str, default=None,
+    group2 = parser.add_mutually_exclusive_group()
+    group2.add_argument("--ref", type=str, default=None,
                        help="Directory of Caliper files to use as reference for "+\
                        " comparing against a threshold. Exits with failure perfdata1 "+\
                        "times exceed threshold.")
-    group.add_argument("--perfdata2", type=str, default=None,
+    group2.add_argument("--perfdata2", type=str, default=None,
                        help="Directory of an atsr.py file or a collection of Caliper "+\
                        "files to compare against perfdata1.")
     parser.add_argument("--test-name", type=str, default=None,
                         help="If comparing a specific test, default is compare all.")
     parser.add_argument("--display", action="store_true",
                         help="Display a tree for timers that failed.")
-    parser.add_argument("--no-comp", action="store_true",
-                        help="No comparisons, just display trees for --perfdata")
     args = parser.parse_args()
 
     # Create a Thicket of the current performance data
     #-------------------------------------------------
-    if (not os.path.exists(args.perfdata1)):
-        raise Exception(f"Cannot find {args.perfdata1}")
-    cali_files, benchmarks = get_caliper_files_and_bench(args.perfdata1)
+    if (args.perfdata1):
+        perfdata = args.perfdata1
+        no_comp = False
+    elif (args.perfdata):
+        perfdata = args.perfdata
+        no_comp = True
+    else:
+        raise Exception("Must specify either --perfdata or --perfdata1")
+    if (not os.path.exists(perfdata)):
+        raise Exception(f"Cannot find {perfdata}")
+    cali_files, benchmarks = get_caliper_files_and_bench(perfdata)
     if (len(cali_files) == 0):
-        raise Exception(f"No .cali files found in {args.perfdata1}")
+        raise Exception(f"No .cali files found in {perfdata}")
     curdata = th.Thicket.from_caliperreader(cali_files, disable_tqdm=True)
     # Filter data set by tests
     cur_test_data = group_tests(curdata)
     cur_test_data = remove_nans(cur_test_data)
-    if (args.no_comp):
+    if (no_comp):
+        if (args.perfdata2 or args.ref):
+            raise RuntimeError("To compare with --perfdata2 or --ref, use --perfdata1")
         for test_key, ctest in cur_test_data.items():
             metric = "Avg time/rank"
             if (len(ctest.profile) > 1):
@@ -249,7 +248,6 @@ def main():
 
     # Create a Thicket of the other performance data
     #-----------------------------------------------
-
     do_thresh_test = False
     if (args.perfdata2):
         if (not os.path.exists(args.perfdata2)):
@@ -271,25 +269,17 @@ def main():
                     ref_files = curdata.metadata["benchmark_dir"].iloc[0]
                 except:
                     raise Exception("No reference or benchmark data specified")
-            # If we using benchmark reference data, only grab the current install/machine
+            # If using benchmark reference data, only grab the current install/machine
             # Get install config and machine name from current data
             install_config = curdata.metadata["install_config"].iloc[0]
             machine_name = curdata.metadata["cluster"].iloc[0]
-            ref_loc = os.path.join(ref_files, install_config, machine_name, "latest")
+            ref_loc = os.path.join(ref_files, install_config, machine_name)
             if (not os.path.exists(ref_loc)):
                 raise Exception(f"Benchmark location {ref_loc} does not exists")
-            cali_ref_files = glob.glob(os.path.join(ref_loc, "*.cali"), recursive=True)
+            cali_ref_files = glob.glob(os.path.join(ref_loc, "**/*.cali"), recursive=True)
 
     if (len(cali_ref_files) == 0):
         raise Exception(f"No Caliper files found in {cali_ref_files}")
-    refdata = th.Thicket.from_caliperreader(cali_ref_files, disable_tqdm=True)
-
-    # Group, filter, and compare performance data
-    #--------------------------------------------
-
-    # Filter data set by tests
-    ref_test_data = group_tests(refdata)
-    ref_test_data = remove_nans(ref_test_data)
 
     test_status = {}
     # Iterate over each test
@@ -297,6 +287,9 @@ def main():
         test_name = test_key[0]
         if (args.test_name and args.test_name != test_name):
             continue
+        ref_test_files = [i for i in cali_ref_files if test_name in i]
+        ref_test_data = th.Thicket.from_caliperreader(ref_test_files, disable_tqdm=True)
+        ref_test_data = group_tests(ref_test_data)
         test_sph_nodes = test_key[1]
         test_steps = test_key[2]
         if (test_key not in ref_test_data):
@@ -326,10 +319,10 @@ def main():
             th.stats.std(rtest, metrics)
         # Extract times of comp_region
         if (not check_for_region(ctest, comp_region)):
-            print(f"{comp_region} not found in {args.perfdata1}")
+            print(f"{comp_region} not found in {perfdata}")
             continue
         if (not check_for_region(rtest, comp_region)):
-            print(f"{comp_region} not found in {os.path.dirname(cali_ref_files[0])}")
+            print(f"{comp_region} not found in {os.path.dirname(ref_test_files[0])}")
             continue
         cmain = get_times(ctest.statsframe, comp_region, cmetrics[0])[0]
         rmain = get_times(rtest.statsframe, comp_region, cmetrics[0])[0]
@@ -360,13 +353,13 @@ def main():
             if args.display:
                 ctest.statsframe.dataframe["pdata2"] = rtest.statsframe.dataframe[cmetrics[1]]
                 display(ctest.statsframe.tree(cmetrics[1], "pdata2"))
-    num_failed = 0
     if (do_thresh_test):
+        print("Negative values mean local data was faster than reference")
         print(f"Test name: test status, % change in time of {comp_region} region")
-        print("Negative values mean perfdata was faster than reference")
     else:
-        print(f"Test name: % change in time of {comp_region} region")
         print("Negative values mean perfdata1 was faster than perfdata2")
+        print(f"Test name: % change in time of {comp_region} region")
+    failed_tests = []
     for test_name, val in test_status.items():
         if ("SKIPPED" in val[0]):
             diff_str = " ".join(str(x) for x in val[1])
@@ -376,7 +369,7 @@ def main():
             rtime = val[2]
             thresh = val[3]
             if ("FAILED" in val[0]):
-                num_failed += 1
+                failed_tests.append(test_name)
                 print(f"{test_name}: FAILED, {(ctime/rtime-1.)*100.:0.3f}%")
             else:
                 print(f"{test_name}: PASSED, {(ctime/rtime-1.)*100.:0.3f}%")
@@ -384,8 +377,10 @@ def main():
             ctime = val[1]
             rtime = val[2]
             print(f"{test_name}: {(ctime/rtime-1.)*100.:0.3f}%")
-    if (num_failed > 0):
-        raise Exception(f"{num_failed} have failed")
+    if (len(failed_tests) > 0):
+        print("ERROR: The following tests have failed:")
+        for i in failed_tests:
+            print(i)
 
 if __name__ == "__main__":
     main()

@@ -93,37 +93,8 @@ macro(spheral_add_test)
   endif()
 
   # If we're configuring for unified memory on Cray machines we need to fiddle with the environment
-  if (SPHERAL_UNIFIED_MEMORY AND ENABLE_HIP)
+  if (ENABLE_HIP)
     set_tests_properties(${original_test_name} PROPERTIES ENVIRONMENT HSA_XNACK=1)
   endif()
 
 endmacro(spheral_add_test)
-
-macro(find_asan_library ASAN_LIBRARY_PATH)
-  # Determine the name of the asan library being used
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    # ASAN library names vary based on clang version so we search for it
-    execute_process(
-      COMMAND "${CMAKE_CXX_COMPILER}" -print-resource-dir
-      OUTPUT_VARIABLE CLANG_LIB_PATH
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-    file(GLOB ASAN_LIB_CANDIDATES "${CLANG_LIB_PATH}/lib/*/lib*.asan*.so")
-    list(LENGTH ASAN_LIB_CANDIDATES ASAN_LIB_COUNT)
-    if (ASAN_LIB_COUNT EQUAL 0)
-      message(FATAL_ERROR "No ASan library found matching '${DIR_NAME}/lib/*/lib*asan*.so'")
-    elseif (ASAN_LIB_COUNT GREATER 1)
-      message(FATAL_ERROR "Multiple ASan libraries found where only one is expected:\n"
-        "  ${ASAN_LIB_CANDIDATES}")
-    endif()
-    list(GET ASAN_LIB_CANDIDATES 0 ASAN_LIBRARY_NAME)
-    get_filename_component(ASAN_LIBRARY_NAME ${ASAN_LIBRARY_NAME} NAME)
-  else()
-    set(ASAN_LIBRARY_NAME "libasan.so")
-  endif()
-  execute_process(
-    COMMAND /bin/sh -c
-    "\"${CMAKE_CXX_COMPILER}\" -print-file-name=${ASAN_LIBRARY_NAME} | xargs dirname"
-    OUTPUT_VARIABLE ASAN_LIBRARY
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(ASAN_LIBRARY_PATH "${ASAN_LIBRARY}/${ASAN_LIBRARY_NAME}")
-endmacro()

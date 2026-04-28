@@ -51,6 +51,14 @@
 #
 # ACRK Classic 3D
 #ATS:test(SELF, "--geometry 3d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 3D reference data")
+#
+# RAJA ASPH 2D
+#ATS:tack(raja_test = True)
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_8proc --raja True", np=8, level=100, label="Generate 8 proc SPH+RAJA 2D reference data")
+#
+# GPU RAJA ASPH 2D
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_1gpu --raja True", np=1, ngpu=1, level=100, label="Generate 1 GPU SPH+RAJA 2D reference data")
+#ATS:untack("raja_test")
 
 import os, shutil, sys
 from math import *
@@ -91,6 +99,7 @@ commandLine(geometry = "2d",                     # one of (2d, 3d, RZ)
             # hydro type
             hydroType = "SPH",                   # One of (SPH, FSISPH, CRKSPH)
             asph = True,                         # Only for H evolution, not hydro algorithm.  One of (True, False, Classic)
+            raja = False,
 
             # general hydro options
             HUpdate = IdealH,
@@ -171,6 +180,9 @@ if asph:
         hydroname = "AClassic" + hydroname
     else:
         hydroname = "A" + hydroname
+
+if raja:
+    hydroname = "RAJA" + hydroname
 
 # Restart and output files.
 if baseDir:
@@ -486,7 +498,8 @@ else:
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                ASPH = asph)
+                ASPH = asph,
+                RAJA = raja)
 
 for bc in bcs:
     hydro.appendBoundary(bc)
@@ -579,7 +592,7 @@ if (not reflect) and control.totalSteps == 0:
     control.dropViz(control.totalSteps, 0.0, 0.0)
 
 #-------------------------------------------------------------------------------
-# Advance to completetion.
+# Advance to completion.
 #-------------------------------------------------------------------------------
 if not steps is None:
     control.step(steps)
