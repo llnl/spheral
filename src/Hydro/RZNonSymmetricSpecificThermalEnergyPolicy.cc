@@ -189,8 +189,8 @@ update(const KeyType& key,
       // Correct r- and z-components individually (multiplicative form)
       const auto dEzij = -(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]);
       const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
-      const auto chiz = dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny);
-      const auto chir = dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny);
+      const auto chiz = std::clamp(dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny), -10.0, 10.0);
+      const auto chir = std::clamp(dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny), -10.0, 10.0);
       DepsDt_thread(nodeListi, i) += chiz*pworkzi + chir*pworkri;
       DepsDt_thread(nodeListj, j) += chiz*pworkzj + chir*pworkrj;
 
