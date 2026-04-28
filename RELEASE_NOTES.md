@@ -9,7 +9,9 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path. This allows installs to be relocatable.
 
-  * Bug fixes
+  * Bug fixes:
+    * SPH now requests volume from RK.
+    * Fixed a circular dependency in the Johnson-Cook damage model.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
