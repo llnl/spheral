@@ -40,20 +40,20 @@
 //   return result.os.get();
 // }
 
-#define SpheralMessage(msg)                                          \
+#define SpheralMessage(...) do                                       \
   if (Spheral::Process::getRank() == 0)  {                           \
-    std::cout << "INFO: " << msg << std::endl;                       \
-  }
+    std::cout << "INFO: " << __VA_ARGS__ << std::endl;               \
+  } while(0)
   
-#define SpheralError(msg)                                            \
+#define SpheralError(...) do                                         \
   if (Spheral::Process::getRank() == 0)  {                           \
-    std::cerr << "ERROR: " << msg << std::endl;                      \
-  }
+    std::cerr << "ERROR: " << __VA_ARGS__ << std::endl;              \
+  } while(0)
   
-#define DeprecationWarning(msg)                                      \
+#define DeprecationWarning(...) do                                   \
   if (Spheral::Process::getRank() == 0)  {                           \
-    std::cerr << "DEPRECATION Warning: " << msg << std::endl;        \
-  }
+    std::cerr << "DEPRECATION Warning: " << __VA_ARGS__ << std::endl;\
+  } while(0)
 
 #endif
 
