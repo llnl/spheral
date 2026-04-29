@@ -131,14 +131,18 @@ update(const KeyType& key,
   const bool selfInteraction = selfAccelerations.numFields() == numFields;
 
   const auto hdt = 0.5*multiplier;
-  auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
+  auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "DepsDt");
+  auto deltaE0 = 0.0;
+  auto deltaEconserve = 0.0;
+  auto wsum = 0.0;
 
-  // Walk all pairs and figure out the discrete work for each point
+  // Walk all pairs to find the total energy changes
 #pragma omp parallel
   {
     // Thread private variables
-    auto DepsDt_thread = DepsDt.threadCopy();
-    // auto dEtot_thread = 0.0;
+    auto deltaEconserve_thread = 0.0;
+    auto deltaE0_thread = 0.0;
+    auto wsum_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -148,15 +152,7 @@ update(const KeyType& key,
       const auto nodeListj = pairs[kk].j_list;
 
       // State for node i.
-      const auto& posi = position(nodeListi, i);
-      const auto& Hi = H(nodeListi, i);
-      const auto  ri = std::abs(posi.y());
-      const auto  zetai = std::abs((Hi*posi).y());
-      const auto  hri = ri*safeInv(zetai);
-      CHECK(hri >= 0.0);
       const auto  mi = mass(nodeListi, i);
-      // const auto  mRZi = massRZ(nodeListi, i);
-      const auto  mRZi = mi*safeInvVar(2.0*M_PI*ri, 0.01*hri);
       const auto& vi = velocity(nodeListi, i);
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
@@ -165,15 +161,7 @@ update(const KeyType& key,
       const auto  pworkri = pairWork[kk][1];
 
       // State for node j.
-      const auto& posj = position(nodeListj, j);
-      const auto& Hj = H(nodeListj, j);
-      const auto  rj = std::abs(posj.y());
-      const auto  zetaj = std::abs((Hj*posj).y());
-      const auto  hrj = rj*safeInv(zetaj);
-      CHECK(hrj >= 0.0);
       const auto  mj = mass(nodeListj, j);
-      // const auto  mRZj = massRZ(nodeListj, j);
-      const auto  mRZj = mj*safeInvVar(2.0*M_PI*rj, 0.01*hrj);
       const auto& vj = velocity(nodeListj, j);
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
@@ -181,37 +169,68 @@ update(const KeyType& key,
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
 
-      // // Exact conservation
-      // const auto dE0ij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      // const auto chiz = dE0ij*safeInv(mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj), tiny);
-      // const auto chir = chiz;
+      // Exact conservation energy change
+      const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
+      const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
+      deltaEconserve_thread += dEij;
+      deltaE0_thread += dE0ij;
+      wsum_thread += std::abs(dE0ij);
+    }
 
-      // Correct r- and z-components individually (multiplicative form)
-      const auto dEzij = -(mRZi*vi12[0]*pacci[0] + mRZj*vj12[0]*paccj[0]);
-      const auto dErij = -(mi  *vi12[1]*pacci[1] + mj  *vj12[1]*paccj[1]);
-      const auto chiz = std::clamp(dEzij*safeInv(mRZi*pworkzi + mRZj*pworkzj, tiny), -10.0, 10.0);
-      const auto chir = std::clamp(dErij*safeInv(mi  *pworkri + mj  *pworkrj, tiny), -10.0, 10.0);
-      DepsDt_thread(nodeListi, i) += chiz*pworkzi + chir*pworkri;
-      DepsDt_thread(nodeListj, j) += chiz*pworkzj + chir*pworkrj;
+#pragma omp critical
+    {
+      deltaEconserve += deltaEconserve_thread;
+      deltaE0 += deltaE0_thread;
+      wsum += wsum_thread;
+    }
+  }
 
-      // // Additive form
-      // const auto dEij = ((dEzij - (mRZi*pworkzi + mRZj*pworkzj))/(mRZi + mRZj)*(mi + mj) +
-      //                    (dErij - (mi  *pworkri + mj  *pworkrj)));
-      // const auto wi = std::abs(pworkzi + pworkri);
-      // const auto wj = std::abs(pworkzj + pworkrj);
-      // // auto wi = 1.0;
-      // // auto wj = 1.0;
-      // // if (dEij < 0.0) {
-      // //   wi = std::abs(eps(nodeListi, i));
-      // //   wj = std::abs(eps(nodeListj, j));
-      // // }
-      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + dEij*wi*safeInv((wi + wj)*mi, tiny);
-      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + dEij*wj*safeInv((wi + wj)*mj, tiny);
+  // Find the global ratio for conservation
+  deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
+  deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
+  wsum = allReduce(wsum, SPHERAL_OP_SUM);
+  const auto dEtot = deltaEconserve - deltaE0;
 
-      // // Correct just the r-component error (additive form)
-      // const auto durij = (-(mi*vi12[1]*pacci[1] + mj*vj12[1]*paccj[1]) - (mi*pworkri + mj*pworkrj))/(mi + mj);
-      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + durij;
-      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + durij;
+  // Walk all pairs again and update the energy derivative
+#pragma omp parallel
+  {
+    // Thread private variables
+    auto DepsDt_thread = DepsDt.threadCopy();
+
+#pragma omp for
+    for (auto kk = 0u; kk < npairs; ++kk) {
+      const auto i = pairs[kk].i_node;
+      const auto j = pairs[kk].j_node;
+      const auto nodeListi = pairs[kk].i_list;
+      const auto nodeListj = pairs[kk].j_list;
+
+      // State for node i.
+      const auto  mi = mass(nodeListi, i);
+      const auto  pworkzi = pairWork[kk][0];
+      const auto  pworkri = pairWork[kk][1];
+      const auto  epsi = eps(nodeListi, i);
+
+      // State for node j.
+      const auto  mj = mass(nodeListj, j);
+      const auto  pworkzj = pairWork[kk][2];
+      const auto  pworkrj = pairWork[kk][3];
+      const auto  epsj = eps(nodeListj, j);
+
+      // Update the energy derivative
+      const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
+      // const auto duij = std::abs(dE0ij)*safeInv(wsum, tiny) * dEtot/(mi + mj);
+      const auto deltaij = std::abs(dE0ij)*safeInv(wsum, tiny) * dEtot;
+      auto wi = mi*std::abs(epsi);
+      auto wj = mj*std::abs(epsj);
+      const auto thpt = safeInv(wi + wj, tiny);
+      wi *= thpt;
+      wj *= thpt;
+      // if (not fuzzyEqual(wi + wj, 1.0, 1.0e-10)) {
+      //   wi = 0.5;
+      //   wj = 0.5;
+      // }
+      DepsDt_thread(nodeListi, i) += pworkzi + pworkri + wi*deltaij/mi;
+      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + wj*deltaij/mj;
     }
 
 #pragma omp critical
