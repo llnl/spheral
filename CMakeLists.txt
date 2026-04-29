@@ -1,6 +1,6 @@
 # CMakeLists to build the Spheral library.
 
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 include(cmake/SpheralVersion.cmake)
 project(spheral LANGUAGES C CXX Fortran VERSION ${SPHERAL_VERSION})
 

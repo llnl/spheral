@@ -24,7 +24,7 @@
 
 .clang_mpi_dev_build:
   variables:
-    SPEC: '+mpi%clang'
+    SPEC: '+mpi%clang_gfortran'
     EXTRA_CMAKE_ARGS: '-DENABLE_WARNINGS_AS_ERRORS=On -DENABLE_DEV_BUILD=On'
 
 

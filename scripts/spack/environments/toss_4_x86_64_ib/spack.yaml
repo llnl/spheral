@@ -2,12 +2,12 @@ spack:
   specs:
   - spheral+mpi%gcc
   - spheral~mpi%gcc
-  - spheral+mpi%clang
+  - spheral+mpi%clang_gfortran
   view: false
   concretizer:
     unify: false
     reuse: false
-    compiler_mixing: false
+    compiler_mixing: true
   develop:
     spheral:
       path: ../../../../
