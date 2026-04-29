@@ -174,7 +174,7 @@ update(const KeyType& key,
       const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
       deltaEconserve_thread += dEij;
       deltaE0_thread += dE0ij;
-      wsum_thread += std::abs(dE0ij);
+      wsum_thread += std::abs(dE0ij) + tiny;
     }
 
 #pragma omp critical
@@ -189,13 +189,16 @@ update(const KeyType& key,
   deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
   deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
   wsum = allReduce(wsum, SPHERAL_OP_SUM);
-  const auto dEtot = deltaEconserve - deltaE0;
+  CHECK(wsum > 0.0);
+  const auto dEtot = (deltaEconserve - deltaE0)/wsum;
 
   // Walk all pairs again and update the energy derivative
+  auto dEcheck = 0.0;
 #pragma omp parallel
   {
     // Thread private variables
     auto DepsDt_thread = DepsDt.threadCopy();
+    auto dEcheck_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -218,26 +221,31 @@ update(const KeyType& key,
 
       // Update the energy derivative
       const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
-      // const auto duij = std::abs(dE0ij)*safeInv(wsum, tiny) * dEtot/(mi + mj);
-      const auto deltaij = std::abs(dE0ij)*safeInv(wsum, tiny) * dEtot;
+      // const auto duij = std::abs(dE0ij) * dEtot/(mi + mj);
+      const auto deltaij = (std::abs(dE0ij) + tiny) * dEtot;
       auto wi = mi*std::abs(epsi);
       auto wj = mj*std::abs(epsj);
       const auto thpt = safeInv(wi + wj, tiny);
       wi *= thpt;
       wj *= thpt;
-      // if (not fuzzyEqual(wi + wj, 1.0, 1.0e-10)) {
-      //   wi = 0.5;
-      //   wj = 0.5;
-      // }
+      if (not fuzzyEqual(wi + wj, 1.0, 1.0e-10)) {
+        wi = 0.5;
+        wj = 0.5;
+      }
       DepsDt_thread(nodeListi, i) += pworkzi + pworkri + wi*deltaij/mi;
       DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + wj*deltaij/mj;
+      dEcheck_thread += deltaij;
     }
 
 #pragma omp critical
     {
       DepsDt_thread.threadReduce();
+      dEcheck += dEcheck_thread;
     }
   }
+  dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
+  VERIFY2(fuzzyEqual(dEcheck, deltaEconserve - deltaE0, 1.0e-10),
+          "Bad energy correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " " << wsum);
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
