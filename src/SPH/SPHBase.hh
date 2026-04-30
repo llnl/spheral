@@ -122,8 +122,8 @@ public:
   void enforceBoundaries(State<Dimension>& state,
                          StateDerivatives<Dimension>& derivs) override;
 
-  virtual bool requireVoronoiCells() const { return (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
-                                                     this->densityUpdate() == MassDensityType::SumVoronoiCellDensity); }
+  virtual bool requireVoronoiCells() const override { return (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
+                                                              this->densityUpdate() == MassDensityType::SumVoronoiCellDensity); }
 
   // Flag to choose whether we want to sum for density, or integrate the continuity equation.
   MassDensityType densityUpdate()                                               const { return mDensityUpdate; }
