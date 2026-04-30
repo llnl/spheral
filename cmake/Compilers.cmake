@@ -29,6 +29,8 @@ if (ENABLE_WARNINGS)
       list(APPEND CXX_COMPILE_FLAGS -Wno-deprecated-declarations -Wno-gnu-zero-variadic-macro-arguments)
       if(CMAKE_CXX_COMPILER_VERSION LESS 20.0.0)
         list(APPEND CXX_COMPILE_FLAGS -Wno-enum-constexpr-conversion)
+      endif()
+      if(CMAKE_CXX_COMPILER_VERSION LESS 19.0.0)
         # We build some Fortran code from outside sources (like the Helmholtz EOS) that
         # cause building errors if the compiler is too picky...
         set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
