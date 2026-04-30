@@ -884,7 +884,7 @@ getUniqueIndices(const std::vector<unsigned>& globalNeighbors,
   std::map<unsigned, unsigned> globalToIndex;
   for (auto j = 0u; j < size; ++j) {
     const auto global = globalNeighbors[j];
-    CHECK(global < numGlobalNodes());
+    CHECK(global < static_cast<unsigned>(numGlobalNodes()));
 
     auto it = globalToIndex.find(global);
     if (it == globalToIndex.end()) {

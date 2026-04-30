@@ -924,7 +924,7 @@ computeConnectivity() {
                     // We don't include self-interactions.
                     if ((iNodeList != jNodeList) or (i != j)) {
                       neighbors[jNodeList].push_back(j);
-                      CHECK2(neighbors[jNodeList].size() < 10000, "Too many neighbors: check H");
+                      CHECK2(neighbors[jNodeList].size() < 10000u, "Too many neighbors: check H");
                       if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
                       if (domainDecompIndependent) keys[jNodeList].push_back(pair<int, Key>(j, mKeys(jNodeList, j)));
                     }
