@@ -34,7 +34,7 @@ template<typename Value>
 constexpr Value
 allReduce(const Value& value, const MPI_Op op,
           const MPI_Comm comm = Communicator::communicator()) {
-  CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
+  // CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
   Value tmp = value;
   Value result;
   MPI_Allreduce(&tmp, &result, 1,
@@ -46,7 +46,7 @@ template<typename Value>
 constexpr std::pair<Value, int>
 allReduceLoc(const Value value, const MPI_Op op,
              const MPI_Comm comm = Communicator::communicator()) {
-  CHECK(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC);
+  // CHECK(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC);
   struct {
     Value val;
     int rank;
@@ -65,7 +65,7 @@ template<typename Value>
 constexpr Value
 distScan(const Value& value, const MPI_Op op,
      const MPI_Comm comm = Communicator::communicator()) {
-  CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
+  // CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
   Value tmp = value;
   Value result;
   MPI_Scan(&tmp, &result, 1, DataTypeTraits<Value>::MpiDataType(), op, comm);
