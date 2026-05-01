@@ -117,10 +117,10 @@ update(const KeyType& key,
        const double /*t*/,
        const double /*dt*/) {
 
-  auto globalIDs = globalNodeIDs(*mDataBasePtr);
-  const auto& bound = TreeDistributedBoundary<Dimension>::instance();
-  bound.applyFieldListGhostBoundary(globalIDs);
-  bound.finalizeGhostBoundary();
+  // auto globalIDs = globalNodeIDs(*mDataBasePtr);
+  // const auto& bound = TreeDistributedBoundary<Dimension>::instance();
+  // bound.applyFieldListGhostBoundary(globalIDs);
+  // bound.finalizeGhostBoundary();
 
 //   // HACK!
 //   std::cerr.setf(std::ios::scientific, std::ios::floatfield);
@@ -155,7 +155,6 @@ update(const KeyType& key,
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "DepsDt");
-  auto deltaE0 = 0.0;
   auto deltaEconserve = 0.0;
   auto wsum = 0.0;
   auto pairCount = 0.0;
@@ -169,7 +168,6 @@ update(const KeyType& key,
   {
     // Thread private variables
     auto deltaEconserve_thread = 0.0;
-    auto deltaE0_thread = 0.0;
     auto wsum_thread = 0.0;
     auto pairCount_thread = 0.0;
 
@@ -216,15 +214,18 @@ update(const KeyType& key,
       // Exact conservation energy change
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
       const auto dE0ij = (mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj));
-      deltaEconserve_thread += dEij*pairScale;
-      deltaE0_thread += dE0ij*pairScale;
+      deltaEconserve_thread += (dEij - dE0ij)*pairScale;
       wsum_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
+
+      // const auto deltaij = dEij - dE0ij;
+      // const auto duij = deltaij/(mi + mj);
+      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
+      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
     }
 
 #pragma omp critical
     {
       deltaEconserve += deltaEconserve_thread;
-      deltaE0 += deltaE0_thread;
       wsum += wsum_thread;
       pairCount += pairCount_thread;
     }
@@ -232,13 +233,9 @@ update(const KeyType& key,
 
   // Find the global delta for conservation
   deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
-  deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
   wsum = allReduce(wsum, SPHERAL_OP_SUM);
   CHECK(wsum > 0.0);
-  const auto dEtot = (deltaEconserve - deltaE0)/wsum;
-
-  pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
-  if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " " << wsum << " " << deltaEconserve << " " << deltaE0 << std::endl;
+  const auto dEtot = deltaEconserve/wsum;
 
   // Walk all pairs again and update the energy derivative
   auto dEcheck = 0.0;
@@ -278,7 +275,8 @@ update(const KeyType& key,
 
       // Update the energy derivative
       const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
-      const auto deltaij = dEtot*(std::abs(dE0ij) + tiny);
+      const auto deltaij = dEtot*(std::abs(epsi) + std::abs(epsj) + tiny);
+      // const auto deltaij = dEtot*(std::abs(dE0ij) + tiny);
       dEcheck_thread += deltaij*pairScale;
       wsumCheck_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
       // wsumCheck_thread += (std::abs(dE0ij) + tiny)*pairScale;
@@ -308,10 +306,15 @@ update(const KeyType& key,
   }
   dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
   wsumCheck = allReduce(wsumCheck, SPHERAL_OP_SUM);
-  // VERIFY2(fuzzyEqual(dEcheck, deltaEconserve - deltaE0, 1.0e-10),
-  //         "Bad energy correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " : " << wsum << " " << wsumCheck);
-  // VERIFY2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
-  //         "Bad wsum correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " : " << wsum << " " << wsumCheck);
+  VERIFY2(fuzzyEqual(dEcheck, deltaEconserve, 1.0e-10),
+          "Bad energy correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
+  VERIFY2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
+          "Bad wsum correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
+
+  pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
+  if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " : "
+                                         << wsum << " " << wsumCheck << " : "
+                                         << deltaEconserve << " " << dEcheck << std::endl;
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
