@@ -9,4 +9,5 @@ pyyaml == 6.0.2
 llnl-thicket == 2024.2.1
 ipython >= 8.12.3, <= 8.18.1
 pyside6 >= 6.9.3
+ply >= 3.6
 ats @ file://@SPHERAL_ROOT_DIR@/extern/ATS
