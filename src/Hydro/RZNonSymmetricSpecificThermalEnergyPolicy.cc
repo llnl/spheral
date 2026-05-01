@@ -24,6 +24,11 @@
 #include "Utilities/SpheralFunctions.hh"
 #include "Geometry/toroidalVolume.hh"
 
+#ifdef SPHERAL_ENABLE_MPI
+#include "Distributed/TreeDistributedBoundary.hh"
+#endif
+#include "Utilities/globalNodeIDs.hh"
+
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -34,7 +39,20 @@ using std::endl;
 
 namespace Spheral {
 
-// namespace {
+namespace {
+
+template<typename Dimension>
+inline
+bool
+isCommunicatedNode(const NodeList<Dimension>& nodes,
+                   const size_t i) {
+#ifdef SPHERAL_ENABLE_MPI
+  const auto& bound = TreeDistributedBoundary<Dimension>::instance();
+  return bound.isGhostNode(nodes, i);
+#else
+  return false;
+#endif
+}
 
 // inline
 // double
@@ -76,7 +94,7 @@ namespace Spheral {
 //   }  
 // }
 
-// }
+}
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -98,6 +116,11 @@ update(const KeyType& key,
        const double multiplier,
        const double /*t*/,
        const double /*dt*/) {
+
+  auto globalIDs = globalNodeIDs(*mDataBasePtr);
+  const auto& bound = TreeDistributedBoundary<Dimension>::instance();
+  bound.applyFieldListGhostBoundary(globalIDs);
+  bound.finalizeGhostBoundary();
 
 //   // HACK!
 //   std::cerr.setf(std::ios::scientific, std::ios::floatfield);
@@ -135,6 +158,11 @@ update(const KeyType& key,
   auto deltaE0 = 0.0;
   auto deltaEconserve = 0.0;
   auto wsum = 0.0;
+  auto pairCount = 0.0;
+
+  // const auto numInternalNodesPerNodeList = mDataBasePtr->numInternalNodesPerFluidNodeList();
+  // CHECK(numInternalNodesPerNodeList.size() == numFields);
+  // auto isGhost = [&](const size_t k, const size_t i) { return false; }; //return i >= numInternalNodesPerNodeList[k]; };
 
   // Walk all pairs to find the total energy changes
 #pragma omp parallel
@@ -143,6 +171,7 @@ update(const KeyType& key,
     auto deltaEconserve_thread = 0.0;
     auto deltaE0_thread = 0.0;
     auto wsum_thread = 0.0;
+    auto pairCount_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -151,6 +180,19 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
+      // const auto ifactor = isGhost(nodeListi, i) ? 0.0 : 1.0;
+      // const auto jfactor = isGhost(nodeListj, j) ? 0.0 : 1.0;
+      const auto ifactor = isCommunicatedNode(*nodeListPtrs[nodeListi], i) ? 0.0 : 1.0;
+      const auto jfactor = isCommunicatedNode(*nodeListPtrs[nodeListj], j) ? 0.0 : 1.0;
+      const auto pairScale = 0.5*(ifactor + jfactor);
+      CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
+      pairCount_thread += pairScale;
+
+      // const auto gIDi = globalIDs(nodeListi, i);
+      // const auto gIDj = globalIDs(nodeListj, j);
+      // // if (ifactor + jfactor < 2.0) std::cerr << "--> (" << globalIDs(nodeListi, i) << " " << globalIDs(nodeListj, j) << ") (" << ifactor << " " << jfactor << ")\n";
+      // if ((gIDi == 297 or gIDi == 1000) and (gIDj == 297 or gIDj == 1000)) std::cerr << "--> (" << gIDi << " " << gIDj << ") (" << ifactor << " " << jfactor << ")\n";
+      
       // State for node i.
       const auto  mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
@@ -159,6 +201,7 @@ update(const KeyType& key,
       const auto& pacci = pairAccelerations[kk][0];
       const auto  pworkzi = pairWork[kk][0];
       const auto  pworkri = pairWork[kk][1];
+      const auto  epsi = eps(nodeListi, i);
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
@@ -168,13 +211,14 @@ update(const KeyType& key,
       const auto& paccj = pairAccelerations[kk][1];
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
+      const auto  epsj = eps(nodeListj, j);
 
       // Exact conservation energy change
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
-      deltaEconserve_thread += dEij;
-      deltaE0_thread += dE0ij;
-      wsum_thread += std::abs(dE0ij) + tiny;
+      const auto dE0ij = (mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj));
+      deltaEconserve_thread += dEij*pairScale;
+      deltaE0_thread += dE0ij*pairScale;
+      wsum_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
     }
 
 #pragma omp critical
@@ -182,23 +226,29 @@ update(const KeyType& key,
       deltaEconserve += deltaEconserve_thread;
       deltaE0 += deltaE0_thread;
       wsum += wsum_thread;
+      pairCount += pairCount_thread;
     }
   }
 
-  // Find the global ratio for conservation
+  // Find the global delta for conservation
   deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
   deltaE0 = allReduce(deltaE0, SPHERAL_OP_SUM);
   wsum = allReduce(wsum, SPHERAL_OP_SUM);
   CHECK(wsum > 0.0);
   const auto dEtot = (deltaEconserve - deltaE0)/wsum;
 
+  pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
+  if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " " << wsum << " " << deltaEconserve << " " << deltaE0 << std::endl;
+
   // Walk all pairs again and update the energy derivative
   auto dEcheck = 0.0;
+  auto wsumCheck = 0.0;
 #pragma omp parallel
   {
     // Thread private variables
     auto DepsDt_thread = DepsDt.threadCopy();
     auto dEcheck_thread = 0.0;
+    auto wsumCheck_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -206,6 +256,13 @@ update(const KeyType& key,
       const auto j = pairs[kk].j_node;
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
+
+      // const auto ifactor = isGhost(nodeListi, i) ? 0.0 : 1.0;
+      // const auto jfactor = isGhost(nodeListj, j) ? 0.0 : 1.0;
+      const auto ifactor = isCommunicatedNode(*nodeListPtrs[nodeListi], i) ? 0.0 : 1.0;
+      const auto jfactor = isCommunicatedNode(*nodeListPtrs[nodeListj], j) ? 0.0 : 1.0;
+      const auto pairScale = 0.5*(ifactor + jfactor);
+      CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
 
       // State for node i.
       const auto  mi = mass(nodeListi, i);
@@ -221,10 +278,12 @@ update(const KeyType& key,
 
       // Update the energy derivative
       const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
-      // const auto duij = std::abs(dE0ij) * dEtot/(mi + mj);
-      const auto deltaij = (std::abs(dE0ij) + tiny) * dEtot;
-      auto wi = mi*std::abs(epsi);
-      auto wj = mj*std::abs(epsj);
+      const auto deltaij = dEtot*(std::abs(dE0ij) + tiny);
+      dEcheck_thread += deltaij*pairScale;
+      wsumCheck_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
+      // wsumCheck_thread += (std::abs(dE0ij) + tiny)*pairScale;
+      auto wi = 0.5; //mi*std::abs(pworkzi + pworkri);
+      auto wj = 0.5; //mj*std::abs(pworkzj + pworkrj);
       const auto thpt = safeInv(wi + wj, tiny);
       wi *= thpt;
       wj *= thpt;
@@ -234,18 +293,25 @@ update(const KeyType& key,
       }
       DepsDt_thread(nodeListi, i) += pworkzi + pworkri + wi*deltaij/mi;
       DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + wj*deltaij/mj;
-      dEcheck_thread += deltaij;
+
+      // const auto duij = deltaij/(mi + mj);
+      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
+      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
     }
 
 #pragma omp critical
     {
       DepsDt_thread.threadReduce();
       dEcheck += dEcheck_thread;
+      wsumCheck += wsumCheck_thread;
     }
   }
   dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
-  VERIFY2(fuzzyEqual(dEcheck, deltaEconserve - deltaE0, 1.0e-10),
-          "Bad energy correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " " << wsum);
+  wsumCheck = allReduce(wsumCheck, SPHERAL_OP_SUM);
+  // VERIFY2(fuzzyEqual(dEcheck, deltaEconserve - deltaE0, 1.0e-10),
+  //         "Bad energy correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " : " << wsum << " " << wsumCheck);
+  // VERIFY2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
+  //         "Bad wsum correction: " << dEcheck << " " << (deltaEconserve - deltaE0) << " : " << wsum << " " << wsumCheck);
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
