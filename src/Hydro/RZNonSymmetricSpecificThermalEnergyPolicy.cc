@@ -22,12 +22,12 @@
 #include "Utilities/DBC.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/SpheralFunctions.hh"
+#include "Utilities/range.hh"
 #include "Geometry/toroidalVolume.hh"
 
 #ifdef SPHERAL_ENABLE_MPI
 #include "Distributed/TreeDistributedBoundary.hh"
 #endif
-#include "Utilities/globalNodeIDs.hh"
 
 #include <vector>
 #include <limits>
@@ -41,18 +41,41 @@ namespace Spheral {
 
 namespace {
 
+//------------------------------------------------------------------------------
+// Functor class to check if a point is a communicated ghost point from another
+// domain.
+// This implementation assumes the ghost point indices are contiguous, and that
+// we're using TreeDistributedBoundary.
+//------------------------------------------------------------------------------
 template<typename Dimension>
-inline
-bool
-isCommunicatedNode(const NodeList<Dimension>& nodes,
-                   const size_t i) {
+class CheckCommunicatedNodes {
+public:
+  CheckCommunicatedNodes(const std::vector<NodeList<Dimension>*>& nodeListPtrs):
+    mGhostRanges(nodeListPtrs.size(), std::pair<size_t, size_t>(0u, 0u)) {
 #ifdef SPHERAL_ENABLE_MPI
-  const auto& bound = TreeDistributedBoundary<Dimension>::instance();
-  return bound.isGhostNode(nodes, i);
-#else
-  return false;
+    if (Process::getTotalNumberOfProcesses() > 1) {
+      const auto& bound = TreeDistributedBoundary<Dimension>::instance();
+      for (const auto [k, nptr]: enumerate(nodeListPtrs)) {
+        const auto& ghosts = bound.ghostNodes(*nptr);
+        const auto [imin, imax] = std::minmax_element(ghosts.begin(), ghosts.end());
+        CHECK(imin < ghosts.end());
+        CHECK(imax < ghosts.end());
+        mGhostRanges[k] = std::make_pair(*imin, *imax);
+      }
+    }
 #endif
-}
+  }
+  ~CheckCommunicatedNodes() = default;
+  bool operator()(const size_t nodeListID,
+                  const size_t i) const {
+    REQUIRE(nodeListID < mGhostRanges.size());
+    const auto [imin, imax] = mGhostRanges[nodeListID];
+    return (i >=  imin and i < imax);
+  }
+
+private:
+  std::vector<std::pair<size_t, size_t>> mGhostRanges;
+};
 
 // inline
 // double
@@ -117,14 +140,9 @@ update(const KeyType& key,
        const double /*t*/,
        const double /*dt*/) {
 
-  // auto globalIDs = globalNodeIDs(*mDataBasePtr);
-  // const auto& bound = TreeDistributedBoundary<Dimension>::instance();
-  // bound.applyFieldListGhostBoundary(globalIDs);
-  // bound.finalizeGhostBoundary();
-
-  // HACK!
-  std::cerr.setf(std::ios::scientific, std::ios::floatfield);
-  std::cerr.precision(15);
+  // // HACK!
+  // std::cerr.setf(std::ios::scientific, std::ios::floatfield);
+  // std::cerr.precision(15);
 
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
@@ -134,6 +152,9 @@ update(const KeyType& key,
   const auto numFields = eps.numFields();
   const auto tiny = 1.0e-20;
   const auto nodeListPtrs = eps.nodeListPtrs();
+
+  // Build a functor to check for communicated nodes
+  const CheckCommunicatedNodes<Dimension> isCommunicatedNode(nodeListPtrs);
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
@@ -159,10 +180,6 @@ update(const KeyType& key,
   auto wsum = 0.0;
   auto pairCount = 0.0;
 
-  // const auto numInternalNodesPerNodeList = mDataBasePtr->numInternalNodesPerFluidNodeList();
-  // CHECK(numInternalNodesPerNodeList.size() == numFields);
-  // auto isGhost = [&](const size_t k, const size_t i) { return false; }; //return i >= numInternalNodesPerNodeList[k]; };
-
   // Walk all pairs to find the total energy changes
 #pragma omp parallel
   {
@@ -178,10 +195,8 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
-      // const auto ifactor = isGhost(nodeListi, i) ? 0.0 : 1.0;
-      // const auto jfactor = isGhost(nodeListj, j) ? 0.0 : 1.0;
-      const auto ifactor = isCommunicatedNode(*nodeListPtrs[nodeListi], i) ? 0.0 : 1.0;
-      const auto jfactor = isCommunicatedNode(*nodeListPtrs[nodeListj], j) ? 0.0 : 1.0;
+      const auto ifactor = isCommunicatedNode(nodeListi, i) ? 0.0 : 1.0;
+      const auto jfactor = isCommunicatedNode(nodeListj, j) ? 0.0 : 1.0;
       const auto pairScale = 0.5*(ifactor + jfactor);
       CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
       pairCount_thread += pairScale;
@@ -252,10 +267,8 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
-      // const auto ifactor = isGhost(nodeListi, i) ? 0.0 : 1.0;
-      // const auto jfactor = isGhost(nodeListj, j) ? 0.0 : 1.0;
-      const auto ifactor = isCommunicatedNode(*nodeListPtrs[nodeListi], i) ? 0.0 : 1.0;
-      const auto jfactor = isCommunicatedNode(*nodeListPtrs[nodeListj], j) ? 0.0 : 1.0;
+      const auto ifactor = isCommunicatedNode(nodeListi, i) ? 0.0 : 1.0;
+      const auto jfactor = isCommunicatedNode(nodeListj, j) ? 0.0 : 1.0;
       const auto pairScale = 0.5*(ifactor + jfactor);
       CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
 
