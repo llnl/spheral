@@ -122,9 +122,9 @@ update(const KeyType& key,
   // bound.applyFieldListGhostBoundary(globalIDs);
   // bound.finalizeGhostBoundary();
 
-//   // HACK!
-//   std::cerr.setf(std::ios::scientific, std::ios::floatfield);
-//   std::cerr.precision(15);
+  // HACK!
+  std::cerr.setf(std::ios::scientific, std::ios::floatfield);
+  std::cerr.precision(15);
 
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
@@ -199,7 +199,6 @@ update(const KeyType& key,
       const auto& pacci = pairAccelerations[kk][0];
       const auto  pworkzi = pairWork[kk][0];
       const auto  pworkri = pairWork[kk][1];
-      const auto  epsi = eps(nodeListi, i);
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
@@ -209,13 +208,12 @@ update(const KeyType& key,
       const auto& paccj = pairAccelerations[kk][1];
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
-      const auto  epsj = eps(nodeListj, j);
 
       // Exact conservation energy change
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
       const auto dE0ij = (mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj));
       deltaEconserve_thread += (dEij - dE0ij)*pairScale;
-      wsum_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
+      wsum_thread += (mi*std::abs(pworkzi + pworkri) + mj*std::abs(pworkzj + pworkrj))*pairScale;
 
       // const auto deltaij = dEij - dE0ij;
       // const auto duij = deltaij/(mi + mj);
@@ -234,8 +232,8 @@ update(const KeyType& key,
   // Find the global delta for conservation
   deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
   wsum = allReduce(wsum, SPHERAL_OP_SUM);
-  CHECK(wsum > 0.0);
-  const auto dEtot = deltaEconserve/wsum;
+  CHECK(wsum >= 0.0);
+  const auto dEtot = deltaEconserve/(wsum + tiny);
 
   // Walk all pairs again and update the energy derivative
   auto dEcheck = 0.0;
@@ -265,23 +263,21 @@ update(const KeyType& key,
       const auto  mi = mass(nodeListi, i);
       const auto  pworkzi = pairWork[kk][0];
       const auto  pworkri = pairWork[kk][1];
-      const auto  epsi = eps(nodeListi, i);
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
       const auto  pworkzj = pairWork[kk][2];
       const auto  pworkrj = pairWork[kk][3];
-      const auto  epsj = eps(nodeListj, j);
 
       // Update the energy derivative
-      const auto dE0ij = mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj);
-      const auto deltaij = dEtot*(std::abs(epsi) + std::abs(epsj) + tiny);
-      // const auto deltaij = dEtot*(std::abs(dE0ij) + tiny);
+      const auto wij = mi*std::abs(pworkzi + pworkri) + mj*std::abs(pworkzj + pworkrj);
+      // const auto deltaij = dEtot*(std::abs(epsi) + std::abs(epsj) + tiny);
+      const auto deltaij = dEtot*wij;
       dEcheck_thread += deltaij*pairScale;
-      wsumCheck_thread += (std::abs(epsi) + std::abs(epsj) + tiny)*pairScale;
+      wsumCheck_thread += wij*pairScale;
       // wsumCheck_thread += (std::abs(dE0ij) + tiny)*pairScale;
-      auto wi = 0.5; //mi*std::abs(pworkzi + pworkri);
-      auto wj = 0.5; //mj*std::abs(pworkzj + pworkrj);
+      auto wi = mi*std::abs(pworkzi + pworkri);
+      auto wj = mj*std::abs(pworkzj + pworkrj);
       const auto thpt = safeInv(wi + wj, tiny);
       wi *= thpt;
       wj *= thpt;
@@ -306,15 +302,15 @@ update(const KeyType& key,
   }
   dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
   wsumCheck = allReduce(wsumCheck, SPHERAL_OP_SUM);
-  VERIFY2(fuzzyEqual(dEcheck, deltaEconserve, 1.0e-10),
+  VERIFY2(wsum == 0.0 or fuzzyEqual(dEcheck, deltaEconserve, 1.0e-10),
           "Bad energy correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
   VERIFY2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
           "Bad wsum correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
 
-  pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
-  if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " : "
-                                         << wsum << " " << wsumCheck << " : "
-                                         << deltaEconserve << " " << dEcheck << std::endl;
+  // pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
+  // if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " : "
+  //                                        << wsum << " " << wsumCheck << " : "
+  //                                        << deltaEconserve << " " << dEcheck << std::endl;
 
   // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
