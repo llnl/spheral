@@ -150,11 +150,12 @@ update(const KeyType& key,
           nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
   auto eps = state.fields(fieldKey, Scalar());
   const auto numFields = eps.numFields();
-  const auto tiny = 1.0e-20;
   const auto nodeListPtrs = eps.nodeListPtrs();
 
-  // Build a functor to check for communicated nodes
-  const CheckCommunicatedNodes<Dimension> isCommunicatedNode(nodeListPtrs);
+  // Function to check if the given node is a ghost node
+  const auto numInternalNodesPerNodeList = mDataBasePtr->numInternalNodesPerFluidNodeList();
+  CHECK(numInternalNodesPerNodeList.size() == numFields);
+  auto isGhost = [&](const size_t k, const size_t i) { return i >= numInternalNodesPerNodeList[k]; };
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
@@ -176,17 +177,19 @@ update(const KeyType& key,
 
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "DepsDt");
+  auto weight = mDataBasePtr->newFluidFieldList(0.0, "weight");
   auto deltaEconserve = 0.0;
   auto wsum = 0.0;
-  auto pairCount = 0.0;
 
   // Walk all pairs to find the total energy changes
 #pragma omp parallel
   {
     // Thread private variables
+    typename SpheralThreads<Dim<2>>::FieldListStack threadStack;
+    auto DepsDt_thread = DepsDt.threadCopy(threadStack);
+    auto weight_thread = weight.threadCopy(threadStack);
     auto deltaEconserve_thread = 0.0;
     auto wsum_thread = 0.0;
-    auto pairCount_thread = 0.0;
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
@@ -195,17 +198,9 @@ update(const KeyType& key,
       const auto nodeListi = pairs[kk].i_list;
       const auto nodeListj = pairs[kk].j_list;
 
-      const auto ifactor = isCommunicatedNode(nodeListi, i) ? 0.0 : 1.0;
-      const auto jfactor = isCommunicatedNode(nodeListj, j) ? 0.0 : 1.0;
-      const auto pairScale = 0.5*(ifactor + jfactor);
-      CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
-      pairCount_thread += pairScale;
+      const auto ifactor = isGhost(nodeListi, i) ? 0.0 : 1.0;
+      const auto jfactor = isGhost(nodeListj, j) ? 0.0 : 1.0;
 
-      // const auto gIDi = globalIDs(nodeListi, i);
-      // const auto gIDj = globalIDs(nodeListj, j);
-      // // if (ifactor + jfactor < 2.0) std::cerr << "--> (" << globalIDs(nodeListi, i) << " " << globalIDs(nodeListj, j) << ") (" << ifactor << " " << jfactor << ")\n";
-      // if ((gIDi == 297 or gIDi == 1000) and (gIDj == 297 or gIDj == 1000)) std::cerr << "--> (" << gIDi << " " << gIDj << ") (" << ifactor << " " << jfactor << ")\n";
-      
       // State for node i.
       const auto  mi = mass(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
@@ -227,121 +222,73 @@ update(const KeyType& key,
       // Exact conservation energy change
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
       const auto dE0ij = (mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj));
-      deltaEconserve_thread += (dEij - dE0ij)*pairScale;
-      wsum_thread += (mi*std::abs(pworkzi + pworkri) + mj*std::abs(pworkzj + pworkrj))*pairScale;
+      const auto duij = (dEij - dE0ij)/(mi + mj);
+      const auto wi = mi*(std::abs(pworkzi) + std::abs(pworkri))*ifactor;
+      const auto wj = mj*(std::abs(pworkzj) + std::abs(pworkrj))*jfactor;
+      deltaEconserve_thread += mi*duij*ifactor + mj*duij*jfactor;
+      wsum_thread += wi + wj;
 
-      // const auto deltaij = dEij - dE0ij;
-      // const auto duij = deltaij/(mi + mj);
-      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
-      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
+      // Add the uncorrected energy change vote
+      DepsDt_thread(nodeListi, i) += pworkzi + pworkri;
+      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj;
+      weight_thread(nodeListi, i) += wi;
+      weight_thread(nodeListj, j) += wj;
     }
 
 #pragma omp critical
     {
       deltaEconserve += deltaEconserve_thread;
       wsum += wsum_thread;
-      pairCount += pairCount_thread;
     }
+    threadReduceFieldLists<Dimension>(threadStack);
   }
 
   // Find the global delta for conservation
   deltaEconserve = allReduce(deltaEconserve, SPHERAL_OP_SUM);
   wsum = allReduce(wsum, SPHERAL_OP_SUM);
   CHECK(wsum >= 0.0);
-  const auto dEtot = deltaEconserve/(wsum + tiny);
+  const auto dEtot = wsum > 0.0 ? deltaEconserve/wsum : 0.0;
 
-  // Walk all pairs again and update the energy derivative
+  // Go through the internal points, add the conservative energy fix and update the final energy
   auto dEcheck = 0.0;
   auto wsumCheck = 0.0;
-#pragma omp parallel
-  {
-    // Thread private variables
-    auto DepsDt_thread = DepsDt.threadCopy();
-    auto dEcheck_thread = 0.0;
-    auto wsumCheck_thread = 0.0;
-
-#pragma omp for
-    for (auto kk = 0u; kk < npairs; ++kk) {
-      const auto i = pairs[kk].i_node;
-      const auto j = pairs[kk].j_node;
-      const auto nodeListi = pairs[kk].i_list;
-      const auto nodeListj = pairs[kk].j_list;
-
-      const auto ifactor = isCommunicatedNode(nodeListi, i) ? 0.0 : 1.0;
-      const auto jfactor = isCommunicatedNode(nodeListj, j) ? 0.0 : 1.0;
-      const auto pairScale = 0.5*(ifactor + jfactor);
-      CHECK(fuzzyEqual(pairScale, 0.5) or fuzzyEqual(pairScale, 1.0));
-
-      // State for node i.
-      const auto  mi = mass(nodeListi, i);
-      const auto  pworkzi = pairWork[kk][0];
-      const auto  pworkri = pairWork[kk][1];
-
-      // State for node j.
-      const auto  mj = mass(nodeListj, j);
-      const auto  pworkzj = pairWork[kk][2];
-      const auto  pworkrj = pairWork[kk][3];
-
-      // Update the energy derivative
-      const auto wij = mi*std::abs(pworkzi + pworkri) + mj*std::abs(pworkzj + pworkrj);
-      // const auto deltaij = dEtot*(std::abs(epsi) + std::abs(epsj) + tiny);
-      const auto deltaij = dEtot*wij;
-      dEcheck_thread += deltaij*pairScale;
-      wsumCheck_thread += wij*pairScale;
-      // wsumCheck_thread += (std::abs(dE0ij) + tiny)*pairScale;
-      auto wi = mi*std::abs(pworkzi + pworkri);
-      auto wj = mj*std::abs(pworkzj + pworkrj);
-      const auto thpt = safeInv(wi + wj, tiny);
-      wi *= thpt;
-      wj *= thpt;
-      if (not fuzzyEqual(wi + wj, 1.0, 1.0e-10)) {
-        wi = 0.5;
-        wj = 0.5;
-      }
-      DepsDt_thread(nodeListi, i) += pworkzi + pworkri + wi*deltaij/mi;
-      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + wj*deltaij/mj;
-
-      // const auto duij = deltaij/(mi + mj);
-      // DepsDt_thread(nodeListi, i) += pworkzi + pworkri + duij;
-      // DepsDt_thread(nodeListj, j) += pworkzj + pworkrj + duij;
-    }
-
-#pragma omp critical
-    {
-      DepsDt_thread.threadReduce();
-      dEcheck += dEcheck_thread;
-      wsumCheck += wsumCheck_thread;
-    }
-  }
-  dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
-  wsumCheck = allReduce(wsumCheck, SPHERAL_OP_SUM);
-  VERIFY2(wsum == 0.0 or fuzzyEqual(dEcheck, deltaEconserve, 1.0e-10),
-          "Bad energy correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
-  VERIFY2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
-          "Bad wsum correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
-
-  // pairCount = allReduce(pairCount, SPHERAL_OP_SUM);
-  // if (Process::getRank() == 0) std::cerr << "PAIR COUNT: " << pairCount << " : "
-  //                                        << wsum << " " << wsumCheck << " : "
-  //                                        << deltaEconserve << " " << dEcheck << std::endl;
-
-  // Now we can update the energy.
   for (auto nodeListi = 0u; nodeListi < numFields; ++nodeListi) {
     const auto n = eps[nodeListi]->numInternalElements();
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
+      auto& DepsDti = DepsDt(nodeListi, i);
+
+      // Add the conservative fix to this point
+      const auto mi = mass(nodeListi, i);
+      const auto wi = weight(nodeListi, i);
+      DepsDti += wi*dEtot/mi;
 
       // Add the self-contribution if any (RZ with strength does this for instance).
       if (selfInteraction) {
         const auto& vi = velocity(nodeListi, i);
         const auto& ai = acceleration(nodeListi, i);
         const auto  vi12 = vi + ai*hdt;
-        DepsDt(nodeListi, i) -= vi12.dot(selfAccelerations(nodeListi, i));
+        DepsDti -= vi12.dot(selfAccelerations(nodeListi, i));
       }
 
-      eps(nodeListi, i) += DepsDt(nodeListi, i)*multiplier;
+      // Update the specific thermal energy
+      eps(nodeListi, i) += DepsDti*multiplier;
+
+#pragma omp critical
+      {
+        wsumCheck += wi;
+        dEcheck += wi*dEtot;
+      }
     }
   }
+
+  dEcheck = allReduce(dEcheck, SPHERAL_OP_SUM);
+  wsumCheck = allReduce(wsumCheck, SPHERAL_OP_SUM);
+  // if (Process::getRank() == 0) printf("wsum=%f %f      dE=%f %f\n", wsum, wsumCheck, deltaEconserve, dEcheck);
+  CHECK2(wsum == 0.0 or fuzzyEqual(dEcheck, deltaEconserve, 1.0e-10),
+         "Bad energy correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
+  CHECK2(fuzzyEqual(wsumCheck, wsum, 1.0e-10),
+         "Bad wsum correction: " << dEcheck << " " << deltaEconserve << " : " << wsum << " " << wsumCheck);
 }
 
 //------------------------------------------------------------------------------
