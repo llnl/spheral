@@ -6,7 +6,6 @@
 # routines.  Those are more extensively tested in the separate unit tests in
 # testEigen.py.
 
-from SpheralTestUtilities import fuzzyEqual
 from math import *
 import unittest
 
@@ -397,7 +396,7 @@ class TensorTestBase:
         for row in range(self.TensorType.nDimensions):
             for col in range(self.TensorType.nDimensions):
                 if row == col:
-                    assert fuzzyEqual(check(row, col), 1.0)
+                    assert fuzzyEqual(check(row, col), 1.0, 1.0e-10)
                 else:
                     self.assertTrue(fuzzyEqual(check(row, col), 0.0, 1.0e-5),
                                     "Off diagonal not zero: %s" % str(check))
