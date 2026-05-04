@@ -25,10 +25,6 @@
 #include "Utilities/range.hh"
 #include "Geometry/toroidalVolume.hh"
 
-#ifdef SPHERAL_ENABLE_MPI
-#include "Distributed/TreeDistributedBoundary.hh"
-#endif
-
 #include <vector>
 #include <limits>
 #include <cmath>
@@ -39,43 +35,43 @@ using std::endl;
 
 namespace Spheral {
 
-namespace {
+// namespace {
 
-//------------------------------------------------------------------------------
-// Functor class to check if a point is a communicated ghost point from another
-// domain.
-// This implementation assumes the ghost point indices are contiguous, and that
-// we're using TreeDistributedBoundary.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-class CheckCommunicatedNodes {
-public:
-  CheckCommunicatedNodes(const std::vector<NodeList<Dimension>*>& nodeListPtrs):
-    mGhostRanges(nodeListPtrs.size(), std::pair<size_t, size_t>(0u, 0u)) {
-#ifdef SPHERAL_ENABLE_MPI
-    if (Process::getTotalNumberOfProcesses() > 1) {
-      const auto& bound = TreeDistributedBoundary<Dimension>::instance();
-      for (const auto [k, nptr]: enumerate(nodeListPtrs)) {
-        const auto& ghosts = bound.ghostNodes(*nptr);
-        const auto [imin, imax] = std::minmax_element(ghosts.begin(), ghosts.end());
-        CHECK(imin < ghosts.end());
-        CHECK(imax < ghosts.end());
-        mGhostRanges[k] = std::make_pair(*imin, *imax);
-      }
-    }
-#endif
-  }
-  ~CheckCommunicatedNodes() = default;
-  bool operator()(const size_t nodeListID,
-                  const size_t i) const {
-    REQUIRE(nodeListID < mGhostRanges.size());
-    const auto [imin, imax] = mGhostRanges[nodeListID];
-    return (i >=  imin and i < imax);
-  }
+// //------------------------------------------------------------------------------
+// // Functor class to check if a point is a communicated ghost point from another
+// // domain.
+// // This implementation assumes the ghost point indices are contiguous, and that
+// // we're using TreeDistributedBoundary.
+// //------------------------------------------------------------------------------
+// template<typename Dimension>
+// class CheckCommunicatedNodes {
+// public:
+//   CheckCommunicatedNodes(const std::vector<NodeList<Dimension>*>& nodeListPtrs):
+//     mGhostRanges(nodeListPtrs.size(), std::pair<size_t, size_t>(0u, 0u)) {
+// #ifdef SPHERAL_ENABLE_MPI
+//     if (Process::getTotalNumberOfProcesses() > 1) {
+//       const auto& bound = TreeDistributedBoundary<Dimension>::instance();
+//       for (const auto [k, nptr]: enumerate(nodeListPtrs)) {
+//         const auto& ghosts = bound.ghostNodes(*nptr);
+//         const auto [imin, imax] = std::minmax_element(ghosts.begin(), ghosts.end());
+//         CHECK(imin < ghosts.end());
+//         CHECK(imax < ghosts.end());
+//         mGhostRanges[k] = std::make_pair(*imin, *imax);
+//       }
+//     }
+// #endif
+//   }
+//   ~CheckCommunicatedNodes() = default;
+//   bool operator()(const size_t nodeListID,
+//                   const size_t i) const {
+//     REQUIRE(nodeListID < mGhostRanges.size());
+//     const auto [imin, imax] = mGhostRanges[nodeListID];
+//     return (i >=  imin and i < imax);
+//   }
 
-private:
-  std::vector<std::pair<size_t, size_t>> mGhostRanges;
-};
+// private:
+//   std::vector<std::pair<size_t, size_t>> mGhostRanges;
+// };
 
 // inline
 // double
@@ -117,7 +113,7 @@ private:
 //   }  
 // }
 
-}
+// }
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -125,7 +121,8 @@ private:
 RZNonSymmetricSpecificThermalEnergyPolicy::
 RZNonSymmetricSpecificThermalEnergyPolicy(const DataBase<Dim<2>>& dataBase):
   UpdatePolicyBase<Dimension>(),
-  mDataBasePtr(&dataBase) {
+  mDataBasePtr(&dataBase),
+  mWeight(FieldStorageType::CopyFields) {
 }
 
 //------------------------------------------------------------------------------
@@ -151,6 +148,7 @@ update(const KeyType& key,
   auto eps = state.fields(fieldKey, Scalar());
   const auto numFields = eps.numFields();
   const auto nodeListPtrs = eps.nodeListPtrs();
+  const auto hdt = 0.5*multiplier;
 
   // Function to check if the given node is a ghost node
   const auto numInternalNodesPerNodeList = mDataBasePtr->numInternalNodesPerFluidNodeList();
@@ -175,19 +173,21 @@ update(const KeyType& key,
   CHECK(selfAccelerations.numFields() == 0 or selfAccelerations.numFields() == numFields);
   const bool selfInteraction = selfAccelerations.numFields() == numFields;
 
-  const auto hdt = 0.5*multiplier;
-  auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "DepsDt");
-  auto weight = mDataBasePtr->newFluidFieldList(0.0, "weight");
-  auto deltaEconserve = 0.0;
-  auto wsum = 0.0;
+  // Grab and reuse the DepsDt field registered by the hydro
+  auto DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, Scalar());
+  DepsDt.Zero();
+  if (mWeight.numFields() != numFields) mWeight = mDataBasePtr->newFluidFieldList(Scalar(), "compatible energy update weight");
+  mWeight.Zero();
 
   // Walk all pairs to find the total energy changes
+  auto deltaEconserve = 0.0;
+  auto wsum = 0.0;
 #pragma omp parallel
   {
     // Thread private variables
     typename SpheralThreads<Dim<2>>::FieldListStack threadStack;
     auto DepsDt_thread = DepsDt.threadCopy(threadStack);
-    auto weight_thread = weight.threadCopy(threadStack);
+    auto weight_thread = mWeight.threadCopy(threadStack);
     auto deltaEconserve_thread = 0.0;
     auto wsum_thread = 0.0;
 
@@ -260,7 +260,7 @@ update(const KeyType& key,
 
       // Add the conservative fix to this point
       const auto mi = mass(nodeListi, i);
-      const auto wi = weight(nodeListi, i);
+      const auto wi = mWeight(nodeListi, i);
       DepsDti += wi*dEtot/mi;
 
       // Add the self-contribution if any (RZ with strength does this for instance).
