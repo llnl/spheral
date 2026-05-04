@@ -4,7 +4,6 @@
 import unittest
 
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 import mpi
 
 from testSampleMultipleFields2Lattice import TestSampleMultipleFields2Lattice

@@ -4,7 +4,6 @@ import unittest
 import Generate3dTestSetup
 
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 import Gnuplot
 from SpheralGnuPlotUtilities import *
 
