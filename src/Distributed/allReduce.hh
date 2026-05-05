@@ -31,10 +31,10 @@ namespace Spheral {
 #define SPHERAL_OP_MAXLOC MPI_MAXLOC
 
 template<typename Value>
-constexpr Value
+Value
 allReduce(const Value& value, const MPI_Op op,
           const MPI_Comm comm = Communicator::communicator()) {
-  // CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
+  CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
   Value tmp = value;
   Value result;
   MPI_Allreduce(&tmp, &result, 1,
@@ -43,10 +43,10 @@ allReduce(const Value& value, const MPI_Op op,
 }
 
 template<typename Value>
-constexpr std::pair<Value, int>
+std::pair<Value, int>
 allReduceLoc(const Value value, const MPI_Op op,
              const MPI_Comm comm = Communicator::communicator()) {
-  // CHECK(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC);
+  CHECK(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC);
   struct {
     Value val;
     int rank;
@@ -62,10 +62,10 @@ allReduceLoc(const Value value, const MPI_Op op,
 
 
 template<typename Value>
-constexpr Value
+Value
 distScan(const Value& value, const MPI_Op op,
      const MPI_Comm comm = Communicator::communicator()) {
-  // CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
+  CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
   Value tmp = value;
   Value result;
   MPI_Scan(&tmp, &result, 1, DataTypeTraits<Value>::MpiDataType(), op, comm);
@@ -92,7 +92,7 @@ Barrier(const MPI_Comm comm = Communicator::communicator()) {
 #define SPHERAL_OP_MAXLOC 8
 
 template<typename Value>
-constexpr Value
+Value
 allReduce(const Value& value, const int /*op*/, const int = 0) {
   return value;
 }
@@ -105,7 +105,7 @@ allReduceLoc(const Value value, const int /*op*/,
 }
 
 template<typename Value>
-constexpr Value
+Value
 distScan(const Value& value, const int /*op*/, const int = 0) {
   return value;
 }
