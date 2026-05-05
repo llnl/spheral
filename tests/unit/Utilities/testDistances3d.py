@@ -20,7 +20,7 @@ class TestDistances3d(unittest.TestCase):
         self.ntests = 100
         self.multMin = 0.001
         self.multMax = 1e6
-        self.tol
+        self.tol = 1.0e-5
         return
 
     #===========================================================================
