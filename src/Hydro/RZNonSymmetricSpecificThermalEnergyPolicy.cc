@@ -163,7 +163,7 @@ update(const KeyType& key,
   const auto  velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto  acceleration = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   const auto& pairAccelerations = derivs.template get<PairwiseField<Dimension, Vector, 2u>>(HydroFieldNames::pairAccelerations);
-  const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 4u>>(HydroFieldNames::pairWork);
+  const auto& pairWork = derivs.template get<PairwiseField<Dimension, Scalar, 2u>>(HydroFieldNames::pairWork);
   const auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   const auto& connectivityMap = mDataBasePtr->connectivityMap();
   const auto& pairs = connectivityMap.nodePairList();
@@ -207,8 +207,7 @@ update(const KeyType& key,
       const auto& ai = acceleration(nodeListi, i);
       const auto  vi12 = vi + ai*hdt;
       const auto& pacci = pairAccelerations[kk][0];
-      const auto  pworkzi = pairWork[kk][0];
-      const auto  pworkri = pairWork[kk][1];
+      const auto  pworki = pairWork[kk][0];
 
       // State for node j.
       const auto  mj = mass(nodeListj, j);
@@ -216,21 +215,20 @@ update(const KeyType& key,
       const auto& aj = acceleration(nodeListj, j);
       const auto  vj12 = vj + aj*hdt;
       const auto& paccj = pairAccelerations[kk][1];
-      const auto  pworkzj = pairWork[kk][2];
-      const auto  pworkrj = pairWork[kk][3];
+      const auto  pworkj = pairWork[kk][1];
 
       // Exact conservation energy change
       const auto dEij = -(mi*vi12.dot(pacci) + mj*vj12.dot(paccj));
-      const auto dE0ij = (mi*(pworkzi + pworkri) + mj*(pworkzj + pworkrj));
+      const auto dE0ij = mi*pworki + mj*pworkj;
       const auto duij = (dEij - dE0ij)/(mi + mj);
-      const auto wi = mi*(std::abs(pworkzi) + std::abs(pworkri))*ifactor;
-      const auto wj = mj*(std::abs(pworkzj) + std::abs(pworkrj))*jfactor;
+      const auto wi = mi*std::abs(pworki)*ifactor;
+      const auto wj = mj*std::abs(pworkj)*jfactor;
       deltaEconserve_thread += mi*duij*ifactor + mj*duij*jfactor;
       wsum_thread += wi + wj;
 
       // Add the uncorrected energy change vote
-      DepsDt_thread(nodeListi, i) += pworkzi + pworkri;
-      DepsDt_thread(nodeListj, j) += pworkzj + pworkrj;
+      DepsDt_thread(nodeListi, i) += pworki;
+      DepsDt_thread(nodeListj, j) += pworkj;
       weight_thread(nodeListi, i) += wi;
       weight_thread(nodeListj, j) += wj;
     }

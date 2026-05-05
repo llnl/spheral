@@ -579,10 +579,12 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
                fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
-      const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
-      const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
-      const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
+      const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);
+      const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);
+      // const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
+      // const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
+      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
+      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
       effViscousPressurei += mRZj*Qi*WQi/rhoRZj;
@@ -597,23 +599,21 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       DvDtj += deltaDvDtj;
 
       // Specific thermal energy evolution.
-      // const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
-      // const auto workj = mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
-      const auto workzi = mRZj*(Pi/(rhoi*rhoRZi)*vij[0]*gradWi[0] + workQzi);
-      const auto workri = mRZj*(Pi/(rhoi*rhoRZi)*vij[1]*gradWi[1] + workQri);
-      const auto workzj = mRZi*(Pj/(rhoj*rhoRZj)*vij[0]*gradWj[0] + workQzj);
-      const auto workrj = mRZi*(Pj/(rhoj*rhoRZj)*vij[1]*gradWj[1] + workQrj);
-      DepsDti += workzi + workri;
-      DepsDtj += workzj + workrj;
+      const auto worki = mRZj*(Pi/(rhoi*rhoRZi)*vij.dot(gradWi) + workQi);
+      const auto workj = mRZi*(Pj/(rhoj*rhoRZj)*vij.dot(gradWj) + workQj);
+      // const auto workzi = mRZj*(Pi/(rhoi*rhoRZi)*vij[0]*gradWi[0] + workQzi);
+      // const auto workri = mRZj*(Pi/(rhoi*rhoRZi)*vij[1]*gradWi[1] + workQri);
+      // const auto workzj = mRZi*(Pj/(rhoj*rhoRZj)*vij[0]*gradWj[0] + workQzj);
+      // const auto workrj = mRZi*(Pj/(rhoj*rhoRZj)*vij[1]*gradWj[1] + workQrj);
+      DepsDti += worki;
+      DepsDtj += workj;
 
       // Update the history for compatible energy update
       if (compatibleEnergy) {
         pairAccelerations[kk][0] = -deltaDvDti;
         pairAccelerations[kk][1] =  deltaDvDtj;
-        pairWork[kk][0] = workzi;
-        pairWork[kk][1] = workri;
-        pairWork[kk][2] = workzj;
-        pairWork[kk][3] = workrj;
+        pairWork[kk][0] = worki;
+        pairWork[kk][1] = workj;
       }
 
       // Velocity gradient.
