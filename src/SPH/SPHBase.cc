@@ -213,6 +213,10 @@ registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   TIME_BEGIN("SPHBaseRegister");
 
+  // Create inital conditions for time step mask and omega correction
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
+
   // We may need the volume per node as well.
   const bool updateVolume = (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
                              this->densityUpdate() == MassDensityType::SumVoronoiCellDensity);
