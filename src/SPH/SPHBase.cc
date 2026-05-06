@@ -117,7 +117,7 @@ template<typename Dimension>
 void
 SPHBase<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
-  TIME_BEGIN("SPHBaseInitializeStartup");
+  ADV_TIME_BEGIN("SPHBaseInitializeStartup");
   // Create storage for our internal state.
   mTimeStepMask = dataBase.newFluidFieldList(int(0), HydroFieldNames::timeStepMask);
   mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
@@ -138,7 +138,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   mGradRho = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::massDensityGradient);
   mM = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::M_SPHCorrection);
   mLocalM = dataBase.newFluidFieldList(Tensor::zero(), "local " + HydroFieldNames::M_SPHCorrection);
-  TIME_END("SPHBaseInitializeStartup");
+  ADV_TIME_END("SPHBaseInitializeStartup");
 }
 
 //------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ SPHBase<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SPHBaseInitializeStartupDependencies");
+  ADV_TIME_BEGIN("SPHBaseInitializeStartupDependencies");
 
   // Set the moduli.
   updateStateFields(HydroFieldNames::pressure, state, derivs);
@@ -194,7 +194,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   //     }
   //   }
   // }
-  TIME_END("SPHBaseInitializeStartupDependencies");
+  ADV_TIME_END("SPHBaseInitializeStartupDependencies");
 }
 
 //------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ void
 SPHBase<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  TIME_BEGIN("SPHBaseRegister");
+  ADV_TIME_BEGIN("SPHBaseRegister");
 
   // Create the local storage for time step mask, pressure, sound speed, and position weight.
   dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
@@ -259,7 +259,7 @@ registerState(DataBase<Dimension>& dataBase,
   // We deliberately make this non-dynamic here.  These corrections are computed
   // during SPHBase::initialize, not as part of our usual state update.
   state.enroll(mOmegaGradh);
-  TIME_END("SPHBaseRegister");
+  ADV_TIME_END("SPHBaseRegister");
 }
 
 //------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ void
 SPHBase<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SPHBaseRegisterDerivs");
+  ADV_TIME_BEGIN("SPHBaseRegisterDerivs");
 
   // Create the scratch fields.
   // Note we deliberately do not zero out the derivatives here!  This is because the previous step
@@ -312,7 +312,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   derivs.enroll(mGradRho);
   derivs.enroll(mM);
   derivs.enroll(mLocalM);
-  TIME_END("SPHBaseRegisterDerivs");
+  ADV_TIME_END("SPHBaseRegisterDerivs");
 }
 
 //------------------------------------------------------------------------------
@@ -324,7 +324,7 @@ SPHBase<Dimension>::
 preStepInitialize(const DataBase<Dimension>& dataBase, 
                   State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SPHBasePreStepInitialize");
+  ADV_TIME_BEGIN("SPHBasePreStepInitialize");
 
   // Depending on the mass density advancement selected, we may want to replace the 
   // mass density.
@@ -490,7 +490,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   //        ++boundaryItr) (*boundaryItr)->setAllViolationNodes(dataBase);
   //   this->enforceBoundaries(state, derivs);
   // }
-  TIME_END("SPHBasePreStepInitialize");
+  ADV_TIME_END("SPHBasePreStepInitialize");
 }
 
 //------------------------------------------------------------------------------
@@ -504,7 +504,7 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
                     const DataBase<Dimension>& /*dataBase*/,
                     const State<Dimension>& /*state*/,
                     StateDerivatives<Dimension>& derivs) const {
-  TIME_BEGIN("SPHBaseFinalizeDerivs");
+  ADV_TIME_BEGIN("SPHBaseFinalizeDerivs");
 
   // If we're using the compatible energy discretization, we need to enforce
   // boundary conditions on the accelerations.
@@ -517,7 +517,7 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
     }
     for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
   }
-  TIME_END("SPHBaseFinalizeDerivs");
+  ADV_TIME_END("SPHBaseFinalizeDerivs");
 }
 
 //------------------------------------------------------------------------------
@@ -558,7 +558,7 @@ void
 SPHBase<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& /*derivs*/) {
-  TIME_BEGIN("SPHBaseGhostBounds");
+  ADV_TIME_BEGIN("SPHBaseGhostBounds");
 
   // Apply boundary conditions to the basic fluid state Fields.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
@@ -587,7 +587,7 @@ applyGhostBoundaries(State<Dimension>& state,
     boundaryPtr->applyFieldListGhostBoundary(omega);
     // if (updateVolume) boundaryPtr->applyFieldListGhostBoundary(volume);
   }
-  TIME_END("SPHBaseGhostBounds");
+  ADV_TIME_END("SPHBaseGhostBounds");
 }
 
 //------------------------------------------------------------------------------
@@ -598,7 +598,7 @@ void
 SPHBase<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& /*derivs*/) {
-  TIME_BEGIN("SPHBaseEnforceBounds");
+  ADV_TIME_BEGIN("SPHBaseEnforceBounds");
 
   // Enforce boundary conditions on the fluid state Fields.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
@@ -627,7 +627,7 @@ enforceBoundaries(State<Dimension>& state,
     boundaryPtr->enforceFieldListBoundary(omega);
     // if (updateVolume) boundaryPtr->enforceFieldListBoundary(volume);
   }
-  TIME_END("SPHBaseEnforceBounds");
+  ADV_TIME_END("SPHBaseEnforceBounds");
 }
 
 //------------------------------------------------------------------------------

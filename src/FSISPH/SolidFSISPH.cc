@@ -263,7 +263,7 @@ void
 SolidFSISPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  TIME_BEGIN("SolidFSISPHregisterState");
+  ADV_TIME_BEGIN("SolidFSISPHregisterState");
 
   VERIFY2(not (mCompatibleEnergyEvolution and mEvolveTotalEnergy),
           "FSISPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
@@ -374,7 +374,7 @@ void
 SolidFSISPH<Dimension>::
 registerDerivatives(DataBase<Dimension>&  dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidFSISPHregisterDerivs");
+  ADV_TIME_BEGIN("SolidFSISPHregisterDerivs");
 
   FieldList<Dimension, Scalar> plasticStrainRate = dataBase.solidPlasticStrainRate();
 

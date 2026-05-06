@@ -62,7 +62,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('mpi', when='+mpi')
 
-    depends_on('cmake@3.21.0:', type='build', when='@2025.01.0:')
+    depends_on('cmake@3.24.0:', type='build', when='@develop')
+    depends_on('cmake@3.21.0:', type='build', when='@2025.01.0:2025.12.0')
     depends_on('cmake@3.18.0:', type='build', when='@2024.06.1')
     depends_on('cmake@3.10.0:', type='build', when='@2024.01.1')
 

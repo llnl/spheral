@@ -182,7 +182,7 @@ SolidSPH<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHinitializeStartup");
+  ADV_TIME_BEGIN("SolidSPHinitializeStartup");
 
   // Call the ancestor.
   SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
@@ -192,7 +192,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   updateStateFields(SolidFieldNames::shearModulus, state, derivs);
   updateStateFields(SolidFieldNames::yieldStrength, state, derivs);
 
-  TIME_END("SolidSPHinitializeStartup");
+  ADV_TIME_END("SolidSPHinitializeStartup");
 }
 
 
@@ -204,7 +204,7 @@ void
 SolidSPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  TIME_BEGIN("SolidSPHregister");
+  ADV_TIME_BEGIN("SolidSPHregister");
 
   // Invoke SPHHydro's state.
   SPH<Dimension>::registerState(dataBase, state);
@@ -242,7 +242,7 @@ registerState(DataBase<Dimension>& dataBase,
   // And finally the intial plastic strain.
   mPlasticStrain0.assignFields(ps);
   state.enroll(mPlasticStrain0);
-  TIME_END("SolidSPHregister");
+  ADV_TIME_END("SolidSPHregister");
 }
 
 //------------------------------------------------------------------------------
@@ -253,7 +253,7 @@ void
 SolidSPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHregisterDerivs");
+  ADV_TIME_BEGIN("SolidSPHregisterDerivs");
 
   // Call the ancestor method.
   SPH<Dimension>::registerDerivatives(dataBase, derivs);
@@ -269,7 +269,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   for (auto [nodeListi, solidNodeListPtr]: enumerate(dataBase.solidNodeListBegin(), dataBase.solidNodeListEnd())) {
     derivs.enroll(solidNodeListPtr->plasticStrainRate());
   }
-  TIME_END("SolidSPHregisterDerivs");
+  ADV_TIME_END("SolidSPHregisterDerivs");
 }
 
 //------------------------------------------------------------------------------
@@ -789,7 +789,7 @@ void
 SolidSPH<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHghostBounds");
+  ADV_TIME_BEGIN("SolidSPHghostBounds");
 
   // Ancestor method.
   SPH<Dimension>::applyGhostBoundaries(state, derivs);
@@ -810,7 +810,7 @@ applyGhostBoundaries(State<Dimension>& state,
     boundaryPtr->applyFieldListGhostBoundary(fragIDs);
     boundaryPtr->applyFieldListGhostBoundary(pTypes);
   }
-  TIME_END("SolidSPHghostBounds");
+  ADV_TIME_END("SolidSPHghostBounds");
 }
 
 //------------------------------------------------------------------------------
@@ -821,7 +821,7 @@ void
 SolidSPH<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidSPHenforceBounds");
+  ADV_TIME_BEGIN("SolidSPHenforceBounds");
 
   // Ancestor method.
   SPH<Dimension>::enforceBoundaries(state, derivs);
@@ -842,7 +842,7 @@ enforceBoundaries(State<Dimension>& state,
     boundaryPtr->enforceFieldListBoundary(fragIDs);
     boundaryPtr->enforceFieldListBoundary(pTypes);
   }
-  TIME_END("SolidSPHenforceBounds");
+  ADV_TIME_END("SolidSPHenforceBounds");
 }
 
 //------------------------------------------------------------------------------

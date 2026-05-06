@@ -91,7 +91,7 @@ void
 CRKSPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  TIME_BEGIN("CRKregisterState");
+  ADV_TIME_BEGIN("CRKregisterState");
 
   CRKSPHBase<Dimension>::registerState(dataBase, state);
 
@@ -127,7 +127,7 @@ void
 CRKSPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("CRKregisterDerivatives");
+  ADV_TIME_BEGIN("CRKregisterDerivatives");
 
   CRKSPHBase<Dimension>::registerDerivatives(dataBase, derivs);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();

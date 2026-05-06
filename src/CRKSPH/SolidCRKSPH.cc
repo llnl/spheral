@@ -162,7 +162,7 @@ void
 SolidCRKSPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  TIME_BEGIN("SolidCRKregisterState");
+  ADV_TIME_BEGIN("SolidCRKregisterState");
 
   // Invoke CRKSPHHydro's state.
   CRKSPH<Dimension>::registerState(dataBase, state);
@@ -212,7 +212,7 @@ void
 SolidCRKSPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidCRKregisterDerivatives");
+  ADV_TIME_BEGIN("SolidCRKregisterDerivatives");
 
   // Call the ancestor method.
   CRKSPH<Dimension>::registerDerivatives(dataBase, derivs);
@@ -594,7 +594,7 @@ void
 SolidCRKSPH<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidCRKapplyGhostBoundaries");
+  ADV_TIME_BEGIN("SolidCRKapplyGhostBoundaries");
 
   // Ancestor method.
   CRKSPH<Dimension>::applyGhostBoundaries(state, derivs);
@@ -626,7 +626,7 @@ void
 SolidCRKSPH<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidCRKenforceBoundaries");
+  ADV_TIME_BEGIN("SolidCRKenforceBoundaries");
 
   // Ancestor method.
   CRKSPH<Dimension>::enforceBoundaries(state, derivs);

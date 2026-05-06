@@ -137,7 +137,7 @@ void
 GSPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("GSPHregisterDerivs");
+  ADV_TIME_BEGIN("GSPHregisterDerivs");
 
   GenericRiemannHydro<Dimension>::registerDerivatives(dataBase,derivs);
 
@@ -224,7 +224,7 @@ void
 GSPH<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("GSPHghostBounds");
+  ADV_TIME_BEGIN("GSPHghostBounds");
   GenericRiemannHydro<Dimension>::applyGhostBoundaries(state,derivs);
   TIME_END("GSPHghostBounds");
 }
@@ -237,7 +237,7 @@ void
 GSPH<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("GSPHenforceBounds");
+  ADV_TIME_BEGIN("GSPHenforceBounds");
   GenericRiemannHydro<Dimension>::enforceBoundaries(state,derivs);
   TIME_END("GSPHenforceBounds");
 }
