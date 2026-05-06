@@ -24,6 +24,7 @@ Notable changes include:
     * Added a page to the docs about GPU development. 
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * Require minimum CMake version 3.24.
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
@@ -52,6 +53,7 @@ Notable changes include:
       * Added umask command for updating upstreams and removed separate job to update permissions.
       * Build and test job now fails if import of Spheral module fails.
       * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
+      * Created advanced timers for lower level timers. These are disabled by default for cleaner Caliper timer trees.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
