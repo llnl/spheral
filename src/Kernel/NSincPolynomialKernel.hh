@@ -26,6 +26,11 @@ public:
   // Constructor.
   NSincPolynomialKernel(const int order);
 
+  // ALE3D edit to include destructor as a workaround for a ROCm 7 bug.
+  // Destructor.
+  virtual ~NSincPolynomialKernel() = default;
+  // ALE3D edit to include destructor as a workaround for a ROCm 7 bug.
+
   // Return the kernel weight for a given normalized distance or position.
   double kernelValue(double etaij, const double Hdet) const;
 
