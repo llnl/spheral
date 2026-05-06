@@ -204,9 +204,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     def _get_short_spec(self, spec):
         short_spec = spec.compiler.name
         if (spec.satisfies("+mpi")):
-            short_spec += spec.format("+{^mpi.name}")
+            short_spec += "+mpi"
         if (spec.satisfies("+cuda")):
-            short_spec += spec.format("{^cuda.name}")
+            short_spec += "+cuda"
         if (spec.satisfies("+rocm")):
             short_spec += "+rocm"
         return short_spec

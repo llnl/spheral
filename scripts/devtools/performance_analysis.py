@@ -136,7 +136,7 @@ def compare_config(cdata, rdata):
     Do not use if comparing across hardware or install configurations.
     Assumes Thicket data has comparable test_name, total_internal_nodes, and total_steps
     """
-    hardware_tests = ["install_config", "cluster", "jobsize", "threads_per_rank"]
+    hardware_tests = ["spec", "cluster", "jobsize", "threads_per_rank"]
     return compare_metadata(cdata, rdata, hardware_tests)
 
 def filter_tests(data, test_name):
@@ -271,9 +271,9 @@ def main():
                     raise Exception("No reference or benchmark data specified")
             # If using benchmark reference data, only grab the current install/machine
             # Get install config and machine name from current data
-            install_config = curdata.metadata["install_config"].iloc[0]
+            install_spec = curdata.metadata["spec"].iloc[0]
             machine_name = curdata.metadata["cluster"].iloc[0]
-            ref_loc = os.path.join(ref_files, install_config, machine_name)
+            ref_loc = os.path.join(ref_files, machine_name, install_spec)
             if (not os.path.exists(ref_loc)):
                 raise Exception(f"Benchmark location {ref_loc} does not exists")
             cali_ref_files = glob.glob(os.path.join(ref_loc, "**/*.cali"), recursive=True)
