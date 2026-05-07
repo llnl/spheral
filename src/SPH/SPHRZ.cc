@@ -10,39 +10,28 @@
 //
 // Created by JMO, Fri May  6 16:18:36 PDT 2016
 //----------------------------------------------------------------------------//
-#include "SPHRZ.hh"
+#include "SPH/SPHRZ.hh"
+#include "SPH/SPHRZUtilities.hh"
 #include "FileIO/FileIO.hh"
-#include "computeSPHSumMassDensity.hh"
-#include "correctSPHSumMassDensity.hh"
-#include "computeSumVoronoiCellMassDensity.hh"
-#include "computeSPHOmegaGradhCorrection.hh"
 #include "Hydro/HydroFieldNames.hh"
-#include "Hydro/SpecificThermalEnergyPolicy.hh"
-#include "Hydro/SpecificFromTotalThermalEnergyPolicy.hh"
 #include "Physics/GenericHydro.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/IncrementState.hh"
 #include "DataBase/ReplaceState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
-#include "Hydro/RZNonSymmetricSpecificThermalEnergyPolicy.hh"
-#include "Mesh/generateMesh.hh"
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
 #include "Utilities/timingUtilities.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/range.hh"
-#include "Utilities/globalBoundingVolumes.hh"
 #include "Utilities/Timer.hh"
 #include "Mesh/Mesh.hh"
-#include "CRKSPH/volumeSpacing.hh"
 #include "Geometry/GeometryRegistrar.hh"
-#include "Geometry/toroidalVolume.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -167,41 +156,8 @@ void
 SPHRZ::
 registerState(DataBase<Dim<2>>& dataBase,
               State<Dim<2>>& state) {
-
-  // The base class does most of it.
   SPHBase<Dimension>::registerState(dataBase, state);
-
-  // RZ mass
-  state.enroll(mMassRZ);
-
-  // RZ mass density
-  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
-    state.enroll(*mMassDensityRZ[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
-                                                                                                   fluidNodeListPtr->rhoMax()));
-  }
-
-  // We have to choose either compatible or total energy evolution.
-  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-  const auto evolveTotalEnergy = this->evolveTotalEnergy();
-  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
-          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
-
-  // Register the specific thermal energy.
-  // Note in RZ we require the specific thermal energy go before the position so we can use the r position
-  // during update.  This is why we make position update dependent on the thermal energy in SPHBase.
-  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
-  if (compatibleEnergy) {
-    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
-
-  } else if (evolveTotalEnergy) {
-    // If we're doing total energy, we register the specific energy to advance with the
-    // total energy policy.
-    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
-
-  } else {
-    // Otherwise we're just time-evolving the specific energy.
-    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
-  }
+  SPHRZUtilities::registerState(*this, dataBase, state, mMassRZ, mMassDensityRZ);
 }
 
 //------------------------------------------------------------------------------
@@ -235,82 +191,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
                   StateDerivatives<Dimension>& derivs) {
 
   TIME_BEGIN("SPHRZPreStepInitialize");
-
-  if (densityUpdate() == MassDensityType::IntegrateDensity) return;
-
-  // this->applyGhostBoundaries(state, derivs);
-  // for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
-
-  // We're going to do something expensive to update the mass density, so get ready.
-  const auto& connectivityMap = state.connectivityMap();
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
-  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto  massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  auto        massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
-  auto        massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-
-  switch(densityUpdate()) {
-
-  case MassDensityType::RigorousSumDensity:
-  case MassDensityType::CorrectedSumDensity:
-    {
-      computeSPHSumMassDensity(connectivityMap, this->kernel(), mSumMassDensityOverAllNodeLists, position, massRZ, H, massDensityRZ);
-      if (densityUpdate() == MassDensityType::CorrectedSumDensity) {
-        for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
-        for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
-        correctSPHSumMassDensity(connectivityMap, this->kernel(), mSumMassDensityOverAllNodeLists, position, massRZ, H, massDensityRZ);
-      }
-    }
-    break;
-
-  case MassDensityType::VoronoiCellDensity:
-    {
-      this->updateVolume(state, false);
-      const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-      massDensityRZ = massRZ / volume;
-    }
-    break;
-
-  case MassDensityType::SumVoronoiCellDensity:
-    {
-      this->updateVolume(state, true);
-      const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-      computeSumVoronoiCellMassDensity(connectivityMap, this->kernel(), position, massRZ, volume, H, massDensityRZ);
-    }
-    break;
-
-  default:
-    VERIFY2(false, "SPHRZ::preStepInitialize did not handle a density update choice : " << static_cast<int>(densityUpdate()));
-    break;
-  }
-
-  // Update the real mass density based on the areal (RZ) density
-  for (auto k = 0u; k < massDensity.numFields(); ++k) {
-    const auto n = massDensity[k]->numInternalElements();
-    for (auto i = 0u; i < n; ++i) {
-      CHECK(massDensityRZ(k,i) > 0.0);
-      const auto& posi = position(k, i);
-      const auto& Hi = H(k, i);
-      const auto  ri = std::abs(posi.y());
-      const auto  zetai = std::abs((Hi*posi).y());
-      const auto  hri = ri*safeInv(zetai);
-      CHECK(hri >= 0.0);
-      const auto Ai = massRZ(k,i)/massDensityRZ(k,i);
-      const auto Vi = 2.0*M_PI*std::max(ri, 0.01*hri)*Ai;
-      massDensity(k,i) = mass(k,i)/Vi;
-      // const auto di = std::sqrt(massRZ(k,i)/massDensityRZ(k,i));
-      // const auto Vi = cylindricalToroidalVolume(di, ri);
-      // // const auto Ri = std::sqrt(massRZ(k,i)/(M_PI*massDensityRZ(k,i)));
-      // // const auto Vi = circularToroidalVolume(Ri, ri);
-    }
-  }
-  for (auto* boundPtr: this->boundaryConditions()) {
-    boundPtr->applyFieldListGhostBoundary(massDensityRZ);
-    boundPtr->applyFieldListGhostBoundary(massDensity);
-  }
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
-
+  SPHRZUtilities::preStepInitialize(*this, dataBase, state, derivs);
   TIME_END("SPHRZPreStepInitialize");
 }
 

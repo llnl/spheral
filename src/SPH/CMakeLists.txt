@@ -55,6 +55,7 @@ set(SPH_headers
   computeSPHSumMassDensity.hh
   computeSumVoronoiCellMassDensity.hh
   correctSPHSumMassDensity.hh
+  SPHRZUtilities.hh
 )
 
 spheral_install_python_files(
