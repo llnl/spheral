@@ -116,7 +116,7 @@ registerState(DataBase<Dimension>& dataBase,
     // Otherwise we're just time-evolving the specific energy.
     state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
   }
-  TIME_END("CRKregisterState");
+  ADV_TIME_END("CRKregisterState");
 }
 
 //------------------------------------------------------------------------------
@@ -136,7 +136,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  TIME_END("CRKregisterDerivatives");
+  ADV_TIME_END("CRKregisterDerivatives");
 }
 
 //------------------------------------------------------------------------------
@@ -150,8 +150,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const DataBase<Dimension>& dataBase,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
-  TIME_BEGIN("CRKevaluateDerivatives");
-
   // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
@@ -163,7 +161,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
-  TIME_END("CRKevaluateDerivatives");
 }
   
 //------------------------------------------------------------------------------

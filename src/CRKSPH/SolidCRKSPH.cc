@@ -141,7 +141,7 @@ SolidCRKSPH<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
-  TIME_BEGIN("SolidCRKinitializeProblemStartupDependencies");
+  ADV_TIME_BEGIN("SolidCRKinitializeProblemStartupDependencies");
 
   // Call the ancestor.
   CRKSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
@@ -150,7 +150,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   updateStateFields(SolidFieldNames::bulkModulus, state, derivs);
   updateStateFields(SolidFieldNames::shearModulus, state, derivs);
   updateStateFields(SolidFieldNames::yieldStrength, state, derivs);
-  TIME_END("SolidCRKinitializeProblemStartupDependencies");
+  ADV_TIME_END("SolidCRKinitializeProblemStartupDependencies");
 }
 
 
@@ -201,7 +201,7 @@ registerState(DataBase<Dimension>& dataBase,
   mPlasticStrain0.copyFields();
   for (auto* fptr: mPlasticStrain0) fptr->name(SolidFieldNames::plasticStrain + "0");
   state.enroll(mPlasticStrain0);
-  TIME_END("SolidCRKregisterState");
+  ADV_TIME_END("SolidCRKregisterState");
 }
 
 //------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
 
   auto psr = dataBase.solidPlasticStrainRate();
   derivs.enroll(psr);
-  TIME_END("SolidCRKregisterDerivatives");
+  ADV_TIME_END("SolidCRKregisterDerivatives");
 }
 
 //------------------------------------------------------------------------------
@@ -615,7 +615,7 @@ applyGhostBoundaries(State<Dimension>& state,
     boundaryPtr->applyFieldListGhostBoundary(fragIDs);
     boundaryPtr->applyFieldListGhostBoundary(pTypes);
   }
-  TIME_END("SolidCRKapplyGhostBoundaries");
+  ADV_TIME_END("SolidCRKapplyGhostBoundaries");
 }
 
 //------------------------------------------------------------------------------
@@ -647,7 +647,7 @@ enforceBoundaries(State<Dimension>& state,
     boundaryPtr->enforceFieldListBoundary(fragIDs);
     boundaryPtr->enforceFieldListBoundary(pTypes);
   }
-  TIME_END("SolidCRKenforceBoundaries");
+  ADV_TIME_END("SolidCRKenforceBoundaries");
 }
 
 //------------------------------------------------------------------------------

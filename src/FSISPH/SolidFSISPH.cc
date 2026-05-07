@@ -363,7 +363,7 @@ registerState(DataBase<Dimension>& dataBase,
   state.enroll(pTypes);
   state.enroll(mPlasticStrain0);
 
-  TIME_END("SolidFSISPHregisterState");
+  ADV_TIME_END("SolidFSISPHregisterState");
 }
 
 //------------------------------------------------------------------------------
@@ -436,7 +436,7 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
   derivs.enroll(mNewInterfaceSmoothness);
   derivs.enroll(mInterfaceAngles);
 
-  TIME_END("SolidFSISPHregisterDerivs");
+  ADV_TIME_END("SolidFSISPHregisterDerivs");
 }
 
 //------------------------------------------------------------------------------
