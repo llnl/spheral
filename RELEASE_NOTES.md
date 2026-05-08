@@ -24,6 +24,8 @@ Notable changes include:
     * Added a page to the docs about GPU development. 
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
+      * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
@@ -65,6 +67,8 @@ Notable changes include:
       * ROCM version updated from 6.2.0 to 6.4.3.
       * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
       * CHAI, Umpire, and RAJA updated to 2025.12.0.
+    * Addig PySide6 as default PIP package install for better Matplotlib performance.
+    * Python wrapped the C++ fuzzyEqual methods and removed the slightly different pure Python implementations from SpheralTestUtilities.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
