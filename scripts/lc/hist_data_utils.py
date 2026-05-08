@@ -12,7 +12,7 @@ def create_header(title, file_dict):
 <body>
   <form>
     <select onchange="window.location.href = this.value;">
-      <option value="">-- Select machine/config --</option>
+      <option value="">-- Select machine --</option>
 """
     for link, ff in file_dict.items():
         html_string += " "*6

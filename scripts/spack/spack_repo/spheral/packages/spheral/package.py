@@ -62,7 +62,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
 
     depends_on('mpi', when='+mpi')
 
-    depends_on('cmake@3.21.0:', type='build', when='@2025.01.0:')
+    depends_on('cmake@3.24.0:', type='build', when='@develop')
+    depends_on('cmake@3.21.0:', type='build', when='@2025.01.0:2025.12.0')
     depends_on('cmake@3.18.0:', type='build', when='@2024.06.1')
     depends_on('cmake@3.10.0:', type='build', when='@2024.01.1')
 
@@ -204,9 +205,9 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     def _get_short_spec(self, spec):
         short_spec = spec.compiler.name
         if (spec.satisfies("+mpi")):
-            short_spec += spec.format("+{^mpi.name}")
+            short_spec += "+mpi"
         if (spec.satisfies("+cuda")):
-            short_spec += spec.format("{^cuda.name}")
+            short_spec += "+cuda"
         if (spec.satisfies("+rocm")):
             short_spec += "+rocm"
         return short_spec
