@@ -572,16 +572,12 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto deltaDvDxj = fDij * vij.dyad(gradWGj);
 
       // Specific thermal energy evolution.
-      // const auto worki = -mRZj*(sigmai.doubledot(deltaDvDxi)/(rhoi*rhoRZi) - workQi);
-      // const auto workj = -mRZi*(sigmaj.doubledot(deltaDvDxj)/(rhoi*rhoRZi) - workQj);
-      // const auto workzi = -mRZj*(sigmai.xx()/(rhoi*rhoRZi)*deltaDvDxi.xx() + sigmai.xy()/(rhoi*rhoRZi)*deltaDvDxi.xy() - workQzi);
-      // const auto workri = -mRZj*(sigmai.yz()/(rhoi*rhoRZi)*deltaDvDxi.yz() + sigmai.yy()/(rhoi*rhoRZi)*deltaDvDxi.yy() - workQri);
-      // const auto workzj = -mRZi*(sigmaj.xx()/(rhoj*rhoRZj)*deltaDvDxj.xx() + sigmaj.xy()/(rhoj*rhoRZj)*deltaDvDxj.xy() - workQzj);
-      // const auto workrj = -mRZi*(sigmaj.yz()/(rhoj*rhoRZj)*deltaDvDxj.yz() + sigmaj.yy()/(rhoj*rhoRZj)*deltaDvDxj.yy() - workQrj);
-      const auto worki = -mRZj*((sigmai.xx()*deltaDvDxi.xx() + sigmai.xy()*deltaDvDxi.yx() +
-                                 sigmai.xy()*deltaDvDxi.xy() + sigmai.yy()*deltaDvDxi.yy())/(rhoi*rhoRZi) - workQi);
-      const auto workj = -mRZi*((sigmaj.xx()*deltaDvDxj.xx() + sigmaj.xy()*deltaDvDxj.yx() +
-                                 sigmaj.xy()*deltaDvDxj.xy() + sigmaj.yy()*deltaDvDxj.yy())/(rhoj*rhoRZj) - workQj);
+      const auto worki = -mRZj*(sigmai.doubledot(deltaDvDxi)/(rhoi*rhoRZi) - workQi);
+      const auto workj = -mRZi*(sigmaj.doubledot(deltaDvDxj)/(rhoj*rhoRZj) - workQj);
+      // const auto worki = -mRZj*((sigmai.xx()*deltaDvDxi.xx() + sigmai.xy()*deltaDvDxi.yx() +
+      //                            sigmai.xy()*deltaDvDxi.xy() + sigmai.yy()*deltaDvDxi.yy())/(rhoi*rhoRZi) - workQi);
+      // const auto workj = -mRZi*((sigmaj.xx()*deltaDvDxj.xx() + sigmaj.xy()*deltaDvDxj.yx() +
+      //                            sigmaj.xy()*deltaDvDxj.xy() + sigmaj.yy()*deltaDvDxj.yy())/(rhoj*rhoRZj) - workQj);
       if (freeParticle) {
         DepsDti += worki;
         DepsDtj += workj;
