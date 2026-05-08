@@ -263,7 +263,7 @@ void
 SolidFSISPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  ADV_TIME_BEGIN("SolidFSISPHregisterState");
+  TIME_BEGIN("SolidFSISPHregisterState");
 
   VERIFY2(not (mCompatibleEnergyEvolution and mEvolveTotalEnergy),
           "FSISPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
@@ -363,7 +363,7 @@ registerState(DataBase<Dimension>& dataBase,
   state.enroll(pTypes);
   state.enroll(mPlasticStrain0);
 
-  ADV_TIME_END("SolidFSISPHregisterState");
+  TIME_END("SolidFSISPHregisterState");
 }
 
 //------------------------------------------------------------------------------
@@ -374,7 +374,7 @@ void
 SolidFSISPH<Dimension>::
 registerDerivatives(DataBase<Dimension>&  dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  ADV_TIME_BEGIN("SolidFSISPHregisterDerivs");
+  TIME_BEGIN("SolidFSISPHregisterDerivs");
 
   FieldList<Dimension, Scalar> plasticStrainRate = dataBase.solidPlasticStrainRate();
 
@@ -436,7 +436,7 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
   derivs.enroll(mNewInterfaceSmoothness);
   derivs.enroll(mInterfaceAngles);
 
-  ADV_TIME_END("SolidFSISPHregisterDerivs");
+  TIME_END("SolidFSISPHregisterDerivs");
 }
 
 //------------------------------------------------------------------------------

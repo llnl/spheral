@@ -91,7 +91,7 @@ void
 CRKSPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  ADV_TIME_BEGIN("CRKregisterState");
+  TIME_BEGIN("CRKregisterState");
 
   CRKSPHBase<Dimension>::registerState(dataBase, state);
 
@@ -116,7 +116,7 @@ registerState(DataBase<Dimension>& dataBase,
     // Otherwise we're just time-evolving the specific energy.
     state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
   }
-  ADV_TIME_END("CRKregisterState");
+  TIME_END("CRKregisterState");
 }
 
 //------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ void
 CRKSPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  ADV_TIME_BEGIN("CRKregisterDerivatives");
+  TIME_BEGIN("CRKregisterDerivatives");
 
   CRKSPHBase<Dimension>::registerDerivatives(dataBase, derivs);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
@@ -136,7 +136,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  ADV_TIME_END("CRKregisterDerivatives");
+  TIME_END("CRKregisterDerivatives");
 }
 
 //------------------------------------------------------------------------------

@@ -87,7 +87,7 @@ void
 SPH<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  ADV_TIME_BEGIN("SPHregister");
+  TIME_BEGIN("SPHregister");
 
   SPHBase<Dimension>::registerState(dataBase, state);
 
@@ -112,7 +112,7 @@ registerState(DataBase<Dimension>& dataBase,
     state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
   }
 
-  ADV_TIME_END("SPHregister");
+  TIME_END("SPHregister");
 }
 
 //------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ void
 SPH<Dimension>::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
-  ADV_TIME_BEGIN("SPHregisterDerivs");
+  TIME_BEGIN("SPHregisterDerivs");
   SPHBase<Dimension>::registerDerivatives(dataBase, derivs);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   if (compatibleEnergy) {
@@ -131,7 +131,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-  ADV_TIME_END("SPHregisterDerivs");
+  TIME_END("SPHregisterDerivs");
 }
 
 //------------------------------------------------------------------------------
