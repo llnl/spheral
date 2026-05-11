@@ -63,6 +63,15 @@ def extract_data(cali_file):
                         rtimes[rg] = tval
     return runday, rtimes
 
+def update_spec(spec):
+    "Spec names changes from spack 0.12 to 1.0, so we must update the names to match"
+    repl_dict = [("clang", "llvm"), ("rocmcc", "llvm-amdgpu"),
+                 ("cray-mpich", "mpi"), ("mvapich2", "mpi")]
+    newspec = spec
+    for i in repl_dict:
+        newspec = newspec.replace(i[0], i[1])
+    return newspec
+
 def get_globals(cali_file):
     # If cali_file is just a dir, grab the latest caliper file
     if type(cali_file) == list:
@@ -83,7 +92,9 @@ def get_spec(cali_file):
     return gls["spec"]
 
 def compare_time(cfile, num_of_months):
-    tdelta = (time.time() - os.path.getmtime(cfile))/ (60*60*24)
+    # The benchmark file times might not be accurate, use file names instead
+    file_mtime = int(cfile.split("_")[-1].split(".")[0])
+    tdelta = (time.time() - file_mtime)/ (60*60*24)
     if (tdelta < 30*num_of_months):
         return True
     return False
@@ -101,19 +112,12 @@ def split_test_name(test_name, test_base_names):
             return base, variant
     return None, None
 
-def update_spec(spec):
-    "Spec names changes from spack 0.12 to 1.0, so we must update the names to match"
-    newspec = spec.replace("clang", "llvm")
-    newspec = newspec.replace("rocmcc", "llvm-amdgpu")
-    return newspec
-
 # Convert array of dictionaries into panda dataframe
 def convert_to_dataframe(in_array, test_base_names):
     data = []
     for in_data in in_array:
         mac_name = in_data["machine"]
         spec_name = update_spec(in_data["spec"])
-        config = in_data["config"]
         data_dict = in_data["data_dict"]
         for test_name, tdata in data_dict.items():
             test_base, test_var = split_test_name(test_name, test_base_names)
@@ -123,7 +127,6 @@ def convert_to_dataframe(in_array, test_base_names):
                 for reg, val in time_dict.items():
                     data.append({"Machine": mac_name,
                                  "Spec": spec_name,
-                                 "Config": config,
                                  "Test Name": test_name,
                                  "Test Base": test_base,
                                  "Test Var": test_var,
@@ -210,29 +213,28 @@ def main():
     if (args.test):
         test_names = [test_names[0]]
     test_bases = pt.get_test_bases()
-    # Benchmark directory is organized as /configs/machines/run_dates/*.cali
+    # Benchmark directory is organized as /machine/spec/run_dates/*.cali
     # Each set of caliper files contain a single spec
-    # Multiple configs could span a single machine+spec
-    config_dirs = glob.glob(os.path.join(args.bench, "*"))
+    mac_dirs = glob.glob(os.path.join(args.bench, "*"))
     # Extract all machine directories
     all_mac_specs = {}
     all_specs = {}
     if (rank == 0):
-        for cc in config_dirs:
-            mac_dirs = glob.glob(os.path.join(cc, "*"))
-            for mc_path in mac_dirs:
-                mac_name = os.path.basename(mc_path)
-                cspec = get_spec(mc_path)
+        for mc_path in mac_dirs:
+            mac_name = os.path.basename(mc_path)
+            spec_dirs = glob.glob(os.path.join(mc_path, "*"))
+            for cc in spec_dirs:
+                cspec = os.path.basename(cc)
                 key = mac_name+" "+cspec
                 all_specs[key] = cspec
-                cur_path = os.path.join(mc_path, "*")
+                cur_path = os.path.join(cc, "*")
                 if key in all_mac_specs:
                     all_mac_specs[key].append(cur_path)
                 else:
                     all_mac_specs.update({key: [cur_path]})
         if (args.local_run_dir):
             local_cali_files = glob.glob(os.path.join(args.local_run_dir, "*.cali"))
-            cspec = get_spec(local_cali_files)
+            cspec = update_spec(get_spec(local_cali_files))
             mac_name = get_host(local_cali_files)
             key = mac_name+" "+cspec
             if key in all_mac_specs:

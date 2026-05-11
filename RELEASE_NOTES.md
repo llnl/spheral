@@ -5,6 +5,7 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Now require C++20.
     * Added view class for PairwiseField (PairwiseFieldView)
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
     * ArtificialViscosity has been refactored for use on the GPU.
@@ -22,6 +23,8 @@ Notable changes include:
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * Require minimum CMake version 3.24.
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
@@ -35,8 +38,9 @@ Notable changes include:
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
     * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
-    * Updated from Rocm 6.2.0 to 6.4.3.
+    * Updated from ROCM 6.2.0 to 6.4.3.
     * Added update-tpls commit message trigger.
+    * Updated LC Clang from 14.0.6 to 19.1.3 to use C++20.
     * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
     * tpl-manager.py updates:
       * Added --no-upstream option for when on LC machines but cannot access upstream.
@@ -51,6 +55,7 @@ Notable changes include:
       * Added umask command for updating upstreams and removed separate job to update permissions.
       * Build and test job now fails if import of Spheral module fails.
       * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
+      * Created advanced timers for lower level timers. These are disabled by default for cleaner Caliper timer trees.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.

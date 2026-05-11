@@ -3,7 +3,7 @@ include(ExternalProject)
 #-------------------------------------------------------------------------------
 # Configure CMake
 #-------------------------------------------------------------------------------
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
 
@@ -39,7 +39,7 @@ set(Python3_EXECUTABLE ${python_DIR}/bin/python3)
 set(ENABLE_MPI ON CACHE BOOL "")
 set(ENABLE_OPENMP ON CACHE BOOL "")
 
-set(BLT_CXX_STD "c++17" CACHE STRING "")
+set(BLT_CXX_STD "c++20" CACHE STRING "")
 set(BLT_DOCS_TARGET_NAME "blt_docs" CACHE STRING "")
 
 if(NOT SPHERAL_BLT_DIR)

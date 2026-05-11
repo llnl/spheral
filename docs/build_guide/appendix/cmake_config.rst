@@ -86,6 +86,10 @@ The following are CMake variables that can be set during configure time. In gene
 
    Default location Spheral will search for cached pip packages.
 
+.. option:: -DSPHERAL_EXTERNAL_INSTALL=<OFF, ON>
+
+   Enable when Spheral is being built as a TPL for a separate project.
+
 .. option:: -DSPHERAL_DBC_MODE=<None, All, Pre>
 
    Set the compile time design by contract (DBC) mode for Spheral. Design by contract statements are very useful developer tools, whereby the developer can insert tests in the code as they write it.
@@ -110,11 +114,11 @@ Compiler Options
 
 Options specific to compilers:
 
-.. option:: -DSPHERAL_ENABLE_WARNINGS=<ON, OFF>
+.. option:: -DENABLE_WARNINGS=<ON, OFF>
 
    Show compiler warnings.
 
-.. option:: -DSPHERAL_ENABLE_WARNINGS_AS_ERRORS=<OFF, ON>
+.. option:: -DENABLE_WARNINGS_AS_ERRORS=<OFF, ON>
 
    Return an error during compilation if warning occurs.
 

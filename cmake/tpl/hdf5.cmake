@@ -1,5 +1,3 @@
-set(${lib_name}_libs libhdf5.dylib libhdf5_hl.dylib)
+set(${lib_name}_libs libhdf5 libhdf5_hl)
 
-if(ENABLE_STATIC_TPL)
-  string(REPLACE ".dylib" ".a;" ${lib_name}_libs ${${lib_name}_libs})
-endif()
+Spheral_Handle_Ext(${lib_name})
