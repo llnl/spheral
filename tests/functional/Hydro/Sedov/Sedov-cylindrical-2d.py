@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # The cylindrical Sedov test case (2-D).
 #-------------------------------------------------------------------------------
-import os, sys, shutil, mpi
+import os, sys, shutil, mpi, time
 from Spheral2d import *
 from SpheralTestUtilities import *
 from GenerateNodeDistribution2d import *
@@ -9,7 +9,6 @@ from GenerateNodeDistribution2d import *
 import SedovAnalyticSolution
 
 if mpi.procs > 1:
-    #from VoronoiDistributeNodes import distributeNodes2d
     from PeanoHilbertDistributeNodes import distributeNodes2d
 else:
     from DistributeNodes import distributeNodes2d
@@ -108,18 +107,19 @@ commandLine(seed = "lattice",
             dtverbose = False,
 
             # IO
+            dropViz = True,
             vizCycle = None,
             vizDerivs = False,
             vizTime = 0.1,
             restoreCycle = -1,
             restartStep = 1000,
 
+            statsDump = False,
             graphics = False,
             useVoronoiOutput = False,
             clearDirectories = False,
             dataDirBase = "dumps-cylindrical-Sedov",
-            outputFile = None,
-            serialDump=True,
+            outputFile = None
             )
 
 if smallPressure:
@@ -159,6 +159,12 @@ elif thetaFactor == 1.0:
 if seed == "square":
     seed = "lattice"
 
+if dropViz:
+    vizBaseName = "Sedov-cylindrical-2d-%ix%i" % (nRadial, nTheta)
+else:
+    vizBaseName = None
+    vizCycle = None
+    vizTime = None
 #-------------------------------------------------------------------------------
 # Path names.
 #-------------------------------------------------------------------------------
@@ -254,7 +260,6 @@ nodes1 = nodeListConstructor("nodes1", eos,
                            kernelExtent = kernelExtent,
                            nPerh = nPerh,
                            rhoMin = rhomin)
-nodes1.allowALE=True
 #-------------------------------------------------------------------------------
 # Set the node properties.
 #-------------------------------------------------------------------------------
@@ -533,7 +538,7 @@ control = SpheralController(integrator, WT,
                             restartBaseName = restartBaseName,
                             restoreCycle = restoreCycle,
                             vizMethod = vizMethod,
-                            vizBaseName = "Sedov-cylindrical-2d-%ix%i" % (nRadial, nTheta),
+                            vizBaseName = vizBaseName,
                             vizDerivs=vizDerivs,
                             vizDir = vizDir,
                             vizStep = vizCycle,
@@ -544,13 +549,17 @@ output("control")
 #-------------------------------------------------------------------------------
 # Finally run the problem and plot the results.
 #-------------------------------------------------------------------------------
+t0 = time.perf_counter()
+
 if steps is None:
     control.advance(goalTime, maxSteps)
     if restoreCycle != control.totalSteps:
-        control.updateViz(control.totalSteps, integrator.currentTime, 0.0)
+        #control.updateViz(control.totalSteps, integrator.currentTime, 0.0)
         control.dropRestartFile()
 else:
     control.step(steps)
+
+t1 = time.perf_counter()
 
 # Output the energy conservation.
 print("Energy conservation: ", ((control.conserve.EHistory[-1] -
@@ -567,6 +576,7 @@ xprof = mpi.allreduce([x.x for x in nodes1.positions().internalValues()], mpi.SU
 yprof = mpi.allreduce([x.y for x in nodes1.positions().internalValues()], mpi.SUM)
 rho = mpi.allreduce(list(nodes1.massDensity().internalValues()), mpi.SUM)
 mass = mpi.allreduce(list(nodes1.mass().internalValues()), mpi.SUM)
+vol = [mass[i]/rho[i] for i in range(len(mass))]
 v = mpi.allreduce([x.magnitude() for x in nodes1.velocity().internalValues()], mpi.SUM)
 eps = mpi.allreduce(list(nodes1.specificThermalEnergy().internalValues()), mpi.SUM)
 Pf = ScalarField("pressure", nodes1)
@@ -600,8 +610,10 @@ if mpi.rank == 0:
     multiSort(r, rho, v, eps, P, A, hr, ht)
     rans, vans, epsans, rhoans, Pans, Aans, hans = answer.solution(control.time(), r)
     print("\tQuantity \t\tL1 \t\t\tL2 \t\t\tLinf")
-    #f = open("MCTesting.txt", "a")
-    #f.write(("CL=%g, Cq=%g \t") %(Cl, Cq))
+
+    f = open(dataDir + "/errornorms.ascii", "w")
+    f.write("# field, L1, L2, Linf\n")
+
     for (name, data, ans) in [("Mass Density", rho, rhoans),
                               ("Pressure", P, Pans),
                               ("Velocity", v, vans),
@@ -615,8 +627,11 @@ if mpi.rank == 0:
         L2 = Pn.gridpnorm(2, rmin, rmax)
         Linf = Pn.gridpnorm("inf", rmin, rmax)
         print("\t%s \t\t%g \t\t%g \t\t%g" % (name, L1, L2, Linf))
-        #f.write(("\t\t%g") % (L1))
-    #f.write("\n")
+
+        f.write("%s, %g, %g, %g\n" % (name, L1, L2, Linf))
+
+    f.close()
+
 Aans = mpi.bcast(Aans, 0)
 
 #-------------------------------------------------------------------------------
@@ -634,25 +649,14 @@ if outputFile and mpi.rank == 0:
                                            rhoansi, Pansi, vansi, epsansi, Aansi, hansi))
     f.close()
 
-if serialDump:
-    procs = mpi.procs
-    rank = mpi.rank
-    serialData = []
-    i,j = 0,0
-    nodeSet = []
-    nodeSet.append(nodes1)
-    for i in range(procs):
-        for nodeL in nodeSet:
-            if rank == i:
-                for j in range(nodeL.numInternalNodes):
-                    serialData.append([nodeL.positions()[j],3.0/(nodeL.Hfield()[j].Trace()),nodeL.mass()[j],nodeL.massDensity()[j],nodeL.specificThermalEnergy()[j]])
-    serialData = mpi.reduce(serialData,mpi.SUM)
-    if rank == 0:
-        f = open(dataDir + "/serialDump.ascii",'w')
-        for i in range(len(serialData)):
-            f.write("{0} {1} {2} {3} {4} {5} {6} {7}\n".format(i,serialData[i][0][0],serialData[i][0][1],0.0,serialData[i][1],serialData[i][2],serialData[i][3],serialData[i][4]))
-        f.close()
-
+if statsDump and mpi.rank == 0:
+    f = open(dataDir + "/statsDump.ascii",'w')
+    f.write("# cycles, walltime (sec), energy error, volume error\n")
+    f.write("{0}, {1}, {2}, {3}".format(int(integrator.currentCycle),
+                                       (t1-t0),
+                                       ((control.conserve.EHistory[-1]-control.conserve.EHistory[0])/control.conserve.EHistory[0]),
+                                       (sum(vol) - 1)))
+    f.close()
 #-------------------------------------------------------------------------------
 # Plot the final state.
 #-------------------------------------------------------------------------------

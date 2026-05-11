@@ -1,14 +1,16 @@
 #-------------------------------------------------------------------------------
 # The spherical Sedov test case (3-D).
 #-------------------------------------------------------------------------------
-import os, sys, shutil
+import os
+import sys
+import shutil
+import mpi
+import SedovAnalyticSolution
+
 from Spheral3d import *
 from findLastRestart import *
 from SpheralTestUtilities import *
-from SpheralGnuPlotUtilities import *
 from GenerateNodeDistribution3d import *
-
-import mpi
 
 title("3-D integrated hydro test -- planar Sedov problem")
 #-------------------------------------------------------------------------------
@@ -20,8 +22,11 @@ commandLine(seed = "lattice",
             ny = 50,
             nz = 50,
             nPerh = 1.51,
-            KernelConstructor = BSplineKernel,
+            kernelConstructor = BSplineKernel,
             order = 5,
+            rmax = 1,
+            rmin = 0,
+            includeOuterBoundary=False,
 
             rho0 = 1.0,
             eps0 = 0.0,
@@ -44,6 +49,8 @@ commandLine(seed = "lattice",
             psph = False,
             gsph = False,
             fsisph = False,
+            mfm = False,
+            mfv = False,
 
             # hydro parameters
             asph = False,
@@ -61,8 +68,10 @@ commandLine(seed = "lattice",
             volumeType = RKSumVolume,      
 
             # gsph parameters
-            RiemannGradientType = RiemannGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
+            RiemannGradientType = SPHSameTimeGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
             linearReconstruction = True,
+            nodeMotionType = "eulerian",
+            nodeMotionCoefficient = 0.05,
 
             # Artificial Viscosity
             Qconstructor = MonaghanGingoldViscosity,
@@ -88,7 +97,7 @@ commandLine(seed = "lattice",
 
             # Integration
             IntegratorConstructor = CheapSynchronousRK2Integrator,
-            cfl = 0.5,
+            cfl = 0.35,
             useVelocityMagnitudeForDt = False,
             steps = None,
             goalTime = None,
@@ -102,12 +111,15 @@ commandLine(seed = "lattice",
             smoothIters = 0,
 
             # IO
+            dropViz = True,
             vizCycle = None,
             vizTime = 0.1,
+            vizDerivs = False,
             restoreCycle = -1,
             restartStep = 1000,
 
-            graphics = True,
+            statsDump = False,
+            graphics = False,
             clearDirectories = False,
             dataDirBase = "dumps-spherical-Sedov",
             outputFile = None,
@@ -121,7 +133,6 @@ if smallPressure:
 assert not(boolReduceViscosity and boolCullenViscosity)
 
 # Figure out what our goal time should be.
-import SedovAnalyticSolution
 h0 = 1.0/nx*nPerh
 answer = SedovAnalyticSolution.SedovSolution(nDim = 3,
                                              gamma = gamma,
@@ -136,6 +147,12 @@ if goalTime is None:
 vs, r2, v2, rho2, P2 = answer.shockState(goalTime)
 print("Predicted shock position %g at goal time %g." % (r2, goalTime))
 
+if dropViz:
+    vizBaseName = "Sedov-spherical-3d-%ix%ix%i" % (nx, ny, nz)
+else:
+    vizBaseName = None
+    vizCycle = None
+    vizTime = None
 #-------------------------------------------------------------------------------
 # Path names.
 #-------------------------------------------------------------------------------
@@ -147,9 +164,34 @@ if asph:
 if crksph:
     hydroname += "CRKSPH"
 elif fsisph:
-    hydroname = "FSISPH"
+    hydroname += "FSISPH"
 elif gsph:
-    hydroname = "GSPH"
+    hydroname += "GSPH"
+elif mfm:
+    hydroname += "MFM"
+elif mfv:
+    hydroname += "MFV"
+    nodeMotionType = nodeMotionType.lower()
+    if nodeMotionType == "eulerian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Eulerian
+    elif nodeMotionType == "lagrangian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Lagrangian
+    elif nodeMotionType == "fickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.Fickian
+    elif nodeMotionType == "eulerianfickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.EulerianFickian
+    elif nodeMotionType == "xsph":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.XSPH
+    else:
+        raise ValueError ("Invalid node motion type for MFV")
 elif psph:
     hydroname += "PSPH"
 else:
@@ -171,7 +213,6 @@ restartBaseName = os.path.join(restartDir, "Sedov-spherical-3d")
 #-------------------------------------------------------------------------------
 # Check if the necessary output directories exist.  If not, create them.
 #-------------------------------------------------------------------------------
-import os, sys
 if mpi.rank == 0:
     if clearDirectories and os.path.exists(dataDir):
         shutil.rmtree(dataDir)
@@ -190,10 +231,10 @@ eos = GammaLawGasMKS(gamma, mu)
 # Create our interpolation kernels -- one for normal hydro interactions, and
 # one for use with the artificial viscosity
 #-------------------------------------------------------------------------------
-if KernelConstructor==NBSplineKernel:
+if kernelConstructor==NBSplineKernel:
   WT = TableKernel(NBSplineKernel(order), 1000)
 else:
-  WT = TableKernel(KernelConstructor(), 1000)
+  WT = TableKernel(kernelConstructor(), 1000)
 output("WT")
 kernelExtent = WT.kernelExtent
 
@@ -225,8 +266,8 @@ else:
                                            rho0, seed,
                                            xmin = (0.0, 0.0, 0.0),
                                            xmax = (1.0, 1.0, 1.0),
-                                           rmin = 0.0,
-                                           rmax = 1.0,
+                                           rmin = rmin,
+                                           rmax = rmax,
                                            nNodePerh = nPerh,
                                            SPH = (not asph))
 
@@ -300,35 +341,19 @@ output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
 #-------------------------------------------------------------------------------
-# Construct the artificial viscosity.
-#-------------------------------------------------------------------------------
-if not gsph:
-    q = Qconstructor(Cl, Cq, linearInExpansion)
-    q.epsilon2 = epsilon2
-    q.limiter = Qlimiter
-    q.balsaraShearCorrection = balsaraCorrection
-    output("q")
-    output("q.Cl")
-    output("q.Cq")
-    output("q.epsilon2")
-    output("q.limiter")
-    output("q.balsaraShearCorrection")
-    output("q.linearInExpansion")
-    output("q.quadraticInExpansion")
-
-#-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
 if crksph:
     hydro = CRKSPH(dataBase = db,
-                   Q = q,
+                   W = WT,
+                   order = correctionOrder,
                    filter = filter,
                    cfl = cfl,
                    compatibleEnergyEvolution = compatibleEnergy,
                    XSPH = XSPH,
-                   order = correctionOrder,
                    densityUpdate = densityUpdate,
-                   HUpdate = HUpdate)
+                   HUpdate = HUpdate,
+                   ASPH = asph)
 elif fsisph:
     hydro = FSISPH(dataBase = db,
                    W = WT,
@@ -357,10 +382,45 @@ elif gsph:
                 ASPH = asph,
                 densityUpdate=densityUpdate,
                 HUpdate = HUpdate)
+elif mfm:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFM(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = RiemannGradientType,
+                XSPH = XSPH,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
+elif mfv:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFV(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                nodeMotionCoefficient = nodeMotionCoefficient,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = SPHSameTimeGradient,
+                nodeMotionType = nodeMotionType,
+                XSPH = XSPH,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
 elif psph:
     hydro = PSPH(dataBase = db,
                  W = WT,
-                 Q = q,
                  filter = filter,
                  cfl = cfl,
                  useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
@@ -372,8 +432,7 @@ elif psph:
                  XSPH = XSPH)
 else:
     hydro = SPH(dataBase = db,
-                W = WT, 
-                Q = q,
+                W = WT,
                 cfl = cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
                 evolveTotalEnergy = evolveTotalEnergy,
@@ -382,23 +441,35 @@ else:
                 densityUpdate = densityUpdate,
                 XSPH = XSPH,
                 HUpdate = HUpdate)
+
+packages = [hydro]
+
 output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
-output("hydro.HEvolution")
+if not (gsph or mfm or mfv):
+    q = hydro.Q
+    q.Cq = 2
+    q.Cl = 2
+    output("q")
+    output("q.Cl")
+    output("q.Cq")
+    output("q.epsilon2")
+    output("q.limiter")
+    output("q.balsaraShearCorrection")
+    output("q.linearInExpansion")
+    output("q.quadraticInExpansion")
 
-packages = [hydro]
-
-#-------------------------------------------------------------------------------
-# Construct the MMRV physics object.
-#-------------------------------------------------------------------------------
-if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
-    packages.append(evolveReducingViscosityMultiplier)
-elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
-    packages.append(evolveCullenViscosityMultiplier)
+    #-------------------------------------------------------------------------------
+    # Construct the MMRV physics object.
+    #-------------------------------------------------------------------------------
+    if boolReduceViscosity:
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
+        packages.append(evolveReducingViscosityMultiplier)
+    elif boolCullenViscosity:
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
 # Create boundary conditions.
@@ -414,6 +485,18 @@ if seed.lower() != "icosahedral":
     for p in packages:
         for bc in (xbc0, ybc0, zbc0):
             p.appendBoundary(bc)
+
+    # include reflecting boundarys at x=1, y=1, z=1
+    if includeOuterBoundary:
+        xPlane1 = Plane(Vector(1, 1, 1), Vector(-1,  0,  0))
+        yPlane1 = Plane(Vector(1, 1, 1), Vector( 0, -1,  0))
+        zPlane1 = Plane(Vector(1, 1, 1), Vector( 0,  0, -1))
+        xbc1 = ReflectingBoundary(xPlane1)
+        ybc1 = ReflectingBoundary(yPlane1)
+        zbc1 = ReflectingBoundary(zPlane1)
+        for p in packages:
+            for bc in (xbc1, ybc1, zbc1):
+                p.appendBoundary(bc)
 
 #-------------------------------------------------------------------------------
 # Construct a time integrator, and add the one physics package.
@@ -443,23 +526,25 @@ control = SpheralController(integrator, WT,
                             restartStep = restartStep,
                             restartBaseName = restartBaseName,
                             restoreCycle = restoreCycle,
-                            vizBaseName = "Sedov-spherical-3d-%ix%ix%i" % (nx, ny, nz),
+                            vizBaseName = vizBaseName,
                             vizDir = vizDir,
                             vizStep = vizCycle,
                             vizTime = vizTime,
+                            vizDerivs = vizDerivs,
                             SPH = (not ASPH))
 output("control")
-
 #-------------------------------------------------------------------------------
 # Finally run the problem and plot the results.
 #-------------------------------------------------------------------------------
+t0 = time.perf_counter()
 if steps is None:
     control.advance(goalTime, maxSteps)
-    if restoreCycle != control.totalSteps:
-        control.updateViz(control.totalSteps, integrator.currentTime, 0.0)
-        control.dropRestartFile()
+    #if restoreCycle != control.totalSteps:
+    #    control.updateViz(control.totalSteps, integrator.currentTime, 0.0)
+    #    control.dropRestartFile()
 else:
     control.step(steps)
+t1 = time.perf_counter()
 
 # Output the energy conservation.
 print("Energy conservation: ", ((control.conserve.EHistory[-1] -
@@ -477,6 +562,7 @@ yprof = mpi.allreduce([x.y for x in nodes1.positions().internalValues()], mpi.SU
 zprof = mpi.allreduce([x.z for x in nodes1.positions().internalValues()], mpi.SUM)
 rho = mpi.allreduce(list(nodes1.massDensity().internalValues()), mpi.SUM)
 mass = mpi.allreduce(list(nodes1.mass().internalValues()), mpi.SUM)
+vol = [mass[i]/rho[i] for i in range(len(mass))]
 v = mpi.allreduce([x.magnitude() for x in nodes1.velocity().internalValues()], mpi.SUM)
 eps = mpi.allreduce(list(nodes1.specificThermalEnergy().internalValues()), mpi.SUM)
 Pf = ScalarField("pressure", nodes1)
@@ -521,6 +607,14 @@ if outputFile and mpi.rank == 0:
                                            rhoansi, Pansi, vansi, epsansi, Aansi, hansi))
     f.close()
 
+if statsDump and mpi.rank == 0:
+    f = open(dataDir + "/statsDump.ascii",'w')
+    f.write("# cycles, walltime (sec), energy error, volume error\n")
+    f.write("{0}, {1}, {2}, {3}".format(int(integrator.currentCycle),
+                                       (t1-t0),
+                                       ((control.conserve.EHistory[-1]-control.conserve.EHistory[0])/control.conserve.EHistory[0]),
+                                       (sum(vol) - 1)))
+    f.close()
 #-------------------------------------------------------------------------------
 # Plot the final state.
 #-------------------------------------------------------------------------------

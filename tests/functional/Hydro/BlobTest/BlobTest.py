@@ -7,16 +7,22 @@
 #       doi:10.1111/j.1365-2966.2007.12183.x.
 #-------------------------------------------------------------------------------
 import shutil
+import os
+import sys
 from math import *
 from Spheral3d import *
 from SpheralTestUtilities import *
-from SpheralGnuPlotUtilities import *
 from findLastRestart import *
 from GenerateNodeDistribution3d import *
 from CloudMassFraction import *
 
 import mpi
 import DistributeNodes
+
+if mpi.procs > 1:
+    from PeanoHilbertDistributeNodes import distributeNodes3d
+else:
+    from DistributeNodes import distributeNodes3d
 
 title("3-D integrated hydro test --  Blob Test")
 
@@ -106,13 +112,22 @@ commandLine(
     ny1 = 64,
     nz1 = 256,
     massMatch = True,   # If False, match spatial resolution in blob
+    resFactor = 1,
 
     nPerh = 1.35,
 
-    SVPH = False,
-    CRKSPH = False,
-    PSPH = False,
-    ASPH = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
+    svph = False,
+    crksph = False,
+    psph = False,
+    fsisph = False,
+    gsph = False,
+    mfm = False,
+    mfv = False,
+    xsph = False,
+
+    asph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
+    solid = False,
+
     filter = 0.0,  # For CRKSPH
     HopkinsConductivity = False,     # For PSPH
     Qconstructor = MonaghanGingoldViscosity,
@@ -143,19 +158,33 @@ commandLine(
     hmin = 1e-5,
     hmax = 0.5,
     hminratio = 0.1,
-    cfl = 0.25,
-    XSPH = False,
+    
     epsilonTensile = 0.0,
     nTensile = 8,
 
+    # FSISPH parameters
+    fsiSurfaceCoefficient = 0.00,           # adds additional repulsive force to material interfaces)
+    fsiRhoStabilizeCoeff = 0.0,             # coefficient that smooths the density field
+    fsiEpsDiffuseCoeff = 0.0,               # explicit diiffusion of the thermal energy
+    fsiXSPHCoeff = 0.00,                    # fsi uses multiplier for XSPH instead of binary switch
+    fsiInterfaceMethod = ModulusInterface,  # (HLLCInterface, ModulusInterface)
+    fsiKernelMethod  = NeverAverageKernels, # (NeverAverageKernels, AlwaysAverageKernels, AverageInterfaceKernels)
+    
+    # GSPH parameters
+    RiemannGradientType = SPHSameTimeGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
+    linearReconstruction = True,
+    nodeMotionType = "lagrangian",
+    nodeMotionCoefficient = 0.05,
+
     IntegratorConstructor = CheapSynchronousRK2Integrator,
+    cfl = 0.35,
     steps = None,
-    vizCycle = 20,
-    vizTime = 0.1,
+    vizCycle = None,
+    vizTKH = 0.1,
     dt = 0.0001,
     dtMin = 1.0e-5, 
     dtMax = 0.1,
-    dtGrowth = 2.0,
+    dtGrowth = 4.0,
     maxSteps = None,
     statsStep = 10,
     HUpdate = IdealH,
@@ -171,8 +200,9 @@ commandLine(
 
     clearDirectories = False,
     restoreCycle = -1,
-    restartStep = 200,
+    restartStep = 100,
     dataDir = "dumps-blobtest-3d",
+    redistributeStep = 100,
 
     # Parameters for the cloud mass fraction history
     histfilename = "cloud_mass_history.gnu",
@@ -181,47 +211,70 @@ commandLine(
     massFracFreq = 10,
     )
 
+nx1=nx1*resFactor
+ny1=ny1*resFactor
+nz1=nz1*resFactor
+
 # Check the input.
 assert not (boolReduceViscosity and boolCullenViscosity)
 assert not (compatibleEnergy and evolveTotalEnergy)
 
 # Decide on our hydro algorithm.
-if SVPH:
-    if ASPH:
-        HydroConstructor = ASVPHFacetedHydro
-    else:
-        HydroConstructor = SVPHFacetedHydro
-elif CRKSPH:
-    Qconstructor = LimitedMonaghanGingoldViscosity
-    if ASPH:
-        HydroConstructor = ACRKSPHHydro
-    else:
-        HydroConstructor = CRKSPHHydro
-elif PSPH:
-    if ASPH:
-        HydroConstructor = APSPHHydro
-    else:
-        HydroConstructor = PSPHHydro
+if svph:
+    hydroname="SVPH"
+elif crksph:
+    hydroname="CRKSPH"
+elif psph:
+    hydroname = "PSPH"
+elif fsisph:
+    hydroname = "FSISPH"
+elif gsph:
+    hydroname = "GSPH"
+elif mfm:
+    hydroname = "MFM"
+elif mfv:
+    hydroname = "MFV"
+    nodeMotionType = nodeMotionType.lower()
+    if nodeMotionType == "eulerian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Eulerian
+    elif nodeMotionType == "lagrangian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Lagrangian
+    elif nodeMotionType == "fickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.Fickian
+    elif nodeMotionType == "eulerianfickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.EulerianFickian
+    elif nodeMotionType == "xsph":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.XSPH
 else:
-    if ASPH:
-        HydroConstructor = ASPHHydro
-    else:
-        HydroConstructor = SPHHydro
+    hydroname = "SPH"
 
+if asph:
+    hydroname = "A"+hydroname
+if solid:
+    hydroname = "SOLID"+hydroname
+print(hydroname,nodeMotionType)
 # Build our directory paths.
 densityUpdateLabel = {IntegrateDensity : "IntegrateDensity",
                       SumDensity : "SumDensity",
                       RigorousSumDensity : "RigorousSumDensity",
                       SumVoronoiCellDensity : "SumVoronoiCellDensity"}
 baseDir = os.path.join(dataDir,
-                       HydroConstructor.__name__,
+                       hydroname,
                        Qconstructor.__name__,
                        KernelConstructor.__name__,
                        densityUpdateLabel[densityUpdate],
                        "compatibleEnergy=%s" % compatibleEnergy,
                        "evolveTotalEnergy=%s" % evolveTotalEnergy,
                        "Cullen=%s" % boolCullenViscosity,
-                       "XSPH=%s" % XSPH,
+                       "XSPH=%s" % xsph,
                        "nPerh=%3.1f" % nPerh,
                        "fcentroidal=%1.3f" % fcentroidal,
                        "fcellPressure = %1.3f" % fcellPressure,
@@ -231,7 +284,7 @@ restartDir = os.path.join(baseDir, "restarts")
 restartBaseName = os.path.join(restartDir, "blob-3d-%ix%ix%i" % (nx1, ny1, nz1))
 
 vizDir = os.path.join(baseDir, "visit")
-if vizTime is None and vizCycle is None:
+if vizTKH is None and vizCycle is None:
     vizBaseName = None
 else:
     vizBaseName = "blobtest-3d-%ix%ix%i" % (nx1, ny1, nz1)
@@ -242,13 +295,13 @@ vext = mach*csext
 tCrush = 2.0*br*sqrt(chi)/vext
 tKH = 1.6*tCrush
 goalTime = goalTKH * tKH
+vizTime = vizTKH * tKH
 
 print("Computed times (tCrush, tKH, goalTime) = (%g, %g, %g)" % (tCrush, tKH, goalTime))
 
 #-------------------------------------------------------------------------------
 # Check if the necessary output directories exist.  If not, create them.
 #-------------------------------------------------------------------------------
-import os, sys
 if mpi.rank == 0:
     if clearDirectories and os.path.exists(baseDir):
         shutil.rmtree(baseDir)
@@ -279,13 +332,17 @@ kernelExtent = WT.kernelExtent
 # Make the NodeLists.
 #-------------------------------------------------------------------------------
 #Ambient Medium nodes
-outerNodes = makeFluidNodeList("outer", eos1,
+if solid:
+    nodeListConstructor = makeSolidNodeList
+else:
+    nodeListConstructor = makeFluidNodeList
+outerNodes = nodeListConstructor("outer", eos1,
                                hmin = hmin,
                                hmax = hmax,
                                hminratio = hminratio,
                                nPerh = nPerh)
 #Blob nodes
-innerNodes = makeFluidNodeList("inner", eos2,
+innerNodes = nodeListConstructor("inner", eos2,
                                hmin = hmin,
                                hmax = hmax,
                                hminratio = hminratio,
@@ -350,11 +407,6 @@ else:
                                                 nNodePerh = nPerh,
                                                 SPH = (not ASPH))
 
-if mpi.procs > 1:
-    from VoronoiDistributeNodes import distributeNodes3d
-else:
-    from DistributeNodes import distributeNodes3d
-
 distributeNodes3d((outerNodes, generatorOuter),
                   (innerNodes, generatorInner))
 for nodes in nodeSet:
@@ -394,27 +446,28 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the artificial viscosity.
 #-------------------------------------------------------------------------------
-q = Qconstructor(Cl, Cq)
-q.epsilon2 = epsilon2
-q.limiter = Qlimiter
-q.balsaraShearCorrection = balsaraCorrection
-output("q")
-output("q.Cl")
-output("q.Cq")
-output("q.epsilon2")
-output("q.limiter")
-output("q.balsaraShearCorrection")
+if not (gsph or mfm or mfv):
+    q = Qconstructor(Cl, Cq, WT)
+    q.epsilon2 = epsilon2
+    q.limiter = Qlimiter
+    q.balsaraShearCorrection = balsaraCorrection
+    output("q")
+    output("q.Cl")
+    output("q.Cq")
+    output("q.epsilon2")
+    output("q.limiter")
+    output("q.balsaraShearCorrection")
 
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if SVPH:
-    hydro = HydroConstructor(W = WT, 
+if svph:
+    hydro = SVPH(W = WT, 
                              Q = q,
                              cfl = cfl,
                              compatibleEnergyEvolution = compatibleEnergy,
                              densityUpdate = densityUpdate,
-                             XSVPH = XSPH,
+                             XSVPH = xsph,
                              linearConsistent = linearConsistent,
                              generateVoid = False,
                              HUpdate = HUpdate,
@@ -422,8 +475,8 @@ if SVPH:
                              fcellPressure = fcellPressure,
                              xmin = Vector(xb0 - (xb1 - xb0), yb0 - (yb1 - yb0), zb0 - (zb1 - zb0)),
                              xmax = Vector(xb1 + (xb1 - xb0), yb1 + (yb1 - yb0), zb1 + (zb1 - zb0)))
-elif CRKSPH:
-    hydro = HydroConstructor(W = WT, 
+elif crksph:
+    hydro = CRKSPK(W = WT, 
                              Q = q,
                              filter = filter,
                              epsTensile = epsilonTensile,
@@ -431,11 +484,11 @@ elif CRKSPH:
                              cfl = cfl,
                              compatibleEnergyEvolution = compatibleEnergy,
                              evolveTotalEnergy = evolveTotalEnergy,
-                             XSPH = XSPH,
+                             XSPH = xsph,
                              densityUpdate = densityUpdate,
                              HUpdate = HUpdate)
-elif PSPH:
-    hydro = HydroConstructor(W = WT,
+elif psph:
+    hydro = PSPH(W = WT,
                              Q = q,
                              filter = filter,
                              cfl = cfl,
@@ -445,27 +498,96 @@ elif PSPH:
                              HopkinsConductivity = HopkinsConductivity,
                              densityUpdate = densityUpdate,
                              HUpdate = HUpdate,
-                             XSPH = XSPH)
+                             XSPH = xsph)
+elif fsisph:
+    sumDensityNodeListSwitch =[outerNodes,innerNodes]  
+    hydro = FSISPH(dataBase = db,
+                   Q=q, 
+                   W = WT,
+                   cfl = cfl,
+                   surfaceForceCoefficient = fsiSurfaceCoefficient,              
+                   densityStabilizationCoefficient = fsiRhoStabilizeCoeff,         
+                   specificThermalEnergyDiffusionCoefficient = fsiEpsDiffuseCoeff,     
+                   xsphCoefficient = fsiXSPHCoeff,
+                   interfaceMethod = fsiInterfaceMethod,
+                   kernelAveragingMethod = fsiKernelMethod,
+                   sumDensityNodeLists = sumDensityNodeListSwitch,
+                   linearCorrectGradients = correctVelocityGradient,
+                   compatibleEnergyEvolution = compatibleEnergy,  
+                   evolveTotalEnergy = evolveTotalEnergy,         
+                   ASPH = asph,
+                   epsTensile = epsilonTensile)
+elif gsph:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = GSPH(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                #specificThermalEnergyDiffusionCoefficient = gsphEpsDiffuseCoeff,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                densityUpdate=densityUpdate,
+                XSPH = xsph,
+                ASPH = asph,
+                epsTensile = epsilonTensile,
+                nTensile = nTensile)
+elif mfm:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFM(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = RiemannGradientType,
+                XSPH = xsph,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
+elif mfv:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFV(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                nodeMotionCoefficient = nodeMotionCoefficient,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = SPHSameTimeGradient,
+                nodeMotionType = nodeMotionType,
+                XSPH = xsph,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
 else:
-    hydro = HydroConstructor(W = WT,
+    hydro = SPH(W = WT,
                              Q = q,
                              cfl = cfl,
                              compatibleEnergyEvolution = compatibleEnergy,
                              evolveTotalEnergy = evolveTotalEnergy,
                              gradhCorrection = gradhCorrection,
                              correctVelocityGradient = correctVelocityGradient,
-                             XSPH = XSPH,
+                             XSPH = xsph,
                              densityUpdate = densityUpdate,
                              HUpdate = HUpdate,
                              epsTensile = epsilonTensile,
                              nTensile = nTensile)
 output("hydro")
 output("hydro.kernel()")
-output("hydro.PiKernel()")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
-output("hydro.HEvolution")
 
 packages = [hydro]
 
@@ -551,10 +673,11 @@ control = SpheralController(integrator, WT,
                             restartBaseName = restartBaseName,
                             restoreCycle = restoreCycle,
                             vizBaseName = vizBaseName,
+                            redistributeStep = redistributeStep,
                             vizDir = vizDir,
                             vizStep = vizCycle,
                             vizTime = vizTime,
-                            skipInitialPeriodicWork = (HydroConstructor in (SVPHFacetedHydro, ASVPHFacetedHydro)),
+                            skipInitialPeriodicWork = svph,
                             SPH = (not ASPH))
 output("control")
 

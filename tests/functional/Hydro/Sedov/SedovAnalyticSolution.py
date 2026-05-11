@@ -164,7 +164,7 @@ class SedovSolution:
         vs, r2, v2, rho2, P2 = self.shockState(t)
 
         if r is None:
-            r = [0.01*r2*i for i in range(101)]
+            r = [0.001*r2*i for i in range(1001)]
 
         v = []
         rho = []

@@ -7,16 +7,22 @@
 #       doi:10.1111/j.1365-2966.2007.12183.x.
 #-------------------------------------------------------------------------------
 import shutil
+import os
+import sys
+
 from math import *
 from Spheral2d import *
 from SpheralTestUtilities import *
-from SpheralGnuPlotUtilities import *
 from findLastRestart import *
 from GenerateNodeDistribution2d import *
 from CloudMassFraction import *
 
 import mpi
-import DistributeNodes
+
+if mpi.procs > 1:
+    from PeanoHilbertDistributeNodes import distributeNodes2d
+else:
+    from DistributeNodes import distributeNodes2d
 
 title("2-D integrated hydro test --  Blob Test")
 
@@ -93,6 +99,7 @@ commandLine(
     nx1 = 256,            # num nodes spanning x
     ny1 = 64,             # num nodes spanning y
     massMatch = True,     # If False, match spatial resolution in blob  
+    resFactor = 1,
 
     # kernel
     HUpdate = IdealH,
@@ -108,7 +115,9 @@ commandLine(
     crksph = False,
     psph = False,
     fsisph = False,
-    gsph = False, 
+    gsph = False,
+    mfm = False,
+    mfv = False,
 
     # hydro options
     solid = False,                      # use solid node lists (fluid limit of solid hydro)
@@ -132,8 +141,10 @@ commandLine(
     fsiKernelMethod  = NeverAverageKernels, # (NeverAverageKernels, AlwaysAverageKernels, AverageInterfaceKernels)
     
     # GSPH parameters
-    gsphEpsDiffuseCoeff = 0.0,
-    gsphLinearCorrect = True,
+    RiemannGradientType = SPHSameTimeGradient, # (RiemannGradient,SPHGradient,HydroAccelerationGradient,OnlyDvDxGradient,MixedMethodGradient)
+    linearReconstruction = True,
+    nodeMotionType = "lagrangian",
+    nodeMotionCoefficient = 0.05,
 
     # artificial viscosity
     Cl = 1.0, 
@@ -160,14 +171,14 @@ commandLine(
     epsilon2 = 1e-2,
 
     # integrator
-    cfl = 0.25,
-    goalTKH = 2.5,  # Goal time in units of t_KH
+    cfl = 0.35,
+    goalTKH = 4.0,  # Goal time in units of t_KH
     IntegratorConstructor = CheapSynchronousRK2Integrator,
     steps = None,
-    vizCycle = 20,
-    vizTime = 0.1,
-    dt = 0.0001,
-    dtMin = 1.0e-5, 
+    vizCycle = None,
+    vizTKH = 0.5,
+    dt = 0.000001,
+    dtMin = 1.0e-6, 
     dtMax = 0.1,
     dtGrowth = 2.0,
     maxSteps = None,
@@ -175,6 +186,7 @@ commandLine(
     domainIndependent = False,
     rigorousBoundaries = False,
     dtverbose = False,
+    redistributeStep = 100,
 
     # outputs
     clearDirectories = False,
@@ -186,6 +198,9 @@ commandLine(
     epsThresholdFrac = 0.9,
     massFracFreq = 10,
     )
+
+nx1=nx1*resFactor
+ny1=ny1*resFactor
 
 # Check the input.
 assert not (boolReduceViscosity and boolCullenViscosity)
@@ -205,6 +220,31 @@ elif fsisph:
     hydroname = "FSI"+hydroname
 elif gsph:
     hydroname = "G"+hydroname
+elif mfm:
+    hydroname = "MFM"
+elif mfv:
+    hydroname = "MFV"
+    nodeMotionType = nodeMotionType.lower()
+    if nodeMotionType == "eulerian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Eulerian
+    elif nodeMotionType == "lagrangian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Lagrangian
+    elif nodeMotionType == "fickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.Fickian
+    elif nodeMotionType == "eulerianfickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.EulerianFickian
+    elif nodeMotionType == "xsph":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.XSPH
+    else:
+        raise ValueError ("Invalid node motion type for MFV")
 if asph: 
     hydorname = "A"+hydroname
 if solid: 
@@ -234,7 +274,7 @@ restartDir = os.path.join(baseDir, "restarts")
 restartBaseName = os.path.join(restartDir, "blob-2d-%ix%i" % (nx1, ny1))
 
 vizDir = os.path.join(baseDir, "visit")
-if vizTime is None and vizCycle is None:
+if vizTKH is None and vizCycle is None:
     vizBaseName = None
 else:
     vizBaseName = "blobtest-2d-%ix%i" % (nx1, ny1)
@@ -245,13 +285,13 @@ vext = mach*csext
 tCrush = 2.0*br*sqrt(chi)/vext
 tKH = 1.6*tCrush
 goalTime = goalTKH * tKH
+vizTime = vizTKH * tKH
 
 print("Computed times (tCrush, tKH, goalTime) = (%g, %g, %g)" % (tCrush, tKH, goalTime))
 
 #-------------------------------------------------------------------------------
 # Check if the necessary output directories exist.  If not, create them.
 #-------------------------------------------------------------------------------
-import os, sys
 if mpi.rank == 0:
     if clearDirectories and os.path.exists(baseDir):
         shutil.rmtree(baseDir)
@@ -356,11 +396,6 @@ else:
                                                 nNodePerh = nPerh,
                                                 SPH = (not ASPH))
 
-if mpi.procs > 1:
-    from VoronoiDistributeNodes import distributeNodes2d
-else:
-    from DistributeNodes import distributeNodes2d
-
 distributeNodes2d((outerNodes, generatorOuter),
                   (innerNodes, generatorInner))
 for nodes in nodeSet:
@@ -395,8 +430,8 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the artificial viscosity.
 #-------------------------------------------------------------------------------
-if not gsph:
-    q = Qconstructor(Cl, Cq)
+if not (gsph or mfm or mfv):
+    q = Qconstructor(Cl, Cq, WT)
     q.epsilon2 = epsilon2
     q.limiter = Qlimiter
     q.balsaraShearCorrection = balsaraCorrection
@@ -448,7 +483,7 @@ elif psph:
                  HUpdate = HUpdate,
                  XSPH = xsph,
                  ASPH = asph)
-if fsisph:
+elif fsisph:
     sumDensityNodeListSwitch =[outerNodes,innerNodes]  
     hydro = FSISPH(dataBase = db,
                    Q=q, 
@@ -469,12 +504,12 @@ if fsisph:
 elif gsph:
     limiter = VanLeerLimiter()
     waveSpeed = DavisWaveSpeed()
-    solver = HLLC(limiter,waveSpeed,gsphLinearCorrect)
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
     hydro = GSPH(dataBase = db,
                 riemannSolver = solver,
                 W = WT,
                 cfl=cfl,
-                specificThermalEnergyDiffusionCoefficient = gsphEpsDiffuseCoeff,
+                #specificThermalEnergyDiffusionCoefficient = gsphEpsDiffuseCoeff,
                 compatibleEnergyEvolution = compatibleEnergy,
                 correctVelocityGradient= correctVelocityGradient,
                 evolveTotalEnergy = evolveTotalEnergy,
@@ -483,6 +518,42 @@ elif gsph:
                 ASPH = asph,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile)
+elif mfm:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFM(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = RiemannGradientType,
+                XSPH = xsph,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
+elif mfv:
+    limiter = VanLeerLimiter()
+    waveSpeed = DavisWaveSpeed()
+    solver = HLLC(limiter,waveSpeed,linearReconstruction)
+    hydro = MFV(dataBase = db,
+                riemannSolver = solver,
+                W = WT,
+                cfl=cfl,
+                nodeMotionCoefficient = nodeMotionCoefficient,
+                specificThermalEnergyDiffusionCoefficient = 0.00,
+                compatibleEnergyEvolution = compatibleEnergy,
+                correctVelocityGradient= correctVelocityGradient,
+                evolveTotalEnergy = evolveTotalEnergy,
+                gradientType = SPHSameTimeGradient,
+                nodeMotionType = nodeMotionType,
+                XSPH = xsph,
+                ASPH = asph,
+                densityUpdate=densityUpdate,
+                HUpdate = HUpdate)
 else:
     hydro = SPH(dataBase = db,
                 cfl = cfl,
@@ -502,7 +573,6 @@ output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
-output("hydro.HEvolution")
 
 packages = [hydro]
 
@@ -579,6 +649,7 @@ control = SpheralController(integrator, WT,
                             vizDir = vizDir,
                             vizStep = vizCycle,
                             vizTime = vizTime,
+                            redistributeStep=redistributeStep,
                             skipInitialPeriodicWork = svph,
                             SPH = (not ASPH))
 output("control")

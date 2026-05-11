@@ -118,7 +118,7 @@ commandLine(seed = "constantDTheta",
             volumeType = RKSumVolume,
 
             # MFV
-            nodeMotion = NodeMotionType.Eulerian,
+            nodeMotionType = "lagrangian",
             nodeMotionCoefficient = 0.15,
 
             # artificial viscosity
@@ -219,10 +219,32 @@ elif mfm:
     hydroname = "MFM"
 elif mfv:
     hydroname = "MFV"
+    nodeMotionType = nodeMotionType.lower()
+    if nodeMotionType == "eulerian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Eulerian
+    elif nodeMotionType == "lagrangian":
+        hydroname += "_{0}".format(nodeMotionType)
+        nodeMotionType = NodeMotionType.Lagrangian
+    elif nodeMotionType == "fickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.Fickian
+    elif nodeMotionType == "eulerianfickian":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.EulerianFickian
+    elif nodeMotionType == "xsph":
+        hydroname += "_{0}".format(nodeMotionType)
+        hydroname += "_{0}".format(nodeMotionCoefficient)
+        nodeMotionType = NodeMotionType.XSPH
+    else:
+        raise ValueError ("Invalid node motion type for MFV")
 elif psph:
     hydroname = "PSPH"
 else:
     hydroname = "SPH"
+    
 if asph:
     hydroname = "A" + hydroname
 
@@ -237,7 +259,6 @@ if dataDir:
                            "Cullen=%s" % boolCullenViscosity,
                            "xfilter=%f" % xfilter,
                            "fhourglass=%f" % fhourglass,
-                           "%s" % nodeMotion,
                            "nrad=%i_ntheta=%i" % (nRadial, nTheta))
     restartDir = os.path.join(dataDir, "restarts")
     restartBaseName = os.path.join(restartDir, "Noh-cylindrical-2d-%ix%i" % (nRadial, nTheta))
@@ -446,7 +467,7 @@ elif mfv:
                 riemannSolver = solver,
                 W = WT,
                 cfl=cfl,
-                nodeMotionType=nodeMotion,
+                nodeMotionType=nodeMotionType,
                 nodeMotionCoefficient=nodeMotionCoefficient,
                 specificThermalEnergyDiffusionCoefficient = 0.00,
                 compatibleEnergyEvolution = compatibleEnergy,
