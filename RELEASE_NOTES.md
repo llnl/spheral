@@ -26,6 +26,8 @@ Notable changes include:
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
       * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
+    * The explicitly bound C++ pair types for Python have been removed -- just use Python tuples instead --
+      i.e. use (1.0, "Howdy") rather than pair_double_string(1.0, "Howdy").
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
