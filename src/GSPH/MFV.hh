@@ -103,6 +103,12 @@ public:
   // Destructor.
   virtual ~MFV() = default;
 
+  // for the next time step.
+  virtual TimeStepType dt(const DataBase<Dimension>& dataBase,
+                          const State<Dimension>& state,
+                          const StateDerivatives<Dimension>& derivs,
+                          const Scalar currentTime) const override;
+
   // Tasks we do once on problem startup.
   virtual
   void initializeProblemStartup(DataBase<Dimension>& dataBase) override;

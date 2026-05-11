@@ -46,6 +46,7 @@
 #include <limits.h>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 
 using std::vector;
 using std::string;
@@ -426,10 +427,14 @@ dt(const DataBase<Dimension>& dataBase,
 
           // Total acceleration limit.
           const auto vmagi = vi.magnitude();
-          const auto dtAcc = 0.1*std::max(nodeScalei/(vmagi + tiny), vmagi/(DvDt(nodeListi, i).magnitude() + tiny));
+          //const auto dtAcc = std::max(nodeScalei/(vmagi + tiny), vmagi/(DvDt(nodeListi, i).magnitude() + tiny));
+          const auto dtAcc = std::sqrt(2*nodeScalei/(DvDt(nodeListi, i).magnitude() + tiny));
           if (dtAcc < minDt_local.first) {
             minDt_local = make_pair(dtAcc, ("Total acceleration limit: dt = " + to_string(dtAcc) + "\n" + 
                                             "              |acceleration| = " + to_string(DvDt(nodeListi, i).magnitude()) + "\n" +
+                                            // "              |velocity|     = " + to_string(vmagi) + "\n" +
+                                            // "                   vel dt    = " + to_string(nodeScalei/(vmagi + tiny)) +"\n" +
+                                            // "                   acc dt    = " + to_string( vmagi/(DvDt(nodeListi, i).magnitude() + tiny)) +"\n" +
                                             "                   nodeScale = " + to_string(nodeScalei) + "\n" +
                                             "                    material = " + fluidNodeList.name() + "\n" +
                                             "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(Process::getRank()) + ")\n" +

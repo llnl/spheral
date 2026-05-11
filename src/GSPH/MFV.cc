@@ -64,7 +64,20 @@
 
 #include <sstream>
 
+using std::pair;
+using std::to_string;
+using std::make_pair;
 using std::string;
+
+namespace {
+template<typename Vector>
+std::string
+vec_to_string(const Vector& vec) {
+  std::ostringstream oss;
+  oss << vec << std::endl;
+  return oss.str();
+}
+}
 
 namespace Spheral {
 
@@ -120,6 +133,82 @@ MFV(DataBase<Dimension>& dataBase,
     mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
     mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
     mMaxFluxSpeed = dataBase.newFluidFieldList(0.0, GSPHFieldNames::maxFluxSpeed);
+}
+
+//------------------------------------------------------------------------------
+// Constructor.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename GenericRiemannHydro<Dimension>::TimeStepType
+MFV<Dimension>::
+dt(const DataBase<Dimension>& dataBase,
+   const State<Dimension>& state,
+   const StateDerivatives<Dimension>& derivs,
+   const Scalar currentTime) const{
+
+  const auto dtBase = GenericRiemannHydro<Dimension>::dt(dataBase,state,derivs,currentTime);
+
+  const auto tiny = std::numeric_limits<Scalar>::epsilon();
+
+  // Get some useful fluid variables from the DataBase.
+  const auto  mask = state.fields(HydroFieldNames::timeStepMask, 1);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  vf = derivs.fields(GSPHFieldNames::maxFluxSpeed, 0.0);
+  const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
+                                                         this->requireOverlapConnectivity(),
+                                                         this->requireIntersectionConnectivity());
+  const auto  numNodeLists = connectivityMap.nodeLists().size();
+
+  // Initialize the return value to some impossibly high value.
+  auto minDt = make_pair(std::numeric_limits<double>::max(), string());
+
+  // Loop over every fluid node.
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto& fluidNodeList = **(dataBase.fluidNodeListBegin() + nodeListi);
+    const auto nPerh = fluidNodeList.nodesPerSmoothingScale();
+    const auto ni = fluidNodeList.numInternalNodes();
+
+#pragma omp parallel
+    {
+      auto minDt_local = minDt;
+#pragma omp for
+      for (auto i = 0u; i < ni; ++i) {
+
+        // If this node is masked, don't worry about it.
+        if (mask(nodeListi, i) == 1) {
+
+          // Get this nodes minimum characteristic smoothing scale.
+          const auto& Hi = H(nodeListi, i);
+          const Scalar nodeScalei = 1.0/Hi.eigenValues().maxElement()/nPerh;
+
+          // Sound speed limit.
+          const auto vfi = vf(nodeListi, i);
+          const auto vfDt = nodeScalei/(vfi + tiny);
+          if (vfDt < minDt_local.first) {
+            minDt_local = make_pair(vfDt, ("flux velocity limit: dt = " + to_string(vfDt) + "\n" +
+                                           "                     cs = " + to_string(vf(nodeListi, i)) + "\n" +
+                                           "              nodeScale = " + to_string(nodeScalei) + "\n" +
+                                           "               material = " + fluidNodeList.name() + "\n" +
+                                           "  (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(Process::getRank()) + ")\n" +
+                                           "             @ position = " + vec_to_string(position(nodeListi, i))));
+          }
+        }
+      }
+
+#pragma omp critical
+      if (minDt_local.first < minDt.first) minDt = minDt_local;
+    }
+  }
+  // Scale by the cfl safety factor.
+  minDt.first *= this->cfl();
+
+  // use the base class dt if lower
+  if (dtBase.first < minDt.first){
+    minDt = dtBase;
+  }
+  return minDt;
+
 }
 
 //------------------------------------------------------------------------------
