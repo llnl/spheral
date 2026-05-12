@@ -84,7 +84,6 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   xmax),
   mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
   mPairWorkPtr(std::make_unique<PairWorkType>()),
-  mSelfAccelerations(FieldStorageType::CopyFields),
   mMassRZ(FieldStorageType::CopyFields),
   mMassDensityRZ(FieldStorageType::CopyFields),
   mDmassDensityDtRZ(FieldStorageType::CopyFields) {
@@ -174,11 +173,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     mPairWorkPtr = std::make_unique<PairWorkType>(connectivityMap);
-    // dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
   derivs.enroll(HydroFieldNames::pairWork, *mPairWorkPtr);
-  // derivs.enroll(mSelfAccelerations);
 }
 
 //------------------------------------------------------------------------------
@@ -304,7 +301,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   auto& pairWork = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
-  // auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   CHECK(rhoSum.size() == numNodeLists);
@@ -324,8 +320,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
   CHECK((compatibleEnergy and pairWork.size() == npairs) or not compatibleEnergy);
-  // CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
-  //       (not compatibleEnergy and selfAccelerations.size() == 0u));
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -580,11 +574,6 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       // rhoSumi /= circi;
       normi += mRZi/rhoRZi*W0*Hdeti;
 
-      // // Finish the acceleration -- self hoop strain.
-      // const Vector deltaDvDti(0.0, Pi/rhoRZi*riInv);
-      // DvDti += deltaDvDti;
-      // if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
-
       // Finish the gradient of the velocity.
       CHECK(rhoi > 0.0);
       if (correctVelocityGradient and
@@ -740,6 +729,30 @@ enforceBoundaries(State<Dim<2>>& state,
       mass(nodeListi, i) *= ri;
     }
   }
+}
+
+//------------------------------------------------------------------------------
+// Dump the current state to the given file.
+//------------------------------------------------------------------------------
+void
+SPHRZ::
+dumpState(FileIO& file, const string& pathName) const {
+  SPHBase<Dim<2>>::dumpState(file, pathName);
+  file.write(mMassRZ, pathName + "/massRZ");
+  file.write(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.write(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
+}
+
+//------------------------------------------------------------------------------
+// Restore the state from the given file.
+//------------------------------------------------------------------------------
+void
+SPHRZ::
+restoreState(const FileIO& file, const string& pathName) {
+  SPHBase<Dim<2>>::restoreState(file, pathName);
+  file.read(mMassRZ, pathName + "/massRZ");
+  file.read(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.read(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
 }
 
 //------------------------------------------------------------------------------

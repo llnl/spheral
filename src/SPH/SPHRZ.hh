@@ -136,7 +136,6 @@ public:
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
   const PairWorkType& pairWork()                          const { VERIFY2(mPairWorkPtr, "SPH ERROR: pairWork not initialized on access"); return *mPairWorkPtr; }
-  const FieldList<Dimension, Vector>& selfAccelerations() const { return mSelfAccelerations; }
   const FieldList<Dimension, Scalar>& massRZ()            const { return mMassRZ; }
   const FieldList<Dimension, Scalar>& massDensityRZ()     const { return mMassDensityRZ; }
   const FieldList<Dimension, Scalar>& DmassDensityDtRZ()  const { return mDmassDensityDtRZ; }
@@ -144,6 +143,8 @@ public:
   //****************************************************************************
   // Methods required for restarting.
   virtual std::string label() const override { return "SPHRZ" ; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // Integrate an estimate of vr/r over a timestep given the initial radial
@@ -159,7 +160,6 @@ private:
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
   std::unique_ptr<PairWorkType> mPairWorkPtr;
 
-  FieldList<Dimension, Vector> mSelfAccelerations;
   FieldList<Dimension, Scalar> mMassRZ;
   FieldList<Dimension, Scalar> mMassDensityRZ;
   FieldList<Dimension, Scalar> mDmassDensityDtRZ;

@@ -3,6 +3,7 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from SPHBase import *
+from RestartMethods import *
 
 @PYB11template()            # Override the fact SPHBase is templated
 @PYB11template_dict({"Dimension" : "Dim<2>"})
@@ -117,11 +118,6 @@ mass density, velocity, and specific thermal energy."""
         "Enforce boundary conditions for the physics specific fields."
         return "void"
 
-    @PYB11virtual
-    @PYB11const
-    def label(self):
-        return "std::string"
-
     @PYB11static
     def integrate_vr_over_r(vr = "double",
                             r = "double",
@@ -138,3 +134,8 @@ mass density, velocity, and specific thermal energy."""
     massRZ = PYB11property("const ScalarFieldList&", "massRZ", returnpolicy="reference_internal")
     massDensityRZ = PYB11property("const ScalarFieldList&", "massDensityRZ", returnpolicy="reference_internal")
     DmassDensityDtRZ = PYB11property("const ScalarFieldList&", "DmassDensityDtRZ", returnpolicy="reference_internal")
+
+#-------------------------------------------------------------------------------
+# Inject methods
+#-------------------------------------------------------------------------------
+PYB11inject(RestartMethods, SPHRZ)

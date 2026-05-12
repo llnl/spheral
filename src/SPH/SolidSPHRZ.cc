@@ -870,4 +870,30 @@ enforceBoundaries(State<Dimension>& state,
   }
 }
 
+//------------------------------------------------------------------------------
+// Dump the current state to the given file.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+dumpState(FileIO& file, const string& pathName) const {
+  SolidSPH<Dim<2>>::dumpState(file, pathName);
+  file.write(mSelfAccelerations, pathName + "/selfAcceleration");
+  file.write(mMassRZ, pathName + "/massRZ");
+  file.write(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.write(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
+}
+
+//------------------------------------------------------------------------------
+// Restore the state from the given file.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+restoreState(const FileIO& file, const string& pathName) {
+  SolidSPH<Dim<2>>::restoreState(file, pathName);
+  file.read(mSelfAccelerations, pathName + "/selfAcceleration");
+  file.read(mMassRZ, pathName + "/massRZ");
+  file.read(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.read(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
+}
+
 }
