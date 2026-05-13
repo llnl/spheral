@@ -21,10 +21,13 @@ Notable changes include:
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
-    * Added a page to the docs about GPU development. 
+    * Added a page to the docs about GPU development.
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * Require minimum CMake version 3.24.
+    * Volume calculation has been separated from RKCorrections into the VoronoiCells/VolumeUpdate physics packages.
+    * Physics package requirements API consolidated for connectivity, volumes, and reproducing kernels.
+    * Added a priority to Boundary to ensure boundary conditions are ordered consistently.
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
@@ -566,7 +569,7 @@ Notable changes include:
   * New features / API changes:
     * Added verbose time step frequency to `SpheralController`, allowing time step information to be printed every N steps instead of every step.
     * Periodic work frequencies in `SpheralController` can now be callables, enabling dynamic frequency changes during a simulation.
-    * Added `gradientPairs` to modernize the gradient calculation using node pairs. 
+    * Added `gradientPairs` to modernize the gradient calculation using node pairs.
     * Silo output now supports subdirectories within silo files.
     * Added support for 1D silo output, readable as curves in VisIt.
     * Added a damping factor to the ideal H iteration in both SPH and ASPH smoothing scales to improve convergence for difficult initial distributions.
@@ -579,4 +582,3 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
     * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
-

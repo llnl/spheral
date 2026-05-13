@@ -19,6 +19,9 @@ class GenericRiemannHydro(Physics):
   using PairAccelerationsType = typename GenericRiemannHydro<%(Dimension)s>::PairAccelerationsType;
   using PairWorkType = typename GenericRiemannHydro<%(Dimension)s>::PairWorkType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",

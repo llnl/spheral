@@ -29,6 +29,7 @@ public:
   typedef typename Dimension::SymTensor SymTensor;
 
   typedef typename Physics<Dimension>::TimeStepType TimeStepType;
+  using ConnectivityRequirements = typename Physics<Dimension>::ConnectivityRequirements;
 
   //! Constructor.
   //! \param plummerSofteningLength -- The Plummer Softening Length for the model.
@@ -88,7 +89,8 @@ public:
   virtual std::string label() const override { return "NBodyGravity"; }
 
   //! This package opts out of building connectivity.
-  virtual bool requireConnectivity() const override { return false; }
+  //! Returns {connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity}
+  virtual ConnectivityRequirements requireConnectivity() const override { return {false, false, false, false}; }
 
   //! Return the total energy contribution due to the gravitational potential.
   virtual Scalar extraEnergy() const override;

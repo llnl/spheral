@@ -38,6 +38,7 @@
 #include "Utilities/safeInv.hh"
 #include "Utilities/range.hh"
 #include "Utilities/NodeCoupling.hh"
+#include "VoronoiCells/GeometryScaling.hh"
 #include "SolidMaterial/SolidEquationOfState.hh"
 #include "Geometry/GeometryRegistrar.hh"
 
@@ -132,28 +133,11 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
 
-  // Correct the mass to mass/r.
   auto mass = dataBase.fluidMass();
   const auto pos = dataBase.fluidPosition();
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Call the ancestor.
-  SolidCRKSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
-
-  // Convert back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) *= circi;
-    }
+  {
+    auto guard = unscaledRegion(pos, mass);
+    SolidCRKSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
   }
 }
 
@@ -229,37 +213,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
                   State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
 
-  // Convert the mass to mass per unit length first.
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
-    }
-  }
-
-  // Base class finalization does most of the work.
-  CRKSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
-
-  // Now convert back to true masses.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto& xi = pos(nodeListi, i);
-      const auto circi = 2.0*M_PI*abs(xi.y());
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
-    }
+  {
+    auto guard = unscaledRegion(pos, mass);
+    CRKSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
 }
 
@@ -667,39 +625,12 @@ SolidCRKSPHRZ::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
-    }
-  }
-
-  // Apply ordinary BCs.
-  SolidCRKSPH<Dimension>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
-
-  // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
-    }
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  {
+    auto guard = unscaledRegion(pos, mass);
+    SolidCRKSPH<Dimension>::applyGhostBoundaries(state, derivs);
+    for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
   }
 }
 
@@ -711,41 +642,11 @@ SolidCRKSPHRZ::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
-    }
-  }
-
-  // Apply ordinary BCs.
-  SolidCRKSPH<Dimension>::enforceBoundaries(state, derivs);
-
-  // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    //const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
-    }
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  {
+    auto guard = unscaledInternalRegion(pos, mass);
+    SolidCRKSPH<Dimension>::enforceBoundaries(state, derivs);
   }
 }
 

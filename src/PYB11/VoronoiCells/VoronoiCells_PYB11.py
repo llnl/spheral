@@ -9,16 +9,20 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
+from VolumeUpdate import *
 from VoronoiCells import *
 from SubPointPressureHourglassControl import *
 
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
-PYB11includes += ['"VoronoiCells/VoronoiCells.hh"',
+PYB11includes += ['"VoronoiCells/VolumeUpdate.hh"',
+                  '"VoronoiCells/VolumeType.hh"',
+                  '"VoronoiCells/VoronoiCells.hh"',
                   '"VoronoiCells/SubPointPressureHourglassControl.hh"',
                   '"VoronoiCells/IncrementVoronoiCells.hh"',
                   '"VoronoiCells/computeVoronoiVolume.hh"',
+                  '"Kernel/TableKernel.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
@@ -29,6 +33,14 @@ PYB11includes += ['"VoronoiCells/VoronoiCells.hh"',
 # Namespaces
 #-------------------------------------------------------------------------------
 PYB11namespaces = ["Spheral"]
+
+#-------------------------------------------------------------------------------
+# Enums
+#-------------------------------------------------------------------------------
+VolumeType = PYB11enum(("MassOverDensity", "SumVolume", "VoronoiVolume", "HullVolume", "HVolume",
+                        "RKMassOverDensity", "RKSumVolume", "RKVoronoiVolume", "RKHullVolume"),
+                       export_values = True,
+                       doc = "Options for volume computation methods")
 
 #-------------------------------------------------------------------------------
 # Methods
@@ -59,6 +71,7 @@ for ndim in dims:
     exec(f'''
 computeVoronoiVolume{ndim}d = PYB11TemplateFunction(computeVoronoiVolume, template_parameters="{Dimension}", pyname="computeVoronoiVolume")
 
+VolumeUpdate{ndim}d = PYB11TemplateClass(VolumeUpdate, template_parameters="{Dimension}")
 VoronoiCells{ndim}d = PYB11TemplateClass(VoronoiCells, template_parameters="{Dimension}")
 SubPointPressureHourglassControl{ndim}d = PYB11TemplateClass(SubPointPressureHourglassControl, template_parameters="{Dimension}")
 ''')

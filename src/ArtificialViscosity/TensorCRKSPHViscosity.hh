@@ -20,6 +20,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using RKRequirements = typename Physics<Dimension>::RKRequirements;
 
   // Constructors, destructor
   TensorCRKSPHViscosity(const Scalar Clinear,
@@ -42,7 +43,7 @@ public:
                                       const StateDerivatives<Dimension>& derivs) override;
 
   // Override the method listing our RK requirements
-  virtual std::set<RKOrder> requireReproducingKernels() const override { return std::set<RKOrder>({mOrder}); }
+  virtual RKRequirements requireReproducingKernels() const override { return {{mOrder}, {}, false}; }
 
   RKOrder order()                                       const          { return mOrder; }
   void order(const RKOrder x)                                          { mOrder = x; }

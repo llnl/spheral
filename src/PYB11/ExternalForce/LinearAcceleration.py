@@ -15,6 +15,9 @@ class LinearAcceleration(GenericBodyForce):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     #...........................................................................

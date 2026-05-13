@@ -152,7 +152,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
      2.0,               // voidThreshold
      *mMeshPtr,
      voidNodes);
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::hydroVolume);
   for (unsigned nodeListi = 0; nodeListi != dataBase.numFluidNodeLists(); ++nodeListi) {
     const unsigned n = mVolume[nodeListi]->numInternalElements();
     const unsigned offset = mMeshPtr->offset(nodeListi);
@@ -219,7 +219,7 @@ registerState(DataBase<Dimension>& dataBase,
   // dataBase.resizeFluidFieldList(mA, vector<Scalar>(), SVPHFieldNames::A_SVPH);
   // dataBase.resizeFluidFieldList(mB, vector<Vector>(), SVPHFieldNames::B_SVPH);
   // dataBase.resizeFluidFieldList(mGradB, vector<Tensor>(), SVPHFieldNames::gradB_SVPH);
-  dataBase.resizeFluidFieldList(mVolume, 0.0, HydroFieldNames::volume, false);
+  dataBase.resizeFluidFieldList(mVolume, 0.0, HydroFieldNames::hydroVolume, false);
   dataBase.fluidPressure(mPressure);
   dataBase.fluidSoundSpeed(mSoundSpeed);
 
@@ -384,7 +384,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const FieldList<Dimension, Scalar> cellPressure = state.fields("Cell" + HydroFieldNames::pressure, 0.0);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
@@ -713,7 +713,7 @@ dt(const DataBase<Dimension>& dataBase,
    typename Dimension::Scalar /*currentTime*/) const {
 
   // Get some useful fluid variables from the DataBase.
-  const FieldList<Dimension, Scalar> vol = state.fields(HydroFieldNames::volume, Scalar());
+  const FieldList<Dimension, Scalar> vol = state.fields(HydroFieldNames::hydroVolume, Scalar());
   const FieldList<Dimension, int> mask = state.fields(HydroFieldNames::timeStepMask, 1);
   const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
@@ -914,7 +914,7 @@ finalize(const typename Dimension::Scalar time,
     massDensity.assignFields(massDensitySum);
   } else if (densityUpdate() == MassDensityType::VoronoiCellDensity) {
     const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
     FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
     massDensity = mass / volume;
   }
@@ -936,7 +936,7 @@ applyGhostBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   FieldList<Dimension, Scalar> cellPressure = state.fields("Cell" + HydroFieldNames::pressure, 0.0);
 
   FieldList<Dimension, Vector> DvDt;
@@ -978,7 +978,7 @@ enforceBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   FieldList<Dimension, Scalar> cellPressure = state.fields("Cell" + HydroFieldNames::pressure, 0.0);
 
   FieldList<Dimension, Vector> DvDt;
@@ -1025,7 +1025,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mDvDx, pathName + "/DvDx");
   file.write(mInternalDvDx, pathName + "/internalDvDx");
 
-  file.write(mVolume, pathName + "/volume");
+  file.write(mVolume, pathName + "/hydroVolume");
   file.write(mFaceForce, pathName + "/faceForce");
 }
 
@@ -1050,7 +1050,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mDvDx, pathName + "/DvDx");
   file.read(mInternalDvDx, pathName + "/internalDvDx");
 
-  file.read(mVolume, pathName + "/volume");
+  file.read(mVolume, pathName + "/hydroVolume");
   file.read(mFaceForce, pathName + "/faceForce");
 }
 

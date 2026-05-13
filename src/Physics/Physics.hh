@@ -12,6 +12,8 @@
 #include "RK/RKCorrectionParams.hh"
 #include "Utilities/DBC.hh"
 
+#include <utility>
+#include <tuple>
 #include <vector>
 #include <set>
 #include <string>
@@ -36,6 +38,9 @@ public:
   using ConstBoundaryIterator = typename std::vector<Boundary<Dimension>*>::const_iterator;
   using TimeStepType = typename std::pair<double, std::string>;
   using ResidualType = typename std::pair<double, std::string>;
+  using VolumeRequirements = std::tuple<bool, bool, bool>;
+  using RKRequirements = std::tuple<std::set<RKOrder>, std::set<RKOrder>, bool>;
+  using ConnectivityRequirements = std::tuple<bool, bool, bool, bool>;
 
   // Constructors.
   Physics();
@@ -192,29 +197,20 @@ public:
                        State<Dimension>& state,
                        StateDerivatives<Dimension>& derivatives);
 
-  // Some physics does not require the connectivity be constructed.
-  virtual bool requireConnectivity() const                       { return true; }                // Default TRUE
+  // Connectivity requirements for this physics package.
+  // Returns {connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity}
+  virtual ConnectivityRequirements requireConnectivity() const { return {true, false, false, false}; }
 
-  // Some physics algorithms require ghost connectivity to be constructed.
-  virtual bool requireGhostConnectivity() const                  { return false; }               // Default FALSE
-
-  // Some physics algorithms require overlap connectivity.
-  virtual bool requireOverlapConnectivity() const                { return false; }               // Default FALSE
-
-  // Some physics algorithms require intersection connectivity
-  virtual bool requireIntersectionConnectivity() const           { return false; }               // Default FALSE
-
-  // Does this package require Voronoi-like cells per point?
-  virtual bool requireVoronoiCells() const                       { return false; }               // Default FALSE
+  // Does this package require volumes per point?
+  // Returns {explicit, implicit, needVoronoi}:
+  //   explicit    = volumes needed during the step
+  //   implicit    = volumes needed during finalize
+  //   needVoronoi = full Voronoi geometry required (vs simple m/rho volumes)
+  virtual VolumeRequirements requireVolumes() const { return {false, false, false}; }
 
   // Does this package require reproducing kernel functions?
-  virtual std::set<RKOrder> requireReproducingKernels() const    { return std::set<RKOrder>(); } // Default no RK orders
-
-  // If using reproducing kernels, do we need the second derivative?
-  virtual bool requireReproducingKernelHessian() const           { return false; }               // Default FALSE
-
-  // Does this package need an update of reproducing kernels during finalize?
-  virtual bool updateReproducingKernelsInFinalize() const        { return false; }               // Default FALSE
+  // Returns {explicit_orders, implicit_orders, needHessian}
+  virtual RKRequirements requireReproducingKernels() const { return {{}, {}, false}; }
   
   // Many physics packages will have their own representations of energy in the
   // system (gravitational potential energy, radiative losses, etc.)

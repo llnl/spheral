@@ -1,6 +1,9 @@
 //Parameters used for RK kernels. 
 #ifndef __Spheral_RKCorrectionParams_hh__
 #define __Spheral_RKCorrectionParams_hh__
+
+#include "VoronoiCells/VolumeType.hh"
+
 //Enumerated type for the corrected Kernels
 namespace Spheral {
 
@@ -15,13 +18,8 @@ enum class RKOrder : int {//Used to assign the order of the corrections
   SepticOrder = 7,
 };
 
-enum class RKVolumeType : int { // Choices for the RK volume weighting
-  RKMassOverDensity = 0,
-  RKSumVolume = 1,
-  RKVoronoiVolume = 2,
-  RKHullVolume = 3,
-  HVolume = 4,
-};
+// Backward compatibility
+using RKVolumeType = VolumeType;
 
 }
 #endif

@@ -22,7 +22,7 @@ template<typename Dimension>
 CellPressurePolicy<Dimension>::
 CellPressurePolicy():
   FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::mass,
-                                        HydroFieldNames::volume,
+                                        HydroFieldNames::hydroVolume,
                                         HydroFieldNames::specificThermalEnergy}) {
 }
 
@@ -45,7 +45,7 @@ update(const KeyType& key,
 
   // Get the mass, volume, and specific thermal energy fields from the state.
   const KeyType massKey = StateBase<Dimension>::buildFieldKey(HydroFieldNames::mass, nodeListKey);
-  const KeyType volKey = StateBase<Dimension>::buildFieldKey(HydroFieldNames::volume, nodeListKey);
+  const KeyType volKey = StateBase<Dimension>::buildFieldKey(HydroFieldNames::hydroVolume, nodeListKey);
   const KeyType energyKey = StateBase<Dimension>::buildFieldKey(HydroFieldNames::specificThermalEnergy, nodeListKey);
   CHECK(state.registered(massKey));
   CHECK(state.registered(volKey));
