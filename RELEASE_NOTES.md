@@ -582,3 +582,4 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
     * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
+
