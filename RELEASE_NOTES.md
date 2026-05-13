@@ -29,6 +29,8 @@ Notable changes include:
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
+    * SPH now requests volume from RK.
+    * Fixed a circular dependency in the Johnson-Cook damage model.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.

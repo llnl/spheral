@@ -1,7 +1,6 @@
 #include "Utilities/DBC.hh"
 #include "Neighbor/Neighbor.hh"
 #include "NodeList/NodeList.hh"
-#include "NodeList/FluidNodeList.hh"
 
 #include <vector>
 
@@ -113,19 +112,6 @@ nodeListPtr() const {
   } else {
     return 0;
   }
-}
-
-//------------------------------------------------------------------------------
-// Return a pointer to the NodeList cast as a FluidNodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-const FluidNodeList<Dimension>*
-NodeIteratorBase<Dimension>::
-fluidNodeListPtr() const {
-  const FluidNodeList<Dimension>* result = dynamic_cast<const FluidNodeList<Dimension>*>(nodeListPtr());
-  ENSURE(result != 0);
-  return result;
 }
 
 //------------------------------------------------------------------------------
