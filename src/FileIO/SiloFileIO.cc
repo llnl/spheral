@@ -218,7 +218,7 @@ SiloFileIO::write(const size_t& value, const string path) {
   const string varname = setdir(mFilePtr, path);
   int dims[1] = {1};
   CONTRACT_VAR(dims);
-  VERIFY2(DBWrite(mFilePtr, varname.c_str(), &value, dims, 1, DB_INT) == 0,
+  VERIFY2(DBWrite(mFilePtr, varname.c_str(), &value, dims, 1, DB_LONG) == 0,
           "SiloFileIO ERROR: unable to write variable " << path);
 }
 

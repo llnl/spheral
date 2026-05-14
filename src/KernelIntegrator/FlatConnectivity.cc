@@ -562,6 +562,7 @@ void
 FlatConnectivity<Dimension>::
 computeBoundaryInformation(const DataBase<Dimension>& dataBase,
                            const std::vector<Boundary<Dimension>*>& boundaries) {
+  TIME_FUNCTION;
   VERIFY(mIndexingInitialized);
 
   // Get information from the dataBase
@@ -883,6 +884,8 @@ getUniqueIndices(const std::vector<unsigned>& globalNeighbors,
   std::map<unsigned, unsigned> globalToIndex;
   for (auto j = 0u; j < size; ++j) {
     const auto global = globalNeighbors[j];
+    CHECK(global < static_cast<unsigned>(numGlobalNodes()));
+
     auto it = globalToIndex.find(global);
     if (it == globalToIndex.end()) {
       // If the map doesn't have this global index yet, add a new index to the map

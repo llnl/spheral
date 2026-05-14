@@ -129,16 +129,20 @@ RestartRegistrar::
 uniqueLabels() {
   this->removeExpiredPointers();
   vector<string> result;
-  unsigned counter = 0;
   for (const_iterator itr = this->begin();
        itr != this->end();
        ++itr) {
     string l = itr->lock()->label();
     if (find(result.begin(), result.end(), l) != result.end()) {
-      std::stringstream newlabel;
-      newlabel << l << "_" << counter;
-      l = newlabel.str();
-      ++counter;
+      unsigned counter = 0;
+      string candidate;
+      do {
+        std::stringstream newlabel;
+        newlabel << l << "_" << counter;
+        candidate = newlabel.str();
+        ++counter;
+      } while (find(result.begin(), result.end(), candidate) != result.end());
+      l = candidate;
     }
     CHECK(find(result.begin(), result.end(), l) == result.end());
     result.push_back(l);

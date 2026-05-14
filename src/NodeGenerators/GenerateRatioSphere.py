@@ -206,6 +206,216 @@ class GenerateRatioSphere2d(NodeGeneratorBase):
         assert i >= 0 and i < len(self.H)
         return self.H[i]
     
+#-------------------------------------------------------------------------------
+# Same as standard version, but generates in parallel
+#-------------------------------------------------------------------------------
+class GenerateRatioSphere2dPar(NodeGeneratorBase):
+    
+    #---------------------------------------------------------------------------
+    # Constructor
+    #---------------------------------------------------------------------------
+    def __init__(self,
+                 drStart, drRatio,
+                 rho,
+                 rmin,
+                 rmax,
+                 thetamin = 0.0,
+                 thetamax = 0.5*pi,
+                 ntheta = 1,
+                 center = (0.0, 0.0),
+                 distributionType = "constantDTheta",   # one of (constantDTheta, constantNTheta)
+                 aspectRatio = 1.0,                     # only for constantDTheta
+                 nNodePerh = 2.01,
+                 SPH = False,
+                 rejecter = None,
+                 perturbFunc = None):
+
+        nNodePerh = float(nNodePerh)  # Just to be sure...
+
+        assert drStart > 0.0
+        assert drRatio > 0.0
+        assert nNodePerh > 0.0
+        assert rmin >= 0.0
+        assert rmax > rmin
+        assert thetamax > thetamin
+        assert distributionType.lower() in ("constantdtheta", "constantntheta")
+        
+        self.center = center
+
+        # Did we get passed a function or a constant for the density?
+        if type(rho) == type(1.0):
+            def rhofunc(posi):
+                return rho
+        else:
+            rhofunc = rho
+        self.rhofunc = rhofunc
+
+        # Do we have a perturbation function?
+        if not perturbFunc:
+            perturbFunc = lambda x: x
+
+        self.x, self.y, self.m, self.H = [], [], [], []
+
+        constantN = (distributionType.lower() == "constantntheta")
+        Dtheta = thetamax - thetamin
+
+        nthetamin = max(2, int(Dtheta/(0.5*pi) + 0.5)*2)
+
+        # Decide the actual drStart we're going to use to arrive at an integer number of radial bins.
+        if abs(drRatio - 1.0) > 1e-4:
+            neff = max(1, int(log(1.0 - (rmax - rmin)*(1.0 - drRatio)/drStart)/log(drRatio) + 0.5))
+            drStart = (rmax - rmin)*(1.0 - drRatio)/(1.0 - drRatio**neff)
+        else:
+            neff = max(1, int((rmax - rmin)/drStart + 0.5))
+            drStart = (rmax - rmin)/neff
+        print("Adjusting initial radial spacing to %g in order to create an integer radial number of bins %i." % (drStart, neff))
+
+        # Get the local procs that correspond to a given irregular list
+        def getThetaRanges(nthetas):
+            rank = mpi.rank
+            procs = mpi.procs
+            
+            N = sum(nthetas)
+            q, r = divmod(N, procs)
+
+            gstart = rank*q + min(rank, r)
+            gend   = (rank+1)*q + min(rank+1, r)
+
+            thetaStart = [0]*len(nthetas)
+            thetaEnd   = [0]*len(nthetas)
+
+            offset = 0
+            for i, ni in enumerate(nthetas):
+                istart = max(0, gstart - offset)
+                iend   = min(ni, gend - offset)
+
+                if istart < iend:
+                    thetaStart[i] = istart
+                    thetaEnd[i]   = iend
+                else:
+                    thetaStart[i] = 0
+                    thetaEnd[i]   = 0
+
+                offset += ni
+
+            return thetaStart, thetaEnd
+
+        # Step in radius (in or out) until we span the full radial range.
+        def getRData():
+            nthetas = []
+            rData = []
+            for i in range(neff):
+                if abs(drRatio - 1.0) > 1e-4:
+                    if startFromCenter:
+                        r0 = min(rmax, rmin + drStart*(1.0 - drRatio**i)/(1.0 - drRatio))
+                        r1 = min(rmax, rmin + drStart*(1.0 - drRatio**(i + 1))/(1.0 - drRatio))
+                        r0hr = rmin + drStart*(1.0 - drRatio**max(0, i - nNodePerh))/(1.0 - drRatio)
+                        r1hr = rmin + drStart*(1.0 - drRatio**(      i + nNodePerh))/(1.0 - drRatio)
+                    else:
+                        r0 = max(rmin, rmax - drStart*(1.0 - drRatio**(i + 1))/(1.0 - drRatio))
+                        r1 = max(rmin, rmax - drStart*(1.0 - drRatio**i)/(1.0 - drRatio))
+                        r0hr = rmax - drStart*(1.0 - drRatio**(      i + nNodePerh))/(1.0 - drRatio)
+                        r1hr = rmax - drStart*(1.0 - drRatio**max(0, i - nNodePerh))/(1.0 - drRatio)
+                else:
+                    r0 = min(rmax, rmin + i*drStart)
+                    r1 = min(rmax, rmin + (i + 1)*drStart)
+                    r0hr = rmin + (i - nNodePerh)*drStart
+                    r1hr = rmin + (i + nNodePerh)*drStart
+
+                dr = r1 - r0
+                ri = 0.5*(r0 + r1)
+                li = Dtheta*ri
+                if constantN:
+                    nthetai = ntheta
+                else:
+                    nthetai = max(nthetamin, int(li/dr*aspectRatio))
+                dtheta = Dtheta/nthetai
+
+                # Find the radial and azimuthal smoothing lengths we should use.  We have to be
+                # careful for extrememely high aspect ratios that the points will overlap the expected
+                # number of neighbors taking into account the curvature of the local point distribution.
+                # This means hr might need to be larger than we would naively expect...
+                r0hr -= 2.0*r1hr*(sin(0.5*nNodePerh*dtheta))**2
+                r1hr += 2.0*r1hr*(sin(0.5*nNodePerh*dtheta))**2
+                hr = max(r1hr - ri, ri - r0hr)
+                ha = nNodePerh * ri*dtheta
+
+                nthetas.append(nthetai)
+                rData.append((r0, r1, r0hr, r1hr, dr, ri, li, dtheta, hr, ha))
+            thetaBegin, thetaEnd = getThetaRanges(nthetas)
+            return thetaBegin, thetaEnd, rData
+
+        thetaBegin, thetaEnd, rData = getRData()
+
+        for i in range(neff):
+            r0, r1, r0hr, r1hr, dr, ri, li, dtheta, hr, ha = rData[i]
+            
+            for j in range(thetaBegin[i], thetaEnd[i]):
+                theta0 = thetamin + j*dtheta
+                theta1 = thetamin + (j + 1)*dtheta
+                pos0 = perturbFunc(Vector2d(r0*cos(theta0), r0*sin(theta0)))
+                pos1 = perturbFunc(Vector2d(r1*cos(theta0), r1*sin(theta0)))
+                pos2 = perturbFunc(Vector2d(r1*cos(theta1), r1*sin(theta1)))
+                pos3 = perturbFunc(Vector2d(r0*cos(theta1), r0*sin(theta1)))
+                areai = 0.5*((pos1 - pos0).cross(pos2 - pos0).z +
+                             (pos2 - pos0).cross(pos3 - pos0).z)
+                posi = 0.5*(r0 + r1)*Vector2d(cos(0.5*(theta0 + theta1)),
+                                              sin(0.5*(theta0 + theta1)))
+                mi = areai*self.rhofunc(posi)
+                self.x.append(posi.x + center[0])
+                self.y.append(posi.y + center[1])
+                self.m.append(mi)
+                if SPH:
+                    hi = sqrt(hr*ha)
+                    self.H.append(SymTensor2d(1.0/hi, 0.0, 0.0, 1.0/hi))
+                else:
+                    self.H.append(SymTensor2d(1.0/hr, 0.0, 0.0, 1.0/ha))
+                    runit = posi.unitVector()
+                    T = rotationMatrix2d(runit).Transpose()
+                    self.H[-1].rotationalTransform(T)
+
+        # If the user provided a "rejecter", give it a pass
+        # at the nodes.
+        if rejecter:
+            self.x, self.y, self.m, self.H = rejecter(self.x,
+                                                      self.y,
+                                                      self.m,
+                                                      self.H)
+
+        # Is already parallel, so no need to break up
+        NodeGeneratorBase.__init__(self, False,
+                                   self.x, self.y, self.m, self.H)
+        return
+
+    #---------------------------------------------------------------------------
+    # Get the position for the given node index.
+    #---------------------------------------------------------------------------
+    def localPosition(self, i):
+        assert i >= 0 and i < len(self.x)
+        assert len(self.x) == len(self.y)
+        return Vector2d(self.x[i], self.y[i])
+    
+    #---------------------------------------------------------------------------
+    # Get the mass for the given node index.
+    #---------------------------------------------------------------------------
+    def localMass(self, i):
+        assert i >= 0 and i < len(self.m)
+        return self.m[i]
+    
+    #---------------------------------------------------------------------------
+    # Get the mass density for the given node index.
+    #---------------------------------------------------------------------------
+    def localMassDensity(self, i):
+        ri = sqrt((self.x[i] - self.center[0])**2 + (self.y[i] - self.center[1])**2)
+        return self.rhofunc(ri)
+    
+    #---------------------------------------------------------------------------
+    # Get the H tensor for the given node index.
+    #---------------------------------------------------------------------------
+    def localHtensor(self, i):
+        assert i >= 0 and i < len(self.H)
+        return self.H[i]
+
 #--------------------------------------------------------------------------------
 # 3D version, actual sphere.
 # Based on spinning the case above.

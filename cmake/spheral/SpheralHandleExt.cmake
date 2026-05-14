@@ -7,7 +7,6 @@
 # INPUT VARIABLES
 # ----------------------
 # <lib_name>      : REQUIRED : name of target TPL
-# APPLE           : REQUIRED : flag for Mac OSX
 
 # ----------------------
 # OUTPUT VARIABLES
@@ -15,16 +14,26 @@
 # <lib_name>_libs : list of library names with modified extension
 #----------------------------------------------------------------------------------------
 
-function(Spheral_Handle_Ext lib_name APPLE)
-
+function(Spheral_Handle_Ext lib_name)
   if(APPLE)
-    set(SHARED_EXT "dylib")
+    set(_lib_ext ".dylib")
+  elseif(ENABLE_STATIC_TPL)
+    set(_lib_ext ".a")
   else()
-    set(SHARED_EXT "so")
+    list(GET ${lib_name}_libs 0 _test_lib)
+    set(_full_test_lib "${${lib_name}_DIR}/**/${_test_lib}")
+    file(GLOB FOUND_DYLIB "${_full_test_lib}.dylib")
+    file(GLOB FOUND_STATIC "${_full_test_lib}.a")
+    if(FOUND_DYLIB)
+      set(_lib_ext ".dylib")
+    elseif(FOUND_STATIC)
+      set(_lib_ext ".a")
+    else()
+      set(_lib_ext ".so")
+    endif()
   endif()
 
-  if(ENABLE_STATIC_TPL)
-    string(REPLACE ".${SHARED_EXT}" ".a;" ${lib_name}_libs ${${lib_name}_libs})
-  endif()
-
+  list(TRANSFORM ${lib_name}_libs APPEND ${_lib_ext})
+  set(${lib_name}_libs "${${lib_name}_libs}" PARENT_SCOPE)
+  message("${${lib_name}_libs}")
 endfunction()

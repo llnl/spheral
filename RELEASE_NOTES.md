@@ -5,6 +5,7 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Now require C++20.
     * Added view class for PairwiseField (PairwiseFieldView)
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
     * ArtificialViscosity has been refactored for use on the GPU.
@@ -20,8 +21,10 @@ Notable changes include:
     * Added view class for PairwiseField (PairwiseFieldView).
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
-    * Added a page to the docs about GPU development. 
+    * Added a page to the docs about GPU development.
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * Require minimum CMake version 3.24.
     * Volume calculation has been separated from RKCorrections into the VoronoiCells/VolumeUpdate physics packages.
     * Physics package requirements API consolidated for connectivity, volumes, and reproducing kernels.
     * Added a priority to Boundary to ensure boundary conditions are ordered consistently.
@@ -29,6 +32,8 @@ Notable changes include:
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
+    * SPH now requests volume from RK.
+    * Fixed a circular dependency in the Johnson-Cook damage model.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
@@ -36,8 +41,9 @@ Notable changes include:
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
     * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
-    * Updated from Rocm 6.2.0 to 6.4.3.
+    * Updated from ROCM 6.2.0 to 6.4.3.
     * Added update-tpls commit message trigger.
+    * Updated LC Clang from 14.0.6 to 19.1.3 to use C++20.
     * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
     * tpl-manager.py updates:
       * Added --no-upstream option for when on LC machines but cannot access upstream.
@@ -52,6 +58,7 @@ Notable changes include:
       * Added umask command for updating upstreams and removed separate job to update permissions.
       * Build and test job now fails if import of Spheral module fails.
       * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
+      * Created advanced timers for lower level timers. These are disabled by default for cleaner Caliper timer trees.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
@@ -562,7 +569,7 @@ Notable changes include:
   * New features / API changes:
     * Added verbose time step frequency to `SpheralController`, allowing time step information to be printed every N steps instead of every step.
     * Periodic work frequencies in `SpheralController` can now be callables, enabling dynamic frequency changes during a simulation.
-    * Added `gradientPairs` to modernize the gradient calculation using node pairs. 
+    * Added `gradientPairs` to modernize the gradient calculation using node pairs.
     * Silo output now supports subdirectories within silo files.
     * Added support for 1D silo output, readable as curves in VisIt.
     * Added a damping factor to the ideal H iteration in both SPH and ASPH smoothing scales to improve convergence for difficult initial distributions.
@@ -575,4 +582,3 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
     * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
-
