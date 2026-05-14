@@ -549,7 +549,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.01*hri);
+      const auto  riInv = safeInvVar(ri, 0.05*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
       CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);
