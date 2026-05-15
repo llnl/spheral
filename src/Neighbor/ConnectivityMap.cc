@@ -8,11 +8,11 @@
 #include "ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Neighbor/Neighbor.hh"
+#include "Neighbor/TreeNeighbor.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Boundary/Boundary.hh"
 #include "Utilities/globalNodeIDs.hh"
-#include "Utilities/timingUtilities.hh"
 #include "Utilities/mortonOrderIndices.hh"
 #include "Utilities/PairComparisons.hh"
 #include "Utilities/pointDistances.hh"
@@ -56,34 +56,302 @@ hashKeys(const KeyTraits::Key& a, const KeyTraits::Key& b) {
 }
 
 //------------------------------------------------------------------------------
-// Helper to insert into a sorted list of IDs.
+// Flatten the legacy ragged connectivity into CSR-like storage over
+// (global node index, neighbor node list) entries.
 //------------------------------------------------------------------------------
-template<typename KeyContainer>
 inline
-bool
-insertUnique(const std::vector<int>& offsets,
-             std::vector<std::vector<std::vector<int>>>& indices,
-             const KeyContainer& keys,
-             const bool useKeys,
-             const int jN1, const int j1,
-             const int jN2, const int j2) {
-  if (jN1 != jN2 or j1 != j2) {
-    auto& overlap = indices[offsets[jN1] + j1][jN2];
-    std::vector<int>::iterator itr;
-    if (useKeys) {
-      itr = std::lower_bound(overlap.begin(), overlap.end(), j2,
-                             [&](const int a, const int& b) { return keys(jN2, a) < keys(jN2, b); });
-    } else {
-      itr = std::lower_bound(overlap.begin(), overlap.end(), j2);
-    }
-    if (itr == overlap.end() or *itr != j2) {
-      overlap.insert(itr, j2);
-      return true;
-    } else {
-      return false;
+void
+flattenConnectivity(const std::vector<std::vector<std::vector<int>>>& source,
+                    const size_t numNodeLists,
+                    std::vector<int>& flatOffsets,
+                    std::vector<int>& flatNeighbors) {
+  const auto numEntries = source.size()*numNodeLists;
+  flatOffsets.resize(numEntries + 1u);
+  flatOffsets[0] = 0;
+  auto offset = 0;
+  auto entry = 0u;
+  for (const auto& neighborsPerNode: source) {
+    CHECK(neighborsPerNode.size() == numNodeLists);
+    for (const auto& neighborsPerNodeList: neighborsPerNode) {
+      offset += neighborsPerNodeList.size();
+      ++entry;
+      flatOffsets[entry] = offset;
     }
   }
+  CHECK(entry == numEntries);
+
+  flatNeighbors.clear();
+  flatNeighbors.reserve(offset);
+  for (const auto& neighborsPerNode: source) {
+    for (const auto& neighborsPerNodeList: neighborsPerNode) {
+      flatNeighbors.insert(flatNeighbors.end(),
+                           neighborsPerNodeList.begin(),
+                           neighborsPerNodeList.end());
+    }
+  }
+  CHECK(flatOffsets.back() == int(flatNeighbors.size()));
+}
+
+//------------------------------------------------------------------------------
+// Convert counts to CSR offsets.
+//------------------------------------------------------------------------------
+inline
+void
+countsToOffsets(const std::vector<int>& counts,
+                std::vector<int>& offsets) {
+  offsets.resize(counts.size() + 1u);
+  if (counts.empty()) {
+    offsets[0] = 0;
+  } else {
+    RAJA::exclusive_scan<RAJA::seq_exec>(RAJA::make_span(counts.data(), counts.size()),
+                                         RAJA::make_span(offsets.data(), counts.size()),
+                                         RAJA::operators::plus<int>{});
+    offsets.back() = offsets[counts.size() - 1u] + counts.back();
+  }
+}
+
+//------------------------------------------------------------------------------
+// Expand flat CSR-like connectivity back to the legacy ragged storage.
+//------------------------------------------------------------------------------
+inline
+void
+unflattenConnectivity(const size_t numEntries,
+                      const size_t numNodeLists,
+                      const std::vector<int>& flatOffsets,
+                      const std::vector<int>& flatNeighbors,
+                      std::vector<std::vector<std::vector<int>>>& connectivity) {
+  connectivity = std::vector<std::vector<std::vector<int>>>(numEntries,
+                                                            std::vector<std::vector<int>>(numNodeLists));
+  for (auto globalNodeIndex = 0u; globalNodeIndex < numEntries; ++globalNodeIndex) {
+    for (auto neighborNodeList = 0u; neighborNodeList < numNodeLists; ++neighborNodeList) {
+      const auto entryIndex = globalNodeIndex*numNodeLists + neighborNodeList;
+      connectivity[globalNodeIndex][neighborNodeList].assign(flatNeighbors.begin() + flatOffsets[entryIndex],
+                                                             flatNeighbors.begin() + flatOffsets[entryIndex + 1u]);
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// Copy the flat connectivity slices for a given global node back into a
+// temporary ragged representation.
+//------------------------------------------------------------------------------
+inline
+std::vector<std::vector<int>>
+flatConnectivityForNode(const ConnectivityMapFlatView& connectivity,
+                        const size_t globalNodeIndex,
+                        const size_t numNodeLists) {
+  std::vector<std::vector<int>> result(numNodeLists);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    const auto entryIndex = connectivity.entryIndex(globalNodeIndex, nodeList);
+    const auto count = connectivity.size(entryIndex);
+    result[nodeList].resize(count);
+    for (auto k = 0u; k < count; ++k) result[nodeList][k] = connectivity(entryIndex, k);
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Shared pair-selection rule for node-pair construction.
+//------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE
+inline
+bool
+shouldCalculatePairInteraction(const int nodeListi, const int i,
+                               const int nodeListj, const int j,
+                               const int firstGhostNodej) {
+  return ((nodeListj > nodeListi) or
+          (nodeListj == nodeListi and j > i) or
+          (nodeListj < nodeListi and j >= firstGhostNodej));
+}
+
+//------------------------------------------------------------------------------
+// Check if a flat connectivity slice contains a target neighbor.
+//------------------------------------------------------------------------------
+inline
+bool
+flatConnectivityContains(const ConnectivityMapFlatView& connectivity,
+                         const size_t globalNodeIndex,
+                         const size_t neighborNodeList,
+                         const int target) {
+  const auto entryIndex = connectivity.entryIndex(globalNodeIndex, neighborNodeList);
+  const auto count = connectivity.size(entryIndex);
+  for (auto k = 0u; k < count; ++k) {
+    if (connectivity(entryIndex, k) == target) return true;
+  }
   return false;
+}
+
+//------------------------------------------------------------------------------
+// Count or fill the raw overlap-neighbor candidates for one flat entry.
+//------------------------------------------------------------------------------
+template<typename PositionViewType, typename HViewType, typename OffsetViewType>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+fillRawOverlapNeighborsForEntry(const ConnectivityMapFlatView& connectivity,
+                                const OffsetViewType& offsets,
+                                const PositionViewType& position,
+                                const HViewType& H,
+                                const double kernelExtent2,
+                                const size_t numNodeLists,
+                                const size_t globalNodeIndex,
+                                const size_t iNodeList,
+                                const int i,
+                                const size_t targetNodeList,
+                                int* result) {
+  size_t count = 0u;
+
+  // All direct gather/scatter neighbors are overlap neighbors.
+  const auto baseEntryIndex = connectivity.entryIndex(globalNodeIndex, targetNodeList);
+  const auto baseCount = connectivity.size(baseEntryIndex);
+  for (auto k = 0u; k < baseCount; ++k) {
+    if (result != nullptr) result[count] = connectivity(baseEntryIndex, k);
+    ++count;
+  }
+
+  const auto& ri = position(iNodeList, i);
+  const auto& Hi = H(iNodeList, i);
+  for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
+    const auto entryIndexjNodeList = connectivity.entryIndex(globalNodeIndex, jNodeList);
+    const auto countjNodeList = connectivity.size(entryIndexjNodeList);
+    for (auto neighborIndex = 0u; neighborIndex < countjNodeList; ++neighborIndex) {
+      const auto j1 = connectivity(entryIndexjNodeList, neighborIndex);
+      const auto& rj1 = position(jNodeList, j1);
+      if ((Hi*(rj1 - ri)).magnitude2() <= kernelExtent2) {   // j1 is a gather neighbor of i.
+        const auto globalj1 = size_t(offsets[jNodeList] + j1);
+        const auto targetEntryIndex = connectivity.entryIndex(globalj1, targetNodeList);
+        const auto targetCount = connectivity.size(targetEntryIndex);
+        for (auto targetNeighborIndex = 0u; targetNeighborIndex < targetCount; ++targetNeighborIndex) {
+          const auto j2 = connectivity(targetEntryIndex, targetNeighborIndex);
+          if (targetNodeList != iNodeList or j2 != i) {
+            const auto& rj2 = position(targetNodeList, j2);
+            const auto& Hj2 = H(targetNodeList, j2);
+            if ((Hj2*(rj2 - rj1)).magnitude2() <= kernelExtent2) {
+              if (result != nullptr) result[count] = j2;
+              ++count;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return count;
+}
+
+//------------------------------------------------------------------------------
+// Compare overlap neighbors in the desired final ordering.
+//------------------------------------------------------------------------------
+template<typename KeyViewType>
+SPHERAL_HOST_DEVICE
+inline
+bool
+overlapNeighborLess(const int a,
+                    const int b,
+                    const size_t targetNodeList,
+                    const KeyViewType& keys,
+                    const bool useKeys) {
+  return (useKeys ? keys(targetNodeList, a) < keys(targetNodeList, b) : a < b);
+}
+
+//------------------------------------------------------------------------------
+// Insertion sort a small overlap-neighbor slice in place.
+//------------------------------------------------------------------------------
+template<typename KeyViewType>
+SPHERAL_HOST_DEVICE
+inline
+void
+sortOverlapNeighbors(int* values,
+                     const size_t count,
+                     const size_t targetNodeList,
+                     const KeyViewType& keys,
+                     const bool useKeys) {
+  for (auto i = 1u; i < count; ++i) {
+    const auto value = values[i];
+    auto j = i;
+    while (j > 0u and overlapNeighborLess(value, values[j - 1u], targetNodeList, keys, useKeys)) {
+      values[j] = values[j - 1u];
+      --j;
+    }
+    values[j] = value;
+  }
+}
+
+//------------------------------------------------------------------------------
+// Remove duplicates from a sorted overlap-neighbor slice in place.
+//------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE
+inline
+size_t
+uniqueOverlapNeighbors(int* values,
+                       const size_t count) {
+  if (count == 0u) return 0u;
+  auto result = 1u;
+  for (auto i = 1u; i < count; ++i) {
+    if (values[i] != values[result - 1u]) values[result++] = values[i];
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Local device-safe box predicates for preprocessing culling.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+bool
+pointInBox(const typename Dimension::Vector& point,
+           const typename Dimension::Vector& xmin,
+           const typename Dimension::Vector& xmax,
+           const double tol = 1.0e-10) {
+  for (auto k = 0; k < Dimension::nDim; ++k) {
+    if (point(k) < xmin(k) - tol) return false;
+    if (point(k) > xmax(k) + tol) return false;
+  }
+  return true;
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+bool
+boxesIntersect(const typename Dimension::Vector& xmin1,
+               const typename Dimension::Vector& xmax1,
+               const typename Dimension::Vector& xmin2,
+               const typename Dimension::Vector& xmax2,
+               const double tol = 1.0e-10) {
+  for (auto k = 0; k < Dimension::nDim; ++k) {
+    if (xmax1(k) < xmin2(k) - tol) return false;
+    if (xmax2(k) < xmin1(k) - tol) return false;
+  }
+  return true;
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+bool
+keepCoarseNeighborForGroup(const int neighborSearchType,
+                           const typename Dimension::Vector& nodePosition,
+                           const typename Dimension::Vector& nodeExtent,
+                           const typename Dimension::Vector& minMasterPosition,
+                           const typename Dimension::Vector& maxMasterPosition,
+                           const typename Dimension::Vector& minMasterExtent,
+                           const typename Dimension::Vector& maxMasterExtent) {
+  if (neighborSearchType == int(NeighborSearchType::GatherScatter)) {
+    const auto minNodeExtent = nodePosition - nodeExtent;
+    const auto maxNodeExtent = nodePosition + nodeExtent;
+    return (pointInBox<Dimension>(nodePosition, minMasterExtent, maxMasterExtent) or
+            boxesIntersect<Dimension>(minMasterPosition, maxMasterPosition, minNodeExtent, maxNodeExtent));
+
+  } else if (neighborSearchType == int(NeighborSearchType::Gather)) {
+    return pointInBox<Dimension>(nodePosition, minMasterExtent, maxMasterExtent);
+
+  } else {
+    const auto minNodeExtent = nodePosition - nodeExtent;
+    const auto maxNodeExtent = nodePosition + nodeExtent;
+    return boxesIntersect<Dimension>(minMasterPosition, maxMasterPosition, minNodeExtent, maxNodeExtent);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -123,7 +391,18 @@ ConnectivityMap():
   mBuildGhostConnectivity(false),
   mBuildOverlapConnectivity(false),
   mBuildIntersectionConnectivity(false),
+  mOffsets(),
   mConnectivity(),
+  mConnectivityFlatOffsets(),
+  mConnectivityFlatNeighbors(),
+  mConnectivityFlatOffsetsSpan(),
+  mConnectivityFlatNeighborsSpan(),
+  mNodePairListPtr(),
+  mOverlapConnectivity(),
+  mOverlapConnectivityFlatOffsets(),
+  mOverlapConnectivityFlatNeighbors(),
+  mOverlapConnectivityFlatOffsetsSpan(),
+  mOverlapConnectivityFlatNeighborsSpan(),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
   mCouplingPtr(std::make_shared<NodeCoupling>()),
@@ -136,6 +415,45 @@ ConnectivityMap():
 template<typename Dimension>
 ConnectivityMap<Dimension>::
 ~ConnectivityMap() {
+  GPUUtils::freeMAView(mConnectivityFlatOffsetsSpan);
+  GPUUtils::freeMAView(mConnectivityFlatNeighborsSpan);
+  GPUUtils::freeMAView(mOverlapConnectivityFlatOffsetsSpan);
+  GPUUtils::freeMAView(mOverlapConnectivityFlatNeighborsSpan);
+}
+
+//------------------------------------------------------------------------------
+// Rebuild the flat connectivity views from the legacy ragged storage.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+rebuildFlatConnectivityViews() {
+  const auto numNodeLists = mNodeLists.size();
+
+  flattenConnectivity(mConnectivity,
+                      numNodeLists,
+                      mConnectivityFlatOffsets,
+                      mConnectivityFlatNeighbors);
+  GPUUtils::initMAView(mConnectivityFlatOffsetsSpan, mConnectivityFlatOffsets);
+  GPUUtils::initMAView(mConnectivityFlatNeighborsSpan, mConnectivityFlatNeighbors);
+  GPUUtils::touch(mConnectivityFlatOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mConnectivityFlatNeighborsSpan, chai::CPU);
+
+  if (mBuildOverlapConnectivity) {
+    flattenConnectivity(mOverlapConnectivity,
+                        numNodeLists,
+                        mOverlapConnectivityFlatOffsets,
+                        mOverlapConnectivityFlatNeighbors);
+    GPUUtils::initMAView(mOverlapConnectivityFlatOffsetsSpan, mOverlapConnectivityFlatOffsets);
+    GPUUtils::initMAView(mOverlapConnectivityFlatNeighborsSpan, mOverlapConnectivityFlatNeighbors);
+    GPUUtils::touch(mOverlapConnectivityFlatOffsetsSpan, chai::CPU);
+    GPUUtils::touch(mOverlapConnectivityFlatNeighborsSpan, chai::CPU);
+  } else {
+    mOverlapConnectivityFlatOffsets.clear();
+    mOverlapConnectivityFlatNeighbors.clear();
+    GPUUtils::freeMAView(mOverlapConnectivityFlatOffsetsSpan);
+    GPUUtils::freeMAView(mOverlapConnectivityFlatNeighborsSpan);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -311,7 +629,10 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
         intersection[pair] = newintersect;
       }
     }
+    mIntersectionConnectivity = std::move(intersection);
   }
+
+  this->rebuildFlatConnectivityViews();
 
   // You can't check valid yet 'cause the NodeLists have not been resized
   // when we call patch!  The valid method should be checked by whoever called
@@ -348,11 +669,14 @@ connectivityIntersectionForNodes(const int nodeListi, const int i,
 
   // Prepare the result.
   vector<vector<int>> result(numNodeLists);
+  const auto connectivity = this->connectivityFlatView();
+  const auto globalNodei = size_t(mOffsets[nodeListi] + i);
+  const auto globalNodej = size_t(mOffsets[nodeListj] + j);
 
   // If both nodes are internal, we simply intersect their neighbor lists.
   if (ghostConnectivity or (i < (int)firstGhostNodei and j < (int)firstGhostNodej)) {
-    const auto& neighborsi = this->connectivityForNode(nodeListi, i);
-    const auto& neighborsj = this->connectivityForNode(nodeListj, j);
+    const auto neighborsi = flatConnectivityForNode(connectivity, globalNodei, numNodeLists);
+    const auto neighborsj = flatConnectivityForNode(connectivity, globalNodej, numNodeLists);
     CHECK(neighborsi.size() == numNodeLists);
     CHECK(neighborsj.size() == numNodeLists);
     vector<int> neighborsijk;
@@ -381,9 +705,9 @@ connectivityIntersectionForNodes(const int nodeListi, const int i,
       }
     }
   } else if (i < (int)firstGhostNodei) {
-    result = this->connectivityForNode(nodeListi, i);
+    result = flatConnectivityForNode(connectivity, globalNodei, numNodeLists);
   } else {
-    result = this->connectivityForNode(nodeListj, j);
+    result = flatConnectivityForNode(connectivity, globalNodej, numNodeLists);
   }
   result[nodeListi].push_back(i);
   result[nodeListj].push_back(j);
@@ -419,6 +743,8 @@ removeConnectivity(const FieldList<Dimension, vector<vector<int>>>& neighborsToC
     }
   }
 
+  this->rebuildFlatConnectivityViews();
+
   TIME_END("ConnectivityMap_cutConnectivity");
 }
 
@@ -449,8 +775,9 @@ connectivityUnionForNodes(const int nodeListi, const int i,
 
   // Do the deed.
   vector<vector<int> > result(numNodeLists);
-  vector<vector<int> > neighborsi = this->connectivityForNode(nodeListi, i);
-  vector<vector<int> > neighborsj = this->connectivityForNode(nodeListj, j);
+  const auto connectivity = this->connectivityFlatView();
+  vector<vector<int> > neighborsi = flatConnectivityForNode(connectivity, mOffsets[nodeListi] + i, numNodeLists);
+  vector<vector<int> > neighborsj = flatConnectivityForNode(connectivity, mOffsets[nodeListj] + j, numNodeLists);
   CHECK(neighborsi.size() == numNodeLists);
   CHECK(neighborsj.size() == numNodeLists);
   for (unsigned k = 0; k != numNodeLists; ++k) {
@@ -488,22 +815,20 @@ globalConnectivity(vector<Boundary<Dimension>*>& boundaries) const {
   // Now convert our connectivity to global IDs.
   map<int, vector<int> > result;
   const size_t numNodeLists = mNodeLists.size();
+  const auto connectivity = this->connectivityFlatView();
   for (size_t nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
 
     const NodeList<Dimension>* nodeListPtr = mNodeLists[nodeListi];
     for (auto i = 0u; i != nodeListPtr->numInternalNodes(); ++i) {
       const int gid = globalIDs(nodeListi, i);
       result[gid] = vector<int>();
-
-      const vector< vector<int> >& fullConnectivity = connectivityForNode(nodeListPtr, i);
-      CHECK(fullConnectivity.size() == numNodeLists);
+      const auto globalNodeIndex = size_t(mOffsets[nodeListi] + i);
       for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
-
-        for (typename vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) result[gid].push_back(globalIDs(nodeListj, *jItr));
-
+        const auto entryIndex = connectivity.entryIndex(globalNodeIndex, nodeListj);
+        const auto count = connectivity.size(entryIndex);
+        for (auto k = 0u; k < count; ++k) {
+          result[gid].push_back(globalIDs(nodeListj, connectivity(entryIndex, k)));
+        }
       }
       ENSURE(result[gid].size() == numNeighborsForNode(nodeListPtr, i));
     }
@@ -537,6 +862,7 @@ valid() const {
   const auto ghostConnectivity = (mBuildGhostConnectivity or
                                   mBuildOverlapConnectivity or
                                   domainDecompIndependent);
+  const auto connectivity = this->connectivityFlatView();
 
   // Check the offsets.
   const auto numNodeLists = mNodeLists.size();
@@ -550,6 +876,11 @@ valid() const {
                            mNodeLists.back()->numInternalNodes());
     if (mConnectivity.size() != mOffsets.back() + numNodes) {
       cerr << "ConnectivityMap::valid: Failed offset bounding: " << mConnectivity.size() << " != " << mOffsets.back() << " + " << numNodes << endl;
+    }
+    if (connectivity.numNodeLists() != numNodeLists or
+        connectivity.numNodes() != mOffsets.back() + numNodes) {
+      cerr << "ConnectivityMap::valid: Flat connectivity dimensions are inconsistent" << endl;
+      return false;
     }
   }
 
@@ -592,25 +923,24 @@ valid() const {
     // Iterate over the nodes for this NodeList.
     const int ioff = mOffsets[nodeListIDi];
     for (auto i = 0u; i < numNodes; ++i) {
-
-      // The set of neighbors for this node.  This has to be sized as the number of
-      // NodeLists.
-      const vector< vector<int> >& allNeighborsForNode = mConnectivity[ioff + i];
-      if (allNeighborsForNode.size() != numNodeLists) {
-        cerr << "ConnectivityMap::valid: Failed allNeighborsForNode.size() == numNodeLists" << endl;
-        return false;
-      }
+      const auto globalNodeIndex = size_t(ioff + i);
 
       // Iterate over the sets of NodeList neighbors for this node.
       for (auto nodeListIDj = 0u; nodeListIDj < numNodeLists; ++nodeListIDj) {
         const NodeList<Dimension>* nodeListPtrj = mNodeLists[nodeListIDj];
         //const int firstGhostNodej = nodeListPtrj->firstGhostNode();
-        const vector<int>& neighbors = allNeighborsForNode[nodeListIDj];
+        const auto entryIndex = connectivity.entryIndex(globalNodeIndex, nodeListIDj);
+        const auto numNeighbors = connectivity.size(entryIndex);
 
         // We require that the node IDs be sorted, unique, and of course in a valid range.
-        if (neighbors.size() > 0) {
-          const auto minNeighbor = *min_element(neighbors.begin(), neighbors.end());
-          const auto maxNeighbor = *max_element(neighbors.begin(), neighbors.end());
+        if (numNeighbors > 0u) {
+          auto minNeighbor = connectivity(entryIndex, 0u);
+          auto maxNeighbor = minNeighbor;
+          for (auto k = 1u; k < numNeighbors; ++k) {
+            const auto neighbor = connectivity(entryIndex, k);
+            minNeighbor = std::min(minNeighbor, neighbor);
+            maxNeighbor = std::max(maxNeighbor, neighbor);
+          }
 
           if (minNeighbor < 0 or (size_t)maxNeighbor >= nodeListPtrj->numNodes()) {
             cerr << "ConnectivityMap::valid: Failed test that neighbors must be valid IDs: " << minNeighbor << " " << maxNeighbor << " " << nodeListPtrj->numNodes() << endl;
@@ -624,27 +954,27 @@ valid() const {
           //   return false;
           // }
 
-          for (auto k = 1u; k < neighbors.size(); ++k) {
+          for (auto k = 1u; k < numNeighbors; ++k) {
             if (domainDecompIndependent) {
               // In the case of domain decomposition reproducibility, neighbors are sorted
               // by hashed IDs.
-              if (mKeys(nodeListIDj, neighbors[k]) < mKeys(nodeListIDj, neighbors[k - 1])) {
+              if (mKeys(nodeListIDj, connectivity(entryIndex, k)) <
+                  mKeys(nodeListIDj, connectivity(entryIndex, k - 1u))) {
                 cerr << "ConnectivityMap::valid: Failed test that neighbors must be sorted for node "
                      << i << endl;
-                for (vector<int>::const_iterator itr = neighbors.begin();
-                     itr != neighbors.end();
-                     ++itr) cerr << "(" << *itr << " " << mKeys(nodeListIDj, *itr) << ") ";
+                for (auto kk = 0u; kk < numNeighbors; ++kk) {
+                  const auto neighbor = connectivity(entryIndex, kk);
+                  cerr << "(" << neighbor << " " << mKeys(nodeListIDj, neighbor) << ") ";
+                }
                 cerr << endl;
                 return false;
               }
 
             } else {
               // Otherwise they should be sorted by local ID.
-              if (neighbors[k] <= neighbors[k - 1]) {
+              if (connectivity(entryIndex, k) <= connectivity(entryIndex, k - 1u)) {
                 cerr << "ConnectivityMap::valid: Failed test that neighbors must be sorted" << endl;
-                for (vector<int>::const_iterator itr = neighbors.begin();
-                     itr != neighbors.end();
-                     ++itr) cerr << " " << *itr;
+                for (auto kk = 0u; kk < numNeighbors; ++kk) cerr << " " << connectivity(entryIndex, kk);
                 cerr << endl;
                 return false;
               }
@@ -653,22 +983,23 @@ valid() const {
         }
 
         // Check that the connectivity is symmetric.
-        for (auto j: neighbors) {
+        for (auto k = 0u; k < numNeighbors; ++k) {
+          const auto j = connectivity(entryIndex, k);
           if (ghostConnectivity or ((size_t)j < nodeListPtrj->numInternalNodes())) {
-            const vector< vector<int> >& otherNeighbors = connectivityForNode(nodeListPtrj, j);
-            if (find(otherNeighbors[nodeListIDi].begin(),
-                     otherNeighbors[nodeListIDi].end(),
-                     i) == otherNeighbors[nodeListIDi].end()) {
+            if (not flatConnectivityContains(connectivity, size_t(mOffsets[nodeListIDj] + j), nodeListIDi, i)) {
+              const auto otherEntryIndex = connectivity.entryIndex(size_t(mOffsets[nodeListIDj] + j), nodeListIDi);
               cerr << "ConnectivityMap::valid: Failed test that neighbors must be symmetric: " 
                    << i << " <> " << j 
-                   << "  numneigbors(i)=" << neighbors.size() 
-                   << "  numneigbors(j)=" << otherNeighbors[nodeListIDi].size() 
+                   << "  numneigbors(i)=" << numNeighbors
+                   << "  numneigbors(j)=" << connectivity.size(otherEntryIndex)
                    << endl;
               cerr << "   " << i << " : ";
-              std::copy(neighbors.begin(), neighbors.end(), std::ostream_iterator<int>(std::cerr, " "));
+              for (auto kk = 0u; kk < numNeighbors; ++kk) cerr << connectivity(entryIndex, kk) << " ";
               cerr << endl
                    << "   " << j << " : ";
-              std::copy(otherNeighbors[nodeListIDi].begin(), otherNeighbors[nodeListIDi].end(), std::ostream_iterator<int>(std::cerr, " "));
+              for (auto kk = 0u; kk < connectivity.size(otherEntryIndex); ++kk) {
+                cerr << connectivity(otherEntryIndex, kk) << " ";
+              }
               cerr << endl;
               return false;
             }
@@ -790,21 +1121,8 @@ computeConnectivity() {
              connectivitySize = mOffsets.back() + (ghostConnectivity ?
                                                    mNodeLists.back()->numNodes() :
                                                    mNodeLists.back()->numInternalNodes());
-  const bool ok = (connectivitySize > 0 and mConnectivity.size() == connectivitySize);
-  if (ok) {
-    CHECK(mNodeTraversalIndices.size() == numNodeLists);
-    for (typename ConnectivityStorageType::iterator itr = mConnectivity.begin();
-         itr != mConnectivity.end();
-         ++itr) {
-      CHECK(itr->size() == numNodeLists);
-      for (unsigned k = 0; k != numNodeLists; ++k) {
-        (*itr)[k].clear();
-      }
-    }
-  } else {
-    mConnectivity = ConnectivityStorageType(connectivitySize, vector<vector<int> >(numNodeLists));
-    mNodeTraversalIndices = vector<vector<int> >(numNodeLists);
-  }
+  const auto numConnectivityEntries = connectivitySize*numNodeLists;
+  mNodeTraversalIndices = vector<vector<int> >(numNodeLists);
   mIntersectionConnectivity.clear();
 
   // If we're trying to be domain decomposition independent, we need a key to sort
@@ -837,130 +1155,416 @@ computeConnectivity() {
     }
   }
 
-  // Create a list of flags to keep track of which nodes have been completed thus far.
-  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(int());
-  flagNodeDone = 0;
-
   // Get the position and H fields.
-  const FieldList<Dimension, Vector> position = dataBase.globalPosition();
-  const FieldList<Dimension, SymTensor> H = dataBase.globalHfield();
-
-  // Iterate over the NodeLists.
-  // std::clock_t t0, 
-  //   tmaster = std::clock_t(0), 
-  //   trefine = std::clock_t(0), 
-  //   twalk = std::clock_t(0);
-  std::vector<NodePairIdxType> nodePairs;
-  if (mNodePairListPtr) {
-    nodePairs.reserve(mNodePairListPtr->size());
+  FieldList<Dimension, Vector> position = dataBase.globalPosition();
+  FieldList<Dimension, SymTensor> H = dataBase.globalHfield();
+  FieldList<Dimension, Vector> extent = dataBase.globalNodeExtent();
+  auto positionView = position.view();
+  auto HView = H.view();
+  auto extentView = extent.view();
+  auto keysView = mKeys.view();
+  using FlatIntSpan = typename ConnectivityMap<Dimension>::FlatConnectivitySpan;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using FlatVectorSpan = SPHERAL_SPAN_TYPE<Vector>;
+#else
+  using FlatVectorSpan = chai::ManagedArray<Vector>;
+#endif
+  FlatIntSpan offsetsSpan;
+  GPUUtils::initMAView(offsetsSpan, mOffsets);
+  GPUUtils::touch(offsetsSpan, chai::CPU);
+  std::vector<int> firstGhostNodes(numNodeLists);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    firstGhostNodes[nodeList] = mNodeLists[nodeList]->firstGhostNode();
   }
-  CHECK(mConnectivity.size() == connectivitySize);
-  for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
-    const auto etaMax = mNodeLists[iiNodeList]->neighbor().kernelExtent();
+  FlatIntSpan firstGhostNodesSpan;
+  GPUUtils::initMAView(firstGhostNodesSpan, firstGhostNodes);
+  GPUUtils::touch(firstGhostNodesSpan, chai::CPU);
+  std::vector<int> neighborSearchTypes(numNodeLists);
+  std::vector<const TreeNeighbor<Dimension>*> treeNeighbors(numNodeLists, nullptr);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    neighborSearchTypes[nodeList] = int(mNodeLists[nodeList]->neighbor().neighborSearchType());
+    treeNeighbors[nodeList] = dynamic_cast<const TreeNeighbor<Dimension>*>(&(mNodeLists[nodeList]->neighbor()));
+  }
+  FlatIntSpan neighborSearchTypesSpan;
+  GPUUtils::initMAView(neighborSearchTypesSpan, neighborSearchTypes);
+  GPUUtils::touch(neighborSearchTypesSpan, chai::CPU);
 
-    // Iterate over the nodes in this NodeList, and look for any that are not done yet.
+  // Precompute the unique master groups on the host, then flatten the pieces
+  // the connectivity count/fill passes actually need.
+  std::vector<int> groupTaskOffsets(1, 0);
+  std::vector<int> groupSeedNodeListIDs;
+  std::vector<int> groupSeedNodeIDs;
+  std::vector<int> groupRawCoarseOffsets(1, 0);
+  std::vector<int> groupRawCoarseNeighbors;
+  std::vector<int> taskGroupIDs;
+  std::vector<int> taskNodeListIDs;
+  std::vector<int> taskNodeIDs;
+  std::vector<std::vector<int>> nodeDone(numNodeLists);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    const auto n = (ghostConnectivity ?
+                    mNodeLists[nodeList]->numNodes() :
+                    mNodeLists[nodeList]->numInternalNodes());
+    nodeDone[nodeList].assign(n, 0);
+  }
+
+  auto numNeighborGroups = 0u;
+  std::vector<int> masterList;
+  std::vector<int> coarseNeighbors;
+  for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
     const auto nii = (ghostConnectivity ?
                       mNodeLists[iiNodeList]->numNodes() :
                       mNodeLists[iiNodeList]->numInternalNodes());
     for (auto ii = 0u; ii < nii; ++ii) {
-      if (flagNodeDone(iiNodeList, ii) == 0) {
-
-        // Set the master nodes.
-        // t0 = std::clock();
-        vector<vector<int>> masterLists, coarseNeighbors;
-        Neighbor<Dimension>::setMasterNeighborGroup(position(iiNodeList, ii),
-                                                    H(iiNodeList, ii),
-                                                    mNodeLists.begin(),
-                                                    mNodeLists.end(),
-                                                    etaMax,
-                                                    masterLists,
-                                                    coarseNeighbors,
-                                                    ghostConnectivity);
-
-        // Iterate over the full of NodeLists again to work on the master nodes.
-        for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-          const auto nmaster = masterLists[iNodeList].size();
-#pragma omp parallel 
-          {
-            std::vector<NodePairIdxType> nodePairs_private;
-#pragma omp for schedule(dynamic)
-            for (auto k = 0u; k < nmaster; ++k) {
-              const auto i = masterLists[iNodeList][k];
-              CHECK2(flagNodeDone(iNodeList, i) == 0, "(" << iNodeList << " " << i << ")");
-
-              // Get the state for this node.
-              const auto& ri = position(iNodeList, i);
-              const auto& Hi = H(iNodeList, i);
-              auto&       worki = mNodeLists[iNodeList]->work();
-              CHECK2(mOffsets[iNodeList] + i < (int)mConnectivity.size(),
-                     iNodeList << " " << i << " " << mOffsets[iNodeList] << " " << mConnectivity.size());
-              const auto start = Timing::currentTime();
-
-              // Get the neighbor set we're building for this node.
-              auto& neighbors = mConnectivity[mOffsets[iNodeList] + i];
-              CHECK2(neighbors.size() == numNodeLists, neighbors.size() << " " << numNodeLists << " " << i);
-
-              // We keep track of the Morton indices.
-              vector<vector<pair<int, Key>>> keys(numNodeLists);
-
-              // Iterate over the neighbor NodeLists.
-              for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
-                const auto firstGhostNodej = mNodeLists[jNodeList]->firstGhostNode();
-
-                // Iterate over the coarse neighbors in this NodeList.
-                // t0 = std::clock();
-                for (const auto j:  coarseNeighbors[jNodeList]) {
-                  const auto& rj = position(jNodeList, j);
-                  const auto& Hj = H(jNodeList, j);
-
-                  // Compute the normalized distance between this pair.
-                  const auto rij = ri - rj;
-                  const auto eta2i = (Hi*rij).magnitude2();
-                  const auto eta2j = (Hj*rij).magnitude2();
-
-                  // If this pair is significant, add it to the list.
-                  if (eta2i <= kernelExtent2 or eta2j <= kernelExtent2) {
-
-                    // We don't include self-interactions.
-                    if ((iNodeList != jNodeList) or (i != j)) {
-                      neighbors[jNodeList].push_back(j);
-                      if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
-                      if (domainDecompIndependent) keys[jNodeList].push_back(pair<int, Key>(j, mKeys(jNodeList, j)));
-                    }
-                  }
-                }
-                // twalk += std::clock() - t0;
-              }
-              CHECK(neighbors.size() == numNodeLists);
-              CHECK(keys.size() == numNodeLists);
-        
-              // We have a few options for how to order the neighbors for this node.
-              for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
-
-                if (domainDecompIndependent) {
-                  // Sort in a domain independent manner.
-                  CHECK(keys[jNodeList].size() == neighbors[jNodeList].size());
-                  sort(keys[jNodeList].begin(), keys[jNodeList].end(), ComparePairsBySecondElement<pair<int, Key>>());
-                  for (auto j = 0u; j != neighbors[jNodeList].size(); ++j) neighbors[jNodeList][j] = keys[jNodeList][j].first;
-                } else {
-                  // Sort in an attempt to be cache friendly.
-                  sort(neighbors[jNodeList].begin(), neighbors[jNodeList].end());
-                }
-              }
-
-              // Flag this master node as done.
-              flagNodeDone(iNodeList, i) = 1;
-              worki(i) += Timing::difference(start, Timing::currentTime());
+      if (nodeDone[iiNodeList][ii] == 0) {
+        groupSeedNodeListIDs.push_back(iiNodeList);
+        groupSeedNodeIDs.push_back(ii);
+        for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+          if (treeNeighbors[nodeListi] != nullptr) {
+            const auto coarseBegin = groupRawCoarseNeighbors.size();
+            const auto coarseCount = treeNeighbors[nodeListi]->countTreeCoarseNeighbors(position(iiNodeList, ii),
+                                                                                        H(iiNodeList, ii));
+            groupRawCoarseNeighbors.resize(coarseBegin + coarseCount);
+            if (coarseCount > 0u) {
+              treeNeighbors[nodeListi]->fillTreeCoarseNeighbors(position(iiNodeList, ii),
+                                                                H(iiNodeList, ii),
+                                                                groupRawCoarseNeighbors.data() + coarseBegin);
             }
-            
-            // Merge the NodePairList
-#pragma omp critical
-            nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
-          } // end OMP parallel
+            groupRawCoarseOffsets.push_back(groupRawCoarseNeighbors.size());
+
+            const auto taskBegin = taskNodeIDs.size();
+            const auto masterCount = treeNeighbors[nodeListi]->countTreeMasterList(position(iiNodeList, ii),
+                                                                                   H(iiNodeList, ii),
+                                                                                   ghostConnectivity);
+            taskGroupIDs.insert(taskGroupIDs.end(), masterCount, numNeighborGroups);
+            taskNodeListIDs.insert(taskNodeListIDs.end(), masterCount, nodeListi);
+            taskNodeIDs.resize(taskBegin + masterCount);
+            if (masterCount > 0u) {
+              treeNeighbors[nodeListi]->fillTreeMasterList(position(iiNodeList, ii),
+                                                           H(iiNodeList, ii),
+                                                           taskNodeIDs.data() + taskBegin,
+                                                           ghostConnectivity);
+            }
+            for (auto taskIndex = taskBegin; taskIndex < taskNodeIDs.size(); ++taskIndex) {
+              const auto i = taskNodeIDs[taskIndex];
+              CHECK2(nodeDone[nodeListi][i] == 0, "(" << nodeListi << " " << i << ")");
+              nodeDone[nodeListi][i] = 1;
+            }
+          } else {
+            masterList.clear();
+            coarseNeighbors.clear();
+            mNodeLists[nodeListi]->neighbor().setMasterList(position(iiNodeList, ii),
+                                                            H(iiNodeList, ii),
+                                                            masterList,
+                                                            coarseNeighbors,
+                                                            ghostConnectivity);
+            groupRawCoarseNeighbors.insert(groupRawCoarseNeighbors.end(),
+                                           coarseNeighbors.begin(),
+                                           coarseNeighbors.end());
+            groupRawCoarseOffsets.push_back(groupRawCoarseNeighbors.size());
+
+            for (const auto i: masterList) {
+              CHECK2(nodeDone[nodeListi][i] == 0, "(" << nodeListi << " " << i << ")");
+              nodeDone[nodeListi][i] = 1;
+              taskGroupIDs.push_back(numNeighborGroups);
+              taskNodeListIDs.push_back(nodeListi);
+              taskNodeIDs.push_back(i);
+            }
+          }
         }
+        groupTaskOffsets.push_back(taskNodeIDs.size());
+
+        ++numNeighborGroups;
       }
     }
   }
+  CHECK(groupTaskOffsets.size() == numNeighborGroups + 1u);
+  CHECK(groupRawCoarseOffsets.size() == numNeighborGroups*numNodeLists + 1u);
+  CHECK(taskNodeIDs.size() == connectivitySize);
+
+  FlatIntSpan groupTaskOffsetsSpan;
+  GPUUtils::initMAView(groupTaskOffsetsSpan, groupTaskOffsets);
+  GPUUtils::touch(groupTaskOffsetsSpan, chai::CPU);
+  FlatIntSpan groupSeedNodeListIDsSpan;
+  GPUUtils::initMAView(groupSeedNodeListIDsSpan, groupSeedNodeListIDs);
+  GPUUtils::touch(groupSeedNodeListIDsSpan, chai::CPU);
+  FlatIntSpan groupSeedNodeIDsSpan;
+  GPUUtils::initMAView(groupSeedNodeIDsSpan, groupSeedNodeIDs);
+  GPUUtils::touch(groupSeedNodeIDsSpan, chai::CPU);
+  FlatIntSpan groupRawCoarseOffsetsSpan;
+  GPUUtils::initMAView(groupRawCoarseOffsetsSpan, groupRawCoarseOffsets);
+  GPUUtils::touch(groupRawCoarseOffsetsSpan, chai::CPU);
+  FlatIntSpan groupRawCoarseNeighborsSpan;
+  GPUUtils::initMAView(groupRawCoarseNeighborsSpan, groupRawCoarseNeighbors);
+  GPUUtils::touch(groupRawCoarseNeighborsSpan, chai::CPU);
+  FlatIntSpan taskGroupIDsSpan;
+  GPUUtils::initMAView(taskGroupIDsSpan, taskGroupIDs);
+  GPUUtils::touch(taskGroupIDsSpan, chai::CPU);
+  FlatIntSpan taskNodeListIDsSpan;
+  GPUUtils::initMAView(taskNodeListIDsSpan, taskNodeListIDs);
+  GPUUtils::touch(taskNodeListIDsSpan, chai::CPU);
+  FlatIntSpan taskNodeIDsSpan;
+  GPUUtils::initMAView(taskNodeIDsSpan, taskNodeIDs);
+  GPUUtils::touch(taskNodeIDsSpan, chai::CPU);
+
+  std::vector<Vector> groupMinMasterPosition(numNeighborGroups);
+  std::vector<Vector> groupMaxMasterPosition(numNeighborGroups);
+  std::vector<Vector> groupMinMasterExtent(numNeighborGroups);
+  std::vector<Vector> groupMaxMasterExtent(numNeighborGroups);
+  FlatVectorSpan groupMinMasterPositionSpan;
+  FlatVectorSpan groupMaxMasterPositionSpan;
+  FlatVectorSpan groupMinMasterExtentSpan;
+  FlatVectorSpan groupMaxMasterExtentSpan;
+  GPUUtils::initMAView(groupMinMasterPositionSpan, groupMinMasterPosition);
+  GPUUtils::initMAView(groupMaxMasterPositionSpan, groupMaxMasterPosition);
+  GPUUtils::initMAView(groupMinMasterExtentSpan, groupMinMasterExtent);
+  GPUUtils::initMAView(groupMaxMasterExtentSpan, groupMaxMasterExtent);
+  GPUUtils::touch(groupMinMasterPositionSpan, chai::CPU);
+  GPUUtils::touch(groupMaxMasterPositionSpan, chai::CPU);
+  GPUUtils::touch(groupMinMasterExtentSpan, chai::CPU);
+  GPUUtils::touch(groupMaxMasterExtentSpan, chai::CPU);
+
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups)),
+  [=] SPHERAL_HOST_DEVICE (int groupIndex) {
+    const auto seedNodeList = size_t(groupSeedNodeListIDsSpan[groupIndex]);
+    const auto seedNode = groupSeedNodeIDsSpan[groupIndex];
+    const auto& seedPosition = positionView(seedNodeList, seedNode);
+    const auto& seedExtent = extentView(seedNodeList, seedNode);
+    auto minMasterPosition = seedPosition;
+    auto maxMasterPosition = seedPosition;
+    auto minMasterExtent = seedPosition - seedExtent;
+    auto maxMasterExtent = seedPosition + seedExtent;
+    const auto taskBegin = groupTaskOffsetsSpan[groupIndex];
+    const auto taskEnd = groupTaskOffsetsSpan[groupIndex + 1u];
+    for (auto taskIndex = taskBegin; taskIndex < taskEnd; ++taskIndex) {
+      const auto iNodeList = size_t(taskNodeListIDsSpan[taskIndex]);
+      const auto i = taskNodeIDsSpan[taskIndex];
+      const auto& ri = positionView(iNodeList, i);
+      const auto& exti = extentView(iNodeList, i);
+      const auto minExtenti = ri - exti;
+      const auto maxExtenti = ri + exti;
+      for (auto k = 0; k < Dimension::nDim; ++k) {
+        if (ri(k) < minMasterPosition(k)) minMasterPosition(k) = ri(k);
+        if (ri(k) > maxMasterPosition(k)) maxMasterPosition(k) = ri(k);
+        if (minExtenti(k) < minMasterExtent(k)) minMasterExtent(k) = minExtenti(k);
+        if (maxExtenti(k) > maxMasterExtent(k)) maxMasterExtent(k) = maxExtenti(k);
+      }
+    }
+    groupMinMasterPositionSpan[groupIndex] = minMasterPosition;
+    groupMaxMasterPositionSpan[groupIndex] = maxMasterPosition;
+    groupMinMasterExtentSpan[groupIndex] = minMasterExtent;
+    groupMaxMasterExtentSpan[groupIndex] = maxMasterExtent;
+  });
+  GPUUtils::touch(groupMinMasterPositionSpan, chai::CPU);
+  GPUUtils::touch(groupMaxMasterPositionSpan, chai::CPU);
+  GPUUtils::touch(groupMinMasterExtentSpan, chai::CPU);
+  GPUUtils::touch(groupMaxMasterExtentSpan, chai::CPU);
+
+  std::vector<int> groupCoarseCounts(numNeighborGroups*numNodeLists, 0);
+  FlatIntSpan groupCoarseCountsSpan;
+  GPUUtils::initMAView(groupCoarseCountsSpan, groupCoarseCounts);
+  GPUUtils::touch(groupCoarseCountsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
+  [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+    const auto groupIndex = size_t(entryIndex) / numNodeLists;
+    const auto nodeList = size_t(entryIndex) % numNodeLists;
+    const auto rawBegin = groupRawCoarseOffsetsSpan[entryIndex];
+    const auto rawEnd = groupRawCoarseOffsetsSpan[entryIndex + 1u];
+    auto count = 0;
+    for (auto rawIndex = rawBegin; rawIndex < rawEnd; ++rawIndex) {
+      const auto j = groupRawCoarseNeighborsSpan[rawIndex];
+      if (keepCoarseNeighborForGroup<Dimension>(neighborSearchTypesSpan[nodeList],
+                                                positionView(nodeList, j),
+                                                extentView(nodeList, j),
+                                                groupMinMasterPositionSpan[groupIndex],
+                                                groupMaxMasterPositionSpan[groupIndex],
+                                                groupMinMasterExtentSpan[groupIndex],
+                                                groupMaxMasterExtentSpan[groupIndex])) {
+        ++count;
+      }
+    }
+    groupCoarseCountsSpan[entryIndex] = count;
+  });
+  GPUUtils::touch(groupCoarseCountsSpan, chai::CPU);
+
+  std::vector<int> groupCoarseOffsets;
+  countsToOffsets(groupCoarseCounts, groupCoarseOffsets);
+  FlatIntSpan groupCoarseOffsetsSpan;
+  GPUUtils::initMAView(groupCoarseOffsetsSpan, groupCoarseOffsets);
+  GPUUtils::touch(groupCoarseOffsetsSpan, chai::CPU);
+  std::vector<int> groupCoarseNeighbors(groupCoarseOffsets.back());
+  FlatIntSpan groupCoarseNeighborsSpan;
+  GPUUtils::initMAView(groupCoarseNeighborsSpan, groupCoarseNeighbors);
+  GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
+  [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+    const auto groupIndex = size_t(entryIndex) / numNodeLists;
+    const auto nodeList = size_t(entryIndex) % numNodeLists;
+    const auto rawBegin = groupRawCoarseOffsetsSpan[entryIndex];
+    const auto rawEnd = groupRawCoarseOffsetsSpan[entryIndex + 1u];
+    auto count = 0;
+    for (auto rawIndex = rawBegin; rawIndex < rawEnd; ++rawIndex) {
+      const auto j = groupRawCoarseNeighborsSpan[rawIndex];
+      if (keepCoarseNeighborForGroup<Dimension>(neighborSearchTypesSpan[nodeList],
+                                                positionView(nodeList, j),
+                                                extentView(nodeList, j),
+                                                groupMinMasterPositionSpan[groupIndex],
+                                                groupMaxMasterPositionSpan[groupIndex],
+                                                groupMinMasterExtentSpan[groupIndex],
+                                                groupMaxMasterExtentSpan[groupIndex])) {
+        groupCoarseNeighborsSpan[groupCoarseOffsetsSpan[entryIndex] + count] = j;
+        ++count;
+      }
+    }
+    CHECK(groupCoarseOffsetsSpan[entryIndex] + count == groupCoarseOffsetsSpan[entryIndex + 1u]);
+  });
+  GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
+
+  // Count/scan/fill the main connectivity in flat CSR-like storage first.
+  std::vector<int> connectivityCounts(numConnectivityEntries, 0);
+  std::vector<int> connectivityOffsets;
+  std::vector<int> connectivityNeighbors;
+  auto buildConnectivityPass = [&](std::vector<int>* flatCounts,
+                                   const std::vector<int>* flatOffsets,
+                                   std::vector<int>* flatNeighbors) {
+    const auto fillingConnectivity = (flatNeighbors != nullptr);
+    if (fillingConnectivity) CHECK(flatOffsets != nullptr);
+    else CHECK(flatCounts != nullptr);
+
+    FlatIntSpan flatCountsSpan;
+    FlatIntSpan flatOffsetsSpan;
+    FlatIntSpan flatNeighborsSpan;
+    if (fillingConnectivity) {
+      GPUUtils::initMAView(flatOffsetsSpan, const_cast<std::vector<int>&>(*flatOffsets));
+      GPUUtils::touch(flatOffsetsSpan, chai::CPU);
+      GPUUtils::initMAView(flatNeighborsSpan, *flatNeighbors);
+      GPUUtils::touch(flatNeighborsSpan, chai::CPU);
+    } else {
+      GPUUtils::initMAView(flatCountsSpan, *flatCounts);
+      GPUUtils::touch(flatCountsSpan, chai::CPU);
+    }
+
+    const auto numTasks = taskNodeIDs.size();
+    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numTasks)),
+    [=] SPHERAL_HOST_DEVICE (int taskIndex) {
+      const auto groupIndex = size_t(taskGroupIDsSpan[taskIndex]);
+      const auto iNodeList = size_t(taskNodeListIDsSpan[taskIndex]);
+      const auto i = taskNodeIDsSpan[taskIndex];
+      const auto globalNodeIndex = size_t(offsetsSpan[iNodeList] + i);
+      CHECK(globalNodeIndex < connectivitySize);
+
+      const auto& ri = positionView(iNodeList, i);
+      const auto& Hi = HView(iNodeList, i);
+      for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
+        const auto entryIndex = globalNodeIndex*numNodeLists + jNodeList;
+        const auto beginOffset = (fillingConnectivity ? flatOffsetsSpan[entryIndex] : 0);
+        const auto coarseEntryIndex = groupIndex*numNodeLists + jNodeList;
+        const auto coarseBegin = groupCoarseOffsetsSpan[coarseEntryIndex];
+        const auto coarseEnd = groupCoarseOffsetsSpan[coarseEntryIndex + 1u];
+        auto count = 0;
+
+        for (auto coarseIndex = coarseBegin; coarseIndex < coarseEnd; ++coarseIndex) {
+          const auto j = groupCoarseNeighborsSpan[coarseIndex];
+          const auto& rj = positionView(jNodeList, j);
+          const auto& Hj = HView(jNodeList, j);
+          const auto rij = ri - rj;
+          const auto eta2i = (Hi*rij).magnitude2();
+          const auto eta2j = (Hj*rij).magnitude2();
+          if ((eta2i <= kernelExtent2 or eta2j <= kernelExtent2) and
+              ((iNodeList != jNodeList) or (i != j))) {
+            if (fillingConnectivity) {
+              flatNeighborsSpan[beginOffset + count] = j;
+            }
+            ++count;
+          }
+        }
+
+        if (fillingConnectivity) {
+          CHECK(beginOffset + count == flatOffsetsSpan[entryIndex + 1u]);
+          if (count > 1) {
+            if (domainDecompIndependent) {
+              RAJA::sort<RAJA::seq_exec>(RAJA::make_span(flatNeighborsSpan.data() + beginOffset, count),
+                                         [&](const int a, const int b) { return keysView(jNodeList, a) < keysView(jNodeList, b); });
+            } else {
+              RAJA::sort<RAJA::seq_exec>(RAJA::make_span(flatNeighborsSpan.data() + beginOffset, count));
+            }
+          }
+        } else {
+          flatCountsSpan[entryIndex] = count;
+        }
+      }
+    });
+
+    if (fillingConnectivity) {
+      GPUUtils::touch(flatNeighborsSpan, chai::CPU);
+    } else {
+      GPUUtils::touch(flatCountsSpan, chai::CPU);
+    }
+  };
+
+  buildConnectivityPass(&connectivityCounts, nullptr, nullptr);
+  countsToOffsets(connectivityCounts, connectivityOffsets);
+  connectivityNeighbors.resize(connectivityOffsets.back());
+  buildConnectivityPass(nullptr, &connectivityOffsets, &connectivityNeighbors);
+
+  mConnectivityFlatOffsets = connectivityOffsets;
+  mConnectivityFlatNeighbors = connectivityNeighbors;
+  GPUUtils::initMAView(mConnectivityFlatOffsetsSpan, mConnectivityFlatOffsets);
+  GPUUtils::initMAView(mConnectivityFlatNeighborsSpan, mConnectivityFlatNeighbors);
+  GPUUtils::touch(mConnectivityFlatOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mConnectivityFlatNeighborsSpan, chai::CPU);
+  const auto connectivityView = this->connectivityFlatView();
+
+  unflattenConnectivity(connectivitySize,
+                        numNodeLists,
+                        mConnectivityFlatOffsets,
+                        mConnectivityFlatNeighbors,
+                        mConnectivity);
+
+  std::vector<int> nodePairCounts(numConnectivityEntries, 0);
+  auto buildNodePairPass = [&](std::vector<int>* pairCounts,
+                               const std::vector<int>* pairOffsets,
+                               std::vector<NodePairIdxType>* nodePairs) {
+    const auto fillingNodePairs = (nodePairs != nullptr);
+    if (fillingNodePairs) CHECK(pairOffsets != nullptr);
+    else CHECK(pairCounts != nullptr);
+
+    for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+      const auto ni = (ghostConnectivity ?
+                       mNodeLists[iNodeList]->numNodes() :
+                       mNodeLists[iNodeList]->numInternalNodes());
+      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)), [&](int ii) {
+        const auto i = size_t(ii);
+        const auto globalNodeIndex = size_t(mOffsets[iNodeList] + i);
+        for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
+          const auto firstGhostNodej = firstGhostNodesSpan[jNodeList];
+          const auto entryIndex = connectivityView.entryIndex(globalNodeIndex, jNodeList);
+          const auto neighborCount = connectivityView.size(entryIndex);
+          auto pairCount = 0;
+          for (auto k = 0u; k < neighborCount; ++k) {
+            const auto j = connectivityView(entryIndex, k);
+            if (shouldCalculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) {
+              if (fillingNodePairs) {
+                (*nodePairs)[(*pairOffsets)[entryIndex] + pairCount] =
+                  NodePairIdxType(i, iNodeList, j, jNodeList);
+              }
+              ++pairCount;
+            }
+          }
+          if (fillingNodePairs) {
+            CHECK((*pairOffsets)[entryIndex] + pairCount == (*pairOffsets)[entryIndex + 1u]);
+          } else {
+            (*pairCounts)[entryIndex] = pairCount;
+          }
+        }
+      });
+    }
+  };
+
+  buildNodePairPass(&nodePairCounts, nullptr, nullptr);
+  std::vector<int> nodePairOffsets;
+  countsToOffsets(nodePairCounts, nodePairOffsets);
+  std::vector<NodePairIdxType> nodePairs(nodePairOffsets.back());
+  buildNodePairPass(nullptr, &nodePairOffsets, &nodePairs);
   mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
 
   // // If necessary add ghost->internal connectivity.
@@ -995,30 +1599,6 @@ computeConnectivity() {
   //   }
   // }
 
-  // In the domain decompostion independent case, we need to sort the neighbors for ghost
-  // nodes as well.
-  if (domainDecompIndependent) {
-    for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-      const auto* nodeListPtr = mNodeLists[iNodeList];
-      for (auto i = nodeListPtr->firstGhostNode();
-           i != nodeListPtr->numNodes();
-           ++i) {
-        auto& neighbors = mConnectivity[mOffsets[iNodeList] + i];
-        CHECK(neighbors.size() == numNodeLists);
-        for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
-          vector<pair<int, Key>> keys;
-          keys.reserve(neighbors[jNodeList].size());
-          for (auto itr = neighbors[jNodeList].begin();
-               itr != neighbors[jNodeList].end();
-               ++itr) keys.push_back(pair<int, Key>(*itr, mKeys(jNodeList, *itr)));
-          CHECK(keys.size() == neighbors[jNodeList].size());
-          sort(keys.begin(), keys.end(), ComparePairsBySecondElement<pair<int, Key> >());
-          for (auto k = 0u; k != keys.size(); ++k) neighbors[jNodeList][k] = keys[k].first;
-        }
-      }
-    }
-  }
-
   // Sort the NodePairList in order to enforce domain decomposition independence.
   if (domainDecompIndependent) {
     // sort(mNodePairListPtr->begin(), mNodePairListPtr->end(), [this](const NodePairIdxType& a, const NodePairIdxType& b) { return (mKeys(a.i_list, a.i_node) + mKeys(a.j_list, a.j_node)) < (mKeys(b.i_list, b.i_node) + mKeys(b.j_list, b.j_node)); });
@@ -1034,67 +1614,123 @@ computeConnectivity() {
     // VERIFY2(ghostConnectivity, "ghost connectivity is required for overlap connectivity");
     TIME_BEGIN("ConnectivityMap_computeOverlapConnectivity");
 
-    // To start out, *all* neighbors of a node (gather and scatter) are overlap neighbors.  Therefore we
-    // first just copy the neighbor connectivity.
-    mOverlapConnectivity = mConnectivity;
+    const auto connectivity = this->connectivityFlatView();
+    std::vector<int> overlapRawCounts(numConnectivityEntries, 0);
+    FlatIntSpan overlapRawCountsSpan;
+    GPUUtils::initMAView(overlapRawCountsSpan, overlapRawCounts);
+    GPUUtils::touch(overlapRawCountsSpan, chai::CPU);
 
     for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
-      const auto* nodeListPtr = mNodeLists[iNodeList];
-      for (auto i = 0u; i < nodeListPtr->numNodes(); ++i) {
-        const auto& neighborsi = mConnectivity[mOffsets[iNodeList] + i];
-        CHECK(neighborsi.size() == numNodeLists);
-        const auto& ri = position(iNodeList, i);
-        const auto& Hi = H(iNodeList, i);
-
-        // The points that have i in common are overlap neighbors with one another
-        // for (auto jN1 = 0; jN1 < numNodeLists; ++jN1) {
-        //   for (const auto j1 : neighborsi[jN1]) {
-        //     for (auto jN2 = 0; jN2 < numNodeLists; ++jN2) {
-        //       for (const auto j2 : neighborsi[jN2]) {
-        //         if (!(jN1 == jN2  && j1 == j2)) {
-        //           insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
-        //                        jN1, j1, jN2, j2);
-        //         }
-        //       }
-        //     }
-        //   }
-        // }
-        
-        // Find all the gather neighbors of i.
-        for (auto jN1 = 0u; jN1 < numNodeLists; ++jN1) {
-          for (const auto j1: neighborsi[jN1]) {
-            const auto& rj1 = position(jN1, j1);
-            const auto& Hj1 = H(jN1, j1);
-            if ((Hi*(rj1 - ri)).magnitude2() <= kernelExtent2) {                           // Is j1 a gather neighbor of i?
-
-              // Check if i and j1 have overlap directly.
-              if ((Hj1*(rj1 - ri)).magnitude2() <= kernelExtent2) {
-                insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
-                             iNodeList, i, jN1, j1);
-                insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
-                             jN1, j1, iNodeList, i);
-              }
-
-              // Find the gather neighbors of j1, all of which share overlap with i.
-              const auto& neighborsj1 = mConnectivity[mOffsets[jN1] + j1];
-              for (auto jN2 = 0u; jN2 < numNodeLists; ++jN2) {
-                for (const auto j2: neighborsj1[jN2]) {
-                  const auto& rj2 = position(jN2, j2);
-                  const auto& Hj2 = H(jN2, j2);
-                  if ((Hj2*(rj2 - rj1)).magnitude2() <= kernelExtent2) {                   // Is j2 a scatter neighbor of j1?
-                    insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
-                                 iNodeList, i, jN2, j2);
-                    insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
-                                 jN2, j2, iNodeList, i);
-                  }
-                }
-              }
-            }
-          }
+      const auto ni = mNodeLists[iNodeList]->numNodes();
+      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)),
+      [=] SPHERAL_HOST_DEVICE (int ii) {
+        const auto i = ii;
+        const auto globalNodeIndex = size_t(offsetsSpan[iNodeList] + i);
+        for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
+          const auto entryIndex = connectivity.entryIndex(globalNodeIndex, jNodeList);
+          overlapRawCountsSpan[entryIndex] =
+            fillRawOverlapNeighborsForEntry(connectivity,
+                                           offsetsSpan,
+                                           positionView,
+                                           HView,
+                                           kernelExtent2,
+                                           numNodeLists,
+                                           globalNodeIndex,
+                                           iNodeList,
+                                           i,
+                                           jNodeList,
+                                           nullptr);
         }
-      }
+      });
     }
+    GPUUtils::touch(overlapRawCountsSpan, chai::CPU);
+
+    std::vector<int> overlapRawOffsets;
+    countsToOffsets(overlapRawCounts, overlapRawOffsets);
+    FlatIntSpan overlapRawOffsetsSpan;
+    GPUUtils::initMAView(overlapRawOffsetsSpan, overlapRawOffsets);
+    GPUUtils::touch(overlapRawOffsetsSpan, chai::CPU);
+
+    std::vector<int> overlapRawNeighbors(overlapRawOffsets.back());
+    FlatIntSpan overlapRawNeighborsSpan;
+    GPUUtils::initMAView(overlapRawNeighborsSpan, overlapRawNeighbors);
+    GPUUtils::touch(overlapRawNeighborsSpan, chai::CPU);
+
+    for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
+      const auto ni = mNodeLists[iNodeList]->numNodes();
+      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)),
+      [=] SPHERAL_HOST_DEVICE (int ii) {
+        const auto i = ii;
+        const auto globalNodeIndex = size_t(offsetsSpan[iNodeList] + i);
+        for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
+          const auto entryIndex = connectivity.entryIndex(globalNodeIndex, jNodeList);
+          auto* entryPtr = (overlapRawNeighborsSpan.size() > 0u ?
+                            overlapRawNeighborsSpan.data() + overlapRawOffsetsSpan[entryIndex] :
+                            nullptr);
+          fillRawOverlapNeighborsForEntry(connectivity,
+                                         offsetsSpan,
+                                         positionView,
+                                         HView,
+                                         kernelExtent2,
+                                         numNodeLists,
+                                         globalNodeIndex,
+                                         iNodeList,
+                                         i,
+                                         jNodeList,
+                                         entryPtr);
+        }
+      });
+    }
+    GPUUtils::touch(overlapRawNeighborsSpan, chai::CPU);
+
+    std::vector<int> overlapCounts(numConnectivityEntries, 0);
+    FlatIntSpan overlapCountsSpan;
+    GPUUtils::initMAView(overlapCountsSpan, overlapCounts);
+    GPUUtils::touch(overlapCountsSpan, chai::CPU);
+
+    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numConnectivityEntries)),
+    [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+      const auto beginOffset = overlapRawOffsetsSpan[entryIndex];
+      const auto count = size_t(overlapRawOffsetsSpan[entryIndex + 1] - beginOffset);
+      auto* values = (count > 0u ? overlapRawNeighborsSpan.data() + beginOffset : nullptr);
+      const auto targetNodeList = size_t(entryIndex) % numNodeLists;
+      if (count > 1u) {
+        sortOverlapNeighbors(values, count, targetNodeList, keysView, domainDecompIndependent);
+      }
+      overlapCountsSpan[entryIndex] = uniqueOverlapNeighbors(values, count);
+    });
+    GPUUtils::touch(overlapCountsSpan, chai::CPU);
+
+    std::vector<int> overlapOffsets;
+    countsToOffsets(overlapCounts, overlapOffsets);
+    FlatIntSpan overlapOffsetsSpan;
+    GPUUtils::initMAView(overlapOffsetsSpan, overlapOffsets);
+    GPUUtils::touch(overlapOffsetsSpan, chai::CPU);
+
+    std::vector<int> overlapNeighbors(overlapOffsets.back());
+    FlatIntSpan overlapNeighborsSpan;
+    GPUUtils::initMAView(overlapNeighborsSpan, overlapNeighbors);
+    GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
+
+    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numConnectivityEntries)),
+    [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+      const auto beginSrc = overlapRawOffsetsSpan[entryIndex];
+      const auto beginDst = overlapOffsetsSpan[entryIndex];
+      const auto count = size_t(overlapCountsSpan[entryIndex]);
+      for (auto k = 0u; k < count; ++k) {
+        overlapNeighborsSpan[beginDst + k] = overlapRawNeighborsSpan[beginSrc + k];
+      }
+    });
+    GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
+
+    unflattenConnectivity(connectivitySize,
+                          numNodeLists,
+                          overlapOffsets,
+                          overlapNeighbors,
+                          mOverlapConnectivity);
     TIME_END("ConnectivityMap_computeOverlapConnectivity");
+  } else {
+    mOverlapConnectivity.clear();
   }
 
   // Are we building intersection connectivity?
@@ -1140,13 +1776,15 @@ computeConnectivity() {
                     mNodeLists[iNodeList]->numNodes() :
                     mNodeLists[iNodeList]->numInternalNodes());
     for (auto i = 0u; i < n; ++i) {
-      ENSURE2(flagNodeDone(iNodeList, i) == 1,
+      ENSURE2(nodeDone[iNodeList][i] == 1,
               "Missed connnectivity for (" << iNodeList << " " << i << ")");
     }
   }
   // Make sure we're ready to be used.
   ENSURE(valid());
   END_CONTRACT_SCOPE
+
+  this->rebuildFlatConnectivityViews();
 
   TIME_END("ConnectivityMap_computeConnectivity");
 }

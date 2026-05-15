@@ -25,9 +25,20 @@ ConnectivityMap(const NodeListIterator& begin,
   mBuildIntersectionConnectivity(buildIntersectionConnectivity),
   mOffsets(),
   mConnectivity(),
+  mConnectivityFlatOffsets(),
+  mConnectivityFlatNeighbors(),
+  mConnectivityFlatOffsetsSpan(),
+  mConnectivityFlatNeighborsSpan(),
+  mNodePairListPtr(),
+  mOverlapConnectivity(),
+  mOverlapConnectivityFlatOffsets(),
+  mOverlapConnectivityFlatNeighbors(),
+  mOverlapConnectivityFlatOffsetsSpan(),
+  mOverlapConnectivityFlatNeighborsSpan(),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
-  mCouplingPtr(std::make_shared<NodeCoupling>()) {
+  mCouplingPtr(std::make_shared<NodeCoupling>()),
+  mIntersectionConnectivity() {
 
   // The private method does the grunt work of filling in the connectivity once we have
   // established the set of NodeLists.
@@ -147,6 +158,29 @@ nodePairListPtr() const {
 }
 
 //------------------------------------------------------------------------------
+// Get the flat connectivity views.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+ConnectivityMapFlatView
+ConnectivityMap<Dimension>::
+connectivityFlatView() const {
+  return ConnectivityMapFlatView(mNodeLists.size(),
+                                 mConnectivityFlatOffsetsSpan,
+                                 mConnectivityFlatNeighborsSpan);
+}
+
+template<typename Dimension>
+inline
+ConnectivityMapFlatView
+ConnectivityMap<Dimension>::
+overlapConnectivityFlatView() const {
+  return ConnectivityMapFlatView(mNodeLists.size(),
+                                 mOverlapConnectivityFlatOffsetsSpan,
+                                 mOverlapConnectivityFlatNeighborsSpan);
+}
+
+//------------------------------------------------------------------------------
 // Get the set of neighbors for the given node in the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -240,11 +274,22 @@ size_t
 ConnectivityMap<Dimension>::
 numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
                     const int nodeID) const {
-  const std::vector< std::vector<int> >& neighbors = connectivityForNode(nodeListPtr, nodeID);
+  const bool ghostValid = (mBuildGhostConnectivity or
+                           NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
+  CONTRACT_VAR(ghostValid);
+  REQUIRE(nodeID >= 0 and
+          ((nodeID < (int)nodeListPtr->numInternalNodes()) or
+           (ghostValid and nodeID < (int)nodeListPtr->numNodes())));
+  const auto nodeListID = std::distance(mNodeLists.begin(),
+                                        std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
+  REQUIRE(nodeListID < (int)mNodeLists.size());
+  const auto connectivity = this->connectivityFlatView();
+  if (connectivity.empty()) return 0u;
+  const auto globalNodeIndex = size_t(mOffsets[nodeListID] + nodeID);
   size_t result = 0u;
-  for (std::vector< std::vector<int> >::const_iterator itr = neighbors.begin();
-       itr != neighbors.end();
-       ++itr) result += itr->size();
+  for (auto nodeListj = 0u; nodeListj < mNodeLists.size(); ++nodeListj) {
+    result += connectivity.size(globalNodeIndex, nodeListj);
+  }
   return result;
 }
 
@@ -267,11 +312,22 @@ size_t
 ConnectivityMap<Dimension>::
 numOverlapNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
                            const int nodeID) const {
-  const std::vector< std::vector<int> >& neighbors = overlapConnectivityForNode(nodeListPtr, nodeID);
+  const bool ghostValid = (mBuildGhostConnectivity or
+                           NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
+  CONTRACT_VAR(ghostValid);
+  REQUIRE(nodeID >= 0 and
+          ((nodeID < (int)nodeListPtr->numInternalNodes()) or
+           (ghostValid and nodeID < (int)nodeListPtr->numNodes())));
+  const auto nodeListID = std::distance(mNodeLists.begin(),
+                                        std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
+  REQUIRE(nodeListID < (int)mNodeLists.size());
+  const auto connectivity = this->overlapConnectivityFlatView();
+  if (connectivity.empty()) return 0u;
+  const auto globalNodeIndex = size_t(mOffsets[nodeListID] + nodeID);
   size_t result = 0u;
-  for (std::vector< std::vector<int> >::const_iterator itr = neighbors.begin();
-       itr != neighbors.end();
-       ++itr) result += itr->size();
+  for (auto nodeListj = 0u; nodeListj < mNodeLists.size(); ++nodeListj) {
+    result += connectivity.size(globalNodeIndex, nodeListj);
+  }
   return result;
 }
 
@@ -290,6 +346,7 @@ numOverlapNeighborsForNode(const int nodeListID,
 // pair should be calculated or not when we are doing pairs simultaneously.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE
 inline
 bool
 ConnectivityMap<Dimension>::
