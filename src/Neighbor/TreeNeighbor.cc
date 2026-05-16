@@ -53,6 +53,7 @@ findCellIndexInLevel(const ViewType& view,
 }
 
 template<typename CellKey>
+SPHERAL_HOST_DEVICE
 inline
 void
 extractCellIndices(const CellKey key,
@@ -69,6 +70,7 @@ extractCellIndices(const CellKey key,
 }
 
 template<typename CellKey, typename LevelKey>
+SPHERAL_HOST_DEVICE
 inline
 CellKey
 shiftTreeKeyLevel(const CellKey ix,
@@ -80,6 +82,7 @@ shiftTreeKeyLevel(const CellKey ix,
 }
 
 template<typename CellKey>
+SPHERAL_HOST_DEVICE
 inline
 bool
 keyInRange(const CellKey key,
@@ -101,6 +104,7 @@ keyInRange(const CellKey key,
 }
 
 template<typename ViewType, typename CellKey>
+SPHERAL_HOST_DEVICE
 inline
 size_t
 countOrFillMasterList(const ViewType& view,
@@ -126,6 +130,7 @@ countOrFillMasterList(const ViewType& view,
 }
 
 template<typename ViewType, typename LevelKey, typename CellKey>
+SPHERAL_HOST_DEVICE
 inline
 size_t
 countOrFillTreeNeighbors(const ViewType& view,
@@ -141,28 +146,17 @@ countOrFillTreeNeighbors(const ViewType& view,
                          int* result) {
   if (view.empty()) return 0u;
 
-  LevelKey ilevel = 0;
-  CellKey ix, iy, iz, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max, delta;
+  auto count = 0u;
   CHECK2(view.levelSize(0) > 0u, "TreeNeighbor root level is empty.");
   const auto rootCellIndex = view.levelBegin(0);
   CHECK2(view.memberSize(rootCellIndex) == 0u,
          "TreeNeighbor root cell occupied!  Will miss neighbors... " << view.memberSize(rootCellIndex));
-
-  std::vector<int> remainingDaughters, newDaughters;
-  remainingDaughters.reserve(view.daughterSize(rootCellIndex));
-  for (auto i = 0u; i < view.daughterSize(rootCellIndex); ++i) {
-    remainingDaughters.push_back(view.daughterIndex(rootCellIndex, i));
-  }
-
-  auto count = 0u;
-  while (remainingDaughters.size() > 0) {
-    newDaughters.clear();
-    ++ilevel;
-    delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
-
-    ix = shiftTreeKeyLevel(ix_master, masterLevel, ilevel);
-    iy = shiftTreeKeyLevel(iy_master, masterLevel, ilevel);
-    iz = shiftTreeKeyLevel(iz_master, masterLevel, ilevel);
+  for (LevelKey ilevel = 1; ilevel < view.numLevels(); ++ilevel) {
+    CellKey ix_min, iy_min, iz_min, ix_max, iy_max, iz_max;
+    const auto delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
+    const auto ix = shiftTreeKeyLevel(ix_master, masterLevel, ilevel);
+    const auto iy = shiftTreeKeyLevel(iy_master, masterLevel, ilevel);
+    const auto iz = shiftTreeKeyLevel(iz_master, masterLevel, ilevel);
     ix_min = (ix > delta              ? ix - delta : 0U);
     iy_min = (iy > delta              ? iy - delta : 0U);
     iz_min = (iz > delta              ? iz - delta : 0U);
@@ -173,7 +167,7 @@ countOrFillTreeNeighbors(const ViewType& view,
     CHECK(iy_min <= iy_max and iy_max <= max1dKey);
     CHECK(iz_min <= iz_max and iz_max <= max1dKey);
 
-    for (const auto cellIndex: remainingDaughters) {
+    for (auto cellIndex = view.levelBegin(ilevel); cellIndex < view.levelEnd(ilevel); ++cellIndex) {
       const auto cellKey = view.cellKey(cellIndex);
       if (keyInRange(cellKey,
                      ix_min, iy_min, iz_min,
@@ -185,15 +179,8 @@ countOrFillTreeNeighbors(const ViewType& view,
           if (result != nullptr) result[count] = view.member(cellIndex, k);
           ++count;
         }
-
-        const auto numDaughters = view.daughterSize(cellIndex);
-        for (auto k = 0u; k < numDaughters; ++k) {
-          newDaughters.push_back(view.daughterIndex(cellIndex, k));
-        }
       }
     }
-
-    remainingDaughters = newDaughters;
   }
 
   return count;
@@ -420,6 +407,59 @@ setTreeMasterList(const Vector& position,
 template<typename Dimension>
 size_t
 TreeNeighbor<Dimension>::
+countMasterList(const Vector& position,
+                const SymTensor& H,
+                const bool ghostConnectivity) const {
+  return this->countTreeMasterList(position, H, ghostConnectivity);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillMasterList(const Vector& position,
+               const SymTensor& H,
+               int* result,
+               const bool ghostConnectivity) const {
+  this->fillTreeMasterList(position, H, result, ghostConnectivity);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countCoarseNeighbors(const Vector& position,
+                     const SymTensor& H,
+                     const bool /*ghostConnectivity*/) const {
+  return this->countTreeCoarseNeighbors(position, H);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillCoarseNeighbors(const Vector& position,
+                    const SymTensor& H,
+                    int* result,
+                    const bool /*ghostConnectivity*/) const {
+  this->fillTreeCoarseNeighbors(position, H, result);
+}
+
+template<typename Dimension>
+NeighborGroupDescriptor
+TreeNeighbor<Dimension>::
+groupDescriptor(const Vector& position,
+                const SymTensor& H,
+                const uint64_t /*fallbackToken*/) const {
+  NeighborGroupDescriptor result;
+  result.kind = 1;
+  result.level = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(result.level, position, masterKey, ix_master, iy_master, iz_master);
+  result.key = masterKey;
+  return result;
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
 countTreeMasterList(const Vector& position,
                     const SymTensor& H,
                     const bool ghostConnectivity) const {
@@ -489,6 +529,39 @@ fillTreeCoarseNeighbors(const Vector& position,
   const auto view = this->view();
   countOrFillTreeNeighbors(view,
                            masterLevel,
+                           ix_master, iy_master, iz_master,
+                           num1dbits,
+                           max1dKey,
+                           xkeymask, ykeymask, zkeymask,
+                           result);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countTreeCoarseNeighbors(const LevelKey levelID,
+                         const CellKey cellID) const {
+  CellKey ix_master, iy_master, iz_master;
+  extractCellIndices(cellID, ix_master, iy_master, iz_master);
+  return countOrFillTreeNeighbors(this->view(),
+                                  levelID,
+                                  ix_master, iy_master, iz_master,
+                                  num1dbits,
+                                  max1dKey,
+                                  xkeymask, ykeymask, zkeymask,
+                                  nullptr);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillTreeCoarseNeighbors(const LevelKey levelID,
+                        const CellKey cellID,
+                        int* result) const {
+  CellKey ix_master, iy_master, iz_master;
+  extractCellIndices(cellID, ix_master, iy_master, iz_master);
+  countOrFillTreeNeighbors(this->view(),
+                           levelID,
                            ix_master, iy_master, iz_master,
                            num1dbits,
                            max1dKey,

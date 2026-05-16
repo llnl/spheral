@@ -62,6 +62,23 @@ public:
                              std::vector<int>& masterList,
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const override;
+  virtual size_t countMasterList(const Vector& position,
+                                 const SymTensor& H,
+                                 const bool ghostConnectivity = false) const override;
+  virtual void fillMasterList(const Vector& position,
+                              const SymTensor& H,
+                              int* result,
+                              const bool ghostConnectivity = false) const override;
+  virtual size_t countCoarseNeighbors(const Vector& position,
+                                      const SymTensor& H,
+                                      const bool ghostConnectivity = false) const override;
+  virtual void fillCoarseNeighbors(const Vector& position,
+                                   const SymTensor& H,
+                                   int* result,
+                                   const bool ghostConnectivity = false) const override;
+  virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
+                                                  const SymTensor& H,
+                                                  const uint64_t fallbackToken) const override;
 
   virtual void setRefineNeighborList(const Vector& position,
                                      const Scalar& H,
@@ -157,6 +174,11 @@ public:
                                   const SymTensor& H) const;
   void fillTreeCoarseNeighbors(const Vector& position,
                                const SymTensor& H,
+                               int* result) const;
+  size_t countTreeCoarseNeighbors(const LevelKey levelID,
+                                  const CellKey cellID) const;
+  void fillTreeCoarseNeighbors(const LevelKey levelID,
+                               const CellKey cellID,
                                int* result) const;
   void setTreeMasterList(const Vector& position,
                          const SymTensor& H,

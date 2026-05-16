@@ -8,6 +8,7 @@
 #include "ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Neighbor/Neighbor.hh"
+#include "Neighbor/NestedGridNeighbor.hh"
 #include "Neighbor/TreeNeighbor.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
@@ -1166,8 +1167,10 @@ computeConnectivity() {
   using FlatIntSpan = typename ConnectivityMap<Dimension>::FlatConnectivitySpan;
 #ifdef SPHERAL_UNIFIED_MEMORY
   using FlatVectorSpan = SPHERAL_SPAN_TYPE<Vector>;
+  using FlatDescriptorSpan = SPHERAL_SPAN_TYPE<NeighborGroupDescriptor>;
 #else
   using FlatVectorSpan = chai::ManagedArray<Vector>;
+  using FlatDescriptorSpan = chai::ManagedArray<NeighborGroupDescriptor>;
 #endif
   FlatIntSpan offsetsSpan;
   GPUUtils::initMAView(offsetsSpan, mOffsets);
@@ -1180,122 +1183,138 @@ computeConnectivity() {
   GPUUtils::initMAView(firstGhostNodesSpan, firstGhostNodes);
   GPUUtils::touch(firstGhostNodesSpan, chai::CPU);
   std::vector<int> neighborSearchTypes(numNodeLists);
-  std::vector<const TreeNeighbor<Dimension>*> treeNeighbors(numNodeLists, nullptr);
   for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
     neighborSearchTypes[nodeList] = int(mNodeLists[nodeList]->neighbor().neighborSearchType());
-    treeNeighbors[nodeList] = dynamic_cast<const TreeNeighbor<Dimension>*>(&(mNodeLists[nodeList]->neighbor()));
   }
   FlatIntSpan neighborSearchTypesSpan;
   GPUUtils::initMAView(neighborSearchTypesSpan, neighborSearchTypes);
   GPUUtils::touch(neighborSearchTypesSpan, chai::CPU);
 
-  // Precompute the unique master groups on the host, then flatten the pieces
-  // the connectivity count/fill passes actually need.
-  std::vector<int> groupTaskOffsets(1, 0);
-  std::vector<int> groupSeedNodeListIDs;
-  std::vector<int> groupSeedNodeIDs;
-  std::vector<int> groupRawCoarseOffsets(1, 0);
-  std::vector<int> groupRawCoarseNeighbors;
-  std::vector<int> taskGroupIDs;
-  std::vector<int> taskNodeListIDs;
-  std::vector<int> taskNodeIDs;
-  std::vector<std::vector<int>> nodeDone(numNodeLists);
-  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
-    const auto n = (ghostConnectivity ?
-                    mNodeLists[nodeList]->numNodes() :
-                    mNodeLists[nodeList]->numInternalNodes());
-    nodeDone[nodeList].assign(n, 0);
-  }
-
-  auto numNeighborGroups = 0u;
-  std::vector<int> masterList;
-  std::vector<int> coarseNeighbors;
+  // Group nodes by identical per-NodeList descriptors of their own query
+  // state. This replaces the old sequential "first seed claims a group"
+  // ownership discovery with a canonical key-based grouping.
+  std::vector<int> seedNodeListIDs;
+  std::vector<int> seedNodeIDs;
+  seedNodeListIDs.reserve(connectivitySize);
+  seedNodeIDs.reserve(connectivitySize);
   for (auto iiNodeList = 0u; iiNodeList < numNodeLists; ++iiNodeList) {
     const auto nii = (ghostConnectivity ?
                       mNodeLists[iiNodeList]->numNodes() :
                       mNodeLists[iiNodeList]->numInternalNodes());
     for (auto ii = 0u; ii < nii; ++ii) {
-      if (nodeDone[iiNodeList][ii] == 0) {
-        groupSeedNodeListIDs.push_back(iiNodeList);
-        groupSeedNodeIDs.push_back(ii);
-        for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-          if (treeNeighbors[nodeListi] != nullptr) {
-            const auto coarseBegin = groupRawCoarseNeighbors.size();
-            const auto coarseCount = treeNeighbors[nodeListi]->countTreeCoarseNeighbors(position(iiNodeList, ii),
-                                                                                        H(iiNodeList, ii));
-            groupRawCoarseNeighbors.resize(coarseBegin + coarseCount);
-            if (coarseCount > 0u) {
-              treeNeighbors[nodeListi]->fillTreeCoarseNeighbors(position(iiNodeList, ii),
-                                                                H(iiNodeList, ii),
-                                                                groupRawCoarseNeighbors.data() + coarseBegin);
-            }
-            groupRawCoarseOffsets.push_back(groupRawCoarseNeighbors.size());
-
-            const auto taskBegin = taskNodeIDs.size();
-            const auto masterCount = treeNeighbors[nodeListi]->countTreeMasterList(position(iiNodeList, ii),
-                                                                                   H(iiNodeList, ii),
-                                                                                   ghostConnectivity);
-            taskGroupIDs.insert(taskGroupIDs.end(), masterCount, numNeighborGroups);
-            taskNodeListIDs.insert(taskNodeListIDs.end(), masterCount, nodeListi);
-            taskNodeIDs.resize(taskBegin + masterCount);
-            if (masterCount > 0u) {
-              treeNeighbors[nodeListi]->fillTreeMasterList(position(iiNodeList, ii),
-                                                           H(iiNodeList, ii),
-                                                           taskNodeIDs.data() + taskBegin,
-                                                           ghostConnectivity);
-            }
-            for (auto taskIndex = taskBegin; taskIndex < taskNodeIDs.size(); ++taskIndex) {
-              const auto i = taskNodeIDs[taskIndex];
-              CHECK2(nodeDone[nodeListi][i] == 0, "(" << nodeListi << " " << i << ")");
-              nodeDone[nodeListi][i] = 1;
-            }
-          } else {
-            masterList.clear();
-            coarseNeighbors.clear();
-            mNodeLists[nodeListi]->neighbor().setMasterList(position(iiNodeList, ii),
-                                                            H(iiNodeList, ii),
-                                                            masterList,
-                                                            coarseNeighbors,
-                                                            ghostConnectivity);
-            groupRawCoarseNeighbors.insert(groupRawCoarseNeighbors.end(),
-                                           coarseNeighbors.begin(),
-                                           coarseNeighbors.end());
-            groupRawCoarseOffsets.push_back(groupRawCoarseNeighbors.size());
-
-            for (const auto i: masterList) {
-              CHECK2(nodeDone[nodeListi][i] == 0, "(" << nodeListi << " " << i << ")");
-              nodeDone[nodeListi][i] = 1;
-              taskGroupIDs.push_back(numNeighborGroups);
-              taskNodeListIDs.push_back(nodeListi);
-              taskNodeIDs.push_back(i);
-            }
-          }
-        }
-        groupTaskOffsets.push_back(taskNodeIDs.size());
-
-        ++numNeighborGroups;
-      }
+      seedNodeListIDs.push_back(iiNodeList);
+      seedNodeIDs.push_back(ii);
     }
   }
-  CHECK(groupTaskOffsets.size() == numNeighborGroups + 1u);
-  CHECK(groupRawCoarseOffsets.size() == numNeighborGroups*numNodeLists + 1u);
-  CHECK(taskNodeIDs.size() == connectivitySize);
+  CHECK(seedNodeIDs.size() == connectivitySize);
+  FlatIntSpan seedNodeListIDsSpan;
+  GPUUtils::initMAView(seedNodeListIDsSpan, seedNodeListIDs);
+  GPUUtils::touch(seedNodeListIDsSpan, chai::CPU);
+  FlatIntSpan seedNodeIDsSpan;
+  GPUUtils::initMAView(seedNodeIDsSpan, seedNodeIDs);
+  GPUUtils::touch(seedNodeIDsSpan, chai::CPU);
 
-  FlatIntSpan groupTaskOffsetsSpan;
-  GPUUtils::initMAView(groupTaskOffsetsSpan, groupTaskOffsets);
-  GPUUtils::touch(groupTaskOffsetsSpan, chai::CPU);
+  std::vector<NeighborGroupDescriptor> seedDescriptors(connectivitySize*numNodeLists);
+  FlatDescriptorSpan seedDescriptorsSpan;
+  GPUUtils::initMAView(seedDescriptorsSpan, seedDescriptors);
+  GPUUtils::touch(seedDescriptorsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(connectivitySize*numNodeLists)),
+  [&](int entryIndex) {
+    const auto seedIndex = size_t(entryIndex) / numNodeLists;
+    const auto nodeListi = size_t(entryIndex) % numNodeLists;
+    const auto iiNodeList = size_t(seedNodeListIDsSpan[seedIndex]);
+    const auto ii = seedNodeIDsSpan[seedIndex];
+    seedDescriptorsSpan[entryIndex] =
+      mNodeLists[nodeListi]->neighbor().groupDescriptor(position(iiNodeList, ii),
+                                                        H(iiNodeList, ii),
+                                                        seedIndex);
+  });
+  GPUUtils::touch(seedDescriptorsSpan, chai::CPU);
+
+  std::vector<int> sortedSeedIndices(connectivitySize);
+  for (auto i = 0u; i < connectivitySize; ++i) sortedSeedIndices[i] = i;
+  std::sort(sortedSeedIndices.begin(), sortedSeedIndices.end(),
+            [&](const int lhs, const int rhs) {
+              for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+                const auto& ldesc = seedDescriptorsSpan[size_t(lhs)*numNodeLists + nodeListi];
+                const auto& rdesc = seedDescriptorsSpan[size_t(rhs)*numNodeLists + nodeListi];
+                if (ldesc < rdesc) return true;
+                if (rdesc < ldesc) return false;
+              }
+              return lhs < rhs;
+            });
+
+  std::vector<int> descriptorRunOffsets(1, 0);
+  for (auto sortedIndex = 1u; sortedIndex < connectivitySize; ++sortedIndex) {
+    const auto seedIndex = sortedSeedIndices[sortedIndex];
+    const auto repSeed = sortedSeedIndices[sortedIndex - 1u];
+    auto same = true;
+    for (auto nodeListi = 0u; nodeListi < numNodeLists and same; ++nodeListi) {
+      same = (seedDescriptorsSpan[size_t(seedIndex)*numNodeLists + nodeListi] ==
+              seedDescriptorsSpan[size_t(repSeed)*numNodeLists + nodeListi]);
+    }
+    if (not same) descriptorRunOffsets.push_back(sortedIndex);
+  }
+  descriptorRunOffsets.push_back(connectivitySize);
+
+  const auto numNeighborGroups = descriptorRunOffsets.size() - 1u;
+  std::vector<int> groupRepresentativeSeeds(numNeighborGroups);
+  std::vector<int> groupSeedCounts(numNeighborGroups);
+  for (auto groupIndex = 0u; groupIndex < numNeighborGroups; ++groupIndex) {
+    const auto begin = descriptorRunOffsets[groupIndex];
+    const auto end = descriptorRunOffsets[groupIndex + 1u];
+    groupRepresentativeSeeds[groupIndex] = sortedSeedIndices[begin];
+    groupSeedCounts[groupIndex] = end - begin;
+  }
+
+  std::vector<int> groupOrder(numNeighborGroups);
+  for (auto i = 0u; i < numNeighborGroups; ++i) groupOrder[i] = i;
+  std::sort(groupOrder.begin(), groupOrder.end(),
+            [&](const int lhs, const int rhs) {
+              return groupRepresentativeSeeds[lhs] < groupRepresentativeSeeds[rhs];
+            });
+
+  std::vector<int> orderedGroupRepresentativeSeeds(numNeighborGroups);
+  std::vector<int> orderedGroupSeedCounts(numNeighborGroups);
+  for (auto groupIndex = 0u; groupIndex < numNeighborGroups; ++groupIndex) {
+    const auto sourceGroup = size_t(groupOrder[groupIndex]);
+    orderedGroupRepresentativeSeeds[groupIndex] = groupRepresentativeSeeds[sourceGroup];
+    orderedGroupSeedCounts[groupIndex] = groupSeedCounts[sourceGroup];
+  }
+  std::vector<int> groupedSeedOffsets;
+  countsToOffsets(orderedGroupSeedCounts, groupedSeedOffsets);
+  std::vector<int> groupedSeedIndices(groupedSeedOffsets.back());
+  for (auto groupIndex = 0u; groupIndex < numNeighborGroups; ++groupIndex) {
+    const auto sourceGroup = size_t(groupOrder[groupIndex]);
+    const auto begin = descriptorRunOffsets[sourceGroup];
+    const auto end = descriptorRunOffsets[sourceGroup + 1u];
+    CHECK(groupedSeedOffsets[groupIndex + 1u] - groupedSeedOffsets[groupIndex] == end - begin);
+    std::copy(sortedSeedIndices.begin() + begin,
+              sortedSeedIndices.begin() + end,
+              groupedSeedIndices.begin() + groupedSeedOffsets[groupIndex]);
+  }
+
+  std::vector<int> groupTaskOffsets = groupedSeedOffsets;
+  std::vector<int> groupSeedNodeListIDs(numNeighborGroups);
+  std::vector<int> groupSeedNodeIDs(numNeighborGroups);
+  std::vector<int> taskGroupIDs(connectivitySize);
+  std::vector<int> taskNodeListIDs(connectivitySize);
+  std::vector<int> taskNodeIDs(connectivitySize);
+  FlatIntSpan orderedGroupRepresentativeSeedsSpan;
+  GPUUtils::initMAView(orderedGroupRepresentativeSeedsSpan, orderedGroupRepresentativeSeeds);
+  GPUUtils::touch(orderedGroupRepresentativeSeedsSpan, chai::CPU);
+  FlatIntSpan groupedSeedOffsetsSpan;
+  GPUUtils::initMAView(groupedSeedOffsetsSpan, groupedSeedOffsets);
+  GPUUtils::touch(groupedSeedOffsetsSpan, chai::CPU);
+  FlatIntSpan groupedSeedIndicesSpan;
+  GPUUtils::initMAView(groupedSeedIndicesSpan, groupedSeedIndices);
+  GPUUtils::touch(groupedSeedIndicesSpan, chai::CPU);
   FlatIntSpan groupSeedNodeListIDsSpan;
   GPUUtils::initMAView(groupSeedNodeListIDsSpan, groupSeedNodeListIDs);
   GPUUtils::touch(groupSeedNodeListIDsSpan, chai::CPU);
   FlatIntSpan groupSeedNodeIDsSpan;
   GPUUtils::initMAView(groupSeedNodeIDsSpan, groupSeedNodeIDs);
   GPUUtils::touch(groupSeedNodeIDsSpan, chai::CPU);
-  FlatIntSpan groupRawCoarseOffsetsSpan;
-  GPUUtils::initMAView(groupRawCoarseOffsetsSpan, groupRawCoarseOffsets);
-  GPUUtils::touch(groupRawCoarseOffsetsSpan, chai::CPU);
-  FlatIntSpan groupRawCoarseNeighborsSpan;
-  GPUUtils::initMAView(groupRawCoarseNeighborsSpan, groupRawCoarseNeighbors);
-  GPUUtils::touch(groupRawCoarseNeighborsSpan, chai::CPU);
   FlatIntSpan taskGroupIDsSpan;
   GPUUtils::initMAView(taskGroupIDsSpan, taskGroupIDs);
   GPUUtils::touch(taskGroupIDsSpan, chai::CPU);
@@ -1305,6 +1324,111 @@ computeConnectivity() {
   FlatIntSpan taskNodeIDsSpan;
   GPUUtils::initMAView(taskNodeIDsSpan, taskNodeIDs);
   GPUUtils::touch(taskNodeIDsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups)),
+  [&](int groupIndex) {
+    const auto repSeed = size_t(orderedGroupRepresentativeSeedsSpan[groupIndex]);
+    groupSeedNodeListIDsSpan[groupIndex] = seedNodeListIDsSpan[repSeed];
+    groupSeedNodeIDsSpan[groupIndex] = seedNodeIDsSpan[repSeed];
+    for (auto seedOffset = groupedSeedOffsetsSpan[groupIndex];
+         seedOffset < groupedSeedOffsetsSpan[groupIndex + 1u];
+         ++seedOffset) {
+      const auto seedIndex = size_t(groupedSeedIndicesSpan[seedOffset]);
+      taskGroupIDsSpan[seedOffset] = groupIndex;
+      taskNodeListIDsSpan[seedOffset] = seedNodeListIDsSpan[seedIndex];
+      taskNodeIDsSpan[seedOffset] = seedNodeIDsSpan[seedIndex];
+    }
+  });
+  GPUUtils::touch(groupSeedNodeListIDsSpan, chai::CPU);
+  GPUUtils::touch(groupSeedNodeIDsSpan, chai::CPU);
+  GPUUtils::touch(taskGroupIDsSpan, chai::CPU);
+  GPUUtils::touch(taskNodeListIDsSpan, chai::CPU);
+  GPUUtils::touch(taskNodeIDsSpan, chai::CPU);
+
+  auto countDescriptorCoarseNeighbors = [&](const size_t repSeed,
+                                            const size_t nodeListi) -> int {
+    const auto& neighbor = mNodeLists[nodeListi]->neighbor();
+    const auto& descriptor = seedDescriptorsSpan[repSeed*numNodeLists + nodeListi];
+    if (descriptor.kind == 1) {
+      const auto* treeNeighbor = dynamic_cast<const TreeNeighbor<Dimension>*>(&neighbor);
+      CHECK(treeNeighbor != nullptr);
+      return treeNeighbor->countTreeCoarseNeighbors(descriptor.level, descriptor.key);
+    } else if (descriptor.kind == 2) {
+      const auto* nestedNeighbor = dynamic_cast<const NestedGridNeighbor<Dimension>*>(&neighbor);
+      CHECK(nestedNeighbor != nullptr);
+      return nestedNeighbor->countNestedCoarseNeighbors(descriptor.level, descriptor.key);
+    } else {
+      const auto repNodeList = size_t(seedNodeListIDsSpan[repSeed]);
+      const auto repNode = seedNodeIDsSpan[repSeed];
+      return neighbor.countCoarseNeighbors(position(repNodeList, repNode),
+                                           H(repNodeList, repNode),
+                                           ghostConnectivity);
+    }
+  };
+
+  auto fillDescriptorCoarseNeighbors = [&](const size_t repSeed,
+                                           const size_t nodeListi,
+                                           int* result) {
+    const auto& neighbor = mNodeLists[nodeListi]->neighbor();
+    const auto& descriptor = seedDescriptorsSpan[repSeed*numNodeLists + nodeListi];
+    if (descriptor.kind == 1) {
+      const auto* treeNeighbor = dynamic_cast<const TreeNeighbor<Dimension>*>(&neighbor);
+      CHECK(treeNeighbor != nullptr);
+      treeNeighbor->fillTreeCoarseNeighbors(descriptor.level, descriptor.key, result);
+    } else if (descriptor.kind == 2) {
+      const auto* nestedNeighbor = dynamic_cast<const NestedGridNeighbor<Dimension>*>(&neighbor);
+      CHECK(nestedNeighbor != nullptr);
+      nestedNeighbor->fillNestedCoarseNeighbors(descriptor.level, descriptor.key, result);
+    } else {
+      const auto repNodeList = size_t(seedNodeListIDsSpan[repSeed]);
+      const auto repNode = seedNodeIDsSpan[repSeed];
+      neighbor.fillCoarseNeighbors(position(repNodeList, repNode),
+                                   H(repNodeList, repNode),
+                                   result,
+                                   ghostConnectivity);
+    }
+  };
+
+  std::vector<int> groupRawCoarseCounts(numNeighborGroups*numNodeLists);
+  FlatIntSpan groupRawCoarseCountsSpan;
+  GPUUtils::initMAView(groupRawCoarseCountsSpan, groupRawCoarseCounts);
+  GPUUtils::touch(groupRawCoarseCountsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
+  [&](int entryIndex) {
+    const auto groupIndex = size_t(entryIndex) / numNodeLists;
+    const auto nodeListi = size_t(entryIndex) % numNodeLists;
+    const auto repSeed = size_t(orderedGroupRepresentativeSeedsSpan[groupIndex]);
+    groupRawCoarseCountsSpan[entryIndex] = countDescriptorCoarseNeighbors(repSeed, nodeListi);
+  });
+  GPUUtils::touch(groupRawCoarseCountsSpan, chai::CPU);
+  std::vector<int> groupRawCoarseOffsets;
+  countsToOffsets(groupRawCoarseCounts, groupRawCoarseOffsets);
+  FlatIntSpan groupRawCoarseOffsetsSpan;
+  GPUUtils::initMAView(groupRawCoarseOffsetsSpan, groupRawCoarseOffsets);
+  GPUUtils::touch(groupRawCoarseOffsetsSpan, chai::CPU);
+  std::vector<int> groupRawCoarseNeighbors(groupRawCoarseOffsets.back());
+  FlatIntSpan groupRawCoarseNeighborsSpan;
+  GPUUtils::initMAView(groupRawCoarseNeighborsSpan, groupRawCoarseNeighbors);
+  GPUUtils::touch(groupRawCoarseNeighborsSpan, chai::CPU);
+  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
+  [&](int entryIndex) {
+    const auto groupIndex = size_t(entryIndex) / numNodeLists;
+    const auto nodeListi = size_t(entryIndex) % numNodeLists;
+    const auto repSeed = size_t(orderedGroupRepresentativeSeedsSpan[groupIndex]);
+    const auto count = groupRawCoarseCountsSpan[entryIndex];
+    if (count > 0) {
+      fillDescriptorCoarseNeighbors(repSeed,
+                                    nodeListi,
+                                    groupRawCoarseNeighborsSpan.data() + groupRawCoarseOffsetsSpan[entryIndex]);
+    }
+  });
+  GPUUtils::touch(groupRawCoarseNeighborsSpan, chai::CPU);
+  CHECK(groupTaskOffsets.size() == numNeighborGroups + 1u);
+  CHECK(groupRawCoarseOffsets.size() == numNeighborGroups*numNodeLists + 1u);
+  CHECK(taskNodeIDs.size() == connectivitySize);
+
+  FlatIntSpan groupTaskOffsetsSpan;
+  GPUUtils::initMAView(groupTaskOffsetsSpan, groupTaskOffsets);
+  GPUUtils::touch(groupTaskOffsetsSpan, chai::CPU);
 
   std::vector<Vector> groupMinMasterPosition(numNeighborGroups);
   std::vector<Vector> groupMaxMasterPosition(numNeighborGroups);
@@ -1770,16 +1894,8 @@ computeConnectivity() {
 
   // Post conditions.
   BEGIN_CONTRACT_SCOPE
-  // Make sure that the correct number of nodes have been completed.
-  for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
-    const auto n = (ghostConnectivity ? 
-                    mNodeLists[iNodeList]->numNodes() :
-                    mNodeLists[iNodeList]->numInternalNodes());
-    for (auto i = 0u; i < n; ++i) {
-      ENSURE2(nodeDone[iNodeList][i] == 1,
-              "Missed connnectivity for (" << iNodeList << " " << i << ")");
-    }
-  }
+  ENSURE2(taskNodeIDs.size() == connectivitySize,
+          "Missed connectivity tasks: " << taskNodeIDs.size() << " " << connectivitySize);
   // Make sure we're ready to be used.
   ENSURE(valid());
   END_CONTRACT_SCOPE

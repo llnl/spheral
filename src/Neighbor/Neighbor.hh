@@ -10,6 +10,7 @@
 #include "Geometry/Dimension.hh"
 #include "Geometry/GeomPlane.hh"
 
+#include <stdint.h>
 #include <vector>
 
 namespace Spheral {
@@ -22,6 +23,23 @@ enum class NeighborSearchType {
   Gather = 1,
   Scatter = 2,
   GatherScatter = 3
+};
+
+struct NeighborGroupDescriptor {
+  int kind = 0;
+  int level = 0;
+  uint64_t key = 0;
+
+  bool operator==(const NeighborGroupDescriptor& rhs) const {
+    return kind == rhs.kind and level == rhs.level and key == rhs.key;
+  }
+
+  bool operator<(const NeighborGroupDescriptor& rhs) const {
+    return (kind < rhs.kind or
+            (kind == rhs.kind and
+             (level < rhs.level or
+              (level == rhs.level and key < rhs.key))));
+  }
 };
 
 template<typename Dimension>
@@ -100,6 +118,25 @@ public:
                              std::vector<int>& masterList,
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const = 0;
+
+  // Count/fill interfaces for preprocessing flat connectivity structures.
+  virtual size_t countMasterList(const Vector& position,
+                                 const SymTensor& H,
+                                 const bool ghostConnectivity = false) const;
+  virtual void fillMasterList(const Vector& position,
+                              const SymTensor& H,
+                              int* result,
+                              const bool ghostConnectivity = false) const;
+  virtual size_t countCoarseNeighbors(const Vector& position,
+                                      const SymTensor& H,
+                                      const bool ghostConnectivity = false) const;
+  virtual void fillCoarseNeighbors(const Vector& position,
+                                   const SymTensor& H,
+                                   int* result,
+                                   const bool ghostConnectivity = false) const;
+  virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
+                                                  const SymTensor& H,
+                                                  const uint64_t fallbackToken) const;
 
   virtual void setRefineNeighborList(const Vector& position,
                                      const Scalar& H,

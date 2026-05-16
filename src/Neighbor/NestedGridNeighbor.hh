@@ -10,6 +10,7 @@
 
 #include "Neighbor.hh"
 #include "GridCellIndex.hh"
+#include "NestedGridNeighborView.hh"
 #include "Utilities/SafeIndexMap.hh"
 
 #include <vector>
@@ -62,6 +63,23 @@ public:
                              std::vector<int>& masterList,
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const override;
+  virtual size_t countMasterList(const Vector& position,
+                                 const SymTensor& H,
+                                 const bool ghostConnectivity = false) const override;
+  virtual void fillMasterList(const Vector& position,
+                              const SymTensor& H,
+                              int* result,
+                              const bool ghostConnectivity = false) const override;
+  virtual size_t countCoarseNeighbors(const Vector& position,
+                                      const SymTensor& H,
+                                      const bool ghostConnectivity = false) const override;
+  virtual void fillCoarseNeighbors(const Vector& position,
+                                   const SymTensor& H,
+                                   int* result,
+                                   const bool ghostConnectivity = false) const override;
+  virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
+                                                  const SymTensor& H,
+                                                  const uint64_t fallbackToken) const override;
 
   virtual void setMasterList(const Vector& position,
                              std::vector<int>& masterList,
@@ -176,6 +194,13 @@ public:
   // Allow read only access to some of the more interesting member data.
   const std::vector<double>& gridCellSizeInv() const;
   const std::vector< std::vector<GC > >& nodeInCell() const;
+  NestedGridNeighborView<Dimension> view() const {
+    return NestedGridNeighborView<Dimension>(mMaxGridLevels,
+                                             mViewLevelOffsetsSpan,
+                                             mViewCellKeysSpan,
+                                             mViewMemberOffsetsSpan,
+                                             mViewMembersSpan);
+  }
 
   // The flag indicating the end of a linked list of nodes.
   int endOfLinkList() const;
@@ -185,6 +210,11 @@ public:
 
   // Allow outside users to be able to directly set master info for a given
   // grid cell and grid level.
+  size_t countNestedCoarseNeighbors(const int gridLevel,
+                                    const uint64_t packedCellKey) const;
+  void fillNestedCoarseNeighbors(const int gridLevel,
+                                 const uint64_t packedCellKey,
+                                 int* result) const;
   void setNestedMasterList(const GC& gridCell,
                            const int gridLevel,
                            std::vector<int>& masterList,
@@ -199,6 +229,7 @@ private:
   // Private functions.
   bool readyToAssignNodes() const;
   void rebuildOccupiedGridCells();
+  void rebuildView();
   void linkNode(const int nodeID,
                 const int gridLevelID,
                 const GC& gridCellID);
@@ -237,10 +268,27 @@ private:
 
   // The set of grid cells that are actually occupied.
   std::vector< std::vector<GC> > mOccupiedGridCells;
+  std::vector<int> mViewLevelOffsets;
+  std::vector<uint64_t> mViewCellKeys;
+  std::vector<int> mViewMemberOffsets;
+  std::vector<int> mViewMembers;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  SPHERAL_SPAN_TYPE<int> mViewLevelOffsetsSpan;
+  SPHERAL_SPAN_TYPE<uint64_t> mViewCellKeysSpan;
+  SPHERAL_SPAN_TYPE<int> mViewMemberOffsetsSpan;
+  SPHERAL_SPAN_TYPE<int> mViewMembersSpan;
+#else
+  chai::ManagedArray<int> mViewLevelOffsetsSpan;
+  chai::ManagedArray<uint64_t> mViewCellKeysSpan;
+  chai::ManagedArray<int> mViewMemberOffsetsSpan;
+  chai::ManagedArray<int> mViewMembersSpan;
+#endif
 
   static const double ln2inverse;
   static const int mEndOfLinkList;
   static const int mGridNormalMagnitude;
+  static const unsigned numGridCellBits = 21u;
+  static const uint64_t gridCellIndexBias = 1u << 20;
 };
 
 //------------------------------------------------------------------------------

@@ -216,6 +216,68 @@ setRefineNeighborList(int nodeID,
 }
 
 //------------------------------------------------------------------------------
+// Default count/fill master/coarse list interfaces built on the legacy vector
+// API. Descendent classes can override these to avoid host-side staging.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+size_t
+Neighbor<Dimension>::
+countMasterList(const Vector& position,
+                const SymTensor& H,
+                const bool ghostConnectivity) const {
+  std::vector<int> masterList, coarseNeighbors;
+  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  return masterList.size();
+}
+
+template<typename Dimension>
+void
+Neighbor<Dimension>::
+fillMasterList(const Vector& position,
+               const SymTensor& H,
+               int* result,
+               const bool ghostConnectivity) const {
+  std::vector<int> masterList, coarseNeighbors;
+  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  std::copy(masterList.begin(), masterList.end(), result);
+}
+
+template<typename Dimension>
+size_t
+Neighbor<Dimension>::
+countCoarseNeighbors(const Vector& position,
+                     const SymTensor& H,
+                     const bool ghostConnectivity) const {
+  std::vector<int> masterList, coarseNeighbors;
+  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  return coarseNeighbors.size();
+}
+
+template<typename Dimension>
+void
+Neighbor<Dimension>::
+fillCoarseNeighbors(const Vector& position,
+                    const SymTensor& H,
+                    int* result,
+                    const bool ghostConnectivity) const {
+  std::vector<int> masterList, coarseNeighbors;
+  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  std::copy(coarseNeighbors.begin(), coarseNeighbors.end(), result);
+}
+
+template<typename Dimension>
+NeighborGroupDescriptor
+Neighbor<Dimension>::
+groupDescriptor(const Vector&,
+                const SymTensor&,
+                const uint64_t fallbackToken) const {
+  NeighborGroupDescriptor result;
+  result.kind = 0;
+  result.key = fallbackToken;
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // General precull routine.  Select nodes based on a range of positions and
 // extents.
 //------------------------------------------------------------------------------

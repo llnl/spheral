@@ -27,6 +27,7 @@ set(Neighbor_headers
     NeighborInline.hh
     NestedGridNeighbor.hh
     NestedGridNeighborInline.hh
+    NestedGridNeighborView.hh
     NodePairIdxType.hh
     NodePairList.hh
     NodePairListView.hh
