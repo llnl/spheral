@@ -459,9 +459,9 @@ Integrator<Dimension>::setGhostNodes() const {
         const auto& nodeList = *nodeListPtr;
         for (auto i = 0u; i < nodeList.numInternalNodes(); ++i) {
           flags(nodeListi, i) = 1;
-          const vector<vector<int> >& fullConnectivity = cm.connectivityForNode(&nodeList, i);
+          const auto fullConnectivity = cm.connectivityForNodeView(&nodeList, i);
           for (auto nodeListj = 0u; nodeListj < fullConnectivity.size(); ++nodeListj) {
-            const vector<int>& connectivity = fullConnectivity[nodeListj];
+            const auto connectivity = fullConnectivity[nodeListj];
             for (auto j: connectivity) flags(nodeListj, j) = 1;
           }
         }

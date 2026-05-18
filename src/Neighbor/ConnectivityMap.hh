@@ -86,6 +86,15 @@ public:
   std::shared_ptr<NodePairList> nodePairListPtr() const;
   ConnectivityMapFlatView connectivityFlatView() const;
   ConnectivityMapFlatView overlapConnectivityFlatView() const;
+  ConnectivityMapBlockView connectivityForNodeView(const NodeList<Dimension>* nodeListPtr,
+                                                   const int nodeID) const;
+  ConnectivityMapBlockView connectivityForNodeView(const int nodeListID,
+                                                   const int nodeID) const;
+  ConnectivityMapBlockView overlapConnectivityForNodeView(const NodeList<Dimension>* nodeListPtr,
+                                                          const int nodeID) const;
+  ConnectivityMapBlockView overlapConnectivityForNodeView(const int nodeListID,
+                                                          const int nodeID) const;
+  ConnectivityMapBlockView intersectionConnectivityView(const NodePairIdxType& pair) const;
 
   // A functor to specify the coupling between nodes
   NodeCoupling& coupling();
@@ -198,7 +207,7 @@ private:
   // [offset[NodeList] + nodeID] [NodeListID] [neighborIndex]
   using ConnectivityStorageType = std::vector<std::vector<std::vector<int>>>;
   std::vector<int> mOffsets;
-  ConnectivityStorageType mConnectivity;
+  mutable ConnectivityStorageType mConnectivity;
   std::vector<int> mConnectivityFlatOffsets;
   std::vector<int> mConnectivityFlatNeighbors;
   FlatConnectivitySpan mConnectivityFlatOffsetsSpan;
@@ -208,14 +217,18 @@ private:
   std::shared_ptr<NodePairList> mNodePairListPtr;
 
   // Same for overlap connectivity.
-  ConnectivityStorageType mOverlapConnectivity;
+  mutable ConnectivityStorageType mOverlapConnectivity;
   std::vector<int> mOverlapConnectivityFlatOffsets;
   std::vector<int> mOverlapConnectivityFlatNeighbors;
   FlatConnectivitySpan mOverlapConnectivityFlatOffsetsSpan;
   FlatConnectivitySpan mOverlapConnectivityFlatNeighborsSpan;
 
   // The set of node indices per Nodelist in order for traversal.
-  std::vector<std::vector<int>> mNodeTraversalIndices;
+  std::vector<int> mNodeTraversalOffsets;
+  std::vector<int> mNodeTraversalIndicesFlat;
+  FlatConnectivitySpan mNodeTraversalOffsetsSpan;
+  FlatConnectivitySpan mNodeTraversalIndicesFlatSpan;
+  mutable std::vector<std::vector<int>> mNodeTraversalIndices;
 
   // The set of keys we may compute for each node.
   using Key = typename KeyTraits::Key;
@@ -226,12 +239,26 @@ private:
 
   // The connectivity intersections, if we're keeping them.
   using IntersectionConnectivityContainer = std::unordered_map<NodePairIdxType, std::vector<std::vector<int>>>;
-  IntersectionConnectivityContainer mIntersectionConnectivity;
+  mutable IntersectionConnectivityContainer mIntersectionConnectivity;
+  std::vector<int> mIntersectionConnectivityFlatOffsets;
+  std::vector<int> mIntersectionConnectivityFlatNeighbors;
+  FlatConnectivitySpan mIntersectionConnectivityFlatOffsetsSpan;
+  FlatConnectivitySpan mIntersectionConnectivityFlatNeighborsSpan;
+  mutable bool mConnectivityCacheValid;
+  mutable bool mOverlapConnectivityCacheValid;
+  mutable bool mNodeTraversalCacheValid;
+  mutable bool mIntersectionConnectivityCacheValid;
 
   // Internal method to fill in the connectivity, once the set of NodeLists 
   // is determined.
   void computeConnectivity();
   void rebuildFlatConnectivityViews();
+  void rebuildFlatTraversalViews();
+  void rebuildFlatIntersectionConnectivityViews();
+  void ensureConnectivityCache() const;
+  void ensureOverlapConnectivityCache() const;
+  void ensureTraversalCache() const;
+  void ensureIntersectionConnectivityCache() const;
 
   // No default constructor, copying, or assignment.
   ConnectivityMap(const ConnectivityMap&);

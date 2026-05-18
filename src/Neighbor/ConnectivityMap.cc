@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <tuple>
 using std::vector;
 using std::map;
 using std::string;
@@ -29,19 +30,6 @@ using std::pair;
 namespace Spheral {
 
 namespace {
-//------------------------------------------------------------------------------
-// Append v2 to the end of v1
-//------------------------------------------------------------------------------
-template<typename T>
-inline
-void
-appendSTLvectors(std::vector<T>& v1, std::vector<T>& v2) {
-  if (not v2.empty()) {
-    v1.reserve(v1.size() + v2.size());
-    v1.insert(v1.end(), v2.begin(), v2.end());
-  }
-}
-
 //------------------------------------------------------------------------------
 // How should we compare pairs for sorting?
 //------------------------------------------------------------------------------
@@ -54,43 +42,6 @@ hashKeys(const KeyTraits::Key& a, const KeyTraits::Key& b) {
   //         a + b * b);          // where a, b >= 0
   // return a + b;
   return ((KeyTraits::Key(a) << 16) | KeyTraits::Key(b));
-}
-
-//------------------------------------------------------------------------------
-// Flatten the legacy ragged connectivity into CSR-like storage over
-// (global node index, neighbor node list) entries.
-//------------------------------------------------------------------------------
-inline
-void
-flattenConnectivity(const std::vector<std::vector<std::vector<int>>>& source,
-                    const size_t numNodeLists,
-                    std::vector<int>& flatOffsets,
-                    std::vector<int>& flatNeighbors) {
-  const auto numEntries = source.size()*numNodeLists;
-  flatOffsets.resize(numEntries + 1u);
-  flatOffsets[0] = 0;
-  auto offset = 0;
-  auto entry = 0u;
-  for (const auto& neighborsPerNode: source) {
-    CHECK(neighborsPerNode.size() == numNodeLists);
-    for (const auto& neighborsPerNodeList: neighborsPerNode) {
-      offset += neighborsPerNodeList.size();
-      ++entry;
-      flatOffsets[entry] = offset;
-    }
-  }
-  CHECK(entry == numEntries);
-
-  flatNeighbors.clear();
-  flatNeighbors.reserve(offset);
-  for (const auto& neighborsPerNode: source) {
-    for (const auto& neighborsPerNodeList: neighborsPerNode) {
-      flatNeighbors.insert(flatNeighbors.end(),
-                           neighborsPerNodeList.begin(),
-                           neighborsPerNodeList.end());
-    }
-  }
-  CHECK(flatOffsets.back() == int(flatNeighbors.size()));
 }
 
 //------------------------------------------------------------------------------
@@ -354,6 +305,219 @@ flatConnectivityForNode(const ConnectivityMapFlatView& connectivity,
 }
 
 //------------------------------------------------------------------------------
+// Number of global-node entries stored for the given NodeList in a flat layout.
+//------------------------------------------------------------------------------
+inline
+size_t
+nodeListEntryCount(const std::vector<int>& offsets,
+                   const size_t totalEntries,
+                   const size_t nodeList) {
+  CHECK(nodeList < offsets.size());
+  return size_t((nodeList + 1u < offsets.size() ? offsets[nodeList + 1u] : totalEntries) - offsets[nodeList]);
+}
+
+//------------------------------------------------------------------------------
+// Build the canonical flat traversal ordering directly.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Key>
+inline
+void
+buildTraversalOrdering(const std::vector<const NodeList<Dimension>*>& nodeLists,
+                       const FieldList<Dimension, Key>& keys,
+                       const bool domainDecompIndependent,
+                       std::vector<int>& flatOffsets,
+                       std::vector<int>& flatIndices) {
+  const auto numNodeLists = nodeLists.size();
+  flatOffsets.resize(numNodeLists + 1u);
+  flatOffsets[0] = 0;
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    flatOffsets[iNodeList + 1u] = flatOffsets[iNodeList] +
+                                  (domainDecompIndependent ?
+                                   nodeLists[iNodeList]->numNodes() :
+                                   nodeLists[iNodeList]->numInternalNodes());
+  }
+
+  flatIndices.resize(flatOffsets.back());
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto beginOffset = size_t(flatOffsets[iNodeList]);
+    const auto count = size_t(flatOffsets[iNodeList + 1u] - flatOffsets[iNodeList]);
+    if (domainDecompIndependent) {
+      std::vector<std::pair<int, Key>> orderedKeys;
+      orderedKeys.reserve(count);
+      for (auto i = 0u; i != count; ++i) orderedKeys.emplace_back(i, keys(iNodeList, i));
+      sort(orderedKeys.begin(), orderedKeys.end(), ComparePairsBySecondElement<std::pair<int, Key>>());
+      for (auto i = 0u; i != count; ++i) flatIndices[beginOffset + i] = orderedKeys[i].first;
+    } else {
+      for (auto i = 0u; i != count; ++i) flatIndices[beginOffset + i] = i;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// Patch canonical flat connectivity after node deletion/reindexing.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Key>
+inline
+void
+patchFlatConnectivity(const size_t oldNumEntries,
+                      const std::vector<int>& sourceFlatOffsets,
+                      const std::vector<int>& sourceFlatNeighbors,
+                      const std::vector<int>& oldOffsets,
+                      const std::vector<int>& newOffsets,
+                      const FieldList<Dimension, size_t>& flags,
+                      const FieldList<Dimension, size_t>& old2new,
+                      const FieldList<Dimension, Key>& keys,
+                      const bool domainDecompIndependent,
+                      const size_t numNodeLists,
+                      std::vector<int>& flatOffsets,
+                      std::vector<int>& flatNeighbors) {
+  const auto newNumEntries = size_t(newOffsets.back());
+  std::vector<int> counts(newNumEntries*numNodeLists, 0);
+
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto oldBegin = size_t(oldOffsets[iNodeList]);
+    const auto ni = nodeListEntryCount(oldOffsets, oldNumEntries, iNodeList);
+    for (auto i = 0u; i != ni; ++i) {
+      if (flags(iNodeList, i) == 0) continue;
+      const auto srcNodeIndex = oldBegin + i;
+      const auto dstNodeIndex = size_t(newOffsets[iNodeList] + old2new(iNodeList, i));
+      for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
+        const auto entryIndex = srcNodeIndex*numNodeLists + jNodeList;
+        auto count = 0;
+        for (auto k = sourceFlatOffsets[entryIndex]; k != sourceFlatOffsets[entryIndex + 1u]; ++k) {
+          const auto j = sourceFlatNeighbors[k];
+          if (flags(jNodeList, j) != 0) ++count;
+        }
+        counts[dstNodeIndex*numNodeLists + jNodeList] = count;
+      }
+    }
+  }
+
+  countsToOffsets(counts, flatOffsets);
+  flatNeighbors.resize(flatOffsets.back());
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto oldBegin = size_t(oldOffsets[iNodeList]);
+    const auto ni = nodeListEntryCount(oldOffsets, oldNumEntries, iNodeList);
+    for (auto i = 0u; i != ni; ++i) {
+      if (flags(iNodeList, i) == 0) continue;
+      const auto srcNodeIndex = oldBegin + i;
+      const auto dstNodeIndex = size_t(newOffsets[iNodeList] + old2new(iNodeList, i));
+      for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
+        const auto srcEntryIndex = srcNodeIndex*numNodeLists + jNodeList;
+        const auto dstEntryIndex = dstNodeIndex*numNodeLists + jNodeList;
+        auto dstOffset = size_t(flatOffsets[dstEntryIndex]);
+        if (domainDecompIndependent) {
+          std::vector<std::pair<int, Key>> neighborKeys;
+          neighborKeys.reserve(sourceFlatOffsets[srcEntryIndex + 1u] - sourceFlatOffsets[srcEntryIndex]);
+          for (auto k = sourceFlatOffsets[srcEntryIndex]; k != sourceFlatOffsets[srcEntryIndex + 1u]; ++k) {
+            const auto j = sourceFlatNeighbors[k];
+            if (flags(jNodeList, j) != 0) neighborKeys.emplace_back(old2new(jNodeList, j), keys(jNodeList, j));
+          }
+          sort(neighborKeys.begin(), neighborKeys.end(), ComparePairsBySecondElement<std::pair<int, Key>>());
+          for (const auto& entry: neighborKeys) flatNeighbors[dstOffset++] = entry.first;
+        } else {
+          std::vector<int> patchedNeighbors;
+          patchedNeighbors.reserve(sourceFlatOffsets[srcEntryIndex + 1u] - sourceFlatOffsets[srcEntryIndex]);
+          for (auto k = sourceFlatOffsets[srcEntryIndex]; k != sourceFlatOffsets[srcEntryIndex + 1u]; ++k) {
+            const auto j = sourceFlatNeighbors[k];
+            if (flags(jNodeList, j) != 0) patchedNeighbors.push_back(old2new(jNodeList, j));
+          }
+          sort(patchedNeighbors.begin(), patchedNeighbors.end());
+          for (const auto j: patchedNeighbors) flatNeighbors[dstOffset++] = j;
+        }
+        CHECK(dstOffset == size_t(flatOffsets[dstEntryIndex + 1u]));
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// Patch canonical flat traversal ordering after node deletion/reindexing.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Key>
+inline
+void
+patchTraversalOrdering(const std::vector<int>& currentOffsets,
+                       const FieldList<Dimension, size_t>& flags,
+                       const FieldList<Dimension, size_t>& old2new,
+                       const FieldList<Dimension, Key>& keys,
+                       const bool domainDecompIndependent,
+                       std::vector<int>& flatOffsets,
+                       std::vector<int>& flatIndices) {
+  const auto numNodeLists = currentOffsets.size() - 1u;
+  flatOffsets.resize(numNodeLists + 1u);
+  flatOffsets[0] = 0;
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto n = size_t(currentOffsets[iNodeList + 1u] - currentOffsets[iNodeList]);
+    auto count = 0;
+    for (auto i = 0u; i != n; ++i) count += (flags(iNodeList, i) != 0 ? 1 : 0);
+    flatOffsets[iNodeList + 1u] = flatOffsets[iNodeList] + count;
+  }
+
+  flatIndices.resize(flatOffsets.back());
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto beginOffset = size_t(flatOffsets[iNodeList]);
+    const auto n = size_t(currentOffsets[iNodeList + 1u] - currentOffsets[iNodeList]);
+    const auto count = size_t(flatOffsets[iNodeList + 1u] - flatOffsets[iNodeList]);
+    if (domainDecompIndependent) {
+      std::vector<std::pair<int, Key>> orderedKeys;
+      orderedKeys.reserve(count);
+      for (auto i = 0u; i != n; ++i) {
+        if (flags(iNodeList, i) != 0) orderedKeys.emplace_back(old2new(iNodeList, i), keys(iNodeList, i));
+      }
+      sort(orderedKeys.begin(), orderedKeys.end(), ComparePairsBySecondElement<std::pair<int, Key>>());
+      for (auto i = 0u; i != count; ++i) flatIndices[beginOffset + i] = orderedKeys[i].first;
+    } else {
+      for (auto i = 0u; i != count; ++i) flatIndices[beginOffset + i] = i;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// Patch canonical flat intersection connectivity after node deletion/reindexing.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+void
+patchIntersectionConnectivity(const std::vector<size_t>& sourcePairIndices,
+                              const size_t numNodeLists,
+                              const std::vector<int>& oldFlatOffsets,
+                              const std::vector<int>& oldFlatNeighbors,
+                              const FieldList<Dimension, size_t>& flags,
+                              const FieldList<Dimension, size_t>& old2new,
+                              std::vector<int>& flatOffsets,
+                              std::vector<int>& flatNeighbors) {
+  std::vector<int> counts(sourcePairIndices.size()*numNodeLists, 0);
+  for (auto pairIndex = 0u; pairIndex != sourcePairIndices.size(); ++pairIndex) {
+    const auto sourcePairIndex = sourcePairIndices[pairIndex];
+    for (auto nodeList = 0u; nodeList != numNodeLists; ++nodeList) {
+      const auto entryIndex = sourcePairIndex*numNodeLists + nodeList;
+      auto count = 0;
+      for (auto k = oldFlatOffsets[entryIndex]; k != oldFlatOffsets[entryIndex + 1u]; ++k) {
+        if (flags(nodeList, oldFlatNeighbors[k]) != 0) ++count;
+      }
+      counts[pairIndex*numNodeLists + nodeList] = count;
+    }
+  }
+
+  countsToOffsets(counts, flatOffsets);
+  flatNeighbors.resize(flatOffsets.back());
+  for (auto pairIndex = 0u; pairIndex != sourcePairIndices.size(); ++pairIndex) {
+    const auto sourcePairIndex = sourcePairIndices[pairIndex];
+    for (auto nodeList = 0u; nodeList != numNodeLists; ++nodeList) {
+      const auto srcEntryIndex = sourcePairIndex*numNodeLists + nodeList;
+      const auto dstEntryIndex = pairIndex*numNodeLists + nodeList;
+      auto dstOffset = size_t(flatOffsets[dstEntryIndex]);
+      for (auto k = oldFlatOffsets[srcEntryIndex]; k != oldFlatOffsets[srcEntryIndex + 1u]; ++k) {
+        const auto oldNode = oldFlatNeighbors[k];
+        if (flags(nodeList, oldNode) != 0) flatNeighbors[dstOffset++] = old2new(nodeList, oldNode);
+      }
+      CHECK(dstOffset == size_t(flatOffsets[dstEntryIndex + 1u]));
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 // Shared pair-selection rule for node-pair construction.
 //------------------------------------------------------------------------------
 SPHERAL_HOST_DEVICE
@@ -606,10 +770,22 @@ ConnectivityMap():
   mOverlapConnectivityFlatNeighbors(),
   mOverlapConnectivityFlatOffsetsSpan(),
   mOverlapConnectivityFlatNeighborsSpan(),
+  mNodeTraversalOffsets(),
+  mNodeTraversalIndicesFlat(),
+  mNodeTraversalOffsetsSpan(),
+  mNodeTraversalIndicesFlatSpan(),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
   mCouplingPtr(std::make_shared<NodeCoupling>()),
-  mIntersectionConnectivity() {
+  mIntersectionConnectivity(),
+  mIntersectionConnectivityFlatOffsets(),
+  mIntersectionConnectivityFlatNeighbors(),
+  mIntersectionConnectivityFlatOffsetsSpan(),
+  mIntersectionConnectivityFlatNeighborsSpan(),
+  mConnectivityCacheValid(false),
+  mOverlapConnectivityCacheValid(false),
+  mNodeTraversalCacheValid(false),
+  mIntersectionConnectivityCacheValid(false) {
 }
 
 //------------------------------------------------------------------------------
@@ -622,41 +798,167 @@ ConnectivityMap<Dimension>::
   GPUUtils::freeMAView(mConnectivityFlatNeighborsSpan);
   GPUUtils::freeMAView(mOverlapConnectivityFlatOffsetsSpan);
   GPUUtils::freeMAView(mOverlapConnectivityFlatNeighborsSpan);
+  GPUUtils::freeMAView(mNodeTraversalOffsetsSpan);
+  GPUUtils::freeMAView(mNodeTraversalIndicesFlatSpan);
+  GPUUtils::freeMAView(mIntersectionConnectivityFlatOffsetsSpan);
+  GPUUtils::freeMAView(mIntersectionConnectivityFlatNeighborsSpan);
 }
 
 //------------------------------------------------------------------------------
-// Rebuild the flat connectivity views from the legacy ragged storage.
+// Refresh the flat connectivity views from the canonical flat storage.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 ConnectivityMap<Dimension>::
 rebuildFlatConnectivityViews() {
-  const auto numNodeLists = mNodeLists.size();
-
-  flattenConnectivity(mConnectivity,
-                      numNodeLists,
-                      mConnectivityFlatOffsets,
-                      mConnectivityFlatNeighbors);
   GPUUtils::initMAView(mConnectivityFlatOffsetsSpan, mConnectivityFlatOffsets);
   GPUUtils::initMAView(mConnectivityFlatNeighborsSpan, mConnectivityFlatNeighbors);
   GPUUtils::touch(mConnectivityFlatOffsetsSpan, chai::CPU);
   GPUUtils::touch(mConnectivityFlatNeighborsSpan, chai::CPU);
+  mConnectivityCacheValid = false;
+  mConnectivity.clear();
 
   if (mBuildOverlapConnectivity) {
-    flattenConnectivity(mOverlapConnectivity,
-                        numNodeLists,
-                        mOverlapConnectivityFlatOffsets,
-                        mOverlapConnectivityFlatNeighbors);
     GPUUtils::initMAView(mOverlapConnectivityFlatOffsetsSpan, mOverlapConnectivityFlatOffsets);
     GPUUtils::initMAView(mOverlapConnectivityFlatNeighborsSpan, mOverlapConnectivityFlatNeighbors);
     GPUUtils::touch(mOverlapConnectivityFlatOffsetsSpan, chai::CPU);
     GPUUtils::touch(mOverlapConnectivityFlatNeighborsSpan, chai::CPU);
+    mOverlapConnectivityCacheValid = false;
+    mOverlapConnectivity.clear();
   } else {
     mOverlapConnectivityFlatOffsets.clear();
     mOverlapConnectivityFlatNeighbors.clear();
     GPUUtils::freeMAView(mOverlapConnectivityFlatOffsetsSpan);
     GPUUtils::freeMAView(mOverlapConnectivityFlatNeighborsSpan);
+    mOverlapConnectivity.clear();
+    mOverlapConnectivityCacheValid = true;
   }
+}
+
+//------------------------------------------------------------------------------
+// Refresh the flat traversal view from the canonical flat storage.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+rebuildFlatTraversalViews() {
+  GPUUtils::initMAView(mNodeTraversalOffsetsSpan, mNodeTraversalOffsets);
+  GPUUtils::initMAView(mNodeTraversalIndicesFlatSpan, mNodeTraversalIndicesFlat);
+  GPUUtils::touch(mNodeTraversalOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mNodeTraversalIndicesFlatSpan, chai::CPU);
+  mNodeTraversalIndices.clear();
+  mNodeTraversalCacheValid = false;
+}
+
+//------------------------------------------------------------------------------
+// Refresh the flat intersection view from the canonical flat storage.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+rebuildFlatIntersectionConnectivityViews() {
+  if (mBuildIntersectionConnectivity) {
+    GPUUtils::initMAView(mIntersectionConnectivityFlatOffsetsSpan, mIntersectionConnectivityFlatOffsets);
+    GPUUtils::initMAView(mIntersectionConnectivityFlatNeighborsSpan, mIntersectionConnectivityFlatNeighbors);
+    GPUUtils::touch(mIntersectionConnectivityFlatOffsetsSpan, chai::CPU);
+    GPUUtils::touch(mIntersectionConnectivityFlatNeighborsSpan, chai::CPU);
+    mIntersectionConnectivity.clear();
+    mIntersectionConnectivityCacheValid = false;
+  } else {
+    mIntersectionConnectivityFlatOffsets.clear();
+    mIntersectionConnectivityFlatNeighbors.clear();
+    GPUUtils::freeMAView(mIntersectionConnectivityFlatOffsetsSpan);
+    GPUUtils::freeMAView(mIntersectionConnectivityFlatNeighborsSpan);
+    mIntersectionConnectivity.clear();
+    mIntersectionConnectivityCacheValid = true;
+  }
+}
+
+//------------------------------------------------------------------------------
+// Rebuild the legacy ragged compatibility caches from the canonical flat data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+ensureConnectivityCache() const {
+  if (mConnectivityCacheValid) return;
+  unflattenConnectivity(this->connectivityFlatView().numNodes(),
+                        mNodeLists.size(),
+                        mConnectivityFlatOffsets,
+                        mConnectivityFlatNeighbors,
+                        mConnectivity);
+  mConnectivityCacheValid = true;
+}
+
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+ensureOverlapConnectivityCache() const {
+  if (mOverlapConnectivityCacheValid) return;
+  if (not mBuildOverlapConnectivity) {
+    mOverlapConnectivity.clear();
+    mOverlapConnectivityCacheValid = true;
+    return;
+  }
+  const auto numNodeLists = mNodeLists.size();
+  const auto numEntries = (numNodeLists > 0u and mOverlapConnectivityFlatOffsets.size() > 0u ?
+                           (mOverlapConnectivityFlatOffsets.size() - 1u)/numNodeLists :
+                           0u);
+  unflattenConnectivity(numEntries,
+                        numNodeLists,
+                        mOverlapConnectivityFlatOffsets,
+                        mOverlapConnectivityFlatNeighbors,
+                        mOverlapConnectivity);
+  mOverlapConnectivityCacheValid = true;
+}
+
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+ensureTraversalCache() const {
+  if (mNodeTraversalCacheValid) return;
+  const auto numNodeLists = mNodeLists.size();
+  mNodeTraversalIndices.assign(numNodeLists, std::vector<int>());
+  CHECK(mNodeTraversalOffsets.size() == numNodeLists + 1u);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    const auto beginOffset = size_t(mNodeTraversalOffsets[nodeList]);
+    const auto endOffset = size_t(mNodeTraversalOffsets[nodeList + 1u]);
+    mNodeTraversalIndices[nodeList].assign(mNodeTraversalIndicesFlat.begin() + beginOffset,
+                                           mNodeTraversalIndicesFlat.begin() + endOffset);
+  }
+  mNodeTraversalCacheValid = true;
+}
+
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+ensureIntersectionConnectivityCache() const {
+  if (mIntersectionConnectivityCacheValid) return;
+  mIntersectionConnectivity.clear();
+  if (not mBuildIntersectionConnectivity) {
+    mIntersectionConnectivityCacheValid = true;
+    return;
+  }
+  REQUIRE(mNodePairListPtr);
+  const auto& pairs = *mNodePairListPtr;
+  const auto numNodeLists = mNodeLists.size();
+  const auto expectedOffsets = pairs.size()*numNodeLists + 1u;
+  if (mIntersectionConnectivityFlatOffsets.size() != expectedOffsets) {
+    mIntersectionConnectivityCacheValid = true;
+    return;
+  }
+  for (auto pairIndex = 0u; pairIndex < pairs.size(); ++pairIndex) {
+    std::vector<std::vector<int>> intersection(numNodeLists);
+    for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+      const auto entryIndex = pairIndex*numNodeLists + nodeList;
+      const auto beginOffset = size_t(mIntersectionConnectivityFlatOffsets[entryIndex]);
+      const auto endOffset = size_t(mIntersectionConnectivityFlatOffsets[entryIndex + 1u]);
+      intersection[nodeList].assign(mIntersectionConnectivityFlatNeighbors.begin() + beginOffset,
+                                    mIntersectionConnectivityFlatNeighbors.begin() + endOffset);
+    }
+    mIntersectionConnectivity[pairs[pairIndex]] = std::move(intersection);
+  }
+  mIntersectionConnectivityCacheValid = true;
 }
 
 //------------------------------------------------------------------------------
@@ -668,12 +970,22 @@ ConnectivityMap<Dimension>::
 patchConnectivity(const FieldList<Dimension, size_t>& flags,
                   const FieldList<Dimension, size_t>& old2new) {
   TIME_BEGIN("ConnectivityMap_patch");
-
   const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
 
   // We have to recompute the keys to sort nodes by excluding the 
   // nodes that are being removed.
   const auto numNodeLists = mNodeLists.size();
+  const auto oldOffsets = mOffsets;
+  const auto oldConnectivityFlatOffsets = mConnectivityFlatOffsets;
+  const auto oldConnectivityFlatNeighbors = mConnectivityFlatNeighbors;
+  const auto oldConnectivityNumEntries = (numNodeLists > 0u and oldConnectivityFlatOffsets.size() > 0u ?
+                                          (oldConnectivityFlatOffsets.size() - 1u)/numNodeLists :
+                                          0u);
+  const auto oldOverlapConnectivityFlatOffsets = mOverlapConnectivityFlatOffsets;
+  const auto oldOverlapConnectivityFlatNeighbors = mOverlapConnectivityFlatNeighbors;
+  const auto oldTraversalOffsets = mNodeTraversalOffsets;
+  const auto oldIntersectionOffsets = mIntersectionConnectivityFlatOffsets;
+  const auto oldIntersectionNeighbors = mIntersectionConnectivityFlatNeighbors;
   if (domainDecompIndependent) {
 // #pragma omp parallel for collapse(2)
     for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
@@ -683,160 +995,123 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
     }
   }
 
-  // Iterate over the Connectivity (NodeList).
+  std::vector<int> newConnectivityOffsets(numNodeLists + 1u, 0);
   for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-    const auto ioff = mOffsets[iNodeList];
-    const auto numNodes = ((domainDecompIndependent or mBuildGhostConnectivity or mBuildOverlapConnectivity) ? 
-                           mNodeLists[iNodeList]->numNodes() :
-                           mNodeLists[iNodeList]->numInternalNodes());
-
-    vector<size_t> iNodesToKill;
-    vector<pair<int, Key>> keys;
-#pragma omp parallel
-    {
-      vector<size_t> iNodesToKill_thread;
-      vector<pair<int, Key>> keys_thread;
-
-      // Patch the traversal ordering and connectivity for this NodeList.
-#pragma omp for schedule(dynamic)
-      for (auto i = 0u; i < numNodes; ++i) {
-
-        // Should we patch this set of neighbors?
-        if (flags(iNodeList, i) == 0) {
-          iNodesToKill_thread.push_back(i);
-        } else {
-          if (domainDecompIndependent) keys_thread.push_back(std::make_pair(old2new(iNodeList, i), mKeys(iNodeList, i)));
-          mNodeTraversalIndices[iNodeList][i] = old2new(iNodeList, i);
-          auto& neighbors = mConnectivity[ioff + i];
-          CHECK(neighbors.size() == numNodeLists);
-          for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
-            vector<pair<int, Key>> nkeys;
-            vector<size_t> jNodesToKill;
-            for (auto k = 0u; k < neighbors[jNodeList].size(); ++k) {
-              const auto j = neighbors[jNodeList][k];
-              if (flags(jNodeList, j) == 0) {
-                jNodesToKill.push_back(k);
-              } else {
-                if (domainDecompIndependent) nkeys.push_back(std::make_pair(old2new(jNodeList, j), mKeys(jNodeList, j)));
-                neighbors[jNodeList][k] = old2new(jNodeList, j);
-              }
-            }
-            removeElements(neighbors[jNodeList], jNodesToKill);
-
-            // Recompute the ordering of the neighbors.
-            if (domainDecompIndependent) {
-              sort(nkeys.begin(), nkeys.end(), ComparePairsBySecondElement<pair<int, Key> >());
-              for (size_t k = 0; k != neighbors[jNodeList].size(); ++k) {
-                CHECK2(k == 0 or nkeys[k].second > nkeys[k-1].second,
-                       "Incorrect neighbor ordering:  "
-                       << i << " "
-                       << k << " "
-                       << nkeys[k-1].second << " "
-                       << nkeys[k].second);
-                neighbors[jNodeList][k] = nkeys[k].first;
-              }
-            } else {
-              sort(neighbors[jNodeList].begin(), neighbors[jNodeList].end());
-            }
-          }
-        }
-      }
-
-#pragma omp critical
-      appendSTLvectors(iNodesToKill, iNodesToKill_thread);
-      appendSTLvectors(keys, keys_thread);
-    }
-    removeElements(mNodeTraversalIndices[iNodeList], iNodesToKill);
-
-    // Recompute the ordering for traversing the nodes.
-    {
-      const auto numNodes = mNodeTraversalIndices[iNodeList].size();
-      if (domainDecompIndependent) {
-        // keys = vector<pair<int, Key> >();
-        // for (size_t k = 0; k != numNodes; ++k) {
-        //   const int i = mNodeTraversalIndices[iNodeList][k];
-        //   keys.push_back(std::make_pair(i, mKeys(iNodeList, i)));
-        // }
-        sort(keys.begin(), keys.end(), ComparePairsBySecondElement<pair<int, Key> >());
-#pragma omp parallel for
-        for (auto k = 0u; k < numNodes; ++k) {
-          mNodeTraversalIndices[iNodeList][k] = keys[k].first;
-        }
-      } else {
-#pragma omp parallel for
-        for (auto i = 0u; i < numNodes; ++i) {
-          mNodeTraversalIndices[iNodeList][i] = i;
-        }
-      }
-    }
+    const auto numNodes = nodeListEntryCount(oldOffsets, oldConnectivityNumEntries, iNodeList);
+    auto count = 0;
+    for (auto i = 0u; i != numNodes; ++i) count += (flags(iNodeList, i) != 0 ? 1 : 0);
+    newConnectivityOffsets[iNodeList + 1u] = newConnectivityOffsets[iNodeList] + count;
   }
-  
-  // We also need to patch the node pair structure
-  // Note here we deliberately reallocate the NodePairList, which will invalidate any
-  // PairFields pointing at the original pairs.
+
+  patchFlatConnectivity(oldConnectivityNumEntries,
+                        oldConnectivityFlatOffsets,
+                        oldConnectivityFlatNeighbors,
+                        oldOffsets,
+                        newConnectivityOffsets,
+                        flags,
+                        old2new,
+                        mKeys,
+                        domainDecompIndependent,
+                        numNodeLists,
+                        mConnectivityFlatOffsets,
+                        mConnectivityFlatNeighbors);
+  if (mBuildOverlapConnectivity) {
+    patchFlatConnectivity(oldConnectivityNumEntries,
+                          oldOverlapConnectivityFlatOffsets,
+                          oldOverlapConnectivityFlatNeighbors,
+                          oldOffsets,
+                          newConnectivityOffsets,
+                          flags,
+                          old2new,
+                          mKeys,
+                          domainDecompIndependent,
+                          numNodeLists,
+                          mOverlapConnectivityFlatOffsets,
+                          mOverlapConnectivityFlatNeighbors);
+  }
+
+  mOffsets.resize(numNodeLists);
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    mOffsets[iNodeList] = newConnectivityOffsets[iNodeList];
+  }
+
+  patchTraversalOrdering(oldTraversalOffsets,
+                         flags,
+                         old2new,
+                         mKeys,
+                         domainDecompIndependent,
+                         mNodeTraversalOffsets,
+                         mNodeTraversalIndicesFlat);
+
   REQUIRE(mNodePairListPtr);
-  NodePairList& currentPairs = *mNodePairListPtr;
-  std::vector<NodePairIdxType> culledPairs;
+  const auto& currentPairs = *mNodePairListPtr;
+  const auto currentPairCount = currentPairs.size();
+  struct PairWithSource {
+    NodePairIdxType pair;
+    size_t sourceIndex;
+  };
+  std::vector<PairWithSource> culledPairs;
   culledPairs.reserve(currentPairs.size());
-#pragma omp parallel
-  {
-    std::vector<NodePairIdxType> culledPairs_thread;
-    const auto npairs = currentPairs.size();
-    culledPairs_thread.reserve(npairs);
-#pragma omp for
-    for (auto k = 0u; k < npairs; ++k) {
-      const auto iNodeList = currentPairs[k].i_list;
-      const auto jNodeList = currentPairs[k].j_list;
-      const auto i = currentPairs[k].i_node;
-      const auto j = currentPairs[k].j_node;
-      if (flags(iNodeList, i) != 0 and flags(jNodeList, j) != 0) {
-        culledPairs_thread.push_back(NodePairIdxType(old2new(iNodeList, i), iNodeList,
-                                                     old2new(jNodeList, j), jNodeList));
-      }
-    }
-#pragma omp critical
-    {
-      culledPairs.insert(culledPairs.end(), culledPairs_thread.begin(), culledPairs_thread.end());
+  for (auto k = 0u; k < currentPairs.size(); ++k) {
+    const auto iNodeList = currentPairs[k].i_list;
+    const auto jNodeList = currentPairs[k].j_list;
+    const auto i = currentPairs[k].i_node;
+    const auto j = currentPairs[k].j_node;
+    if (flags(iNodeList, i) != 0 and flags(jNodeList, j) != 0) {
+      culledPairs.push_back({NodePairIdxType(old2new(iNodeList, i), iNodeList,
+                                             old2new(jNodeList, j), jNodeList),
+                             k});
     }
   }
-  mNodePairListPtr = std::make_shared<NodePairList>(std::move(culledPairs));
 
-  // Sort the NodePairList in order to enforce domain decomposition independence.
-  {
-    auto& pairs = *mNodePairListPtr;
-    if (domainDecompIndependent) {
-      // sort(pairs.begin(), pairs.end(), [this](const NodePairIdxType& a, const NodePairIdxType& b) { return (mKeys(a.i_list, a.i_node) + mKeys(a.j_list, a.j_node)) < (mKeys(b.i_list, b.i_node) + mKeys(b.j_list, b.j_node)); });
-      // sort(pairs.begin(), pairs.end(), [this](const NodePairIdxType& a, const NodePairIdxType& b) { return hashKeys(mKeys(a.i_list, a.i_node), mKeys(a.j_list, a.j_node)) < hashKeys(mKeys(b.i_list, b.i_node), mKeys(b.j_list, b.j_node)); });
-      sortPairs(pairs, mKeys);
-    } else {
-      std::sort(pairs.begin(), pairs.end());
-    }
+  if (domainDecompIndependent) {
+    std::sort(culledPairs.begin(), culledPairs.end(),
+              [this, &currentPairs](const PairWithSource& a, const PairWithSource& b) {
+                const auto& apair = currentPairs[a.sourceIndex];
+                const auto& bpair = currentPairs[b.sourceIndex];
+                return hashKeys(mKeys(apair.i_list, apair.i_node), mKeys(apair.j_list, apair.j_node)) <
+                       hashKeys(mKeys(bpair.i_list, bpair.i_node), mKeys(bpair.j_list, bpair.j_node));
+              });
+  } else {
+    std::sort(culledPairs.begin(), culledPairs.end(),
+              [](const PairWithSource& a, const PairWithSource& b) {
+                return std::tie(a.pair.i_list, a.pair.i_node, a.pair.j_list, a.pair.j_node) <
+                       std::tie(b.pair.i_list, b.pair.i_node, b.pair.j_list, b.pair.j_node);
+              });
   }
-  // mNodePairListPtr->computeLookup();
 
-  // Patch the intersection lists if we're maintaining them
+  std::vector<NodePairIdxType> sortedPairs;
+  std::vector<size_t> sourcePairIndices;
+  sortedPairs.reserve(culledPairs.size());
+  sourcePairIndices.reserve(culledPairs.size());
+  for (const auto& entry: culledPairs) {
+    sortedPairs.push_back(entry.pair);
+    sourcePairIndices.push_back(entry.sourceIndex);
+  }
+  mNodePairListPtr = std::make_shared<NodePairList>(std::move(sortedPairs));
+
   if (mBuildIntersectionConnectivity) {
-    IntersectionConnectivityContainer intersection;
-    for (const auto& element: mIntersectionConnectivity) {
-      auto pair = element.first;
-      const auto& oldintersect = element.second;
-      if (flags(pair.i_list, pair.i_node) != 0 and flags(pair.j_list, pair.j_node) != 0) {
-        pair.i_node = old2new(pair.i_list, pair.i_node);
-        pair.j_node = old2new(pair.j_list, pair.j_node);
-        vector<vector<int>> newintersect(numNodeLists);
-        for (auto klist = 0u; klist < numNodeLists; ++klist) {
-          for (const auto k: oldintersect[klist]) {
-            if (flags(klist, k) != 0) newintersect[klist].push_back(old2new(klist, k));
-          }
-        }
-        intersection[pair] = newintersect;
-      }
+    if (oldIntersectionOffsets.size() == currentPairCount*numNodeLists + 1u) {
+      patchIntersectionConnectivity(sourcePairIndices,
+                                    numNodeLists,
+                                    oldIntersectionOffsets,
+                                    oldIntersectionNeighbors,
+                                    flags,
+                                    old2new,
+                                    mIntersectionConnectivityFlatOffsets,
+                                    mIntersectionConnectivityFlatNeighbors);
+    } else {
+      mIntersectionConnectivityFlatOffsets.clear();
+      mIntersectionConnectivityFlatNeighbors.clear();
     }
-    mIntersectionConnectivity = std::move(intersection);
+  } else {
+    mIntersectionConnectivityFlatOffsets.clear();
+    mIntersectionConnectivityFlatNeighbors.clear();
   }
 
   this->rebuildFlatConnectivityViews();
-
+  this->rebuildFlatTraversalViews();
+  this->rebuildFlatIntersectionConnectivityViews();
   // You can't check valid yet 'cause the NodeLists have not been resized
   // when we call patch!  The valid method should be checked by whoever called
   // this method after that point.
@@ -930,23 +1205,77 @@ void
 ConnectivityMap<Dimension>::
 removeConnectivity(const FieldList<Dimension, vector<vector<int>>>& neighborsToCut) {
   TIME_BEGIN("ConnectivityMap_cutConnectivity");
-
   const auto numNodeLists = mNodeLists.size();
   REQUIRE(neighborsToCut.numFields() == numNodeLists);
-
+  const auto oldConnectivityFlatOffsets = mConnectivityFlatOffsets;
+  const auto oldConnectivityFlatNeighbors = mConnectivityFlatNeighbors;
+  const auto numEntries = (numNodeLists > 0u and oldConnectivityFlatOffsets.size() > 0u ?
+                           (oldConnectivityFlatOffsets.size() - 1u)/numNodeLists :
+                           0u);
+  std::vector<int> counts(numEntries*numNodeLists, 0);
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-    const auto n = mNodeLists[nodeListi]->numNodes();
+    const auto n = nodeListEntryCount(mOffsets, numEntries, nodeListi);
     for (auto i = 0u; i < n; ++i) {
       const auto& allneighbors = neighborsToCut(nodeListi, i);
       CHECK(allneighbors.size() == 0 or allneighbors.size() == numNodeLists);
-      for (auto nodeListj = 0u; nodeListj < allneighbors.size(); ++nodeListj) {
-        auto& neighborsi = mConnectivity[mOffsets[nodeListi] + i][nodeListj];
-        removeElements(neighborsi, allneighbors[nodeListj]);
+      for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
+        const auto entryIndex = (mOffsets[nodeListi] + i)*numNodeLists + nodeListj;
+        const auto oldCount = size_t(oldConnectivityFlatOffsets[entryIndex + 1u] - oldConnectivityFlatOffsets[entryIndex]);
+        if (nodeListj >= allneighbors.size() or allneighbors[nodeListj].empty()) {
+          counts[entryIndex] = oldCount;
+        } else {
+          auto cutIndices = allneighbors[nodeListj];
+          sort(cutIndices.begin(), cutIndices.end());
+          cutIndices.erase(unique(cutIndices.begin(), cutIndices.end()), cutIndices.end());
+          auto keepCount = int(oldCount);
+          for (const auto k: cutIndices) {
+            if (k >= 0 and size_t(k) < oldCount) --keepCount;
+          }
+          counts[entryIndex] = keepCount;
+        }
+      }
+    }
+  }
+
+  countsToOffsets(counts, mConnectivityFlatOffsets);
+  mConnectivityFlatNeighbors.resize(mConnectivityFlatOffsets.back());
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = nodeListEntryCount(mOffsets, numEntries, nodeListi);
+    for (auto i = 0u; i < n; ++i) {
+      const auto& allneighbors = neighborsToCut(nodeListi, i);
+      for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
+        const auto entryIndex = (mOffsets[nodeListi] + i)*numNodeLists + nodeListj;
+        auto dstOffset = size_t(mConnectivityFlatOffsets[entryIndex]);
+        const auto srcBegin = oldConnectivityFlatOffsets[entryIndex];
+        const auto srcEnd = oldConnectivityFlatOffsets[entryIndex + 1u];
+        if (nodeListj >= allneighbors.size() or allneighbors[nodeListj].empty()) {
+          for (auto k = srcBegin; k != srcEnd; ++k) {
+            mConnectivityFlatNeighbors[dstOffset++] = oldConnectivityFlatNeighbors[k];
+          }
+        } else {
+          auto cutIndices = allneighbors[nodeListj];
+          sort(cutIndices.begin(), cutIndices.end());
+          cutIndices.erase(unique(cutIndices.begin(), cutIndices.end()), cutIndices.end());
+          auto cutItr = cutIndices.begin();
+          auto k = 0u;
+          for (auto srcOffset = srcBegin; srcOffset != srcEnd; ++srcOffset) {
+            while (cutItr != cutIndices.end() and *cutItr < int(k)) ++cutItr;
+            if (cutItr == cutIndices.end() or *cutItr != int(k)) {
+              mConnectivityFlatNeighbors[dstOffset++] = oldConnectivityFlatNeighbors[srcOffset];
+            }
+            ++k;
+          }
+        }
+        CHECK(dstOffset == size_t(mConnectivityFlatOffsets[entryIndex + 1u]));
       }
     }
   }
 
   this->rebuildFlatConnectivityViews();
+  mIntersectionConnectivity.clear();
+  mIntersectionConnectivityFlatOffsets.clear();
+  mIntersectionConnectivityFlatNeighbors.clear();
+  this->rebuildFlatIntersectionConnectivityViews();
 
   TIME_END("ConnectivityMap_cutConnectivity");
 }
@@ -1077,9 +1406,6 @@ valid() const {
     const auto numNodes = (ghostConnectivity ? 
                            mNodeLists.back()->numNodes() : 
                            mNodeLists.back()->numInternalNodes());
-    if (mConnectivity.size() != mOffsets.back() + numNodes) {
-      cerr << "ConnectivityMap::valid: Failed offset bounding: " << mConnectivity.size() << " != " << mOffsets.back() << " + " << numNodes << endl;
-    }
     if (connectivity.numNodeLists() != numNodeLists or
         connectivity.numNodes() != mOffsets.back() + numNodes) {
       cerr << "ConnectivityMap::valid: Flat connectivity dimensions are inconsistent" << endl;
@@ -1116,7 +1442,7 @@ valid() const {
                            nodeListPtri->numInternalNodes());
     //const int firstGhostNodei = nodeListPtri->firstGhostNode();
     if (((nodeListIDi < numNodeLists - 1u) and ((mOffsets[nodeListIDi + 1] - mOffsets[nodeListIDi]) != (int)numNodes)) or
-        ((nodeListIDi == numNodeLists - 1u) and ((mConnectivity.size() - (size_t)mOffsets[nodeListIDi]) != numNodes))) {
+        ((nodeListIDi == numNodeLists - 1u) and ((connectivity.numNodes() - (size_t)mOffsets[nodeListIDi]) != numNodes))) {
       cerr << "ConnectivityMap::valid: Failed test that all nodes set for NodeList "
            << mNodeLists[nodeListIDi]->name()
            << endl;
@@ -1227,20 +1553,22 @@ valid() const {
   }
 
   // Make sure all nodes are listed in the node index traversal stuff.
-  if (mNodeTraversalIndices.size() != mNodeLists.size()) {
-    cerr << "ConnectivityMap::valid: mNodeTraversalIndices wrong size!" << endl;
+  if (mNodeTraversalOffsets.size() != mNodeLists.size() + 1u) {
+    cerr << "ConnectivityMap::valid: mNodeTraversalOffsets wrong size!" << endl;
     return false;
   }
   for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
     const auto numExpected = domainDecompIndependent ? mNodeLists[nodeList]->numNodes() : mNodeLists[nodeList]->numInternalNodes();
-    bool ok = mNodeTraversalIndices[nodeList].size() == numExpected;
+    const auto beginOffset = size_t(mNodeTraversalOffsets[nodeList]);
+    const auto endOffset = size_t(mNodeTraversalOffsets[nodeList + 1u]);
+    bool ok = endOffset - beginOffset == numExpected;
     for (auto i = 0u; i < numExpected; ++i) {
-      ok = ok and (count(mNodeTraversalIndices[nodeList].begin(),
-                         mNodeTraversalIndices[nodeList].end(),
+      ok = ok and (count(mNodeTraversalIndicesFlat.begin() + beginOffset,
+                         mNodeTraversalIndicesFlat.begin() + endOffset,
                          i) == 1);
     }
     if (not ok) {
-      cerr << "ConnectivityMap::valid: mNodeTraversalIndices elements messed up!" << endl;
+      cerr << "ConnectivityMap::valid: mNodeTraversalIndicesFlat elements messed up!" << endl;
       return false;
     }
   }
@@ -1325,8 +1653,8 @@ computeConnectivity() {
                                                    mNodeLists.back()->numNodes() :
                                                    mNodeLists.back()->numInternalNodes());
   const auto numConnectivityEntries = connectivitySize*numNodeLists;
-  mNodeTraversalIndices = vector<vector<int> >(numNodeLists);
   mIntersectionConnectivity.clear();
+  mIntersectionConnectivityCacheValid = false;
 
   // If we're trying to be domain decomposition independent, we need a key to sort
   // by that will give us a unique ordering regardless of position.  The Morton ordered
@@ -1335,28 +1663,11 @@ computeConnectivity() {
   if (domainDecompIndependent) mKeys = mortonOrderIndices(dataBase);
 
   // Fill in the ordering for walking the nodes.
-  CHECK(mNodeTraversalIndices.size() == numNodeLists);
-  if (domainDecompIndependent) {
-    for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-      const NodeList<Dimension>& nodeList = *mNodeLists[iNodeList];
-      mNodeTraversalIndices[iNodeList].resize(nodeList.numNodes());
-      vector<pair<int, Key> > keys;
-      keys.reserve(nodeList.numNodes());
-      for (auto i = 0u; i != nodeList.numNodes(); ++i) keys.push_back(pair<int, Key>(i, mKeys(iNodeList, i)));
-      sort(keys.begin(), keys.end(), ComparePairsBySecondElement<pair<int, Key> >());
-      for (auto i = 0u; i != nodeList.numNodes(); ++i) mNodeTraversalIndices[iNodeList][i] = keys[i].first;
-      CHECK(mNodeTraversalIndices[iNodeList].size() == nodeList.numNodes());
-      // std::cerr << "Traversal: ";
-      // std::copy(mNodeTraversalIndices[iNodeList].begin(), mNodeTraversalIndices[iNodeList].end(), std::ostream_iterator<int>(std::cerr, " "));
-      // std::cerr << std::endl;
-    }
-  } else {
-    for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-      const NodeList<Dimension>& nodeList = *mNodeLists[iNodeList];
-      mNodeTraversalIndices[iNodeList].resize(nodeList.numInternalNodes());
-      for (auto i = 0u; i != nodeList.numInternalNodes(); ++i) mNodeTraversalIndices[iNodeList][i] = i;
-    }
-  }
+  buildTraversalOrdering(mNodeLists,
+                         mKeys,
+                         domainDecompIndependent,
+                         mNodeTraversalOffsets,
+                         mNodeTraversalIndicesFlat);
 
   // Get the position and H fields.
   FieldList<Dimension, Vector> position = dataBase.globalPosition();
@@ -1890,17 +2201,8 @@ computeConnectivity() {
 
   mConnectivityFlatOffsets = connectivityOffsets;
   mConnectivityFlatNeighbors = connectivityNeighbors;
-  GPUUtils::initMAView(mConnectivityFlatOffsetsSpan, mConnectivityFlatOffsets);
-  GPUUtils::initMAView(mConnectivityFlatNeighborsSpan, mConnectivityFlatNeighbors);
-  GPUUtils::touch(mConnectivityFlatOffsetsSpan, chai::CPU);
-  GPUUtils::touch(mConnectivityFlatNeighborsSpan, chai::CPU);
+  this->rebuildFlatConnectivityViews();
   const auto connectivityView = this->connectivityFlatView();
-
-  unflattenConnectivity(connectivitySize,
-                        numNodeLists,
-                        mConnectivityFlatOffsets,
-                        mConnectivityFlatNeighbors,
-                        mConnectivity);
 
   std::vector<int> globalNodeListIDs(connectivitySize);
   std::vector<int> globalNodeIDs(connectivitySize);
@@ -2137,39 +2439,53 @@ computeConnectivity() {
     });
     GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
 
-    unflattenConnectivity(connectivitySize,
-                          numNodeLists,
-                          overlapOffsets,
-                          overlapNeighbors,
-                          mOverlapConnectivity);
+    mOverlapConnectivityFlatOffsets = std::move(overlapOffsets);
+    mOverlapConnectivityFlatNeighbors = std::move(overlapNeighbors);
+    mOverlapConnectivity.clear();
     TIME_END("ConnectivityMap_computeOverlapConnectivity");
   } else {
     mOverlapConnectivity.clear();
   }
+
+  this->rebuildFlatConnectivityViews();
 
   // Are we building intersection connectivity?
   if (mBuildIntersectionConnectivity) {
     TIME_BEGIN("ConnectivityMap_precomputeIntersectionConnectivity");
     auto& pairs = *mNodePairListPtr;
     const auto npairs = pairs.size();
-#pragma omp parallel
-    {
-      IntersectionConnectivityContainer intersection_private;
-#pragma omp for
-      for (auto k = 0u; k < npairs; ++k) {
-        const auto& pair = pairs[k];
-        intersection_private[pair] = this->connectivityIntersectionForNodes(pair.i_list, pair.i_node,
-                                                                            pair.j_list, pair.j_node,
-                                                                            position);
+    std::vector<int> intersectionCounts(npairs*numNodeLists, 0);
+#pragma omp parallel for
+    for (auto k = 0u; k < npairs; ++k) {
+      const auto& pair = pairs[k];
+      const auto intersection = this->connectivityIntersectionForNodes(pair.i_list, pair.i_node,
+                                                                       pair.j_list, pair.j_node,
+                                                                       position);
+      CHECK(intersection.size() == numNodeLists);
+      for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+        intersectionCounts[k*numNodeLists + nodeList] = intersection[nodeList].size();
       }
-#pragma omp critical
-      {
-        for (const auto& element: intersection_private) {
-          mIntersectionConnectivity[element.first] = element.second;
+    }
+    countsToOffsets(intersectionCounts, mIntersectionConnectivityFlatOffsets);
+    mIntersectionConnectivityFlatNeighbors.resize(mIntersectionConnectivityFlatOffsets.back());
+#pragma omp parallel for
+    for (auto k = 0u; k < npairs; ++k) {
+      const auto& pair = pairs[k];
+      const auto intersection = this->connectivityIntersectionForNodes(pair.i_list, pair.i_node,
+                                                                       pair.j_list, pair.j_node,
+                                                                       position);
+      for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+        auto dstOffset = size_t(mIntersectionConnectivityFlatOffsets[k*numNodeLists + nodeList]);
+        for (const auto neighbor: intersection[nodeList]) {
+          mIntersectionConnectivityFlatNeighbors[dstOffset++] = neighbor;
         }
-      } // omp critical
-    }   // omp parallel
+        CHECK(dstOffset == size_t(mIntersectionConnectivityFlatOffsets[k*numNodeLists + nodeList + 1u]));
+      }
+    }
     TIME_END("ConnectivityMap_precomputeIntersectionConnectivity");
+  } else {
+    mIntersectionConnectivityFlatOffsets.clear();
+    mIntersectionConnectivityFlatNeighbors.clear();
   }
 
   // {
@@ -2183,6 +2499,9 @@ computeConnectivity() {
   // }
 
   // Post conditions.
+  this->rebuildFlatTraversalViews();
+  this->rebuildFlatIntersectionConnectivityViews();
+
   BEGIN_CONTRACT_SCOPE
   ENSURE2(taskNodeIDs.size() == connectivitySize,
           "Missed connectivity tasks: " << taskNodeIDs.size() << " " << connectivitySize);
@@ -2190,7 +2509,9 @@ computeConnectivity() {
   ENSURE(valid());
   END_CONTRACT_SCOPE
 
-  this->rebuildFlatConnectivityViews();
+  mConnectivityCacheValid = false;
+  mOverlapConnectivityCacheValid = false;
+  mIntersectionConnectivityCacheValid = false;
 
   TIME_END("ConnectivityMap_computeConnectivity");
 }

@@ -78,24 +78,25 @@ computeCRKSPHEvaluation(const ConnectivityMap<Dimension>& connectivityMap,
 
   // Neighbors!
   bool first_time=true;//Used as a flag to include self contribution
-  const vector<vector<int> > fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+  const auto fullConnectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
   CHECK(fullConnectivity.size() == numNodeLists);
   for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
     if (coupleNodeLists or nodeListi == nodeListj) {
-      const vector<int>& connectivity = fullConnectivity[nodeListj];
+      const auto connectivity = fullConnectivity[nodeListj];
 
       // Iterate over the neighbors for in this NodeList.
-      for (vector<int>::const_iterator jItr = connectivity.begin();
-           jItr != connectivity.end();
-           ++jItr) {
-           
-          int j = *jItr;
-          size_t mynodeList=nodeListj;
-          if(first_time){//include self contribution
-            j=i;
-            --jItr;
-            first_time=false;
-            mynodeList=nodeListi;
+      const auto numEntries = connectivity.size() + (first_time ? 1u : 0u);
+      for (size_t k = 0; k != numEntries; ++k) {
+          int j;
+          size_t mynodeList;
+          if (first_time) {  // include self contribution once, before the first neighbor contribution
+            j = i;
+            mynodeList = nodeListi;
+            first_time = false;
+          } else {
+            const auto neighborIndex = (numEntries == connectivity.size() ? k : k - 1u);
+            j = connectivity[neighborIndex];
+            mynodeList = nodeListj;
           }
           // State of node j.
           const Scalar wj = weight(mynodeList, j);

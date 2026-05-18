@@ -64,7 +64,7 @@ computeConnectivity(const DataBase<Dimension>& dataBase) {
        ++nodeListItri, ++nodeListi) {
     const auto numNodesi = (*nodeListItri)->numInternalNodes(); // only over integration regions this process owns
     for (auto nodei = 0u; nodei < numNodesi; ++nodei) {
-      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);
+      const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, nodei);
       const auto pairi = std::make_pair(nodeListi, nodei);
       // Find overlap neighbors of the original point
       // For now, map the points to zero
@@ -162,7 +162,7 @@ computeSurfaceIndexing(const DataBase<Dimension>& dataBase,
       const auto numFlags = flags.size();
       if (numFlags > 0) {
         // Get the connectivity and surface information for this cell
-        const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);
+        const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, nodei);
         const auto& cell = cells(nodeListi, nodei);
         const auto& facets = cell.facets();
         

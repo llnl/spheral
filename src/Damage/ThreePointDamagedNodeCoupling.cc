@@ -93,7 +93,7 @@ ThreePointDamagedNodeCoupling(const State<Dimension>& state,
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
       if (D(il,i).Trace() > Dthreshold) {
-        const auto& connectivity_i = connectivity.connectivityForNode(il,i);
+        const auto connectivity_i = connectivity.connectivityForNodeView(il,i);
         for (auto jl = 0u; jl < numNodeLists; ++jl) {
           for (const auto j: connectivity_i[jl]) {
             flags(jl,j) = 1u;
@@ -131,27 +131,31 @@ ThreePointDamagedNodeCoupling(const State<Dimension>& state,
         // if (barf) std::cerr << "  3pt firing on " << pair << " : " << connectivity.numNeighborsForNode(pair.i_list, pair.i_node) << " " << connectivity.numNeighborsForNode(pair.j_list, pair.j_node) << std::endl;
 
         // Find the common neighbors for this pair.
-        const auto intersection_list = (intersectConnectivityPrecomputed ?
-                                        connectivity.intersectionConnectivity(pair) :
-                                        connectivity.connectivityIntersectionForNodes(pair.i_list, pair.i_node,
-                                                                                      pair.j_list, pair.j_node));
-        auto nodeListk = 0u;
-        while (nodeListk < numNodeLists and fij > 1e-10) {
-          for (const auto k: intersection_list[nodeListk]) {
+        auto processIntersection = [&](const auto& intersection_list) {
+          auto nodeListk = 0u;
+          while (nodeListk < numNodeLists and fij > 1e-10) {
+            for (const auto k: intersection_list[nodeListk]) {
 
-            // State for node k
-            const auto& xk = position(nodeListk, k);
-            const auto& Hk = H(nodeListk, k);
-            const auto& Dk = D(nodeListk, k);
+              // State for node k
+              const auto& xk = position(nodeListk, k);
+              const auto& Hk = H(nodeListk, k);
+              const auto& Dk = D(nodeListk, k);
 
-            // We only proceed if the closest point to k on (i,j) is bounded by (i,j)
-            if (Dk.Trace() > Dthreshold and closestPointOnSegment(xk, xi, xj, b)) {
-              fij *= pairCoupling(xk, Hk, Dk, Di, Dj, xhatji, b, W, W0);
-              // if (k == 48) std::cerr << "  --> " << pair << " " << k << " " << Dk << " " << pairCoupling(xk, Hk, Dk, Di, Dj, xhatji, b, W, W0) << " " << fij << std::endl;
+              // We only proceed if the closest point to k on (i,j) is bounded by (i,j)
+              if (Dk.Trace() > Dthreshold and closestPointOnSegment(xk, xi, xj, b)) {
+                fij *= pairCoupling(xk, Hk, Dk, Di, Dj, xhatji, b, W, W0);
+                // if (k == 48) std::cerr << "  --> " << pair << " " << k << " " << Dk << " " << pairCoupling(xk, Hk, Dk, Di, Dj, xhatji, b, W, W0) << " " << fij << std::endl;
+              }
+              if (fij < 1.0e-10) break;
             }
-            if (fij < 1.0e-10) break;
+            ++nodeListk;
           }
-          ++nodeListk;
+        };
+        if (intersectConnectivityPrecomputed) {
+          processIntersection(connectivity.intersectionConnectivityView(pair));
+        } else {
+          processIntersection(connectivity.connectivityIntersectionForNodes(pair.i_list, pair.i_node,
+                                                                           pair.j_list, pair.j_node));
         }
         CHECK(fij >= 0.0 and fij <= 1.0);
       }

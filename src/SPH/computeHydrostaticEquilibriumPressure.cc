@@ -83,13 +83,11 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
       s[2][iglobal] = rhoi*gi.z();
 
       // Get the neighbors for this node (in this NodeList).
-      const vector<vector<int> >& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
       CHECK(connectivity.size() == numNodeLists);
       for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        for (vector<int>::const_iterator jItr = connectivity[nodeListj].begin();
-             jItr != connectivity[nodeListj].end();
-             ++jItr) {
-          const unsigned j = *jItr;
+        const auto neighbors = connectivity[nodeListj];
+        for (const auto j: neighbors) {
           const auto jglobal = globalIDs(nodeListj, j);
 
           // State for node j.
