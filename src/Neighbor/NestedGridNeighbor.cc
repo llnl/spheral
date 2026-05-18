@@ -389,13 +389,20 @@ fillCoarseNeighbors(const typename Dimension::Vector& position,
 }
 
 template<typename Dimension>
+int
+NestedGridNeighbor<Dimension>::
+groupKind() const {
+  return NestedNeighborGroupKind;
+}
+
+template<typename Dimension>
 NeighborGroupDescriptor
 NestedGridNeighbor<Dimension>::
 groupDescriptor(const typename Dimension::Vector& position,
                 const typename Dimension::SymTensor& H,
                 const uint64_t /*fallbackToken*/) const {
   NeighborGroupDescriptor result;
-  result.kind = 2;
+  result.kind = NestedNeighborGroupKind;
   result.level = gridLevel(H);
   result.key = packGridCellKey(gridCellIndex(position, result.level));
   return result;

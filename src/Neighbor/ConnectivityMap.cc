@@ -112,6 +112,208 @@ countsToOffsets(const std::vector<int>& counts,
 }
 
 //------------------------------------------------------------------------------
+// View-based coarse-neighbor helpers used by ConnectivityMap preprocessing.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+void
+extractTreeCellIndices(const typename TreeNeighbor<Dimension>::CellKey key,
+                       typename TreeNeighbor<Dimension>::CellKey& ix,
+                       typename TreeNeighbor<Dimension>::CellKey& iy,
+                       typename TreeNeighbor<Dimension>::CellKey& iz) {
+  using TreeType = TreeNeighbor<Dimension>;
+  ix = key & TreeType::xKeyMask();
+  iy = (key & TreeType::yKeyMask()) >> TreeType::num1DBits();
+  iz = (key & TreeType::zKeyMask()) >> (2*TreeType::num1DBits());
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+typename TreeNeighbor<Dimension>::CellKey
+shiftTreeKeyLevel(const typename TreeNeighbor<Dimension>::CellKey ix,
+                  const typename TreeNeighbor<Dimension>::LevelKey level0,
+                  const typename TreeNeighbor<Dimension>::LevelKey level1) {
+  return (level0 > level1 ? (ix >> (level0 - level1)) : (ix << (level1 - level0)));
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+bool
+treeKeyInRange(const typename TreeNeighbor<Dimension>::CellKey key,
+               const typename TreeNeighbor<Dimension>::CellKey ix_min,
+               const typename TreeNeighbor<Dimension>::CellKey iy_min,
+               const typename TreeNeighbor<Dimension>::CellKey iz_min,
+               const typename TreeNeighbor<Dimension>::CellKey ix_max,
+               const typename TreeNeighbor<Dimension>::CellKey iy_max,
+               const typename TreeNeighbor<Dimension>::CellKey iz_max) {
+  typename TreeNeighbor<Dimension>::CellKey ix, iy, iz;
+  extractTreeCellIndices<Dimension>(key, ix, iy, iz);
+  return (ix >= ix_min and ix <= ix_max and
+          iy >= iy_min and iy <= iy_max and
+          iz >= iz_min and iz <= iz_max);
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillTreeGroupCoarseNeighbors(const TreeNeighborView<Dimension>& view,
+                                    const int levelID,
+                                    const uint64_t cellID,
+                                    int* result) {
+  using TreeType = TreeNeighbor<Dimension>;
+  using CellKey = typename TreeType::CellKey;
+  using LevelKey = typename TreeType::LevelKey;
+  if (view.empty()) return 0u;
+  CHECK(levelID >= 0);
+  const auto masterLevel = LevelKey(levelID);
+  const auto masterCell = CellKey(cellID);
+  CellKey ix_master, iy_master, iz_master;
+  extractTreeCellIndices<Dimension>(masterCell, ix_master, iy_master, iz_master);
+
+  auto count = 0u;
+  CHECK2(view.levelSize(0) > 0u, "TreeNeighbor root level is empty.");
+  const auto rootCellIndex = view.levelBegin(0);
+  CHECK2(view.memberSize(rootCellIndex) == 0u,
+         "TreeNeighbor root cell occupied!  Will miss neighbors... " << view.memberSize(rootCellIndex));
+  for (LevelKey ilevel = 1; ilevel < view.numLevels(); ++ilevel) {
+    CellKey ix_min, iy_min, iz_min, ix_max, iy_max, iz_max;
+    const auto delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
+    const auto ix = shiftTreeKeyLevel<Dimension>(ix_master, masterLevel, ilevel);
+    const auto iy = shiftTreeKeyLevel<Dimension>(iy_master, masterLevel, ilevel);
+    const auto iz = shiftTreeKeyLevel<Dimension>(iz_master, masterLevel, ilevel);
+    ix_min = (ix > delta                    ? ix - delta : 0U);
+    iy_min = (iy > delta                    ? iy - delta : 0U);
+    iz_min = (iz > delta                    ? iz - delta : 0U);
+    ix_max = ((TreeType::max1dKeyValue() - ix) > delta ? ix + 2*delta - 1U : TreeType::max1dKeyValue());
+    iy_max = ((TreeType::max1dKeyValue() - iy) > delta ? iy + 2*delta - 1U : TreeType::max1dKeyValue());
+    iz_max = ((TreeType::max1dKeyValue() - iz) > delta ? iz + 2*delta - 1U : TreeType::max1dKeyValue());
+    CHECK(ix_min <= ix_max and ix_max <= TreeType::max1dKeyValue());
+    CHECK(iy_min <= iy_max and iy_max <= TreeType::max1dKeyValue());
+    CHECK(iz_min <= iz_max and iz_max <= TreeType::max1dKeyValue());
+
+    for (auto cellIndex = view.levelBegin(ilevel); cellIndex < view.levelEnd(ilevel); ++cellIndex) {
+      if (treeKeyInRange<Dimension>(view.cellKey(cellIndex),
+                                    ix_min, iy_min, iz_min,
+                                    ix_max, iy_max, iz_max)) {
+        const auto numMembers = view.memberSize(cellIndex);
+        for (auto k = 0u; k < numMembers; ++k) {
+          if (result != nullptr) result[count] = view.member(cellIndex, k);
+          ++count;
+        }
+      }
+    }
+  }
+  return count;
+}
+
+SPHERAL_HOST_DEVICE
+inline
+void
+unpackNestedGridCellKey(const uint64_t key,
+                        int& ix,
+                        int& iy,
+                        int& iz) {
+  constexpr uint64_t mask = (1ull << 21) - 1ull;
+  ix = int(key & mask) - (1 << 20);
+  iy = int((key >> 21) & mask) - (1 << 20);
+  iz = int((key >> 42) & mask) - (1 << 20);
+}
+
+SPHERAL_HOST_DEVICE
+inline
+bool
+nestedKeyInRange(const uint64_t key,
+                 const int ixMin,
+                 const int iyMin,
+                 const int izMin,
+                 const int ixMax,
+                 const int iyMax,
+                 const int izMax,
+                 const int ndim) {
+  int ix, iy, iz;
+  unpackNestedGridCellKey(key, ix, iy, iz);
+  return (ix >= ixMin and ix <= ixMax and
+          (ndim < 2 or (iy >= iyMin and iy <= iyMax)) and
+          (ndim < 3 or (iz >= izMin and iz <= izMax)));
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillNestedGroupCoarseNeighbors(const NestedGridNeighborView<Dimension>& view,
+                                      const int gridLevel,
+                                      const uint64_t packedCellKey,
+                                      const int gridCellInfluenceRadius,
+                                      const int searchType,
+                                      int* result) {
+  if (view.empty()) return 0u;
+
+  int cellX, cellY, cellZ;
+  unpackNestedGridCellKey(packedCellKey, cellX, cellY, cellZ);
+  const auto baseMinX = cellX - gridCellInfluenceRadius;
+  const auto baseMinY = cellY - gridCellInfluenceRadius;
+  const auto baseMinZ = cellZ - gridCellInfluenceRadius;
+  const auto baseMaxX = cellX + gridCellInfluenceRadius;
+  const auto baseMaxY = cellY + gridCellInfluenceRadius;
+  const auto baseMaxZ = cellZ + gridCellInfluenceRadius;
+
+  auto count = 0u;
+  for (int currentGridLevel = 0; currentGridLevel != int(view.numLevels()); ++currentGridLevel) {
+    if (view.levelSize(currentGridLevel) > 0u) {
+      int ixMin, iyMin, izMin, ixMax, iyMax, izMax;
+      if (currentGridLevel > gridLevel) {
+        const int glfactor = 1 << (currentGridLevel - gridLevel);
+        ixMin = baseMinX * glfactor;
+        iyMin = baseMinY * glfactor;
+        izMin = baseMinZ * glfactor;
+        ixMax = (baseMaxX + 1) * glfactor - 1;
+        iyMax = (baseMaxY + 1) * glfactor - 1;
+        izMax = (baseMaxZ + 1) * glfactor - 1;
+      } else {
+        const int glfactor = 1 << (gridLevel - currentGridLevel);
+        ixMin = baseMinX / glfactor;
+        iyMin = baseMinY / glfactor;
+        izMin = baseMinZ / glfactor;
+        ixMax = baseMaxX / glfactor;
+        iyMax = baseMaxY / glfactor;
+        izMax = baseMaxZ / glfactor;
+      }
+      const int radius = (searchType == int(NeighborSearchType::GatherScatter) ?
+                          gridCellInfluenceRadius * (1 << (currentGridLevel > gridLevel ? currentGridLevel - gridLevel : 0)) :
+                          searchType == int(NeighborSearchType::Gather) ?
+                          gridCellInfluenceRadius / (1 << (gridLevel > currentGridLevel ? gridLevel - currentGridLevel : 0)) + 1 :
+                          gridCellInfluenceRadius);
+      ixMin -= radius;
+      iyMin -= radius;
+      izMin -= radius;
+      ixMax += radius;
+      iyMax += radius;
+      izMax += radius;
+      for (auto cellIndex = view.levelBegin(currentGridLevel);
+           cellIndex < view.levelEnd(currentGridLevel);
+           ++cellIndex) {
+        if (nestedKeyInRange(view.cellKey(cellIndex),
+                             ixMin, iyMin, izMin,
+                             ixMax, iyMax, izMax,
+                             Dimension::nDim)) {
+          const auto numMembers = view.memberSize(cellIndex);
+          for (auto k = 0u; k < numMembers; ++k) {
+            if (result != nullptr) result[count] = view.member(cellIndex, k);
+            ++count;
+          }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+//------------------------------------------------------------------------------
 // Expand flat CSR-like connectivity back to the legacy ragged storage.
 //------------------------------------------------------------------------------
 inline
@@ -1168,9 +1370,13 @@ computeConnectivity() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   using FlatVectorSpan = SPHERAL_SPAN_TYPE<Vector>;
   using FlatDescriptorSpan = SPHERAL_SPAN_TYPE<NeighborGroupDescriptor>;
+  using FlatTreeNeighborViewSpan = SPHERAL_SPAN_TYPE<TreeNeighborView<Dimension>>;
+  using FlatNestedNeighborViewSpan = SPHERAL_SPAN_TYPE<NestedGridNeighborView<Dimension>>;
 #else
   using FlatVectorSpan = chai::ManagedArray<Vector>;
   using FlatDescriptorSpan = chai::ManagedArray<NeighborGroupDescriptor>;
+  using FlatTreeNeighborViewSpan = chai::ManagedArray<TreeNeighborView<Dimension>>;
+  using FlatNestedNeighborViewSpan = chai::ManagedArray<NestedGridNeighborView<Dimension>>;
 #endif
   FlatIntSpan offsetsSpan;
   GPUUtils::initMAView(offsetsSpan, mOffsets);
@@ -1189,6 +1395,34 @@ computeConnectivity() {
   FlatIntSpan neighborSearchTypesSpan;
   GPUUtils::initMAView(neighborSearchTypesSpan, neighborSearchTypes);
   GPUUtils::touch(neighborSearchTypesSpan, chai::CPU);
+  std::vector<int> neighborGroupKinds(numNodeLists, FallbackNeighborGroupKind);
+  std::vector<int> nestedGridCellInfluenceRadii(numNodeLists, 0);
+  std::vector<TreeNeighborView<Dimension>> treeNeighborViews(numNodeLists);
+  std::vector<NestedGridNeighborView<Dimension>> nestedNeighborViews(numNodeLists);
+  for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+    const auto& neighbor = mNodeLists[nodeList]->neighbor();
+    neighborGroupKinds[nodeList] = neighbor.groupKind();
+    if (neighborGroupKinds[nodeList] == TreeNeighborGroupKind) {
+      const auto& treeNeighbor = static_cast<const TreeNeighbor<Dimension>&>(neighbor);
+      treeNeighborViews[nodeList] = treeNeighbor.view();
+    } else if (neighborGroupKinds[nodeList] == NestedNeighborGroupKind) {
+      const auto& nestedNeighbor = static_cast<const NestedGridNeighbor<Dimension>&>(neighbor);
+      nestedNeighborViews[nodeList] = nestedNeighbor.view();
+      nestedGridCellInfluenceRadii[nodeList] = nestedNeighbor.gridCellInfluenceRadius();
+    }
+  }
+  FlatIntSpan neighborGroupKindsSpan;
+  GPUUtils::initMAView(neighborGroupKindsSpan, neighborGroupKinds);
+  GPUUtils::touch(neighborGroupKindsSpan, chai::CPU);
+  FlatIntSpan nestedGridCellInfluenceRadiiSpan;
+  GPUUtils::initMAView(nestedGridCellInfluenceRadiiSpan, nestedGridCellInfluenceRadii);
+  GPUUtils::touch(nestedGridCellInfluenceRadiiSpan, chai::CPU);
+  FlatTreeNeighborViewSpan treeNeighborViewsSpan;
+  GPUUtils::initMAView(treeNeighborViewsSpan, treeNeighborViews);
+  GPUUtils::touch(treeNeighborViewsSpan, chai::CPU);
+  FlatNestedNeighborViewSpan nestedNeighborViewsSpan;
+  GPUUtils::initMAView(nestedNeighborViewsSpan, nestedNeighborViews);
+  GPUUtils::touch(nestedNeighborViewsSpan, chai::CPU);
 
   // Group nodes by identical per-NodeList descriptors of their own query
   // state. This replaces the old sequential "first seed claims a group"
@@ -1346,17 +1580,24 @@ computeConnectivity() {
 
   auto countDescriptorCoarseNeighbors = [&](const size_t repSeed,
                                             const size_t nodeListi) -> int {
-    const auto& neighbor = mNodeLists[nodeListi]->neighbor();
     const auto& descriptor = seedDescriptorsSpan[repSeed*numNodeLists + nodeListi];
-    if (descriptor.kind == 1) {
-      const auto* treeNeighbor = dynamic_cast<const TreeNeighbor<Dimension>*>(&neighbor);
-      CHECK(treeNeighbor != nullptr);
-      return treeNeighbor->countTreeCoarseNeighbors(descriptor.level, descriptor.key);
-    } else if (descriptor.kind == 2) {
-      const auto* nestedNeighbor = dynamic_cast<const NestedGridNeighbor<Dimension>*>(&neighbor);
-      CHECK(nestedNeighbor != nullptr);
-      return nestedNeighbor->countNestedCoarseNeighbors(descriptor.level, descriptor.key);
+    const auto neighborKind = neighborGroupKindsSpan[nodeListi];
+    if (neighborKind == TreeNeighborGroupKind) {
+      CHECK(descriptor.kind == TreeNeighborGroupKind);
+      return countOrFillTreeGroupCoarseNeighbors<Dimension>(treeNeighborViewsSpan[nodeListi],
+                                                            descriptor.level,
+                                                            descriptor.key,
+                                                            nullptr);
+    } else if (neighborKind == NestedNeighborGroupKind) {
+      CHECK(descriptor.kind == NestedNeighborGroupKind);
+      return countOrFillNestedGroupCoarseNeighbors<Dimension>(nestedNeighborViewsSpan[nodeListi],
+                                                              descriptor.level,
+                                                              descriptor.key,
+                                                              nestedGridCellInfluenceRadiiSpan[nodeListi],
+                                                              neighborSearchTypesSpan[nodeListi],
+                                                              nullptr);
     } else {
+      const auto& neighbor = mNodeLists[nodeListi]->neighbor();
       const auto repNodeList = size_t(seedNodeListIDsSpan[repSeed]);
       const auto repNode = seedNodeIDsSpan[repSeed];
       return neighbor.countCoarseNeighbors(position(repNodeList, repNode),
@@ -1368,17 +1609,24 @@ computeConnectivity() {
   auto fillDescriptorCoarseNeighbors = [&](const size_t repSeed,
                                            const size_t nodeListi,
                                            int* result) {
-    const auto& neighbor = mNodeLists[nodeListi]->neighbor();
     const auto& descriptor = seedDescriptorsSpan[repSeed*numNodeLists + nodeListi];
-    if (descriptor.kind == 1) {
-      const auto* treeNeighbor = dynamic_cast<const TreeNeighbor<Dimension>*>(&neighbor);
-      CHECK(treeNeighbor != nullptr);
-      treeNeighbor->fillTreeCoarseNeighbors(descriptor.level, descriptor.key, result);
-    } else if (descriptor.kind == 2) {
-      const auto* nestedNeighbor = dynamic_cast<const NestedGridNeighbor<Dimension>*>(&neighbor);
-      CHECK(nestedNeighbor != nullptr);
-      nestedNeighbor->fillNestedCoarseNeighbors(descriptor.level, descriptor.key, result);
+    const auto neighborKind = neighborGroupKindsSpan[nodeListi];
+    if (neighborKind == TreeNeighborGroupKind) {
+      CHECK(descriptor.kind == TreeNeighborGroupKind);
+      countOrFillTreeGroupCoarseNeighbors<Dimension>(treeNeighborViewsSpan[nodeListi],
+                                                     descriptor.level,
+                                                     descriptor.key,
+                                                     result);
+    } else if (neighborKind == NestedNeighborGroupKind) {
+      CHECK(descriptor.kind == NestedNeighborGroupKind);
+      countOrFillNestedGroupCoarseNeighbors<Dimension>(nestedNeighborViewsSpan[nodeListi],
+                                                       descriptor.level,
+                                                       descriptor.key,
+                                                       nestedGridCellInfluenceRadiiSpan[nodeListi],
+                                                       neighborSearchTypesSpan[nodeListi],
+                                                       result);
     } else {
+      const auto& neighbor = mNodeLists[nodeListi]->neighbor();
       const auto repNodeList = size_t(seedNodeListIDsSpan[repSeed]);
       const auto repNode = seedNodeIDsSpan[repSeed];
       neighbor.fillCoarseNeighbors(position(repNodeList, repNode),
@@ -1447,8 +1695,8 @@ computeConnectivity() {
   GPUUtils::touch(groupMinMasterExtentSpan, chai::CPU);
   GPUUtils::touch(groupMaxMasterExtentSpan, chai::CPU);
 
-  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups)),
-  [=] SPHERAL_HOST_DEVICE (int groupIndex) {
+  RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups),
+  [=] SPHERAL_HOST_DEVICE (size_t groupIndex) {
     const auto seedNodeList = size_t(groupSeedNodeListIDsSpan[groupIndex]);
     const auto seedNode = groupSeedNodeIDsSpan[groupIndex];
     const auto& seedPosition = positionView(seedNodeList, seedNode);
@@ -1487,10 +1735,10 @@ computeConnectivity() {
   FlatIntSpan groupCoarseCountsSpan;
   GPUUtils::initMAView(groupCoarseCountsSpan, groupCoarseCounts);
   GPUUtils::touch(groupCoarseCountsSpan, chai::CPU);
-  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
-  [=] SPHERAL_HOST_DEVICE (int entryIndex) {
-    const auto groupIndex = size_t(entryIndex) / numNodeLists;
-    const auto nodeList = size_t(entryIndex) % numNodeLists;
+  RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
+  [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
+    const auto groupIndex = entryIndex / numNodeLists;
+    const auto nodeList = entryIndex % numNodeLists;
     const auto rawBegin = groupRawCoarseOffsetsSpan[entryIndex];
     const auto rawEnd = groupRawCoarseOffsetsSpan[entryIndex + 1u];
     auto count = 0;
@@ -1519,10 +1767,10 @@ computeConnectivity() {
   FlatIntSpan groupCoarseNeighborsSpan;
   GPUUtils::initMAView(groupCoarseNeighborsSpan, groupCoarseNeighbors);
   GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
-  RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numNeighborGroups*numNodeLists)),
-  [=] SPHERAL_HOST_DEVICE (int entryIndex) {
-    const auto groupIndex = size_t(entryIndex) / numNodeLists;
-    const auto nodeList = size_t(entryIndex) % numNodeLists;
+  RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
+  [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
+    const auto groupIndex = entryIndex / numNodeLists;
+    const auto nodeList = entryIndex % numNodeLists;
     const auto rawBegin = groupRawCoarseOffsetsSpan[entryIndex];
     const auto rawEnd = groupRawCoarseOffsetsSpan[entryIndex + 1u];
     auto count = 0;
@@ -1541,6 +1789,24 @@ computeConnectivity() {
     }
     CHECK(groupCoarseOffsetsSpan[entryIndex] + count == groupCoarseOffsetsSpan[entryIndex + 1u]);
   });
+  GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
+  for (auto groupIndex = 0u; groupIndex < numNeighborGroups; ++groupIndex) {
+    for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
+      const auto entryIndex = groupIndex*numNodeLists + nodeList;
+      const auto beginOffset = size_t(groupCoarseOffsets[entryIndex]);
+      const auto endOffset = size_t(groupCoarseOffsets[entryIndex + 1u]);
+      if (endOffset - beginOffset > 1u) {
+        auto beginItr = groupCoarseNeighbors.begin() + beginOffset;
+        auto endItr = groupCoarseNeighbors.begin() + endOffset;
+        if (domainDecompIndependent) {
+          std::sort(beginItr, endItr,
+                    [&](const int a, const int b) { return mKeys(nodeList, a) < mKeys(nodeList, b); });
+        } else {
+          std::sort(beginItr, endItr);
+        }
+      }
+    }
+  }
   GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
 
   // Count/scan/fill the main connectivity in flat CSR-like storage first.
@@ -1568,8 +1834,8 @@ computeConnectivity() {
     }
 
     const auto numTasks = taskNodeIDs.size();
-    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numTasks)),
-    [=] SPHERAL_HOST_DEVICE (int taskIndex) {
+    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numTasks),
+    [=] SPHERAL_HOST_DEVICE (size_t taskIndex) {
       const auto groupIndex = size_t(taskGroupIDsSpan[taskIndex]);
       const auto iNodeList = size_t(taskNodeListIDsSpan[taskIndex]);
       const auto i = taskNodeIDsSpan[taskIndex];
@@ -1604,14 +1870,6 @@ computeConnectivity() {
 
         if (fillingConnectivity) {
           CHECK(beginOffset + count == flatOffsetsSpan[entryIndex + 1u]);
-          if (count > 1) {
-            if (domainDecompIndependent) {
-              RAJA::sort<RAJA::seq_exec>(RAJA::make_span(flatNeighborsSpan.data() + beginOffset, count),
-                                         [&](const int a, const int b) { return keysView(jNodeList, a) < keysView(jNodeList, b); });
-            } else {
-              RAJA::sort<RAJA::seq_exec>(RAJA::make_span(flatNeighborsSpan.data() + beginOffset, count));
-            }
-          }
         } else {
           flatCountsSpan[entryIndex] = count;
         }
@@ -1644,52 +1902,84 @@ computeConnectivity() {
                         mConnectivityFlatNeighbors,
                         mConnectivity);
 
+  std::vector<int> globalNodeListIDs(connectivitySize);
+  std::vector<int> globalNodeIDs(connectivitySize);
+  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+    const auto ni = (ghostConnectivity ?
+                     mNodeLists[iNodeList]->numNodes() :
+                     mNodeLists[iNodeList]->numInternalNodes());
+    for (auto i = 0u; i < ni; ++i) {
+      const auto globalNodeIndex = size_t(mOffsets[iNodeList] + i);
+      globalNodeListIDs[globalNodeIndex] = iNodeList;
+      globalNodeIDs[globalNodeIndex] = i;
+    }
+  }
+  FlatIntSpan globalNodeListIDsSpan;
+  GPUUtils::initMAView(globalNodeListIDsSpan, globalNodeListIDs);
+  GPUUtils::touch(globalNodeListIDsSpan, chai::CPU);
+  FlatIntSpan globalNodeIDsSpan;
+  GPUUtils::initMAView(globalNodeIDsSpan, globalNodeIDs);
+  GPUUtils::touch(globalNodeIDsSpan, chai::CPU);
+
   std::vector<int> nodePairCounts(numConnectivityEntries, 0);
   auto buildNodePairPass = [&](std::vector<int>* pairCounts,
                                const std::vector<int>* pairOffsets,
-                               std::vector<NodePairIdxType>* nodePairs) {
+                               NodePairList* nodePairs) {
     const auto fillingNodePairs = (nodePairs != nullptr);
     if (fillingNodePairs) CHECK(pairOffsets != nullptr);
     else CHECK(pairCounts != nullptr);
 
-    for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-      const auto ni = (ghostConnectivity ?
-                       mNodeLists[iNodeList]->numNodes() :
-                       mNodeLists[iNodeList]->numInternalNodes());
-      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)), [&](int ii) {
-        const auto i = size_t(ii);
-        const auto globalNodeIndex = size_t(mOffsets[iNodeList] + i);
-        for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
-          const auto firstGhostNodej = firstGhostNodesSpan[jNodeList];
-          const auto entryIndex = connectivityView.entryIndex(globalNodeIndex, jNodeList);
-          const auto neighborCount = connectivityView.size(entryIndex);
-          auto pairCount = 0;
-          for (auto k = 0u; k < neighborCount; ++k) {
-            const auto j = connectivityView(entryIndex, k);
-            if (shouldCalculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) {
-              if (fillingNodePairs) {
-                (*nodePairs)[(*pairOffsets)[entryIndex] + pairCount] =
-                  NodePairIdxType(i, iNodeList, j, jNodeList);
-              }
-              ++pairCount;
-            }
-          }
+    FlatIntSpan pairCountsSpan;
+    FlatIntSpan pairOffsetsSpan;
+    NodePairListView nodePairsView;
+    if (fillingNodePairs) {
+      GPUUtils::initMAView(pairOffsetsSpan, const_cast<std::vector<int>&>(*pairOffsets));
+      GPUUtils::touch(pairOffsetsSpan, chai::CPU);
+      nodePairsView = nodePairs->view();
+      nodePairsView.touch(chai::CPU);
+    } else {
+      GPUUtils::initMAView(pairCountsSpan, *pairCounts);
+      GPUUtils::touch(pairCountsSpan, chai::CPU);
+    }
+
+    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
+    [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
+      const auto globalNodeIndex = entryIndex / numNodeLists;
+      const auto iNodeList = size_t(globalNodeListIDsSpan[globalNodeIndex]);
+      const auto i = globalNodeIDsSpan[globalNodeIndex];
+      const auto jNodeList = entryIndex % numNodeLists;
+      const auto firstGhostNodej = firstGhostNodesSpan[jNodeList];
+      const auto neighborCount = connectivityView.size(entryIndex);
+      auto pairCount = 0;
+      for (auto k = 0u; k < neighborCount; ++k) {
+        const auto j = connectivityView(entryIndex, k);
+        if (shouldCalculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) {
           if (fillingNodePairs) {
-            CHECK((*pairOffsets)[entryIndex] + pairCount == (*pairOffsets)[entryIndex + 1u]);
-          } else {
-            (*pairCounts)[entryIndex] = pairCount;
+            nodePairsView[pairOffsetsSpan[entryIndex] + pairCount] =
+              NodePairIdxType(i, iNodeList, j, jNodeList);
           }
+          ++pairCount;
         }
-      });
+      }
+      if (fillingNodePairs) {
+        CHECK(pairOffsetsSpan[entryIndex] + pairCount == pairOffsetsSpan[entryIndex + 1u]);
+      } else {
+        pairCountsSpan[entryIndex] = pairCount;
+      }
+    });
+
+    if (fillingNodePairs) {
+      nodePairsView.touch(chai::CPU);
+    } else {
+      GPUUtils::touch(pairCountsSpan, chai::CPU);
     }
   };
 
   buildNodePairPass(&nodePairCounts, nullptr, nullptr);
   std::vector<int> nodePairOffsets;
   countsToOffsets(nodePairCounts, nodePairOffsets);
-  std::vector<NodePairIdxType> nodePairs(nodePairOffsets.back());
-  buildNodePairPass(nullptr, &nodePairOffsets, &nodePairs);
-  mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
+  mNodePairListPtr = std::make_shared<NodePairList>(NodePairList::ContainerType(nodePairOffsets.back()));
+  buildNodePairPass(nullptr, &nodePairOffsets, mNodePairListPtr.get());
 
   // // If necessary add ghost->internal connectivity.
   // if (ghostConnectivity) {
@@ -1746,9 +2036,9 @@ computeConnectivity() {
 
     for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
       const auto ni = mNodeLists[iNodeList]->numNodes();
-      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)),
-      [=] SPHERAL_HOST_DEVICE (int ii) {
-        const auto i = ii;
+      RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, ni),
+      [=] SPHERAL_HOST_DEVICE (size_t ii) {
+        const auto i = int(ii);
         const auto globalNodeIndex = size_t(offsetsSpan[iNodeList] + i);
         for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
           const auto entryIndex = connectivity.entryIndex(globalNodeIndex, jNodeList);
@@ -1782,9 +2072,9 @@ computeConnectivity() {
 
     for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
       const auto ni = mNodeLists[iNodeList]->numNodes();
-      RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(ni)),
-      [=] SPHERAL_HOST_DEVICE (int ii) {
-        const auto i = ii;
+      RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, ni),
+      [=] SPHERAL_HOST_DEVICE (size_t ii) {
+        const auto i = int(ii);
         const auto globalNodeIndex = size_t(offsetsSpan[iNodeList] + i);
         for (auto jNodeList = 0u; jNodeList < numNodeLists; ++jNodeList) {
           const auto entryIndex = connectivity.entryIndex(globalNodeIndex, jNodeList);
@@ -1812,8 +2102,8 @@ computeConnectivity() {
     GPUUtils::initMAView(overlapCountsSpan, overlapCounts);
     GPUUtils::touch(overlapCountsSpan, chai::CPU);
 
-    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numConnectivityEntries)),
-    [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
+    [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
       const auto beginOffset = overlapRawOffsetsSpan[entryIndex];
       const auto count = size_t(overlapRawOffsetsSpan[entryIndex + 1] - beginOffset);
       auto* values = (count > 0u ? overlapRawNeighborsSpan.data() + beginOffset : nullptr);
@@ -1836,8 +2126,8 @@ computeConnectivity() {
     GPUUtils::initMAView(overlapNeighborsSpan, overlapNeighbors);
     GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
 
-    RAJA::forall<RAJA::seq_exec>(RAJA::RangeSegment(0, int(numConnectivityEntries)),
-    [=] SPHERAL_HOST_DEVICE (int entryIndex) {
+    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
+    [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
       const auto beginSrc = overlapRawOffsetsSpan[entryIndex];
       const auto beginDst = overlapOffsetsSpan[entryIndex];
       const auto count = size_t(overlapCountsSpan[entryIndex]);

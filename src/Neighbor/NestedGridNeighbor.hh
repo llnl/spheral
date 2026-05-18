@@ -77,6 +77,7 @@ public:
                                    const SymTensor& H,
                                    int* result,
                                    const bool ghostConnectivity = false) const override;
+  virtual int groupKind() const override;
   virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
                                                   const SymTensor& H,
                                                   const uint64_t fallbackToken) const override;

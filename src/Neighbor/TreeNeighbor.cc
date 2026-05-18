@@ -443,13 +443,20 @@ fillCoarseNeighbors(const Vector& position,
 }
 
 template<typename Dimension>
+int
+TreeNeighbor<Dimension>::
+groupKind() const {
+  return TreeNeighborGroupKind;
+}
+
+template<typename Dimension>
 NeighborGroupDescriptor
 TreeNeighbor<Dimension>::
 groupDescriptor(const Vector& position,
                 const SymTensor& H,
                 const uint64_t /*fallbackToken*/) const {
   NeighborGroupDescriptor result;
-  result.kind = 1;
+  result.kind = TreeNeighborGroupKind;
   result.level = this->gridLevel(H);
   CellKey masterKey, ix_master, iy_master, iz_master;
   buildCellKey(result.level, position, masterKey, ix_master, iy_master, iz_master);

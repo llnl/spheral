@@ -76,6 +76,7 @@ public:
                                    const SymTensor& H,
                                    int* result,
                                    const bool ghostConnectivity = false) const override;
+  virtual int groupKind() const override;
   virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
                                                   const SymTensor& H,
                                                   const uint64_t fallbackToken) const override;
@@ -194,6 +195,12 @@ public:
   // Expose hidden Neighbor methods
   using Neighbor<Dimension>::setMasterList;
   using Neighbor<Dimension>::setRefineNeighborList;
+
+  SPHERAL_HOST_DEVICE static unsigned num1DBits() { return num1dbits; }
+  SPHERAL_HOST_DEVICE static CellKey max1dKeyValue() { return max1dKey; }
+  SPHERAL_HOST_DEVICE static CellKey xKeyMask() { return xkeymask; }
+  SPHERAL_HOST_DEVICE static CellKey yKeyMask() { return ykeymask; }
+  SPHERAL_HOST_DEVICE static CellKey zKeyMask() { return zkeymask; }
 
 private:
   //--------------------------- Private Interface ---------------------------//

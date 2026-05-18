@@ -25,6 +25,12 @@ enum class NeighborSearchType {
   GatherScatter = 3
 };
 
+enum NeighborGroupKind {
+  FallbackNeighborGroupKind = 0,
+  TreeNeighborGroupKind = 1,
+  NestedNeighborGroupKind = 2
+};
+
 struct NeighborGroupDescriptor {
   int kind = 0;
   int level = 0;
@@ -134,6 +140,7 @@ public:
                                    const SymTensor& H,
                                    int* result,
                                    const bool ghostConnectivity = false) const;
+  virtual int groupKind() const;
   virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
                                                   const SymTensor& H,
                                                   const uint64_t fallbackToken) const;
