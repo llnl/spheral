@@ -215,56 +215,6 @@ setRefineNeighborList(int nodeID,
   this->setRefineNeighborList(positions(nodeID), Hfield(nodeID), coarseNeighbors, refineNeighbors);
 }
 
-//------------------------------------------------------------------------------
-// Default count/fill master/coarse list interfaces built on the legacy vector
-// API. Descendent classes can override these to avoid host-side staging.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-Neighbor<Dimension>::
-countMasterList(const Vector& position,
-                const SymTensor& H,
-                const bool ghostConnectivity) const {
-  std::vector<int> masterList, coarseNeighbors;
-  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
-  return masterList.size();
-}
-
-template<typename Dimension>
-void
-Neighbor<Dimension>::
-fillMasterList(const Vector& position,
-               const SymTensor& H,
-               int* result,
-               const bool ghostConnectivity) const {
-  std::vector<int> masterList, coarseNeighbors;
-  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
-  std::copy(masterList.begin(), masterList.end(), result);
-}
-
-template<typename Dimension>
-size_t
-Neighbor<Dimension>::
-countCoarseNeighbors(const Vector& position,
-                     const SymTensor& H,
-                     const bool ghostConnectivity) const {
-  std::vector<int> masterList, coarseNeighbors;
-  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
-  return coarseNeighbors.size();
-}
-
-template<typename Dimension>
-void
-Neighbor<Dimension>::
-fillCoarseNeighbors(const Vector& position,
-                    const SymTensor& H,
-                    int* result,
-                    const bool ghostConnectivity) const {
-  std::vector<int> masterList, coarseNeighbors;
-  this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
-  std::copy(coarseNeighbors.begin(), coarseNeighbors.end(), result);
-}
-
 template<typename Dimension>
 int
 Neighbor<Dimension>::

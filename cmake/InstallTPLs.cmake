@@ -190,9 +190,21 @@ if(chai_FOUND)
   message("Found chai External Package.")
 endif()
 
-list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
-list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
-list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
+message("-----------------------------------------------------------------------------")
+# CARE
+find_package(care REQUIRED NO_DEFAULT_PATH PATHS ${care_DIR})
+if (care_FOUND)
+  message("Found care External Package.")
+endif()
+
+list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA care::care umpire)
+# TODO: get rid of this hack to check for llnl_globalid
+# which care depends on.
+if (TARGET llnl_globalid::llnl_globalid)
+  list(APPEND SPHERAL_BLT_DEPENDS llnl_globalid::llnl_globalid)
+endif()
+list(APPEND SPHERAL_FP_TPLS chai RAJA care umpire)
+list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${care_DIR} ${umpire_DIR})
 
 message("-----------------------------------------------------------------------------")
 # Use find_package to get Sundials

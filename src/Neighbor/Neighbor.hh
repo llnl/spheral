@@ -128,18 +128,18 @@ public:
   // Count/fill interfaces for preprocessing flat connectivity structures.
   virtual size_t countMasterList(const Vector& position,
                                  const SymTensor& H,
-                                 const bool ghostConnectivity = false) const;
+                                 const bool ghostConnectivity = false) const = 0;
   virtual void fillMasterList(const Vector& position,
                               const SymTensor& H,
                               int* result,
-                              const bool ghostConnectivity = false) const;
+                              const bool ghostConnectivity = false) const = 0;
   virtual size_t countCoarseNeighbors(const Vector& position,
                                       const SymTensor& H,
-                                      const bool ghostConnectivity = false) const;
+                                      const bool ghostConnectivity = false) const = 0;
   virtual void fillCoarseNeighbors(const Vector& position,
                                    const SymTensor& H,
                                    int* result,
-                                   const bool ghostConnectivity = false) const;
+                                   const bool ghostConnectivity = false) const = 0;
   virtual int groupKind() const;
   virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
                                                   const SymTensor& H,

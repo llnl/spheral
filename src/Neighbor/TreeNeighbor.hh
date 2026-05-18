@@ -204,9 +204,11 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  static const unsigned num1dbits;                   // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
-  static const CellKey max1dKey;                     // The maximum number of cells this corresponds to in a direction.
-  static const CellKey xkeymask, ykeymask, zkeymask; // Bit masks we can use to extract the coordinate specific indices from a cell key.
+  static constexpr unsigned num1dbits = 21U;                        // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
+  static constexpr CellKey max1dKey = CellKey(1) << num1dbits;      // The maximum number of cells this corresponds to in a direction.
+  static constexpr CellKey xkeymask = max1dKey - 1U;
+  static constexpr CellKey ykeymask = xkeymask << num1dbits;
+  static constexpr CellKey zkeymask = ykeymask << num1dbits;        // Bit masks we can use to extract the coordinate specific indices from a cell key.
 
   //----------------------------------------------------------------------------
   // Cell holds the properties of cells in the tree.
