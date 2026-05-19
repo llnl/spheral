@@ -249,7 +249,26 @@ private:
   mutable bool mNodeTraversalCacheValid;
   mutable bool mIntersectionConnectivityCacheValid;
 
-  // Internal method to fill in the connectivity, once the set of NodeLists 
+  // Persistent workspace buffers to avoid allocation churn
+  // These grow as needed and are reused across computeConnectivity() calls
+  mutable std::vector<int> mWorkspaceGroupRawCoarseCounts;
+  mutable std::vector<int> mWorkspaceGroupRawCoarseOffsets;
+  mutable std::vector<int> mWorkspaceGroupRawCoarseNeighbors;
+  mutable std::vector<int> mWorkspaceGroupCoarseCounts;
+  mutable std::vector<int> mWorkspaceGroupCoarseOffsets;
+  mutable std::vector<int> mWorkspaceGroupCoarseNeighbors;
+  mutable std::vector<int> mWorkspaceFlatCounts;
+  mutable std::vector<int> mWorkspaceFlatOffsets;
+  mutable std::vector<int> mWorkspaceFlatNeighbors;
+  mutable std::vector<int> mWorkspacePairCounts;
+  mutable std::vector<int> mWorkspacePairOffsets;
+  mutable std::vector<int> mWorkspaceOverlapRawCounts;
+  mutable std::vector<int> mWorkspaceOverlapRawOffsets;
+  mutable std::vector<int> mWorkspaceOverlapRawNeighbors;
+  mutable std::vector<int> mWorkspaceOverlapCounts;
+  mutable std::vector<int> mWorkspaceOverlapOffsets;
+
+  // Internal method to fill in the connectivity, once the set of NodeLists
   // is determined.
   void computeConnectivity();
   void rebuildFlatConnectivityViews();

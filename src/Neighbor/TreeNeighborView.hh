@@ -79,6 +79,26 @@ public:
     GPUUtils::touch(mMembers, space);
   }
 
+  SPHERAL_HOST_DEVICE void shallowCopy(TreeNeighborView const& other) const {
+#ifdef SPHERAL_UNIFIED_MEMORY
+    const_cast<size_t&>(mNumLevels) = other.mNumLevels;
+    const_cast<IntSpanType&>(mLevelOffsets) = other.mLevelOffsets;
+    const_cast<KeySpanType&>(mCellKeys) = other.mCellKeys;
+    const_cast<IntSpanType&>(mDaughterOffsets) = other.mDaughterOffsets;
+    const_cast<IntSpanType&>(mDaughterIndices) = other.mDaughterIndices;
+    const_cast<IntSpanType&>(mMemberOffsets) = other.mMemberOffsets;
+    const_cast<IntSpanType&>(mMembers) = other.mMembers;
+#else
+    const_cast<size_t&>(mNumLevels) = other.mNumLevels;
+    mLevelOffsets.shallowCopy(other.mLevelOffsets);
+    mCellKeys.shallowCopy(other.mCellKeys);
+    mDaughterOffsets.shallowCopy(other.mDaughterOffsets);
+    mDaughterIndices.shallowCopy(other.mDaughterIndices);
+    mMemberOffsets.shallowCopy(other.mMemberOffsets);
+    mMembers.shallowCopy(other.mMembers);
+#endif
+  }
+
 private:
   size_t mNumLevels = 0u;
   IntSpanType mLevelOffsets;
