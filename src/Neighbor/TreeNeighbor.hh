@@ -13,6 +13,7 @@
 #define __Spheral_TreeNeighbor_hh__
 
 #include "Neighbor.hh"
+#include "TreeNeighborView.hh"
 
 #include <stdint.h>
 #include <unordered_map>
@@ -61,6 +62,24 @@ public:
                              std::vector<int>& masterList,
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const override;
+  virtual size_t countMasterList(const Vector& position,
+                                 const SymTensor& H,
+                                 const bool ghostConnectivity = false) const override;
+  virtual void fillMasterList(const Vector& position,
+                              const SymTensor& H,
+                              int* result,
+                              const bool ghostConnectivity = false) const override;
+  virtual size_t countCoarseNeighbors(const Vector& position,
+                                      const SymTensor& H,
+                                      const bool ghostConnectivity = false) const override;
+  virtual void fillCoarseNeighbors(const Vector& position,
+                                   const SymTensor& H,
+                                   int* result,
+                                   const bool ghostConnectivity = false) const override;
+  virtual int groupKind() const override;
+  virtual NeighborGroupDescriptor groupDescriptor(const Vector& position,
+                                                  const SymTensor& H,
+                                                  const uint64_t fallbackToken) const override;
 
   virtual void setRefineNeighborList(const Vector& position,
                                      const Scalar& H,
@@ -115,6 +134,15 @@ public:
 
   // Cell size on the given level
   double cellSize(const LevelKey levelID) const;
+  TreeNeighborView<Dimension> view() const {
+    return TreeNeighborView<Dimension>(mTree.size(),
+                                       mTreeLevelOffsetsSpan,
+                                       mTreeCellKeysSpan,
+                                       mTreeDaughterOffsetsSpan,
+                                       mTreeDaughterIndicesSpan,
+                                       mTreeMemberOffsetsSpan,
+                                       mTreeMembersSpan);
+  }
 
   // Methods to serialize/deserialize the state of TreeNeighbor.
   void serialize(std::vector<char>& buffer) const;
@@ -136,6 +164,28 @@ public:
 
   // For our parallel algorithm it is useful to be able to set the master/coarse
   // information based on the given (level, cell).
+  size_t countTreeMasterList(const Vector& position,
+                             const SymTensor& H,
+                             const bool ghostConnectivity) const;
+  void fillTreeMasterList(const Vector& position,
+                          const SymTensor& H,
+                          int* result,
+                          const bool ghostConnectivity) const;
+  size_t countTreeCoarseNeighbors(const Vector& position,
+                                  const SymTensor& H) const;
+  void fillTreeCoarseNeighbors(const Vector& position,
+                               const SymTensor& H,
+                               int* result) const;
+  size_t countTreeCoarseNeighbors(const LevelKey levelID,
+                                  const CellKey cellID) const;
+  void fillTreeCoarseNeighbors(const LevelKey levelID,
+                               const CellKey cellID,
+                               int* result) const;
+  void setTreeMasterList(const Vector& position,
+                         const SymTensor& H,
+                         std::vector<int>& masterList,
+                         std::vector<int>& coarseNeighbors,
+                         const bool ghostConnectivity) const;
   void setTreeMasterList(const LevelKey levelID,
                          const CellKey cellID,
                          std::vector<int>& masterList,
@@ -146,11 +196,19 @@ public:
   using Neighbor<Dimension>::setMasterList;
   using Neighbor<Dimension>::setRefineNeighborList;
 
+  SPHERAL_HOST_DEVICE static unsigned num1DBits() { return num1dbits; }
+  SPHERAL_HOST_DEVICE static CellKey max1dKeyValue() { return max1dKey; }
+  SPHERAL_HOST_DEVICE static CellKey xKeyMask() { return xkeymask; }
+  SPHERAL_HOST_DEVICE static CellKey yKeyMask() { return ykeymask; }
+  SPHERAL_HOST_DEVICE static CellKey zKeyMask() { return zkeymask; }
+
 private:
   //--------------------------- Private Interface ---------------------------//
-  static const unsigned num1dbits;                   // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
-  static const CellKey max1dKey;                     // The maximum number of cells this corresponds to in a direction.
-  static const CellKey xkeymask, ykeymask, zkeymask; // Bit masks we can use to extract the coordinate specific indices from a cell key.
+  static constexpr unsigned num1dbits = 21U;                        // The number of bits we quantize 1D coordinates to.  We have to fit three of these in 64 bits.
+  static constexpr CellKey max1dKey = CellKey(1) << num1dbits;      // The maximum number of cells this corresponds to in a direction.
+  static constexpr CellKey xkeymask = max1dKey - 1U;
+  static constexpr CellKey ykeymask = xkeymask << num1dbits;
+  static constexpr CellKey zkeymask = ykeymask << num1dbits;        // Bit masks we can use to extract the coordinate specific indices from a cell key.
 
   //----------------------------------------------------------------------------
   // Cell holds the properties of cells in the tree.
@@ -209,6 +267,7 @@ private:
 
   // Construct all the daughterPtrs in a tree.
   void constructDaughterPtrs(Tree& tree) const;
+  void rebuildView();
 
   // Actual method for setting the master list.
   void setTreeMasterList(const Vector& position,
@@ -262,6 +321,26 @@ private:
   double mBoxLength, mGridLevelConst0;
   Vector mXmin, mXmax;
   Tree mTree;
+
+  std::vector<int> mTreeLevelOffsets;
+  std::vector<CellKey> mTreeCellKeys;
+  std::vector<int> mTreeDaughterOffsets;
+  std::vector<int> mTreeDaughterIndices;
+  std::vector<int> mTreeMemberOffsets;
+  std::vector<int> mTreeMembers;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using FlatTreeSpan = SPHERAL_SPAN_TYPE<int>;
+  using FlatTreeCellKeySpan = SPHERAL_SPAN_TYPE<CellKey>;
+#else
+  using FlatTreeSpan = chai::ManagedArray<int>;
+  using FlatTreeCellKeySpan = chai::ManagedArray<CellKey>;
+#endif
+  FlatTreeSpan mTreeLevelOffsetsSpan;
+  FlatTreeCellKeySpan mTreeCellKeysSpan;
+  FlatTreeSpan mTreeDaughterOffsetsSpan;
+  FlatTreeSpan mTreeDaughterIndicesSpan;
+  FlatTreeSpan mTreeMemberOffsetsSpan;
+  FlatTreeSpan mTreeMembersSpan;
 };
 
 }

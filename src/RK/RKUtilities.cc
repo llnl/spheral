@@ -360,7 +360,7 @@ computeCorrections(const ConnectivityMap<Dimension>& connectivityMap,
       }
                             
       // Add contribution from other points
-      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);
+      const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, nodei);
       for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
         for (auto nodej : connectivity[nodeListj]) {
           addToMatrix(nodeListi, nodei, nodeListj, nodej);
@@ -606,7 +606,7 @@ computeNormal(const ConnectivityMap<Dimension>& connectivityMap,
       normal(nodeListi, nodei) = Vector::zero();
       
       // Add contribution from other points
-      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);
+      const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, nodei);
       for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
         for (auto nodej : connectivity[nodeListj]) {
           addToNormal(nodeListi, nodei, nodeListj, nodej);

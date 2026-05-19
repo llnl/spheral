@@ -649,7 +649,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       auto& worki = workFieldi(i);
 
       // Get the connectivity info for this node.
-      const auto& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
+      const auto fullConnectivity = connectivityMap.connectivityForNodeView(&nodeList, i);
 
       // Iterate over the NodeLists.
       for (auto nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {

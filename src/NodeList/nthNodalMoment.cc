@@ -78,13 +78,13 @@ nthNodalMoment(const NodeListIterator nodeListBegin,
   for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr, ++nodeListi) {
     const NodeList<Dimension>& nodes = **itr;
     for (unsigned i = 0; i != nodes.numInternalNodes(); ++i) {
-      const vector<vector<int> >& allNeighbors = cm.connectivityForNode(nodeListi, i);
+      const auto allNeighbors = cm.connectivityForNodeView(nodeListi, i);
       CHECK(allNeighbors.size() == numNodeLists);
       const Vector ri = pos(nodeListi, i);
       const SymTensor Hi = H(nodeListi, i);
       double wsum = W0;
       for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& neighbors = allNeighbors[nodeListj];
+        const auto neighbors = allNeighbors[nodeListj];
         for (unsigned k = 0; k != neighbors.size(); ++k) {
           const unsigned j = neighbors[k];
           const Vector etai = Hi*(pos(nodeListj, j) - ri);
@@ -147,12 +147,12 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
   for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr, ++nodeListi) {
     const NodeList<Dimension>& nodes = **itr;
     for (unsigned i = 0; i != nodes.numInternalNodes(); ++i) {
-      const vector<vector<int> >& allNeighbors = cm.connectivityForNode(nodeListi, i);
+      const auto allNeighbors = cm.connectivityForNodeView(nodeListi, i);
       CHECK(allNeighbors.size() == numNodeLists);
       const Vector ri = pos(nodeListi, i);
       const SymTensor Hi = H(nodeListi, i);
       for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& neighbors = allNeighbors[nodeListj];
+        const auto neighbors = allNeighbors[nodeListj];
         for (unsigned k = 0; k != neighbors.size(); ++k) {
           const unsigned j = neighbors[k];
           const Vector rj = pos(nodeListj, j);

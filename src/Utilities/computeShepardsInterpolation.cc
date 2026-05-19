@@ -57,14 +57,11 @@ computeShepardsInterpolation(const FieldList<Dimension, DataType>& fieldList,
       const auto  Hdeti = Hi.Determinant();
 
       // Walk the neighbor NodeLists.
-      const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      const auto fullConnectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
       for (nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const auto& connectivity = fullConnectivity[nodeListj];
+        const auto connectivity = fullConnectivity[nodeListj];
         const int firstGhostNodej = fieldList[nodeListi]->nodeList().firstGhostNode();
-        for (vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) {
-          const int j = *jItr;
+        for (const auto j: connectivity) {
 
           // Check if this node pair has already been calculated.
           if (connectivityMap.calculatePairInteraction(nodeListi, i, 

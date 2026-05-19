@@ -32,6 +32,162 @@ using std::map;
 
 namespace Spheral {
 
+namespace {
+
+template<typename ViewType, typename CellKey>
+SPHERAL_HOST_DEVICE
+inline
+int
+findCellIndexInLevel(const ViewType& view,
+                     const size_t level,
+                     const CellKey key) {
+  auto begin = view.levelBegin(level);
+  auto end = view.levelEnd(level);
+  while (begin < end) {
+    const auto mid = begin + (end - begin)/2u;
+    const auto midKey = view.cellKey(mid);
+    if (midKey < key) begin = mid + 1u;
+    else end = mid;
+  }
+  return (begin < view.levelEnd(level) and view.cellKey(begin) == key ? int(begin) : -1);
+}
+
+template<typename CellKey>
+SPHERAL_HOST_DEVICE
+inline
+void
+extractCellIndices(const CellKey key,
+                   const CellKey xkeymask,
+                   const CellKey ykeymask,
+                   const CellKey zkeymask,
+                   const unsigned num1dbits,
+                   CellKey& ix,
+                   CellKey& iy,
+                   CellKey& iz) {
+  ix = key & xkeymask;
+  iy = (key & ykeymask) >> num1dbits;
+  iz = (key & zkeymask) >> 2*num1dbits;
+}
+
+template<typename CellKey, typename LevelKey>
+SPHERAL_HOST_DEVICE
+inline
+CellKey
+shiftTreeKeyLevel(const CellKey ix,
+                  const LevelKey level0,
+                  const LevelKey level1) {
+  return (level1 <= level0 ?
+          ix >> (level0 - level1) :
+          ix << (level1 - level0));
+}
+
+template<typename CellKey>
+SPHERAL_HOST_DEVICE
+inline
+bool
+keyInRange(const CellKey key,
+           const CellKey ix_min,
+           const CellKey iy_min,
+           const CellKey iz_min,
+           const CellKey ix_max,
+           const CellKey iy_max,
+           const CellKey iz_max,
+           const CellKey xkeymask,
+           const CellKey ykeymask,
+           const CellKey zkeymask,
+           const unsigned num1dbits) {
+  CellKey ix, iy, iz;
+  extractCellIndices(key, xkeymask, ykeymask, zkeymask, num1dbits, ix, iy, iz);
+  return (ix >= ix_min and ix <= ix_max and
+          iy >= iy_min and iy <= iy_max and
+          iz >= iz_min and iz <= iz_max);
+}
+
+template<typename ViewType, typename CellKey>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillMasterList(const ViewType& view,
+                      const size_t levelID,
+                      const CellKey cellID,
+                      const int firstGhostNode,
+                      const bool ghostConnectivity,
+                      int* result) {
+  if (view.numLevels() <= levelID) return 0u;
+  const auto masterCellIndex = findCellIndexInLevel(view, levelID, cellID);
+  if (masterCellIndex < 0) return 0u;
+
+  auto count = 0u;
+  const auto numMembers = view.memberSize(masterCellIndex);
+  for (auto k = 0u; k < numMembers; ++k) {
+    const auto nodeID = view.member(masterCellIndex, k);
+    if (ghostConnectivity or nodeID < firstGhostNode) {
+      if (result != nullptr) result[count] = nodeID;
+      ++count;
+    }
+  }
+  return count;
+}
+
+template<typename ViewType, typename LevelKey, typename CellKey>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillTreeNeighbors(const ViewType& view,
+                         const LevelKey masterLevel,
+                         const CellKey ix_master,
+                         const CellKey iy_master,
+                         const CellKey iz_master,
+                         const unsigned num1dbits,
+                         const CellKey max1dKey,
+                         const CellKey xkeymask,
+                         const CellKey ykeymask,
+                         const CellKey zkeymask,
+                         int* result) {
+  if (view.empty()) return 0u;
+
+  auto count = 0u;
+  CHECK2(view.levelSize(0) > 0u, "TreeNeighbor root level is empty.");
+  const auto rootCellIndex = view.levelBegin(0);
+  CHECK2(view.memberSize(rootCellIndex) == 0u,
+         "TreeNeighbor root cell occupied!  Will miss neighbors... " << view.memberSize(rootCellIndex));
+  for (LevelKey ilevel = 1; ilevel < view.numLevels(); ++ilevel) {
+    CellKey ix_min, iy_min, iz_min, ix_max, iy_max, iz_max;
+    const auto delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
+    const auto ix = shiftTreeKeyLevel(ix_master, masterLevel, ilevel);
+    const auto iy = shiftTreeKeyLevel(iy_master, masterLevel, ilevel);
+    const auto iz = shiftTreeKeyLevel(iz_master, masterLevel, ilevel);
+    ix_min = (ix > delta              ? ix - delta : 0U);
+    iy_min = (iy > delta              ? iy - delta : 0U);
+    iz_min = (iz > delta              ? iz - delta : 0U);
+    ix_max = ((max1dKey - ix) > delta ? ix + 2*delta - 1U : max1dKey);
+    iy_max = ((max1dKey - iy) > delta ? iy + 2*delta - 1U : max1dKey);
+    iz_max = ((max1dKey - iz) > delta ? iz + 2*delta - 1U : max1dKey);
+    CHECK(ix_min <= ix_max and ix_max <= max1dKey);
+    CHECK(iy_min <= iy_max and iy_max <= max1dKey);
+    CHECK(iz_min <= iz_max and iz_max <= max1dKey);
+
+    for (auto cellIndex = view.levelBegin(ilevel); cellIndex < view.levelEnd(ilevel); ++cellIndex) {
+      const auto cellKey = view.cellKey(cellIndex);
+      if (keyInRange(cellKey,
+                     ix_min, iy_min, iz_min,
+                     ix_max, iy_max, iz_max,
+                     xkeymask, ykeymask, zkeymask,
+                     num1dbits)) {
+        const auto numMembers = view.memberSize(cellIndex);
+        for (auto k = 0u; k < numMembers; ++k) {
+          if (result != nullptr) result[count] = view.member(cellIndex, k);
+          ++count;
+        }
+      }
+    }
+  }
+
+  return count;
+}
+
+}
+
 //------------------------------------------------------------------------------
 // Compute the vertex coordinates for a cell.
 //------------------------------------------------------------------------------
@@ -158,7 +314,19 @@ TreeNeighbor(NodeList<Dimension>& nodeList,
   mGridLevelConst0(0.0),
   mXmin(xmin),
   mXmax(xmax),
-  mTree() {
+  mTree(),
+  mTreeLevelOffsets(),
+  mTreeCellKeys(),
+  mTreeDaughterOffsets(),
+  mTreeDaughterIndices(),
+  mTreeMemberOffsets(),
+  mTreeMembers(),
+  mTreeLevelOffsetsSpan(),
+  mTreeCellKeysSpan(),
+  mTreeDaughterOffsetsSpan(),
+  mTreeDaughterIndicesSpan(),
+  mTreeMemberOffsetsSpan(),
+  mTreeMembersSpan() {
   this->reinitialize(xmin, xmax, (xmax - xmin).maxElement()/4.0);
 }
 
@@ -168,6 +336,12 @@ TreeNeighbor(NodeList<Dimension>& nodeList,
 template<typename Dimension>
 TreeNeighbor<Dimension>::
 ~TreeNeighbor() {
+  GPUUtils::freeMAView(mTreeLevelOffsetsSpan);
+  GPUUtils::freeMAView(mTreeCellKeysSpan);
+  GPUUtils::freeMAView(mTreeDaughterOffsetsSpan);
+  GPUUtils::freeMAView(mTreeDaughterIndicesSpan);
+  GPUUtils::freeMAView(mTreeMemberOffsetsSpan);
+  GPUUtils::freeMAView(mTreeMembersSpan);
 }
 
 //------------------------------------------------------------------------------
@@ -212,11 +386,194 @@ setMasterList(const Vector& position,
               std::vector<int>& masterList,
               std::vector<int>& coarseNeighbors,
               const bool ghostConnectivity) const {
+  this->setTreeMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+setTreeMasterList(const Vector& position,
+                  const SymTensor& H,
+                  std::vector<int>& masterList,
+                  std::vector<int>& coarseNeighbors,
+                  const bool ghostConnectivity) const {
   REQUIRE(H.Determinant() > 0.0);
   const Vector hinvValues = H.eigenValues();
   CHECK(hinvValues.minElement() > 0.0);
   const Scalar h = 1.0/hinvValues.minElement();
   this->setTreeMasterList(position, h, masterList, coarseNeighbors, ghostConnectivity);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countMasterList(const Vector& position,
+                const SymTensor& H,
+                const bool ghostConnectivity) const {
+  return this->countTreeMasterList(position, H, ghostConnectivity);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillMasterList(const Vector& position,
+               const SymTensor& H,
+               int* result,
+               const bool ghostConnectivity) const {
+  this->fillTreeMasterList(position, H, result, ghostConnectivity);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countCoarseNeighbors(const Vector& position,
+                     const SymTensor& H,
+                     const bool /*ghostConnectivity*/) const {
+  return this->countTreeCoarseNeighbors(position, H);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillCoarseNeighbors(const Vector& position,
+                    const SymTensor& H,
+                    int* result,
+                    const bool /*ghostConnectivity*/) const {
+  this->fillTreeCoarseNeighbors(position, H, result);
+}
+
+template<typename Dimension>
+int
+TreeNeighbor<Dimension>::
+groupKind() const {
+  return TreeNeighborGroupKind;
+}
+
+template<typename Dimension>
+NeighborGroupDescriptor
+TreeNeighbor<Dimension>::
+groupDescriptor(const Vector& position,
+                const SymTensor& H,
+                const uint64_t /*fallbackToken*/) const {
+  NeighborGroupDescriptor result;
+  result.kind = TreeNeighborGroupKind;
+  result.level = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(result.level, position, masterKey, ix_master, iy_master, iz_master);
+  result.key = masterKey;
+  return result;
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countTreeMasterList(const Vector& position,
+                    const SymTensor& H,
+                    const bool ghostConnectivity) const {
+  REQUIRE(H.Determinant() > 0.0);
+  const auto masterLevel = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(masterLevel, position, masterKey, ix_master, iy_master, iz_master);
+  const auto view = this->view();
+  return countOrFillMasterList(view,
+                               masterLevel,
+                               masterKey,
+                               this->nodeList().firstGhostNode(),
+                               ghostConnectivity,
+                               nullptr);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillTreeMasterList(const Vector& position,
+                   const SymTensor& H,
+                   int* result,
+                   const bool ghostConnectivity) const {
+  REQUIRE(H.Determinant() > 0.0);
+  const auto masterLevel = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(masterLevel, position, masterKey, ix_master, iy_master, iz_master);
+  const auto view = this->view();
+  const auto count = countOrFillMasterList(view,
+                                           masterLevel,
+                                           masterKey,
+                                           this->nodeList().firstGhostNode(),
+                                           ghostConnectivity,
+                                           result);
+  if (count > 1u) std::sort(result, result + count);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countTreeCoarseNeighbors(const Vector& position,
+                         const SymTensor& H) const {
+  REQUIRE(H.Determinant() > 0.0);
+  const auto masterLevel = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(masterLevel, position, masterKey, ix_master, iy_master, iz_master);
+  const auto view = this->view();
+  return countOrFillTreeNeighbors(view,
+                                  masterLevel,
+                                  ix_master, iy_master, iz_master,
+                                  num1dbits,
+                                  max1dKey,
+                                  xkeymask, ykeymask, zkeymask,
+                                  nullptr);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillTreeCoarseNeighbors(const Vector& position,
+                        const SymTensor& H,
+                        int* result) const {
+  REQUIRE(H.Determinant() > 0.0);
+  const auto masterLevel = this->gridLevel(H);
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  buildCellKey(masterLevel, position, masterKey, ix_master, iy_master, iz_master);
+  const auto view = this->view();
+  countOrFillTreeNeighbors(view,
+                           masterLevel,
+                           ix_master, iy_master, iz_master,
+                           num1dbits,
+                           max1dKey,
+                           xkeymask, ykeymask, zkeymask,
+                           result);
+}
+
+template<typename Dimension>
+size_t
+TreeNeighbor<Dimension>::
+countTreeCoarseNeighbors(const LevelKey levelID,
+                         const CellKey cellID) const {
+  CellKey ix_master, iy_master, iz_master;
+  extractCellIndices(cellID, ix_master, iy_master, iz_master);
+  return countOrFillTreeNeighbors(this->view(),
+                                  levelID,
+                                  ix_master, iy_master, iz_master,
+                                  num1dbits,
+                                  max1dKey,
+                                  xkeymask, ykeymask, zkeymask,
+                                  nullptr);
+}
+
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+fillTreeCoarseNeighbors(const LevelKey levelID,
+                        const CellKey cellID,
+                        int* result) const {
+  CellKey ix_master, iy_master, iz_master;
+  extractCellIndices(cellID, ix_master, iy_master, iz_master);
+  countOrFillTreeNeighbors(this->view(),
+                           levelID,
+                           ix_master, iy_master, iz_master,
+                           num1dbits,
+                           max1dKey,
+                           xkeymask, ykeymask, zkeymask,
+                           result);
 }
 
 template<typename Dimension>
@@ -447,6 +804,7 @@ updateNodes() {
 
   // Set the daughter pointers.
   constructDaughterPtrs(mTree);
+  rebuildView();
 
   // Force the node extents to be calculated.
   this->setNodeExtents();
@@ -751,6 +1109,7 @@ deserialize(vector<char>::const_iterator& bufItr,
   CellKey key;
   Cell cell;
   unpackElement(nlevels, bufItr, endItr);
+  mTree.clear();
   mTree.resize(nlevels);
   for (unsigned ilevel = 0; ilevel != nlevels; ++ilevel) {
     unsigned ncells;
@@ -764,6 +1123,7 @@ deserialize(vector<char>::const_iterator& bufItr,
     }
   }
   constructDaughterPtrs(mTree);
+  rebuildView();
 }
 
 //------------------------------------------------------------------------------
@@ -863,6 +1223,7 @@ setTreeMasterList(const typename TreeNeighbor<Dimension>::LevelKey levelID,
                   std::vector<int>& coarseNeighbors,
                   const bool ghostConnectivity) const {
   REQUIRE(levelID < num1dbits);
+  const auto view = this->view();
 
   // Get the per dimension cell indices.
   CellKey ix_master, iy_master, iz_master;
@@ -873,25 +1234,46 @@ setTreeMasterList(const typename TreeNeighbor<Dimension>::LevelKey levelID,
   coarseNeighbors.clear();
 
   // Set the master list.
-  if (mTree.size() > levelID) {
-    auto masterItr = mTree[levelID].find(cellID);
-    if (masterItr !=  mTree[levelID].end()) {
-      masterList = masterItr->second.members;
-      // cerr << "Master cell/level " << masterItr->second.key << " / " << levelID << " : " << masterList.size() << endl;
-    }
+  const auto masterCount = countOrFillMasterList(view,
+                                                 levelID,
+                                                 cellID,
+                                                 this->nodeList().firstGhostNode(),
+                                                 ghostConnectivity,
+                                                 nullptr);
+  masterList.resize(masterCount);
+  if (masterCount > 0u) {
+    countOrFillMasterList(view,
+                          levelID,
+                          cellID,
+                          this->nodeList().firstGhostNode(),
+                          ghostConnectivity,
+                          masterList.data());
   }
+  // cerr << "Master cell/level " << cellID << " / " << levelID << " : " << masterList.size() << endl;
 
   // Set the coarse list.
-  if (mTree.size() > 0) {
-    coarseNeighbors = this->findTreeNeighbors(levelID, ix_master, iy_master, iz_master);
+  if (not view.empty()) {
+    const auto coarseCount = countOrFillTreeNeighbors(view,
+                                                      levelID,
+                                                      ix_master, iy_master, iz_master,
+                                                      num1dbits,
+                                                      max1dKey,
+                                                      xkeymask, ykeymask, zkeymask,
+                                                      nullptr);
+    coarseNeighbors.resize(coarseCount);
+    if (coarseCount > 0u) {
+      countOrFillTreeNeighbors(view,
+                               levelID,
+                               ix_master, iy_master, iz_master,
+                               num1dbits,
+                               max1dKey,
+                               xkeymask, ykeymask, zkeymask,
+                               coarseNeighbors.data());
+    }
   }
 
   // Remove all ghost nodes from the master list.
   sort(masterList.begin(), masterList.end());
-  if (not ghostConnectivity) {
-    const auto firstGhostNode = this->nodeList().firstGhostNode();
-    masterList.erase(lower_bound(masterList.begin(), masterList.end(), firstGhostNode), masterList.end());
-  }
 
   // Post conditions.
   ENSURE2(coarseNeighbors.size() >= masterList.size(), coarseNeighbors.size() << " " << masterList.size());
@@ -1024,6 +1406,83 @@ constructDaughterPtrs(typename TreeNeighbor<Dimension>::Tree& tree) const {
 }
 
 //------------------------------------------------------------------------------
+// Rebuild the flat tree view from the host tree.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+rebuildView() {
+  mTreeLevelOffsets.clear();
+  mTreeCellKeys.clear();
+  mTreeDaughterOffsets.clear();
+  mTreeDaughterIndices.clear();
+  mTreeMemberOffsets.clear();
+  mTreeMembers.clear();
+
+  if (mTree.empty()) {
+    GPUUtils::freeMAView(mTreeLevelOffsetsSpan);
+    GPUUtils::freeMAView(mTreeCellKeysSpan);
+    GPUUtils::freeMAView(mTreeDaughterOffsetsSpan);
+    GPUUtils::freeMAView(mTreeDaughterIndicesSpan);
+    GPUUtils::freeMAView(mTreeMemberOffsetsSpan);
+    GPUUtils::freeMAView(mTreeMembersSpan);
+    return;
+  }
+
+  const auto numLevels = mTree.size();
+  std::vector<std::vector<CellKey>> levelKeys(numLevels);
+  std::vector<std::unordered_map<CellKey, int>> levelCellIndices(numLevels);
+  mTreeLevelOffsets.reserve(numLevels + 1u);
+  mTreeLevelOffsets.push_back(0);
+  for (auto ilevel = 0u; ilevel < numLevels; ++ilevel) {
+    auto& keys = levelKeys[ilevel];
+    keys.reserve(mTree[ilevel].size());
+    for (const auto& keyCell: mTree[ilevel]) keys.push_back(keyCell.first);
+    std::sort(keys.begin(), keys.end());
+    auto& lookup = levelCellIndices[ilevel];
+    lookup.reserve(keys.size());
+    for (const auto key: keys) {
+      lookup[key] = mTreeCellKeys.size();
+      mTreeCellKeys.push_back(key);
+    }
+    mTreeLevelOffsets.push_back(mTreeCellKeys.size());
+  }
+
+  mTreeDaughterOffsets.reserve(mTreeCellKeys.size() + 1u);
+  mTreeMemberOffsets.reserve(mTreeCellKeys.size() + 1u);
+  mTreeDaughterOffsets.push_back(0);
+  mTreeMemberOffsets.push_back(0);
+  for (auto ilevel = 0u; ilevel < numLevels; ++ilevel) {
+    for (const auto key: levelKeys[ilevel]) {
+      const auto& cell = mTree[ilevel].at(key);
+      for (const auto daughterKey: cell.daughters) {
+        CHECK(ilevel + 1u < numLevels);
+        const auto daughterItr = levelCellIndices[ilevel + 1u].find(daughterKey);
+        CHECK(daughterItr != levelCellIndices[ilevel + 1u].end());
+        mTreeDaughterIndices.push_back(daughterItr->second);
+      }
+      mTreeDaughterOffsets.push_back(mTreeDaughterIndices.size());
+
+      mTreeMembers.insert(mTreeMembers.end(), cell.members.begin(), cell.members.end());
+      mTreeMemberOffsets.push_back(mTreeMembers.size());
+    }
+  }
+
+  GPUUtils::initMAView(mTreeLevelOffsetsSpan, mTreeLevelOffsets);
+  GPUUtils::initMAView(mTreeCellKeysSpan, mTreeCellKeys);
+  GPUUtils::initMAView(mTreeDaughterOffsetsSpan, mTreeDaughterOffsets);
+  GPUUtils::initMAView(mTreeDaughterIndicesSpan, mTreeDaughterIndices);
+  GPUUtils::initMAView(mTreeMemberOffsetsSpan, mTreeMemberOffsets);
+  GPUUtils::initMAView(mTreeMembersSpan, mTreeMembers);
+  GPUUtils::touch(mTreeLevelOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mTreeCellKeysSpan, chai::CPU);
+  GPUUtils::touch(mTreeDaughterOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mTreeDaughterIndicesSpan, chai::CPU);
+  GPUUtils::touch(mTreeMemberOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mTreeMembersSpan, chai::CPU);
+}
+
+//------------------------------------------------------------------------------
 // Set the master & coarse neighbor sets by walking the tree.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -1076,54 +1535,25 @@ findTreeNeighbors(const LevelKey& masterLevel,
                   const typename TreeNeighbor<Dimension>::CellKey& ix_master,
                   const typename TreeNeighbor<Dimension>::CellKey& iy_master,
                   const typename TreeNeighbor<Dimension>::CellKey& iz_master) const {
-
-  // Declare variables.
-  LevelKey ilevel = 0;
-  CellKey ix, iy, iz, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max, delta;
-  vector<Cell*> remainingDaughters(mTree[0].begin()->second.daughterPtrs), newDaughters;
+  const auto view = this->view();
   vector<int> result;
-
-  // Walk the tree until we run out of daughters to check.
-  CHECK2(mTree[0].begin()->second.members.size() == 0, "TreeNeighbor root cell occupied!  Will miss neighbors... " << mTree[0].begin()->second.members.size());
-  while (remainingDaughters.size() > 0) {
-    newDaughters = vector<Cell*>();
-    ++ilevel;
-    delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
-
-    // Find the target range of keys on this level.
-    ix = shiftKeyLevel(ix_master, masterLevel, ilevel);
-    iy = shiftKeyLevel(iy_master, masterLevel, ilevel);
-    iz = shiftKeyLevel(iz_master, masterLevel, ilevel);
-    ix_min = (ix > delta              ? ix - delta : 0U);
-    iy_min = (iy > delta              ? iy - delta : 0U);
-    iz_min = (iz > delta              ? iz - delta : 0U);
-    ix_max = ((max1dKey - ix) > delta ? ix + 2*delta - 1U : max1dKey);
-    iy_max = ((max1dKey - iy) > delta ? iy + 2*delta - 1U : max1dKey);
-    iz_max = ((max1dKey - iz) > delta ? iz + 2*delta - 1U : max1dKey);
-    CHECK(ix_min <= ix_max and ix_max <= max1dKey);
-    CHECK(iy_min <= iy_max and iy_max <= max1dKey);
-    CHECK(iz_min <= iz_max and iz_max <= max1dKey);
-    
-    // Walk the candidate daughters on this level.
-    for (auto cellPtr: remainingDaughters) {
-      const auto& cell = *cellPtr;
-
-      // Is this daughter in range?
-      if (keyInRange(cell.key, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max)) {
-        
-        // Copy this cells members to the result.
-        result.insert(result.end(), cell.members.begin(), cell.members.end());
-
-        // Add any daughters of this cell to our candidates to check on the next level.
-        newDaughters.insert(newDaughters.end(), cell.daughterPtrs.begin(), cell.daughterPtrs.end());
-      }
-    }
-
-    // Update the daughters to check on the next pass.
-    remainingDaughters = newDaughters;
+  const auto count = countOrFillTreeNeighbors(view,
+                                              masterLevel,
+                                              ix_master, iy_master, iz_master,
+                                              num1dbits,
+                                              max1dKey,
+                                              xkeymask, ykeymask, zkeymask,
+                                              nullptr);
+  result.resize(count);
+  if (count > 0u) {
+    countOrFillTreeNeighbors(view,
+                             masterLevel,
+                             ix_master, iy_master, iz_master,
+                             num1dbits,
+                             max1dKey,
+                             xkeymask, ykeymask, zkeymask,
+                             result.data());
   }
-
-  // That's it.
   return result;
 }
 
@@ -1255,6 +1685,7 @@ reinitialize() {
   mBoxLength = (mXmax - mXmin).maxElement();
   mGridLevelConst0 = log(mBoxLength/etaMax)/log(2.0);
   mTree.clear();
+  rebuildView();
 }
 
 template<typename Dimension>
@@ -1269,6 +1700,7 @@ reinitialize(const typename Dimension::Vector& xmin,
   mBoxLength = (mXmax - mXmin).maxElement();
   mGridLevelConst0 = log(mBoxLength/etaMax)/log(2.0);
   mTree.clear();
+  rebuildView();
 
   // // Now optimize the box-size so we have a level near the target size.
   // const auto lvl = this->gridLevel(htarget) + 1U;
@@ -1317,10 +1749,4 @@ valid() const {
 //------------------------------------------------------------------------------
 // Define our static members.
 //------------------------------------------------------------------------------
-template<typename Dimension> const unsigned TreeNeighbor<Dimension>::num1dbits = 21U;
-template<typename Dimension> const uint64_t TreeNeighbor<Dimension>::max1dKey = 1U << TreeNeighbor<Dimension>::num1dbits;
-template<typename Dimension> const uint64_t TreeNeighbor<Dimension>::xkeymask = (1U << TreeNeighbor<Dimension>::num1dbits) - 1U;
-template<typename Dimension> const uint64_t TreeNeighbor<Dimension>::ykeymask = TreeNeighbor<Dimension>::xkeymask << TreeNeighbor<Dimension>::num1dbits;
-template<typename Dimension> const uint64_t TreeNeighbor<Dimension>::zkeymask = TreeNeighbor<Dimension>::ykeymask << TreeNeighbor<Dimension>::num1dbits;
-
 }

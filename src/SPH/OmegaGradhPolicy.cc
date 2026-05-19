@@ -85,7 +85,7 @@ update(const KeyType& key,
   for (int i = 0; i != nodeListPtr->numInternalNodes(); ++i) {
 
     // State for node i.
-    const vector< vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListPtr, i);
+    const auto fullConnectivity = connectivityMap.connectivityForNodeView(nodeListPtr, i);
     const Vector& ri = positionThis(i);
     const SymTensor& Hi = HThis(i);
     const Scalar Hdeti = Hi.Determinant();
@@ -97,17 +97,14 @@ update(const KeyType& key,
     for (int nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
 
       // Iterate over the neighbors in this NodeList.
-      const vector<int>& connectivity = fullConnectivity[nodeListj];
+      const auto connectivity = fullConnectivity[nodeListj];
       if (connectivity.size() > 0) {
         const Field<Dimension, Vector>& positionThem = *position[nodeListj];
 
         // Iterate over the neighbors.
-        for (vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) {
+        for (const auto j: connectivity) {
 
           // State of node j.
-          const int j = *jItr;
           const Vector& rj = positionThem(j);
 
           // Add the contribution.

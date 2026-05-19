@@ -23,7 +23,7 @@ namespace Spheral {
 namespace { // anonymous
 template<typename Dimension>
 int
-numFluidNeighbors(const std::vector<std::vector<int>>& connectivity,
+numFluidNeighbors(const auto& connectivity,
                   const DataBase<Dimension>& dataBase)
 {
    auto numNeighbors = 0;
@@ -131,7 +131,7 @@ computeIndices(const DataBase<Dimension>& dataBase) {
       const auto numNodesi = requireGhostConnectivity ? (*nodeListItri)->numNodes() : (*nodeListItri)->numInternalNodes();
       for (auto nodei = 0u; nodei < numNodesi; ++nodei) {
         // Get data from the connectivity map
-        const auto connectivityi = connectivity.connectivityForNode(nodeListi, nodei);
+        const auto connectivityi = connectivity.connectivityForNodeView(nodeListi, nodei);
         const auto locali = mNodeToLocalIndex[nodeListi][nodei];
         const auto numNeighborsi = numFluidNeighbors(connectivityi, dataBase);
         
@@ -153,7 +153,7 @@ computeIndices(const DataBase<Dimension>& dataBase) {
         for (auto nodeListItrj = dataBase.fluidNodeListBegin();
              nodeListItrj != dataBase.fluidNodeListEnd();
              ++nodeListItrj, ++nodeListj) {
-          for (auto nodej : connectivityi[nodeListj]) {
+          for (const auto nodej: connectivityi[nodeListj]) {
             const auto localj = mNodeToLocalIndex[nodeListj][nodej];
             CHECK(index < numNeighborsi + 1);
             mFlatToLocalIndex[locali][index] = localj;
@@ -239,7 +239,7 @@ computeOverlapIndices(const DataBase<Dimension>& dataBase) {
       const auto numNodesi = requireGhostConnectivity ? (*nodeListItri)->numNodes() : (*nodeListItri)->numInternalNodes();
       for (auto nodei = 0u; nodei < numNodesi; ++nodei) {
         // Get data from the connectivity map
-        const auto connectivityi = connectivity.overlapConnectivityForNode(nodeListi, nodei);
+        const auto connectivityi = connectivity.overlapConnectivityForNodeView(nodeListi, nodei);
         const auto locali = mNodeToLocalIndex[nodeListi][nodei];
         const auto numNeighborsi = numFluidNeighbors(connectivityi, dataBase);
         
@@ -260,7 +260,7 @@ computeOverlapIndices(const DataBase<Dimension>& dataBase) {
         for (auto nodeListItrj = dataBase.fluidNodeListBegin();
              nodeListItrj != dataBase.fluidNodeListEnd();
              ++nodeListItrj, ++nodeListj) {
-          for (auto nodej : connectivityi[nodeListj]) {
+          for (const auto nodej: connectivityi[nodeListj]) {
             const auto localj = mNodeToLocalIndex[nodeListj][nodej];
             CHECK(index < numNeighborsi + 1);
             mFlatOverlapToLocalIndex[locali][index] = localj;
@@ -461,7 +461,7 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
         const auto numFlags = flags.size();
         if (numFlags > 0) {
           // Get the connectivity and surface information for this cell
-          const auto& connectivityi = connectivity.connectivityForNode(nodeListi, nodei);
+          const auto connectivityi = connectivity.connectivityForNodeView(nodeListi, nodei);
           const auto& cell = cells(nodeListi, nodei);
           const auto& facets = cell.facets();
 #if REPLACEOVERLAP

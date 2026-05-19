@@ -215,6 +215,25 @@ setRefineNeighborList(int nodeID,
   this->setRefineNeighborList(positions(nodeID), Hfield(nodeID), coarseNeighbors, refineNeighbors);
 }
 
+template<typename Dimension>
+int
+Neighbor<Dimension>::
+groupKind() const {
+  return FallbackNeighborGroupKind;
+}
+
+template<typename Dimension>
+NeighborGroupDescriptor
+Neighbor<Dimension>::
+groupDescriptor(const Vector&,
+                const SymTensor&,
+                const uint64_t fallbackToken) const {
+  NeighborGroupDescriptor result;
+  result.kind = FallbackNeighborGroupKind;
+  result.key = fallbackToken;
+  return result;
+}
+
 //------------------------------------------------------------------------------
 // General precull routine.  Select nodes based on a range of positions and
 // extents.
