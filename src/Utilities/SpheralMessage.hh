@@ -11,49 +11,60 @@
 #include "Distributed/Process.hh"
 
 #include <iostream>
+#include <sstream>
 
-// namespace Detail {
+namespace Spheral{
+namespace Detail {
 
-// class Message : public std::ostream {
-// public:
-//   std::reference_wrapper<std::ostream> os;
-//   enum LogLevel { INFO, WARNING, ERROR };
-//   Message(LogLevel level = INFO): os(level > INFO ? std::cerr : std::cout) {}
-//   template<typename T> std::ostream& operator<< (const T& t) {
-//     return (Process::getRank() == 0 ? os.get() << t : os.get());
-//   }
-// };
-// } // Detail
+inline void emit_message(std::ostream& ss,
+                         const char* level,
+                         const char* file,
+                         const int line,
+                         const std::ostringstream& os) {
+  ss << level << " [" << file << ":" << line << "]: " << os.str() << '\n';
+}
 
-// template<typename T>
-// std::ostream& SpheralMessage(T& msg) {
-//   Detail::Message result(Detail::Message::INFO);
-//   result << msg;
-//   return result.os.get();
-// }
+}
+}
 
-// template<typename T>
-// std::ostream& DeprecationWarning(T& msg) {
-//   Detail::Message result(Detail::Message::WARNING);
-//   result << "DEPRECATION Warning: ";
-//   result << msg;
-//   return result.os.get();
-// }
+#define BUILD_SPHERAL_MSG_STREAM(expr)                               \
+    ([&]() {                                                         \
+       std::ostringstream os;                                        \
+       os << expr;                                                   \
+       return os;                                                    \
+    }())
 
-#define SpheralMessage(...) do                                       \
-  if (Spheral::Process::getRank() == 0)  {                           \
-    std::cout << "INFO: " << __VA_ARGS__ << std::endl;               \
-  } while(0)
+#define SpheralMessage(expr) do {                                       \
+  if (Spheral::Process::getRank() == 0)  {                              \
+    Spheral::Detail::emit_message(std::cout, "INFO",                    \
+                                  __FILE__, __LINE__,                   \
+                                  BUILD_SPHERAL_MSG_STREAM(expr));      \
+  }                                                                     \
+} while(0)
   
-#define SpheralError(...) do                                         \
-  if (Spheral::Process::getRank() == 0)  {                           \
-    std::cerr << "ERROR: " << __VA_ARGS__ << std::endl;              \
-  } while(0)
+#define SpheralWarning(expr) do {                                       \
+  if (Spheral::Process::getRank() == 0)  {                              \
+    Spheral::Detail::emit_message(std::cerr, "WARNING",                 \
+                                  __FILE__, __LINE__,                   \
+                                  BUILD_SPHERAL_MSG_STREAM(expr));      \
+  }                                                                     \
+} while(0)
+
+#define SpheralError(expr) do {                                         \
+  if (Spheral::Process::getRank() == 0)  {                              \
+    Spheral::Detail::emit_message(std::cout, "ERROR",                   \
+                                  __FILE__, __LINE__,                   \
+                                  BUILD_SPHERAL_MSG_STREAM(expr));      \
+  }                                                                     \
+} while(0)
   
-#define DeprecationWarning(...) do                                   \
-  if (Spheral::Process::getRank() == 0)  {                           \
-    std::cerr << "DEPRECATION Warning: " << __VA_ARGS__ << std::endl;\
-  } while(0)
+#define SpheralDeprecationWarning(expr) do {                            \
+  if (Spheral::Process::getRank() == 0)  {                              \
+    Spheral::Detail::emit_message(std::cout, "DEPRECATION WARNING",     \
+                                  __FILE__, __LINE__,                   \
+                                  BUILD_SPHERAL_MSG_STREAM(expr));      \
+  }                                                                     \
+} while(0)
 
 #endif
 
