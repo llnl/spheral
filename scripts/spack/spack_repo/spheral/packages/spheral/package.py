@@ -135,14 +135,17 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('chai@2025.12.0', type='build', when='@develop')
         depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
+        depends_on('care', type='build')
+        depends_on('care@0.15.3', type='build', when='@develop:')
+
     # Forward MPI Variants
-    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak", "chai", "umpire"]
+    mpi_tpl_list = ["hdf5", "conduit", "axom", "adiak", "chai", "care", "umpire"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv} ^{ctpl}")
 
     # Forward OpenMP Variants
-    openmp_tpl_list = ["axom", "raja", "chai", "umpire"]
+    openmp_tpl_list = ["axom", "raja", "chai", "care", "umpire"]
     for ctpl in openmp_tpl_list:
         for variant in ["+openmp", "~openmp"]:
             depends_on(f"{ctpl} {variant}", type='build', when=f"{variant} ^{ctpl}")
@@ -155,7 +158,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         for val in ROCmPackage.amdgpu_targets:
             depends_on(f"{ctpl} +rocm amdgpu_target={val}", type='build', when=f"+rocm amdgpu_target={val} ^{ctpl}")
 
-    gpu_tpl_list = ["raja", "umpire", "axom", "chai"]
+    gpu_tpl_list = ["raja", "umpire", "axom", "chai", "care"]
     for ctpl in gpu_tpl_list:
         set_cuda_variants(ctpl)
         set_rocm_variants(ctpl)
@@ -310,6 +313,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         entries.append(cmake_cache_path('umpire_DIR', spec['umpire'].prefix))
 
         entries.append(cmake_cache_path('chai_DIR', spec['chai'].prefix))
+
+        entries.append(cmake_cache_path('care_DIR', spec['care'].prefix))
 
         entries.append(cmake_cache_path('axom_DIR', spec['axom'].prefix))
 
