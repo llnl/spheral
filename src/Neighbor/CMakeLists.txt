@@ -16,6 +16,7 @@ instantiate(Neighbor_inst Neighbor_sources)
 
 set(Neighbor_headers
     ConnectivityMap.hh
+    ConnectivityMapFlatView.hh
     ConnectivityMapInline.hh
     GridCellIndex.hh
     GridCellIndexBase.hh
@@ -26,10 +27,12 @@ set(Neighbor_headers
     NeighborInline.hh
     NestedGridNeighbor.hh
     NestedGridNeighborInline.hh
+    NestedGridNeighborView.hh
     NodePairIdxType.hh
     NodePairList.hh
     NodePairListView.hh
     TreeNeighbor.hh
+    TreeNeighborView.hh
     PairwiseField.hh
     PairwiseFieldElementAccessor.hh
     PairwiseFieldInline.hh
@@ -37,4 +40,3 @@ set(Neighbor_headers
     )
 
 spheral_add_obj_library(Neighbor SPHERAL_OBJ_LIBS)
-

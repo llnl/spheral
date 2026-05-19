@@ -293,8 +293,8 @@ computeHullVolume(const FieldList<Dimension, typename Dimension::Vector>& positi
 
         // Build the set of inverse positions in eta space about this point (including itself as the origin)
         vector<Vector> invPositions = {Vector::zero()};
-        const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
-        CHECK(connectivity.size() == numNodeLists);
+        const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
+        CHECK(connectivity.numNodeLists() == numNodeLists);
         for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
           for (auto j: connectivity[nodeListj]) {
             const auto etaji = (position(nodeListj, j) - ri);

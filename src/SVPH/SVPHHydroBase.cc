@@ -451,14 +451,14 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       Scalar& worki = workFieldi(i);
 
       // Get the connectivity info for this node.
-      const vector< vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
+      const auto fullConnectivity = connectivityMap.connectivityForNodeView(&nodeList, i);
 
       // Iterate over the NodeLists.
       for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
 
         // Connectivity of this node with this NodeList.  We only need to proceed if
         // there are some nodes in this list.
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+        const auto connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
           const int firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
 
@@ -466,10 +466,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          for (const auto j: connectivity) {
 
             // Only proceed if this node pair has not been calculated yet.
             if (connectivityMap.calculatePairInteraction(nodeListi, i, 
@@ -659,17 +656,14 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
       // Now add the pairwise time for each neighbor we computed here.
       for (int nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+        const auto connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
           const int firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
           Field<Dimension, Scalar>& workFieldj = nodeLists[nodeListj]->work();
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          for (const auto j: connectivity) {
             if (connectivityMap.calculatePairInteraction(nodeListi, i, 
                                                          nodeListj, j,
                                                          firstGhostNodej)) {

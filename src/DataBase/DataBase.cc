@@ -1722,11 +1722,9 @@ DataBase<Dimension>::numNeighbors() const {
     Field<Dimension, int>& count = **(result.fieldForNodeList(nodes));
     for (auto i = 0u; i != nodes.numInternalNodes(); ++i) {
       count(i) = 0;
-      const vector< vector<int> >& connectivity = mConnectivityMapPtr->connectivityForNode(&nodes, i);
-      for (typename vector< vector<int> >::const_iterator itr = connectivity.begin();
-           itr != connectivity.end();
-           ++itr) {
-        count(i) += itr->size();
+      const auto connectivity = mConnectivityMapPtr->connectivityForNodeView(&nodes, i);
+      for (auto nodeListj = 0u; nodeListj != connectivity.size(); ++nodeListj) {
+        count(i) += connectivity[nodeListj].size();
       }
     }
   }
@@ -1978,14 +1976,11 @@ localSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
         flags(nodeListi, i) = 1;
 
         // Find the min/max extent of this connected set of nodes.
-        const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
+        const auto fullConnectivity = connectivityMap.connectivityForNodeView(&nodeList, i);
         CHECK((int)fullConnectivity.size() == numNodeLists);
         for (int nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-          const vector<int>& connectivity = fullConnectivity[nodeListj];
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          const auto connectivity = fullConnectivity[nodeListj];
+          for (const auto j: connectivity) {
             const Vector& xj = positions(nodeListj, j);
             const Vector& extentj = extent(nodeListj, j);
             xminGroup = elementWiseMin(xminGroup, xj - extentj);

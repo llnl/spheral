@@ -39,7 +39,7 @@ editMultimaterialSurfaceTopology(FieldList<Dimension, int>& surfacePoint,
 
 #pragma omp parallel for
     for (auto i = 0u; i < n; ++i) {
-      const auto& allneighbors = connectivityMap.connectivityForNode(iNodeList, i);
+      const auto allneighbors = connectivityMap.connectivityForNodeView(iNodeList, i);
 
       // printf(" --> (%d, %d) :", iNodeList, i);
 

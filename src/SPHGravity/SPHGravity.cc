@@ -172,23 +172,21 @@ mComputeMatrixStructure(const DataBase<Dimension>& dataBase,
       adjTable[iNode].push_back(iNodeIndex);
        
       // Get the neighbors for this node.
-      const vector<vector<int> >& jNodes = 
-        connectivityMap.connectivityForNode(nodeLists[iNodeList], iNode);
+      const auto jNodes =
+        connectivityMap.connectivityForNodeView(nodeLists[iNodeList], iNode);
 
       // Iterate over the nodelists containing the ith node's neighbors.
       for (int jNodeList = 0; jNodeList < numNodeLists; ++jNodeList)
       {
         // Get the neighboring nodes within this node list.
-        const vector<int>& neighbors = jNodes[jNodeList];
+        const auto neighbors = jNodes[jNodeList];
 
         // Get the number of internal nodes within the jth nodelist.
         int numInternalNodes = nodeLists[jNodeList]->numInternalNodes();
 
         // Traverse these neighboring nodes.
-        for (vector<int>::const_iterator jNodeIter = neighbors.begin();
-             jNodeIter != neighbors.end(); ++jNodeIter)
+        for (const auto jNode: neighbors)
         {
-          int jNode = *jNodeIter;
 
           // Scrutinize non-internal nodes.  If a non-internal node is a 
           // boundary node related to a periodic or a distributed boundary, 
@@ -288,23 +286,21 @@ mUpdateLaplacianMatrix(const DataBase<Dimension>& dataBase,
       values.push_back(0.0);
        
       // Get the neighbors for this node.
-      const vector<vector<int> >& jNodes = 
-        connectivityMap.connectivityForNode(nodeLists[iNodeList], iNode);
+      const auto jNodes =
+        connectivityMap.connectivityForNodeView(nodeLists[iNodeList], iNode);
 
       // Iterate over the nodelists containing the ith node's neighbors.
       for (int jNodeList = 0; jNodeList < numNodeLists; ++jNodeList)
       {
         // Get the neighboring nodes within this node list.
-        const vector<int>& neighbors = jNodes[jNodeList];
+        const auto neighbors = jNodes[jNodeList];
         const Field<Dimension, Scalar>& weightj = *weight[jNodeList];
         const Field<Dimension, Vector>& positionj = *position[jNodeList];
         const Field<Dimension, SymTensor>& Htensorj = *Htensor[jNodeList];
 
         // Traverse these neighboring nodes.
-        for (vector<int>::const_iterator jNodeIter = neighbors.begin();
-             jNodeIter != neighbors.end(); ++jNodeIter)
+        for (const auto jNode: neighbors)
         {
-          int jNode = *jNodeIter;
 
           // Scrutinize non-internal nodes.  If a non-internal node is a 
           // boundary node related to a periodic or a distributed boundary, 
@@ -626,17 +622,14 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       Scalar rhoi = (*rho[iNodeList])[iNode];
     
       // Loop over the neighboring nodes.
-      const vector< vector<int> >& fullConnectivity = 
-         connectivityMap.connectivityForNode(&nodeList, iNode);
+      const auto fullConnectivity =
+         connectivityMap.connectivityForNodeView(&nodeList, iNode);
       // Iterate over the NodeLists.
       for (int jNodeList = 0; jNodeList != numNodeLists; ++jNodeList) {
-        const vector<int>& connectivity = fullConnectivity[jNodeList];
+        const auto connectivity = fullConnectivity[jNodeList];
         if (connectivity.size() > 0) {
           // Loop over the neighbors.
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            int jNode = *jItr;
+          for (const auto jNode: connectivity) {
             if (iNode != jNode) { // No self-interaction. 
               // Contribute to the gradient of the gravitational potential.
               Scalar phij = (*mPotential[jNodeList])[jNode];

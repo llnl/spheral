@@ -386,7 +386,7 @@ dt(const DataBase<Dimension>& dataBase,
           // Maximum velocity difference limit.
           //const auto& xi = position(nodeListi, i);
           const auto& vi = velocity(nodeListi, i);
-          const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+          const auto fullConnectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
           for (auto nodeListj = 0u; nodeListj != numNodeLists; ++nodeListj) {
             const auto& connectivity = fullConnectivity[nodeListj];
             for (auto jItr = connectivity.begin();

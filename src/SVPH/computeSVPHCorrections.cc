@@ -129,15 +129,12 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
     gradm1(i) += Vi*W(0.0, Hdeti) * Tensor::one();
 
     // Neighbors!
-    const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+    const auto fullConnectivity = connectivityMap.connectivityForNodeView(nodeListi, i);
     CHECK(fullConnectivity.size() == numNodeLists);
-    const vector<int>& connectivity = fullConnectivity[nodeListi];
+    const auto connectivity = fullConnectivity[nodeListi];
 
     // Iterate over the neighbors for in this NodeList.
-    for (vector<int>::const_iterator jItr = connectivity.begin();
-         jItr != connectivity.end();
-         ++jItr) {
-      const int j = *jItr;
+    for (const auto j: connectivity) {
 
         // // Check if this node pair has already been calculated.
         // if (connectivityMap.calculatePairInteraction(nodeListi, i, 

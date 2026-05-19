@@ -28,6 +28,179 @@ using std::map;
 
 namespace Spheral {
 
+namespace {
+
+SPHERAL_HOST_DEVICE
+inline
+uint64_t
+packGridCellKey(const GridCellIndex<Dim<1>>& gridCell) {
+  return uint64_t(gridCell.xIndex() + (1 << 20));
+}
+
+SPHERAL_HOST_DEVICE
+inline
+uint64_t
+packGridCellKey(const GridCellIndex<Dim<2>>& gridCell) {
+  const auto x = uint64_t(gridCell.xIndex() + (1 << 20));
+  const auto y = uint64_t(gridCell.yIndex() + (1 << 20));
+  return x | (y << 21);
+}
+
+SPHERAL_HOST_DEVICE
+inline
+uint64_t
+packGridCellKey(const GridCellIndex<Dim<3>>& gridCell) {
+  const auto x = uint64_t(gridCell.xIndex() + (1 << 20));
+  const auto y = uint64_t(gridCell.yIndex() + (1 << 20));
+  const auto z = uint64_t(gridCell.zIndex() + (1 << 20));
+  return x | (y << 21) | (z << 42);
+}
+
+SPHERAL_HOST_DEVICE
+inline
+void
+unpackGridCellKey(const uint64_t key,
+                  int& ix,
+                  int& iy,
+                  int& iz) {
+  constexpr uint64_t mask = (1ull << 21) - 1ull;
+  ix = int(key & mask) - (1 << 20);
+  iy = int((key >> 21) & mask) - (1 << 20);
+  iz = int((key >> 42) & mask) - (1 << 20);
+}
+
+template<typename ViewType>
+SPHERAL_HOST_DEVICE
+inline
+int
+findNestedCellIndexInLevel(const ViewType& view,
+                           const size_t level,
+                           const uint64_t key) {
+  auto begin = view.levelBegin(level);
+  auto end = view.levelEnd(level);
+  while (begin < end) {
+    const auto mid = begin + (end - begin)/2u;
+    const auto midKey = view.cellKey(mid);
+    if (midKey < key) begin = mid + 1u;
+    else end = mid;
+  }
+  return (begin < view.levelEnd(level) and view.cellKey(begin) == key ? int(begin) : -1);
+}
+
+SPHERAL_HOST_DEVICE
+inline
+bool
+keyInRange(const uint64_t key,
+           const int ixMin,
+           const int iyMin,
+           const int izMin,
+           const int ixMax,
+           const int iyMax,
+           const int izMax,
+           const int ndim) {
+  int ix, iy, iz;
+  unpackGridCellKey(key, ix, iy, iz);
+  return (ix >= ixMin and ix <= ixMax and
+          (ndim < 2 or (iy >= iyMin and iy <= iyMax)) and
+          (ndim < 3 or (iz >= izMin and iz <= izMax)));
+}
+
+template<typename ViewType>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillNestedMasterList(const ViewType& view,
+                            const int gridLevel,
+                            const uint64_t cellKey,
+                            const int firstGhostNode,
+                            const bool ghostConnectivity,
+                            int* result) {
+  if (gridLevel < 0 or size_t(gridLevel) >= view.numLevels()) return 0u;
+  const auto cellIndex = findNestedCellIndexInLevel(view, gridLevel, cellKey);
+  if (cellIndex < 0) return 0u;
+
+  auto count = 0u;
+  const auto numMembers = view.memberSize(cellIndex);
+  for (auto k = 0u; k < numMembers; ++k) {
+    const auto nodeID = view.member(cellIndex, k);
+    if (ghostConnectivity or nodeID < firstGhostNode) {
+      if (result != nullptr) result[count] = nodeID;
+      ++count;
+    }
+  }
+  return count;
+}
+
+template<typename ViewType>
+SPHERAL_HOST_DEVICE
+inline
+size_t
+countOrFillNestedNeighbors(const ViewType& view,
+                           const int ndim,
+                           const int gridLevel,
+                           const int baseMinX,
+                           const int baseMinY,
+                           const int baseMinZ,
+                           const int baseMaxX,
+                           const int baseMaxY,
+                           const int baseMaxZ,
+                           const int maxGridLevels,
+                           const int gridCellInfluenceRadius,
+                           const int searchType,
+                           int* result) {
+  if (view.empty()) return 0u;
+
+  auto count = 0u;
+  for (int currentGridLevel = 0; currentGridLevel != maxGridLevels; ++currentGridLevel) {
+    if (view.levelSize(currentGridLevel) > 0u) {
+      int ixMin, iyMin, izMin, ixMax, iyMax, izMax;
+      if (currentGridLevel > gridLevel) {
+        const int glfactor = 1 << (currentGridLevel - gridLevel);
+        ixMin = baseMinX * glfactor;
+        iyMin = baseMinY * glfactor;
+        izMin = baseMinZ * glfactor;
+        ixMax = (baseMaxX + 1) * glfactor - 1;
+        iyMax = (baseMaxY + 1) * glfactor - 1;
+        izMax = (baseMaxZ + 1) * glfactor - 1;
+      } else {
+        const int glfactor = 1 << (gridLevel - currentGridLevel);
+        ixMin = baseMinX / glfactor;
+        iyMin = baseMinY / glfactor;
+        izMin = baseMinZ / glfactor;
+        ixMax = baseMaxX / glfactor;
+        iyMax = baseMaxY / glfactor;
+        izMax = baseMaxZ / glfactor;
+      }
+      const int radius = (searchType == int(NeighborSearchType::GatherScatter) ? gridCellInfluenceRadius * (1 << (currentGridLevel > gridLevel ? currentGridLevel - gridLevel : 0)) :
+                          searchType == int(NeighborSearchType::Gather) ?        gridCellInfluenceRadius / (1 << (gridLevel > currentGridLevel ? gridLevel - currentGridLevel : 0)) + 1 :
+                                                                       gridCellInfluenceRadius);
+      ixMin -= radius;
+      iyMin -= radius;
+      izMin -= radius;
+      ixMax += radius;
+      iyMax += radius;
+      izMax += radius;
+      for (auto cellIndex = view.levelBegin(currentGridLevel);
+           cellIndex < view.levelEnd(currentGridLevel);
+           ++cellIndex) {
+        if (keyInRange(view.cellKey(cellIndex),
+                       ixMin, iyMin, izMin,
+                       ixMax, iyMax, izMax,
+                       ndim)) {
+          const auto numMembers = view.memberSize(cellIndex);
+          for (auto k = 0u; k < numMembers; ++k) {
+            if (result != nullptr) result[count] = view.member(cellIndex, k);
+            ++count;
+          }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+}
+
 
 //------------------------------------------------------------------------------
 // Construct with everything necessary to completely specify the neighboring.
@@ -55,7 +228,15 @@ NestedGridNeighbor(NodeList<Dimension>& aNodeList,
   mNodeOnGridLevel(aNodeList.numNodes()),
 //   mDaughterCells(numGridLevels),
 //   mEmptyNest(),
-  mOccupiedGridCells(numGridLevels) {
+  mOccupiedGridCells(numGridLevels),
+  mViewLevelOffsets(),
+  mViewCellKeys(),
+  mViewMemberOffsets(),
+  mViewMembers(),
+  mViewLevelOffsetsSpan(),
+  mViewCellKeysSpan(),
+  mViewMemberOffsetsSpan(),
+  mViewMembersSpan() {
 
   // CHECK the input is sane.
   VERIFY(numGridLevels > 0 and numGridLevels < 32);
@@ -80,6 +261,10 @@ NestedGridNeighbor(NodeList<Dimension>& aNodeList,
 template<typename Dimension>
 NestedGridNeighbor<Dimension>::
 ~NestedGridNeighbor() {
+  GPUUtils::freeMAView(mViewLevelOffsetsSpan);
+  GPUUtils::freeMAView(mViewCellKeysSpan);
+  GPUUtils::freeMAView(mViewMemberOffsetsSpan);
+  GPUUtils::freeMAView(mViewMembersSpan);
 }
 
 //------------------------------------------------------------------------------
@@ -105,6 +290,122 @@ setMasterList(const typename Dimension::Vector& position,
               std::vector<int>& coarseNeighbors,
               const bool ghostConnectivity) const {
   setNestedMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+}
+
+template<typename Dimension>
+size_t
+NestedGridNeighbor<Dimension>::
+countMasterList(const typename Dimension::Vector& position,
+                const typename Dimension::SymTensor& H,
+                const bool ghostConnectivity) const {
+  REQUIRE2(ghostConnectivity == false,
+           "ERROR: NestedGridNeighbor currently does not support ghost connectivity");
+  const auto gl = gridLevel(H);
+  const auto gc = gridCellIndex(position, gl);
+  const auto view = this->view();
+  return countOrFillNestedMasterList(view,
+                                     gl,
+                                     packGridCellKey(gc),
+                                     this->nodeList().firstGhostNode(),
+                                     false,
+                                     nullptr);
+}
+
+template<typename Dimension>
+void
+NestedGridNeighbor<Dimension>::
+fillMasterList(const typename Dimension::Vector& position,
+               const typename Dimension::SymTensor& H,
+               int* result,
+               const bool ghostConnectivity) const {
+  REQUIRE2(ghostConnectivity == false,
+           "ERROR: NestedGridNeighbor currently does not support ghost connectivity");
+  const auto gl = gridLevel(H);
+  const auto gc = gridCellIndex(position, gl);
+  const auto view = this->view();
+  countOrFillNestedMasterList(view,
+                              gl,
+                              packGridCellKey(gc),
+                              this->nodeList().firstGhostNode(),
+                              false,
+                              result);
+}
+
+template<typename Dimension>
+size_t
+NestedGridNeighbor<Dimension>::
+countCoarseNeighbors(const typename Dimension::Vector& position,
+                     const typename Dimension::SymTensor& H,
+                     const bool ghostConnectivity) const {
+  CONTRACT_VAR(ghostConnectivity);
+  REQUIRE2(ghostConnectivity == false,
+           "ERROR: NestedGridNeighbor currently does not support ghost connectivity");
+  const auto gl = gridLevel(H);
+  const auto gc = gridCellIndex(position, gl);
+  const auto baseMin = gc - mGridCellInfluenceRadius;
+  const auto baseMax = gc + mGridCellInfluenceRadius;
+  return countOrFillNestedNeighbors(this->view(),
+                                    Dimension::nDim,
+                                    gl,
+                                    baseMin.xIndex(),
+                                    (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                                    (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                                    baseMax.xIndex(),
+                                    (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                                    (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                                    mMaxGridLevels,
+                                    mGridCellInfluenceRadius,
+                                    int(this->neighborSearchType()),
+                                    nullptr);
+}
+
+template<typename Dimension>
+void
+NestedGridNeighbor<Dimension>::
+fillCoarseNeighbors(const typename Dimension::Vector& position,
+                    const typename Dimension::SymTensor& H,
+                    int* result,
+                    const bool ghostConnectivity) const {
+  CONTRACT_VAR(ghostConnectivity);
+  REQUIRE2(ghostConnectivity == false,
+           "ERROR: NestedGridNeighbor currently does not support ghost connectivity");
+  const auto gl = gridLevel(H);
+  const auto gc = gridCellIndex(position, gl);
+  const auto baseMin = gc - mGridCellInfluenceRadius;
+  const auto baseMax = gc + mGridCellInfluenceRadius;
+  countOrFillNestedNeighbors(this->view(),
+                             Dimension::nDim,
+                             gl,
+                             baseMin.xIndex(),
+                             (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                             (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                             baseMax.xIndex(),
+                             (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                             (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                             mMaxGridLevels,
+                             mGridCellInfluenceRadius,
+                             int(this->neighborSearchType()),
+                             result);
+}
+
+template<typename Dimension>
+int
+NestedGridNeighbor<Dimension>::
+groupKind() const {
+  return NestedNeighborGroupKind;
+}
+
+template<typename Dimension>
+NeighborGroupDescriptor
+NestedGridNeighbor<Dimension>::
+groupDescriptor(const typename Dimension::Vector& position,
+                const typename Dimension::SymTensor& H,
+                const uint64_t /*fallbackToken*/) const {
+  NeighborGroupDescriptor result;
+  result.kind = NestedNeighborGroupKind;
+  result.level = gridLevel(H);
+  result.key = packGridCellKey(gridCellIndex(position, result.level));
+  return result;
 }
 
 template<typename Dimension>
@@ -237,15 +538,115 @@ setNestedMasterList(const GridCellIndex<Dimension>& gridCell,
            "ERROR: NestedGridNeighbor currently does not support ghost connectivity");
 
   // Set the master list to all (internal) nodes in this gridcell (on this gridlevel).
-  masterList = internalNodesInCell(gridCell, gridLevel);
+  const auto view = this->view();
+  const auto masterCount = countOrFillNestedMasterList(view,
+                                                       gridLevel,
+                                                       packGridCellKey(gridCell),
+                                                       this->nodeList().firstGhostNode(),
+                                                       false,
+                                                       nullptr);
+  masterList.resize(masterCount);
+  if (masterCount > 0u) {
+    countOrFillNestedMasterList(view,
+                                gridLevel,
+                                packGridCellKey(gridCell),
+                                this->nodeList().firstGhostNode(),
+                                false,
+                                masterList.data());
+  }
 
   // We also need to set the coarse neighbor list -- potential neighbors for all
   // nodes in the master gridcell.  We can outsource this to our private findNestedNeighbors
   // method.
-  coarseNeighbors = findNestedNeighbors(gridCell, gridLevel);
+  const auto baseMin = gridCell - mGridCellInfluenceRadius;
+  const auto baseMax = gridCell + mGridCellInfluenceRadius;
+  const auto coarseCount = countOrFillNestedNeighbors(view,
+                                                      Dimension::nDim,
+                                                      gridLevel,
+                                                      baseMin.xIndex(),
+                                                      (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                                                      (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                                                      baseMax.xIndex(),
+                                                      (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                                                      (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                                                      mMaxGridLevels,
+                                                      mGridCellInfluenceRadius,
+                                                      int(this->neighborSearchType()),
+                                                      nullptr);
+  coarseNeighbors.resize(coarseCount);
+  if (coarseCount > 0u) {
+    countOrFillNestedNeighbors(view,
+                               Dimension::nDim,
+                               gridLevel,
+                               baseMin.xIndex(),
+                               (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                               (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                               baseMax.xIndex(),
+                               (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                               (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                               mMaxGridLevels,
+                               mGridCellInfluenceRadius,
+                               int(this->neighborSearchType()),
+                               coarseNeighbors.data());
+  }
 
   // Post conditions.
   ENSURE(coarseNeighbors.size() >= masterList.size());
+}
+
+template<typename Dimension>
+size_t
+NestedGridNeighbor<Dimension>::
+countNestedCoarseNeighbors(const int gridLevel,
+                           const uint64_t packedCellKey) const {
+  int ix, iy, iz;
+  unpackGridCellKey(packedCellKey, ix, iy, iz);
+  const GC gridCell = (Dimension::nDim == 1 ? GC(ix) :
+                       (Dimension::nDim == 2 ? GC(ix, iy) :
+                                               GC(ix, iy, iz)));
+  const auto baseMin = gridCell - mGridCellInfluenceRadius;
+  const auto baseMax = gridCell + mGridCellInfluenceRadius;
+  return countOrFillNestedNeighbors(this->view(),
+                                    Dimension::nDim,
+                                    gridLevel,
+                                    baseMin.xIndex(),
+                                    (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                                    (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                                    baseMax.xIndex(),
+                                    (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                                    (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                                    mMaxGridLevels,
+                                    mGridCellInfluenceRadius,
+                                    int(this->neighborSearchType()),
+                                    nullptr);
+}
+
+template<typename Dimension>
+void
+NestedGridNeighbor<Dimension>::
+fillNestedCoarseNeighbors(const int gridLevel,
+                          const uint64_t packedCellKey,
+                          int* result) const {
+  int ix, iy, iz;
+  unpackGridCellKey(packedCellKey, ix, iy, iz);
+  const GC gridCell = (Dimension::nDim == 1 ? GC(ix) :
+                       (Dimension::nDim == 2 ? GC(ix, iy) :
+                                               GC(ix, iy, iz)));
+  const auto baseMin = gridCell - mGridCellInfluenceRadius;
+  const auto baseMax = gridCell + mGridCellInfluenceRadius;
+  countOrFillNestedNeighbors(this->view(),
+                             Dimension::nDim,
+                             gridLevel,
+                             baseMin.xIndex(),
+                             (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                             (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                             baseMax.xIndex(),
+                             (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                             (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                             mMaxGridLevels,
+                             mGridCellInfluenceRadius,
+                             int(this->neighborSearchType()),
+                             result);
 }
 
 //------------------------------------------------------------------------------
@@ -498,40 +899,37 @@ findNestedNeighbors(const GridCellIndex<Dimension>& gridCell,
 		    int gridLevel) const {
 
   // Vector of node indices which we're going to build up.
-  vector<int> result;
-
-  // The grid cell range for the base grid level.
-  const GC baseMin = gridCell - mGridCellInfluenceRadius;
-  const GC baseMax = gridCell + mGridCellInfluenceRadius;
-
-  // Loop over all occupied grid levels.
-  const NeighborSearchType searchType = this->neighborSearchType();
-  GC targetMin, targetMax;
-  for (int currentGridLevel = 0; 
-       currentGridLevel != mMaxGridLevels;
-       ++currentGridLevel) {
-    if (mGridLevelOccupied[currentGridLevel] == true) {
-
-      // Find the range of grid cells on this grid level that overlap
-      // this gridcells potential neighbor influence.
-      translateGridCellRange(baseMin, baseMax, gridLevel, currentGridLevel, targetMin, targetMax);
-      const int radius = (searchType == NeighborSearchType::GatherScatter ? mGridCellInfluenceRadius * intpow2(max(0, currentGridLevel - gridLevel)) :
-			  searchType == NeighborSearchType::Gather ?        mGridCellInfluenceRadius / intpow2(max(0, gridLevel - currentGridLevel)) + 1 :
-                                                                            mGridCellInfluenceRadius);
-      targetMin -= radius;
-      targetMax += radius;
-      CHECK(targetMin <= targetMax);
-
-      // Loop over the occupied cells in the neighbor grid cell range,
-      // and add their nodes to the result.
-      vector<GC> gridCells;
-      occupiedGridCellsInRange(gridCells, targetMin, targetMax, currentGridLevel);
-      for (typename vector<GC>::iterator gcItr = gridCells.begin();
-	   gcItr != gridCells.end();
-	   ++gcItr) appendNodesInCell(*gcItr, currentGridLevel, result);
-    }
+  const auto baseMin = gridCell - mGridCellInfluenceRadius;
+  const auto baseMax = gridCell + mGridCellInfluenceRadius;
+  const auto count = countOrFillNestedNeighbors(this->view(),
+                                                Dimension::nDim,
+                                                gridLevel,
+                                                baseMin.xIndex(),
+                                                (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                                                (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                                                baseMax.xIndex(),
+                                                (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                                                (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                                                mMaxGridLevels,
+                                                mGridCellInfluenceRadius,
+                                                int(this->neighborSearchType()),
+                                                nullptr);
+  vector<int> result(count);
+  if (count > 0u) {
+    countOrFillNestedNeighbors(this->view(),
+                               Dimension::nDim,
+                               gridLevel,
+                               baseMin.xIndex(),
+                               (Dimension::nDim > 1 ? baseMin.yIndex() : 0),
+                               (Dimension::nDim > 2 ? baseMin.zIndex() : 0),
+                               baseMax.xIndex(),
+                               (Dimension::nDim > 1 ? baseMax.yIndex() : 0),
+                               (Dimension::nDim > 2 ? baseMax.zIndex() : 0),
+                               mMaxGridLevels,
+                               mGridCellInfluenceRadius,
+                               int(this->neighborSearchType()),
+                               result.data());
   }
-
   return result;
 }
 
@@ -959,6 +1357,7 @@ NestedGridNeighbor<Dimension>::updateNodes() {
 
   // Create the list of occupied grid cells.
   rebuildOccupiedGridCells();
+  rebuildView();
 
 //   // Build the tree.
 //   rebuildOctTree();
@@ -1057,6 +1456,7 @@ updateNodes(const vector<int>& nodeIDs) {
 
   // Create the list of occupied grid cells.
   rebuildOccupiedGridCells();
+  rebuildView();
 
 //   // Build the tree.
 //   rebuildOctTree();
@@ -1102,6 +1502,68 @@ rebuildOccupiedGridCells() {
     CHECK(mOccupiedGridCells[gridLevelID].size() == mGridCellHead[gridLevelID].size());
   }
 
+}
+
+//------------------------------------------------------------------------------
+// Rebuild the flat occupied-cell/member view from the host linked-list state.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NestedGridNeighbor<Dimension>::
+rebuildView() {
+  mViewLevelOffsets.clear();
+  mViewCellKeys.clear();
+  mViewMemberOffsets.clear();
+  mViewMembers.clear();
+
+  mViewLevelOffsets.reserve(mMaxGridLevels + 1);
+  mViewLevelOffsets.push_back(0);
+  mViewMemberOffsets.push_back(0);
+  for (int gridLevelID = 0; gridLevelID < mMaxGridLevels; ++gridLevelID) {
+    // Use const reference to avoid unnecessary copy
+    const auto& cells = mOccupiedGridCells[gridLevelID];
+    const auto numCells = cells.size();
+
+    if (numCells > 0) {
+      // Create key-index pairs for sorting
+      std::vector<uint64_t> cellKeys(numCells);
+      std::vector<int> cellIndices(numCells);
+
+      for (size_t i = 0; i < numCells; ++i) {
+        cellKeys[i] = packGridCellKey(cells[i]);
+        cellIndices[i] = i;
+      }
+
+      // Sort indices by keys
+      std::sort(cellIndices.begin(), cellIndices.end(), [&](int a, int b) {
+        return cellKeys[a] < cellKeys[b];
+      });
+
+      // Process cells in sorted order
+      for (int idx : cellIndices) {
+        const auto& gridCell = cells[idx];
+        mViewCellKeys.push_back(packGridCellKey(gridCell));
+
+        // Follow linked list for this cell
+        auto nodeID = headOfGridCell(gridCell, gridLevelID);
+        while (nodeID != mEndOfLinkList) {
+          mViewMembers.push_back(nodeID);
+          nodeID = nextNodeInCell(nodeID);
+        }
+        mViewMemberOffsets.push_back(mViewMembers.size());
+      }
+    }
+    mViewLevelOffsets.push_back(mViewCellKeys.size());
+  }
+
+  GPUUtils::initMAView(mViewLevelOffsetsSpan, mViewLevelOffsets);
+  GPUUtils::initMAView(mViewCellKeysSpan, mViewCellKeys);
+  GPUUtils::initMAView(mViewMemberOffsetsSpan, mViewMemberOffsets);
+  GPUUtils::initMAView(mViewMembersSpan, mViewMembers);
+  GPUUtils::touch(mViewLevelOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mViewCellKeysSpan, chai::CPU);
+  GPUUtils::touch(mViewMemberOffsetsSpan, chai::CPU);
+  GPUUtils::touch(mViewMembersSpan, chai::CPU);
 }
 
 //------------------------------------------------------------------------------
@@ -1158,4 +1620,3 @@ rebuildOccupiedGridCells() {
 // const int NestedGridNeighbor<Dimension>::mGridNormalMagnitude = 1024;
 
 }
-

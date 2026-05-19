@@ -210,17 +210,14 @@ computeHullSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
 
         // Get the neighbors for this node (in this NodeList).  We use the approximation here
         // that nodes from other NodeLists do not contribute to the density of this one.
-        const vector<int>& connectivity = connectivityMap.connectivityForNode(nodeListi, i)[nodeListi];
+        const auto connectivity = connectivityMap.connectivityForNodeView(nodeListi, i)[nodeListi];
 
         // Copy the neighbor positions & masses.
         vector<Vector> positionsInv(1, Vector::zero());
         vector<Scalar> masses(1, mi);
         positionsInv.reserve(connectivity.size() + 1);
         masses.reserve(connectivity.size() + 1);
-        for (vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) {
-          const unsigned j = *jItr;
+        for (const auto j: connectivity) {
           if (nodeCoupling(NodePairIdxType(i, nodeListi, j, nodeListi)) > 0.0) {
             const Vector& rj = position(nodeListi, j);
             const Vector rji = rj - ri;
@@ -228,7 +225,7 @@ computeHullSumMassDensity(const ConnectivityMap<Dimension>& connectivityMap,
             if (etai2 < kernelExtent2) {
               const Vector rjiHat = rji.unitVector();
               positionsInv.push_back(1.0/sqrt(rji.magnitude2() + 1.0e-30) * rjiHat);
-              masses.push_back(mass(nodeListi, *jItr));
+              masses.push_back(mass(nodeListi, j));
             }
           }
         }
