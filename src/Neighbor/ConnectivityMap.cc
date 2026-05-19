@@ -250,6 +250,44 @@ countsToOffsets(const std::vector<int>& counts,
   }
 }
 
+// GPU-enabled version using CHAI managed arrays
+template<typename ExecPolicy, typename IntSpanType>
+inline
+void
+countsToOffsetsGPU(const IntSpanType& countsSpan,
+                   std::vector<int>& counts,
+                   IntSpanType& offsetsSpan,
+                   std::vector<int>& offsets) {
+  offsets.resize(counts.size() + 1u);
+  if (counts.empty()) {
+    offsets[0] = 0;
+  } else {
+    // Perform exclusive scan on device if using GPU policy, otherwise on host
+    using ScanPolicy = std::conditional_t<std::is_same_v<ExecPolicy, RAJA::seq_exec>,
+                                          RAJA::seq_exec,
+                                          ExecPolicy>;
+
+    GPUUtils::initMAView(offsetsSpan, offsets);
+    GPUUtils::touch(offsetsSpan, chai::CPU);
+
+    // Extract raw pointers for scan
+    int* countsPtr = countsSpan.data();
+    int* offsetsPtr = offsetsSpan.data();
+    const size_t n = counts.size();
+
+    RAJA::exclusive_scan<ScanPolicy>(RAJA::make_span(countsPtr, n),
+                                     RAJA::make_span(offsetsPtr, n),
+                                     RAJA::operators::plus<int>{});
+
+    // Compute final offset (sum of all counts)
+    // This can be done with a simple kernel
+    RAJA::forall<ExecPolicy>(RAJA::RangeSegment(0, 1),
+    [=] SPHERAL_HOST_DEVICE (int) {
+      offsetsPtr[n] = offsetsPtr[n - 1] + countsPtr[n - 1];
+    });
+  }
+}
+
 //------------------------------------------------------------------------------
 // View-based coarse-neighbor helpers used by ConnectivityMap preprocessing.
 //------------------------------------------------------------------------------
@@ -2030,36 +2068,47 @@ computeConnectivity() {
     }
     seedDescriptorsSpan[entryIndex] = descriptor;
   });
-  GPUUtils::touch(seedDescriptorsSpan, chai::CPU);
+  // Removed unnecessary touch - data stays on device for next GPU kernel
+
+  // Composite key sort optimization: Create a single sort key that packs (kind, level, key)
+  // This replaces the three-stage stable sort with a single sort operation.
+  // Composite key layout (most significant to least):
+  //   bits 96-127: kind (32 bits, but only needs ~2-3 bits)
+  //   bits 64-95:  level (32 bits)
+  //   bits 0-63:   key (64 bits)
+  struct CompositeKey {
+    uint64_t low;   // bits 0-63: original key
+    uint64_t high;  // bits 64-95: level, bits 96-127: kind
+
+    SPHERAL_HOST_DEVICE
+    bool operator<(const CompositeKey& rhs) const {
+      return (high < rhs.high) || (high == rhs.high && low < rhs.low);
+    }
+  };
 
   care::host_device_ptr<int> sortedSeedIndices(connectivitySize, "sortedSeedIndices");
-  care::host_device_ptr<int> descriptorSortKeysInt(connectivitySize, "descriptorSortKeysInt");
-  care::host_device_ptr<uint64_t> descriptorSortKeysUInt64(connectivitySize, "descriptorSortKeysUInt64");
+  care::host_device_ptr<CompositeKey> compositeKeys(connectivitySize, "compositeKeys");
+
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, connectivitySize),
   [=] SPHERAL_HOST_DEVICE (size_t seedIndex) {
     sortedSeedIndices[seedIndex] = seedIndex;
   });
+
   for (int nodeListi = int(numNodeLists) - 1; nodeListi >= 0; --nodeListi) {
+    // Single kernel to extract composite key
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, connectivitySize),
     [=] SPHERAL_HOST_DEVICE (size_t sortedIndex) {
       const auto seedIndex = size_t(sortedSeedIndices[sortedIndex]);
-      descriptorSortKeysUInt64[sortedIndex] = seedDescriptorsSpan[seedIndex*numNodeLists + size_t(nodeListi)].key;
+      const auto& desc = seedDescriptorsSpan[seedIndex*numNodeLists + size_t(nodeListi)];
+      CompositeKey key;
+      key.low = desc.key;
+      // Pack level in lower 32 bits of high, kind in upper 32 bits
+      key.high = (uint64_t(uint32_t(desc.kind)) << 32) | uint64_t(uint32_t(desc.level));
+      compositeKeys[sortedIndex] = key;
     });
-    care::sortKeyValueArrays<SortExecPolicy, uint64_t, int>(descriptorSortKeysUInt64, sortedSeedIndices, 0, connectivitySize);
 
-    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, connectivitySize),
-    [=] SPHERAL_HOST_DEVICE (size_t sortedIndex) {
-      const auto seedIndex = size_t(sortedSeedIndices[sortedIndex]);
-      descriptorSortKeysInt[sortedIndex] = seedDescriptorsSpan[seedIndex*numNodeLists + size_t(nodeListi)].level;
-    });
-    care::sortKeyValueArrays<SortExecPolicy, int, int>(descriptorSortKeysInt, sortedSeedIndices, 0, connectivitySize);
-
-    RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, connectivitySize),
-    [=] SPHERAL_HOST_DEVICE (size_t sortedIndex) {
-      const auto seedIndex = size_t(sortedSeedIndices[sortedIndex]);
-      descriptorSortKeysInt[sortedIndex] = seedDescriptorsSpan[seedIndex*numNodeLists + size_t(nodeListi)].kind;
-    });
-    care::sortKeyValueArrays<SortExecPolicy, int, int>(descriptorSortKeysInt, sortedSeedIndices, 0, connectivitySize);
+    // Single sort operation
+    care::sortKeyValueArrays<SortExecPolicy, CompositeKey, int>(compositeKeys, sortedSeedIndices, 0, connectivitySize);
   }
   sortedSeedIndices.registerTouch(care::CPU);
 
@@ -2169,9 +2218,10 @@ computeConnectivity() {
   const auto hasFallbackNeighborKinds =
     std::find(neighborGroupKinds.begin(), neighborGroupKinds.end(), FallbackNeighborGroupKind) != neighborGroupKinds.end();
 
-  std::vector<int> groupRawCoarseCounts(numNeighborGroups*numNodeLists);
+  // Use persistent workspace to avoid allocation churn
+  mWorkspaceGroupRawCoarseCounts.resize(numNeighborGroups*numNodeLists);
   FlatIntSpan groupRawCoarseCountsSpan;
-  GPUUtils::initMAView(groupRawCoarseCountsSpan, groupRawCoarseCounts);
+  GPUUtils::initMAView(groupRawCoarseCountsSpan, mWorkspaceGroupRawCoarseCounts);
   GPUUtils::touch(groupRawCoarseCountsSpan, chai::CPU);
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
   [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
@@ -2207,7 +2257,7 @@ computeConnectivity() {
       for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
         if (neighborGroupKinds[nodeListi] == FallbackNeighborGroupKind) {
           const auto& neighbor = mNodeLists[nodeListi]->neighbor();
-          groupRawCoarseCounts[groupIndex*numNodeLists + nodeListi] =
+          mWorkspaceGroupRawCoarseCounts[groupIndex*numNodeLists + nodeListi] =
             neighbor.countCoarseNeighbors(position(repNodeList, repNode),
                                           H(repNodeList, repNode),
                                           ghostConnectivity);
@@ -2215,15 +2265,14 @@ computeConnectivity() {
       }
     }
   }
-  std::vector<int> groupRawCoarseOffsets;
-  countsToOffsets(groupRawCoarseCounts, groupRawCoarseOffsets);
+  countsToOffsets(mWorkspaceGroupRawCoarseCounts, mWorkspaceGroupRawCoarseOffsets);
   FlatIntSpan groupRawCoarseOffsetsSpan;
-  GPUUtils::initMAView(groupRawCoarseOffsetsSpan, groupRawCoarseOffsets);
+  GPUUtils::initMAView(groupRawCoarseOffsetsSpan, mWorkspaceGroupRawCoarseOffsets);
   GPUUtils::touch(groupRawCoarseOffsetsSpan, chai::CPU);
-  std::vector<int> groupRawCoarseNeighbors(groupRawCoarseOffsets.back());
+  mWorkspaceGroupRawCoarseNeighbors.resize(mWorkspaceGroupRawCoarseOffsets.back());
   FlatIntSpan groupRawCoarseNeighborsSpan;
-  GPUUtils::initMAView(groupRawCoarseNeighborsSpan, groupRawCoarseNeighbors);
-  GPUUtils::touch(groupRawCoarseNeighborsSpan, chai::CPU);
+  GPUUtils::initMAView(groupRawCoarseNeighborsSpan, mWorkspaceGroupRawCoarseNeighbors);
+  // Removed unnecessary touch - data will be written by GPU kernel
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
   [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
     const auto groupIndex = entryIndex / numNodeLists;
@@ -2259,11 +2308,11 @@ computeConnectivity() {
       for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
         if (neighborGroupKinds[nodeListi] == FallbackNeighborGroupKind) {
           const auto entryIndex = groupIndex*numNodeLists + nodeListi;
-          const auto count = groupRawCoarseCounts[entryIndex];
+          const auto count = mWorkspaceGroupRawCoarseCounts[entryIndex];
           if (count > 0) {
             mNodeLists[nodeListi]->neighbor().fillCoarseNeighbors(position(repNodeList, repNode),
                                                                   H(repNodeList, repNode),
-                                                                  groupRawCoarseNeighbors.data() + groupRawCoarseOffsets[entryIndex],
+                                                                  mWorkspaceGroupRawCoarseNeighbors.data() + mWorkspaceGroupRawCoarseOffsets[entryIndex],
                                                                   ghostConnectivity);
           }
         }
@@ -2271,7 +2320,7 @@ computeConnectivity() {
     }
   }
   CHECK(groupTaskOffsets.size() == numNeighborGroups + 1u);
-  CHECK(groupRawCoarseOffsets.size() == numNeighborGroups*numNodeLists + 1u);
+  CHECK(mWorkspaceGroupRawCoarseOffsets.size() == numNeighborGroups*numNodeLists + 1u);
   CHECK(taskNodeIDs.size() == connectivitySize);
 
   FlatIntSpan groupTaskOffsetsSpan;
@@ -2331,9 +2380,10 @@ computeConnectivity() {
   GPUUtils::touch(groupMinMasterExtentSpan, chai::CPU);
   GPUUtils::touch(groupMaxMasterExtentSpan, chai::CPU);
 
-  std::vector<int> groupCoarseCounts(numNeighborGroups*numNodeLists, 0);
+  // Use persistent workspace to avoid allocation churn
+  mWorkspaceGroupCoarseCounts.assign(numNeighborGroups*numNodeLists, 0);
   FlatIntSpan groupCoarseCountsSpan;
-  GPUUtils::initMAView(groupCoarseCountsSpan, groupCoarseCounts);
+  GPUUtils::initMAView(groupCoarseCountsSpan, mWorkspaceGroupCoarseCounts);
   GPUUtils::touch(groupCoarseCountsSpan, chai::CPU);
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
   [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
@@ -2358,15 +2408,14 @@ computeConnectivity() {
   });
   GPUUtils::touch(groupCoarseCountsSpan, chai::CPU);
 
-  std::vector<int> groupCoarseOffsets;
-  countsToOffsets(groupCoarseCounts, groupCoarseOffsets);
+  countsToOffsets(mWorkspaceGroupCoarseCounts, mWorkspaceGroupCoarseOffsets);
   FlatIntSpan groupCoarseOffsetsSpan;
-  GPUUtils::initMAView(groupCoarseOffsetsSpan, groupCoarseOffsets);
+  GPUUtils::initMAView(groupCoarseOffsetsSpan, mWorkspaceGroupCoarseOffsets);
   GPUUtils::touch(groupCoarseOffsetsSpan, chai::CPU);
-  std::vector<int> groupCoarseNeighbors(groupCoarseOffsets.back());
+  mWorkspaceGroupCoarseNeighbors.resize(mWorkspaceGroupCoarseOffsets.back());
   FlatIntSpan groupCoarseNeighborsSpan;
-  GPUUtils::initMAView(groupCoarseNeighborsSpan, groupCoarseNeighbors);
-  GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
+  GPUUtils::initMAView(groupCoarseNeighborsSpan, mWorkspaceGroupCoarseNeighbors);
+  // Removed unnecessary touch - data will be written by GPU kernel
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
   [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
     const auto groupIndex = entryIndex / numNodeLists;
@@ -2390,11 +2439,11 @@ computeConnectivity() {
     CHECK(groupCoarseOffsetsSpan[entryIndex] + count == groupCoarseOffsetsSpan[entryIndex + 1u]);
   });
   GPUUtils::touch(groupCoarseNeighborsSpan, chai::CPU);
-  care::host_device_ptr<Key> groupCoarseSortKeys(groupCoarseNeighbors.size(), "groupCoarseSortKeys");
+  care::host_device_ptr<Key> groupCoarseSortKeys(mWorkspaceGroupCoarseNeighbors.size(), "groupCoarseSortKeys");
 #ifndef SPHERAL_UNIFIED_MEMORY
   care::host_device_ptr<int> groupCoarseSortValues(groupCoarseNeighborsSpan);
 #else
-  care::host_device_ptr<int> groupCoarseSortValues(groupCoarseNeighbors.size(), "groupCoarseSortValues");
+  care::host_device_ptr<int> groupCoarseSortValues(mWorkspaceGroupCoarseNeighbors.size(), "groupCoarseSortValues");
 #endif
   RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numNeighborGroups*numNodeLists),
   [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
@@ -2410,8 +2459,8 @@ computeConnectivity() {
     }
   });
   for (auto entryIndex = 0u; entryIndex < numNeighborGroups*numNodeLists; ++entryIndex) {
-    const auto beginOffset = size_t(groupCoarseOffsets[entryIndex]);
-    const auto sortCount = size_t(groupCoarseOffsets[entryIndex + 1u] - groupCoarseOffsets[entryIndex]);
+    const auto beginOffset = size_t(mWorkspaceGroupCoarseOffsets[entryIndex]);
+    const auto sortCount = size_t(mWorkspaceGroupCoarseOffsets[entryIndex + 1u] - mWorkspaceGroupCoarseOffsets[entryIndex]);
     if (sortCount > 1u) {
       care::sortKeyValueArrays<SortExecPolicy, Key, int>(groupCoarseSortKeys,
                                                          groupCoarseSortValues,
@@ -2420,7 +2469,7 @@ computeConnectivity() {
     }
   }
 #ifdef SPHERAL_UNIFIED_MEMORY
-  RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, groupCoarseNeighbors.size()),
+  RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, mWorkspaceGroupCoarseNeighbors.size()),
   [=] SPHERAL_HOST_DEVICE (size_t coarseIndex) {
     groupCoarseNeighborsSpan[coarseIndex] = groupCoarseSortValues[coarseIndex];
   });
@@ -2428,9 +2477,8 @@ computeConnectivity() {
 #endif
 
   // Count/scan/fill the main connectivity in flat CSR-like storage first.
-  std::vector<int> connectivityCounts(numConnectivityEntries, 0);
-  std::vector<int> connectivityOffsets;
-  std::vector<int> connectivityNeighbors;
+  // Use persistent workspace to avoid allocation churn
+  mWorkspaceFlatCounts.assign(numConnectivityEntries, 0);
   auto buildConnectivityPass = [&](std::vector<int>* flatCounts,
                                    const std::vector<int>* flatOffsets,
                                    std::vector<int>* flatNeighbors) {
@@ -2445,7 +2493,7 @@ computeConnectivity() {
       GPUUtils::initMAView(flatOffsetsSpan, const_cast<std::vector<int>&>(*flatOffsets));
       GPUUtils::touch(flatOffsetsSpan, chai::CPU);
       GPUUtils::initMAView(flatNeighborsSpan, *flatNeighbors);
-      GPUUtils::touch(flatNeighborsSpan, chai::CPU);
+      // Removed unnecessary touch - data will be written by GPU kernel
     } else {
       GPUUtils::initMAView(flatCountsSpan, *flatCounts);
       GPUUtils::touch(flatCountsSpan, chai::CPU);
@@ -2501,13 +2549,13 @@ computeConnectivity() {
     }
   };
 
-  buildConnectivityPass(&connectivityCounts, nullptr, nullptr);
-  countsToOffsets(connectivityCounts, connectivityOffsets);
-  connectivityNeighbors.resize(connectivityOffsets.back());
-  buildConnectivityPass(nullptr, &connectivityOffsets, &connectivityNeighbors);
+  buildConnectivityPass(&mWorkspaceFlatCounts, nullptr, nullptr);
+  countsToOffsets(mWorkspaceFlatCounts, mWorkspaceFlatOffsets);
+  mWorkspaceFlatNeighbors.resize(mWorkspaceFlatOffsets.back());
+  buildConnectivityPass(nullptr, &mWorkspaceFlatOffsets, &mWorkspaceFlatNeighbors);
 
-  mConnectivityFlatOffsets = connectivityOffsets;
-  mConnectivityFlatNeighbors = connectivityNeighbors;
+  mConnectivityFlatOffsets = mWorkspaceFlatOffsets;
+  mConnectivityFlatNeighbors = mWorkspaceFlatNeighbors;
   this->rebuildFlatConnectivityViews();
   const auto connectivityView = this->connectivityFlatView();
 
@@ -2530,7 +2578,8 @@ computeConnectivity() {
   GPUUtils::initMAView(globalNodeIDsSpan, globalNodeIDs);
   GPUUtils::touch(globalNodeIDsSpan, chai::CPU);
 
-  std::vector<int> nodePairCounts(numConnectivityEntries, 0);
+  // Use persistent workspace to avoid allocation churn
+  mWorkspacePairCounts.assign(numConnectivityEntries, 0);
   auto buildNodePairPass = [&](std::vector<int>* pairCounts,
                                const std::vector<int>* pairOffsets,
                                NodePairList* nodePairs) {
@@ -2584,11 +2633,10 @@ computeConnectivity() {
     }
   };
 
-  buildNodePairPass(&nodePairCounts, nullptr, nullptr);
-  std::vector<int> nodePairOffsets;
-  countsToOffsets(nodePairCounts, nodePairOffsets);
-  mNodePairListPtr = std::make_shared<NodePairList>(NodePairList::ContainerType(nodePairOffsets.back()));
-  buildNodePairPass(nullptr, &nodePairOffsets, mNodePairListPtr.get());
+  buildNodePairPass(&mWorkspacePairCounts, nullptr, nullptr);
+  countsToOffsets(mWorkspacePairCounts, mWorkspacePairOffsets);
+  mNodePairListPtr = std::make_shared<NodePairList>(NodePairList::ContainerType(mWorkspacePairOffsets.back()));
+  buildNodePairPass(nullptr, &mWorkspacePairOffsets, mNodePairListPtr.get());
 
   // // If necessary add ghost->internal connectivity.
   // if (ghostConnectivity) {
@@ -2638,9 +2686,10 @@ computeConnectivity() {
     TIME_BEGIN("ConnectivityMap_computeOverlapConnectivity");
 
     const auto connectivity = this->connectivityFlatView();
-    std::vector<int> overlapRawCounts(numConnectivityEntries, 0);
+    // Use persistent workspace to avoid allocation churn
+    mWorkspaceOverlapRawCounts.assign(numConnectivityEntries, 0);
     FlatIntSpan overlapRawCountsSpan;
-    GPUUtils::initMAView(overlapRawCountsSpan, overlapRawCounts);
+    GPUUtils::initMAView(overlapRawCountsSpan, mWorkspaceOverlapRawCounts);
     GPUUtils::touch(overlapRawCountsSpan, chai::CPU);
 
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
@@ -2664,16 +2713,15 @@ computeConnectivity() {
     });
     GPUUtils::touch(overlapRawCountsSpan, chai::CPU);
 
-    std::vector<int> overlapRawOffsets;
-    countsToOffsets(overlapRawCounts, overlapRawOffsets);
+    countsToOffsets(mWorkspaceOverlapRawCounts, mWorkspaceOverlapRawOffsets);
     FlatIntSpan overlapRawOffsetsSpan;
-    GPUUtils::initMAView(overlapRawOffsetsSpan, overlapRawOffsets);
+    GPUUtils::initMAView(overlapRawOffsetsSpan, mWorkspaceOverlapRawOffsets);
     GPUUtils::touch(overlapRawOffsetsSpan, chai::CPU);
 
-    std::vector<int> overlapRawNeighbors(overlapRawOffsets.back());
+    mWorkspaceOverlapRawNeighbors.resize(mWorkspaceOverlapRawOffsets.back());
     FlatIntSpan overlapRawNeighborsSpan;
-    GPUUtils::initMAView(overlapRawNeighborsSpan, overlapRawNeighbors);
-    GPUUtils::touch(overlapRawNeighborsSpan, chai::CPU);
+    GPUUtils::initMAView(overlapRawNeighborsSpan, mWorkspaceOverlapRawNeighbors);
+    // Removed unnecessary touch - data will be written by GPU kernel
 
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
     [=] SPHERAL_HOST_DEVICE (size_t entryIndex) {
@@ -2698,9 +2746,9 @@ computeConnectivity() {
     });
     GPUUtils::touch(overlapRawNeighborsSpan, chai::CPU);
 
-    std::vector<int> overlapCounts(numConnectivityEntries, 0);
+    mWorkspaceOverlapCounts.assign(numConnectivityEntries, 0);
     FlatIntSpan overlapCountsSpan;
-    GPUUtils::initMAView(overlapCountsSpan, overlapCounts);
+    GPUUtils::initMAView(overlapCountsSpan, mWorkspaceOverlapCounts);
     GPUUtils::touch(overlapCountsSpan, chai::CPU);
 
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, numConnectivityEntries),
@@ -2714,15 +2762,13 @@ computeConnectivity() {
       }
       overlapCountsSpan[entryIndex] = uniqueOverlapNeighbors(values, count);
     });
-    GPUUtils::touch(overlapCountsSpan, chai::CPU);
-
-    std::vector<int> overlapOffsets;
-    countsToOffsets(overlapCounts, overlapOffsets);
+    // Use GPU prefix sum instead of CPU countsToOffsets for better performance
     FlatIntSpan overlapOffsetsSpan;
-    GPUUtils::initMAView(overlapOffsetsSpan, overlapOffsets);
+    countsToOffsetsGPU<EXEC_POLICY>(overlapCountsSpan, mWorkspaceOverlapCounts,
+                                    overlapOffsetsSpan, mWorkspaceOverlapOffsets);
     GPUUtils::touch(overlapOffsetsSpan, chai::CPU);
 
-    std::vector<int> overlapNeighbors(overlapOffsets.back());
+    std::vector<int> overlapNeighbors(mWorkspaceOverlapOffsets.back());
     FlatIntSpan overlapNeighborsSpan;
     GPUUtils::initMAView(overlapNeighborsSpan, overlapNeighbors);
     GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
@@ -2738,7 +2784,7 @@ computeConnectivity() {
     });
     GPUUtils::touch(overlapNeighborsSpan, chai::CPU);
 
-    mOverlapConnectivityFlatOffsets = std::move(overlapOffsets);
+    mOverlapConnectivityFlatOffsets = std::move(mWorkspaceOverlapOffsets);
     mOverlapConnectivityFlatNeighbors = std::move(overlapNeighbors);
     mOverlapConnectivity.clear();
     TIME_END("ConnectivityMap_computeOverlapConnectivity");

@@ -1520,18 +1520,38 @@ rebuildView() {
   mViewLevelOffsets.push_back(0);
   mViewMemberOffsets.push_back(0);
   for (int gridLevelID = 0; gridLevelID < mMaxGridLevels; ++gridLevelID) {
-    std::vector<GC> cells = mOccupiedGridCells[gridLevelID];
-    std::sort(cells.begin(), cells.end(), [](const GC& lhs, const GC& rhs) {
-      return packGridCellKey(lhs) < packGridCellKey(rhs);
-    });
-    for (const auto& gridCell: cells) {
-      mViewCellKeys.push_back(packGridCellKey(gridCell));
-      auto nodeID = headOfGridCell(gridCell, gridLevelID);
-      while (nodeID != mEndOfLinkList) {
-        mViewMembers.push_back(nodeID);
-        nodeID = nextNodeInCell(nodeID);
+    // Use const reference to avoid unnecessary copy
+    const auto& cells = mOccupiedGridCells[gridLevelID];
+    const auto numCells = cells.size();
+
+    if (numCells > 0) {
+      // Create key-index pairs for sorting
+      std::vector<uint64_t> cellKeys(numCells);
+      std::vector<int> cellIndices(numCells);
+
+      for (size_t i = 0; i < numCells; ++i) {
+        cellKeys[i] = packGridCellKey(cells[i]);
+        cellIndices[i] = i;
       }
-      mViewMemberOffsets.push_back(mViewMembers.size());
+
+      // Sort indices by keys
+      std::sort(cellIndices.begin(), cellIndices.end(), [&](int a, int b) {
+        return cellKeys[a] < cellKeys[b];
+      });
+
+      // Process cells in sorted order
+      for (int idx : cellIndices) {
+        const auto& gridCell = cells[idx];
+        mViewCellKeys.push_back(packGridCellKey(gridCell));
+
+        // Follow linked list for this cell
+        auto nodeID = headOfGridCell(gridCell, gridLevelID);
+        while (nodeID != mEndOfLinkList) {
+          mViewMembers.push_back(nodeID);
+          nodeID = nextNodeInCell(nodeID);
+        }
+        mViewMemberOffsets.push_back(mViewMembers.size());
+      }
     }
     mViewLevelOffsets.push_back(mViewCellKeys.size());
   }
