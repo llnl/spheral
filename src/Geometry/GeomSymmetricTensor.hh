@@ -38,6 +38,8 @@ public:
   using size_type = unsigned;
   using EigenType = Eigen::Matrix<double, nDim, nDim>;
   using EigenStructType = EigenStruct<nDim>;
+  using SymTensorType = GeomSymmetricTensor<nDim>;
+  using TensorType = GeomTensor<nDim>;
 
   // Useful stuff known at compile time
   SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
