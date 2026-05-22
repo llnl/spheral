@@ -128,7 +128,6 @@ preStepInitialize(const HydroPackage& hydro,
 
   case MassDensityType::VoronoiCellDensity:
     {
-      hydro.updateVolume(state, false);
       const auto volume = state.fields(HydroFieldNames::volume, 0.0);
       massDensityRZ = massRZ / volume;
     }
@@ -136,7 +135,6 @@ preStepInitialize(const HydroPackage& hydro,
 
   case MassDensityType::SumVoronoiCellDensity:
     {
-      hydro.updateVolume(state, true);
       const auto volume = state.fields(HydroFieldNames::volume, 0.0);
       computeSumVoronoiCellMassDensity(connectivityMap, WT, position, massRZ, volume, H, massDensityRZ);
     }
