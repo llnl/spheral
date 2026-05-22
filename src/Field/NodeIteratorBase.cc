@@ -9,6 +9,8 @@
 
 #include "NodeIteratorBase.hh"
 
+#include "NodeList/FluidNodeList.hh"
+
 #include <algorithm>
 #include <cstdlib>
 using std::vector;
@@ -66,6 +68,18 @@ operator=(const NodeIteratorBase<Dimension>& rhs) {
   }
   ENSURE(valid());
   return *this;
+}
+
+//------------------------------------------------------------------------------
+// Return a pointer to the NodeList cast as a FluidNodeList.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+const FluidNodeList<Dimension>*
+NodeIteratorBase<Dimension>::
+fluidNodeListPtr() const {
+  const FluidNodeList<Dimension>* result = dynamic_cast<const FluidNodeList<Dimension>*>(nodeListPtr());
+  ENSURE(result != 0);
+  return result;
 }
 
 //------------------------------------------------------------------------------
