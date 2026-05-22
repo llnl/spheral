@@ -40,7 +40,8 @@ public:
   // Constructors.
   GenericHydro(ArtificialViscosity<Dimension>& Q,
                const double cfl,
-               const bool useVelocityMagnitudeForDt);
+               const bool useVelocityMagnitudeForDt,
+               const bool useNewAccelerationMagnitudeForDt);
 
   // Destructor.
   virtual ~GenericHydro();
@@ -80,6 +81,9 @@ public:
   // be used in determining the timestep.
   bool useVelocityMagnitudeForDt()          const { return mUseVelocityMagnitudeForDt; }
   void useVelocityMagnitudeForDt(bool x)          { mUseVelocityMagnitudeForDt = x; }
+
+  bool useNewAccelerationMagnitudeForDt()          const { return mUseNewAccelerationMagnitudeForDt; }
+  void useNewAccelerationMagnitudeForDt(bool x)          { mUseNewAccelerationMagnitudeForDt = x; }
 
   // Return the cumulative neighboring statistics.
   int minMasterNeighbor()                   const { return mMinMasterNeighbor; }
@@ -122,6 +126,7 @@ private:
   ArtificialViscosity<Dimension>& mArtificialViscosity;
   Scalar mCFL;
   bool mUseVelocityMagnitudeForDt;
+  bool mUseNewAccelerationMagnitudeForDt;
 
   mutable int mMinMasterNeighbor, mMaxMasterNeighbor, mSumMasterNeighbor;
   mutable int mMinCoarseNeighbor, mMaxCoarseNeighbor, mSumCoarseNeighbor;
