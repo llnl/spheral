@@ -1,26 +1,27 @@
-################################################
-ConnectivityMap ``computeConnectivity`` Design
-################################################
+######################
+ConnectivityMap Design
+######################
 
-Likely Implementation Strategy
-==============================
+ConnectivityMap Object
+======================
 
-1. Keep the existing ``ConnectivityMap`` API intact for Python, tests, overlap
-   connectivity, intersection connectivity, and host algorithms.
-2. Add or extend a device-ready flat representation: probably
-   ``NodePairListView`` plus CSR-style arrays for per-node connectivity if more
-   than pair iteration is needed.
-3. First make the host connectivity builder populate CHAI-backed views reliably,
-   so GPU derivative users do not need nested host structures.
-4. Only then consider a true GPU connectivity builder. That will require
-   replacing host-only pieces like ``Neighbor::setMasterNeighborGroup``, dynamic
-   ``push_back``, per-node sorting, and virtual neighbor calls with
-   preallocated/count-prefix-fill RAJA kernels.
-5. Treat overlap and intersection connectivity as separate later work; they are
-   more irregular than the pair list used by evaluate derivatives.
+``ConnectivityMap<Dimension>`` is the ``DataBase``-owned object that records
+which nodes can interact with which other nodes. It preserves ``NodeList``
+ordering according to ``NodeListRegistrar``, provides the public
+``connectivityForNode`` style queries used by host algorithms and Python tests,
+and exposes flat pair data through ``NodePairList`` for pairwise algorithms.
+
+This note currently focuses on the ``computeConnectivity`` builder because that
+is the part of ``ConnectivityMap`` most relevant to a future GPU port. The
+broader object description can be expanded as needed to cover patching,
+global-connectivity queries, coupling functors, traversal APIs, and Python
+binding behavior.
+
+``computeConnectivity`` Implementation
+--------------------------------------
 
 Purpose and Scope
-=================
+^^^^^^^^^^^^^^^^^
 
 ``ConnectivityMap<Dimension>::computeConnectivity`` is the internal builder for
 the per-node neighbor graph used by the ``DataBase``, hydrodynamics packages,
@@ -41,7 +42,7 @@ does not build connectivity on the GPU; it consumes the already-built
 ``FieldView`` and ``FieldListView``.
 
 Primary Calling Graph
-=====================
+^^^^^^^^^^^^^^^^^^^^^
 
 The normal rebuild path is:
 
@@ -94,7 +95,7 @@ Important downstream consumers include:
   ``tests/cpp/Neighbor``.
 
 Public Entry Points
-===================
+^^^^^^^^^^^^^^^^^^^
 
 ``DataBase<Dimension>::updateConnectivityMap`` is the common explicit update
 entry point. It requires an existing ``mConnectivityMapPtr`` and forwards the
@@ -116,7 +117,7 @@ fresh connectivity should call ``updateConnectivityMap`` before querying.
 - calls ``computeConnectivity``.
 
 Core Data Structures
-====================
+^^^^^^^^^^^^^^^^^^^^
 
 ``mNodeLists``
    ``std::vector<const NodeList<Dimension>*>`` in ``NodeListRegistrar`` order.
@@ -188,7 +189,7 @@ Core Data Structures
    between the pair positions.
 
 Neighbor Search Dependencies
-============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``computeConnectivity`` delegates candidate generation to the active
 ``Neighbor`` implementation for each ``NodeList``.
@@ -214,10 +215,10 @@ This gather-or-scatter test is what turns coarse neighbor candidates into
 significant connectivity entries.
 
 Build Algorithm Details
-=======================
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Preconditions
--------------
+"""""""""""""
 
 Before building, ``computeConnectivity`` verifies:
 
@@ -237,7 +238,7 @@ The represented connectivity size is the offset of the last ``NodeList`` plus
 either its total node count or internal-node count depending on that flag.
 
 Initialization
---------------
+""""""""""""""
 
 The builder constructs a temporary ``DataBase`` over ``mNodeLists`` and reads
 ``globalPosition`` and ``globalHfield`` from it. It also finds the maximum kernel
@@ -248,7 +249,7 @@ the nested vectors are reallocated. Reused per-node neighbor vectors are cleared
 Intersection connectivity is always cleared before rebuild.
 
 Domain-Independent Ordering
----------------------------
+"""""""""""""""""""""""""""
 
 If ``NodeListRegistrar::domainDecompositionIndependent()`` is true, the builder
 computes ``mKeys = mortonOrderIndices(dataBase)`` and orders traversal by those
@@ -266,7 +267,7 @@ Pair lists are sorted after construction:
 - ``std::sort`` over ``NodePairIdxType`` otherwise.
 
 Main Connectivity Walk
-----------------------
+""""""""""""""""""""""
 
 The outer loops choose seed nodes and skip any already marked complete in
 ``flagNodeDone``. For each seed, ``Neighbor::setMasterNeighborGroup`` returns a
@@ -290,7 +291,7 @@ Thread-local pair vectors are merged into the outer ``nodePairs`` vector in an
 OpenMP critical section.
 
 Pair Uniqueness Policy
-----------------------
+""""""""""""""""""""""
 
 ``calculatePairInteraction`` determines which accepted pairs enter
 ``NodePairList``:
@@ -306,7 +307,7 @@ while preserving interactions involving ghost nodes when the target list appears
 earlier in ``NodeList`` order.
 
 Overlap Connectivity
---------------------
+""""""""""""""""""""
 
 When requested, overlap connectivity starts as a copy of primary connectivity.
 The builder then expands it using gather/scatter overlap logic:
@@ -321,7 +322,7 @@ The builder then expands it using gather/scatter overlap logic:
 when domain-independent mode is active.
 
 Intersection Connectivity
--------------------------
+"""""""""""""""""""""""""
 
 When requested, the builder loops over the completed ``NodePairList`` in
 parallel. Each thread creates a private unordered map:
@@ -340,7 +341,7 @@ Thread-local intersection maps are merged into ``mIntersectionConnectivity`` in
 an OpenMP critical section.
 
 Postconditions and Validation
-=============================
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``computeConnectivity`` checks that every represented node was marked done, then
 calls ``valid()``.
@@ -372,40 +373,6 @@ This path works because all data captured by the kernel is flat or view-based.
 The full ``ConnectivityMap`` primary storage is still nested STL storage and is
 not itself a device-side data structure.
 
-Design Implications for a GPU Connectivity Builder
-==================================================
-
-A direct RAJA port of the current function is not practical because the core
-algorithm depends on host-only or GPU-hostile operations:
-
-- virtual ``Neighbor`` calls for candidate generation;
-- nested ``std::vector`` allocation and ``push_back`` inside the hot loop;
-- per-node dynamic sorting;
-- OpenMP thread-local vectors and critical-section merges;
-- ``std::unordered_map`` for intersection connectivity;
-- host-only validation and output paths.
-
-A GPU-ready implementation should therefore separate products:
-
-- ``NodePairList`` for pairwise derivative loops;
-- optional CSR-style per-node connectivity for algorithms that need
-  ``connectivityForNode``-like queries on device;
-- host nested connectivity for the existing public API and Python behavior;
-- optional host-only overlap and intersection products until device consumers
-  need them.
-
-A likely GPU builder shape is:
-
-1. Build or expose device-readable position, ``H``, extent, and spatial-bin/tree
-   metadata.
-2. Run a count kernel to determine accepted neighbor counts and pair counts.
-3. Prefix-sum counts to allocate flat arrays.
-4. Run a fill kernel to write accepted neighbors and pairs.
-5. Sort or canonicalize only the arrays whose consumers require deterministic
-   ordering.
-6. Populate the existing host ``ConnectivityMap`` storage from the flat product
-   when legacy APIs are queried, or keep a synchronized host mirror.
-
 Testing Notes
 =============
 
@@ -425,3 +392,63 @@ Any implementation that changes ``computeConnectivity`` should keep the Python
 neighbor tests as correctness gates and add C++ tests for any new flat or
 device-facing connectivity representation.
 
+Potential strategy for porting to GPUs
+======================================
+
+The following is one candidate strategy for discussion. It is intentionally
+listed after the current design so alternatives can be evaluated against the
+actual behavior and data products of ``ConnectivityMap``.
+
+The original implementation author suggested a ``NodePairList``-first port:
+build only the pair list in the initial GPU kernel, then transfer or transform
+that result into the alternative per-node query representation after the fact.
+That derived per-node representation may be best built on demand because many
+models consume the pair list directly and do not need the older
+``connectivityForNode`` query path.
+
+A conservative staged strategy is:
+
+1. Keep the existing ``ConnectivityMap`` API intact for Python, tests, overlap
+   connectivity, intersection connectivity, and host algorithms.
+2. Make ``NodePairList`` the first-class device product, since that is what the
+   GPU derivative loops already consume through ``NodePairListView``.
+3. Build or update any CSR-style per-node connectivity from the pair list after
+   the pair list is available, preferably only when a consumer asks for
+   ``connectivityForNode``-like queries.
+4. Keep the existing nested host storage as the compatibility layer for Python
+   and legacy host algorithms, but avoid making it the primary GPU build target.
+5. Treat overlap and intersection connectivity as separate later work; they are
+   more irregular than the pair list used by evaluate derivatives.
+
+A direct RAJA port of the current function is not practical because the core
+algorithm depends on host-only or GPU-hostile operations:
+
+- virtual ``Neighbor`` calls for candidate generation;
+- nested ``std::vector`` allocation and ``push_back`` inside the hot loop;
+- per-node dynamic sorting;
+- OpenMP thread-local vectors and critical-section merges;
+- ``std::unordered_map`` for intersection connectivity;
+- host-only validation and output paths.
+
+A GPU-ready implementation should therefore separate products:
+
+- ``NodePairList`` as the primary product for pairwise derivative loops;
+- optional CSR-style per-node connectivity derived from the pair list for
+  algorithms that need ``connectivityForNode``-like queries on device;
+- host nested connectivity derived or synchronized for the existing public API
+  and Python behavior;
+- optional host-only overlap and intersection products until device consumers
+  need them.
+
+A likely GPU builder shape is:
+
+1. Build or expose device-readable position, ``H``, extent, and spatial-bin/tree
+   metadata.
+2. Run a count kernel to determine accepted pair counts.
+3. Prefix-sum pair counts to allocate the flat ``NodePairList`` storage.
+4. Run a fill kernel to write accepted pairs in canonical form.
+5. Sort or canonicalize the pair list only where consumers require deterministic
+   ordering.
+6. When a per-node query consumer appears, derive CSR-style adjacency or the
+   existing host ``ConnectivityMap`` nested storage from the pair list rather
+   than making those structures mandatory outputs of every build.
