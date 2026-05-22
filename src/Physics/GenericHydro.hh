@@ -41,7 +41,7 @@ public:
   GenericHydro(ArtificialViscosity<Dimension>& Q,
                const double cfl,
                const bool useVelocityMagnitudeForDt,
-               const bool useNewAccelerationMagnitudeForDt);
+               const bool useNewAccelerationMagnitudeForDt = false);
 
   // Destructor.
   virtual ~GenericHydro();
