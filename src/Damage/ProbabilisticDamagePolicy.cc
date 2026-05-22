@@ -24,7 +24,9 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "Geometry/GeometricUtilities.hh"
+#include "Geometry/RZGeometryOps.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>
@@ -143,6 +145,59 @@ effectiveRotation(const Dim<3>::Tensor& DvDx) {
                          0.0, -sin(theta.z()), cos(theta.z())));
 }
 
+//------------------------------------------------------------------------------
+// Build a tensor of the requested type
+//------------------------------------------------------------------------------
+// Generic definition
+template<typename Dimension, typename OutTensorType>
+OutTensorType
+buildTensor(const size_t i,
+            const Field<Dimension, typename Dimension::SymTensor>& tfield,
+            const Field<Dimension, typename Dimension::Scalar>* ttfieldptr) {
+  return tfield(i);
+}
+
+// RZ specialization
+template<>
+Dim<3>::SymTensor
+buildTensor<Dim<2>, Dim<3>::SymTensor>(const size_t i,
+                                       const Field<Dim<2>, Dim<2>::SymTensor>& tfield,
+                                       const Field<Dim<2>, Dim<2>::Scalar>* ttfieldptr) {
+  REQUIRE(ttfieldptr != nullptr);
+  const auto& ti = tfield(i);
+  return Dim<3>::SymTensor(ti[0], ti[1], 0.0,
+                           ti[1], ti[2], 0.0,
+                           0.0,   0.0,   (*ttfieldptr)(i));
+}
+
+
+//------------------------------------------------------------------------------
+// Assign tensor components
+//------------------------------------------------------------------------------
+// Generic definition
+template<typename Dimension, typename InTensorType>
+void
+assignTensor(const size_t i,
+             const InTensorType& ti,
+             Field<Dimension, typename Dimension::SymTensor>& tfield,
+             Field<Dimension, typename Dimension::Scalar>* ttfieldptr) {
+  tfield(i) = ti;
+}
+
+// RZ specialization
+template<>
+void
+assignTensor<Dim<2>, Dim<3>::SymTensor>(const size_t i,
+                                        const Dim<3>::SymTensor& ti,
+                                        Field<Dim<2>, Dim<2>::SymTensor>& tfield,
+                                        Field<Dim<2>, Dim<2>::Scalar>* ttfieldptr) {
+  REQUIRE(ttfieldptr != nullptr);
+  tfield(i)[0] = ti[0];
+  tfield(i)[1] = ti[1];
+  tfield(i)[2] = ti[3];
+  (*ttfieldptr)(i) = ti[5];
+}
+
 }
 
 //------------------------------------------------------------------------------
@@ -160,7 +215,7 @@ ProbabilisticDamagePolicy(const bool damageInCompression,  // allow damage in co
 }
 
 //------------------------------------------------------------------------------
-// Update the field.
+// Update the field (dispatch)
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
@@ -169,13 +224,37 @@ update(const KeyType& key,
        State<Dimension>& state,
        StateDerivatives<Dimension>& derivs,
        const double multiplier,
-       const double /*t*/,
-       const double /*dt*/) {
+       const double t,
+       const double dt) {
+  if constexpr (Dimension::nDim == 2) {
+    if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+      this->updateImpl<Dim<3>::SymTensor>(key, state, derivs, multiplier, t, dt);
+    } else {
+      this->updateImpl<SymTensor>(key, state, derivs, multiplier, t, dt);
+    }
+  } else {
+    this->updateImpl<SymTensor>(key, state, derivs, multiplier, t, dt);
+  }
+}  
+
+//------------------------------------------------------------------------------
+// Update the field (implementation)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+template<typename DamageTensorType>
+void
+ProbabilisticDamagePolicy<Dimension>::
+updateImpl(const KeyType& key,
+           State<Dimension>& state,
+           StateDerivatives<Dimension>& derivs,
+           const double multiplier,
+           const double /*t*/,
+           const double /*dt*/) {
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero());
-
+  auto& D = state.field(key, SymTensor::zero());
+  
   const auto Dtiny = 0.01;
   const auto Dtiny1 = 1.0/(FastMath::CubeRootHalley2(1.0 - Dtiny) - FastMath::CubeRootHalley2(Dtiny));
 
@@ -191,6 +270,14 @@ update(const KeyType& key,
   const auto& maxFlaw = state.field(buildKey(SolidFieldNames::maxFlaw), 0.0);
   const auto& V0 = state.field(buildKey(SolidFieldNames::initialVolume), 0.0);
 
+  // Get any needed RZ components
+  const auto RZ = (GeometryRegistrar::coords() == CoordinateType::RZ);
+  Field<Dimension, Scalar> *DTTptr = nullptr, *strainTTptr = nullptr;
+  if (RZ) {
+    DTTptr = &state.field(buildKey(SolidFieldNames::tensorDamageTT), 0.0);
+    strainTTptr = &state.field(buildKey(SolidFieldNames::effectiveStrainTensorTT), 0.0);
+  }
+
   // Check if porosity is active for this material
   const auto usePorosity = state.registered(buildKey(SolidFieldNames::porosityAlpha));
   Field<Dimension, Scalar>* alpha0Ptr = nullptr;
@@ -203,10 +290,11 @@ update(const KeyType& key,
   }
 
   // Iterate over the internal nodes.
-  const auto ni = stateField.numInternalElements();
+  const auto ni = D.numInternalElements();
 #pragma omp parallel for
   for (auto i = 0u; i < ni; ++i) {
-    auto& Di = stateField(i);
+    auto straini = buildTensor<Dimension, DamageTensorType>(i, strain, strainTTptr);
+    auto Di = buildTensor<Dimension, DamageTensorType>(i, D, DTTptr);
     CHECK(Di.eigenValues().minElement() >= 0.0 and
           fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
 
@@ -223,7 +311,7 @@ update(const KeyType& key,
           fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
 
     // The tensor strain on this node.
-    auto eigeni = strain(i).eigenVectors();
+    auto eigeni = straini.eigenVectors();
 
     // If we're allowing damage in compression, force all strains to be abs value.
     if (mDamageInCompression) abs_in_place(eigeni.eigenValues);
@@ -232,7 +320,7 @@ update(const KeyType& key,
     sortEigen(eigeni);
 
     // Iterate over the eigen values/vectors of the strain.
-    for (auto j = 0; j < Dimension::nDim; ++j) {
+    for (auto j = 0u; j < DamageTensorType::nDimensions(); ++j) {
 
       // The direction of the strain, and projected current (starting) damage.
       const auto strainDirection = eigeni.eigenVectors.getColumn(j);
@@ -303,6 +391,9 @@ update(const KeyType& key,
     //            fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
     //     ENSURE(fuzzyGreaterThanOrEqual(Di.eigenValues().minElement(), 0.0) &&
     //            fuzzyLessThanOrEqual(Di.Trace(), 1.0));
+
+    // Put the new damage values back in the Field(s)
+    assignTensor<Dimension, DamageTensorType>(i, Di, D, DTTptr);
   }
 }
 

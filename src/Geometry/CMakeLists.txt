@@ -83,6 +83,7 @@ set(Geometry_headers
     invertRankNTensor.hh
     outerProduct.hh
     GeometricUtilities.hh
+    RZGeometryOps.hh
     )
 
 spheral_add_obj_library(Geometry SPHERAL_OBJ_LIBS)

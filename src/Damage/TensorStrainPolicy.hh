@@ -54,6 +54,15 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   TensorStrainAlgorithm mStrainType;
+
+  // Worker method to handle the update
+  template<typename StrainTensorType>
+  void updateImpl(const KeyType& key,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs,
+                  const double multiplier,
+                  const double t,
+                  const double dt);
 };
 
 }

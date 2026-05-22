@@ -64,6 +64,15 @@ private:
   //--------------------------- Private Interface ---------------------------//
   bool mDamageInCompression;
   double mkWeibull, mmWeibull;
+
+  // Worker method to handle the update
+  template<typename DamageTensorType>
+  void updateImpl(const KeyType& key,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs,
+                  const double multiplier,
+                  const double t,
+                  const double dt);
 };
 
 }
