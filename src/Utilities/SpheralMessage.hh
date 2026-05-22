@@ -24,6 +24,12 @@ inline void emit_message(std::ostream& ss,
   ss << level << " [" << file << ":" << line << "]: " << os.str() << '\n';
 }
 
+inline void emit_message(std::ostream& ss,
+                         const char* level,
+                         const std::ostringstream& os) {
+  ss << level << ": " << os.str() << '\n';
+}
+
 }
 }
 
@@ -37,7 +43,7 @@ inline void emit_message(std::ostream& ss,
 #define SpheralMessage(expr) do {                                       \
   if (Spheral::Process::getRank() == 0)  {                              \
     Spheral::Detail::emit_message(std::cout, "INFO",                    \
-                                  __FILE__, __LINE__,                   \
+>>>>>>> feature/RZhydro
                                   BUILD_SPHERAL_MSG_STREAM(expr));      \
   }                                                                     \
 } while(0)
@@ -61,7 +67,6 @@ inline void emit_message(std::ostream& ss,
 #define SpheralDeprecationWarning(expr) do {                            \
   if (Spheral::Process::getRank() == 0)  {                              \
     Spheral::Detail::emit_message(std::cout, "DEPRECATION WARNING",     \
-                                  __FILE__, __LINE__,                   \
                                   BUILD_SPHERAL_MSG_STREAM(expr));      \
   }                                                                     \
 } while(0)

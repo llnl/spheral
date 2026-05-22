@@ -78,6 +78,7 @@ The following macros are used to create timing regions in the Spheral C++ interf
 
 - ``TIME_BEGIN("timer_name")`` and ``TIME_END("timer_name")`` create a region between the two different calls and use the string (in this case ``timer_name``) as the name.
 
+It is not recommended to add timers to lower level functions. For example, functions that are called on a per SPH node basis should not have timers. If timers are desired for these types of functions, use advanced timers, denoted as ``ADV_TIME_BEGIN("timer_name")`` and ``ADV_TIME_END("timer_name")``. Advanced timers must be enabled through the python interface, as described below.
 
 Adding Region Timers in Python
 ------------------------------
@@ -85,10 +86,23 @@ Adding Region Timers in Python
 Region timers can be added inside the python code using the following function calls:
 ::
 
-   from SpheralUtilities import TimerMgr
+   from SpheralCompiledModules.SpheralUtilities import TimerMgr
+   if (not TimerMgr.is_started()):
+        TimerMgr.default_start("TestName.cali")
    TimerMgr.timer_begin("timer_name")
    some_function_call()
    TimerMgr.timer_end("timer_name")
+
+Similarly, advanced timers can be added through the python interface. They must be enabled through the python interface for any advanced timers to be included:
+::
+
+   from SpheralCompiledModules.SpheralUtilities import TimerMgr
+   if (not TimerMgr.is_started()):
+        TimerMgr.default_start("TestName.cali")
+   TimerMgr.enable_advanced_timers() # Required for advanced timers to be included
+   TimerMgr.adv_timer_begin("timer_name")
+   some_function_call()
+   TimerMgr.adv_timer_end("timer_name")
 
 .. note::
    All timers must have both a start and end call. Otherwise, memory issues will occur.
@@ -129,7 +143,7 @@ Starting Caliper Manually
 As mentioned above, the Caliper timing manager is normally configured and started in the ``commandLine()`` routine. However, Caliper can be directly configured and started through the python interface, if desired. This can be done by putting the following into the python file:
 ::
 
-   from SpheralUtilities import TimerMgr
+   from SpheralCompiledModules.SpheralUtilities import TimerMgr
    caliper_config = "some_configuration(output=some_filename.txt)"
    TimerMgr.add(caliper_config)
    TimerMgr.start()
@@ -184,7 +198,7 @@ The general procedure to comparing performance regression tests is:
    If ``run_perf.py`` is run on a non-MPI Spheral build, it will only use 1 rank and will thread all other available cores.
 
 
-To simply display the Thicket timing tree for a performance run without doing any sort of comparison, use:
+To simply display the Thicket timing tree for a performance run without doing any comparison, use:
 ::
 
    ./bin/spheral ./scripts/performance_analysis.py --perfdata /path/to/perf/data

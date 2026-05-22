@@ -24,6 +24,7 @@ Notable changes include:
     * Added a page to the docs about GPU development. 
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * Require minimum CMake version 3.24.
     * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
       * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
     * The explicitly bound C++ pair types for Python have been removed -- just use Python tuples instead --
@@ -32,6 +33,8 @@ Notable changes include:
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
+    * SPH now requests volume from RK.
+    * Fixed a circular dependency in the Johnson-Cook damage model.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
@@ -56,6 +59,7 @@ Notable changes include:
       * Added umask command for updating upstreams and removed separate job to update permissions.
       * Build and test job now fails if import of Spheral module fails.
       * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
+      * Created advanced timers for lower level timers. These are disabled by default for cleaner Caliper timer trees.
     * Builds and installs are cleaner:
       * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
       * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.

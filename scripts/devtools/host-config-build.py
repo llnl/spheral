@@ -57,10 +57,15 @@ def main():
     build_dir="{0}/build_{1}".format(source_dir, hostconfig)
   else:
     build_dir="{0}/{1}".format(source_dir, args.build_dir)
-  if not args.install_dir:
-    install_dir="{0}/install".format(build_dir)
+
+  # Set install directory, give preference to the CMAKE_INSTALL_PREFIX
+  if args.D and any("CMAKE_INSTALL_PREFIX" in x for x in args.D):
+    install_dir = None
+  elif args.install_dir:
+    install_dir = args.install_dir
   else:
-    install_dir=args.install_dir
+    install_dir="{0}/install".format(build_dir)
+
   build_dir=build_dir+"/build"
   # Pull the cmake command to use out of our host config.
   cmake_cmd=sexe("grep 'CMake executable' \"{0}\"".format(hostconfig_path), ret_output=True, echo=False).split()[-1]
@@ -68,11 +73,12 @@ def main():
   cmake_extra_args=""
   if args.D and args.D != ['']:
     cmake_extra_args="-D"+" -D".join(args.D)
-  
+
   print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
   print("~ Host-config:      {0}".format(hostconfig_path))
   print("~ Build Dir:        {0}".format(build_dir))
-  print("~ Install Dir:      {0}".format(install_dir))
+  if install_dir:
+    print("~ Install Dir:      {0}".format(install_dir))
   print("~ Source Dir:       {0}".format(source_dir))
   print("~ Cmake cmd:        {0}".format(cmake_cmd))
   print("~ Extra CMake Args: {0}".format(cmake_extra_args))
@@ -82,15 +88,18 @@ def main():
   # Clean our build and install dirs...
   if not args.no_clean:
       sexe("rm -rf \"{0}\" 2>/dev/null".format(build_dir),echo=True)
-      sexe("rm -rf \"{0}\" 2>/dev/null".format(install_dir),echo=True)
+      if install_dir:
+        sexe("rm -rf \"{0}\" 2>/dev/null".format(install_dir),echo=True)
   sexe("mkdir -p \"{0}\"".format(build_dir),echo=True)
-  sexe("mkdir -p \"{0}\"".format(install_dir),echo=True)
+  if install_dir:
+    sexe("mkdir -p \"{0}\"".format(install_dir),echo=True)
 
   # Move to the build directory.
   os.chdir(build_dir)
 
   # Run our CMake config step.
-  sexe(f"{cmake_cmd} -C {hostconfig_path} -DCMAKE_INSTALL_PREFIX={install_dir} {cmake_extra_args} {source_dir}")
+  install_str = f"-DCMAKE_INSTALL_PREFIX={install_dir}" if install_dir else ""
+  sexe(f"{cmake_cmd} -C {hostconfig_path} {install_str} {cmake_extra_args} {source_dir}")
 
   # Build and install Spheral
 
