@@ -392,63 +392,27 @@ Any implementation that changes ``computeConnectivity`` should keep the Python
 neighbor tests as correctness gates and add C++ tests for any new flat or
 device-facing connectivity representation.
 
-Potential strategy for porting to GPUs
-======================================
+NodePairList-First GPU Connectivity
+===================================
 
-The following is one candidate strategy for discussion. It is intentionally
-listed after the current design so alternatives can be evaluated against the
-actual behavior and data products of ``ConnectivityMap``.
+Author's quote:
 
-The original implementation author suggested a ``NodePairList``-first port:
-build only the pair list in the initial GPU kernel, then transfer or transform
-that result into the alternative per-node query representation after the fact.
-That derived per-node representation may be best built on demand because many
-models consume the pair list directly and do not need the older
-``connectivityForNode`` query path.
+.. epigraph::
 
-A conservative staged strategy is:
+   I was thinking for porting the current computeConnectivity to GPU it would
+   make sense to build the NodePairList alone first (which should be simpler in
+   a GPU kernel), and after the fact transfer that information to the
+   alternative per node query data. Perhaps making that last bit only on demand
+   since many of our models don't need the older per node query.
 
-1. Keep the existing ``ConnectivityMap`` API intact for Python, tests, overlap
-   connectivity, intersection connectivity, and host algorithms.
-2. Make ``NodePairList`` the first-class device product, since that is what the
-   GPU derivative loops already consume through ``NodePairListView``.
-3. Build or update any CSR-style per-node connectivity from the pair list after
-   the pair list is available, preferably only when a consumer asks for
-   ``connectivityForNode``-like queries.
-4. Keep the existing nested host storage as the compatibility layer for Python
-   and legacy host algorithms, but avoid making it the primary GPU build target.
-5. Treat overlap and intersection connectivity as separate later work; they are
-   more irregular than the pair list used by evaluate derivatives.
+Plan:
 
-A direct RAJA port of the current function is not practical because the core
-algorithm depends on host-only or GPU-hostile operations:
-
-- virtual ``Neighbor`` calls for candidate generation;
-- nested ``std::vector`` allocation and ``push_back`` inside the hot loop;
-- per-node dynamic sorting;
-- OpenMP thread-local vectors and critical-section merges;
-- ``std::unordered_map`` for intersection connectivity;
-- host-only validation and output paths.
-
-A GPU-ready implementation should therefore separate products:
-
-- ``NodePairList`` as the primary product for pairwise derivative loops;
-- optional CSR-style per-node connectivity derived from the pair list for
-  algorithms that need ``connectivityForNode``-like queries on device;
-- host nested connectivity derived or synchronized for the existing public API
-  and Python behavior;
-- optional host-only overlap and intersection products until device consumers
-  need them.
-
-A likely GPU builder shape is:
-
-1. Build or expose device-readable position, ``H``, extent, and spatial-bin/tree
-   metadata.
-2. Run a count kernel to determine accepted pair counts.
-3. Prefix-sum pair counts to allocate the flat ``NodePairList`` storage.
-4. Run a fill kernel to write accepted pairs in canonical form.
-5. Sort or canonicalize the pair list only where consumers require deterministic
-   ordering.
-6. When a per-node query consumer appears, derive CSR-style adjacency or the
-   existing host ``ConnectivityMap`` nested storage from the pair list rather
-   than making those structures mandatory outputs of every build.
+1. Build a ``NodePairList``-only connectivity path that produces accepted,
+   canonical ``NodePairIdxType`` pairs without constructing the legacy per-node
+   query data in the same step.
+2. Verify the ``NodePairList``-only path against the current full
+   ``computeConnectivity`` result by comparing sorted pair lists across the
+   existing neighbor correctness tests.
+3. Derive the alternative per-node query data from the completed
+   ``NodePairList`` after the fact, preferably on demand for
+   ``connectivityForNode``-style consumers.
