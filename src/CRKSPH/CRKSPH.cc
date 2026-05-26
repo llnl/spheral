@@ -150,8 +150,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const DataBase<Dimension>& dataBase,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
-  TIME_BEGIN("CRKevaluateDerivatives");
-
   // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
@@ -163,7 +161,6 @@ evaluateDerivatives(const typename Dimension::Scalar time,
     chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
-  TIME_END("CRKevaluateDerivatives");
 }
   
 //------------------------------------------------------------------------------

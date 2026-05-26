@@ -150,7 +150,7 @@ def main():
     hostname = temp_uname[1].rstrip("0123456789")
     if (options.get_benchmark):
         import SpheralConfigs
-        path = os.path.join(benchmark_dir, SpheralConfigs.config(), hostname)
+        path = os.path.join(benchmark_dir, hostname, SpheralConfigs.spec())
         print(path)
         return
     sys_type = os.getenv("SYS_TYPE")

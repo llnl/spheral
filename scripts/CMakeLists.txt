@@ -60,7 +60,7 @@ if (SPHERAL_ENABLE_PYTHON)
 
   # byte compile all of the venv site-packages.
   install(CODE "
-  message(\"-- Byte compiling the Spheral Virtual Envionment ...\")
+  message(\"-- Byte compiling the Spheral Virtual Environment ...\")
   execute_process(
     COMMAND ${CMAKE_INSTALL_PREFIX}/bin/spheral -m compileall -q ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}
   )

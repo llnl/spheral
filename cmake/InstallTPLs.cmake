@@ -160,24 +160,13 @@ endif()
 
 message("-----------------------------------------------------------------------------")
 # HDF5
-# This is a hack to allow other codes to use old versions of hdf5
-# Ideally, if(NOT ENABLE_STATIC_TPL) would be replaced and the
-# find_package call would be moved outside of the if statement:
-#
-# find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
-# if (hdf5_FOUND)
 
-
-if(NOT ENABLE_STATIC_TPL)
+if(NOT SPHERAL_EXTERNAL_INSTALL)
   find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_FP_TPLS hdf5)
   list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
-  if(ENABLE_STATIC_TPL)
-    list(APPEND SPHERAL_BLT_DEPENDS hdf5-static hdf5_hl-static)
-  else()
-    list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
-  endif()
+  list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
 else()
   list(APPEND SPHERAL_EXTERN_LIBS hdf5)
 endif()
@@ -224,14 +213,14 @@ if (SPHERAL_ENABLE_SUNDIALS)
 endif()
 
 message("-----------------------------------------------------------------------------")
-# This is a hack to allow other codes to use an unconvential Boost install
-if(NOT ENABLE_STATIC_TPL)
+if(NOT SPHERAL_EXTERNAL_INSTALL)
   find_package(Boost REQUIRED NO_DEFAULT_PATH COMPONENTS filesystem PATHS ${boost_DIR})
   if(Boost_FOUND)
     list(APPEND SPHERAL_BLT_DEPENDS Boost::filesystem)
     message("Found Boost External Package version ${Boost_VERSION}")
   endif()
 else()
+  # This is used in case a code wants to use an unconventional Boost install
   list(APPEND SPHERAL_EXTERN_LIBS boost)
 endif()
 

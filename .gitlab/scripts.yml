@@ -65,24 +65,25 @@
 
 # This copies the install so scheduled perf tests can use it
 # Adding test-perf to commit message will trigger the perf install from that branch
+# Requires upstream TPLs to be up to date
 .perf_install:
   extends: [.retry_rule]
   stage: perf_install
   variables:
     GIT_STRATEGY: none
   rules:
-    - if: '($CI_COMMIT_MESSAGE =~ /test-perf/ || $CI_COMMIT_REF_NAME == "develop")'
+    - !reference [.merge_pr_rule, rules]
+    - if: '$CI_COMMIT_MESSAGE =~ /test-perf/'
       when: always
   script:
+    - umask 027
     - CI_BUILD_DIR=$(cat ci-dir.txt)
     - INSTALL_DIR=$PERF_INSTALL_DIR/${SPEC//%/_}
     - ml load mpifileutils
     - echo "Doing install in ${INSTALL_DIR}"
     - if [[ -d $INSTALL_DIR ]]; then $RUN_CMD -n $NPROC drm $INSTALL_DIR; else echo "No install exists."; fi
-    - cd $CI_BUILD_DIR/build_gitlab/build
-    - cmake ../../ -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-    - make -j $NPROC install
-    - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
+    - cd $CI_BUILD_DIR
+    - ./$SCRIPT_DIR/devtools/host-config-build.py --no-clean --build --nprocs $NPROC --host-config gitlab.cmake --install-dir $INSTALL_DIR
   artifacts:
     paths:
       - ci-dir.txt
@@ -136,7 +137,7 @@
   stage: update_tpls
   rules:
     - !reference [.merge_pr_rule, rules]
-    - if: '$CI_COMMIT_MESSAGE =~ /update-tpls/'
+    - if: '($CI_COMMIT_MESSAGE =~ /update-tpls/ || $CI_COMMIT_MESSAGE =~ /test-perf/)'
   script:
     - umask 027
     - ./$SCRIPT_DIR/devtools/tpl-manager.py --update-upstream

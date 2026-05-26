@@ -57,9 +57,10 @@ endif()
 cmake_dependent_option(SPHERAL_ENABLE_DOCS "Enable sphinx Spheral documentation" OFF SPHERAL_ENABLE_PYTHON OFF)
 
 #-------------------------------------------------------------------------------
-# For using static TPLs
+# External install
 #-------------------------------------------------------------------------------
-option(ENABLE_STATIC_TPL "Assume TPLs are built statically" OFF)
+option(SPHERAL_EXTERNAL_INSTALL "Enable when Spheral is a TPL" OFF)
+option(ENABLE_STATIC_TPL "Build Spheral TPLs as static libraries" OFF)
 
 #-------------------------------------------------------------------------------
 # Debug options

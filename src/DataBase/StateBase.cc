@@ -28,6 +28,7 @@ using std::cerr;
 using std::endl;
 using std::reference_wrapper;
 using std::string;
+using std::pair;
 
 namespace Spheral {
 
@@ -126,6 +127,7 @@ operator==(const StateBase<Dimension>& rhs) const {
   addCompare<VisitorType, Vector>                                        (EQUAL);
   addCompare<VisitorType, Tensor>                                        (EQUAL);
   addCompare<VisitorType, SymTensor>                                     (EQUAL);
+  addCompare<VisitorType, pair<Scalar, string>>                          (EQUAL);
   addCompare<VisitorType, vector<Scalar>>                                (EQUAL);
   addCompare<VisitorType, vector<Vector>>                                (EQUAL);
   addCompare<VisitorType, vector<Tensor>>                                (EQUAL);
@@ -408,6 +410,7 @@ assign(const StateBase<Dimension>& rhs) {
   addAssign<VisitorType, Vector>                                        (ASSIGN);
   addAssign<VisitorType, Tensor>                                        (ASSIGN);
   addAssign<VisitorType, SymTensor>                                     (ASSIGN);
+  addAssign<VisitorType, pair<Scalar, string>>                          (ASSIGN);
   addAssign<VisitorType, vector<Scalar>>                                (ASSIGN);
   addAssign<VisitorType, vector<Vector>>                                (ASSIGN);
   addAssign<VisitorType, vector<Tensor>>                                (ASSIGN);
@@ -470,6 +473,7 @@ copyState() {
   addClone<VisitorType, Vector>                                        (CLONE);
   addClone<VisitorType, Tensor>                                        (CLONE);
   addClone<VisitorType, SymTensor>                                     (CLONE);
+  addClone<VisitorType, pair<Scalar, string>>                          (CLONE);
   addClone<VisitorType, vector<Scalar>>                                (CLONE);
   addClone<VisitorType, vector<Vector>>                                (CLONE);
   addClone<VisitorType, vector<Tensor>>                                (CLONE);
