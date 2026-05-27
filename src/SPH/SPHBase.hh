@@ -123,8 +123,6 @@ public:
   void enforceBoundaries(State<Dimension>& state,
                          StateDerivatives<Dimension>& derivs) override;
 
-  // A method to fill in the volume in the State, optionally enforcing
-  // boundary conditions.
   virtual VolumeRequirements requireVolumes() const override {
     return {(this->densityUpdate() == MassDensityType::VoronoiCellDensity or
              this->densityUpdate() == MassDensityType::SumVoronoiCellDensity),
