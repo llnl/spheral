@@ -43,7 +43,6 @@ inline void emit_message(std::ostream& ss,
 #define SpheralMessage(expr) do {                                       \
   if (Spheral::Process::getRank() == 0)  {                              \
     Spheral::Detail::emit_message(std::cout, "INFO",                    \
->>>>>>> feature/RZhydro
                                   BUILD_SPHERAL_MSG_STREAM(expr));      \
   }                                                                     \
 } while(0)
