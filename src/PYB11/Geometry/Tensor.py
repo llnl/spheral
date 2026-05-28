@@ -25,21 +25,6 @@ class Tensor:
                 rhs = "const Dim<%(ndim)s>::SymTensor"):
         "Copy constructor (symmetric tensor)"
 
-    def pyinit3(self,
-                xx="double"):
-        "Construct with element values."
-
-    def pyinit4(self,
-                xx="double", xy="double",
-                yx="double", yy="double"):
-        "Construct with element values."
-
-    def pyinit5(self,
-                xx="double", xy="double", xz="double",
-                yx="double", yy="double", yz="double",
-                zx="double", zy="double", zz="double"):
-        "Construct with element values."
-
     # Sequence methods
     @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements(); }")
     def __len__(self):
@@ -187,12 +172,12 @@ class Tensor:
         return "Dim<%(ndim)s>::Tensor"
     @PYB11const
     def doubledot(self, rhs="const Dim<%(ndim)s>::Tensor&"):
-        "Double dot contraction with another tensor (returns a scalar)."
+        "Double dot contraction with another tensor (a_ij * b_ji)"
         return "double"
     @PYB11const
     @PYB11pycppname("doubledot")
     def doubledot2(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
-        "Double dot contraction with a SymTensor (returns a scalar)."
+        "Double dot contraction with a SymTensor (a_ij * b_ji)"
         return "double"
     def selfDoubledot(self):
         "Double dot contraction with ourself (returns a scalar)."
@@ -207,6 +192,37 @@ class Tensor:
     def maxAbsElement(self):
         "Return the maximum of the absolute values of the elements."
 
+    # A few methods using the full 3D elements
+    @PYB11const
+    def diagonalElements3D(self):
+        "Return a Vector3d with the 3D diagonal"
+    @PYB11const
+    def Trace3D(self):
+        "The full 3D trace"
+    @PYB11const
+    def Determinant3D(self):
+        "The full 3D determinant"
+    @PYB11const
+    def doubledot3D(self, rhs="const Dim<%(ndim)s>::Tensor&"):
+        "3D double dot contraction (a_ij * b_ji)"
+        return "double"
+    @PYB11cppname("doubledot3D")
+    @PYB11const
+    def doubledot3D_sym(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
+        "3D double dot contraction (a_ij * b_ji)"
+        return "double"
+    @PYB11const
+    def selfDoubledot3D(self):
+        "3D double dot contraction with ourself (a_ij * a_ji)"
+        return "double"
+    @PYB11const
+    def maxAbsElement3D(self):
+        "Return the maximum of the absolute valuses of the elements (3D)"
+        return "double"
+    @PYB11const
+    def eigenValues3D(self):
+        "Compute the full 3D eigenvalues (always returns a Vector3d)"
+
     # Properties
     xx = PYB11property("double", "xx", "xx", doc="The xx element.")
     xy = PYB11property("double", "xy", "xy", doc="The xy element.")
@@ -217,6 +233,43 @@ class Tensor:
     zx = PYB11property("double", "zx", "zx", doc="The zx element.")
     zy = PYB11property("double", "zy", "zy", doc="The zy element.")
     zz = PYB11property("double", "zz", "zz", doc="The zz element.")
+
+#-------------------------------------------------------------------------------
+# Methods particular to 1D, 2D, 3D (use these for injection)
+#-------------------------------------------------------------------------------
+@PYB11ignore
+class Tensor1Dmethods:
+    def pyinit3(self,
+                xx = "double",
+                yy = ("double", 0.0),
+                zz = ("double", 0.0)):
+        "Construct with element values (1D)"
+
+    @PYB11pycppname("dot")
+    def dot3D(self, rhs="const Dim<3>::Vector&"):
+        "Product with a 3D vector"
+        return
+
+@PYB11ignore
+class Tensor2Dmethods:
+    def pyinit4(self,
+                xx="double", xy="double",
+                yx="double", yy="double",
+                zz="double"):
+        "Construct with element values (2D)"
+
+    @PYB11pycppname("dot")
+    def dot3D(self, rhs="const Dim<3>::Vector&"):
+        "Product with a 3D vector"
+        return
+
+@PYB11ignore
+class Tensor3Dmethods:
+    def pyinit5(self,
+                xx="double", xy="double", xz="double",
+                yx="double", yy="double", yz="double",
+                zx="double", zy="double", zz="double"):
+        "Construct with element values (3D)"
 
 #-------------------------------------------------------------------------------
 # Tensor instantiations.
@@ -233,3 +286,7 @@ Tensor3d = PYB11TemplateClass(Tensor,
                               template_parameters = ("3"),
                               cppname = "Dim<3>::Tensor",
                               pyname = "Tensor3d")
+
+PYB11inject(Tensor1Dmethods, Tensor1d)
+PYB11inject(Tensor2Dmethods, Tensor2d)
+PYB11inject(Tensor3Dmethods, Tensor3d)
