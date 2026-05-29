@@ -40,7 +40,7 @@ class Tensor:
     def pyinit4(self,
                 xx="double", xy="double",
                 yx="double", yy="double",
-                zz="double"):
+                zz=("double", 0.0)):
         "Construct with element values (2D)"
 
     @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
