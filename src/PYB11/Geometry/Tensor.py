@@ -25,6 +25,31 @@ class Tensor:
                 rhs = "const Dim<%(ndim)s>::SymTensor"):
         "Copy constructor (symmetric tensor)"
 
+    def pyinit_double(self,
+                      a = "double"):
+        "Construct from a single scalar (results in a diagonal tensor with 'a' along the diagonal)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "1")
+    def pyinit3(self,
+                xx = "double",
+                yy = ("double", 0.0),
+                zz = ("double", 0.0)):
+        "Construct with element values (1D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "2")
+    def pyinit4(self,
+                xx="double", xy="double",
+                yx="double", yy="double",
+                zz="double"):
+        "Construct with element values (2D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit5(self,
+                xx="double", xy="double", xz="double",
+                yx="double", yy="double", yz="double",
+                zx="double", zy="double", zz="double"):
+        "Construct with element values (3D)"
+
     # Sequence methods
     @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements(); }")
     def __len__(self):
@@ -223,6 +248,12 @@ class Tensor:
     def eigenValues3D(self):
         "Compute the full 3D eigenvalues (always returns a Vector3d)"
 
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    @PYB11pycppname("dot")
+    def dot3D(self, rhs="const Dim<3>::Vector&"):
+        "Product with a 3D vector"
+        return
+
     # Properties
     xx = PYB11property("double", "xx", "xx", doc="The xx element.")
     xy = PYB11property("double", "xy", "xy", doc="The xy element.")
@@ -233,43 +264,6 @@ class Tensor:
     zx = PYB11property("double", "zx", "zx", doc="The zx element.")
     zy = PYB11property("double", "zy", "zy", doc="The zy element.")
     zz = PYB11property("double", "zz", "zz", doc="The zz element.")
-
-#-------------------------------------------------------------------------------
-# Methods particular to 1D, 2D, 3D (use these for injection)
-#-------------------------------------------------------------------------------
-@PYB11ignore
-class Tensor1Dmethods:
-    def pyinit3(self,
-                xx = "double",
-                yy = ("double", 0.0),
-                zz = ("double", 0.0)):
-        "Construct with element values (1D)"
-
-    @PYB11pycppname("dot")
-    def dot3D(self, rhs="const Dim<3>::Vector&"):
-        "Product with a 3D vector"
-        return
-
-@PYB11ignore
-class Tensor2Dmethods:
-    def pyinit4(self,
-                xx="double", xy="double",
-                yx="double", yy="double",
-                zz="double"):
-        "Construct with element values (2D)"
-
-    @PYB11pycppname("dot")
-    def dot3D(self, rhs="const Dim<3>::Vector&"):
-        "Product with a 3D vector"
-        return
-
-@PYB11ignore
-class Tensor3Dmethods:
-    def pyinit5(self,
-                xx="double", xy="double", xz="double",
-                yx="double", yy="double", yz="double",
-                zx="double", zy="double", zz="double"):
-        "Construct with element values (3D)"
 
 #-------------------------------------------------------------------------------
 # Tensor instantiations.
@@ -286,7 +280,3 @@ Tensor3d = PYB11TemplateClass(Tensor,
                               template_parameters = ("3"),
                               cppname = "Dim<3>::Tensor",
                               pyname = "Tensor3d")
-
-PYB11inject(Tensor1Dmethods, Tensor1d)
-PYB11inject(Tensor2Dmethods, Tensor2d)
-PYB11inject(Tensor3Dmethods, Tensor3d)

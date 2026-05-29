@@ -25,9 +25,30 @@ class SymTensor:
                 rhs = "const Dim<%(ndim)s>::SymTensor"):
         "Copy constructor (symmetric tensor)"
 
+    def pyinit_double(self,
+                      a = "double"):
+        "Construct from a single scalar (results in a diagonal tensor with 'a' along the diagonal)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "1")
     def pyinit3(self,
-                xx="double"):
-        "Construct with element values."
+                xx = "double",
+                yy = ("double", 0.0),
+                zz = ("double", 0.0)):
+        "Construct with element values (1D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "2")
+    def pyinit4(self,
+                xx="double", xy="double",
+                yx="double", yy="double",
+                zz="double"):
+        "Construct with element values (2D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit5(self,
+                xx="double", xy="double", xz="double",
+                yx="double", yy="double", yz="double",
+                zx="double", zy="double", zz="double"):
+        "Construct with element values (3D)"
 
     # Sequence methods
     @PYB11implementation("[](const Dim<%(ndim)s>::SymTensor&) { return Dim<%(ndim)s>::SymTensor::numElements(); }")
@@ -235,6 +256,12 @@ class SymTensor:
         "Compute the full 3D eigenvalues & eigenvectors (always returns an EigenStruct3d)"
         return
 
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    @PYB11pycppname("dot")
+    def dot3D(self, rhs="const Dim<3>::Vector&"):
+        "Product with a 3D vector"
+        return
+
     # Properties
     xx = PYB11property("double", "xx", "xx", doc="The xx element.")
     xy = PYB11property("double", "xy", "xy", doc="The xy element.")
@@ -245,43 +272,6 @@ class SymTensor:
     zx = PYB11property("double", "zx", "zx", doc="The zx element.")
     zy = PYB11property("double", "zy", "zy", doc="The zy element.")
     zz = PYB11property("double", "zz", "zz", doc="The zz element.")
-
-#-------------------------------------------------------------------------------
-# Methods particular to 1D, 2D, 3D (use these for injection)
-#-------------------------------------------------------------------------------
-@PYB11ignore
-class SymTensor1Dmethods:
-    def pyinit3(self,
-                xx = "double",
-                yy = ("double", 0.0),
-                zz = ("double", 0.0)):
-        "Construct with element values (1D)"
-
-    @PYB11pycppname("dot")
-    def dot3D(self, rhs="const Dim<3>::Vector&"):
-        "Product with a 3D vector"
-        return
-
-@PYB11ignore
-class SymTensor2Dmethods:
-    def pyinit4(self,
-                xx="double", xy="double",
-                yx="double", yy="double",
-                zz="double"):
-        "Construct with element values (2D)"
-
-    @PYB11pycppname("dot")
-    def dot3D(self, rhs="const Dim<3>::Vector&"):
-        "Product with a 3D vector"
-        return
-
-@PYB11ignore
-class SymTensor3Dmethods:
-    def pyinit5(self,
-                xx="double", xy="double", xz="double",
-                yx="double", yy="double", yz="double",
-                zx="double", zy="double", zz="double"):
-        "Construct with element values (3D)"
 
 #-------------------------------------------------------------------------------
 # SymTensor instantiations.
@@ -298,7 +288,3 @@ SymTensor3d = PYB11TemplateClass(SymTensor,
                                  template_parameters = ("3"),
                                  cppname = "Dim<3>::SymTensor",
                                  pyname = "SymTensor3d")
-
-PYB11inject(SymTensor1Dmethods, SymTensor1d)
-PYB11inject(SymTensor2Dmethods, SymTensor2d)
-PYB11inject(SymTensor3Dmethods, SymTensor3d)

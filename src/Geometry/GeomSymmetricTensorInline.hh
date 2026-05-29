@@ -37,7 +37,7 @@ GeomSymmetricTensor<2>::elementIndex(const GeomSymmetricTensor<2>::size_type row
   REQUIRE((row < 2u and column < 2u) or
           (row == 2u and column == 2u));
   return (row == 2u ? 3u :
-          row == 1u ? 2u :
+          row == 1u ? column + 1u :
           column);
 }
 
