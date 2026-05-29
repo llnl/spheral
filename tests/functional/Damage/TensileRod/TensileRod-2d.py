@@ -101,7 +101,6 @@ commandLine(seed = "lattice",
             damageCoupling = PairMaxDamage,
             cullToWeakestFlaws = False,
             damageInCompression = False,
-            negativePressureInDamage = False,
 
             # Johnson-Cook choices
             D1 = 0.0,
@@ -447,15 +446,12 @@ else:
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                ASPH = ASPH,
-                negativePressureInDamage = negativePressureInDamage)
+                ASPH = ASPH)
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
-output("hydro.negativePressureInDamage")
 
 #-------------------------------------------------------------------------------
 # Construct a damage model.
