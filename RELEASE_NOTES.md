@@ -75,6 +75,7 @@ Notable changes include:
       * CHAI, Umpire, and RAJA updated to 2025.12.0.
     * Addig PySide6 as default PIP package install for better Matplotlib performance.
     * Python wrapped the C++ fuzzyEqual methods and removed the slightly different pure Python implementations from SpheralTestUtilities.
+    * Updating to PYB11Generator v2026.5.0.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
