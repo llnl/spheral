@@ -32,6 +32,7 @@ public:
   using const_iterator = std::vector<int>::const_iterator;
   using NodeCouplingPtr = std::shared_ptr<NodeCoupling>;
   using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors, destructor.
   ConnectivityMap();
@@ -177,6 +178,10 @@ public:
   // Check that the internal data structure is valid.
   bool valid() const;
 
+  // No copy constructor or assignment.
+  ConnectivityMap(const ConnectivityMap&) = delete;
+  ConnectivityMap& operator=(const ConnectivityMap&) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   // The set of NodeLists.
@@ -214,10 +219,6 @@ private:
   // Internal method to fill in the connectivity, once the set of NodeLists 
   // is determined.
   void computeConnectivity();
-
-  // No default constructor, copying, or assignment.
-  ConnectivityMap(const ConnectivityMap&);
-  ConnectivityMap& operator=(const ConnectivityMap&);
 };
 
 }
