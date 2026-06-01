@@ -31,7 +31,7 @@ namespace Spheral {
 #define SPHERAL_OP_MAXLOC MPI_MAXLOC
 
 template<typename Value>
-constexpr Value
+Value
 allReduce(const Value& value, const MPI_Op op,
           const MPI_Comm comm = Communicator::communicator()) {
   CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
@@ -43,7 +43,7 @@ allReduce(const Value& value, const MPI_Op op,
 }
 
 template<typename Value>
-constexpr std::pair<Value, int>
+std::pair<Value, int>
 allReduceLoc(const Value value, const MPI_Op op,
              const MPI_Comm comm = Communicator::communicator()) {
   CHECK(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC);
@@ -62,7 +62,7 @@ allReduceLoc(const Value value, const MPI_Op op,
 
 
 template<typename Value>
-constexpr Value
+Value
 distScan(const Value& value, const MPI_Op op,
      const MPI_Comm comm = Communicator::communicator()) {
   CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
@@ -92,7 +92,7 @@ Barrier(const MPI_Comm comm = Communicator::communicator()) {
 #define SPHERAL_OP_MAXLOC 8
 
 template<typename Value>
-constexpr Value
+Value
 allReduce(const Value& value, const int /*op*/, const int = 0) {
   return value;
 }
