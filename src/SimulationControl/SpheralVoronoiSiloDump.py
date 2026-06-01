@@ -304,6 +304,10 @@ class SpheralVoronoiSiloDump:
             det = eval("ScalarField%s('%s_determinant', n)" % (self.dimension, f.name))
             mineigen = eval("ScalarField%s('%s_eigen_min', n)" % (self.dimension, f.name))
             maxeigen = eval("ScalarField%s('%s_eigen_max', n)" % (self.dimension, f.name))
+            tr3D = eval("ScalarField%s('%s_trace3D', n)" % (self.dimension, f.name))
+            det3D = eval("ScalarField%s('%s_determinant3D', n)" % (self.dimension, f.name))
+            mineigen3D = eval("ScalarField%s('%s_eigen_min3D', n)" % (self.dimension, f.name))
+            maxeigen3D = eval("ScalarField%s('%s_eigen_max3D', n)" % (self.dimension, f.name))
             fvals = f.internalValues()
             for i in range(n.numInternalNodes):
                 tr[i] = fvals[i].Trace()
@@ -311,7 +315,12 @@ class SpheralVoronoiSiloDump:
                 eigen = fvals[i].eigenValues()
                 mineigen[i] = eigen.minElement()
                 maxeigen[i] = eigen.maxElement()
-            scalarFields += [tr, det, mineigen, maxeigen]
+                tr3D[i] = fvals[i].Trace3D()
+                det3D[i] = fvals[i].Determinant3D()
+                eigen3D = fvals[i].eigenValues3D()
+                mineigen3D[i] = eigen3D.minElement()
+                maxeigen3D[i] = eigen3D.maxElement()
+            scalarFields += [tr, det, mineigen, maxeigen, tr3D, det3D, mineigen3D, maxeigen3D]
         # print "Took %g sec to build output fields" % (TIME.clock() - start)
         # start = TIME.clock()
 
