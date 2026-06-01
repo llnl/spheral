@@ -131,14 +131,6 @@ ConnectivityMap():
 }
 
 //------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ConnectivityMap<Dimension>::
-~ConnectivityMap() {
-}
-
-//------------------------------------------------------------------------------
 // Internal method to build the connectivity for the requested set of NodeLists.
 //------------------------------------------------------------------------------
 template<typename Dimension>

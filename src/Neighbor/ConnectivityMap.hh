@@ -35,7 +35,7 @@ public:
 
   // Constructors, destructor.
   ConnectivityMap();
-  ~ConnectivityMap();
+  ~ConnectivityMap() = default;
 
   template<typename NodeListIterator>
   ConnectivityMap(const NodeListIterator& begin,
