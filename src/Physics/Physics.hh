@@ -34,8 +34,8 @@ public:
 
   using BoundaryIterator = typename std::vector<Boundary<Dimension>*>::iterator;
   using ConstBoundaryIterator = typename std::vector<Boundary<Dimension>*>::const_iterator;
-  using TimeStepType = typename std::pair<double, std::string>;
-  using ResidualType = typename std::pair<double, std::string>;
+  using TimeStepType = std::pair<double, std::string>;
+  using ResidualType = std::pair<double, std::string>;
 
   // Constructors.
   Physics();

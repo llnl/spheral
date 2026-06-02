@@ -1,5 +1,4 @@
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 
 import os
 import random

@@ -7,7 +7,6 @@ import unittest
 
 from Spheral3d import *
 from generateMesh import *
-from SpheralTestUtilities import fuzzyEqual
 
 #===============================================================================
 # Load mpi, and figure out how may domains to set up, and which domain we are.

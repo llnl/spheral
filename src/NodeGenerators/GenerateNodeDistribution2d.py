@@ -2,9 +2,7 @@ from math import *
 
 from NodeGeneratorBase import *
 
-from Spheral import Vector2d, Tensor2d, SymTensor2d, \
-     rotationMatrix2d, testPointInBox2d
-from SpheralTestUtilities import fuzzyEqual
+from Spheral import Vector2d, Tensor2d, SymTensor2d, rotationMatrix2d, testPointInBox2d
 
 #-------------------------------------------------------------------------------
 # Class to generate 2-D node positions.
@@ -1513,9 +1511,15 @@ class SlantedBoxNodeDistribution2d(NodeGeneratorBase):
 #-------------------------------------------------------------------------------
 def RZGenerator(generator):
 
-    # Correct the mass.
-    n = len(generator.m)
-    for i in range(n):
-        generator.m[i] *= 2.0*pi*generator.localPosition(i).y
+    # # Correct the mass.
+    # n = len(generator.m)
+    # for i in range(n):
+    #     rhoi = generator.localMassDensity(i)
+    #     assert rhoi > 0.0
+    #     Ai = generator.localMass(i) / rhoi
+    #     Ri = sqrt(Ai/pi)
+    #     ri = generator.localPosition(i).y
+    #     Vi = toroidalVolume(Ri, ri)
+    #     generator.m[i] = generator.localPosition(i).y
 
     return generator

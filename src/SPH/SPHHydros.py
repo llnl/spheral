@@ -28,7 +28,7 @@ def SPH(W,
         strengthInDamage = False,
         xmin = (-1e100, -1e100, -1e100),
         xmax = ( 1e100,  1e100,  1e100),
-        etaMinAxis = 0.1,
+        etaMinAxis = 0.0,
         ASPH = False,
         RAJA = False,
         smoothingScaleMethod = None):

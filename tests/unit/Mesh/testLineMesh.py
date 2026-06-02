@@ -8,7 +8,7 @@ import unittest
 
 from Spheral1d import *
 from generateMesh import *
-from SpheralTestUtilities import fuzzyEqual, testParallelConsistency
+from SpheralTestUtilities import testParallelConsistency
 
 #===============================================================================
 # Load mpi, and figure out how may domains to set up, and which domain we are.

@@ -148,6 +148,12 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHBaseInitializeStartupDependencies");
 
+  // Create the local storage for time step mask, pressure, sound speed, and position weight.
+  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(mPressure, 0.0, HydroFieldNames::pressure);
+  dataBase.resizeFluidFieldList(mSoundSpeed, 0.0, HydroFieldNames::soundSpeed);
+  dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
+
   // Need mass for density calculation
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(mass);
@@ -177,10 +183,8 @@ registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   TIME_BEGIN("SPHBaseRegister");
 
-  // Create the local storage for time step mask, pressure, sound speed, and position weight.
+  // Create inital conditions for time step mask and omega correction
   dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::timeStepMask);
-  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::pressure);
-  dataBase.resizeFluidFieldList(mTimeStepMask, 1, HydroFieldNames::soundSpeed);
   dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // Now register away.
@@ -191,7 +195,8 @@ registerState(DataBase<Dimension>& dataBase,
   // Mass density
   auto massDensity = dataBase.fluidMassDensity();
   for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
-    state.enroll(*massDensity[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
+    state.enroll(*massDensity[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>({HydroFieldNames::specificThermalEnergy},
+                                                                                                fluidNodeListPtr->rhoMin(),
                                                                                                 fluidNodeListPtr->rhoMax()));
   }
 

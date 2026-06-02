@@ -1,6 +1,5 @@
 #ATS:test(SELF, label="TableKernel unit tests")
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 
 from math import *
 import numpy as np

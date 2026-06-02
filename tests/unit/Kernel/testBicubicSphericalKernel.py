@@ -4,7 +4,6 @@ import unittest
 import numpy as np
 
 from Spheral1d import *
-from SpheralTestUtilities import fuzzyEqual
 
 # Build the SphericalKernel
 t0 = time.time()

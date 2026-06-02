@@ -5,7 +5,6 @@ from math import *
 import time
 
 from Spheral2d import *
-from SpheralTestUtilities import fuzzyEqual
 from PolyhedronFileUtilities import *
 
 # Create a global random number generator.

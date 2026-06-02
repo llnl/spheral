@@ -4,7 +4,6 @@
 # looking up values between the two
 #-------------------------------------------------------------------------------
 from Spheral1d import *
-from SpheralTestUtilities import fuzzyEqual
 import numpy as np
 import unittest
 from writeLEOSfile import *
