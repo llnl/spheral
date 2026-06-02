@@ -3,6 +3,8 @@ GPU Porting
 
 This page attempts to document some of the lessons learned and pitfalls we have experienced during the effort of porting Spheral to GPUs.
 
+For recurring implementation patterns used in GPU ports, see :doc:`gpu_porting_patterns`.
+
 On-Device Virtual Function Lookup on AMD GPUS
 =============================================
 

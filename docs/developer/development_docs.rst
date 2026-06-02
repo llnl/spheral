@@ -13,3 +13,4 @@ Welcome to Spheral's developer documentation. This documentation is a work in pr
    dev/release_process.rst
    dev/continuous_deployment.rst
    dev/gpu_dev.rst
+   dev/gpu_porting_patterns.rst
