@@ -70,4 +70,4 @@ Submodule Origin
 ================
 
 To Change the origin of a submodule you must first edit the ``url`` line of the respective submodule in the ``.gitmodules`` file. 
-Next you will need to run the steps from :ref:`Update Local Submodules`. You can then work on the submodule or switch branch normally as detailed in the above sections.
+Next you will need to run the steps from :ref:`update_local_submodules`. You can then work on the submodule or switch branch normally as detailed in the above sections.

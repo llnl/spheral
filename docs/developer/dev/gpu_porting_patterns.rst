@@ -127,8 +127,8 @@ The documented managed-dispatch example uses this shape:
 Worked Example: ``Field`` and ``FieldView``
 ===========================================
 
-Problem Addressed
------------------
+Field Problem Addressed
+-----------------------
 
 ``Field`` is one of the central data containers in Spheral. Existing host code
 expects a rich object that knows its name, its ``NodeList``, how to resize, how
@@ -139,8 +139,8 @@ The documented kernels need much less. In those kernels, the common operation
 is indexed access to field values, together with a small amount of metadata
 such as the number of internal and ghost elements.
 
-Design
-------
+Field Design
+------------
 
 ``Field`` remains the owning object. It owns the host ``std::vector`` storage
 and the full host API. It derives from ``FieldBase`` and participates in
@@ -170,8 +170,8 @@ return a lightweight copy of the ``FieldView`` subobject:
        // Device-callable work using ri.
      });
 
-Important Consequences
-----------------------
+Field Important Consequences
+----------------------------
 
 The kernel captures ``position``, not the owning ``State``, ``FieldList``, or
 ``Field``. This is the important design boundary. Host code performs lookup and
@@ -197,15 +197,15 @@ When applying this pattern to another class, check:
 Worked Example: ``FieldList`` and ``FieldListView``
 ===================================================
 
-Problem Addressed
------------------
+FieldList Problem Addressed
+---------------------------
 
 Many Spheral algorithms operate on one field per ``NodeList``. Host code needs
 the full ``FieldList`` abstraction, but kernels need fast indexed access by
 ``(fieldIndex, nodeIndex)``.
 
-Design
-------
+FieldList Design
+----------------
 
 ``FieldListView`` packages a collection of ``FieldView`` objects into a
 device-usable container. Device code can write:
@@ -220,8 +220,8 @@ device-usable container. Device code can write:
 The view hides the host ``FieldList`` machinery while preserving the indexing
 model used throughout the C++ code.
 
-Important Consequences
-----------------------
+FieldList Important Consequences
+--------------------------------
 
 The RAJA hydro code first extracts all state and derivative ``FieldList``
 objects, converts them to views, and only then enters the pair or node loops.
@@ -231,15 +231,15 @@ than reaching back into ``State`` or ``StateDerivatives``.
 Worked Example: ``NodePairList`` and ``NodePairListView``
 =========================================================
 
-Problem Addressed
------------------
+NodePairList Problem Addressed
+------------------------------
 
 Pairwise hydro loops need a compact schedule of node-node interactions. Host
 code also needs richer operations: sorting, insertion, pair-to-index lookup, and
 domain-decomposition ordering.
 
-Design
-------
+NodePairList Design
+-------------------
 
 ``NodePairList`` is the host-side owner. It stores a
 ``std::vector<NodePairIdxType>`` and maintains host-side conveniences such as
@@ -270,8 +270,8 @@ This is enough for the RAJA pair loops shown in the current SPH examples:
        // Compute this pair interaction.
      });
 
-Important Consequences
-----------------------
+NodePairList Important Consequences
+-----------------------------------
 
 The view does not expose the pair-to-index lookup map. That omission is a
 design feature, not a missing API, for loops that operate on an already-built
@@ -289,8 +289,8 @@ new device-ready structures.
 Worked Example: ``ArtificialViscosity`` and Managed Views
 =========================================================
 
-Problem Addressed
------------------
+ArtificialViscosity Problem Addressed
+-------------------------------------
 
 ``ArtificialViscosity`` is not just a data container. It is a ``Physics``
 package with state registration, derivative registration, boundary behavior,
@@ -298,8 +298,8 @@ restart state, and several concrete implementations. The hydro algorithm needs
 to call the pairwise ``QPiij`` operation on device, but the concrete viscosity
 type is selected through the host object model.
 
-Design
-------
+ArtificialViscosity Design
+--------------------------
 
 The host-facing ``ArtificialViscosity`` object owns the full physics-package
 behavior. It also exposes ``getScalarView()`` and ``getTensorView()`` so callers
@@ -353,8 +353,8 @@ virtual interface:
             rj, Hj, etaj, vj, rhoj, cj,
             fClQView, fCqQView, DvDxQView);
 
-Important Consequences
-----------------------
+ArtificialViscosity Important Consequences
+------------------------------------------
 
 This pattern is best reserved for cases where the device path really needs
 polymorphism. A managed virtual hierarchy has stricter lifetime rules than a
