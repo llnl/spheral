@@ -16,6 +16,12 @@ patterns used by those examples. It does not settle project-specific design
 questions for future ``Neighbor``, ``TreeNeighbor``, ``NodeList``, or
 ``ConnectivityMap`` work.
 
+This page is the applied porting guide. For subsystem reference material, see
+:doc:`../design/value_view_and_device_execution_model` for owning-object/view
+lifetimes, :doc:`../design/raja_chai_execution_patterns` for RAJA and CHAI
+execution details, and :doc:`../design/connectivity_data_structures` for
+connectivity and pair-list structure.
+
 Evidence and Limits
 ===================
 
