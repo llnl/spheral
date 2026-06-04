@@ -195,23 +195,22 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       CHECK(etaMagj >= 0.0);
 
       // Compute the node-node weighting
-      fweightij = 1.0;
-      fispherical = 1.0;
-      fjspherical = 1.0;
-      if (nodeListi != nodeListj) {
-        fweightij = mj*rhoi/(mi*rhoj);
-        if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
-          const auto eii = Hi.xx()*xi.x();
-          const auto eji = Hi.xx()*xj.x();
-          const auto ejj = Hj.xx()*xj.x();
-          const auto eij = Hj.xx()*xi.x();
-          fispherical = (eii > etaMax ? 1.0 :
-                         eii < eji ? 2.0 :
-                         0.0);
-          fjspherical = (ejj > etaMax ? 1.0 :
-                         ejj < eij ? 2.0 :
-                         0.0);
-        }
+      if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
+        fweightij = 1.0;
+        const auto eii = Hi.xx()*xi.x();
+        const auto eji = Hi.xx()*xj.x();
+        const auto ejj = Hj.xx()*xj.x();
+        const auto eij = Hj.xx()*xi.x();
+        fispherical = (eii > etaMax ? 1.0 :
+                       eii < eji ? 2.0 :
+                       0.0);
+        fjspherical = (ejj > etaMax ? 1.0 :
+                       ejj < eij ? 2.0 :
+                       0.0);
+      } else {
+        fweightij = nodeListi == nodeListj ? 1.0 : mj*rhoi/(mi*rhoj);
+        fispherical = 1.0;
+        fjspherical = 1.0;
       }
 
       // Symmetrized kernel weight
