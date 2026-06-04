@@ -184,8 +184,8 @@ public:
   bool applySelectSumDensity() const;
   void applySelectSumDensity(bool x);
 
-  bool planeStrain()                                const { DeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
-  void planeStrain(bool val)                              { DeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
+  bool planeStrain()                                const { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
+  void planeStrain(bool val)                              { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
   
   bool decoupleDamagedMaterial() const;
   void decoupleDamagedMaterial(bool val);

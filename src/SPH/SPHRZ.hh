@@ -35,6 +35,7 @@ public:
   using SymTensor = Dimension::SymTensor;
 
   using PairAccelerationsType = PairwiseField<Dimension, Vector, 2u>;
+  using PairWorkType = PairwiseField<Dimension, Scalar, 2u>;
   using ConstBoundaryIterator = Physics<Dimension>::ConstBoundaryIterator;
 
   // Constructors.
@@ -63,6 +64,23 @@ public:
 
   // Destructor.
   virtual ~SPHRZ() = default;
+
+  // An optional hook to initialize once when the problem is starting up.
+  // This is called after the materials and NodeLists are created. This method
+  // should set the sizes of all arrays owned by the physics package and initialize
+  // independent variables.
+  // It is assumed after this method has been called it is safe to call
+  // Physics::registerState to create full populated State objects.
+  virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
+
+  // A second optional method to be called on startup, after Physics::initializeProblemStartup has
+  // been called.
+  // One use for this hook is to fill in dependendent state using the State object, such as
+  // temperature or pressure.
+  virtual
+  void initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                            State<Dimension>& state,
+                                            StateDerivatives<Dimension>& derivs) override;
 
   // Register the state Hydro expects to use and evolve.
   virtual 
@@ -95,6 +113,16 @@ public:
                                StateDerivatives<Dimension>& derivatives,
                                chai::managed_ptr<QType>& Q) const;
 
+  // Provide a hook to be called after all physics packages have had their
+  // evaluateDerivatives method called, but before anyone does anything
+  // with those derivatives.
+  virtual 
+  void finalizeDerivatives(const Scalar time,
+                           const Scalar dt,
+                           const DataBase<Dimension>& dataBase,
+                           const State<Dimension>& state,
+                           StateDerivatives<Dimension>& derivatives) const override;
+
   // Apply boundary conditions to the physics specific fields.
   virtual
   void applyGhostBoundaries(State<Dimension>& state,
@@ -107,15 +135,34 @@ public:
                
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
+  const PairWorkType& pairWork()                          const { VERIFY2(mPairWorkPtr, "SPH ERROR: pairWork not initialized on access"); return *mPairWorkPtr; }
+  const FieldList<Dimension, Scalar>& massRZ()            const { return mMassRZ; }
+  const FieldList<Dimension, Scalar>& massDensityRZ()     const { return mMassDensityRZ; }
+  const FieldList<Dimension, Scalar>& DmassDensityDtRZ()  const { return mDmassDensityDtRZ; }
 
   //****************************************************************************
   // Methods required for restarting.
   virtual std::string label() const override { return "SPHRZ" ; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
+
+  // Integrate an estimate of vr/r over a timestep given the initial radial
+  // velocity, position, acceleration, smoothing scale, and timestep.
+  static double integrate_vr_over_r(double vr,
+                                    double r,
+                                    double ar,
+                                    const double hr,
+                                    const double dt);
 
 private:
   //--------------------------- Private Interface ---------------------------//
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
+  std::unique_ptr<PairWorkType> mPairWorkPtr;
+
+  FieldList<Dimension, Scalar> mMassRZ;
+  FieldList<Dimension, Scalar> mMassDensityRZ;
+  FieldList<Dimension, Scalar> mDmassDensityDtRZ;
 };
 
 }

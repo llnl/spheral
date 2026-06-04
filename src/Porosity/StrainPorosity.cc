@@ -12,6 +12,7 @@
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "Porosity/StrainPorosity.hh"
+#include "Geometry/GeometryRegistrar.hh"
 
 using std::vector;
 using std::string;
@@ -108,11 +109,20 @@ evaluateDerivatives(const Scalar /*time*/,
   const auto& strain = state.field(buildKey(SolidFieldNames::porosityStrain), 0.0);
   const auto& alpha = state.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
   const auto& DuDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy), 0.0);
-  // const auto& DrhoDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity), 0.0);
-  // const auto& H = state.field(buildKey(HydroFieldNames::H), SymTensor::zero());
   auto&       DstrainDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityStrain), 0.0);
   auto&       DalphaDt = derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   auto&       fDSnew = derivs.field(buildKey(ReplaceBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::fDSjutzi), 0.0);
+
+  // Are we working in axisymmetric coordinates?
+  const bool axisymmetric = (GeometryRegistrar::coords() == CoordinateType::RZ);
+  const Field<Dimension, Vector>* posPtr = nullptr;
+  const Field<Dimension, Vector>* velPtr = nullptr;
+  const Field<Dimension, SymTensor>* Hptr = nullptr;
+  if (axisymmetric) {
+    posPtr = &state.field(buildKey(HydroFieldNames::position), Vector::zero());
+    velPtr = &state.field(buildKey(HydroFieldNames::velocity), Vector::zero());
+    Hptr = &state.field(buildKey(HydroFieldNames::H), SymTensor::zero());
+  }
 
   // Walk the nodes.
   const auto n = mNodeList.numInternalNodes();
@@ -125,6 +135,15 @@ evaluateDerivatives(const Scalar /*time*/,
       fDSnew(i) = 1.0;
     } else {
       DstrainDt(i) = DvDx(i).Trace();
+      if (axisymmetric) {
+        const auto& posi = (*posPtr)(i);
+        const auto  ri = posi.y();
+        const auto  vri = (*velPtr)(i).y();
+        const auto  zetai = ((*Hptr)(i)*posi).y();            // Can be negative for ghost points!
+        const auto  hri = ri*safeInv(zetai);                  // Always positive
+        CHECK(hri >= 0.0);
+        DstrainDt(i) += vri*safeInv(ri, 0.01*hri);
+      }
       const auto epsi = strain(i);
       const auto DuDti = DuDt(i);
       const auto strainRate = min(0.0, DstrainDt(i) - mGammaS0*safeInv(mcS0*mcS0)*DuDti);

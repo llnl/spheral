@@ -1734,6 +1734,45 @@ DataBase<Dimension>::numNeighbors() const {
 }
 
 //------------------------------------------------------------------------------
+// Return the number of internal nodes in sets of NodeLists
+//------------------------------------------------------------------------------
+template<typename Dimension>
+std::vector<size_t>
+DataBase<Dimension>::numInternalNodesPerNodeList() const {
+  const auto n = mNodeListPtrs.size();
+  std::vector<size_t> result(n);
+  for (auto i = 0u; i < n; ++i) result[i] = mNodeListPtrs[i]->numInternalNodes();
+  return result;
+}
+
+template<typename Dimension>
+std::vector<size_t>
+DataBase<Dimension>::numInternalNodesPerFluidNodeList() const {
+  const auto n = mFluidNodeListPtrs.size();
+  std::vector<size_t> result(n);
+  for (auto i = 0u; i < n; ++i) result[i] = mFluidNodeListPtrs[i]->numInternalNodes();
+  return result;
+}
+
+template<typename Dimension>
+std::vector<size_t>
+DataBase<Dimension>::numInternalNodesPerSolidNodeList() const {
+  const auto n = mSolidNodeListPtrs.size();
+  std::vector<size_t> result(n);
+  for (auto i = 0u; i < n; ++i) result[i] = mSolidNodeListPtrs[i]->numInternalNodes();
+  return result;
+}
+
+template<typename Dimension>
+std::vector<size_t>
+DataBase<Dimension>::numInternalNodesPerDEMNodeList() const {
+  const auto n = mDEMNodeListPtrs.size();
+  std::vector<size_t> result(n);
+  for (auto i = 0u; i < n; ++i) result[i] = mDEMNodeListPtrs[i]->numInternalNodes();
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // The maximum kernel extent being used.
 //------------------------------------------------------------------------------
 template<typename Dimension>

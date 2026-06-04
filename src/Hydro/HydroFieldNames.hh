@@ -73,6 +73,10 @@ struct HydroFieldNames {
   static inline const std::string specificHeat = "specific heat";
   static inline const std::string normal = "outward normal direction";
   static inline const std::string surfaceArea = "boundary surface area";
+
+  // Special RZ coordinate stuff
+  static inline const std::string massRZ = "RZ " + mass;
+  static inline const std::string massDensityRZ = "RZ " + massDensity;
 };
 
 }

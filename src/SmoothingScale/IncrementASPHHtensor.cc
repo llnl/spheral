@@ -12,7 +12,7 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {

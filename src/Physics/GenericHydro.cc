@@ -158,6 +158,12 @@ dt(const DataBase<Dimension>& dataBase,
   const auto Fdiv = (GeometryRegistrar::coords() == CoordinateType::Spherical ? +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi[0] + 2.0*veli[0]*safeInv(posi[0]); } :
                      GeometryRegistrar::coords() == CoordinateType::RZ        ? +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi.Trace() + veli[1]*safeInv(posi[1]); } :
                                                                                 +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi.Trace(); });
+
+  // Extract r-component for curvilinear coordinates
+  const auto rcomponent = (GeometryRegistrar::coords() == CoordinateType::Spherical ? +[](const Vector& posi) { return posi[0]; } :
+                           GeometryRegistrar::coords() == CoordinateType::RZ        ? +[](const Vector& posi) { return posi[1]; } :
+                                                                                      +[](const Vector& posi) { CHECK2(false, "You really shouldn't be here"); return 0.0; });
+
   // Loop over every fluid node.
   // #pragma omp declare reduction (MINPAIR : pair<double,string> : omp_out = (omp_out.first < omp_in.first ? omp_out : omp_in)) initializer(omp_priv = pair<double,string>(std::numeric_limits<double>::max(), string("null")))
   // #pragma omp parallel for reduction(MINPAIR:minDt) collapse(2)
@@ -327,6 +333,25 @@ dt(const DataBase<Dimension>& dataBase,
               DTNodeList_local = nodeListi;
               DTnode_local = i;
               DTreason_local = "velocity magnitude";
+            }
+          }
+
+          // In curvilinear coordinates limit such that we shouldn't cross r=0 in a timestep
+          if (GeometryRegistrar::coords() != CoordinateType::Cartesian) {
+            const auto ri = rcomponent(position(nodeListi, i));
+            const auto vri = rcomponent(velocity(nodeListi, i));
+            const auto rvelDt = -ri*safeInvVar(vri);  // Only care if we're going toward the axis
+            if (rvelDt > 0.0 and rvelDt < minDt_local.first) {
+              minDt_local = TimeStepType(rvelDt, ("   r velocity limit: dt = " + to_string(rvelDt) + "\n" +
+                                                  "                    vri = " + to_string(vri) + "\n" +
+                                                  "                     ri = " + to_string(ri) + "\n" +
+                                                  "               material = " + fluidNodeListPtr->name() + "\n" +
+                                                  "  (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
+                                                  "             @ position = " + vec_to_string(position(nodeListi, i))));
+              DTrank_local = rank;
+              DTNodeList_local = nodeListi;
+              DTnode_local = i;
+              DTreason_local = "r velocity to origin";
             }
           }
         }

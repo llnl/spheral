@@ -105,6 +105,12 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
 
   // SPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
 
+  // Create the local storage for time step mask, pressure, sound speed, and position weight.
+  dataBase.resizeFluidFieldList(this->mTimeStepMask, 1, HydroFieldNames::timeStepMask);
+  dataBase.resizeFluidFieldList(this->mPressure, 0.0, HydroFieldNames::pressure);
+  dataBase.resizeFluidFieldList(this->mSoundSpeed, 0.0, HydroFieldNames::soundSpeed);
+  dataBase.resizeFluidFieldList(this->mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
+
   // The SPH class tries to update these using the policies, but since PSPH
   // handles them differently we have to override that behavior here and do
   // it differently.
