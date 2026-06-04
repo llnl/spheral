@@ -103,12 +103,16 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0, true);
+  const auto massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0, true);
   const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   CHECK(position.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
   CHECK(mass.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
+  CHECK((GeometryRegistrar::coords() == CoordinateType::RZ and massRZ.size() == numNodeLists and massDensityRZ.size() == numNodeLists) or
+        (GeometryRegistrar::coords() != CoordinateType::RZ and massRZ.size() == 0u           and massDensityRZ.size() == 0u));
 
   // Derivative FieldLists.
   auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
@@ -130,7 +134,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   {
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
-    Scalar mi, mj, ri, rj, mRZi, mRZj, rhoi, rhoj, WSPHi, WSPHj, etaMagi, etaMagj, fweightij, fispherical, fjspherical;
+    Scalar mi, mj, rhoi, rhoj, WSPHi, WSPHj, etaMagi, etaMagj, fweightij, fispherical, fjspherical;
     Vector xij, etai, etaj;
     SymTensor xijdyad;
 
@@ -146,22 +150,27 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       nodeListi = pairs[kk].i_list;
       nodeListj = pairs[kk].j_list;
 
-      // Get the state for node i.
-      mi = mass(nodeListi, i);
-      rhoi = massDensity(nodeListi, i);
+      // Get the state
+      if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+        mi = massRZ(nodeListi, i);
+        rhoi = massDensityRZ(nodeListi, i);
+        mj = massRZ(nodeListj, j);
+        rhoj = massDensityRZ(nodeListj, j);
+      } else {
+        mi = mass(nodeListi, i);
+        rhoi = massDensity(nodeListi, i);
+        mj = mass(nodeListj, j);
+        rhoj = massDensity(nodeListj, j);
+      }
+
       const auto& xi = position(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
-
       auto& massZerothMomenti = massZerothMoment_thread(nodeListi, i);
       auto& massFirstMomenti = massFirstMoment_thread(nodeListi, i);
       auto& massSecondMomenti = massSecondMoment_thread(nodeListi, i);
 
-      // Get the state for node j
-      mj = mass(nodeListj, j);
-      rhoj = massDensity(nodeListj, j);
       const auto& xj = position(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
-
       auto& massZerothMomentj = massZerothMoment_thread(nodeListj, j);
       auto& massFirstMomentj = massFirstMoment_thread(nodeListj, j);
       auto& massSecondMomentj = massSecondMoment_thread(nodeListj, j);
@@ -180,26 +189,19 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       fispherical = 1.0;
       fjspherical = 1.0;
       if (nodeListi != nodeListj) {
-        if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-          ri = abs(xi.y());
-          rj = abs(xj.y());
-          mRZi = mi/(2.0*M_PI*ri);
-          mRZj = mj/(2.0*M_PI*rj);
-          fweightij = mRZj*rhoi/(mRZi*rhoj);
-        } else {
-          fweightij = mj*rhoi/(mi*rhoj);
+        fweightij = mj*rhoi/(mi*rhoj);
+        if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
+          const auto eii = Hi.xx()*xi.x();
+          const auto eji = Hi.xx()*xj.x();
+          const auto ejj = Hj.xx()*xj.x();
+          const auto eij = Hj.xx()*xi.x();
+          fispherical = (eii > etaMax ? 1.0 :
+                         eii < eji ? 2.0 :
+                         0.0);
+          fjspherical = (ejj > etaMax ? 1.0 :
+                         ejj < eij ? 2.0 :
+                         0.0);
         }
-      } else if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
-        const auto eii = Hi.xx()*xi.x();
-        const auto eji = Hi.xx()*xj.x();
-        const auto ejj = Hj.xx()*xj.x();
-        const auto eij = Hj.xx()*xi.x();
-        fispherical = (eii > etaMax ? 1.0 :
-                       eii < eji ? 2.0 :
-                       0.0);
-        fjspherical = (ejj > etaMax ? 1.0 :
-                       ejj < eij ? 2.0 :
-                       0.0);
       }
 
       // Symmetrized kernel weight
