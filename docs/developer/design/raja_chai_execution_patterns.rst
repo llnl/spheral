@@ -26,8 +26,6 @@ Configuration and helpers:
 
 * ``src/config.hh.in``
 * ``src/Utilities/GPUUtils.hh``
-* ``docs/developer/dev/gpu_dev.rst``
-* ``docs/developer/dev/gpu_porting_patterns.rst``
 
 Primary RAJA hydro implementations:
 
