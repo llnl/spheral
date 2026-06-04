@@ -261,6 +261,12 @@ views are valid in the target execution space. In some paths the first access
 through CHAI may trigger movement; in others, especially HIP-focused code,
 explicit movement is used before the launch.
 
+Device-to-host movement is a consumer-boundary decision, not an automatic
+post-kernel step. Written views only need to be moved back to ``chai::CPU`` when
+the next consumer is non-RAJAfied host code that will read those values. If the
+next consumer is another RAJA/device-capable path using views, the data can
+remain in the active execution space until a host-only boundary is reached.
+
 CPU, OpenMP, HIP, and CUDA Behavior
 -----------------------------------
 
@@ -325,18 +331,3 @@ Host reads GPU-written data
 Device virtual dispatch instability
   Managed polymorphic objects must be constructed in a way that preserves the
   device vtable. Follow the artificial-viscosity managed-view pattern.
-
-Relationship to the Other Design Docs
--------------------------------------
-
-:doc:`value_view_and_device_execution_model` defines the value/view and managed
-view pointer patterns that make kernel captures possible.
-
-:doc:`value_view_conversion_case_studies` identifies the concrete owner/view and
-managed-dispatch families used by these kernels.
-
-:doc:`connectivity_data_structures` describes how ``ConnectivityMap`` creates
-the flattened ``NodePairList`` traversed by RAJA pair loops.
-
-:doc:`integrator_and_state_update_model` describes when physics packages are
-called and where derivative fields enter the integrator update policy system.
