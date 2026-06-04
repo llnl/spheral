@@ -156,6 +156,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
 
   // Need mass for density calculation
   this->applyGhostBoundaries(state, derivs);
+  for (auto* boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
   
   // Calculate the density that will actually be used
   this->preStepInitialize(dataBase, state, derivs);
