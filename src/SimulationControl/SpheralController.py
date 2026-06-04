@@ -802,22 +802,6 @@ class SpheralController:
     #--------------------------------------------------------------------------
     def insertDistributedBoundary(self, physicsPackages):
 
-        # This is the list of boundary types that need to precede the distributed
-        # boundary, since their ghost nodes need to be communicated.
-        precedeDistributed = []
-        if 2 in dims:
-            precedeDistributed += [FacetedVolumeBoundary2d]            
-        if 3 in dims:
-            precedeDistributed += [FacetedVolumeBoundary3d,
-                                   CylindricalBoundary,
-                                   SphericalBoundary]
-        for dim in dims:
-            exec("""
-precedeDistributed += [PeriodicBoundary%(dim)sd,
-                       ConstantBoundary%(dim)sd,
-                       InflowOutflowBoundary%(dim)sd]
-""" % {"dim" : dim})
-
         # Check if this is a parallel process or not.
         if mpi.procs == 1:
             self.domainbc = None
@@ -826,12 +810,6 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         # boundary condition and insert it into the list of boundaries for each physics
         # package.
         else:
-            # exec("from SpheralCompiledPackages import NestedGridDistributedBoundary%s" % self.dim)
-            # self.domainbc = eval("NestedGridDistributedBoundary%s.instance()" % self.dim)
-            # from SpheralCompiledPackages import BoundingVolumeDistributedBoundary1d, \
-            #                                    BoundingVolumeDistributedBoundary2d, \
-            #                                    BoundingVolumeDistributedBoundary3d
-            # self.domainbc = eval("BoundingVolumeDistributedBoundary%s.instance()" % self.dim)
             exec("from SpheralCompiledPackages import TreeDistributedBoundary%s" % self.dim)
             self.domainbc = eval("TreeDistributedBoundary%s.instance()" % self.dim)
 
@@ -840,23 +818,25 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
 
             # Make a copy of the current set of boundary conditions for this package,
             # and assign priorities to enforce the desired order
-            bcs = list(package.boundaryConditions)
-            priorities = list(range(len(bcs)))
-            for i, bc in enumerate(bcs):
-                if isinstance(bc, eval("ConstantBoundary%s" % self.dim)):
-                    priorities[i] = -2
-                if isinstance(bc, eval("InflowOutflowBoundary%s" % self.dim)):
-                    priorities[i] = -1
-            #priorities, sortedbcs = (list(t) for t in zip(*sorted(zip(priorities, bcs))))
-            sortedbcs = [x for _,x in sorted(zip(priorities, bcs), key=lambda tup: tup[0])]
-
-            # Add the domain bc if needed
+            nbcs0 = len(package.boundaryConditions)
+            bcs = list(zip(list(package.boundaryConditions), range(nbcs0)))  # [(bc, priority), ...]
             if self.domainbc:
-                sortedbcs.append(self.domainbc)
+                bcs.append((self.domainbc, nbcs0))
 
-            # Reassign the package boundary conditions
+            # Some packages need particular priorities for ordering
+            for i, (bc, priority0) in enumerate(bcs):
+                if isinstance(bc, eval(f"ConstantBoundary{self.dim}")):
+                    bcs[i] = (bc, -2)
+                if isinstance(bc, eval(f"InflowOutflowBoundary{self.dim}")):
+                    bcs[i] = (bc, -1)
+
+            # Sort boundaries by priority
+            bcs.sort(key = lambda x: x[1])
+            #sortedbcs = [x for _,x in sorted(zip(priorities, bcs), key=lambda tup: tup[0])]
+
+            # Reassign the package boundary conditions in proper order and including the parallel boundary
             package.clearBoundaries()
-            for bc in sortedbcs:
+            for bc, priority in bcs:
                 package.appendBoundary(bc)
 
         # That's it.
