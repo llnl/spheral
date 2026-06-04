@@ -35,17 +35,22 @@ The implementation is organized around a small set of concepts:
 This page is the architectural overview. Detailed subsystem documents live
 beside it:
 
-* ``simulation_lifecycle_and_main_loop.rst`` explains the controller and C++
+* :doc:`simulation_lifecycle_and_main_loop` explains the controller and C++
   integrator execution path.
-* ``integrator_and_state_update_model.rst`` describes concrete integrator
+* :doc:`integrator_and_state_update_model` describes concrete integrator
   mechanics, ``State``/``StateDerivatives``, and update policies.
-* ``value_view_and_device_execution_model.rst`` describes the owning-object and
-  view-object pattern used by fields, field lists, kernels, and pairwise data.
-* ``raja_chai_execution_patterns.rst`` describes RAJA loop structure, CHAI data
+* :doc:`value_view_and_device_execution_model` describes the value/view and
+  managed view pointer patterns used when host objects become device-facing.
+* :doc:`value_view_conversion_case_studies` identifies current device-facing
+  object families such as ``Field``/``FieldView`` and
+  ``NodePairList``/``NodePairListView``.
+* :doc:`raja_chai_execution_patterns` describes RAJA loop structure, CHAI data
   movement, managed views, and current device-kernel constraints.
-* ``connectivity_data_structures.rst`` describes neighbor search,
+* :doc:`connectivity_data_structures` describes neighbor search,
   ``ConnectivityMap``, node-pair lists, overlap/intersection connectivity, and
   pairwise fields.
+* :doc:`neighbor_family_and_usage` analyzes ``Neighbor``, ``TreeNeighbor``,
+  ``NestedGridNeighbor``, and their role in connectivity construction.
 
 Repository Layout
 -----------------

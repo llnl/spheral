@@ -9,11 +9,11 @@ It focuses on the C++ implementation and the abstractions used at that level,
 while also showing how the Python controller drives the compiled step engine.
 
 The most important point for new developers is that Spheral does not have one
-monolithic C++ ``main`` routine for normal simulations. A typical run is driven
-from Python. Python owns run control, restart/viz scheduling, and user-facing
-workflow. The C++ implementation owns the time-step mechanics: state assembly,
-boundary handling, connectivity, derivative evaluation, state update, and
-package finalization.
+monolithic C++ ``main`` routine as the primary user-facing entry point. A
+typical run is driven from Python. Python owns run control, restart/viz
+scheduling, and user-facing workflow. The C++ implementation owns the time-step
+mechanics: state assembly, boundary handling, connectivity, derivative
+evaluation, state update, and package finalization.
 
 Source Map
 ----------
@@ -576,7 +576,8 @@ This document intentionally stops at the lifecycle level. The internal
 connectivity data structure design, including master/coarse/refine neighbor
 lists, node-pair construction, overlap connectivity, intersection connectivity,
 and deterministic traversal, is covered in
-``connectivity_data_structures.rst``.
+:doc:`connectivity_data_structures`. The ``Neighbor`` class family itself is
+covered in :doc:`neighbor_family_and_usage`.
 
 Physics Package Lifecycle
 -------------------------
@@ -754,12 +755,17 @@ This lifecycle document is the foundation for several deeper design documents:
 
 * integrator functionality, concrete time-centering schemes, and the
   supporting ``State``/policy object model, covered in
-  ``integrator_and_state_update_model.rst``;
-* field, value, and view design, including the initial RAJA and CHAI execution
-  patterns, covered in ``value_view_and_device_execution_model.rst``;
+  :doc:`integrator_and_state_update_model`;
+* device-facing value/view design, managed view pointer dispatch, and the
+  field execution model, covered in
+  :doc:`value_view_and_device_execution_model`;
+* current device-facing object families, covered in
+  :doc:`value_view_conversion_case_studies`;
 * RAJA loop structure, CHAI movement, and managed device views, covered in
-  ``raja_chai_execution_patterns.rst``;
+  :doc:`raja_chai_execution_patterns`;
 * connectivity data structures and traversal patterns, covered in
-  ``connectivity_data_structures.rst``.
+  :doc:`connectivity_data_structures`.
+* the ``Neighbor`` class family and its usage, covered in
+  :doc:`neighbor_family_and_usage`.
 
 Those documents reference this lifecycle rather than repeat it.

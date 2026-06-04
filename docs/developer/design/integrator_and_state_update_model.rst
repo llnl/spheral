@@ -6,7 +6,7 @@ Purpose
 
 This document describes the C++ integrator subsystem and the supporting
 ``State``/``StateDerivatives`` object model in developer-facing detail. It
-builds on ``simulation_lifecycle_and_main_loop.rst``: that document explains
+builds on :doc:`simulation_lifecycle_and_main_loop`: that document explains
 the overall simulation lifecycle, while this one focuses on the internal
 contracts that make time advancement work.
 
@@ -804,8 +804,10 @@ The integrator/state model works because responsibilities stay separated:
 * ``DataBase`` owns node-list aggregation and connectivity lifetime;
 * boundaries own ghost and violation-node mappings.
 
-Field value/view storage, RAJA/CHAI execution patterns, and connectivity
-internals are covered in dedicated documents:
-``value_view_and_device_execution_model.rst``,
-``raja_chai_execution_patterns.rst``, and
-``connectivity_data_structures.rst``.
+Device-facing value/view storage, managed view pointer dispatch, RAJA/CHAI
+execution patterns, and connectivity internals are covered in dedicated
+documents: :doc:`value_view_and_device_execution_model`,
+:doc:`value_view_conversion_case_studies`,
+:doc:`raja_chai_execution_patterns`,
+:doc:`connectivity_data_structures`, and
+:doc:`neighbor_family_and_usage`.

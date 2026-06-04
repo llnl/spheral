@@ -17,10 +17,13 @@ questions for future ``Neighbor``, ``TreeNeighbor``, ``NodeList``, or
 ``ConnectivityMap`` work.
 
 This page is the applied porting guide. For subsystem reference material, see
-:doc:`../design/value_view_and_device_execution_model` for owning-object/view
-lifetimes, :doc:`../design/raja_chai_execution_patterns` for RAJA and CHAI
-execution details, and :doc:`../design/connectivity_data_structures` for
-connectivity and pair-list structure.
+:doc:`../design/value_view_and_device_execution_model` for the value/view and
+managed view pointer execution model,
+:doc:`../design/value_view_conversion_case_studies` for the current
+device-facing object families,
+:doc:`../design/raja_chai_execution_patterns` for RAJA and CHAI execution
+details, and :doc:`../design/connectivity_data_structures` for connectivity and
+pair-list structure.
 
 Evidence and Limits
 ===================

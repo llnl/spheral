@@ -75,26 +75,14 @@ Neighbor Objects
 ----------------
 
 ``Neighbor<Dimension>`` is the abstract base for node-list-local neighbor
-search. Each ``NodeList`` owns or references one active neighbor object.
+search. Each ``NodeList`` has one active neighbor object, and
+``ConnectivityMap`` queries those objects through ``setMasterList``,
+``setRefineNeighborList``, and the static ``setMasterNeighborGroup`` helper.
 
-The base stores:
-
-* ``NeighborSearchType``: ``Gather``, ``Scatter``, or ``GatherScatter``;
-* kernel extent;
-* pointer to the associated ``NodeList``;
-* ``Field<Dimension, Vector> mNodeExtent`` for per-node search extents.
-
-Concrete neighbor classes implement methods such as:
-
-* ``setMasterList``;
-* ``setRefineNeighborList``;
-* ``updateNodes``;
-* position/H overloads for scalar and tensor smoothing scales.
-
-The base class provides shared support such as ``precullList`` and
-``setMasterNeighborGroup``. ``ConnectivityMap`` uses these APIs instead of
-knowing whether the underlying search is nested-grid, tree-based, or another
-implementation.
+This page summarizes the role of ``Neighbor`` because it is part of
+connectivity construction. The detailed class-family analysis, including
+``TreeNeighbor``, ``NestedGridNeighbor``, registration with ``NodeList``, and
+future device-facing questions, lives in :doc:`neighbor_family_and_usage`.
 
 ConnectivityMap Ownership and Indexing
 --------------------------------------
@@ -548,14 +536,21 @@ Ignoring overlap/intersection cost
 Relationship to the Other Design Docs
 -------------------------------------
 
-``simulation_lifecycle_and_main_loop.rst`` explains when ghost and connectivity
+:doc:`simulation_lifecycle_and_main_loop` explains when ghost and connectivity
 updates occur during startup and each step.
 
-``integrator_and_state_update_model.rst`` explains how physics package
+:doc:`integrator_and_state_update_model` explains how physics package
 requirements cause the integrator to request connectivity.
 
-``value_view_and_device_execution_model.rst`` explains the owner/view pattern
-used by ``NodePairList`` and ``PairwiseField``.
+:doc:`value_view_and_device_execution_model` explains the owner/view pattern used
+by ``NodePairList`` and ``PairwiseField``.
 
-``raja_chai_execution_patterns.rst`` explains how ``NodePairListView`` is used
-in RAJA pair kernels.
+:doc:`value_view_conversion_case_studies` identifies ``NodePairList`` and
+``PairwiseField`` as current device-facing object families.
+
+:doc:`neighbor_family_and_usage` explains the ``Neighbor`` base class,
+``TreeNeighbor``, ``NestedGridNeighbor``, and how neighbor search feeds
+``ConnectivityMap``.
+
+:doc:`raja_chai_execution_patterns` explains how ``NodePairListView`` is used in
+RAJA pair kernels.
