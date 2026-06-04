@@ -10,6 +10,47 @@ physics pair loops: neighbor objects find candidate nodes, ``ConnectivityMap``
 turns those candidates into significant neighbor lists, and ``NodePairList``
 provides a flattened pair traversal for RAJA-style kernels.
 
+The data shape is:
+
+::
+
+   NodeList IDs in this example:
+     0 = first active NodeList
+     1 = second active NodeList
+
+   Neighbor candidate lists
+     temporary per-node candidate IDs from Neighbor search
+
+             candidate filtering / significance tests
+             v
+
+   ConnectivityMap::mConnectivity
+     std::vector<std::vector<std::vector<int>>>
+     // [offset[nodeListID] + nodeID][neighborNodeListID][neighborIndex]
+
+     mConnectivity[offset[0] + 0][0] = [3]
+     mConnectivity[offset[0] + 0][1] = [2, 5]
+     mConnectivity[offset[0] + 1][1] = [4]
+
+             flattened for pair kernels
+             v
+
+   NodePairList::mNodePairList
+     std::vector<NodePairIdxType>
+
+     kk   NodePairIdxType fields
+     --   -------------------------------------------------
+      0   {i_list=0, i_node=0, j_list=0, j_node=3}
+      1   {i_list=0, i_node=0, j_list=1, j_node=2}
+      2   {i_list=0, i_node=0, j_list=1, j_node=5}
+      3   {i_list=0, i_node=1, j_list=1, j_node=4}
+
+             RAJA pair traversal
+             v
+
+     RAJA::forall(... kk ...)
+       pair = pairs[kk]
+
 The focus here is the C++ implementation: object ownership, indexing, rebuild
 semantics, deterministic traversal, optional overlap/intersection structures,
 and pairwise storage patterns.
