@@ -969,22 +969,28 @@ class SpheralController:
         db = self.integrator.dataBase
         bcs = self.integrator.uniqueBoundaryConditions()
 
-        # Find the smoothing scale method
-        method = None
-        for pkg in self.integrator.physicsPackages():
-            if isinstance(pkg, eval(f"SmoothingScaleBase{self.dim}")):
-                method = pkg
-        if method is None:
-            print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
-            method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
+        # RZ is tricky because it needs to have extra state (massRZ and rhoRZ)
+        # that currently belong the hydro. For now we punt and just use the
+        # full package list if we're in RZ (to be fixed later)
+        if GeometryRegistrar.coords() == CoordinateType.RZ:
+            packages = self.integrator.physicsPackages()
 
-        # Get needed packages
-        packages = eval(f"vector_of_Physics{self.dim}()")
-        if method.requireVoronoiCells() or any(p.requireVoronoiCells() for p in extraPackages):
-            packages.append(self.VoronoiCells)
-        packages.append(method)
-        for package in extraPackages:
-            packages.append(package)
+        else:
+
+            # Find the smoothing scale method
+            method = None
+            for pkg in self.integrator.physicsPackages():
+                if isinstance(pkg, eval(f"SmoothingScaleBase{self.dim}")):
+                    method = pkg
+            if method is None:
+                print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
+                method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
+
+            # Get needed packages
+            packages = eval(f"vector_of_Physics{self.dim}()")
+            if method.requireVoronoiCells() or any(p.requireVoronoiCells() for p in extraPackages):
+                packages.append(self.VoronoiCells)
+            packages.append(method)
 
         # Make sure extra packages have boundary conditions
         for package in packages:
@@ -993,6 +999,10 @@ class SpheralController:
                 for extraPackage in extraPackages:
                     if not bc in extraPackage.boundaryConditions:
                         extraPackage.appendBoundary(bc)
+
+        # Add the extra packages
+        for package in extraPackages:
+            packages.append(package)
 
         # Perform the update
         iterateIdealH = eval(f"iterateIdealH{self.dim}")
