@@ -593,8 +593,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
-      const auto vr_over_r = vri*riInv;
-      // const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv); //integrate_vr_over_r(vri, ri, DvDti[1], hri, dt));  //
+      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv); //integrate_vr_over_r(vri, ri, DvDti[1], hri, dt));  //
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
