@@ -46,7 +46,7 @@ computeMassDensityFromArealMassDensity(Field<Dim<2>, Dim<2>::Scalar>& massDensit
     const auto  hri = ri*safeInv(zetai);
     CHECK(hri >= 0.0);
     const auto Ai = massRZ(i)/massDensityRZ(i);
-    const auto ViInv = safeInvVar(ri, 0.05*hri)/(2.0*M_PI*Ai);
+    const auto ViInv = safeInvVar(ri, 0.01*hri)/(2.0*M_PI*Ai);
     massDensity(i) = std::clamp(mass(i)*ViInv, rhoMin, rhoMax);
     // const auto rho3D = std::clamp(mass(i)*ViInv, rhoMin, rhoMax);
     // const auto w0 = std::clamp(10.0*zetai - 0.1, 0.0, 1.0);
