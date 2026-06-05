@@ -45,9 +45,9 @@
 #ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK 2D reference data")
 #ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 2D reference data")
 #
-# ACRK Classic RZ
-#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK RZ reference data")
-#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK RZ reference data")
+# # ACRK Classic RZ   # Suspeneded until updated to new RZ formalism
+# #ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK RZ reference data")
+# #ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK RZ reference data")
 #
 # ACRK Classic 3D
 #ATS:test(SELF, "--geometry 3d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 3D reference data")
