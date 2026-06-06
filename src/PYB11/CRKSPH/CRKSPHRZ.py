@@ -6,7 +6,7 @@ from CRKSPHBase import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPHRZ(CRKSPHBase):
     "An area weighted RZ specialization of CRKSPH for cylindrical coordinates"
@@ -26,7 +26,7 @@ class CRKSPHRZ(CRKSPHBase):
 
     def pyinit(self,
                dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",

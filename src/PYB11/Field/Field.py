@@ -6,7 +6,7 @@ from FieldView import FieldView
 # Field
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value")
-@PYB11module("SpheralField")
+@PYB11module("SpheralCompiledModules.SpheralField")
 class Field(FieldBase,
             FieldView):
 
@@ -174,6 +174,12 @@ class Field(FieldBase,
     def allValues(self):
         "Return a python list (as a copy) of all values in the Field"
         return "py::list"
+
+    @PYB11implementation("[](Field<%(Dimension)s, %(Value)s>& self, py::list& pylist) { auto vals = PYB11utils::from_list<%(Value)s>(pylist); self = vals; }")
+    def assign(self,
+               values = "py::list"):
+        "Assign the values of a Field from a Python list"
+        return "void"
 
     def view(self):
         return "ViewType"

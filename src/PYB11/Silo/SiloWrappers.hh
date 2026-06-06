@@ -1392,7 +1392,7 @@ DBPutPointmesh(DBfile& file,
 
   // Preconditions.
   const unsigned ndims = coords.size();
-  VERIFY(ndims == 2 or ndims == 3);
+  VERIFY(ndims == 1 or ndims == 2 or ndims == 3);
   const unsigned npoints = coords[0].size();
   for (unsigned idim = 0; idim != ndims; ++idim) VERIFY(coords[idim].size() == npoints);
 

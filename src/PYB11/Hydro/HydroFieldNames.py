@@ -64,3 +64,5 @@ class HydroFieldNames:
     specificHeat = PYB11readonly(static=True, returnpolicy="copy")
     normal = PYB11readonly(static=True, returnpolicy="copy")
     surfaceArea = PYB11readonly(static=True, returnpolicy="copy")
+    massRZ = PYB11readonly(static=True, returnpolicy="copy")
+    massDensityRZ = PYB11readonly(static=True, returnpolicy="copy")

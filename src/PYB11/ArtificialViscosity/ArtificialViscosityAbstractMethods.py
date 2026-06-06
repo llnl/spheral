@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# ArtificialViscosity pure virtual interface
+# ArtificialViscosityView pure virtual interface
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 
@@ -28,9 +28,9 @@ class ArtificialViscosityAbstractMethods:
               vj        = "const Vector&",
               rhoj      = "const Scalar",
               csj       = "const Scalar",
-              fCl       = "const FieldList<%(Dimension)s, Scalar>&",
-              fCq       = "const FieldList<%(Dimension)s, Scalar>&",
-              DvDx      = "const FieldList<%(Dimension)s, Tensor>&"):
+              fCl       = "const FieldListView<%(Dimension)s, Scalar>&",
+              fCq       = "const FieldListView<%(Dimension)s, Scalar>&",
+              DvDx      = "const FieldListView<%(Dimension)s, Tensor>&"):
         """All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
 Returns the pair values QPiij and QPiji by reference as the first two arguments.
 Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered

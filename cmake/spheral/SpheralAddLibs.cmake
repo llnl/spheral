@@ -8,6 +8,7 @@
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
 # SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
+# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -32,6 +33,8 @@ function(spheral_add_obj_library package_name obj_list_name)
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
   # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
   get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
 
@@ -42,6 +45,7 @@ function(spheral_add_obj_library package_name obj_list_name)
       DEFINES     ${SPHERAL_COMPILE_DEFS}
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} 
       SHARED      TRUE)
+    target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
   else()
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
@@ -82,6 +86,7 @@ endfunction()
 # SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
 # SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
 # SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
+# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
@@ -104,6 +109,8 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
   get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
   # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
   get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
+  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   # For including files in submodules, currently unused
   get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
   # Convert package name to lower-case for export target name
@@ -124,11 +131,12 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
     # Add compile options
     target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
   endif()
 
   target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
 
-  if(ENABLE_CUDA)
+  if(ENABLE_CUDA AND SPHERAL_ENABLE_RDC)
     set_target_properties(Spheral_${package_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   endif()
 
@@ -139,9 +147,6 @@ function(spheral_add_cxx_library package_name _cxx_obj_list)
 
   # Export Spheral target
   install(EXPORT ${export_target_name} DESTINATION lib/cmake)
-
-  # Set the r-path of the C++ lib such that it is independent of the build dir when installed
-  set_target_properties(Spheral_${package_name} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endfunction()
 
 #----------------------------------------------------------------------------------------
@@ -165,6 +170,8 @@ endfunction()
 # DEPENDS        : OPTIONAL : Target specific dependencies
 # SOURCE         : OPTIONAL : Target specific sources
 # MULTIPLE_FILES : OPTIONAL : Generate multiple pybind11 output files to parallelize compilation
+# IS_SUBMODULE   : OPTIONAL : (default ON) Compile as a submodule of SpheralCompiledPackages
+# SUBMODULES     : OPTIONAL : (default "") List of submodules of this module
 # -----------------------
 # OUTPUT VARIABLES TO USE - Made available implicitly after function call
 # -----------------------
@@ -177,12 +184,19 @@ function(spheral_add_pybind11_library package_name module_list_name)
 
   # Define our arguments
   set(options )
-  set(oneValueArgs MULTIPLE_FILES)
-  set(multiValueArgs INCLUDES SOURCES DEPENDS)
+  set(oneValueArgs MULTIPLE_FILES IS_SUBMODULE)
+  set(multiValueArgs INCLUDES SOURCES DEPENDS SUBMODULES)
   cmake_parse_arguments(${package_name} "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   # message("** ${package_name}_INCLUDES: ${${package_name}_INCLUDES}")
   # message("** ${package_name}_SOURCES: ${${package_name}_SOURCES}")
   # message("** ${package_name}_DEPENDS: ${${package_name}_DEPENDS}")
+
+  if (NOT DEFINED ${package_name}_IS_SUBMODULE)
+    set(${package_name}_IS_SUBMODULE "ON")
+  endif()
+  if (NOT DEFINED ${package_name}_SUBMODULES)
+    set(${package_name}_SUBMODULES "")
+  endif()
 
   # List directories in which spheral .py files can be found.
   set(PYTHON_ENV 
@@ -241,36 +255,42 @@ function(spheral_add_pybind11_library package_name module_list_name)
   get_property(SPHERAL_PYB11_TARGET_FLAGS GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS)
   list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
 
+  get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
+
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}
     MODULE          ${MODULE_NAME}
     SOURCE          ${package_name}_PYB11.py
-    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
+    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
+    DEFINES         ${SPHERAL_COMPILE_DEFS}
     INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
-    INSTALL         OFF
+    INSTALL         OFF # ${SPHERAL_SITE_PACKAGES_PATH}/Spheral
     VIRTUAL_ENV     python_build_env
     MULTIPLE_FILES  ${${package_name}_MULTIPLE_FILES}
-    PYTHONPATH      ${PYTHON_ENV_STR})
+    PYTHONPATH      ${PYTHON_ENV_STR}
+    IS_SUBMODULE    ${${package_name}_IS_SUBMODULE}
+    SUBMODULES      ${${package_name}_SUBMODULES})
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
   add_dependencies(${MODULE_NAME} generate_spheralDimensions)
 
-  add_custom_command(TARGET ${MODULE_NAME}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_BINARY_DIR}/lib/${MODULE_NAME}.so
-    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
+  if (NOT ${${package_name}_IS_SUBMODULE})
+    add_custom_command(TARGET ${MODULE_NAME}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_BINARY_DIR}/lib/${MODULE_NAME}.so
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/Spheral/${MODULE_NAME}.so)
+  endif()
 
   install(TARGETS     ${MODULE_NAME}
           DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
-
-  # Set the r-path of the C++ lib such that it is independent of the build dir when installed
-  set_target_properties(${MODULE_NAME} PROPERTIES INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
+  target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
 
 endfunction()

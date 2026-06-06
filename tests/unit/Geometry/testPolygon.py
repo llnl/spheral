@@ -4,7 +4,6 @@
 import unittest
 import functools
 from math import *
-from SpheralTestUtilities import fuzzyEqual
 
 from Spheral2d import *
 

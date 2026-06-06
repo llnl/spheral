@@ -11,7 +11,6 @@ import random
 from Spheral2d import *
 from generateMesh import *
 from siloMeshDump import siloMeshDump
-from SpheralTestUtilities import fuzzyEqual
 
 #===============================================================================
 # Load mpi, and figure out how may domains to set up, and which domain we are.

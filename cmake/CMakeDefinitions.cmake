@@ -32,6 +32,7 @@ endif()
 set(_comp_flags
   ENABLE_MPI
   ENABLE_HIP
+  ENABLE_OPENMP
   ENABLE_CUDA
   ENABLE_NAN_EXCEPTIONS
   ENABLE_OPENSUBDIV
@@ -84,6 +85,9 @@ endif()
 if(SPHERAL_UNIFIED_MEMORY)
   message("-- Enabling unified memory for GPU architectures")
   list(APPEND SPHERAL_COMPILE_DEFS SPHERAL_UNIFIED_MEMORY)
+  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
+  list(APPEND SPHERAL_ENV_LINES "export HSA_XNACK=1")
+  set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
 else()
   message("-- Assuming non-unified memory for GPU architectures")
 endif()

@@ -6,7 +6,7 @@ from SPHBase import *
 
 @PYB11template()            # Override the fact SPHBase is templated
 @PYB11template_dict({"Dimension" : "Dim<1>"})
-@PYB11module("SpheralSPH")
+@PYB11module("SpheralCompiledModules.SpheralSPH")
 @PYB11dynamic_attr
 class SphericalSPH(SPHBase):
 
@@ -21,7 +21,7 @@ class SphericalSPH(SPHBase):
 """
 
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const SphericalKernel&",
                WPi = "const SphericalKernel&",
                cfl = "const double",

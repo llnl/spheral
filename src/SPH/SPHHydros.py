@@ -28,8 +28,9 @@ def SPH(W,
         strengthInDamage = False,
         xmin = (-1e100, -1e100, -1e100),
         xmax = ( 1e100,  1e100,  1e100),
-        etaMinAxis = 0.1,
+        etaMinAxis = 0.0,
         ASPH = False,
+        RAJA = False,
         smoothingScaleMethod = None):
 
     # Check if we're running solid or fluid hydro
@@ -73,10 +74,13 @@ def SPH(W,
             constructor = SPHRZ
 
     else:
+        constructor = "SPH"
         if nsolid > 0:
-            constructor = eval("SolidSPH%id" % ndim)
-        else:
-            constructor = eval("SPH%id" % ndim)
+            constructor = "Solid" + constructor
+        if RAJA:
+            constructor += "_RAJA"
+        constructor += f"{ndim}d"
+        constructor = eval(constructor)
 
     # Fill out the set of kernels
     if WPi is None:
@@ -140,18 +144,14 @@ def SPH(W,
     result.appendSubPackage(smoothingScaleMethod)
 
     # In spherical coordatinates, preserve our locally constructed spherical kernels
-    # and add the origin enforcement boundary
     if GeometryRegistrar.coords() == CoordinateType.Spherical:
-        result.originBC = SphericalOriginBoundary()
-        result.appendBoundary(result.originBC)
         result._W3S1 = W
         result._WPi3S1 = WPi
         result._WGrad3S1 = WGrad
 
-    # If we're using area-weighted RZ, we need to reflect from the axis
+    # If we're using area-weighted RZ, store etaMinAxis
     if GeometryRegistrar.coords() == CoordinateType.RZ:
-        result.zaxisBC = AxisBoundaryRZ(etaMinAxis)
-        result.appendBoundary(result.zaxisBC)
+        result.etaMinAxis = etaMinAxis
 
     return result
 

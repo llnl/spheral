@@ -1,6 +1,5 @@
 #ATS:test(SELF, label="EquationOfState unit tests")
 
-from SpheralTestUtilities import fuzzyEqual
 import numpy as np
 from math import *
 import unittest

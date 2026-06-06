@@ -127,7 +127,7 @@ MFV(DataBase<Dimension>& dataBase,
   mDmomentumDt(FieldStorageType::CopyFields),
   mDvolumeDt(FieldStorageType::CopyFields),
   mMaxFluxSpeed(FieldStorageType::CopyFields),
-  mPairMassFluxPtr() {
+  mPairMassFluxPtr(std::make_unique<PairMassFluxType>()) {
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
     mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);

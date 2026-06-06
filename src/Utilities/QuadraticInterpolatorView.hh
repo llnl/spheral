@@ -7,14 +7,17 @@
 #ifndef __Spheral_QuadraticInterpolatorView__
 #define __Spheral_QuadraticInterpolatorView__
 
-#include "chai/ManagedArray.hpp"
-#include "config.hh"
+#include "GPUUtils.hh"
 
 namespace Spheral {
 
 class QuadraticInterpolatorView {
 public:
+#ifdef SPHERAL_UNIFIED_MEMORY
+  using ContainerType = SPHERAL_SPAN_TYPE<double>;
+#else
   using ContainerType = typename chai::ManagedArray<double>;
+#endif
   //--------------------------- Public Interface ---------------------------//
   // Constructors, destructors
   SPHERAL_HOST_DEVICE QuadraticInterpolatorView() = default;
@@ -45,7 +48,8 @@ public:
   SPHERAL_HOST_DEVICE double xstep() const { return mXstep; }
   SPHERAL_HOST_DEVICE double* data() const { return mcoeffs.data(); }
 
-  void move(chai::ExecutionSpace space)    { mcoeffs.move(space); }
+  SPHERAL_HOST void move(chai::ExecutionSpace space)   { GPUUtils::move(mcoeffs, space); }
+  SPHERAL_HOST void touch(chai::ExecutionSpace space)  { GPUUtils::touch(mcoeffs, space); }
 
 protected:
   //--------------------------- Private Interface --------------------------//

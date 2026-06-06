@@ -16,7 +16,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 
 #include "Utilities/DBC.hh"
 
@@ -36,7 +36,7 @@ TensorSVPHViscosity(const Scalar Clinear,
                     const Scalar Cquadratic,
                     const TableKernel<Dimension>& WT,
                     const Scalar fslice):
-  ArtificialViscosity<Dimension, Tensor>(Clinear, Cquadratic, WT),
+  ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT),
   mfslice(fslice),
   mDvDx(),
   mShearCorrection(),

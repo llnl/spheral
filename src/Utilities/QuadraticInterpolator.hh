@@ -10,9 +10,6 @@
 #define __Spheral_QuadraticInterpolator__
 
 #include "QuadraticInterpolatorView.hh"
-#include "chai/ManagedArray.hpp"
-#include "chai/config.hpp"
-#include "config.hh"
 
 #include <cstddef>
 #include <vector>
@@ -36,12 +33,12 @@ public:
 
   QuadraticInterpolatorView view() { return static_cast<QuadraticInterpolatorView>(*this); }
 
-#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
     mcoeffs.setUserCallback(getNPLCallback(std::forward<F>(extension)));
-  }
 #endif
+  }
 
 protected:
   template<typename F>

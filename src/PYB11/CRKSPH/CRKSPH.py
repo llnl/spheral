@@ -5,7 +5,7 @@ from PYB11Generator import *
 from CRKSPHBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPH(CRKSPHBase):
     "CRKSPHBase -- The CRKSPH/ACRKSPH hydrodynamic package for Spheral++."
@@ -26,7 +26,7 @@ class CRKSPH(CRKSPHBase):
 
     def pyinit(self,
                dataBase = "DataBase<%(Dimension)s>&",
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",

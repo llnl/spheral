@@ -72,12 +72,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
-  auto* pairAccelerationsPtr = (compatibleEnergy ?
-                                &derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations) :
-                                nullptr);
-  auto* pairDepsDtPtr = (compatibleEnergy ?
-                         &derivs.template get<PairWorkType>(HydroFieldNames::pairWork) :
-                         nullptr);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairDepsDt = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  newRiemannDpDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannPressureGradient,Vector::zero());
   auto  newRiemannDvDx = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + GSPHFieldNames::RiemannVelocityGradient,Tensor::zero());
@@ -94,8 +90,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(newRiemannDpDx.size() == numNodeLists);
   CHECK(newRiemannDvDx.size() == numNodeLists);
-  CHECK(not compatibleEnergy or pairAccelerationsPtr->size() == npairs);
-  CHECK(not compatibleEnergy or pairDepsDtPtr->size() == npairs);
+  CHECK(not compatibleEnergy or pairAccelerations.size() == npairs);
+  CHECK(not compatibleEnergy or pairDepsDt.size() == npairs);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -259,9 +255,9 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
      
       if(compatibleEnergy){
         const auto invmij = 1.0/(mi*mj);
-        (*pairAccelerationsPtr)[kk] = deltaDvDt*invmij; 
-        (*pairDepsDtPtr)[kk][0]  = deltaDepsDti*invmij; 
-        (*pairDepsDtPtr)[kk][1]  = deltaDepsDtj*invmij; 
+        pairAccelerations[kk] = deltaDvDt*invmij; 
+        pairDepsDt[kk][0]  = deltaDepsDti*invmij; 
+        pairDepsDt[kk][1]  = deltaDepsDtj*invmij; 
       }
 
       // gradients

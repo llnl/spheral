@@ -52,6 +52,7 @@ class TimerMgr:
     def timers_usable(self):
         "Return whether the code has been compiled with timers turned on"
         return "bool"
+
     @PYB11static
     def timer_begin(self, region_name = "std::string"):
         "Start custom region Caliper timer, must have corresponding timer_end call"
@@ -65,4 +66,31 @@ class TimerMgr:
     @PYB11static
     def is_started(self):
         "Check if ConfigManager has been started"
+        return "bool"
+
+    #...........................................................................
+    # Advanced timers
+    @PYB11static
+    def adv_timer_begin(self, region_name = "std::string"):
+        "Start advanced custom region Caliper timer, must have corresponding adv_timer_end call"
+        return "void"
+
+    @PYB11static
+    def adv_timer_end(self, region_name = "std::string"):
+        "End advanced custom region Caliper timer"
+        return "void"
+
+    @PYB11static
+    def disable_advanced_timers(self):
+        "Disable advanced timers"
+        return "void"
+
+    @PYB11static
+    def enable_advanced_timers(self):
+        "Enable advanced timers"
+        return "void"
+
+    @PYB11static
+    def advanced_timers_enabled(self):
+        "Return whether advanced timers are enabled"
         return "bool"

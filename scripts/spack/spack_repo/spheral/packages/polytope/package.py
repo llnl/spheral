@@ -1,0 +1,44 @@
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
+
+from spack_repo.builtin.build_systems.cmake import CMakePackage
+from spack.package import *
+import os
+
+
+class Polytope(CMakePackage):
+    """Polytope is a C++ library for generating polygonal and polyhedral meshes."""
+
+    git = "https://github.com/LLNL/polytope.git"
+    url = "https://github.com/LLNL/polytope/archive/v0.7.5.tar.gz"
+    # DO NOT COMMIT, FOR TESTING ONLY
+    version('v0.7.5', commit='949fc7723e7a013edb0d00ac993bbb746eccdf9d', tag='v0.7.5', submodules=True, preferred=True)
+
+    variant('python', default=True, description='Enable Python Support.')
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+
+    extends('python', when='+python')
+    depends_on('python@3: +zlib +shared', type=('build', 'run'), when='+python')
+    depends_on('boost', type=('build', 'run'))
+    patch('polytope_cxx.patch', when='^boost@1.82:')
+
+    parallel = False      # Should be able to remove this at some point
+
+    def cmake_args(self):
+        options = []
+        spec = self.spec
+
+        options.append(self.define('USE_MPI', 'Off'))   # Turn back on when polytope fixes parallel generation
+        options.append(self.define('BOOST_ROOT', spec['boost'].prefix.include))
+
+        if "+python" in spec:
+            options.append(self.define('USE_PYTHON', True))
+            options.append(self.define('Python3_EXECUTABLE', os.path.join(self.spec['python'].prefix.bin, 'python3') ) )
+
+        options.append(self.define('TESTING', False))
+
+        return options

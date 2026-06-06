@@ -125,8 +125,8 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
   mRiemannDvDx(FieldStorageType::CopyFields),
   mNewRiemannDpDx(FieldStorageType::CopyFields),
   mNewRiemannDvDx(FieldStorageType::CopyFields),
-  mPairAccelerationsPtr(),
-  mPairDepsDtPtr() {
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
+  mPairDepsDtPtr(std::make_unique<PairWorkType>()) {
 
   // Create storage for our internal state.
   mTimeStepMask = dataBase.newFluidFieldList(int(0), HydroFieldNames::timeStepMask);
@@ -304,9 +304,9 @@ registerDerivatives(DataBase<Dimension>& dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     mPairDepsDtPtr = std::make_unique<PairWorkType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-    derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
 }
 
 //------------------------------------------------------------------------------

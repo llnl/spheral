@@ -3,7 +3,7 @@
 #   Optional Arguments:
 #     --progress=plain        : Prints plain output to terminal instead of windowed version.
 #     --build-args SPEC=...   : Specify optional build argument to override. Default = gcc
-#                               e.g. --build-args SPEC=clang 
+#                               e.g. --build-args SPEC=clang
 
 # To build and run a spheral test:
 #   sudo env DOCKERBUILDKIT=1 docker build . --target spheral --tag spheral (--progress=plain) (--network none)
@@ -22,29 +22,62 @@
 # -----------------------------------------------------------------------------
 # SPHERAL-BUILD-ENV
 # -----------------------------------------------------------------------------
-FROM ubuntu:20.04 AS spheral-build-env-local
+FROM ubuntu:24.04 AS spheral-build-env-local
 
 ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
 
 # Update Ubuntu and install necessary packages.
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y build-essential git gfortran mpich autotools-dev autoconf sqlite pkg-config uuid gettext cmake libncurses-dev libgdbm-dev libffi-dev libssl-dev libexpat-dev libreadline-dev libbz2-dev locales python python3 unzip libtool wget curl libcurl4-openssl-dev tk-dev
-RUN apt-get install -y python3-dev python3-venv python3-pip
-RUN apt-get install -y iputils-ping
 
-# Setup system locale for pip package encoding/decoding 
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+        ca-certificates \
+        netbase \
+        iproute2 \
+        build-essential \
+        git \
+        gfortran \
+        autotools-dev \
+        autoconf \
+        sqlite3 \
+        pkg-config \
+        uuid \
+        gettext \
+        cmake \
+        openmpi-bin \
+        libopenmpi-dev \
+        libncurses-dev \
+        libgdbm-dev \
+        libffi-dev \
+        libssl-dev \
+        libexpat-dev \
+        libreadline-dev \
+        libbz2-dev \
+        locales \
+        python3 \
+        python3-dev \
+        python3-venv \
+        python3-pip \
+        python3-tk \
+        unzip \
+        libtool \
+        wget \
+        curl \
+        libcurl4-openssl-dev \
+        tk-dev \
+        iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup system locale for pip package encoding/decoding
 RUN locale-gen en_US.UTF-8
 
 # Set up TPLs for SPEC
 WORKDIR /home/spheral/workspace/
+
 COPY scripts scripts
-
-
-RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
-
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --tpl-dir /home
 COPY . .
 
 # Configure Spheral with SPEC TPLs.
@@ -78,7 +111,7 @@ WORKDIR /home/spheral/workspace/
 
 # Copy Spheral source and generate host config from tpl-manager (all dependencies should already be installed).
 COPY . .
-RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --spack-dir /home
+RUN python3 scripts/devtools/tpl-manager.py --spec spheral%$SPEC --tpl-dir /home
 
 # Configure Spheral with SPEC TPLs.
 RUN mv *.cmake $HOST_CONFIG.cmake

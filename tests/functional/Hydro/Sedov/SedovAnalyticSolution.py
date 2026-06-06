@@ -4,6 +4,7 @@
 # Sedov, L.I. 1959, "Similarity and Dimensional Methods in Mechanics", 210-233.
 #-------------------------------------------------------------------------------
 from math import *
+import numpy as np
 import bisect
 
 def sgn(x):
@@ -164,28 +165,72 @@ class SedovSolution:
         vs, r2, v2, rho2, P2 = self.shockState(t)
 
         if r is None:
-            r = [0.001*r2*i for i in range(1001)]
+            r = np.linspace(0.0, r2, 101, endpoint=True)
+            r = np.append(r, 2.0*r2)
+            #r = np.array([0.01*r2*i for i in range(101)])
 
-        v = []
-        rho = []
-        P = []
-        u = []
-        h = []
-        A = []
+        v, rho, P, u, h, A = np.zeros_like(r), np.zeros_like(r), np.zeros_like(r), np.zeros_like(r), np.zeros_like(r), np.zeros_like(r)
 
-        for ri in r:
+        for i, ri in enumerate(r):
             if abs(ri) < r2:
                 vi, rhoi, Pi = self.lookupSolution(abs(ri/r2))
             else:
                 vi, rhoi, Pi = 0.0, self.rho0/rho2, 0.0
-            v.append(vi*v2*sgn(ri))
-            rho.append(rhoi*rho2)
-            P.append(Pi*P2)
-            u.append(P[-1]/(gam1*rho[-1] + 1.0e-50))
-            h.append(self.h0 * self.rho0/(rho[-1] + 1.0e-50))
-            A.append(P[-1]/max(1.0e-30, rho[-1])**gamma)
+            v[i] = vi*v2*sgn(ri)
+            rho[i] = rhoi*rho2
+            P[i] = Pi*P2
+            u[i] = P[i]/(gam1*rho[i] + 1.0e-50)
+            h[i] = self.h0 * self.rho0/(rho[i] + 1.0e-50)
+            A[i] = P[i]/max(1.0e-30, rho[i])**gamma
 
         return r, v, u, rho, P, A, h
+
+    #---------------------------------------------------------------------------
+    # Compute the derivatives
+    # Numerically estimates and returns (dvdt, dudt, drhodt, divv)
+    #---------------------------------------------------------------------------
+    def derivatives(self, t,
+                    r = None,
+                    rmin = None,
+                    rmax = None,
+                    numSolution = 1000):
+        
+        gamma = self.gamma
+        gam1 = gamma - 1.0
+        nu = self.nu
+
+        vs, r2, v2, rho2, P2 = self.shockState(t)
+
+        if r is None:
+            r = np.array([0.01*r2*i for i in range(101)])
+
+        if rmin is None:
+            rmin = min(r)
+        if rmax is None:
+            rmax = max(r)
+
+        # Make the solution grid in r to compute derivatives on
+        rsol = np.linspace(rmin, rmax, numSolution, endpoint=True)
+
+        # Compute the standard solution on the fine sampled grid
+        rdummy, v, u, rho, P, A, h = self.solution(t, rsol)
+
+        gradP = np.gradient(P, rsol)
+        divv = np.gradient(v, rsol)
+        thpt = np.zeros_like(divv)
+        if self.nu == 2:
+            divv += np.divide(v, rsol, where = (rsol != 0.0))
+        elif self.nu == 3:
+            divv += np.divide(v, rsol*rsol, where = (rsol != 0.0))
+
+        dvdt = -np.divide(gradP, rho, where = (rho != 0.0))
+        dudt = -np.divide(P, rho, where = (rho != 0.0)) * divv
+        drhodt = -rho*divv
+
+        return (np.interp(r, rsol, dvdt),
+                np.interp(r, rsol, dudt),
+                np.interp(r, rsol, drhodt),
+                np.interp(r, rsol, divv))
 
     #---------------------------------------------------------------------------
     # alpha1

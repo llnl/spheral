@@ -256,6 +256,22 @@ class DataBase:
         "Provide a method to determine if the DataBase is in a minimally defined valid state."
         return "bool"
 
+    @PYB11const
+    def numInternalNodesPerNodeList(self):
+        return "std::vector<size_t>"
+
+    @PYB11const
+    def numInternalNodesPerFluidNodeList(self):
+        return "std::vector<size_t>"
+
+    @PYB11const
+    def numInternalNodesPerSolidNodeList(self):
+        return "std::vector<size_t>"
+
+    @PYB11const
+    def numInternalNodesPerDEMNodeList(self):
+        return "std::vector<size_t>"
+
     #...........................................................................
     # FieldList generation methods
     @PYB11template("DataType")

@@ -28,6 +28,7 @@ using std::cerr;
 using std::endl;
 using std::reference_wrapper;
 using std::string;
+using std::pair;
 
 namespace Spheral {
 
@@ -126,6 +127,7 @@ operator==(const StateBase<Dimension>& rhs) const {
   addCompare<VisitorType, Vector>                                        (EQUAL);
   addCompare<VisitorType, Tensor>                                        (EQUAL);
   addCompare<VisitorType, SymTensor>                                     (EQUAL);
+  addCompare<VisitorType, pair<Scalar, string>>                          (EQUAL);
   addCompare<VisitorType, vector<Scalar>>                                (EQUAL);
   addCompare<VisitorType, vector<Vector>>                                (EQUAL);
   addCompare<VisitorType, vector<Tensor>>                                (EQUAL);
@@ -135,9 +137,11 @@ operator==(const StateBase<Dimension>& rhs) const {
   addCompare<VisitorType, ReproducingKernel<Dimension>>                  (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Vector>>              (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (EQUAL);
+  addCompare<VisitorType, PairwiseField<Dimension, Vector, 4u>>          (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Scalar>>              (EQUAL);
   addCompare<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (EQUAL);
-  addCompare<VisitorType, vector<Boundary<Dimension>*>>                   (EQUAL);
+  addCompare<VisitorType, PairwiseField<Dimension, Scalar, 4u>>          (EQUAL);
+  addCompare<VisitorType, vector<Boundary<Dimension>*>>                  (EQUAL);
   
   // Apply the equality visitor to all the stored State data
   auto lhsitr = mStorage.begin();
@@ -233,10 +237,17 @@ template<typename Dimension>
 bool
 StateBase<Dimension>::
 fieldNameRegistered(const FieldName& name) const {
-  KeyType fieldName, nodeListName;
-  for (auto [key, valptr]: mStorage) {
-    splitFieldKey(key, fieldName, nodeListName);
-    if (fieldName == name) return true;
+  // Field keys have the form <name>|<nodeListName>, so we can jump straight to the neighborhood
+  const auto prefix = name + "|";
+  auto itr = mStorage.lower_bound(prefix);
+  if (itr == mStorage.end()) return false;
+  if (itr->first.compare(0, prefix.size(), prefix) != 0) return false;
+  // Confirm this key actually refers to a Field (as opposed to a non-field entry)
+  for (; itr != mStorage.end(); ++itr) {
+    if (itr->first.compare(0, prefix.size(), prefix) != 0) break;
+    if (itr->second.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
+      return true;
+    }
   }
   return false;
 }
@@ -261,7 +272,7 @@ std::vector<typename StateBase<Dimension>::KeyType>
 StateBase<Dimension>::
 fullFieldKeys() const {
   vector<KeyType> result;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
       result.push_back(key);
     }
@@ -277,7 +288,7 @@ std::vector<typename StateBase<Dimension>::KeyType>
 StateBase<Dimension>::
 miscKeys() const {
   vector<KeyType> result;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() != typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
       result.push_back(key);
     }
@@ -294,9 +305,9 @@ StateBase<Dimension>::
 fieldNames() const {
   vector<FieldName> result;
   KeyType fieldName, nodeListName;
-  for (auto [key, aref]: mStorage) {
+  for (const auto& [key, aref]: mStorage) {
     if (aref.type() == typeid(std::reference_wrapper<FieldBase<Dimension>>)) {
-      auto fref = std::any_cast<std::reference_wrapper<FieldBase<Dimension>>>(aref);
+      auto& fref = std::any_cast<const std::reference_wrapper<FieldBase<Dimension>>&>(aref);
       splitFieldKey(fref.get().name(), fieldName, nodeListName);
       result.push_back(fieldName);
     }
@@ -401,6 +412,7 @@ assign(const StateBase<Dimension>& rhs) {
   addAssign<VisitorType, Vector>                                        (ASSIGN);
   addAssign<VisitorType, Tensor>                                        (ASSIGN);
   addAssign<VisitorType, SymTensor>                                     (ASSIGN);
+  addAssign<VisitorType, pair<Scalar, string>>                          (ASSIGN);
   addAssign<VisitorType, vector<Scalar>>                                (ASSIGN);
   addAssign<VisitorType, vector<Vector>>                                (ASSIGN);
   addAssign<VisitorType, vector<Tensor>>                                (ASSIGN);
@@ -410,9 +422,11 @@ assign(const StateBase<Dimension>& rhs) {
   addAssign<VisitorType, ReproducingKernel<Dimension>>                  (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Vector>>              (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (ASSIGN);
+  addAssign<VisitorType, PairwiseField<Dimension, Vector, 4u>>          (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Scalar>>              (ASSIGN);
   addAssign<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (ASSIGN);
-  addAssign<VisitorType, vector<Boundary<Dimension>*>>                   (ASSIGN);
+  addAssign<VisitorType, PairwiseField<Dimension, Scalar, 4u>>          (ASSIGN);
+  addAssign<VisitorType, vector<Boundary<Dimension>*>>                  (ASSIGN);
 
   // Apply the assignment visitor to all the stored State data
   auto lhsitr = mStorage.begin();
@@ -463,6 +477,7 @@ copyState() {
   addClone<VisitorType, Vector>                                        (CLONE);
   addClone<VisitorType, Tensor>                                        (CLONE);
   addClone<VisitorType, SymTensor>                                     (CLONE);
+  addClone<VisitorType, pair<Scalar, string>>                          (CLONE);
   addClone<VisitorType, vector<Scalar>>                                (CLONE);
   addClone<VisitorType, vector<Vector>>                                (CLONE);
   addClone<VisitorType, vector<Tensor>>                                (CLONE);
@@ -472,9 +487,11 @@ copyState() {
   addClone<VisitorType, ReproducingKernel<Dimension>>                  (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Vector>>              (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Vector, 2u>>          (CLONE);
+  addClone<VisitorType, PairwiseField<Dimension, Vector, 4u>>          (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Scalar>>              (CLONE);
   addClone<VisitorType, PairwiseField<Dimension, Scalar, 2u>>          (CLONE);
-  addClone<VisitorType, vector<Boundary<Dimension>*>>                   (CLONE);
+  addClone<VisitorType, PairwiseField<Dimension, Scalar, 4u>>          (CLONE);
+  addClone<VisitorType, vector<Boundary<Dimension>*>>                  (CLONE);
 
   // Clone all our stored data to cache
   for (auto& [key, anyval]: mStorage) {

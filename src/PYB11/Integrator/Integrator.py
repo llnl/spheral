@@ -6,7 +6,7 @@ from IntegratorAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralIntegrator")
+@PYB11module("SpheralCompiledModules.SpheralIntegrator")
 class Integrator:
     "Base class for all Spheral time integration algorithms"
 
@@ -181,6 +181,7 @@ into compliance."""
     rigorousBoundaries = PYB11property("bool", "rigorousBoundaries", "rigorousBoundaries", doc="Toggle if ghost nodes should be recomputed every derivative estimate")
     updateBoundaryFrequency = PYB11property("int", "updateBoundaryFrequency", "updateBoundaryFrequency", doc="Optionally update the boundary ghost nodes only on this frequency of cycles")
     verbose = PYB11property("bool", "verbose", "verbose", doc="Verbose time step information every step")
+    verboseStep = PYB11property("int", "verboseStep", "verboseStep", doc="Select frequency of verbose time step output")
     allowDtCheck = PYB11property("bool", "allowDtCheck", "allowDtCheck", doc="Should the integrator check interim timestep votes and abort steps?")
     domainDecompositionIndependent = PYB11property("bool", "domainDecompositionIndependent", "domainDecompositionIndependent", doc="Order operations to be bit perfect reproducible regardless of domain decomposition")
     cullGhostNodes = PYB11property("bool", "cullGhostNodes", "cullGhostNodes", doc="Cull ghost nodes to just active set")

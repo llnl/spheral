@@ -52,6 +52,8 @@ def globalFrame():
 #-------------------------------------------------------------------------------
 def title(titleText, lineLength=80):
     fillerText = "-"*((lineLength - len(titleText))//2)
+    from SpheralCompiledPackages import adiak_value
+    adiak_value("test_name", titleText)
     print(fillerText, titleText, fillerText)
 
 #-------------------------------------------------------------------------------
@@ -193,32 +195,32 @@ def allValues(fieldList):
         result.extend(vals)
     return result
 
-#-------------------------------------------------------------------------------
-# Fuzzy comparisons.
-#-------------------------------------------------------------------------------
-def fuzzyEqual(lhs, rhs,
-               fuzz = 1.0e-5):
-    if isinstance(lhs, Iterable):
-        assert isinstance(rhs, Iterable) and len(lhs) == len(rhs)
-        return min([fuzzyEqual(x, y, fuzz) for (x, y) in zip(lhs, rhs)])
-    else:
-        return abs(lhs - rhs)/max(1.0, abs(lhs) + abs(rhs)) < fuzz;
+# #-------------------------------------------------------------------------------
+# # Fuzzy comparisons.
+# #-------------------------------------------------------------------------------
+# def fuzzyEqual(lhs, rhs,
+#                fuzz = 1.0e-5):
+#     if isinstance(lhs, Iterable):
+#         assert isinstance(rhs, Iterable) and len(lhs) == len(rhs)
+#         return min([fuzzyEqual(x, y, fuzz) for (x, y) in zip(lhs, rhs)])
+#     else:
+#         return abs(lhs - rhs)/max(1.0, abs(lhs) + abs(rhs)) < fuzz;
 
-def fuzzyLessThanOrEqual(lhs, rhs,
-                         fuzz = 1.0e-5):
-    return lhs < rhs or fuzzyEqual(lhs, rhs, fuzz);
+# def fuzzyLessThanOrEqual(lhs, rhs,
+#                          fuzz = 1.0e-5):
+#     return lhs < rhs or fuzzyEqual(lhs, rhs, fuzz);
 
-def fuzzyGreaterThanOrEqual(lhs, rhs,
-                            fuzz = 1.0e-5):
-    return lhs > rhs or fuzzyEqual(lhs, rhs, fuzz)
+# def fuzzyGreaterThanOrEqual(lhs, rhs,
+#                             fuzz = 1.0e-5):
+#     return lhs > rhs or fuzzyEqual(lhs, rhs, fuzz)
 
-def distinctlyLessThan(lhs, rhs,
-                       fuzz = 1.0e-5):
-    return lhs < rhs and not fuzzyEqual(lhs, rhs, fuzz)
+# def distinctlyLessThan(lhs, rhs,
+#                        fuzz = 1.0e-5):
+#     return lhs < rhs and not fuzzyEqual(lhs, rhs, fuzz)
 
-def distinctlyGreaterThan(lhs, rhs,
-                          fuzz = 1.0e-5):
-    return lhs > rhs and not fuzzyEqual(lhs, rhs, fuzz)
+# def distinctlyGreaterThan(lhs, rhs,
+#                           fuzz = 1.0e-5):
+#     return lhs > rhs and not fuzzyEqual(lhs, rhs, fuzz)
 
 #-------------------------------------------------------------------------------
 # sign functions.
