@@ -10,7 +10,6 @@ namespace Spheral {
                                       const Dim< %(ndim)s >::FacetedVolume& boundary,
                                       const std::vector<Boundary<Dim< %(ndim)s > >*>& boundaries,
                                       const TableKernel<Dim< %(ndim)s > >& W,
-                                      const SmoothingScaleBase<Dim< %(ndim)s > >& smoothingScaleMethod,
                                       const WeightingFunctor<Dim< %(ndim)s > >& weightingFunctor,
                                       const WeightingFunctor<Dim< %(ndim)s > >& massDensityFunctor,
                                       const double targetMass,

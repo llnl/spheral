@@ -9,14 +9,12 @@ namespace Spheral {
 template<typename Dimension>
 void
 storeFieldValues(const NodeList<Dimension>& nodeList,
-                 const std::vector<int>& nodeIDs,
+                 const std::vector<size_t>& nodeIDs,
                  std::map<std::string, std::vector<char>>& values) {
   // std::cerr << "storeFieldValues starting size: " << values.size() << std::endl;
-  for (auto fieldItr = nodeList.registeredFieldsBegin();
-       fieldItr != nodeList.registeredFieldsEnd();
-       ++fieldItr) {
-    const auto buffer = (**fieldItr).packValues(nodeIDs);
-    const auto key = StateBase<Dimension>::key(**fieldItr);
+  for (auto fref: nodeList.registeredFields()) {
+    const auto buffer = fref.get().packValues(nodeIDs);
+    const auto key = StateBase<Dimension>::key(fref.get());
     // std::cerr << "Storing key " << key << std::endl;
     // if (values.find(key) != values.end()) std::cerr << "ConstantBoundaryUtilities::storeFieldValues collision for key " << key << std::endl;
     values[key] = buffer;
@@ -30,7 +28,7 @@ storeFieldValues(const NodeList<Dimension>& nodeList,
 template<typename Dimension>
 void
 resetValues(FieldBase<Dimension>& field,
-            const std::vector<int>& nodeIDs,
+            const std::vector<size_t>& nodeIDs,
             const std::map<std::string, std::vector<char>>& values,
             const bool dieOnMissingField) {
   // Find this Field in the set of stored values.
@@ -52,12 +50,10 @@ resetValues(FieldBase<Dimension>& field,
 template<typename Dimension>
 void
 copyFieldValues(const NodeList<Dimension>& nodeList,
-                const std::vector<int>& fromIDs,
-                const std::vector<int>& toIDs) {
-  for (auto fieldItr = nodeList.registeredFieldsBegin();
-       fieldItr != nodeList.registeredFieldsEnd();
-       ++fieldItr) {
-    (**fieldItr).copyElements(fromIDs, toIDs);
+                const std::vector<size_t>& fromIDs,
+                const std::vector<size_t>& toIDs) {
+  for (auto fref: nodeList.registeredFields()) {
+    fref.get().copyElements(fromIDs, toIDs);
   }
 }
 

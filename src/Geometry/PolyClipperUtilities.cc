@@ -19,7 +19,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 void convertToPolyClipper(PolyClipperPolygon& polygon,
                           const Dim<2>::FacetedVolume& Spheral_polygon) {
-  TIME_BEGIN("PC2d_convertto");
+  ADV_TIME_BEGIN("PC2d_convertto");
 
   // Construct the vertices without connectivity first.
   const auto& coords = Spheral_polygon.vertices();
@@ -40,7 +40,7 @@ void convertToPolyClipper(PolyClipperPolygon& polygon,
   }
 
   CHECK(polygon.size() == nverts0);
-  TIME_END("PC2d_convertto");
+  ADV_TIME_END("PC2d_convertto");
 }
 
 //------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ void convertToPolyClipper(PolyClipperPolygon& polygon,
 //------------------------------------------------------------------------------
 vector<set<int>> convertFromPolyClipper(Dim<2>::FacetedVolume& Spheral_polygon,
                                         const PolyClipperPolygon& polygon) {
-  TIME_BEGIN("PC2d_convertfrom");
+  ADV_TIME_BEGIN("PC2d_convertfrom");
 
   // Useful types.
   using FacetedVolume = Spheral::Dim<2>::FacetedVolume;
@@ -107,7 +107,7 @@ vector<set<int>> convertFromPolyClipper(Dim<2>::FacetedVolume& Spheral_polygon,
 
   // Return the set of planes responsible for each vertex.
   ENSURE(vertexPlanes.size() == Spheral_polygon.vertices().size());
-  TIME_END("PC2d_convertfrom");
+  ADV_TIME_END("PC2d_convertfrom");
   return vertexPlanes;
 }
 
@@ -116,7 +116,7 @@ vector<set<int>> convertFromPolyClipper(Dim<2>::FacetedVolume& Spheral_polygon,
 //------------------------------------------------------------------------------
 void convertToPolyClipper(PolyClipperPolyhedron& polyhedron,
                           const Dim<3>::FacetedVolume& Spheral_polyhedron) {
-  TIME_BEGIN("PC3d_convertto");
+  ADV_TIME_BEGIN("PC3d_convertto");
 
   const auto& vertPositions = Spheral_polyhedron.vertices();
   const auto& facets = Spheral_polyhedron.facets();
@@ -163,7 +163,7 @@ void convertToPolyClipper(PolyClipperPolyhedron& polyhedron,
   }
 
   CHECK(polyhedron.size() == nverts);
-  TIME_END("PC3d_convertto");
+  ADV_TIME_END("PC3d_convertto");
 }
 
 //------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ void convertToPolyClipper(PolyClipperPolyhedron& polyhedron,
 //------------------------------------------------------------------------------
 vector<set<int>> convertFromPolyClipper(Dim<3>::FacetedVolume& Spheral_polyhedron,
                                         const PolyClipperPolyhedron& polyhedron) {
-  TIME_BEGIN("PC3d_convertfrom");
+  ADV_TIME_BEGIN("PC3d_convertfrom");
 
   // Useful types.
   using FacetedVolume = Spheral::Dim<3>::FacetedVolume;
@@ -218,7 +218,7 @@ vector<set<int>> convertFromPolyClipper(Dim<3>::FacetedVolume& Spheral_polyhedro
 
   // Return the set of planes responsible for each vertex.
   ENSURE(vertexPlanes.size() == Spheral_polyhedron.vertices().size());
-  TIME_END("PC3d_convertfrom");
+  ADV_TIME_END("PC3d_convertfrom");
 
   return vertexPlanes;
 }

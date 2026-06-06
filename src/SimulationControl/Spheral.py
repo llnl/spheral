@@ -3,20 +3,20 @@
 
 # Modified version to be compatible with the pybindgen version of Spheral++.
 
-from SpheralUtilities import BuildData
-
-if not BuildData.cxx_compiler_id == "GNU":
-    try:
-        import sys, ctypes
-        sys.setdlopenflags(sys.getdlopenflags() | ctypes.RTLD_GLOBAL)
-    except:
-        print("WARNING: unable to set python dl flags on Spheral import.")
-        pass
-
 # ------------------------------------------------------------------------------
 # Load up MPI.
 # ------------------------------------------------------------------------------
 import mpi
+
+import SpheralConfigs
+from SpheralCompiledModules.SpheralUtilities import BuildData
+if not BuildData.cxx_compiler_id == "GNU":
+    try:
+        import sys, os
+        sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_NOW | os.RTLD_GLOBAL)
+    except:
+        print("WARNING: unable to set python dl flags on Spheral import.")
+        pass
 
 # ------------------------------------------------------------------------------
 # Import a scipy module to initialize scipy's shared qhull library before
@@ -28,6 +28,11 @@ import scipy.spatial
 # Import the compiled packages.
 # ------------------------------------------------------------------------------
 from SpheralCompiledPackages import *
+
+# ------------------------------------------------------------------------------
+# Run initGPUs() to increase the device stack size.
+# ------------------------------------------------------------------------------
+initGPUs()
 
 # Aliases for a few objects
 FacetedVolume1d = Box1d
@@ -49,18 +54,11 @@ from VoidNodeLists import *
 from DEMNodeLists import *
 
 # ------------------------------------------------------------------------------
-# Import SPH, SVPH, and CRKSPH
+# Import hydro configurations
 # ------------------------------------------------------------------------------
-from SPHHydros import *
-from PSPHHydros import *
-from GSPHHydros import *
-from FSISPHHydros import *
-from SlideSurfaces import *
-#from SVPHHydros import *
-from CRKSPHHydros import *
-#from TaylorSPHHydros import *
-from DEM import *
-from SPHUtilities import *
+hydroImports = SpheralConfigs.hydro_imports()
+for x in hydroImports:
+    exec(f"from {x} import *")
 
 # ------------------------------------------------------------------------------
 # Import the SolidMaterial python extensions.
@@ -132,10 +130,12 @@ for shadowedthing in ("TillotsonEquationOfState",
     for dim in dims:
         exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
 
-# ------------------------------------------------------------------------------
-# Prepare for timing
-# ------------------------------------------------------------------------------
-# EasyProfilerStart()
+#-------------------------------------------------------------------------------
+# Set up Axom
+#-------------------------------------------------------------------------------
+import atexit
+initializeAxom()
+atexit.register(finalizeAxom)
 
 # ------------------------------------------------------------------------------
 # Output some useful Spheral configuration info to stdout
@@ -147,6 +147,12 @@ print("|  %-76s|" % ("  number of threads per rank: " + str(omp_get_num_threads(
 print("\\------------------------------------------------------------------------------/")
 
 # ------------------------------------------------------------------------------
-# Set the prompt just to clear to folks they now have Spheral
+# Set the prompt just to clear to folks they now have Spheral.
+# To maintain sanity by default only have one process print the prompt...
 # ------------------------------------------------------------------------------
-sys.ps1 = "Spheral> "
+if mpi.rank == 0:
+    sys.ps1 = "Spheral> "
+else:
+    sys.ps1 = ""
+
+    

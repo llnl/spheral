@@ -4,6 +4,9 @@
 // 
 // Based on the routines in Numerical Recipes in C, pp 220-221.
 //------------------------------------------------------------------------------
+#ifndef __Spheral_erff__
+#define __Spheral_erff__
+
 #include <cmath>
 
 namespace Spheral {
@@ -40,3 +43,5 @@ erff(double x) {
 }
 
 }
+
+#endif

@@ -10,6 +10,14 @@
 
 #include <vector>
 
+// Forward declarations
+namespace axom {
+  namespace sidre {
+    class DataStore;
+    class Group;
+  }
+}
+
 namespace Spheral
 {
 

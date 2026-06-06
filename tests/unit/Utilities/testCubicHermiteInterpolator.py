@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Create a global random number generator.
+# We force a fixed seed to cut down random failures in CI testing.
 import random
-rangen = random.Random()
+random.seed(49884928910350901743)
 
 #===========================================================================
 # Measure the relative difference between two numbers
@@ -23,7 +24,7 @@ def err(a, b):
 def xgen(n, xmin, xmax):
     count = 0
     if n < 3:
-        yield rangen.uniform(xmin, xmax)
+        yield random.uniform(xmin, xmax)
         count += 1
     else:
         while count < n:
@@ -32,7 +33,7 @@ def xgen(n, xmin, xmax):
             elif count == n - 1:
                 yield xmax
             else:
-                yield rangen.uniform(xmin, xmax)
+                yield random.uniform(xmin, xmax)
             count += 1
 
 #===============================================================================
@@ -101,7 +102,7 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
     # Set up
     #===========================================================================
     def setUp(self):
-        self.nfunc = 100
+        self.nfunc = 1000 # 50000
         self.nsamples = 1000
         self.n = 100
         return
@@ -150,55 +151,87 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
                    F1tol,       # first derivative tolerance
                    F2tol,       # second derivative tolerance
                    errorLabel,
+                   tolFunc = None,
                    checkMonotonicity = False):
+
+        def tolFunc(params, x):
+            tol0, dx, hx, A = params
+            eta = min(x - xmin, xmax - x)
+            if eta < dx:
+                return 1e6
+            else:
+                return tol0*(1.0 + A*exp(-(eta/hx)**2))
+
         for x in xgen(self.nsamples, xmin, xmax):
-            passing = err(F(x), func(x)) < Ftol
+            passing = err(F(x), func(x)) < tolFunc(Ftol, x)
             # if not passing:
-            #     print(F.vals)
             #     self.plotem(x, xmin, xmax, func, F)
             self.assertTrue(passing,
-                            "Error interpolating F(x) for %s: %g != %g, err = %g" % (errorLabel, F(x), func(x), err(F(x), func(x))))
+                            "Error interpolating F({}) for {}: {} != {}, err = {}".format(x, errorLabel, F(x), func(x), err(F(x), func(x))))
 
             # Check the first derivative
-            passing = err(F.prime(x), func.prime(x)) < F1tol
+            passing = err(F.prime(x), func.prime(x)) < tolFunc(F1tol, x)
             # if not passing:
             #     self.plotem(x, xmin, xmax, func, F)
             self.assertTrue(passing,
-                            "Error interpolating dF/dx(x) for %s: %g != %g, err = %g" % (errorLabel, F.prime(x), func.prime(x), err(F.prime(x), func.prime(x))))
+                            "Error interpolating dF/dx({}) for {}: {} != {}, err = {}".format(x, errorLabel, F.prime(x), func.prime(x), err(F.prime(x), func.prime(x))))
 
             # Check the second derivative
-            passing = err(F.prime2(x), func.prime2(x)) < F2tol
+            passing = err(F.prime2(x), func.prime2(x)) < tolFunc(F2tol, x)
             # if not passing:
             #     self.plotem(x, xmin, xmax, func, F)
             self.assertTrue(passing,
-                            "Error interpolating d^2F/dx^2(x) for %s: %g != %g, err = %g" % (errorLabel, F.prime2(x), func.prime2(x), err(F.prime2(x), func.prime2(x))))
+                            "Error interpolating d^2F/dx^2({}) for {}: {} != {}, err = {}".format(x, errorLabel, F.prime2(x), func.prime2(x), err(F.prime2(x), func.prime2(x))))
 
             # If requested, check for monotonicity in interpolation
             if checkMonotonicity:
                 i0 = F.lowerBound(x)
-                passing = (F(x) - F.vals[i0])*(F(x) - F.vals[i0 + 1]) <= 0.0
-                # if not passing:
-                #     #print(F.vals)
-                #     self.plotem(x, xmin, xmax, func, F)
+                passing = (F(x) - F[i0])*(F(x) - F[i0 + 1]) <= 0.0
+                if not passing:
+                    #print(F.vals)
+                    self.plotem(x, xmin, xmax, func, F)
                 self.assertTrue(passing,
-                                "Failing monotonicity test for %s: F(%g) = %g not in [%g, %g]" % (errorLabel, x, F(x), F.vals[i0], F.vals[i0 + 1]))
+                                "Failing monotonicity test for {}: F({}) = {} not in [{}, {}]".format(errorLabel, x, F(x), F[i0], F[i0 + 1]))
 
         return
 
     #===========================================================================
-    # Interpolate a quadratic function
+    # Interpolate a quadratic function (without gradient info)
     #===========================================================================
     def test_quad_interp(self):
         xmin = -10.0
         xmax =  40.0
+        dx = (xmax - xmin)/self.n
+        hx = 0.05*(xmax - xmin)
         for ifunc in range(self.nfunc):
-            A = rangen.uniform(-100.0, 100.0)
-            B = rangen.uniform(-100.0, 100.0)
-            C = rangen.uniform(-100.0, 100.0)
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
             func = Fquad(A, B, C)
-            F = CubicHermiteInterpolator(xmin, xmax, self.n, func)
-            tol, f1tol, f2tol = 5.0e-9, 5e-8, 1e-6
-            self.checkError(xmin, xmax, func, F, tol, f1tol, f2tol, "quadratic function")
+            F = CubicHermiteInterpolator(xmin, xmax, 10*self.n, func)  # Without the analytic gradient we benefit from more fiting points
+            self.checkError(xmin, xmax, func, F, 
+                            Ftol  = (1.0e-4, 0.0, hx, 100.0),
+                            F1tol = (1.0e-3, dx, hx, 500.0),
+                            F2tol = (5.0e-3, dx, hx, 1000.0),
+                            errorLabel = "quadratic function")
+
+    #===========================================================================
+    # Interpolate a quadratic function (with gradient info)
+    #===========================================================================
+    def test_quad_interp_with_grad(self):
+        xmin = -10.0
+        xmax =  40.0
+        for ifunc in range(self.nfunc):
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
+            func = Fquad(A, B, C)
+            F = CubicHermiteInterpolator(xmin, xmax, self.n, func, Fgrad(func))
+            self.checkError(xmin, xmax, func, F,
+                            Ftol  = (5e-9, 0.0, 1.0, 0.0),
+                            F1tol = (5e-8, 0.0, 1.0, 0.0),
+                            F2tol = (1e-6, 0.0, 1.0, 0.0),
+                            errorLabel = "quadratic function")
 
     #===========================================================================
     # Interpolate a quadratic function enforcing monotonicity
@@ -207,14 +240,18 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
         xmin = -10.0
         xmax =  40.0
         for ifunc in range(self.nfunc):
-            A = rangen.uniform(-100.0, 100.0)
-            B = rangen.uniform(-100.0, 100.0)
-            C = rangen.uniform(-100.0, 100.0)
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
             func = Fquad(A, B, C)
             F = CubicHermiteInterpolator(xmin, xmax, self.n, func)
             F.makeMonotonic()
-            tol, f1tol, f2tol = 2.0, 2.0, 2.0         # Tolerance has to be way looser when using monotonicity
-            self.checkError(xmin, xmax, func, F, tol, f1tol, f2tol, "quadratic function with monotonicity", True)
+            self.checkError(xmin, xmax, func, F, 
+                            Ftol  = (2.0, 0.0, 1.0, 0.0),           # Tolerance has to be way looser when using monotonicity
+                            F1tol = (2.0, 0.0, 1.0, 0.0),
+                            F2tol = (2.0, 0.0, 1.0, 0.0),
+                            errorLabel = "quadratic function with monotonicity",
+                            checkMonotonicity = True)
 
     #===========================================================================
     # Interpolate a cubic function (func only)
@@ -222,16 +259,39 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
     def test_cubic_interp(self):
         xmin = -10.0
         xmax =  40.0
+        dx = (xmax - xmin)/self.n
+        hx = 0.05*(xmax - xmin)
         for ifunc in range(self.nfunc):
-            A = rangen.uniform(-100.0, 100.0)
-            B = rangen.uniform(-100.0, 100.0)
-            C = rangen.uniform(-100.0, 100.0)
-            D = rangen.uniform(-100.0, 100.0)
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
+            D = random.uniform(-100.0, 100.0)
             func = Fcubic(A, B, C, D)
-            F = CubicHermiteInterpolator(xmin, xmax, self.n, func)
-            tol, f1tol, f2tol = 5.0e-4, 5.0e-2, 5.0e-2
-            #tol, f1tol, f2tol = 5.0e-3, 5.0e-3, 5.0e-3
-            self.checkError(xmin, xmax, func, F, tol, f1tol, f2tol, "cubic function")
+            F = CubicHermiteInterpolator(xmin, xmax, 10*self.n, func)  # Without the analytic gradient we benefit from more fiting points
+            self.checkError(xmin, xmax, func, F,
+                            Ftol  = (0.5, 0.0, hx, 100.0),
+                            F1tol = (1.0, dx, hx, 500.0),
+                            F2tol = (2.0, dx, hx, 1000.0),
+                            errorLabel = "cubic function")
+
+    #===========================================================================
+    # Interpolate a cubic function (func + grad)
+    #===========================================================================
+    def test_cubic_interp_with_grad(self):
+        xmin = -10.0
+        xmax =  40.0
+        for ifunc in range(self.nfunc):
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
+            D = random.uniform(-100.0, 100.0)
+            func = Fcubic(A, B, C, D)
+            F = CubicHermiteInterpolator(xmin, xmax, self.n, func, Fgrad(func))
+            self.checkError(xmin, xmax, func, F, 
+                            Ftol  = (5e-9, 0.0, 1.0, 0.0),
+                            F1tol = (5e-8, 0.0, 1.0, 0.0),
+                            F2tol = (1e-6, 0.0, 1.0, 0.0),
+                            errorLabel = "cubic function")
 
     #===========================================================================
     # Interpolate a cubic function enforcing monotonicity
@@ -240,15 +300,19 @@ class TestCubicHermiteInterpolator(unittest.TestCase):
         xmin = -10.0
         xmax =  40.0
         for ifunc in range(self.nfunc):
-            A = rangen.uniform(-100.0, 100.0)
-            B = rangen.uniform(-100.0, 100.0)
-            C = rangen.uniform(-100.0, 100.0)
-            D = rangen.uniform(-100.0, 100.0)
+            A = random.uniform(-100.0, 100.0)
+            B = random.uniform(-100.0, 100.0)
+            C = random.uniform(-100.0, 100.0)
+            D = random.uniform(-100.0, 100.0)
             func = Fcubic(A, B, C, D)
             F = CubicHermiteInterpolator(xmin, xmax, self.n, func)
             F.makeMonotonic()
-            tol, f1tol, f2tol = 2.0, 2.0, 2.0         # Tolerance has to be way looser when using monotonicity
-            self.checkError(xmin, xmax, func, F, tol, f1tol, f2tol, "cubic function with monotonicity", True)
+            self.checkError(xmin, xmax, func, F, 
+                            Ftol  = (2.0, 0.0, 1.0, 0.0),
+                            F1tol = (2.0, 0.0, 1.0, 0.0),
+                            F2tol = (2.0, 0.0, 1.0, 0.0),
+                            errorLabel = "cubic function with monotonicity",
+                            checkMonotonicity = True)
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,25 +9,34 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
-from SPHHydroBase import *
-from PSPHHydroBase import *
-from SolidSPHHydroBase import *
-from SolidSphericalSPHHydroBase import *
+from SPHBase import *
+from SPH import *
+from PSPH import *
+from SolidSPH import *
+from SolidSphericalSPH import *
+from SPH_RAJA import *
+from SolidSPH_RAJA import *
 
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
-PYB11includes += ['"SPH/SPHHydroBase.hh"',
-                  '"SPH/PSPHHydroBase.hh"',
+PYB11includes += ['"SPH/SPHBase.hh"',
+                  '"SPH/SPH.hh"',
+                  '"SPH/PSPH.hh"',
                   '"SPH/computeSPHSumMassDensity.hh"',
                   '"SPH/computeSPHOmegaGradhCorrection.hh"',
-                  '"SPH/SPHHydroBaseRZ.hh"',
-                  '"SPH/SphericalSPHHydroBase.hh"',
-                  '"SPH/SolidSPHHydroBase.hh"',
-                  '"SPH/SolidSPHHydroBaseRZ.hh"',
-                  '"SPH/SolidSphericalSPHHydroBase.hh"',
+                  '"SPH/SPHRZ.hh"',
+                  '"SPH/SphericalSPH.hh"',
+                  '"SPH/SolidSPH.hh"',
+                  '"SPH/SolidSPHRZ.hh"',
+                  '"SPH/SolidSphericalSPH.hh"',
+                  '"SPH/SPH_RAJA.hh"',
+                  '"SPH/SolidSPH_RAJA.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"',
-                  '"ArtificialViscosity/ArtificialViscosity.hh"']
+                  '"ArtificialViscosity/ArtificialViscosity.hh"',
+                  '"Neighbor/PairwiseField.hh"']
 
 #-------------------------------------------------------------------------------
 # Namespaces
@@ -61,20 +70,24 @@ def computeSPHOmegaGradhCorrection(connectivityMap = "const ConnectivityMap<%(Di
 # Instantiate our types
 #-------------------------------------------------------------------------------
 for ndim in dims:
-    exec('''
-SPHHydroBase%(ndim)id = PYB11TemplateClass(SPHHydroBase, template_parameters="%(Dimension)s")
-PSPHHydroBase%(ndim)id = PYB11TemplateClass(PSPHHydroBase, template_parameters="%(Dimension)s")
-SolidSPHHydroBase%(ndim)id = PYB11TemplateClass(SolidSPHHydroBase, template_parameters="%(Dimension)s")
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+SPHBase{ndim}d = PYB11TemplateClass(SPHBase, template_parameters="{Dimension}")
+SPH{ndim}d = PYB11TemplateClass(SPH, template_parameters="{Dimension}")
+PSPH{ndim}d = PYB11TemplateClass(PSPH, template_parameters="{Dimension}")
+SolidSPH{ndim}d = PYB11TemplateClass(SolidSPH, template_parameters="{Dimension}")
 
-computeSPHSumMassDensity%(ndim)id = PYB11TemplateFunction(computeSPHSumMassDensity, template_parameters=("%(Dimension)s", "TableKernel<%(Dimension)s>"))
-computeSPHOmegaGradhCorrection%(ndim)id = PYB11TemplateFunction(computeSPHOmegaGradhCorrection, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+SPH_RAJA{ndim}d = PYB11TemplateClass(SPH_RAJA, template_parameters="{Dimension}")
+SolidSPH_RAJA{ndim}d = PYB11TemplateClass(SolidSPH_RAJA, template_parameters="{Dimension}")
+
+computeSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeSPHSumMassDensity, template_parameters=("{Dimension}", "TableKernel<{Dimension}>"))
+computeSPHOmegaGradhCorrection{ndim}d = PYB11TemplateFunction(computeSPHOmegaGradhCorrection, template_parameters="{Dimension}")
+''')
 
 if 1 in dims:
-    from SphericalSPHHydroBase import *
+    from SphericalSPH import *
     computeSPHSumMassDensity1d_spherical = PYB11TemplateFunction(computeSPHSumMassDensity, template_parameters=("Dim<1>", "SphericalKernel"), pyname="computeSPHSumMassDensity1d")
 
 if 2 in dims:
-    from SPHHydroBaseRZ import *
-    from SolidSPHHydroBaseRZ import *
+    from SPHRZ import *
+    from SolidSPHRZ import *

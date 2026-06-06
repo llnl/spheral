@@ -1,6 +1,9 @@
 #include "libs.hh"
 #include "classes.hh"
 #include "headers.hh"
+
+#include <random>
+
 namespace FractalSpace
 {
   typedef deque<double>::iterator _ITD__;
@@ -12,11 +15,11 @@ namespace FractalSpace
     // ofstream& FHT{PFM->p_file->DUMPS};
     const int FractalRank=PFM->p_mess->FractalRank;
     int seed=9973+256*FractalRank;
-    boost::random::mt19937 genRAN(seed);
-    boost::random::uniform_real_distribution<double> distRAD(1.0e-10,1.0);
-    boost::random::uniform_real_distribution<double> distTHETA(-0.99999999,0.99999999);
-    boost::random::uniform_real_distribution<double> distPHI(0.0,8.0*atan(1.0));
-    boost::random::normal_distribution<double> distNORM(0.0,1.0);
+    std::mt19937 genRAN(seed);
+    std::uniform_real_distribution<double> distRAD(1.0e-10,1.0);
+    std::uniform_real_distribution<double> distTHETA(-0.99999999,0.99999999);
+    std::uniform_real_distribution<double> distPHI(0.0,8.0*atan(1.0));
+    std::normal_distribution<double> distNORM(0.0,1.0);
     const double rmax=30.0;
     const double x_off=-10.0;
     const double y_off=0.0;

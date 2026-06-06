@@ -50,7 +50,7 @@ update(const KeyType& key,
   // Find all the available matching derivative FieldList keys.
   const auto incrementKey = prefix() + fieldKey;
   // cerr << "IncrementPairFieldList: [" << fieldKey << "] [" << incrementKey << "] : " << endl;
-  const auto allkeys = derivs.fieldKeys();
+  const auto allkeys = derivs.fullFieldKeys();
   vector<string> incrementKeys;
   for (const auto& key: allkeys) {
     // if (std::regex_search(key, std::regex("^" + incrementKey))) {

@@ -14,16 +14,17 @@ class InflowOutflowBoundary(Boundary, Physics):
 as they cross the specified boundary plane."""
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef typename %(Dimension)s::FourthRankTensor FourthRankTensor;
-    typedef typename %(Dimension)s::FifthRankTensor FifthRankTensor;
-    typedef typename %(Dimension)s::FacetedVolume FacetedVolume;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
-    typedef GeomPlane<%(Dimension)s> Plane;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using FourthRankTensor = typename %(Dimension)s::FourthRankTensor;
+    using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
+    using FacetedVolume = typename %(Dimension)s::FacetedVolume;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using Plane = GeomPlane<%(Dimension)s>;
 """
 
     #...........................................................................
@@ -45,9 +46,9 @@ as they cross the specified boundary plane."""
 
     @PYB11virtual
     def cullGhostNodes(self,
-                       flagSet = "const FieldList<%(Dimension)s, int>&",
-                       old2newIndexMap = "FieldList<%(Dimension)s, int>&",
-                       numNodesRemoved = "std::vector<int>&"):
+                       flagSet = "const FieldList<%(Dimension)s, size_t>&",
+                       old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
+                       numNodesRemoved = "std::vector<size_t>&"):
         return "void"
 
     @PYB11virtual
@@ -71,7 +72,7 @@ Really we should rename this post-step finalize."""
     def numInflowNodes(self,
                        nodeList = "const NodeList<%(Dimension)s>&"):
         "Number of nodes in inflow stencil for the given NodeList"
-        return "int"
+        return "size_t"
 
     def clearStoredValues(self):
         "Clear out the stored values and ghost nodes"

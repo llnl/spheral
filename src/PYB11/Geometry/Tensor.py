@@ -7,11 +7,11 @@ from PYB11Generator import *
 class Tensor:
     "Spheral geometric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
-    # Static attributes
-    nDimensions = PYB11readonly(static=True, doc="Number of dimensions", returnpolicy="copy")
-    numElements = PYB11readonly(static=True, doc="Number of elements stored in the type", returnpolicy="copy")
-    zero = PYB11readonly(static=True, doc="The zero value equivalent", returnpolicy="copy")
-    one = PYB11readonly(static=True, doc="The unit value equivalent", returnpolicy="copy")
+    # constexpr attributes
+    nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
+    numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
+    zero = PYB11property(constexpr=True, static=True, doc="The zero value equivalent")
+    one = PYB11property(constexpr=True, static=True, doc="The one value equivalent")
 
     # Constructors
     def pyinit0(self):
@@ -41,15 +41,15 @@ class Tensor:
         "Construct with element values."
 
     # Sequence methods
-    @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements; }")
+    @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements(); }")
     def __len__(self):
         "The size (number of elements) of the Tensor."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::Tensor &s, size_t i) -> double { if (i >= Dim<%(ndim)s>::Tensor::numElements) throw py::index_error(); return s[i]; }") 
+    @PYB11implementation("[](const Dim<%(ndim)s>::Tensor &s, size_t i) -> double { if (i >= Dim<%(ndim)s>::Tensor::numElements()) throw py::index_error(); return s[i]; }") 
     def __getitem__(self):
         "Python indexing to get an element."
 
-    @PYB11implementation("[](Dim<%(ndim)s>::Tensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::Tensor::numElements) throw py::index_error(); s[i] = v; }") 
+    @PYB11implementation("[](Dim<%(ndim)s>::Tensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::Tensor::numElements()) throw py::index_error(); s[i] = v; }") 
     def __setitem__(self):
         "Python indexing to set an element."
 

@@ -145,8 +145,7 @@ commandLine(nx1 = 100,
             redistributeStep = 100,
             checkRestart = False,
             dataDir = "dumps-KelvinHelmholtz-2d",
-            outputFile = "None",
-            comparisonFile = "None",
+
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             
             )
@@ -488,7 +487,7 @@ packages = [hydro]
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity and useArtificialViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 
 #-------------------------------------------------------------------------------

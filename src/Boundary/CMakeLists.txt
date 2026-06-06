@@ -20,19 +20,19 @@ set(Boundary_sources
   FacetedVolumeBoundary.cc
   )
 
-if(ENABLE_1D)
+if(SPHERAL_ENABLE_1D)
   list(APPEND Boundary_sources
        SphericalOriginBoundary.cc
        )
 endif()
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND Boundary_sources
        AxisBoundaryRZ.cc
        )
 endif()
 
-if(ENABLE_3D)
+if(SPHERAL_ENABLE_3D)
   list(APPEND Boundary_sources
       CylindricalBoundary.cc  
       SphericalBoundary.cc
@@ -77,8 +77,6 @@ set(Boundary_headers
     findNodesTouchingThroughPlanes.hh
     mapPositionThroughPlanes.hh
     )
-
-spheral_install_python_files(ExpandingDomain.py)
 
 spheral_add_obj_library(Boundary SPHERAL_OBJ_LIBS)
 

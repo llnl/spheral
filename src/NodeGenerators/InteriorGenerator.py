@@ -9,7 +9,6 @@ from NodeGeneratorBase import *
 from Spheral import Vector2d, Tensor2d, SymTensor2d
 
 import random
-rangen = random.Random()
 
 #-------------------------------------------------------------------------------
 # 2D
@@ -35,8 +34,8 @@ class InteriorGenerator2d(NodeGeneratorBase):
         self.x, self.y = [], []
         for iy in range(ny):
             for ix in range(nx):
-                posi = Vector2d(xmin.x + (ix + 0.5 + jitter*rangen.uniform(0,1))*dx,
-                                xmin.y + (iy + 0.5 + jitter*rangen.uniform(0,1))*dx)
+                posi = Vector2d(xmin.x + (ix + 0.5 + jitter*random.uniform(0,1))*dx,
+                                xmin.y + (iy + 0.5 + jitter*random.uniform(0,1))*dx)
                 if boundary.contains(posi):
                     self.x.append(posi.x)
                     self.y.append(posi.y)

@@ -175,7 +175,7 @@ for nodes in [nodes1, nodes2]:
 import Gnuplot
 xans = array([0.0]*(n1 + n2))
 i = 0
-for nodeList in db.nodeLists():
+for nodeList in db.nodeLists:
     for r in nodeList.positions[:nodeList.numInternalNodes]:
         xans[i] = r.x
         i = i + 1

@@ -1,5 +1,3 @@
-set(${lib_name}_libs libhdf5.so libhdf5_hl.so)
+set(${lib_name}_libs libhdf5 libhdf5_hl)
 
-if(ENABLE_STATIC_TPL)
-  string(REPLACE ".so" ".a;" ${lib_name}_libs ${${lib_name}_libs})
-endif()
+Spheral_Handle_Ext(${lib_name})

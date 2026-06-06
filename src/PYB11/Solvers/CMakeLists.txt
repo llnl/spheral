@@ -1,0 +1,1 @@
+spheral_add_pybind11_library(Solvers SPHERAL_MODULE_LIST)

@@ -99,8 +99,8 @@ setMasterNeighborGroup(const typename Dimension::Vector& position,
                        const bool ghostConnectivity) {
 
   typedef typename Dimension::Vector Vector;
-  Vector minMasterPosition(FLT_MAX);
-  Vector maxMasterPosition(-FLT_MAX);
+  Vector minMasterPosition = Vector::one() * FLT_MAX;
+  Vector maxMasterPosition = Vector::one() * -FLT_MAX;
   Vector minMasterExtent, maxMasterExtent;
 
   // Make sure the return values are sized appropriately.

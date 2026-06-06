@@ -26,8 +26,7 @@ namespace Spheral {
 template<typename Dimension>
 JohnsonCookDamagePolicy<Dimension>::
 JohnsonCookDamagePolicy():
-  UpdatePolicyBase<Dimension>({SolidFieldNames::flaws,
-                               SolidFieldNames::plasticStrain}) {
+  UpdatePolicyBase<Dimension>() {
 }
 
 //------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   // Get the state fields.
   const auto flawsKey = State<Dimension>::buildFieldKey(SolidFieldNames::flaws, nodeListKey);
@@ -72,7 +71,7 @@ update(const KeyType& key,
     // Update the damage.  We take advantage of the fact this is a scalar update here.
     auto Di = stateField(i).xx();
     Di = std::max(0.0, std::min(1.0, Di + multiplier*plasticStrainRate(i)*safeInvVar(flaws(i))));
-    stateField(i) = Di*SymTensor::one;
+    stateField(i) = Di*SymTensor::one();
   }
 }
 

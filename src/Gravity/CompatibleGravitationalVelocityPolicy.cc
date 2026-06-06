@@ -84,8 +84,8 @@ update(const KeyType& key,
 
   // Get the state fields.
   const auto  mass = state.fields(HydroFieldNames::mass, Scalar());
-  const auto  positions1 = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  DvDt = derivs.fields(this->prefix() + HydroFieldNames::velocity, Vector::zero);
+  const auto  positions1 = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  DvDt = derivs.fields(this->prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Prepare to accumulate velocity magnitude changes.
   auto dvel = mDataBasePtr->newGlobalFieldList(Scalar(0.0), "velocity mag change");

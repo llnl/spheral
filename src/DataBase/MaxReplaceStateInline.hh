@@ -17,7 +17,7 @@ template<typename Dimension, typename ValueType>
 inline
 MaxReplaceState<Dimension, ValueType>::
 MaxReplaceState(std::initializer_list<std::string> depends):
-  FieldUpdatePolicy<Dimension>(depends) {
+  FieldUpdatePolicy<Dimension, ValueType>(depends) {
 }
 
 //------------------------------------------------------------------------------

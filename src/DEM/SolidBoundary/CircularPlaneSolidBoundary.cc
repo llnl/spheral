@@ -25,7 +25,7 @@ CircularPlaneSolidBoundary(const Vector& point, const Vector& normal, const Scal
   mPoint(point),
   mNormal(normal),
   mExtent(extent),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>
@@ -63,9 +63,9 @@ registerState(DataBase<Dimension>& dataBase,
   const auto pointKey = boundaryKey +"_point";
   const auto velocityKey = boundaryKey +"_velocity";
   const auto normalKey = boundaryKey +"_normal";
-  state.enrollAny(pointKey,mPoint);
-  state.enrollAny(pointKey,mVelocity);
-  state.enrollAny(pointKey,mNormal);
+  state.enroll(pointKey,mPoint);
+  state.enroll(pointKey,mVelocity);
+  state.enroll(pointKey,mNormal);
 }
 
 template<typename Dimension>

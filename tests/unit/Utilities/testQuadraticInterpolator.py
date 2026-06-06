@@ -7,7 +7,7 @@ import unittest
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===========================================================================
 # A generator for creating a range of x values to test
@@ -21,7 +21,7 @@ def xgen(n, xmin, xmax):
         elif count == n - 1:
             yield xmax
         else:
-            yield rangen.uniform(xmin, xmax)
+            yield random.uniform(xmin, xmax)
         count += 1
 
 #===============================================================================
@@ -55,9 +55,9 @@ class TestQuadraticInterpolator(unittest.TestCase):
         self.xmin = -10.0
         self.xmax =  40.0
         self.dx = (self.xmax - self.xmin)/(self.n - 1)
-        self.A = rangen.uniform(-100.0, 100.0)
-        self.B = rangen.uniform(-100.0, 100.0)
-        self.C = rangen.uniform(-100.0, 100.0)
+        self.A = random.uniform(-100.0, 100.0)
+        self.B = random.uniform(-100.0, 100.0)
+        self.C = random.uniform(-100.0, 100.0)
         self.func = Fquad(self.A, self.B, self.C)
         self.F = QuadraticInterpolator(self.xmin, self.xmax, self.n, self.func)
         self.fuzz = 1.0e-10

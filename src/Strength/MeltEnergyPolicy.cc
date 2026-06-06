@@ -22,9 +22,9 @@ namespace Spheral {
 template<typename Dimension>
 MeltEnergyPolicy<Dimension>::
 MeltEnergyPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity}) {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity}) {
 }
 
 //------------------------------------------------------------------------------

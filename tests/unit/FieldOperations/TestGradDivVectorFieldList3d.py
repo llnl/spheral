@@ -164,7 +164,7 @@ for i in xrange(nodes1.firstGhostNode, nodes1.numNodes):
 # Generate the analytic answer.
 import Gnuplot
 xl = []
-for nodeList in db.nodeLists():
+for nodeList in db.nodeLists:
     for r in nodeList.positions[:nodeList.numInternalNodes]:
         xl.append(r.magnitude())
 if mpi:

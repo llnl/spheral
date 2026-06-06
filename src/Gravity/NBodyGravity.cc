@@ -16,6 +16,7 @@
 #include "Field/Field.hh"
 #include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
+#include "Distributed/Communicator.hh"
 #include "Material/PhysicalConstants.hh"
 #include "Utilities/packElement.hh"
 
@@ -29,12 +30,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -129,12 +124,12 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
 
   // Access to pertinent fields in the database.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
 
   // Get the acceleration and position change vectors we'll be modifying.
-  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
-  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero);
+  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Zero out the total gravitational potential energy.
   mExtraEnergy = 0.0;
@@ -146,7 +141,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   vector<char> localBuffer, buffer;
   this->serialize(mass, position, localBuffer);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Get the processor information.
   const unsigned rank = Process::getRank();
   const unsigned numProcs = Process::getTotalNumberOfProcesses();
@@ -174,7 +169,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   this->deserialize(localBuffer, otherMass, otherPosition);
   this->applyPairForces(otherMass, otherPosition, position, DvDt, mPotential);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Now walk the other processes and get their contributions.
   unsigned bufSize;
   MPI_Status recvStatus;
@@ -223,7 +218,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   mOldMaxAcceleration = allReduce(mOldMaxAcceleration, SPHERAL_OP_MAX);
   mOldMaxVelocity = allReduce(mOldMaxVelocity, SPHERAL_OP_MAX);
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   // Wait until all our sends are complete.
   vector<MPI_Status> sendStatus(sendRequests.size());
   MPI_Waitall(sendRequests.size(), &(*sendRequests.begin()), &(*sendStatus.begin()));
@@ -278,7 +273,7 @@ preStepInitialize(const DataBase<Dimension>& /*dataBase*/,
     mPotential0.copyFields();
   
     // Take a snapshot of the starting velocity^2 (for KE0).
-    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero);
+    const auto vel = state.fields(HydroFieldNames::velocity, Vector::zero());
     const auto numNodeLists = vel.numFields();
     for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
       const auto n = vel[nodeListi]->numInternalElements();
@@ -308,9 +303,9 @@ finalize(const Scalar time,
 
     // Assume mPotential holds the correct end-of-step potential at this time.
     // Correct for Verlet integrator.
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero);
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
     const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       vel = state.fields(HydroFieldNames::velocity, Vector::zero);
+    auto       vel = state.fields(HydroFieldNames::velocity, Vector::zero());
     const auto numNodeLists = vel.numFields();
     for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
       const auto n = vel[nodeListi]->numInternalElements();
@@ -492,8 +487,8 @@ NBodyGravity<Dimension>::
 serialize(const FieldList<Dimension, typename Dimension::Scalar>& mass,
           const FieldList<Dimension, typename Dimension::Vector>& position,
           std::vector<char>& buffer) const {
-  const unsigned n = mass.numInternalNodes();
-  CHECK(position.numInternalNodes() == n);
+  const unsigned n = mass.numInternalElements();
+  CHECK(position.numInternalElements() == n);
   packElement(n, buffer);
   const unsigned numFields = mass.numFields();
   for (unsigned ifield = 0; ifield != numFields; ++ifield) {

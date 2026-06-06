@@ -42,7 +42,7 @@ This is the method required of all descendent classes."""
     @PYB11const
     def currentDomainDecomposition1(self,
                                     dataBase = "const DataBase<%(Dimension)s>&",
-                                    globalNodeIDs = "const FieldList<%(Dimension)s, int>&"):
+                                    globalNodeIDs = "const FieldList<%(Dimension)s, size_t>&"):
         "Calculate the current domain decomposition, and return it as a set of DomainNode identifiers."
         return "std::vector<DomainNode<%(Dimension)s> >"
 
@@ -50,7 +50,7 @@ This is the method required of all descendent classes."""
     @PYB11const
     def currentDomainDecomposition2(self,
                                     dataBase = "const DataBase<%(Dimension)s>&",
-                                    globalNodeIDs = "const FieldList<%(Dimension)s, int>&",
+                                    globalNodeIDs = "const FieldList<%(Dimension)s, size_t>&",
                                     workPerNode = "const FieldList<%(Dimension)s, Scalar>&"):
         "Same as currentDomainDecomposition, but fills in work field in the DomainNodes."
         return "std::vector<DomainNode<%(Dimension)s> >"

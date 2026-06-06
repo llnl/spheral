@@ -56,6 +56,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ResidualType = typename Physics<Dimension>::ResidualType;
   using NodeCouplingPtr = typename std::shared_ptr<NodeCoupling>;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
@@ -66,7 +67,7 @@ public:
               const TableKernel<Dimension>& W,
               const double crackGrowthMultiplier,
               const DamageCouplingAlgorithm damageCouplingAlgorithm);
-  virtual ~DamageModel();
+  virtual ~DamageModel() = default;
 
   // Compute the generic Grady-Kipp (ala Benz-Asphaug) scalar damage time 
   // derivative.
@@ -79,7 +80,7 @@ public:
 
   //...........................................................................
   // Provide a subset of the required physics package interface.
-  virtual void initialize(const Scalar time,
+  virtual bool initialize(const Scalar time,
                           const Scalar dt,
                           const DataBase<Dimension>& dataBase,
                           State<Dimension>& state,
@@ -91,32 +92,47 @@ public:
                         State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs) override;
 
-  virtual bool requireGhostConnectivity() const override;
-  virtual bool requireIntersectionConnectivity() const override;
+  virtual bool requireGhostConnectivity()               const override { return mDamageCouplingAlgorithm == DamageCouplingAlgorithm::ThreePointDamage; }
+  virtual bool requireIntersectionConnectivity()        const override { return mComputeIntersectConnectivity; }
 
+  // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
+  // Damage model for now defaults to just relying on the hydro to handle this, so return no vote.
+  virtual ResidualType maxResidual(const DataBase<Dimension>& dataBase, 
+                                   const State<Dimension>& state1,
+                                   const State<Dimension>& state0,
+                                   const Scalar tol) const override;
   //...........................................................................
   // Access the SolidNodeList we're damaging.
-  SolidNodeList<Dimension>& nodeList();
-  const SolidNodeList<Dimension>& nodeList() const;
+  SolidNodeList<Dimension>& nodeList()                                 { return mNodeList; }
+  const SolidNodeList<Dimension>& nodeList()                     const { return mNodeList; }
 
   // Access the kernel.
-  const TableKernel<Dimension>& kernel() const;
+  const TableKernel<Dimension>& kernel()                         const { return mW; }
 
   // Important local parameters.
-  double crackGrowthMultiplier() const;
-  DamageCouplingAlgorithm damageCouplingAlgorithm() const;
-  const NodeCoupling& nodeCoupling() const;
+  double crackGrowthMultiplier()                                 const { return mCrackGrowthMultiplier; }
+  DamageCouplingAlgorithm damageCouplingAlgorithm()              const { return mDamageCouplingAlgorithm; }
+  const NodeCoupling& nodeCoupling()                             const { return *mNodeCouplingPtr; }
 
   // Allow the user to specify a set of nodes to be excluded from damage.
   std::vector<int> excludeNodes() const;
   void excludeNodes(std::vector<int> ids);
 
+  // Optionally freeze the damage (no more damage growth)
+  bool freezeDamage()                                            const { return mFreezeDamage; }
+  void freezeDamage(const bool x)                                      { mFreezeDamage = x; }
+
   //**************************************************************************
   // Restart methods.
-  virtual std::string label() const override { return "DamageModel"; }
+  virtual std::string label()                           const override { return "DamageModel"; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //**************************************************************************
+
+  // No default constructor, copying or assignment.
+  DamageModel() = delete;
+  DamageModel(const DamageModel&) = delete;
+  DamageModel& operator=(const DamageModel&) = delete;
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -126,20 +142,13 @@ private:
   DamageCouplingAlgorithm mDamageCouplingAlgorithm;
   Field<Dimension, int> mExcludeNode;
   NodeCouplingPtr mNodeCouplingPtr;
-  bool mComputeIntersectConnectivity;
+  bool mComputeIntersectConnectivity, mFreezeDamage;
 
   // The restart registration.
   RestartRegistrationType mRestart;
-
-  // No default constructor, copying or assignment.
-  DamageModel();
-  DamageModel(const DamageModel&);
-  DamageModel& operator=(const DamageModel&);
 };
 
 }
-
-#include "DamageModelInline.hh"
 
 #endif
 

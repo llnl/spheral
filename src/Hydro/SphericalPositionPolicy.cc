@@ -17,12 +17,6 @@
 #include <vector>
 using std::vector;
 using std::string;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -56,33 +50,27 @@ update(const KeyType& key,
   // Get the field name portion of the key.
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
-  REQUIRE(nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
 
   // Get the state we're updating.
-  auto f = state.fields(fieldKey, Vector::zero);
-  const auto numNodeLists = f.size();
+  auto f = state.field(key, Vector::zero());
 
   // Find all the available matching derivative Field keys.
   const auto incrementKey = prefix() + fieldKey;
-  const auto allkeys = derivs.fieldKeys();
-  vector<string> incrementKeys;
+  const auto allkeys = derivs.keys();
+  KeyType dfKey, dfNodeListKey;
   for (const auto& key: allkeys) {
-    if (key.compare(0, incrementKey.size(), incrementKey) == 0) {
-      incrementKeys.push_back(key);
-    }
-  }
-  CHECK(not incrementKeys.empty());
+    StateBase<Dimension>::splitFieldKey(key, dfKey, dfNodeListKey);
+    if (dfNodeListKey == nodeListKey and
+        dfKey.compare(0, incrementKey.size(), incrementKey) == 0) {
 
-  // Update by each of our derivative fields.
-  for (const auto& key: incrementKeys) {
-    const auto df = derivs.fields(key, Vector::zero);
-    CHECK(df.size() == f.size());
-    for (auto k = 0u; k != numNodeLists; ++k) {
-      const auto n = f[k]->numInternalElements();
-      for (auto i = 0u; i != n; ++i) {
+      // This delta field matches the base of increment key, so apply it.
+      const auto& df = derivs.field(key, Vector::zero());
+      const auto  n = f.numInternalElements();
+#pragma omp parallel for
+      for (auto i = 0u; i < n; ++i) {
         // This is where we diverge from the standard IncrementState.  Ensure we cannot cross to
         // negative radius.
-        f(k,i) = std::max(0.5*f(k,i), f(k,i) + multiplier*(df(k, i)));
+        f(i) = std::max(0.5*f(i), f(i) + multiplier*(df(i)));
       }
     }
   }

@@ -29,25 +29,25 @@ template<typename Dimension>
 class DataBase {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename std::vector<NodeList<Dimension>*>::iterator NodeListIterator;
-  typedef typename std::vector<NodeList<Dimension>*>::const_iterator ConstNodeListIterator;
+  using NodeListIterator = typename std::vector<NodeList<Dimension>*>::iterator;
+  using ConstNodeListIterator = typename std::vector<NodeList<Dimension>*>::const_iterator;
 
-  typedef typename std::vector<FluidNodeList<Dimension>*>::iterator FluidNodeListIterator;
-  typedef typename std::vector<FluidNodeList<Dimension>*>::const_iterator ConstFluidNodeListIterator;
+  using FluidNodeListIterator = typename std::vector<FluidNodeList<Dimension>*>::iterator;
+  using ConstFluidNodeListIterator = typename std::vector<FluidNodeList<Dimension>*>::const_iterator;
 
-  typedef typename std::vector<SolidNodeList<Dimension>*>::iterator SolidNodeListIterator;
-  typedef typename std::vector<SolidNodeList<Dimension>*>::const_iterator ConstSolidNodeListIterator;
+  using SolidNodeListIterator = typename std::vector<SolidNodeList<Dimension>*>::iterator;
+  using ConstSolidNodeListIterator = typename std::vector<SolidNodeList<Dimension>*>::const_iterator;
 
-  typedef typename std::vector<DEMNodeList<Dimension>*>::iterator DEMNodeListIterator;
-  typedef typename std::vector<DEMNodeList<Dimension>*>::const_iterator ConstDEMNodeListIterator;
+  using DEMNodeListIterator = typename std::vector<DEMNodeList<Dimension>*>::iterator;
+  using ConstDEMNodeListIterator = typename std::vector<DEMNodeList<Dimension>*>::const_iterator;
 
-  typedef ConnectivityMap<Dimension> ConnectivityMapType;
-  typedef std::shared_ptr<ConnectivityMapType> ConnectivityMapPtr;
+  using ConnectivityMapType = ConnectivityMap<Dimension>;
+  using ConnectivityMapPtr = std::shared_ptr<ConnectivityMapType>;
   
   // It is convenient to be able to query the DataBase for the problem
   // dimensionality for Python.
@@ -57,77 +57,83 @@ public:
   DataBase();
 
   // Destructor.
-  ~DataBase();
+  ~DataBase() = default;
 
   // Assignment.
-  DataBase& operator=(const DataBase& rhs);
+  DataBase& operator=(const DataBase& rhs) = default;
 
   // Number of NodeLists we have in the DataBase.
-  unsigned int numNodeLists() const;
-  unsigned int numFluidNodeLists() const;
-  int numSolidNodeLists() const;
-  int numDEMNodeLists() const;
+  size_t numNodeLists()                                            const { return mNodeListPtrs.size(); }
+  size_t numFluidNodeLists()                                       const { return mFluidNodeListPtrs.size(); }
+  size_t numSolidNodeLists()                                       const { return mSolidNodeListPtrs.size(); }
+  size_t numDEMNodeLists()                                         const { return mDEMNodeListPtrs.size(); }
 
   // Numbers of nodes.
-  int numInternalNodes() const;
-  int numGhostNodes() const;
-  int numNodes() const;
+  size_t numInternalNodes() const;
+  size_t numGhostNodes() const;
+  size_t numNodes() const;
 
-  int globalNumInternalNodes() const;
-  int globalNumGhostNodes() const;
-  int globalNumNodes() const;
+  size_t globalNumInternalNodes() const;
+  size_t globalNumGhostNodes() const;
+  size_t globalNumNodes() const;
 
   // Numbers of fluid nodes.
-  int numFluidInternalNodes() const;
-  int numFluidGhostNodes() const;
-  int numFluidNodes() const;
+  size_t numFluidInternalNodes() const;
+  size_t numFluidGhostNodes() const;
+  size_t numFluidNodes() const;
 
-  int globalNumFluidInternalNodes() const;
-  int globalNumFluidGhostNodes() const;
-  int globalNumFluidNodes() const;
+  size_t globalNumFluidInternalNodes() const;
+  size_t globalNumFluidGhostNodes() const;
+  size_t globalNumFluidNodes() const;
    
+  // Access the various NodeLists
+  const std::vector<NodeList<Dimension>*>& nodeListPtrs()           const { return mNodeListPtrs; }
+  const std::vector<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const { return mFluidNodeListPtrs; }
+  const std::vector<SolidNodeList<Dimension>*>& solidNodeListPtrs() const { return mSolidNodeListPtrs; }
+  const std::vector<DEMNodeList<Dimension>*>& DEMNodeListPtrs()     const { return mDEMNodeListPtrs; }
+
   // Provide normal iterator methods over the DataBase NodeLists.
-  NodeListIterator nodeListBegin();
-  NodeListIterator nodeListEnd();
+  NodeListIterator nodeListBegin()                                        { return mNodeListPtrs.begin(); }
+  NodeListIterator nodeListEnd()                                          { return mNodeListPtrs.end(); }
 
-  ConstNodeListIterator nodeListBegin() const;
-  ConstNodeListIterator nodeListEnd() const;
+  ConstNodeListIterator nodeListBegin()                             const { return mNodeListPtrs.begin(); }
+  ConstNodeListIterator nodeListEnd()                               const { return mNodeListPtrs.end(); }
 
-  FluidNodeListIterator fluidNodeListBegin();
-  FluidNodeListIterator fluidNodeListEnd();
+  FluidNodeListIterator fluidNodeListBegin()                              { return mFluidNodeListPtrs.begin(); }
+  FluidNodeListIterator fluidNodeListEnd()                                { return mFluidNodeListPtrs.end(); }
 
-  ConstFluidNodeListIterator fluidNodeListBegin() const;
-  ConstFluidNodeListIterator fluidNodeListEnd() const;
+  ConstFluidNodeListIterator fluidNodeListBegin()                   const { return mFluidNodeListPtrs.begin(); }
+  ConstFluidNodeListIterator fluidNodeListEnd()                     const { return mFluidNodeListPtrs.end(); }
 
-  NodeListIterator fluidNodeListAsNodeListBegin();
-  NodeListIterator fluidNodeListAsNodeListEnd();
+  NodeListIterator fluidNodeListAsNodeListBegin()                         { return mFluidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator fluidNodeListAsNodeListEnd()                           { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator fluidNodeListAsNodeListBegin() const;
-  ConstNodeListIterator fluidNodeListAsNodeListEnd() const;
+  ConstNodeListIterator fluidNodeListAsNodeListBegin()              const { return mFluidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator fluidNodeListAsNodeListEnd()                const { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  SolidNodeListIterator solidNodeListBegin();
-  SolidNodeListIterator solidNodeListEnd();
+  SolidNodeListIterator solidNodeListBegin()                              { return mSolidNodeListPtrs.begin(); }
+  SolidNodeListIterator solidNodeListEnd()                                { return mSolidNodeListPtrs.end(); }
 
-  ConstSolidNodeListIterator solidNodeListBegin() const;
-  ConstSolidNodeListIterator solidNodeListEnd() const;
+  ConstSolidNodeListIterator solidNodeListBegin()                   const { return mSolidNodeListPtrs.begin(); }
+  ConstSolidNodeListIterator solidNodeListEnd()                     const { return mSolidNodeListPtrs.end(); }
 
-  NodeListIterator solidNodeListAsNodeListBegin();
-  NodeListIterator solidNodeListAsNodeListEnd();
+  NodeListIterator solidNodeListAsNodeListBegin()                         { return mSolidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator solidNodeListAsNodeListEnd()                           { return mSolidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator solidNodeListAsNodeListBegin() const;
-  ConstNodeListIterator solidNodeListAsNodeListEnd() const;
+  ConstNodeListIterator solidNodeListAsNodeListBegin()              const { return mSolidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator solidNodeListAsNodeListEnd()                const { return mSolidNodeListAsNodeListPtrs.end(); }
   
-  DEMNodeListIterator DEMNodeListBegin();
-  DEMNodeListIterator DEMNodeListEnd();
+  DEMNodeListIterator DEMNodeListBegin()                                  { return mDEMNodeListPtrs.begin(); }
+  DEMNodeListIterator DEMNodeListEnd()                                    { return mDEMNodeListPtrs.end(); }
 
-  ConstDEMNodeListIterator DEMNodeListBegin() const;
-  ConstDEMNodeListIterator DEMNodeListEnd() const;
+  ConstDEMNodeListIterator DEMNodeListBegin()                       const { return mDEMNodeListPtrs.begin(); }
+  ConstDEMNodeListIterator DEMNodeListEnd()                         const { return mDEMNodeListPtrs.end(); }
 
-  NodeListIterator DEMNodeListAsNodeListBegin();
-  NodeListIterator DEMNodeListAsNodeListEnd();
+  NodeListIterator DEMNodeListAsNodeListBegin()                           { return mDEMNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator DEMNodeListAsNodeListEnd()                             { return mDEMNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator DEMNodeListAsNodeListBegin() const;
-  ConstNodeListIterator DEMNodeListAsNodeListEnd() const;
+  ConstNodeListIterator DEMNodeListAsNodeListBegin()                const { return mDEMNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator DEMNodeListAsNodeListEnd()                  const { return mDEMNodeListAsNodeListPtrs.end(); }
 
   // Provide NodeIterators to go over the elements of NodeLists/FieldLists.
   AllNodeIterator<Dimension> nodeBegin() const;
@@ -174,11 +180,12 @@ public:
   void updateConnectivityMap(const bool computeGhostConnectivity,
                              const bool computeOverlapConnectivity,
                              const bool computeIntersectionConnectivity) const;
-  void patchConnectivityMap(const FieldList<Dimension, int>& flags,
-                            const FieldList<Dimension, int>& old2new) const;
+  void patchConnectivityMap(const FieldList<Dimension, size_t>& flags,
+                            const FieldList<Dimension, size_t>& old2new) const;
 
   // Get the connectivity map.
   const ConnectivityMapType& connectivityMap() const;
+  ConnectivityMapPtr connectivityMapPtr() const;
   const ConnectivityMapType& connectivityMap(const bool computeGhostConnectivity,
                                              const bool computeOverlapConnectivity,
                                              const bool computeIntersectionConnectivity) const;
@@ -198,12 +205,7 @@ public:
   void deleteNodeList(NodeList<Dimension>& nodeList);
 
   bool haveNodeList(const NodeList<Dimension>& nodeList) const;
-
-  // Allow const access to the list of NodeList pointers.
-  const std::vector<NodeList<Dimension>*>& nodeListPtrs() const;
-  const std::vector<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const;
-  const std::vector<SolidNodeList<Dimension>*>& solidNodeListPtrs() const;
-  const std::vector<DEMNodeList<Dimension>*>& DEMNodeListPtrs() const;
+  size_t nodeListIndex(const NodeList<Dimension>& nodeList) const;
 
   // Provide convenience functions for manipulating the neighbor information
   // of the NodeLists.
@@ -264,7 +266,7 @@ public:
   FieldList<Dimension, SymTensor> DEMHfield() const;
   FieldList<Dimension, Scalar> DEMParticleRadius() const;
   FieldList<Dimension, int> DEMCompositeParticleIndex() const;
-  FieldList<Dimension, int> DEMUniqueIndex() const;
+  FieldList<Dimension, size_t> DEMUniqueIndex() const;
 
   void setDEMHfieldFromParticleRadius(const int startUniqueIndex);
   void setDEMUniqueIndices();
@@ -294,6 +296,12 @@ public:
 
   // Collect the number of neighbors for each node from the ConnectivityMap.
   FieldList<Dimension, int> numNeighbors() const;
+
+  // Return the number of internal nodes for the sets of NodeLists
+  std::vector<size_t> numInternalNodesPerNodeList() const;
+  std::vector<size_t> numInternalNodesPerFluidNodeList() const;
+  std::vector<size_t> numInternalNodesPerSolidNodeList() const;
+  std::vector<size_t> numInternalNodesPerDEMNodeList() const;
 
   //............................................................................
   // Create new FieldLists of size the number of NodeLists or FluidNodeLists.
@@ -385,6 +393,9 @@ public:
   // valid state.
   bool valid() const;
 
+  // Prevent copying.
+  DataBase(const DataBase& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
@@ -398,11 +409,7 @@ private:
   std::vector<DEMNodeList<Dimension>*> mDEMNodeListPtrs;
   std::vector<NodeList<Dimension>*> mDEMNodeListAsNodeListPtrs;
 
-
   mutable ConnectivityMapPtr mConnectivityMapPtr;
-
-  // Prevent copying.
-  DataBase(const DataBase& rhs);
 };
 
 //------------------------------------------------------------------------------

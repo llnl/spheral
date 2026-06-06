@@ -6,7 +6,7 @@ from siloMeshDump import *
 from math import *
 from testSharedElements import *
 
-rangen = random.Random()
+random.seed(4589281204)
 
 x0, y0 = 0.0, 0.0
 x1, y1 = 1.0, 1.0
@@ -44,9 +44,9 @@ else:
     xynodes_all = []
     occupiedCells = set()
     for k in range(nx*nx):
-        i = rangen.randint(0, ncell)
+        i = random.randint(0, ncell)
         while i in occupiedCells:
-            i = rangen.randint(0, ncell)
+            i = random.randint(0, ncell)
         ix = i % nxcell
         iy = i / nxcell
         xynodes_all.append(Vector((ix + 0.5)*dxcell, (iy + 0.5)*dycell))

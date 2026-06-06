@@ -5,6 +5,7 @@
 import os, mpi
 from Spheral import *
 from SpheralCompiledPackages import silo
+from siloMeshDump import getSubDirs, unslashify
 
 #-------------------------------------------------------------------------------
 # siloPointMeshDump -- this is the one the user should actually call!
@@ -45,10 +46,10 @@ def siloPointmeshDump(baseName,
                 os.makedirs(dire)
     mpi.barrier()
 
-    # We can only pretend this is an RZ mesh if it's 2D.
+    # Check dimensionality.
     ndim = dimension(nodeLists[0])
-    if not ndim in (2, 3):
-        raise ValueError("You need to provide 2D or 3D information for siloPointMeshDump.")
+    if not ndim in (1, 2, 3):
+        raise ValueError("You need to provide 1D, 2D or 3D information for siloPointMeshDump.")
     
     # Characterize the fields we're going to write.
     allfields = fields[:]
@@ -68,7 +69,7 @@ def siloPointmeshDump(baseName,
         elif isinstance(f, eval("SymTensorField%id" % ndim)):
             symTensorFields.append(f)
         else:
-            print("siloPointmeshDump WARNING: ignoring unknown field type.")
+            print("siloPointmeshDump WARNING: ignoring unknown field type: %s" % type(f).__name__)
 
     # For any tensor fields, dump the trace, determinant, min, and max eigen values.
     for f in (tensorFields + symTensorFields):
@@ -96,9 +97,9 @@ def siloPointmeshDump(baseName,
     # If we're domain 0 we write the master file.
     writeMasterSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeLists, label, time, cycle, dumpGhosts, fieldwad)
 
-    # Each domain writes it's domain file.
+    # Each domain writes its domain file.
     writeDomainSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeLists, label, time, cycle, dumpGhosts, fieldwad)
-
+    
 #-------------------------------------------------------------------------------
 # Extract the fields we're going to write.  This requires exploding vector and
 # tensor fields into their components.
@@ -178,6 +179,10 @@ def writeMasterSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
             assert optlist.addOption(silo.DBOPT_MATNOS, silo.DBOPT_NMATNOS, vector_of_int(matnos)) == 0
             assert silo.DBPutMultimat(db, "MATERIAL", vector_of_string(material_names), optlist) == 0
         
+            # Create directories for any fields that have slashes in their names
+            for d in getSubDirs(fieldwad):
+                silo.DBMkDir(db, d)
+
             # Write the variable descriptions for non-scalar variables (vector and tensors).
             writeDefvars(db, fieldwad)
 
@@ -190,7 +195,7 @@ def writeMasterSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
                 for iproc, p in enumerate(domainNamePatterns):
                     nvals = mpi.bcast(nlocalvals, root=iproc)
                     if nvals > 0:
-                        domainVarNames.append(p % name)
+                        domainVarNames.append(p % unslashify(name))
                     else:
                         domainVarNames.append("EMPTY")
                 assert len(domainVarNames) == ndoms
@@ -202,7 +207,7 @@ def writeMasterSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
                     for iproc, p in enumerate(domainNamePatterns):
                         nvals = mpi.bcast(nlocalvals, root=iproc)
                         if nvals > 0:
-                            domainVarNames.append(p % subname)
+                            domainVarNames.append(p % unslashify(subname))
                         else:
                             domainVarNames.append("EMPTY")
                     assert len(domainVarNames) == ndoms
@@ -285,6 +290,10 @@ def writeDomainSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
         # Write the variable descriptions for non-scalar variables (vector and tensors).
         writeDefvars(db, fieldwad)
 
+        # Create directories for any fields that have slashes in their names
+        for d in getSubDirs(fieldwad):
+            silo.DBMkDir(db, d)
+
         # Write the field components.
         varOpts = silo.DBoptlist(1024)
         assert varOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
@@ -296,7 +305,7 @@ def writeDomainSiloFile(ndim, baseDirectory, baseName, procDirBaseName, nodeList
                         ctor = vector_of_double
                     else:
                         ctor = vector_of_int
-                    assert silo.DBPutPointvar1(db, subname, "mesh", ctor(vals), varOpts) == 0
+                    assert silo.DBPutPointvar1(db, unslashify(subname), "mesh", ctor(vals), varOpts) == 0
 
         # That's it.
         assert silo.DBClose(db) == 0
@@ -335,7 +344,7 @@ def extractFields(nodeLists, time, cycle, dumpGhosts, fields,
             assert len(subfields) <= len(nodeLists)
 
             # Build the meta-data for this field entry.
-            name = str(fieldName).replace(" ", "_")
+            name = str(fieldName).replace(" ", "_").replace("-", "_")
             varDef, varType, optlistDef, optlistMV, optlistVar = metaDataMethod(name, time, cycle, dim)
 
             # Build the complete values for this field.
@@ -418,9 +427,15 @@ def metaDataScalarField(name, time, cycle, dim):
 #-------------------------------------------------------------------------------
 def extractVectorField(name, field, vals, dim):
     assert len(vals) == dim or len(vals) == 0
-    assert dim in (2,3)
+    assert dim in (1,2,3)
 
-    if dim == 2:
+    if dim == 1:
+        if vals == []:
+            vals = [["%s_x" % name, vector_of_double()]]
+        for v in field:
+            vals[0][1].append(v.x)
+
+    elif dim == 2:
         if vals == []:
             vals = [["%s_x" % name, vector_of_double()],
                     ["%s_y" % name, vector_of_double()]]
@@ -442,9 +457,11 @@ def extractVectorField(name, field, vals, dim):
 
 def dummyVectorField(name, n, vals, dim):
     assert len(vals) == dim or len(vals) == 0
-    assert dim in (2,3)
+    assert dim in (1,2,3)
     if vals == []:
-        if dim == 2:
+        if dim == 1:
+            vals = [["%s_x" % name, vector_of_double([0.0]*n)]]
+        elif dim == 2:
             vals = [["%s_x" % name, vector_of_double([0.0]*n)],
                     ["%s_y" % name, vector_of_double([0.0]*n)]]
         else:
@@ -457,7 +474,7 @@ def dummyVectorField(name, n, vals, dim):
     return vals
 
 def metaDataVectorField(name, time, cycle, dim):
-    assert dim in (2,3)
+    assert dim in (1,2,3)
     optlistDef = silo.DBoptlist()
     optlistMV = silo.DBoptlist()
     optlistVar = silo.DBoptlist()
@@ -465,10 +482,15 @@ def metaDataVectorField(name, time, cycle, dim):
         assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
         assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
     assert optlistMV.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_VECTOR) == 0
-    assert optlistVar.addOption(silo.DBOPT_HIDE_FROM_GUI, 1) == 0
+    # For 1D, don't hide components
+    if dim > 1:
+        assert optlistVar.addOption(silo.DBOPT_HIDE_FROM_GUI, 1) == 0
     assert optlistVar.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_SCALAR) == 0
 
-    if dim == 2:
+    if dim == 1:
+        return ("{%s_x}" % name, silo.DB_VARTYPE_VECTOR,
+                optlistDef, optlistMV, optlistVar)
+    elif dim == 2:
         return ("{%s_x, %s_y}" % (name, name), silo.DB_VARTYPE_VECTOR,
                 optlistDef, optlistMV, optlistVar)
     else:
@@ -480,8 +502,14 @@ def metaDataVectorField(name, time, cycle, dim):
 #-------------------------------------------------------------------------------
 def extractTensorField(name, field, vals, dim):
     assert len(vals) == dim*dim or len(vals) == 0
-    assert dim in (2,3)
-    if dim == 2:
+    assert dim in (1,2,3)
+    if dim == 1:
+        if vals == []:
+            vals = [["%s_xx" % name, vector_of_double()]]
+        for t in field:
+            vals[0][1].append(t.xx)
+
+    elif dim == 2:
         if vals == []:
             vals = [["%s_xx" % name, vector_of_double()],
                     ["%s_xy" % name, vector_of_double()],
@@ -511,9 +539,11 @@ def extractTensorField(name, field, vals, dim):
 
 def dummyTensorField(name, n, vals, dim):
     assert len(vals) == dim*dim or len(vals) == 0
-    assert dim in (2,3)
+    assert dim in (1,2,3)
     if vals == []:
-        if dim == 2:
+        if dim == 1:
+            vals = [["%s_xx" % name, vector_of_double([0.0]*n)]]
+        elif dim == 2:
             vals = [["%s_xx" % name, vector_of_double([0.0]*n)],
                     ["%s_xy" % name, vector_of_double([0.0]*n)],
                     ["%s_yx" % name, vector_of_double([0.0]*n)],
@@ -534,7 +564,7 @@ def dummyTensorField(name, n, vals, dim):
     return vals
 
 def metaDataTensorField(name, time, cycle, dim):
-    assert dim in (2,3)
+    assert dim in (1,2,3)
     optlistDef = silo.DBoptlist()
     optlistMV = silo.DBoptlist()
     optlistVar = silo.DBoptlist()
@@ -542,10 +572,15 @@ def metaDataTensorField(name, time, cycle, dim):
         assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
         assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
     assert optlistMV.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_TENSOR) == 0
-    assert optlistVar.addOption(silo.DBOPT_HIDE_FROM_GUI, 1) == 0
+    # For 1D, don't hide components
+    if dim > 1:
+        assert optlistVar.addOption(silo.DBOPT_HIDE_FROM_GUI, 1) == 0
     assert optlistVar.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_SCALAR) == 0
 
-    if dim == 2:
+    if dim == 1:
+        return ("{%s_xx}" % name, silo.DB_VARTYPE_TENSOR,
+                optlistDef, optlistMV, optlistVar)
+    elif dim == 2:
         return ("{{%s_xx, %s_xy}, {%s_yx, %s_yy}}" % (name, name, name, name), silo.DB_VARTYPE_TENSOR,
                 optlistDef, optlistMV, optlistVar)
     else:
@@ -562,7 +597,7 @@ def writeDefvars(db, fieldwad):
     for name, desc, type, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
         if desc != None:
             assert optlistDef != None
-            assert len(subvars) > 1
+            assert len(subvars) > 0
             names.append(name)
             defs.append(desc)
             types.append(type)

@@ -53,7 +53,7 @@ public:
 
   //! We augment the generic body force state.
   virtual void registerState(DataBase<Dimension>& dataBase,
-                             State<Dimension>& state);
+                             State<Dimension>& state) override;
 
   //! This is the derivative method that all BodyForce classes must provide.
   virtual 
@@ -61,13 +61,13 @@ public:
                            const Scalar /*dt*/,
                            const DataBase<Dimension>& dataBase,
                            const State<Dimension>& state,
-                           StateDerivatives<Dimension>& derivs) const;
+                           StateDerivatives<Dimension>& derivs) const override;
 
   //! Vote on the timestep.  This uses a velocity-limiting rule.
   virtual TimeStepType dt(const DataBase<Dimension>& /*dataBase*/, 
                           const State<Dimension>& state,
                           const StateDerivatives<Dimension>& /*derivs*/,
-                          const Scalar /*currentTime*/) const;
+                          const Scalar /*currentTime*/) const override;
 
   // An optional hook to initialize once when the problem is starting up.
   // Typically this is used to size arrays once all the materials and NodeLists have
@@ -84,10 +84,10 @@ public:
                                                     StateDerivatives<Dimension>& derivs) override;
 
   //! This package opts out of building connectivity.
-  virtual bool requireConnectivity() const { return false; }
+  virtual bool requireConnectivity() const override { return false; }
 
   //! Return the total energy contribution due to the gravitational potential.
-  virtual Scalar extraEnergy() const;
+  virtual Scalar extraEnergy() const override;
 
   //! Return the gravitational potential created by the particle distribution.
   const FieldList<Dimension, Scalar>& potential() const;
@@ -117,7 +117,7 @@ public:
 
   //****************************************************************************
   // Methods required for restarting.
-  virtual std::string label() const { return "PolyGravity"; }
+  virtual std::string label() const override { return "PolyGravity"; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
   //****************************************************************************

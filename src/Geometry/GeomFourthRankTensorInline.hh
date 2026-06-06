@@ -9,19 +9,10 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Default constructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomFourthRankTensor<nDim>::
-GeomFourthRankTensor():
-  RankNTensor<nDim, 4, GeomFourthRankTensor>() {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given value filling the tensor.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomFourthRankTensor<nDim>::
 GeomFourthRankTensor(const double val):
@@ -29,40 +20,10 @@ GeomFourthRankTensor(const double val):
 }
 
 //------------------------------------------------------------------------------
-// Copy constructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomFourthRankTensor<nDim>::
-GeomFourthRankTensor(const GeomFourthRankTensor& rhs):
-  RankNTensor<nDim, 4, GeomFourthRankTensor>(rhs) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomFourthRankTensor<nDim>::
-~GeomFourthRankTensor() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment.
-//------------------------------------------------------------------------------
-template<int nDim>
-inline
-GeomFourthRankTensor<nDim>&
-GeomFourthRankTensor<nDim>::
-operator=(const GeomFourthRankTensor& rhs) {
-  RankNTensor<nDim, 4, GeomFourthRankTensor>::operator=(rhs);
-  return *this;
-}
-
-//------------------------------------------------------------------------------
 // Assignment (double).
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 GeomFourthRankTensor<nDim>&
 GeomFourthRankTensor<nDim>::
@@ -75,6 +36,7 @@ operator=(const double rhs) {
 // Access the elements by indicies.
 //------------------------------------------------------------------------------
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double
 GeomFourthRankTensor<nDim>::
@@ -87,6 +49,7 @@ operator()(const GeomFourthRankTensor::size_type i,
 }
 
 template<int nDim>
+SPHERAL_HOST_DEVICE
 inline
 double&
 GeomFourthRankTensor<nDim>::
@@ -105,21 +68,21 @@ template<int nDim>
 inline
 GeomFourthRankTensor<nDim>
 operator*(const double lhs, const GeomFourthRankTensor<nDim>& rhs) {
-  return lhs * dynamic_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs);
+  return lhs * static_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs);
 }
 
 template<int nDim>
 inline
 ::std::istream&
 operator>>(std::istream& is, GeomFourthRankTensor<nDim>& rhs) {
-  return operator>>(is, dynamic_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs));
+  return operator>>(is, static_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs));
 }
 
 template<int nDim>
 inline
 ::std::ostream&
 operator<<(std::ostream& os, const GeomFourthRankTensor<nDim>& rhs) {
-  return operator<<(os, dynamic_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs));
+  return operator<<(os, static_cast<const RankNTensor<nDim, 4, GeomFourthRankTensor<nDim> >&>(rhs));
 }
 
 }

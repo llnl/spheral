@@ -8,7 +8,6 @@ from generateMesh import generateLineMesh
 from SpheralVoronoiSiloDump import dumpPhysicsState
 
 import random, numpy, Gnuplot
-rangen = random.Random()
 
 #-------------------------------------------------------------------------------
 # Command line parameters.

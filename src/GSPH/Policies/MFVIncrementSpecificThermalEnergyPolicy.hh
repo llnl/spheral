@@ -22,18 +22,18 @@
 namespace Spheral {
 
 template<typename Dimension>
-class MFVIncrementSpecificThermalEnergyPolicy: public FieldUpdatePolicy<Dimension> {
+class MFVIncrementSpecificThermalEnergyPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
 
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   MFVIncrementSpecificThermalEnergyPolicy(std::initializer_list<std::string> depends={});
-  ~MFVIncrementSpecificThermalEnergyPolicy();
+  ~MFVIncrementSpecificThermalEnergyPolicy() = default;
   
   // Overload the methods describing how to update FieldLists.
   virtual void update(const KeyType& key,
@@ -48,23 +48,16 @@ public:
 
   static const std::string prefix() { return "delta "; }
   
-private:
+  // Forbidden methods
+  MFVIncrementSpecificThermalEnergyPolicy(const MFVIncrementSpecificThermalEnergyPolicy& rhs) = delete;
+  MFVIncrementSpecificThermalEnergyPolicy& operator=(const MFVIncrementSpecificThermalEnergyPolicy& rhs) = delete;
 
+private:
+  //--------------------------- Private Interface ---------------------------//
   const std::string mStateKey;
   const std::string mDerivativeKey;
-
-  //--------------------------- Private Interface ---------------------------//
-  MFVIncrementSpecificThermalEnergyPolicy(const MFVIncrementSpecificThermalEnergyPolicy& rhs);
-  MFVIncrementSpecificThermalEnergyPolicy& operator=(const MFVIncrementSpecificThermalEnergyPolicy& rhs);
 };
 
-}
-
-#else
-
-// Forward declaration.
-namespace Spheral {
-  template<typename Dimension> class MFVIncrementSpecificThermalEnergyPolicy;
 }
 
 #endif

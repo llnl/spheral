@@ -56,3 +56,4 @@ class SolidFieldNames:
     fragmentIDs = PYB11readonly(static=True, returnpolicy="copy")
     particleTypes = PYB11readonly(static=True, returnpolicy="copy")
     meltSpecificEnergy = PYB11readonly(static=True, returnpolicy="copy")
+    damagedPressure = PYB11readonly(static=True, returnpolicy="copy")

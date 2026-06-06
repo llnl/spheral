@@ -22,7 +22,6 @@ PYB11namespaces = ["Spheral", "PolyClipper"]
 # Include files
 PYB11includes = ['"Geometry/Dimension.hh"',
                  '"Geometry/GeomVector.hh"',
-                 '"Geometry/Geom3Vector.hh"',
                  '"Geometry/GeomTensor.hh"',
                  '"Geometry/GeomSymmetricTensor.hh"',
                  '"Geometry/GeomThirdRankTensor.hh"',
@@ -42,6 +41,7 @@ PYB11includes = ['"Geometry/Dimension.hh"',
                  '"Geometry/CellFaceFlag.hh"',
                  '"Geometry/PolyClipperUtilities.hh"',
                  '"Geometry/GeometryRegistrar.hh"',
+                 '"Geometry/toroidalVolume.hh"',
                  '"Field/Field.hh"',
                  '"Utilities/DataTypeTraits.hh"',
 
@@ -85,6 +85,28 @@ from GeometryRegistrar import *
 #-------------------------------------------------------------------------------
 CoordinateType = PYB11enum(("Cartesian", "Spherical", "RZ"), export_values=True,
                            doc="The coorindate system types")
+
+#-------------------------------------------------------------------------------
+# General functions
+#-------------------------------------------------------------------------------
+def cylindricalToroidalVolume(d = "const double",
+                              r = "const double"):
+    """Spin a square around the axis, taking into account of whether the bottom of
+the square touches (or goes below) the axis.
+d : length of a side of the square to be rotated
+r : distance of square's center to axis of rotation
+"""
+    return "double"
+
+def circularToroidalVolume(R = "const double",
+                           r = "const double"):
+    """Compute the volume of a toroid, taking into a account when the circular
+cross-section of the torus contains and is clipped by the axis of rotation
+(i.e., a spindle toroid).
+R : radius of the circle to be rotated
+r : distance of circle centroid to axis of rotation
+"""
+    return "double"
 
 #-------------------------------------------------------------------------------
 # Spheral PolyClipper bindings (using Spheral Vectors)

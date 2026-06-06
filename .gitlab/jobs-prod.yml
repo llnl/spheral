@@ -2,41 +2,25 @@
 # UPDATE TPL JOBS
 
 toss_update_tpls:
-  extends: [.toss_resource2, .update_tpls, .merge_pr_rule]
+  extends: [.toss_resource2, .update_tpls]
 
-blueos_update_tpls:
-  extends: [.blueos_resource2, .update_tpls, .merge_pr_rule]
+cray_update_tpls:
+  extends: [.cray_resource2, .update_tpls]
   needs: [toss_update_tpls]
-
-# ------------------------------------------------------------------------------
-# UPDATE PERM JOBS
-
-shared_tpls_update_permissions:
-  extends: [.toss_resource_general, .toss_update_permissions, .merge_pr_rule]
 
 # ------------------------------------------------------------------------------
 # PROD BUILD JOBS
 
 ### TAG RELEASE ###
 toss_build_dev_pkg_release:
-  extends: [.toss_resource_general, .gcc_mvapich2, .build_dev_pkg, .tag_release_rule]
+  extends: [.toss_resource_general, .build_dev_pkg]
 
 toss_install_dev_pkg_release:
-  extends: [.toss_resource_general, .gcc_mvapich2, .install_dev_pkg, .tag_release_rule]
+  extends: [.toss_resource_general, .install_dev_pkg]
   needs: [toss_build_dev_pkg_release]
 
 toss_release_permissions:
   variables:
     ALIAS: $CI_COMMIT_TAG
-  extends: [.toss_resource_general, .prod_permissions, .tag_release_rule]
+  extends: [.toss_resource_general, .prod_permissions]
   needs: [toss_install_dev_pkg_release]
-
-# ------------------------------------------------------------------------------
-# CLEAN OLD BUILD DIRS
-
-cleanup_old_dirs_toss:
-  extends: [.toss_resource_general, .clean_old_dirs]
-
-cleanup_old_dirs_blueos:
-  extends: [.blueos_resource_general, .clean_old_dirs]
-

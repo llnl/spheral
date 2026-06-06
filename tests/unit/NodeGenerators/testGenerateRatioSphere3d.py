@@ -1,10 +1,11 @@
 from Spheral3d import *
 from GenerateRatioSphere import *
 from SpheralTestUtilities import *
-from VoronoiDistributeNodes import distributeNodes3d as distributeNodes
+from PeanoHilbertDistributeNodes import distributeNodes3d as distributeNodes
 from siloPointmeshDump import *
+import time
 
-commandLine(hmin    = 1e-5,
+commandLine(hmin    = 1e-10,
             hmax    = 1e6,
             rhoscale = 0.5,
             drCenter = 0.01,
@@ -42,10 +43,7 @@ output("WT")
 nodes = makeFluidNodeList("nodes", eos,
                           hmin = hmin,
                           hmax = hmax,
-                          nPerh = nPerh,
-                          topGridCellSize = 100,
-                          xmin = Vector.one * -100.0,
-                          xmax = Vector.one *  100.0)
+                          nPerh = nPerh)
 output("nodes")
 output("nodes.hmin")
 output("nodes.hmax")
@@ -54,9 +52,11 @@ output("nodes.nodesPerSmoothingScale")
 #-------------------------------------------------------------------------------
 # Generate them nodes.
 #-------------------------------------------------------------------------------
-def rhoprofile(r):
+def rhoprofile(rvec):
+    r = rvec.magnitude()
     return exp(-r*r/(rhoscale*rhoscale))
 
+t0 = time.time()
 generator = GenerateRatioSphere3d(drCenter, drRatio,
                                   rho = rhoprofile,
                                   rmin = rmin,
@@ -69,13 +69,18 @@ generator = GenerateRatioSphere3d(drCenter, drRatio,
                                   distributionType = distributionType,
                                   nNodePerh = nPerh,
                                   SPH = SPH)
+t1 = time.time()
+print("NodeGeneration required ", t1 - t0, " seconds")
 distributeNodes((nodes, generator))
+t2 = time.time()
+print("Distribution required ", t1 - t0, " seconds")
 
 #-------------------------------------------------------------------------------
 # Drop a viz file for inspection.
 #-------------------------------------------------------------------------------
 Hfield = nodes.Hfield()
 HfieldInv = SymTensorField("H inverse", nodes)
+domain = IntField("Domain", nodes, mpi.rank)
 for i in range(nodes.numNodes):
     HfieldInv[i] = SymTensor(Hfield[i].Inverse())
 vizfile = siloPointmeshDump(baseName = "ratio_sphere_test_" + distributionType,
@@ -85,5 +90,6 @@ vizfile = siloPointmeshDump(baseName = "ratio_sphere_test_" + distributionType,
                                       nodes.velocity(),
                                       nodes.specificThermalEnergy(),
                                       Hfield,
-                                      HfieldInv],
+                                      HfieldInv,
+                                      domain],
                             )

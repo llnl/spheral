@@ -24,14 +24,13 @@ class SuperGaussianKernel: public Kernel<Dimension, SuperGaussianKernel<Dimensio
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  // Constructors, destructors.
+  // Constructor.
   SuperGaussianKernel();
-  ~SuperGaussianKernel();
 
   // Return the kernel weight for a given normalized distance or position.
   double kernelValue(double etaij, const double Hdet) const;
@@ -44,19 +43,10 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  static const double mKW;
-  static const double mKGW;
+  static constexpr double mKW = 0.5*(Dimension::nDim + 2.0);
+  static constexpr double mKGW = 0.5*Dimension::nDim;
 
 };
-
-template<> const double SuperGaussianKernel<Dim<1>>::mKW;
-template<> const double SuperGaussianKernel<Dim<1>>::mKGW;
-
-template<> const double SuperGaussianKernel<Dim<2>>::mKW;
-template<> const double SuperGaussianKernel<Dim<2>>::mKGW;
-
-template<> const double SuperGaussianKernel<Dim<3>>::mKW;
-template<> const double SuperGaussianKernel<Dim<3>>::mKGW;
 
 }
 

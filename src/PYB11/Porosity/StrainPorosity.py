@@ -7,7 +7,7 @@ from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPorosity")
+@PYB11module("SpheralCompiledModules.SpheralPorosity")
 class StrainPorosity(PorosityModel):
     """An implementation of strain-alpha porosity model described in two papers:
 
@@ -27,6 +27,7 @@ http://doi.org/10.1016/j.ijimpeng.2010.10.013
     using Vector = typename %(Dimension)s::Vector;
     using ScalarField = Field<%(Dimension)s, Scalar>;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................

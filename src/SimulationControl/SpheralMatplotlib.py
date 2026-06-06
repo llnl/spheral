@@ -1,5 +1,7 @@
 from matplotlib.pyplot import cm as pltcm
+from matplotlib import patches
 #from matplotlib.collections import PatchCollections
+from scipy.stats import binned_statistic
 import numpy as np
 import mpi
 from Spheral import *
@@ -159,6 +161,37 @@ def angularMomentum(mass, position, velocity):
     return result
 
 #-------------------------------------------------------------------------------
+# Extract FieldList values as (x,y) pairs for plotting.
+# Note for MPI parallel data we reduce the resulting arrays to rank 0.
+#-------------------------------------------------------------------------------
+def extractFieldListValuesByPosition(fieldList,
+                                     xFunction = "%s.x",
+                                     yFunction = "%s",
+                                     includeGhosts = False,
+                                     filterFunc = None):
+    if filterFunc is None:
+        filterFunc = lambda x: True
+
+    x, y, numInField = [], [], np.zeros(fieldList.numFields, dtype=int)
+    for k, field in enumerate(fieldList):
+        if includeGhosts:
+            xvals = field.nodeList().positions().allValues()
+            yvals = field.allValues()
+        else:
+            xvals = field.nodeList().positions().internalValues()
+            yvals = field.internalValues()
+        xloc, yloc = [], []
+        for xi, yi in zip(xvals, yvals):
+            if filterFunc(x):
+                xloc.append(eval(xFunction % "xi"))
+                yloc.append(eval(yFunction % "yi"))
+        x += mpi.allreduce(xloc, mpi.SUM)
+        y += mpi.allreduce(yloc, mpi.SUM)
+        numInField[k] = len(x)
+
+    return np.array(x), np.array(y), numInField
+
+#-------------------------------------------------------------------------------
 # Plot a FieldList
 #-------------------------------------------------------------------------------
 def plotFieldList(fieldList,
@@ -173,42 +206,23 @@ def plotFieldList(fieldList,
                   markerSize = 4,
                   kwords = {},
                   winTitle = None,
-                  lineTitle = "",
+                  lineTitle = None,
                   xlabel = None,
                   ylabel = None,
                   filterFunc = None,
                   semilogy = False):
 
+    # Extract the fieldlist values to arrays in processor 0
+    globalX, globalY, globalNumNodes = extractFieldListValuesByPosition(fieldList,
+                                                                        xFunction,
+                                                                        yFunction,
+                                                                        plotGhosts,
+                                                                        filterFunc)
     # Do we need to make a new window?
     if plot is None:
         plot = newFigure()
 
-    # How about a filtering function?
-    if filterFunc is None:
-        filterFunc = lambda x: True
-
-    # Gather the fieldList info across all processors to process 0.
-    globalNumNodes = []
-    globalX = []
-    globalY = []
-    for field in fieldList:
-        if plotGhosts:
-            xvals = field.nodeList().positions().allValues()
-            yvals = field.allValues()
-        else:
-            xvals = field.nodeList().positions().internalValues()
-            yvals = field.internalValues()
-        localX = []
-        localY = []
-        for x, y in zip(xvals, yvals):
-            if filterFunc(x):
-                localX.append(eval(xFunction % "x"))
-                localY.append(eval(yFunction % "y"))
-        n = len(localX)
-        globalNumNodes.append(mpi.allreduce(n, mpi.SUM))
-        globalX += mpi.allreduce(localX, mpi.SUM)
-        globalY += mpi.allreduce(localY, mpi.SUM)
-            
+    # Plot em
     if mpi.rank == 0:
         # Find the total number of nodes.
         totalNumNodes = sum(globalNumNodes)
@@ -221,6 +235,13 @@ def plotFieldList(fieldList,
         if xlabel: plt.xlabel(xlabel)
         if ylabel: plt.ylabel(ylabel)
 
+        if lineTitle:
+            label = lineTitle
+        elif colorNodeLists:
+            label = ""
+        else:
+            label = None
+
         # Finally, loop over the fields and do the deed.
         assert len(globalX) == len(globalY)
         if colorNodeLists:
@@ -231,18 +252,24 @@ def plotFieldList(fieldList,
                     if semilogy:
                         plot.semilogy(globalX[cumulativeNumNodes:cumulativeNumNodes + n],
                                       globalY[cumulativeNumNodes:cumulativeNumNodes + n],
-                                      plotStyle, ms=markerSize, label = "%s: %s" % (lineTitle, fieldList[i].nodeList().name), **kwords)
+                                      plotStyle, ms=markerSize,
+                                      label = "{}: {}".format(label, fieldList[i].nodeList().name),
+                                      **kwords)
                     else:
                         plot.plot(globalX[cumulativeNumNodes:cumulativeNumNodes + n],
                                   globalY[cumulativeNumNodes:cumulativeNumNodes + n],
-                                  plotStyle, ms=markerSize, label = "%s: %s" % (lineTitle, fieldList[i].nodeList().name), **kwords)
+                                  plotStyle, ms=markerSize,
+                                  label = "{}: {}".format(lineTitle, fieldList[i].nodeList().name),
+                                  **kwords)
                     cumulativeNumNodes += n
         else:
             if semilogy:
-                plot.semilogy(globalX, globalY, plotStyle, ms=markerSize, label = lineTitle, **kwords)
+                plot.semilogy(globalX, globalY, plotStyle, ms=markerSize, label=label, **kwords)
             else:
-                plot.plot(globalX, globalY, plotStyle, ms=markerSize, label = lineTitle, **kwords)
-        plot.axes.legend()
+                plot.plot(globalX, globalY, plotStyle, ms=markerSize, label=label, **kwords)
+
+        if label:
+            plot.axes.legend()
 
         # Set the ranges.
         xmin, xmax = plt.xlim()
@@ -255,6 +282,83 @@ def plotFieldList(fieldList,
         plt.ylim(ymin, ymax)
 
     # That's it
+    mpi.barrier()
+    return plot
+
+#-------------------------------------------------------------------------------
+# Plot a binned fit to a FieldList
+#-------------------------------------------------------------------------------
+def plotFieldListAverage(fieldList,
+                         nbins = 100,
+                         xFunction = "%s.x",
+                         yFunction = "%s",
+                         plotGhosts = False,
+                         plot = None,
+                         xRange = [None, None],
+                         yRange = [None, None],
+                         plotStyle = "b-",
+                         markerSize = 4,
+                         fillcolor = "red",
+                         fillalpha = 0.3,
+                         linewidth = 2,
+                         kwords = {},
+                         winTitle = None,
+                         lineTitle = None,
+                         xlabel = None,
+                         ylabel = None,
+                         filterFunc = None):
+
+    # Extract the fieldlist values to arrays in processor 0
+    x, y, globalNumNodes = extractFieldListValuesByPosition(fieldList,
+                                                            xFunction,
+                                                            yFunction,
+                                                            plotGhosts,
+                                                            filterFunc)
+
+    # Do we need to make a new window?
+    if plot is None:
+        plot = newFigure()
+
+    # Plot em
+    if mpi.rank == 0:
+
+        # Use scipy to computed the binned mean and standard deviation
+        bin_means, bin_edges, _ = binned_statistic(x, y, statistic='mean', bins=nbins)
+        bin_stds, _, _ = binned_statistic(x, y, statistic='std', bins=nbins)
+
+        # Calculate bin centers for plotting
+        bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
+
+        # Plot shaded 1-sigma region
+        if fillcolor:
+            plot.fill_between(bin_centers, bin_means - bin_stds, bin_means + bin_stds, 
+                              color=fillcolor, alpha=fillalpha, **kwords)
+
+        # Plot mean line
+        if plotStyle:
+            plot.plot(bin_centers, bin_means, plotStyle, lw=linewidth, label=lineTitle, **kwords)
+
+        # Set the ranges.
+        xmin, xmax = plt.xlim()
+        ymin, ymax = plt.ylim()
+        if xRange[0]: xmin = xRange[0]
+        if xRange[1]: xmax = xRange[1]
+        if yRange[0]: ymin = yRange[0]
+        if yRange[1]: ymax = yRange[1]
+        plt.xlim(xmin, xmax)
+        plt.ylim(ymin, ymax)
+
+        # Labeling
+        if winTitle:
+            plt.title(winTitle)
+        if xlabel:
+            plt.xlabel(xlabel)
+        if ylabel:
+            plt.ylabel(ylabel)
+        if lineTitle:
+            plot.axes.legend()
+
+    # Done
     mpi.barrier()
     return plot
 
@@ -305,14 +409,14 @@ def plotField(field,
 #-------------------------------------------------------------------------------
 def plotState(thingus,
               plotGhosts = False,
-              colorNodeLists = False,
               plotStyle = "ro",
               markerSize = 4,
               xFunction = "%s.x",
               vecyFunction = "%s.x",
               tenyFunction = "%s.xx ** -1",
               lineTitle = "Simulation",
-              filterFunc = None):
+              filterFunc = None,
+              plotAverage = False):
 
     dim = type(thingus).__name__[-2:]
     if isinstance(thingus, eval("State%s" % dim)):
@@ -331,62 +435,62 @@ def plotState(thingus,
         thingus.fluidPressure(P)
         H = thingus.fluidHfield
 
-    rhoPlot = plotFieldList(rho,
-                            xFunction = xFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Mass Density",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    if plotAverage:
+        plotit = plotFieldListAverage
+    else:
+        plotit = plotFieldList
 
-    velPlot = plotFieldList(vel,
-                            xFunction = xFunction,
-                            yFunction = vecyFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Velocity",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    rhoPlot = plotit(rho,
+                     xFunction = xFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Mass Density",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    epsPlot = plotFieldList(eps,
-                            xFunction = xFunction,
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = plotStyle,
-                            markerSize = markerSize,
-                            winTitle = "Specific Thermal Energy",
-                            lineTitle = lineTitle,
-                            xlabel="x",
-                            filterFunc = filterFunc)
+    velPlot = plotit(vel,
+                     xFunction = xFunction,
+                     yFunction = vecyFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Velocity",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    PPlot = plotFieldList(P,
-                          xFunction = xFunction,
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = plotStyle,
-                          markerSize = markerSize,
-                          winTitle = "Pressure",
-                          lineTitle = lineTitle,
-                          xlabel="x",
-                          filterFunc = filterFunc)
+    epsPlot = plotit(eps,
+                     xFunction = xFunction,
+                     plotGhosts = plotGhosts,
+                     plotStyle = plotStyle,
+                     markerSize = markerSize,
+                     winTitle = "Specific Thermal Energy",
+                     lineTitle = lineTitle,
+                     xlabel="x",
+                     filterFunc = filterFunc)
 
-    HPlot = plotFieldList(H,
-                          xFunction = xFunction,
-                          yFunction = tenyFunction,
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = plotStyle,
-                          markerSize = markerSize,
-                          winTitle = "Smoothing scale",
-                          lineTitle = lineTitle,
-                          xlabel="x",
-                          filterFunc = filterFunc)
+    PPlot = plotit(P,
+                   xFunction = xFunction,
+                   plotGhosts = plotGhosts,
+                   plotStyle = plotStyle,
+                   markerSize = markerSize,
+                   winTitle = "Pressure",
+                   lineTitle = lineTitle,
+                   xlabel="x",
+                   filterFunc = filterFunc)
+
+    HPlot = plotit(H,
+                   xFunction = xFunction,
+                   yFunction = tenyFunction,
+                   plotGhosts = plotGhosts,
+                   plotStyle = plotStyle,
+                   markerSize = markerSize,
+                   winTitle = "Smoothing scale",
+                   lineTitle = lineTitle,
+                   xlabel="x",
+                   filterFunc = filterFunc)
 
     return rhoPlot, velPlot, epsPlot, PPlot, HPlot
 
@@ -395,64 +499,64 @@ def plotState(thingus,
 #-------------------------------------------------------------------------------
 def plotRadialState(dataBase,
                     plotGhosts = False,
-                    colorNodeLists = False,
                     lineTitle = "Simulation",
-                    filterFunc = None):
+                    filterFunc = None,
+                    plotAverage = False):
 
-    rhoPlot = plotFieldList(dataBase.fluidMassDensity,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = "Mass density",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    if plotAverage:
+        plotit = plotFieldListAverage
+    else:
+        plotit = plotFieldList
+
+    rhoPlot = plotit(dataBase.fluidMassDensity,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = "Mass density",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
     radialVelocity = radialVelocityFieldList(dataBase.fluidPosition,
                                              dataBase.fluidVelocity)
-    velPlot = plotFieldList(radialVelocity,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = " Radial Velocity",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    velPlot = plotit(radialVelocity,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = " Radial Velocity",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
-    epsPlot = plotFieldList(dataBase.fluidSpecificThermalEnergy,
-                            xFunction = "%s.magnitude()",
-                            plotGhosts = plotGhosts,
-                            colorNodeLists = colorNodeLists,
-                            plotStyle = "ro",
-                            winTitle = "Specific Thermal Energy",
-                            lineTitle = lineTitle,
-                            xlabel = "r",
-                            filterFunc = filterFunc)
+    epsPlot = plotit(dataBase.fluidSpecificThermalEnergy,
+                     xFunction = "%s.magnitude()",
+                     plotGhosts = plotGhosts,
+                     plotStyle = "ro-",
+                     winTitle = "Specific Thermal Energy",
+                     lineTitle = lineTitle,
+                     xlabel = "r",
+                     filterFunc = filterFunc)
 
     fluidPressure = dataBase.newFluidScalarFieldList(0.0, "pressure")
     dataBase.fluidPressure(fluidPressure)
-    PPlot = plotFieldList(fluidPressure,
-                          xFunction = "%s.magnitude()",
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = "ro",
-                          winTitle = "Pressure",
-                          lineTitle = lineTitle,
-                          xlabel = "r",
-                          filterFunc = filterFunc)
+    PPlot = plotit(fluidPressure,
+                   xFunction = "%s.magnitude()",
+                   plotGhosts = plotGhosts,
+                   plotStyle = "ro-",
+                   winTitle = "Pressure",
+                   lineTitle = lineTitle,
+                   xlabel = "r",
+                   filterFunc = filterFunc)
 
-    HPlot = plotFieldList(dataBase.fluidHfield,
-                          xFunction = "%s.magnitude()",
-                          yFunction = "%s.xx**-1",
-                          plotGhosts = plotGhosts,
-                          colorNodeLists = colorNodeLists,
-                          plotStyle = "ro",
-                          winTitle = "Smoothing scale",
-                          lineTitle = lineTitle,
-                          xlabel = "r",
-                          filterFunc = filterFunc)
+    HPlot = plotit(dataBase.fluidHfield,
+                   xFunction = "%s.magnitude()",
+                   yFunction = "%s.xx**-1",
+                   plotGhosts = plotGhosts,
+                   plotStyle = "ro-",
+                   winTitle = "Smoothing scale",
+                   lineTitle = lineTitle,
+                   xlabel = "r",
+                   filterFunc = filterFunc)
 
     return rhoPlot, velPlot, epsPlot, PPlot, HPlot
 
@@ -467,7 +571,8 @@ def plotAnswer(answerObject, time,
                APlot = None,
                HPlot = None,
                x = None,
-               plotStyle = "k-"):
+               plotStyle = "k-",
+               kwords = {}):
 
     try:
         x, v, u, rho, P, h = answerObject.solution(time, x)
@@ -478,27 +583,27 @@ def plotAnswer(answerObject, time,
             x, v, u, rho, P = answerObject.solution(time, x)
 
     if rhoPlot is not None:
-        rhoPlot.plot(x, rho, plotStyle, label="Solution")
+        rhoPlot.plot(x, rho, plotStyle, label="Solution", **kwords)
         rhoPlot.axes.legend()
 
     if velPlot is not None:
-        velPlot.plot(x, v, plotStyle, label="Solution")
+        velPlot.plot(x, v, plotStyle, label="Solution", **kwords)
         velPlot.axes.legend()
 
     if epsPlot is not None:
-        epsPlot.plot(x, u, plotStyle, label="Solution")
+        epsPlot.plot(x, u, plotStyle, label="Solution", **kwords)
         epsPlot.axes.legend()
 
     if PPlot is not None:
-        PPlot.plot(x, P, plotStyle, label="Solution")
+        PPlot.plot(x, P, plotStyle, label="Solution", **kwords)
         PPlot.axes.legend()
 
     if APlot is not None:
-        APlot.plot(x, A, plotStyle, label="Solution")
+        APlot.plot(x, A, plotStyle, label="Solution", **kwords)
         APlot.axes.legend()
 
     if HPlot is not None:
-        HPlot.plot(x, h, plotStyle, label="Solution")
+        HPlot.plot(x, h, plotStyle, label="Solution", **kwords)
         HPlot.axes.legend()
 
     return
@@ -519,7 +624,7 @@ def plotNodePositions2d(thingy,
     assert colorNodeLists + colorDomains <= 1
 
     if isinstance(thingy, DataBase2d):
-        nodeLists = thingy.nodeLists()
+        nodeLists = thingy.nodeLists
     else:
         nodeLists = thingy
 
@@ -601,14 +706,14 @@ def plotBoundaryNodes(dataBase, boundary):
     # First build one set of position pairs for all of the nodes in the
     # data base.
     positions = []
-    for nodeList in dataBase.nodeLists():
+    for nodeList in dataBase.nodeLists:
         for r in list(nodeList.positions())[:nodeList.numInternalNodes]:
             positions.append((r.x, r.y))
 
     # Now build a list of the control node positions from the boundary
     # condition.
     controlPositions = []
-    for nodeList in dataBase.nodeLists():
+    for nodeList in dataBase.nodeLists:
         controlNodes = boundary.controlNodes(nodeList)
         for nodeID in controlNodes:
             r = nodeList.positions()[nodeID]
@@ -617,7 +722,7 @@ def plotBoundaryNodes(dataBase, boundary):
     # Now build a list of the ghost node positions from the boundary
     # condition.
     ghostPositions = []
-    for nodeList in dataBase.nodeLists():
+    for nodeList in dataBase.nodeLists:
         ghostNodes = boundary.ghostNodes(nodeList)
         for nodeID in ghostNodes:
             r = nodeList.positions()[nodeID]
@@ -738,7 +843,7 @@ def plotVectorField2d(dataBase, fieldList,
     vxNodes = []
     vyNodes = []
     for i in range(dataBase.numNodeLists):
-        nodeList = dataBase.nodeLists()[i]
+        nodeList = dataBase.nodeLists[i]
         assert i < fieldList.numFields
         vectorField = fieldList[i]
         if plotGhosts:
@@ -914,9 +1019,9 @@ def plotpmomHistory(conserve):
 #-------------------------------------------------------------------------------
 # Plot a surface
 #-------------------------------------------------------------------------------
-def plotSurface(x,   # 1D numpy array with x-coordinates for edge of plot : shape nx
-                y,   # 1D numpy array with y-coordinates for edge of plot : shape ny
-                z,   # 2D numpy array with z values for surface : shape (nx, ny)
+def plotSurface(x,   # 2D numpy array with x-coordinates        : shape (nx,ny)
+                y,   # 2D numpy array with y-coordinates        : shape (nx,ny)
+                z,   # 2D numpy array with z values for surface : shape (nx,ny)
                 cmap = pltcm.coolwarm,   # Colormap
                 xlabel = None,
                 ylabel = None,
@@ -931,83 +1036,143 @@ def plotSurface(x,   # 1D numpy array with x-coordinates for edge of plot : shap
     plt.title(title)
     return fig, ax, surf
 
-# #-------------------------------------------------------------------------------
-# # Plot a polygon.
-# #-------------------------------------------------------------------------------
-# def plotPolygon(polygon,
-#                 plotVertices = True,
-#                 plotFacets = True,
-#                 plotNormals = False,
-#                 plotCentroid = False,
-#                 plot = None,
-#                 persist = False,
-#                 plotLabels = True):
-#     import matplotlib.patches as patches
-#     mppoly = patches.Polygon(np.array([[v.x, v.y] for v in in polygon.vertices()]), True)
-#     mppatches = PatchCollection([mppoly])
+#-------------------------------------------------------------------------------
+# Plot a QuadraticInterpolator
+#-------------------------------------------------------------------------------
+def plotInterpolator(interp,
+                     n = None,
+                     plot = None,
+                     plotstyle = "r-",
+                     label = None,
+                     xlabel = None,
+                     ylabel = None,
+                     title = None):
+    x0, x1 = interp.xmin, interp.xmax
+    if n is None:
+        n = 2 * interp.size
+    if plot is None:
+        plot = newFigure()
+    xvals = np.linspace(x0, x1, n)
+    yvals = np.array([interp(x) for x in xvals])
+    plot.plot(xvals, yvals, plotstyle, label=label)
+    plot.set_xlabel(xlabel)
+    plot.set_ylabel(ylabel)
+    plot.set_title(title)
+    return plot
 
-#     px = []
-#     py = []
-#     for v in polygon.vertices():
-#         px.append(v.x)
-#         py.append(v.y)
-#     fx = []
-#     fy = []
-#     fdx = []
-#     fdy = []
-#     nx = []
-#     ny = []
-#     ndx = []
-#     ndy = []
-#     for f in polygon.facets():
-#         dr = f.point2 - f.point1
-#         hdr = dr/2.0
-#         fx.append(f.point1.x)
-#         fy.append(f.point1.y)
-#         fdx.append(dr.x)
-#         fdy.append(dr.y)
-#         nx.append(fx[-1] + hdr.x)
-#         ny.append(fy[-1] + hdr.y)
-#         ndx.append(f.normal.x)
-#         ndy.append(f.normal.y)
-#     if plot is None:
-#         plot = generateNewGnuPlot(persist)
-#     if plotLabels:
-#         vlabel, flabel, nlabel = "Vertices", "Facets", "Normals"
-#     else:
-#         vlabel, flabel, nlabel = None, None, None
-#     dataPoints = Gnuplot.Data(px, py,
-#                               with_ = "points pt 1 ps 2",
-#                               title = vlabel,
-#                               inline = True)
-#     dataFacets = Gnuplot.Data(fx, fy, fdx, fdy,
-#                               with_ = "vectors",
-#                               title = flabel,
-#                               inline = True)
-#     dataNormals = Gnuplot.Data(nx, ny, ndx, ndy,
-#                                with_ = "vectors",
-#                                title = nlabel,
-#                                inline = True)
-#     if plotVertices:
-#         plot.replot(dataPoints)
+#-------------------------------------------------------------------------------
+# Plot a table kernel
+#-------------------------------------------------------------------------------
+def plotTableKernel(WT, nPerh):
+    plots = [plotInterpolator(interp = x,
+                              xlabel = xlab,
+                              ylabel = ylab,
+                              title = ylab) for x, xlab, ylab in [(WT.Winterpolator,      r"$\eta$",   r"$W(\eta)$"),
+                                                                  (WT.gradWinterpolator,  r"$\eta$",   r"$\partial_\eta W(\eta)$"),
+                                                                  (WT.grad2Winterpolator, r"$\eta$",   r"$\partial^2_\eta W(\eta)$"),
+                                                                  (WT.nPerhInterpolator,  r"$\sum W$",  r"n per h($\sum W$)"),
+                                                                  (WT.WsumInterpolator,   r"n per h",  r"$\sum W$")]]
 
-#     if plotFacets:
-#         plot.replot(dataFacets)
+    x0, x1 = 0.0, WT.kernelExtent
+    xvals = np.linspace(x0, x1, 100)
+    yvals = np.array([WT.kernelValueSPH(x) for x in xvals])
+    plotSPH = newFigure()
+    plotSPH.plot(xvals, yvals, "r-", label=None)
+    plotSPH.set_xlabel(r"$\eta$")
+    plotSPH.set_ylabel(r"$W_{SPH}(\eta)$")
+    plotSPH.set_title(r"$W(\eta)$ for SPH h lookup")
 
-#     if plotNormals:
-#         plot.replot(dataNormals)
+    yvals = np.array([WT.kernelValueASPH(x, nPerh) for x in xvals])
+    plotASPH = newFigure()
+    plotASPH.plot(xvals, yvals, "r-", label=None)
+    plotASPH.set_xlabel(r"$\eta$")
+    plotASPH.set_ylabel(r"$W_{ASPH}(\eta)$")
+    plotASPH.set_title(r"$W(\eta)$ for ASPH h lookup with $n_h="+str(nPerh)+"$")
 
-#     if plotCentroid:
-#         c = polygon.centroid()
-#         dataCentroid = Gnuplot.Data([c.x], [c.y],
-#                                     with_ = "points pt 2 ps 2",
-#                                     title = "Centroid",
-#                                     inline = True)
-#         plot.replot(dataCentroid)
+    plots += [plotSPH, plotASPH]
 
-#     SpheralGnuPlotCache.extend([dataPoints, dataFacets, dataNormals, plot])
+    return plots
 
-#     return plot
+#-------------------------------------------------------------------------------
+# Plot a polygon.
+#-------------------------------------------------------------------------------
+def plotPolygon(polygon,
+                plotVertices = True,
+                plotFacets = True,
+                plotNormals = False,
+                plotCentroid = False,
+                plot = None,
+                persist = False,
+                plotLabels = True):
+    mppoly = patches.Polygon(np.array([[v.x, v.y] for v in polygon.vertices]), False)
+
+    if plot is None:
+        plot = newFigure()
+    plot.add_patch(mppoly)
+    return
+
+    # px = []
+    # py = []
+    # for v in polygon.vertices():
+    #     px.append(v.x)
+    #     py.append(v.y)
+    # fx = []
+    # fy = []
+    # fdx = []
+    # fdy = []
+    # nx = []
+    # ny = []
+    # ndx = []
+    # ndy = []
+    # for f in polygon.facets():
+    #     dr = f.point2 - f.point1
+    #     hdr = dr/2.0
+    #     fx.append(f.point1.x)
+    #     fy.append(f.point1.y)
+    #     fdx.append(dr.x)
+    #     fdy.append(dr.y)
+    #     nx.append(fx[-1] + hdr.x)
+    #     ny.append(fy[-1] + hdr.y)
+    #     ndx.append(f.normal.x)
+    #     ndy.append(f.normal.y)
+    # if plot is None:
+    #     plot = generateNewGnuPlot(persist)
+    # if plotLabels:
+    #     vlabel, flabel, nlabel = "Vertices", "Facets", "Normals"
+    # else:
+    #     vlabel, flabel, nlabel = None, None, None
+    # dataPoints = Gnuplot.Data(px, py,
+    #                           with_ = "points pt 1 ps 2",
+    #                           title = vlabel,
+    #                           inline = True)
+    # dataFacets = Gnuplot.Data(fx, fy, fdx, fdy,
+    #                           with_ = "vectors",
+    #                           title = flabel,
+    #                           inline = True)
+    # dataNormals = Gnuplot.Data(nx, ny, ndx, ndy,
+    #                            with_ = "vectors",
+    #                            title = nlabel,
+    #                            inline = True)
+    # if plotVertices:
+    #     plot.replot(dataPoints)
+
+    # if plotFacets:
+    #     plot.replot(dataFacets)
+
+    # if plotNormals:
+    #     plot.replot(dataNormals)
+
+    # if plotCentroid:
+    #     c = polygon.centroid()
+    #     dataCentroid = Gnuplot.Data([c.x], [c.y],
+    #                                 with_ = "points pt 2 ps 2",
+    #                                 title = "Centroid",
+    #                                 inline = True)
+    #     plot.replot(dataCentroid)
+
+    # SpheralGnuPlotCache.extend([dataPoints, dataFacets, dataNormals, plot])
+
+    # return plot
 
 # #-------------------------------------------------------------------------------
 # # Plot a PolygonalMesh

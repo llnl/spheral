@@ -53,7 +53,6 @@ def distributeNodesGeneric(listOfNodeTuples,
 
         # Find the maximum kernel extent for all NodeLists.
         kernelExtent = max(kernelExtent, nodes.neighbor().kernelExtent)
-        one = eval("Spheral.SymTensor%id.one" % db.nDim)
         hminInv = 1.0/nodes.hmin
         hmaxInv = 1.0/nodes.hmax
 
@@ -69,8 +68,8 @@ def distributeNodesGeneric(listOfNodeTuples,
             m[i] = generator.localMass(i)
             vel[i] = generator.localVelocity(i)
             H[i] = generator.localHtensor(i)
-       
-        # DEM mod -- we'll want to clean this up at some point...
+
+        # Set fields for fluids and solids, if applicable
         #------------------------------------------------------
         try:
             rho = nodes.massDensity()
@@ -79,6 +78,15 @@ def distributeNodesGeneric(listOfNodeTuples,
         except:
             pass
 
+        try:
+            matE = nodes.specificThermalEnergy()
+            for i in range(nlocal):
+                matE[i] = generator.localMatE(i)
+        except:
+            pass
+
+        # DEM mod -- we'll want to clean this up at some point...
+        #------------------------------------------------------
         try:
             rad = nodes.particleRadius()
             for i in range(nlocal):
@@ -125,11 +133,11 @@ def distributeNodesGeneric(listOfNodeTuples,
 
     # Update the neighboring info.
     #exec("Spheral.Neighbor%id.setBoundingBox()" % db.nDim)
-    for nodes in db.nodeLists():
+    for nodes in db.nodeLists:
         nodes.neighbor().updateNodes()
 
     # Make sure we finished with the correct numbers of nodes!
-    totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists()]), mpi.SUM)
+    totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists]), mpi.SUM)
     assert totalCheck == totalNumGlobalNodes
 
     # Stuff any extra field values back in the initial lists.

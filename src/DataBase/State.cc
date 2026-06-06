@@ -73,17 +73,6 @@ namespace {
 }
 
 //------------------------------------------------------------------------------
-// Default constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-State<Dimension>::
-State():
-  StateBase<Dimension>(),
-  mPolicyMap(),
-  mTimeAdvanceOnly(false) {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the state for the given set of Physics packages.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -94,9 +83,9 @@ State(DataBase<Dimension>& dataBase,
   mPolicyMap(),
   mTimeAdvanceOnly(false) {
   // Iterate over the physics packages, and have them register their state.
-  for (PackageIterator itr = physicsPackages.begin();
-       itr != physicsPackages.end();
-       ++itr) (*itr)->registerState(dataBase, *this);
+  for (auto pkg: physicsPackages) pkg->registerState(dataBase, *this);
+  auto cmp = dataBase.connectivityMapPtr();
+  if (cmp) this->enrollConnectivityMap(cmp);
 }
 
 //------------------------------------------------------------------------------
@@ -111,43 +100,9 @@ State(DataBase<Dimension>& dataBase,
   mPolicyMap(),
   mTimeAdvanceOnly(false) {
   // Iterate over the physics packages, and have them register their state.
-  for (PackageIterator itr = physicsPackageBegin;
-       itr != physicsPackageEnd;
-       ++itr) (*itr)->registerState(dataBase, *this);
-}
-
-//------------------------------------------------------------------------------
-// Copy constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-State<Dimension>::
-State(const State<Dimension>& rhs):
-  StateBase<Dimension>(rhs),
-  mPolicyMap(rhs.mPolicyMap),
-  mTimeAdvanceOnly(rhs.mTimeAdvanceOnly) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-State<Dimension>::
-~State() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-State<Dimension>&
-State<Dimension>::
-operator=(const State<Dimension>& rhs) {
-  if (this != &rhs) {
-    StateBase<Dimension>::operator=(rhs);
-    mPolicyMap = rhs.mPolicyMap;
-    mTimeAdvanceOnly = rhs.mTimeAdvanceOnly;
-  }
-  return *this;
+  for (auto pkg: range(physicsPackageBegin, physicsPackageEnd)) pkg->registerState(dataBase, *this);
+  auto cmp = dataBase.connectivityMapPtr();
+  if (cmp) this->enrollConnectivityMap(cmp);
 }
 
 //------------------------------------------------------------------------------
@@ -161,119 +116,6 @@ operator==(const StateBase<Dimension>& rhs) const {
 }
 
 //------------------------------------------------------------------------------
-// Update the state with the given derivatives object, according to the per
-// state field policies.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-State<Dimension>::
-update(StateDerivatives<Dimension>& derivs,
-       const double multiplier,
-       const double t,
-       const double dt) {
-
-  // cerr << "################################################################################" << endl;
-
-  // Prepare lists of the keys to be completed.
-  vector<KeyType> fieldsToBeCompleted;
-  map<KeyType, set<KeyType>> stateToBeCompleted;
-  for (auto& fieldkey_policy: mPolicyMap) {
-    auto& fieldkey = fieldkey_policy.first;                // Just Field names
-    for (auto& fullkey_policy: fieldkey_policy.second) {
-      auto& fullkey = fullkey_policy.first;                // Fully encoded Field + NodeList names
-      stateToBeCompleted[fieldkey].insert(fullkey);
-    }
-  }
-  for (const auto& key_fullkey: stateToBeCompleted) fieldsToBeCompleted.push_back(key_fullkey.first);
-  CHECK(fieldsToBeCompleted.size() == stateToBeCompleted.size());
-
-  // Keep a copy of all the Field keys we are evolving
-  const std::set<KeyType> allFieldKeys(fieldsToBeCompleted.begin(), fieldsToBeCompleted.end());
-
-  // Iterate until all state has been updated.
-  while (not stateToBeCompleted.empty()) {
-
-    // Walk the remaining state to be completed.
-    vector<KeyType> stateToRemove;
-    for (auto& [fieldKey, remainingKeys]: stateToBeCompleted) { // (fieldKey, set<full_fieldKeys>)
-
-      // Walk the remaining individual keys for this fieldKey.
-      for (auto& key: remainingKeys) {
-        const PolicyPointer policyPtr = mPolicyMap[fieldKey][key];
-
-        // Check if any of the dependencies for this state have not been completed yet.
-        bool allDependenciesMet = true;
-        {
-          const auto& dependencies = policyPtr->dependencies();
-          auto itr = dependencies.begin();
-          while (itr < dependencies.end() and
-                 find(fieldsToBeCompleted.begin(), fieldsToBeCompleted.end(), *itr) == fieldsToBeCompleted.end()) itr++;
-          allDependenciesMet = (itr == dependencies.end());
-        }
-        if (allDependenciesMet) {
-
-          // We also require that any FieldList policies fire before NodeList specific 
-          // versions of the same Field names.
-          KeyType fieldKey, nodeListKey;
-          this->splitFieldKey(key, fieldKey, nodeListKey);
-          bool fire = (nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
-          if (not fire) {
-            const KeyType wildKey = this->buildFieldKey(fieldKey, UpdatePolicyBase<Dimension>::wildcard());
-            fire = (find(remainingKeys.begin(), remainingKeys.end(), wildKey) == remainingKeys.end());
-          }
-
-          if (fire) {
-            // cerr <<" --> Update " << key << endl;
-            if (mTimeAdvanceOnly) {
-              policyPtr->updateAsIncrement(key, *this, derivs, multiplier, t, dt);
-            } else {
-              policyPtr->update(key, *this, derivs, multiplier, t, dt);
-            }
-
-            // List this field as completed.
-            stateToRemove.push_back(key);
-          }
-        }
-      }
-    }
-
-    // Check that the some state has been updated on this iteration.  If not, then *somebody*
-    // has specified a circular dependency tree!
-    if (stateToRemove.empty()) {
-      std::stringstream message;
-      message << "State::update ERROR: someone has specified a circular state dependency.\n"
-              << "Remaining State:\n";
-      for (const auto& itr: stateToBeCompleted) message << "   " << itr.first << "\n";
-      message << "State dependencies:\n";
-      for (const auto& itr: mPolicyMap) {
-        const KeyType fieldKey = itr.first;
-        const map<KeyType, PolicyPointer>& keysAndPolicies = itr.second;
-        for (const auto& pitr: keysAndPolicies) {
-          const KeyType key = pitr.first;
-          const PolicyPointer policyPtr = pitr.second;
-          message << key << " : ";
-          for (const auto& dep: policyPtr->dependencies()) message << dep << "  ++  ";
-          message << "\n";
-        }
-      }
-      VERIFY2(not stateToRemove.empty(), message.str());
-    }
-    
-    // Remove the completed state.
-    for (const auto& key: stateToRemove) {
-      KeyType fieldKey, nodeListKey;
-      this->splitFieldKey(key, fieldKey, nodeListKey);
-      CHECK(stateToBeCompleted.find(fieldKey) != stateToBeCompleted.end());
-      stateToBeCompleted[fieldKey].erase(key);
-      if (stateToBeCompleted[fieldKey].empty()) stateToBeCompleted.erase(fieldKey);
-    }
-    fieldsToBeCompleted = vector<KeyType>();
-    for (const auto& itr: stateToBeCompleted) fieldsToBeCompleted.push_back(itr.first);
-    CHECK(fieldsToBeCompleted.size() == stateToBeCompleted.size());
-  }
-}
-
-//------------------------------------------------------------------------------
 // The set of keys for all registered policies.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -281,7 +123,7 @@ vector<typename State<Dimension>::KeyType>
 State<Dimension>::
 policyKeys() const {
   vector<KeyType> result;
-  for (const auto itr: mPolicyMap) result.push_back(itr.first);
+  for (const auto& itr: mPolicyMap) result.push_back(itr.first);
   ENSURE(result.size() == mPolicyMap.size());
   return result;
 }
@@ -369,6 +211,202 @@ removePolicy(FieldListBase<Dimension>& fieldList,
          ++fieldPtrItr) this->removePolicy(**fieldPtrItr);
   } else {
     this->removePolicy(StateBase<Dimension>::key(fieldList));
+  }
+}
+
+//------------------------------------------------------------------------------
+// Update the state with the given derivatives object, according to the per
+// state field policies.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+State<Dimension>::
+update(StateDerivatives<Dimension>& derivs,
+       const double multiplier,
+       const double t,
+       const double dt,
+       const bool dependentOnly) {
+
+  // cerr << "################################################################################" << endl;
+
+  // Prepare lists of the keys to be completed.
+  vector<KeyType> fieldsToBeCompleted;
+  map<KeyType, set<KeyType>> stateToBeCompleted;
+  for (auto& fieldkey_policies: mPolicyMap) {
+    auto& fieldkey = fieldkey_policies.first;               // Just Field names
+    for (auto& [fullkey, policyPtr]: fieldkey_policies.second) {
+      // if ((not dependentOnly) or policyPtr->dependent()) {  // Fully encoded Field + NodeList names
+        stateToBeCompleted[fieldkey].insert(fullkey);
+      // }
+    }
+  }
+  for (const auto& key_fullkey: stateToBeCompleted) fieldsToBeCompleted.push_back(key_fullkey.first);
+  CHECK(fieldsToBeCompleted.size() == stateToBeCompleted.size());
+
+  // Keep a copy of all the Field keys we are evolving
+  const std::set<KeyType> allFieldKeys(fieldsToBeCompleted.begin(), fieldsToBeCompleted.end());
+
+  // Iterate until all state has been updated.
+  while (not stateToBeCompleted.empty()) {
+
+    // Walk the remaining state to be completed.
+    vector<KeyType> stateToRemove;
+    for (auto& [fieldKey, remainingKeys]: stateToBeCompleted) { // (fieldKey, set<full_fieldKeys>)
+
+      // Walk the remaining individual keys for this fieldKey.
+      for (auto& key: remainingKeys) {
+        const PolicyPointer policyPtr = mPolicyMap[fieldKey][key];
+
+        // Check if any of the dependencies for this state have not been completed yet.
+        bool allDependenciesMet = true;
+        {
+          const auto& dependencies = policyPtr->dependencies();
+          auto itr = dependencies.begin();
+          while (itr < dependencies.end() and
+                 find(fieldsToBeCompleted.begin(), fieldsToBeCompleted.end(), *itr) == fieldsToBeCompleted.end()) itr++;
+          allDependenciesMet = (itr == dependencies.end());
+        }
+        if (allDependenciesMet) {
+
+          // We also require that any FieldList policies fire before NodeList specific 
+          // versions of the same Field names.
+          KeyType fieldKey, nodeListKey;
+          this->splitFieldKey(key, fieldKey, nodeListKey);
+          bool fire = (nodeListKey == UpdatePolicyBase<Dimension>::wildcard());
+          if (not fire) {
+            const KeyType wildKey = this->buildFieldKey(fieldKey, UpdatePolicyBase<Dimension>::wildcard());
+            fire = (find(remainingKeys.begin(), remainingKeys.end(), wildKey) == remainingKeys.end());
+          }
+
+          if (fire) {
+            // cerr <<" --> Update " << key << endl;
+            if (dependentOnly and policyPtr->independent()) {
+              if (mTimeAdvanceOnly) {
+                policyPtr->updateAsIncrement(key, *this, derivs, 0.0, t, 0.0);
+              } else {
+                policyPtr->update(key, *this, derivs, 0.0, t, 0.0);
+              }
+            } else {
+              if (mTimeAdvanceOnly) {
+                policyPtr->updateAsIncrement(key, *this, derivs, multiplier, t, dt);
+              } else {
+                policyPtr->update(key, *this, derivs, multiplier, t, dt);
+              }
+            }
+            // List this field as completed.
+            stateToRemove.push_back(key);
+          }
+        }
+      }
+    }
+
+    // Check that the some state has been updated on this iteration.  If not, then *somebody*
+    // has specified a circular dependency tree!
+    if (stateToRemove.empty()) {
+      std::stringstream message;
+      message << "State::update ERROR: someone has specified a circular state dependency.\n"
+              << "Remaining State:\n";
+      for (const auto& itr: stateToBeCompleted) message << "   " << itr.first << "\n";
+      message << "State dependencies:\n";
+      for (const auto& itr: mPolicyMap) {
+        const KeyType fieldKey = itr.first;
+        const map<KeyType, PolicyPointer>& keysAndPolicies = itr.second;
+        for (const auto& pitr: keysAndPolicies) {
+          const KeyType key = pitr.first;
+          const PolicyPointer policyPtr = pitr.second;
+          message << key << " : ";
+          for (const auto& dep: policyPtr->dependencies()) message << dep << "  ++  ";
+          message << "\n";
+        }
+      }
+      VERIFY2(not stateToRemove.empty(), message.str());
+    }
+    
+    // Remove the completed state.
+    for (const auto& key: stateToRemove) {
+      KeyType fieldKey, nodeListKey;
+      this->splitFieldKey(key, fieldKey, nodeListKey);
+      CHECK(stateToBeCompleted.find(fieldKey) != stateToBeCompleted.end());
+      stateToBeCompleted[fieldKey].erase(key);
+      if (stateToBeCompleted[fieldKey].empty()) stateToBeCompleted.erase(fieldKey);
+    }
+    fieldsToBeCompleted = vector<KeyType>();
+    for (const auto& itr: stateToBeCompleted) fieldsToBeCompleted.push_back(itr.first);
+    CHECK(fieldsToBeCompleted.size() == stateToBeCompleted.size());
+  }
+}
+
+//------------------------------------------------------------------------------
+// Serialize independent data to a buffer for use in implicit time integration
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+State<Dimension>::
+serializeIndependentData(std::vector<double>& buf) const {
+  buf.clear();
+
+  // Look for any state with update policies that indicate an independent variable
+  for (const auto& stuff: mPolicyMap) {
+    const auto& keys2policies = stuff.second;
+    for (const auto& key2policy: keys2policies) {
+      const auto& key = key2policy.first;
+      const auto& policyPtr = key2policy.second;
+      if (policyPtr->independent()) {
+        // cerr << "Serializing " << key << endl;
+        policyPtr->serializeData(buf, key, *this);
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+// Deserialize independent data from a buffer; for use in implicit time
+// integration
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+State<Dimension>::
+deserializeIndependentData(const std::vector<double>& buf) const {
+  
+  // Look for any state with update policies that indicate an independent variable
+  size_t offset = 0u;
+  for (const auto& stuff: mPolicyMap) {
+    const auto& keys2policies = stuff.second;
+    for (const auto& key2policy: keys2policies) {
+      const auto& key = key2policy.first;
+      const auto& policyPtr = key2policy.second;
+      if (policyPtr->independent()) {
+        // cerr << "Deserializing " << key << endl;
+        offset = policyPtr->deserializeData(buf, key, *this, offset);
+        CHECK(offset <= buf.size());
+      }
+    }
+  }
+  CHECK(offset == buf.size());
+}
+
+//------------------------------------------------------------------------------
+// Serialize the derivatives associated with independent data to a buffer for
+// use in implicit time integration
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+State<Dimension>::
+serializeDerivatives(std::vector<double>& buf,
+                     const StateDerivatives<Dimension>& derivs) const {
+  buf.clear();
+
+  // Look for any state with update policies that indicate an independent variable
+  for (const auto& stuff: mPolicyMap) {
+    const auto& keys2policies = stuff.second;
+    for (const auto& key2policy: keys2policies) {
+      const auto& key = key2policy.first;
+      const auto& policyPtr = key2policy.second;
+      if (policyPtr->independent()) {
+        // cerr << "Serializing DERIV " << key << endl;
+        policyPtr->serializeDerivatives(buf, key, derivs);
+      }
+    }
   }
 }
 

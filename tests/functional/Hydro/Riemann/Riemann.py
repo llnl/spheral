@@ -87,7 +87,7 @@ commandLine(
     restoreCycle = -1,
     restartStep = 10000,
     dataDirBase = "dumps-",
-    outputFile = "None",
+    outputFile = None,
     checkRestart = False,
 
     graphics = True,
@@ -515,7 +515,7 @@ rmin = x0
 rmax = x2
 if mpi.rank == 0:
     multiSort(mo, xprof, rhoprof, Pprof, vprof, epsprof, hprof)
-    if outputFile != "None":
+    if outputFile:
         outputFile = os.path.join(dataDir, outputFile)
         f = open(outputFile, "w")
         f.write(("#  " + 19*"'%s' " + "\n") % ("x", "rho", "P", "v", "eps", "A", "h", "mo",

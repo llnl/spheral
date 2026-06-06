@@ -21,14 +21,14 @@ namespace Spheral {
 template<typename Dimension>
 class KernelIntegrator {
 public:
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
-  typedef typename Dimension::Facet Facet;
-  typedef typename std::array<Vector, Dimension::nDim> Subfacet;
-  typedef typename std::array<int, Dimension::nDim> ArrayDim;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
+  using Tensor = typename Dimension::Tensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
+  using Facet = typename Dimension::Facet;
+  using Subfacet = typename std::array<Vector, Dimension::nDim>;
+  using ArrayDim = typename std::array<int, Dimension::nDim>;
   
   // Construtor
   KernelIntegrator(const int integrationOrder,
@@ -109,9 +109,8 @@ private:
   std::vector<Vector> mBaseSurfaceOrdinates;
   
   // State
-  bool mStateSet;
   double mTime;
-  State<Dimension> mState;
+  std::unique_ptr<State<Dimension>> mState;
 
   // Integrals that we want to add to
   std::vector<std::shared_ptr<KernelIntegralBase<Dimension>>> mIntegrals;

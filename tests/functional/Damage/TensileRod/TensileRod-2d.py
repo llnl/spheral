@@ -166,7 +166,7 @@ commandLine(seed = "lattice",
 
             clearDirectories = False,
             dataDirBase = "dumps-TensileRod-2d",
-            outputFile = "None",
+            outputFile = None,
             )
 
 dx = xlength/nx
@@ -401,8 +401,8 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct constant velocity boundary conditions to be applied to the rod ends.
 #-------------------------------------------------------------------------------
-x0Nodes = vector_of_int()
-x1Nodes = vector_of_int()
+x0Nodes = vector_of_ULL()
+x1Nodes = vector_of_ULL()
 [x0Nodes.append(i) for i in range(nodes.numInternalNodes)
  if nodes.positions()[i].x < -0.5*xlength + 5*dx]
 [x1Nodes.append(i) for i in range(nodes.numInternalNodes)

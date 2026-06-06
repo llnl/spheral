@@ -12,8 +12,11 @@
 #include "RK/RKCorrectionParams.hh"
 
 namespace Spheral {
+
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
+template<typename Dimension> class TableKernel;
+template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension>
 class ArtificialConduction: public Physics<Dimension> {

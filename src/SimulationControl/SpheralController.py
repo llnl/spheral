@@ -5,6 +5,7 @@ import sys, os, gc, warnings, mpi
 
 from SpheralCompiledPackages import *
 from SpheralTimer import SpheralTimer
+from SpheralCompiledPackages import adiak_value, TimerMgr
 from SpheralConservation import SpheralConservation
 from GzipFileIO import GzipFileIO
 from SpheralTestUtilities import globalFrame
@@ -47,17 +48,19 @@ class SpheralController:
                  periodicTimeWork = [],
                  skipInitialPeriodicWork = False,
                  iterateInitialH = True,
+                 initialHExtraPackages = [],
                  numHIterationsBetweenCycles = 0,
                  reinitializeNeighborsStep = 10,
                  volumeType = RKVolumeType.RKVoronoiVolume,
                  facetedBoundaries = None,
+                 forceVoronoi = False,
                  printAllTimers = False):
+        self.restartBaseName = restartBaseName
         self.restart = RestartableObject(self)
         self.integrator = integrator
         self.restartObjects = restartObjects
         self.restartFileConstructor = restartFileConstructor
         self.SPIOFileCountPerTimeslice = SPIOFileCountPerTimeslice
-        self.SPH = SPH
         self.numHIterationsBetweenCycles = numHIterationsBetweenCycles
         self._break = False
 
@@ -81,6 +84,7 @@ class SpheralController:
 
         # Determine the dimensionality of this run, based on the integrator.
         self.dim = "%id" % self.integrator.dataBase.nDim
+        adiak_value("dim", self.dim)
 
         # Determine the visualization method.
         if self.dim == "1d":
@@ -93,16 +97,22 @@ class SpheralController:
         self.vizGhosts = vizGhosts
         self.vizDerivs = vizDerivs
 
+        # If this is in spherical or cylindrical coordinates, add axis boundary
+        self.insertAxisBoundary(integrator.physicsPackages())
+        
         # Organize the physics packages as appropriate
-        self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries)
+        self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries, forceVoronoi)
 
         # If this is a parallel run, automatically construct and insert
         # a DistributedBoundaryCondition into each physics package.
         self.insertDistributedBoundary(integrator.physicsPackages())
 
         # Should we look for the last restart set?
-        if restoreCycle == -1:
-            restoreCycle = findLastRestart(restartBaseName)
+        if restartBaseName:
+            if restoreCycle == -1:
+                restoreCycle = findLastRestart(restartBaseName)
+        else:
+            restoreCycle = None
 
         # Generic initialization work.
         self.reinitializeProblem(restartBaseName,
@@ -124,6 +134,7 @@ class SpheralController:
                                  periodicTimeWork = periodicTimeWork,
                                  skipInitialPeriodicWork = skipInitialPeriodicWork,
                                  iterateInitialH = iterateInitialH,
+                                 initialHExtraPackages = initialHExtraPackages,
                                  reinitializeNeighborsStep = reinitializeNeighborsStep,
                                  volumeType = volumeType,
                                  facetedBoundaries = facetedBoundaries)
@@ -164,6 +175,7 @@ class SpheralController:
                             periodicTimeWork = [],
                             skipInitialPeriodicWork = False,
                             iterateInitialH = True,
+                            initialHExtraPackages = [],
                             reinitializeNeighborsStep = 10,
                             volumeType = RKVolumeType.RKVoronoiVolume,
                             facetedBoundaries = None):
@@ -182,7 +194,8 @@ class SpheralController:
         self._periodicTimeWork = []
         
         # Set the restart file base name.
-        self.setRestartBaseName(restartBaseName)
+        if restartBaseName:
+            self.setRestartBaseName(restartBaseName)
         
         # Set the simulation time.
         self.integrator.currentTime = initialTime
@@ -200,30 +213,42 @@ class SpheralController:
         self.integrator.setGhostNodes()
         db.updateConnectivityMap(False)
 
-        # If we're starting from scratch, initialize the H tensors.
-        if restoreCycle is None and not skipInitialPeriodicWork and iterateInitialH:
-            self.iterateIdealH()
-            # db.reinitializeNeighbors()
-            # self.integrator.setGhostNodes()
-            # db.updateConnectivityMap(False)
-            # self.integrator.applyGhostBoundaries(state, derivs)
-            # for bc in uniquebcs:
-            #     bc.initializeProblemStartup(False)
-
         # Initialize the integrator and packages.
         packages = self.integrator.physicsPackages()
         for package in packages:
             package.initializeProblemStartup(db)
         state = eval("State%s(db, packages)" % (self.dim))
         derivs = eval("StateDerivatives%s(db, packages)" % (self.dim))
+
+        # Build the connectivity
+        requireConnectivity = max([pkg.requireConnectivity() for pkg in packages])
+        if requireConnectivity:
+            requireGhostConnectivity = max([pkg.requireGhostConnectivity() for pkg in packages])
+            requireOverlapConnectivity = max([pkg.requireOverlapConnectivity() for pkg in packages])
+            requireIntersectionConnectivity = max([pkg.requireIntersectionConnectivity() for pkg in packages])
+            db.reinitializeNeighbors()
+            db.updateConnectivityMap(requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity)
+            state.enrollConnectivityMap(db.connectivityMapPtr(requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity))
+
+        # Initialize dependent state
         for package in packages:
             package.initializeProblemStartupDependencies(db, state, derivs)
+
+        # If we're starting from scratch, initialize the H tensors.
+        if restoreCycle is None and not skipInitialPeriodicWork and iterateInitialH:
+            self.checkInitialH()
+            self.iterateIdealH(extraPackages = initialHExtraPackages)
+
         db.reinitializeNeighbors()
         self.integrator.setGhostNodes()
         db.updateConnectivityMap(False)
         self.integrator.applyGhostBoundaries(state, derivs)
         for bc in uniquebcs:
             bc.initializeProblemStartup(False)
+
+        # Reconstruct the state and derivs since H and connectivity have updated
+        state = eval("State%s(db, packages)" % (self.dim))
+        derivs = eval("StateDerivatives%s(db, packages)" % (self.dim))
 
         # If requested, initialize the derivatives.
         if initializeDerivatives or stateBCactive:
@@ -239,7 +264,10 @@ class SpheralController:
         self.integrator.applyGhostBoundaries(state, derivs)
         for bc in uniquebcs:
             bc.initializeProblemStartup(True)
+        db.reinitializeNeighbors()
         self.integrator.setGhostNodes()
+        db.updateConnectivityMap(False)
+        self.integrator.applyGhostBoundaries(state, derivs)
 
         # Set up the default periodic work.
         self.appendPeriodicWork(self.printCycleStatus, printStep)
@@ -341,10 +369,10 @@ class SpheralController:
             db.fluidVelocity.assignFields(smoothedVelocity)
             db.fluidSpecificThermalEnergy.assignFields(smoothedSpecificThermalEnergy)
             db.fluidHfield.assignFields(smoothedHfield)
-            for nodeList in db.fluidNodeLists():
+            for nodeList in db.fluidNodeLists:
                 nodeList.neighbor().updateNodes()
             db.updateConnectivityMap()
-            for nodeList in db.fluidNodeLists():
+            for nodeList in db.fluidNodeLists:
                 nodeList.updateWeight(db.connectivityMap())
 
         return
@@ -361,6 +389,7 @@ class SpheralController:
     # specify a max number of steps to take.
     #--------------------------------------------------------------------------
     def advance(self, goalTime, maxSteps=None):
+        TimerMgr.timer_begin("advance")
         currentSteps = 0
         while (self.time() < goalTime and
                (maxSteps == None or currentSteps < maxSteps) and (self._break == False)):
@@ -387,9 +416,14 @@ class SpheralController:
         numActualGhostNodes = 0
         for bc in bcs:
             numActualGhostNodes += bc.numGhostNodes
-        print("Total number of (internal, ghost, active ghost) nodes : (%i, %i, %i)" % (mpi.allreduce(db.numInternalNodes, mpi.SUM),
-                                                                                        mpi.allreduce(db.numGhostNodes, mpi.SUM),
-                                                                                        mpi.allreduce(numActualGhostNodes, mpi.SUM)))
+        numInternal = db.globalNumInternalNodes
+        numGhost = db.globalNumGhostNodes
+        numActGhost = mpi.allreduce(numActualGhostNodes, mpi.SUM)
+        print(f"Total number of (internal, ghost, active ghost) nodes : ({numInternal}, {numGhost}, {numActGhost})")
+        adiak_value("total_internal_nodes", numInternal)
+        adiak_value("total_ghost_nodes", numGhost)
+        adiak_value("total_steps", self.totalSteps)
+        TimerMgr.timer_end("advance")
 
         # Print how much time was spent per integration cycle.
         self.stepTimer.printStatus()
@@ -412,12 +446,18 @@ class SpheralController:
 
         # Do any periodic cycle work, as determined by the number of steps.
         for method, frequency in self._periodicWork:
-            if frequency is not None and (force or self.totalSteps % frequency == 0):
+            if frequency is None:
+                continue
+            f0 = frequency(t0) if callable(frequency) else frequency
+            if force or self.totalSteps % f0 == 0:
                 method(self.totalSteps, t1, dt)
 
         # Do any periodic time work, as determined by the current time.
         for method, frequency in self._periodicTimeWork:
-            if frequency is not None and (force or ((t0 // frequency) != (t1 // frequency))):
+            if frequency is None:
+                continue
+            f0 = frequency(t0) if callable(frequency) else frequency
+            if force or ((t0 // f0) != (t1 // f0)):
                 method(self.totalSteps, t1, dt)
 
         return
@@ -560,6 +600,8 @@ class SpheralController:
     #--------------------------------------------------------------------------
     def dropRestartFile(self):
 
+        if not self.restartBaseName:
+            return
         # First find out if the requested directory exists.
         import os
         dire = os.path.dirname(os.path.abspath(self.restartBaseName))
@@ -588,6 +630,8 @@ class SpheralController:
     def loadRestartFile(self, restoreCycle,
                         frameDict=None):
 
+        if not self.restartBaseName:
+            return
         # Find out if the requested file exists.
         import os
         fileName = self.restartBaseName + "_cycle%i" % restoreCycle
@@ -657,11 +701,34 @@ class SpheralController:
     #--------------------------------------------------------------------------
     # Properly arrange the physics packages, including adding any needed ones.
     #--------------------------------------------------------------------------
-    def organizePhysicsPackages(self, W, volumeType, facetedBoundaries):
+    def organizePhysicsPackages(self, W, volumeType, facetedBoundaries, forceVoronoi):
         packages = self.integrator.physicsPackages()
         db = self.integrator.dataBase
         RKCorrections = eval("RKCorrections%s" % self.dim)
         vector_of_Physics = eval("vector_of_Physics%s" % self.dim)
+
+        # Anyone require Voronoi cells?
+        # If so we need the VoronoiCells physics package first
+        voronoibcs = []
+        index = -1
+        for (ipack, package) in enumerate(packages):
+            if package.requireVoronoiCells():
+                pbcs = package.boundaryConditions
+                voronoibcs += [bc for bc in pbcs if not bc in voronoibcs]
+                if index == -1:
+                    index = ipack
+
+        if forceVoronoi and index == -1:
+            index = 0
+        if index >= 0:
+            VC = eval("VoronoiCells" + self.dim)
+            fb = eval("vector_of_FacetedVolume{}()".format(self.dim)) if facetedBoundaries is None else facetedBoundaries
+            self.VoronoiCells = VC(kernelExtent = db.maxKernelExtent,
+                                   facetedBoundaries = fb)
+            for bc in voronoibcs:
+                self.VoronoiCells.appendBoundary(bc)
+            packages.insert(index, self.VoronoiCells)
+            self.integrator.resetPhysicsPackages(packages)
 
         # Are there any packages that require reproducing kernels?
         # If so, insert the RKCorrections package prior to any RK packages
@@ -676,7 +743,7 @@ class SpheralController:
             needHessian |= package.requireReproducingKernelHessian()
             rkUpdateInFinalize |= package.updateReproducingKernelsInFinalize()
             if ords:
-                pbcs = package.boundaryConditions()
+                pbcs = package.boundaryConditions
                 rkbcs += [bc for bc in pbcs if not bc in rkbcs]
                 if index == -1:
                     index = ipack
@@ -696,9 +763,32 @@ class SpheralController:
                     self.RKCorrections.addFacetedBoundary(b)
             packages.insert(index, self.RKCorrections)
             self.integrator.resetPhysicsPackages(packages)
-
+        
+        # InflowOutflowBoundary can cause issues for other packages if it is not last
+        if any("InflowOutflowBoundary" in type(p).__name__ for p in packages):
+            packages.sort(key=lambda p: "InflowOutflowBoundary" in type(p).__name__)
+            self.integrator.resetPhysicsPackages(packages)
+        
         return
 
+    #--------------------------------------------------------------------------
+    # Create an axis boundary if needed
+    #--------------------------------------------------------------------------
+    def insertAxisBoundary(self, physicsPackages):
+        if GeometryRegistrar.coords() == CoordinateType.Spherical:
+            self.axisBC = SphericalOriginBoundary()
+        elif GeometryRegistrar.coords() == CoordinateType.RZ:
+            etaMinAxis = 0.1
+            for package in physicsPackages:
+                etaMinAxis = getattr(package, "etaMinAxis", etaMinAxis)
+            self.axisBC = AxisBoundaryRZ(etaMinAxis)
+        else:
+            self.axisBC = None
+        if self.axisBC is not None:
+            for package in physicsPackages:
+                package.prependBoundary(self.axisBC)
+        return
+        
     #--------------------------------------------------------------------------
     # If necessary create and add a distributed boundary condition to each
     # physics package
@@ -750,7 +840,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
 
             # Make a copy of the current set of boundary conditions for this package,
             # and assign priorities to enforce the desired order
-            bcs = list(package.boundaryConditions())
+            bcs = list(package.boundaryConditions)
             priorities = list(range(len(bcs)))
             for i, bc in enumerate(bcs):
                 if isinstance(bc, eval("ConstantBoundary%s" % self.dim)):
@@ -847,21 +937,86 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
         return
 
     #--------------------------------------------------------------------------
+    # Check the initial H values and scale them back if needed
+    #--------------------------------------------------------------------------
+    def checkInitialH(self, limMult = 1.0):
+        from math import pi
+        dataBase = self.integrator.dataBase
+        H = dataBase.globalHfield
+        pos = dataBase.globalPosition
+        conn = dataBase.connectivityMap()
+        nodeLists = dataBase.nodeLists
+        numNodeLists = dataBase.numNodeLists
+
+        numLimited = 0
+        for ni in range(numNodeLists):
+            # Get the approximate goal number of nodes for this NodeList
+            nPerh = nodeLists[ni].nodesPerSmoothingScale
+            if self.dim == 1:
+                goalN = 2.0 * nPerh
+            elif self.dim == 2:
+                goalN = pi * nPerh ** 2
+            else:
+                goalN = 4.0 / 3.0 * pi * nPerh ** 3
+            limN = int(limMult * goalN)
+
+            numNodes = nodeLists[ni].numInternalNodes
+            for i in range(numNodes):
+                currN = conn.numNeighborsForNode(ni, i)
+                if currN > limN:
+                    conni = conn.connectivityForNode(ni, i)
+                    posi = pos[ni][i]
+                    distNi = [(pos[nj][j] - posi).magnitude()
+                              for nj in range(numNodeLists) for j in conni[nj]]
+                    disti = sorted(distNi)[limN - 1]
+                    H[ni][i] = H[ni][i].one / (1e-80 + disti)
+                    numLimited += 1
+        numLimited = mpi.allreduce(numLimited, mpi.SUM)
+        # if numLimited > 0:
+        print(f"SpheralController: Limited H for {numLimited} nodes")
+        return
+                
+    
+    #--------------------------------------------------------------------------
     # Iteratively set the H tensors, until the desired convergence criteria
     # are met.
     #--------------------------------------------------------------------------
     def iterateIdealH(self, 
                       maxIdealHIterations = 50,
-                      idealHTolerance = 1.0e-4):
+                      idealHTolerance = 1.0e-4,
+                      extraPackages = []):
         print("SpheralController: Initializing H's...")
         db = self.integrator.dataBase
         bcs = self.integrator.uniqueBoundaryConditions()
-        if self.SPH:
-            method = eval("SPHSmoothingScale%s()" % self.dim)
-        else:
-            method = eval("ASPHSmoothingScale%s()" % self.dim)
-        iterateIdealH = eval("iterateIdealH%s" % self.dim)
-        iterateIdealH(db, bcs, self.kernel, method, maxIdealHIterations, idealHTolerance, 0.0, False, False)
+
+        # Find the smoothing scale method
+        method = None
+        for pkg in self.integrator.physicsPackages():
+            if isinstance(pkg, eval(f"SmoothingScaleBase{self.dim}")):
+                method = pkg
+        if method is None:
+            print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
+            method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
+
+        # Get needed packages
+        packages = eval(f"vector_of_Physics{self.dim}()")
+        if method.requireVoronoiCells() or any(p.requireVoronoiCells() for p in extraPackages):
+            packages.append(self.VoronoiCells)
+        packages.append(method)
+        for package in extraPackages:
+            packages.append(package)
+
+        # Make sure extra packages have boundary conditions
+        for package in packages:
+            pbcs = package.boundaryConditions
+            for bc in pbcs:
+                for extraPackage in extraPackages:
+                    if not bc in extraPackage.boundaryConditions:
+                        extraPackage.appendBoundary(bc)
+
+        # Perform the update
+        iterateIdealH = eval(f"iterateIdealH{self.dim}")
+        iterateIdealH(db, packages, bcs, maxIdealHIterations, idealHTolerance, 0.0, False, False)
 
         return
 
@@ -872,7 +1027,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
     def voronoiInitializeMass(self):
         from generateMesh import generateLineMesh, generatePolygonalMesh, generatePolyhedralMesh
         db = self.integrator.dataBase
-        nodeLists = db.fluidNodeLists()
+        nodeLists = db.fluidNodeLists
         boundaries = self.integrator.uniqueBoundaryConditions()
         method = eval("generate%sMesh" % {1 : "Line", 2 : "Polygonal", 3 : "Polyhedral"}[db.nDim])
         mesh, void = method(nodeLists,
@@ -900,7 +1055,7 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
             rho = ConstantRho(rho)
 
         db = self.integrator.dataBase
-        nodeLists = db.fluidNodeLists()
+        nodeLists = db.fluidNodeLists
         boundaries = self.integrator.uniqueBoundaryConditions()
         allpackages = self.integrator.physicsPackages()
         packages = eval("vector_of_Physics%id()" % db.nDim)
@@ -929,8 +1084,10 @@ precedeDistributed += [PeriodicBoundary%(dim)sd,
             state.update(derivs, 1.0, 0.0, 1.0)
             self.integrator.enforceBoundaries()
             self.integrator.applyGhostBoundaries()
-            self.integrator.postStateUpdate()
             self.integrator.finalizeGhostBoundaries()
+            if (self.integrator.postStateUpdate()):
+                self.integrator.applyGhostBoundaries()
+                self.integrator.finalizeGhostBoundaries()
             self.integrator.finalize(0.0, 0.0, db, state, derivs)
 
             # Check the displacements.

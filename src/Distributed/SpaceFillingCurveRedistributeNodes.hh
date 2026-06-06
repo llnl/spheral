@@ -13,9 +13,6 @@
 
 #include <vector>
 #include <map>
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 #include "RedistributeNodes.hh"
 #include "Utilities/KeyTraits.hh"

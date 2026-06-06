@@ -23,20 +23,12 @@ namespace Spheral {
 template<typename Dimension>
 ShearModulusPolicy<Dimension>::
 ShearModulusPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                HydroFieldNames::pressure,
-                                SolidFieldNames::tensorDamage,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ShearModulusPolicy<Dimension>::
-~ShearModulusPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        HydroFieldNames::pressure,
+                                        SolidFieldNames::tensorDamage,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha}) {
 }
 
 //------------------------------------------------------------------------------
@@ -71,7 +63,7 @@ update(const KeyType& key,
                       state.field(buildKey(HydroFieldNames::massDensity), 0.0));
   const auto& eps = state.field(buildKey(HydroFieldNames::specificThermalEnergy), 0.0);
   const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
-  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+  const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
 
   // Setting the shear modulus differs based on the presence of porosity
   if (usePorosity) {

@@ -11,8 +11,8 @@
 #
 # Solid FSISPH
 #
-#ATS:fsisph1 = test(           SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Spherical Sod problem with FSISPH -- 1-D (serial)")
-#ATS:fsisph2 = testif(fsisph1, SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Spherical Sod problem with FSISPH -- 1-D (serial) RESTART CHECK")
+#ATS:fsisph1 = test(           SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories True  --restartStep 20 --steps 40", label="Spherical Sod problem with FSISPH -- 1-D (serial)", fsisph=True)
+#ATS:fsisph2 = testif(fsisph1, SELF, "--crksph False --fsisph True --solid True --cfl 0.25 --graphics None --clearDirectories False --restartStep 20 --steps 20 --restoreCycle 20 --checkRestart True", label="Spherical Sod problem with FSISPH -- 1-D (serial) RESTART CHECK", fsisph=True)
 #
 # GSPH
 #
@@ -116,7 +116,7 @@ commandLine(nr1 = 800,
             restartStep = 10000,
             dataDirBase = "dumps-Sod-spherical",
             restartBaseName = "Sod-spherical-1d-restart",
-            outputFile = "None",
+            outputFile = None,
             checkRestart = False,
 
             graphics = True,
@@ -601,7 +601,7 @@ print("Energy conservation: original=%g, final=%g, error=%g" % (control.conserve
 # rmax = x2
 # if mpi.rank == 0:
 #     multiSort(mo, xprof, rhoprof, Pprof, vprof, epsprof, hprof)
-#     if outputFile != "None":
+#     if outputFile:
 #         outputFile = os.path.join(dataDir, outputFile)
 #         f = open(outputFile, "w")
 #         f.write(("#  " + 19*"'%s' " + "\n") % ("x", "rho", "P", "v", "eps", "A", "h", "mo",

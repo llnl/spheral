@@ -24,17 +24,9 @@ namespace Spheral {
 template<typename Dimension>
 GammaPolicy<Dimension>::
 GammaPolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-GammaPolicy<Dimension>::
-~GammaPolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity}) {
 }
 
 //------------------------------------------------------------------------------

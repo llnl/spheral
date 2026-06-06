@@ -10,7 +10,6 @@
 #  2006-03-18 : Created by JMO.
 #-------------------------------------------------------------------------------
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Adaptive refinement is the topmost class you pass to the controller.
@@ -47,7 +46,7 @@ class AdaptiveRefinement:
         self.refinementAlgorithm.prepareForRefinement(db)
 
         # Go over each NodeList.
-        for nodeList in db.nodeLists():
+        for nodeList in db.nodeLists:
 
             # Get the list of nodes that we want to refine on this NodeList.
             refineIDs = self.selectionAlgorithm.selectNodes(nodeList)

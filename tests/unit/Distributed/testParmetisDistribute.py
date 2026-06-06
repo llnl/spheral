@@ -26,7 +26,7 @@ class TestParmetisRedistribute2d(TestDistributeByPosition2d):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes,
                                               mpi.SUM))
 
@@ -37,7 +37,7 @@ class TestParmetisRedistribute2d(TestDistributeByPosition2d):
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
         i = 0
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             nGlobal = nNodesGlobal[i]
             if n != nGlobal:
@@ -175,7 +175,7 @@ class TestParmetisRedistribute3d(unittest.TestCase):
 
         # Record how many nodes we're starting with.
         nNodesGlobal = []
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             nNodesGlobal.append(mpi.allreduce(nodeList.numInternalNodes,
                                               mpi.SUM))
 
@@ -186,7 +186,7 @@ class TestParmetisRedistribute3d(unittest.TestCase):
         # Make sure that the numbers of nodes are correct.
         assert self.dataBase.numNodeLists == len(nNodesGlobal)
         i = 0
-        for nodeList in self.dataBase.nodeLists():
+        for nodeList in self.dataBase.nodeLists:
             n = mpi.allreduce(nodeList.numInternalNodes, mpi.SUM)
             nGlobal = nNodesGlobal[i]
             if n != nGlobal:

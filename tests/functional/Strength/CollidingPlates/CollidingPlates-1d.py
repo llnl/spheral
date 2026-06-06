@@ -1,12 +1,25 @@
-# Non-compatible tests
-#ATS:t10 = test(SELF, "--graphics False --restartStep 50 --clearDirectories True --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-noncompatible-20220422.txt'", np=1, label="Colliding plates domain independence test SERIAL Non-compatible RUN")
-#ATS:t11 = testif(t10, SELF, "--graphics False --clearDirectories False --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-noncompatible-20220422.txt' --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL RESTART Non-compatible RUN")
-#ATS:t12 = testif(t10, SELF, "--graphics False --clearDirectories False --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-noncompatible-20220422.txt' --comparisonFile 'dumps-CollidingPlates-1d/SPH/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN Non-compatible RUN")
+# SPH non-compatible
+#ATS:t10 = test(SELF,        "--graphics False --hydroType SPH --restartStep 50 --clearDirectories True  --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True", np=1, label="Colliding plates domain independence test SERIAL SPH Non-compatible RUN")
+#ATS:t11 = testif(t10, SELF, "--graphics False --hydroType SPH                  --clearDirectories False --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL SPH RESTART Non-compatible RUN")
+#ATS:t12 = testif(t10, SELF, "--graphics False --hydroType SPH                  --clearDirectories False --domainIndependent True --compatibleEnergy False --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --checkReference True --comparisonFile 'dumps-CollidingPlates-1d/SPH/compatibleEnergy=False/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN SPH Non-compatible RUN")
 #
-# Compatible tests
-#ATS:t50 = test(SELF, "--graphics False --restartStep 50 --dataDirBase 'dumps-CollidingPlates-compatible-1d' --clearDirectories True --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-compatible-20220422.txt'", np=1, label="Colliding plates domain independence test SERIAL Compatible RUN")
-#ATS:t51 = testif(t50, SELF, "--graphics False --dataDirBase 'dumps-CollidingPlates-compatible-1d' --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-compatible-20220422.txt' --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL RESTART Compatible RUN")
-#ATS:t52 = testif(t50, SELF, "--graphics False --dataDirBase 'dumps-CollidingPlates-compatible-1d' --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --referenceFile 'Reference/CollidingPlates-1d-reference-compatible-20220422.txt' --comparisonFile 'dumps-CollidingPlates-compatible-1d/SPH/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN Compatible RUN")
+# SPH compatible
+#
+#ATS:t20 = test(SELF,        "--graphics False --hydroType SPH --restartStep 50 --clearDirectories True  --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True", np=1, label="Colliding plates domain independence test SERIAL SPH Compatible RUN")
+#ATS:t21 = testif(t20, SELF, "--graphics False --hydroType SPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL SPH RESTART Compatible RUN")
+#ATS:t22 = testif(t20, SELF, "--graphics False --hydroType SPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --checkReference True --comparisonFile 'dumps-CollidingPlates-1d/SPH/compatibleEnergy=True/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN SPH Compatible RUN")
+#
+# CRKSPH compatible
+#
+#ATS:t30 = test(SELF,        "--graphics False --hydroType CRKSPH --restartStep 50 --clearDirectories True  --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True", np=1, label="Colliding plates domain independence test SERIAL CRKSPH Compatible RUN")
+#ATS:t31 = testif(t30, SELF, "--graphics False --hydroType CRKSPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL CRKSPH RESTART Compatible RUN")
+#ATS:t32 = testif(t30, SELF, "--graphics False --hydroType CRKSPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --checkReference True --comparisonFile 'dumps-CollidingPlates-1d/CRKSPH/compatibleEnergy=True/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN CRKSPH Compatible RUN")
+#
+# FSISPH compatible    -- note: domain independence not working with FSI currently
+#
+#ATS:t40 = test(SELF,        "--graphics False --hydroType FSISPH --restartStep 50 --clearDirectories True  --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True", np=1, label="Colliding plates domain independence test SERIAL FSISPH Compatible RUN")
+#ATS:t41 = testif(t40, SELF, "--graphics False --hydroType FSISPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-1proc-reproducing.txt' --checkReference True --restoreCycle 50", np=1, label="Colliding plates domain independence test SERIAL FSISPH RESTART Compatible RUN")
+###ATS:t42 = testif(t40, SELF, "--graphics False --hydroType FSISPH                  --clearDirectories False --domainIndependent True --compatibleEnergy True --outputFile 'CollidingPlates-1d-4proc-reproducing.txt' --checkReference True --comparisonFile 'dumps-CollidingPlates-1d/CRKSPH/compatibleEnergy=True/100/CollidingPlates-1d-1proc-reproducing.txt'", np=4, label="Colliding plates domain independence test 4 DOMAIN FSISPH Compatible RUN")
 
 #-------------------------------------------------------------------------------
 # A pair of steel plates colliding at the origin.  This is a useful test of
@@ -48,7 +61,7 @@ commandLine(# Geometry
             etamax = 1.5,
 
             # Hydro
-            crksph = False,
+            hydroType = "SPH",  # (SPH, CRKSPH, FSISPH)
             nPerh = 1.25,
             hmin = 1e-5,
             hmax = 1.0,
@@ -58,7 +71,6 @@ commandLine(# Geometry
             evolveTotalEnergy = False,
             gradhCorrection = False,
             correctVelocityGradient = True,
-            filter = 0.0,
 
             # Time advancement.
             IntegratorConstructor = CheapSynchronousRK2Integrator,
@@ -81,19 +93,18 @@ commandLine(# Geometry
             graphics = True,
             testtol = 1.0e-3,
             clearDirectories = False,
-            referenceFile = "Reference/CollidingPlates-1d-reference-compatible-20220422.txt",
+            checkReference = True,
             dataDirBase = "dumps-CollidingPlates-1d",
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
             )
 
-if crksph:
-    hydroname = "CRKSPH"
-else:
-    hydroname = "SPH"
+hydroType = hydroType.upper()
+assert hydroType in ("SPH", "CRKSPH", "FSISPH")
 
 dataDir = os.path.join(dataDirBase,
-                       hydroname,
+                       hydroType,
+                       f"compatibleEnergy={compatibleEnergy}",
                        str(nx))
 restartDir = os.path.join(dataDir, "restarts")
 restartBaseName = os.path.join(restartDir, "CollidingPlates-%i" % nx)
@@ -224,13 +235,24 @@ output("db.numSolidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
+if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
                    compatibleEnergyEvolution = compatibleEnergy,
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate)
+
+elif hydroType == "FSISPH":
+    hydro = FSISPH(dataBase = db,
+                   W = WT,
+                   interfaceMethod = HLLCInterface,
+                   densityStabilizationCoefficient = 0.00,
+                   compatibleEnergyEvolution = compatibleEnergy,
+                   linearCorrectGradients = correctVelocityGradient,
+                   HUpdate = HUpdate)
+
 else:
+    assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
                 compatibleEnergyEvolution = compatibleEnergy,
@@ -239,14 +261,13 @@ else:
                 correctVelocityGradient = correctVelocityGradient,
                 densityUpdate = densityUpdate,
                 HUpdate = HUpdate)
+
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
-output("hydro.kernel")
-output("hydro.PiKernel")
 output("hydro.Q")
 output("hydro.Q.Cl")
 output("hydro.Q.Cq")
@@ -327,30 +348,30 @@ if compatibleEnergy and abs(Eerror) > 1e-13:
 # Plot the state.
 #-------------------------------------------------------------------------------
 if graphics:
-    from SpheralGnuPlotUtilities import *
+    from SpheralMatplotlib import *
     state = State(db, integrator.physicsPackages())
     rhoPlot = plotFieldList(state.scalarFields("mass density"),
-                            plotStyle = "linespoints",
+                            plotStyle = "r-",
                             winTitle = "rho @ %g %i" % (control.time(), mpi.procs))
     velPlot = plotFieldList(state.vectorFields("velocity"),
                             yFunction = "%s.x",
-                            plotStyle = "linespoints",
+                            plotStyle = "r-",
                             winTitle = "vel @ %g %i" % (control.time(), mpi.procs))
     mPlot = plotFieldList(state.scalarFields("mass"),
-                          plotStyle = "linespoints",
+                          plotStyle = "r-",
                           winTitle = "mass @ %g %i" % (control.time(), mpi.procs))
     PPlot = plotFieldList(state.scalarFields("pressure"),
-                          plotStyle = "linespoints",
+                          plotStyle = "r-",
                           winTitle = "pressure @ %g %i" % (control.time(), mpi.procs))
     SPlot = plotFieldList(state.symTensorFields(SolidFieldNames.deviatoricStress),
-                                                yFunction = "%s.xx",
-                                                plotStyle = "linespoints",
-                                                winTitle = "Deviatoric stress @ %g %i" % (control.time(), mpi.procs))
+                          yFunction = "%s.xx",
+                          plotStyle = "r-",
+                          winTitle = "Deviatoric stress @ %g %i" % (control.time(), mpi.procs))
 
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     state = State(db, integrator.physicsPackages())
     outputFile = os.path.join(dataDir, outputFile)
     pos = state.vectorFields(HydroFieldNames.position)
@@ -384,7 +405,12 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Check the floating values for the state against reference data.
         #---------------------------------------------------------------------------
-        if referenceFile != "None":
+        if checkReference:
+            referenceFile = os.path.join("Reference",
+                                         hydroType,
+                                         f"compatibleEnergy={compatibleEnergy}",
+                                         str(nx),
+                                         "CollidingPlates-1d-1proc-reproducing.txt")
             import filearraycmp as fcomp
             assert fcomp.filearraycmp(outputFile, referenceFile, testtol, testtol)
             print("Floating point comparison test passed.")
@@ -393,7 +419,7 @@ if outputFile != "None":
         # Also we can optionally compare the current results with another file for
         # bit level consistency.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None" and BuildData.cxx_compiler_id != "IntelLLVM":
+        if comparisonFile and BuildData.cxx_compiler_id != "IntelLLVM":
             import filecmp
             print("Compare files : %s     <--->     %s" % (outputFile, comparisonFile))
             assert filecmp.cmp(outputFile, comparisonFile)

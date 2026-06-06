@@ -5,85 +5,105 @@
 //
 // Created by JMO, Thu Nov 20 14:13:18 PST 2014
 //----------------------------------------------------------------------------//
-#ifndef LimitedMonaghanGingoldViscosity_HH
-#define LimitedMonaghanGingoldViscosity_HH
+#ifndef __Spheral_LimitedMonaghanGingoldViscosity__
+#define __Spheral_LimitedMonaghanGingoldViscosity__
 
-#include "MonaghanGingoldViscosity.hh"
+#include "LimitedMonaghanGingoldViscosityView.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosity: public MonaghanGingoldViscosity<Dimension> {
+class LimitedMonaghanGingoldViscosity : public MonaghanGingoldViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename ArtificialViscosity<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = LimitedMonaghanGingoldViscosityView<Dimension>;
 
   // Constructors.
   LimitedMonaghanGingoldViscosity(const Scalar Clinear,
                                   const Scalar Cquadratic,
+                                  const TableKernel<Dimension>& kernel,
                                   const bool linearInExpansion,
                                   const bool quadraticInExpansion,
                                   const Scalar etaCritFrac,
-                                  const Scalar etaFoldFrac);
+                                  const Scalar etaFoldFrac) :
+    MonaghanGingoldViscosity<Dimension>(Clinear, Cquadratic, kernel,
+                                        linearInExpansion, quadraticInExpansion),
+    mEtaCritFrac(etaCritFrac),
+    mEtaFoldFrac(etaFoldFrac) { }
 
-  // Destructor.
-  virtual ~LimitedMonaghanGingoldViscosity();
+  virtual ~LimitedMonaghanGingoldViscosity() { m_viewPtr.free(); }
 
-  // Initialize the artificial viscosity for all FluidNodeLists in the given
-  // DataBase.
-  virtual void initialize(const DataBase<Dimension>& dataBase,
-                          const State<Dimension>& state,
-                          const StateDerivatives<Dimension>& derivs,
-                          ConstBoundaryIterator boundaryBegin,
-                          ConstBoundaryIterator boundaryEnd,
-                          const Scalar time,
-                          const Scalar dt,
-                          const TableKernel<Dimension>& W);
+  // No default construction, copying, or assignment
+  LimitedMonaghanGingoldViscosity() = delete;
+  LimitedMonaghanGingoldViscosity(const LimitedMonaghanGingoldViscosity&) = delete;
+  LimitedMonaghanGingoldViscosity& operator=(const LimitedMonaghanGingoldViscosity&) = delete;
 
-  // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
-                                         const Vector& xi,
-                                         const Vector& etai,
-                                         const Vector& vi,
-                                         const Scalar rhoi,
-                                         const Scalar csi,
-                                         const SymTensor& Hi,
-                                         const Vector& xj,
-                                         const Vector& etaj,
-                                         const Vector& vj,
-                                         const Scalar rhoj,
-                                         const Scalar csj,
-                                         const SymTensor& Hj) const;
+  // We need the velocity gradient
+  virtual bool requireVelocityGradient() const override { return true; }
 
-  // Access the fractions setting the critical spacing for kicking the
-  // viscosity back on full force.
-  double etaCritFrac() const;
-  void etaCritFrac(double val);
+  // Access our data
+  Scalar etaCritFrac()                 const { return mEtaCritFrac; }
+  Scalar etaFoldFrac()                 const { return mEtaFoldFrac; }
 
-  double etaFoldFrac() const;
-  void etaFoldFrac(double val);
+  void etaCritFrac(const Scalar x)           { mEtaCritFrac = x; updateManagedPtr(); }
+  void etaFoldFrac(const Scalar x)           { mEtaFoldFrac = x; updateManagedPtr(); }
 
   // Restart methods.
-  virtual std::string label() const { return "LimitedMonaghanGingoldViscosity"; }
+  virtual std::string label() const override { return "LimitedMonaghanGingoldViscosity"; }
+
+  // View methods
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Scalar));
+  }
+
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
+    initView();
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  }
+
+  // Useful for testing
+  chai::managed_ptr<ViewType> getView() {
+    initView();
+    return m_viewPtr;
+  }
 
 protected:
-  //--------------------------- Private Interface ---------------------------//
-  double mEtaCritFrac, mEtaFoldFrac, mEtaCrit, mEtaFold;
-  FieldList<Dimension, Tensor> mGradVel;
+  //--------------------------- Protected Interface ---------------------------//
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear,
+                                               mCquadratic,
+                                               mLinearInExpansion,
+                                               mQuadraticInExpansion,
+                                               mEtaCritFrac,
+                                               mEtaFoldFrac);
+    }
+  }
 
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
+
+  // Not ideal but there is repeated member data between the value and view
+  Scalar mEtaCritFrac = 1.0;
+  Scalar mEtaFoldFrac = 0.2;
+  using MonaghanGingoldViscosity<Dimension>::mLinearInExpansion;
+  using MonaghanGingoldViscosity<Dimension>::mQuadraticInExpansion;
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
 private:
-  //--------------------------- Private Interface ---------------------------//
-  LimitedMonaghanGingoldViscosity();
-  LimitedMonaghanGingoldViscosity(const LimitedMonaghanGingoldViscosity&);
-  LimitedMonaghanGingoldViscosity& operator=(const LimitedMonaghanGingoldViscosity&) const;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

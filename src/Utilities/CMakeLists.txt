@@ -17,6 +17,7 @@ set(Utilities_inst
 set(Utilities_sources
     BuildData.cc
     DBC.cc
+    LinearInterpolator.cc
     QuadraticInterpolator.cc
     CubicHermiteInterpolator.cc
     KeyTraits.cc
@@ -33,6 +34,8 @@ set(Utilities_sources
     coarsenBinnedValuesInst.cc
     clipFacetedVolume.cc
     uniform_random.cc
+    initializeAxom.cc
+    GPUUtils.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -43,10 +46,17 @@ set(Utilities_headers
     BuildData.hh
     CounterClockwiseComparator.hh
     DBC.hh
+    GPUUtils.hh
+    LinearInterpolator.hh
+    LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
     QuadraticInterpolatorInline.hh
+    QuadraticInterpolatorView.hh
+    QuadraticInterpolatorViewInline.hh
     CubicHermiteInterpolator.hh
     CubicHermiteInterpolatorInline.hh
+    CubicHermiteInterpolatorView.hh
+    CubicHermiteInterpolatorViewInline.hh
     XYInterpolator.hh
     XYInterpolatorInline.hh
     BiLinearInterpolator.hh
@@ -61,8 +71,9 @@ set(Utilities_headers
     FastMath.hh
     FieldDataTypeTraits.hh
     Functors.hh
-    GeometricUtilities.hh
+    Hashes.hh
     KeyTraits.hh
+    Logger.hh
     NodeCoupling.hh
     NodeListHashMap.hh
     OpenMP_wrapper.hh
@@ -88,11 +99,9 @@ set(Utilities_headers
     computeConvexHull.hh
     computeShepardsInterpolation.hh
     erff.hh
-    fakestl.hh
     globalBoundingVolumes.hh
     globalNodeIDs.hh
     globalNodeIDsInline.hh
-    hashes.hh
     initializeTau.hh
     integrateThroughMeshAlongSegment.hh
     intpow2.hh
@@ -124,11 +133,18 @@ set(Utilities_headers
     simpsonsIntegration.hh
     size_t_bits.hh
     sort_permutation.hh
+    span.hh
+    StrideIterator.hh
     testBoxIntersection.hh
     timingUtilities.hh
     uniform_random.hh
     uniform_random_Inline.hh
-    )
+    range.hh
+    AnyVisitor.hh
+    SpheralMessage.hh
+    initializeAxom.hh
+    initializeAdiak.hh
+  )
 
 spheral_install_python_files(fitspline.py)
 

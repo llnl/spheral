@@ -67,7 +67,7 @@ class EulerianTracerHistory(Spheral.RestartableObject):
             self.initializefunc()
 
         # How many sample values are we going for?
-        for nodeListi, nodeList in enumerate(self.db.fluidNodeLists()):
+        for nodeListi, nodeList in enumerate(self.db.fluidNodeLists):
             if nodeList.numNodes > 0:
                 nvals = len(self.samplefunc(nodeListi, 0))
         assert nvals > 0

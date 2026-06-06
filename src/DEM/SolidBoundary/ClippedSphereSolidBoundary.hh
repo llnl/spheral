@@ -60,7 +60,7 @@ public:
 
   void setClipIntersectionRadius();
 
-  virtual std::string label() const { return "ClippedSphereSolidBoundary" ; }
+  virtual std::string label() const override { return "ClippedSphereSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 protected:

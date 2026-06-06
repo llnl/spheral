@@ -12,6 +12,7 @@
 #include "NodeList/NodeList.hh"
 #include "Geometry/EigenStruct.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
 #include "Utilities/DBC.hh"
@@ -26,12 +27,6 @@ using std::list;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -59,7 +54,6 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
                   vector<Boundary<Dim<3> >*> boundaries) {
 
   // Number of processors.
-  const int procID = this->domainID();
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
@@ -101,7 +95,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
   }
 
   // Build the set of global node IDs.
-  const FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
+  const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
 
   // Get the local description of the domain distribution.
   vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, work);
@@ -122,14 +116,8 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) {
-    cerr << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:" << endl
-         << initialLoadStats << endl
-         << "    Domain distribution shape tensor: " << shapeTensor.eigenValues << endl;
-    for (int i = 0; i != Dimension::nDim; ++i) {
-      cerr << "    " << shapeTensor.eigenVectors.getColumn(i) << endl;
-    }
-  }
+  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n" <<
+                 "    Domain distribution shape tensor: " << shapeTensor.eigenValues);
     
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -205,8 +193,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
       // Iterator over the number of z domains we'll be assigning.
       for (int iz = 0; iz != numZChunks; ++iz) {
 
-        if (procID == 0) cerr << "Assigning domain " << assignDomainID 
-                              << " of " << numProcs << "...";
+        SpheralMessage("Assigning domain " << assignDomainID << " of " << numProcs << "...");
 
         // Peel off nodes from the front of the unassigned nodes, until the desired work
         // load for this domain is reached.  Note that in this step we use the z index as
@@ -231,8 +218,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
         // Increment the domain we're assigning to.
         ++assignDomainID;
-        if (procID == 0) cerr << "Done." << endl;
-
+        SpheralMessage("   Done.");
       }
 
 //       // Assign any remaining nodes from this chunks work to the last domain we were working
@@ -272,10 +258,8 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  if (procID == 0) cerr << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:" << endl
-                        << finalLoadStats << endl << endl;
+  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
   MPI_Barrier(Communicator::communicator());
-
 }
 
 //------------------------------------------------------------------------------
@@ -309,9 +293,8 @@ domainsPerChunk(const Dim<3>::SymTensor::EigenStructType& shapeTensor) const {
   BEGIN_CONTRACT_SCOPE
   {
     int checkCount = 0;
-    for (vector<int>::const_iterator itr = remainProcs.begin();
-         itr != remainProcs.end();
-         ++itr) checkCount += *itr;
+    CONTRACT_VAR(checkCount);
+    for (const auto x: remainProcs) checkCount += x;
     CHECK(checkCount == totalRemainProcs);
   }
   END_CONTRACT_SCOPE
@@ -350,9 +333,8 @@ domainsPerChunk(const Dim<3>::SymTensor::EigenStructType& shapeTensor) const {
     BEGIN_CONTRACT_SCOPE
     {
       int checkCount = 0;
-      for (vector<int>::const_iterator itr = result[i].begin();
-           itr != result[i].end();
-           ++itr) checkCount += *itr;
+      CONTRACT_VAR(checkCount);
+      for (const auto x: result[i]) checkCount += x;
       CHECK(checkCount == numDomainsInSlab);
     }
     END_CONTRACT_SCOPE
@@ -364,10 +346,9 @@ domainsPerChunk(const Dim<3>::SymTensor::EigenStructType& shapeTensor) const {
   BEGIN_CONTRACT_SCOPE
   {
     int checkCount = 0;
+    CONTRACT_VAR(checkCount);
     for (int i = 0; i != xChunks; ++i) {
-      for (vector<int>::const_iterator itr = result[i].begin();
-           itr != result[i].end();
-           ++itr) checkCount += *itr;
+      for (const auto x: result[i]) checkCount += x;
     }
     ENSURE(checkCount == numProcs);
   }

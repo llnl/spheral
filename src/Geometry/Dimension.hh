@@ -16,7 +16,6 @@
 #include "GeomVector.hh"
 #include "GeomTensor.hh"
 #include "GeomSymmetricTensor.hh"
-#include "Geom3Vector.hh"
 #include "GeomThirdRankTensor.hh"
 #include "GeomFourthRankTensor.hh"
 #include "GeomFifthRankTensor.hh"
@@ -38,7 +37,6 @@ class Dim<1> {
 public:
   typedef double Scalar;
   typedef GeomVector<1> Vector;
-  typedef Geom3Vector Vector3d;
   typedef GeomTensor<1> Tensor;
   typedef GeomSymmetricTensor<1> SymTensor;
   typedef GeomThirdRankTensor<1> ThirdRankTensor;
@@ -51,7 +49,7 @@ public:
   typedef GeomFacet1d Facet;
   static const int nDim = 1;
 
-  static double rootnu(const double& x) { return x; }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return x; }
   static double pownu(const double& x) { return x; }
   static double pownu1(const double& /*x*/) { return 1.0; }
   static double pownu12(const double& /*x*/) { return 1.0; }
@@ -62,7 +60,6 @@ class Dim<2> {
 public:
   typedef double Scalar;
   typedef GeomVector<2> Vector;
-  typedef Geom3Vector Vector3d;
   typedef GeomTensor<2> Tensor;
   typedef GeomSymmetricTensor<2> SymTensor;
   typedef GeomThirdRankTensor<2> ThirdRankTensor;
@@ -73,7 +70,7 @@ public:
   typedef GeomFacet2d Facet;
   static const int nDim = 2;
 
-  static double rootnu(const double& x) { return std::sqrt(x); }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return std::sqrt(x); }
   static double pownu(const double& x) { return x*x; }
   static double pownu1(const double& x) { return x; }
   static double pownu12(const double& x) { return std::sqrt(x); }
@@ -84,7 +81,6 @@ class Dim<3> {
 public:
   typedef double Scalar;
   typedef GeomVector<3> Vector;
-  typedef Geom3Vector Vector3d;
   typedef GeomTensor<3> Tensor;
   typedef GeomSymmetricTensor<3> SymTensor;
   typedef GeomThirdRankTensor<3> ThirdRankTensor;
@@ -95,7 +91,7 @@ public:
   typedef GeomFacet3d Facet;
   static const int nDim = 3;
 
-  static double rootnu(const double& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
+  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
   static double pownu(const double& x) { return x*x*x; }
   static double pownu1(const double& x) { return x*x; }
   static double pownu12(const double& x) { return x; }

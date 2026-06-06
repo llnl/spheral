@@ -157,7 +157,7 @@ commandLine(nx1 = 128,
             sampleFreq = 20,
             dataDir = "dumps-Rayleigh-Taylor-2d_hopkins",
             outputFile = "RT_Hopkins.txt",
-            comparisonFile = "None",
+            comparisonFile = None,
             
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             useVoronoiOutput = False,
@@ -431,10 +431,10 @@ packages = [hydro]
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity and useArtificialViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 elif boolCullenViscosity and useArtificialViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WTPi,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WTPi,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
     packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------

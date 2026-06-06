@@ -23,20 +23,35 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Function to enforce zeroing the trace of the deviatoric stress in 3D only
+//------------------------------------------------------------------------------
+namespace {  // anonymous
+
+template<typename Dimension>
+inline
+void
+zeroTrace(typename Dimension::SymTensor& Si) {
+}
+
+template<>
+inline
+void
+zeroTrace<Dim<3>>(Dim<3>::SymTensor& Si) {
+  const auto dS = Si.Trace()/3.0;
+  Si[0] -= dS;
+  Si[3] -= dS;
+  Si[5] -= dS;
+}
+
+}            // anonymous
+
+//------------------------------------------------------------------------------
 // Constructors.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 DeviatoricStressPolicy<Dimension>::
 DeviatoricStressPolicy():
-  FieldUpdatePolicy<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-DeviatoricStressPolicy<Dimension>::
-~DeviatoricStressPolicy() {
+  FieldUpdatePolicy<Dimension, SymTensor>({}) {
 }
 
 //------------------------------------------------------------------------------
@@ -60,8 +75,8 @@ update(const KeyType& key,
   auto buildKey = [&](const std::string& fkey) -> std::string { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
 
   // Get the state we're advancing.
-  auto&       S = state.field(key, SymTensor::zero);
-  const auto& DSDt = derivs.field(IncrementState<Dimension, SymTensor>::prefix() + key, SymTensor::zero);
+  auto&       S = state.field(key, SymTensor::zero());
+  const auto& DSDt = derivs.field(IncrementState<Dimension, SymTensor>::prefix() + key, SymTensor::zero());
 
   // Check if a porosity model has registered a modifier for the deviatoric stress.
   // They should have added it as a dependency of this policy if so.
@@ -74,10 +89,6 @@ update(const KeyType& key,
     alphaPtr = &state.field(buildKey(SolidFieldNames::porosityAlpha), 0.0);
     DalphaDtPtr = &derivs.field(buildKey(IncrementBoundedState<Dimension, Scalar>::prefix() + SolidFieldNames::porosityAlpha), 0.0);
   }
-
-  // We only want to enforce zeroing the trace in Cartesian coordinates.   In RZ or R
-  // we assume the missing components on the diagonal sum to -Trace(S).
-  const auto zeroTrace = GeometryRegistrar::coords() == CoordinateType::Cartesian;
 
   // Iterate over the internal nodes.
   const auto n = S.numInternalElements();
@@ -96,11 +107,11 @@ update(const KeyType& key,
 
     // Update S
     // Note -- purely elastic flow.  The plastic yielding is accounted for when we update the plastic strain.
-    S(i) += multiplier*DSDti;                                // Elastic prediction for the new deviatoric stress
-    if (zeroTrace) {
-      S(i) -= SymTensor::one * S(i).Trace()/Dimension::nDim; // Ensure the deviatoric stress is traceless (all but RZ and spherical)
-      CHECK(fuzzyEqual(S(i).Trace(), 0.0));
-    }
+    S(i) += multiplier*DSDti;                                          // Elastic prediction for the new deviatoric stress
+
+    // We only want to enforce zeroing the trace in 3D Cartesian coordinates.  In lower
+    // dimensions we assume the missing components on the diagonal sum to -Trace(S).
+    zeroTrace<Dimension>(S(i));
   }
 
 //     // Finally apply the pressure limits to the allowed deviatoric stress.
@@ -116,7 +127,7 @@ DeviatoricStressPolicy<Dimension>::
 operator==(const UpdatePolicyBase<Dimension>& rhs) const {
 
   // We're only equal if the other guy is a DeviatoricStress operator, and has
-  // the same cutoff values.
+  // the same internal parameters
   const auto rhsPtr = dynamic_cast<const DeviatoricStressPolicy<Dimension>*>(&rhs);
   return (rhsPtr != nullptr);
 }

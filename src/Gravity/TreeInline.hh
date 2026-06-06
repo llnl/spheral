@@ -295,7 +295,7 @@ inline
 void
 Tree<Dimension>::
 addNodeToTree(const Tree<Dimension>::Vector& xi) {
-  this->addNodeToTree(0.0, xi, Vector::zero);
+  this->addNodeToTree(0.0, xi, Vector::zero());
 }
 
 //------------------------------------------------------------------------------

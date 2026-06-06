@@ -10,9 +10,9 @@ from spheralDimensions import *
 dims = spheralDimensions()
 
 from GenericRiemannHydro import *
-from GSPHHydroBase import *
-from MFMHydroBase import *
-from MFVHydroBase import *
+from GSPH import *
+from MFM import *
+from MFV import *
 from WaveSpeeds import *
 from Limiters import *
 from RiemannSolvers import *
@@ -21,9 +21,9 @@ from RiemannSolvers import *
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"GSPH/GenericRiemannHydro.hh"',
-                  '"GSPH/GSPHHydroBase.hh"',
-                  '"GSPH/MFMHydroBase.hh"',
-                  '"GSPH/MFVHydroBase.hh"',
+                  '"GSPH/GSPH.hh"',
+                  '"GSPH/MFM.hh"',
+                  '"GSPH/MFV.hh"',
                   '"GSPH/WaveSpeeds/WaveSpeedBase.hh"',
                   '"GSPH/WaveSpeeds/AcousticWaveSpeed.hh"',
                   '"GSPH/WaveSpeeds/DavisWaveSpeed.hh"',
@@ -38,6 +38,9 @@ PYB11includes += ['"GSPH/GenericRiemannHydro.hh"',
                   '"GSPH/RiemannSolvers/RiemannSolverBase.hh"',
                   '"GSPH/RiemannSolvers/HLLC.hh"',
                   '"GSPH/RiemannSolvers/SecondOrderArtificialViscosity.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
+                  '"Neighbor/PairwiseField.hh"',
                   '"FileIO/FileIO.hh"']
 
 #-------------------------------------------------------------------------------
@@ -68,9 +71,9 @@ NodeMotionType = PYB11enum(("Lagrangian",
 for ndim in dims:
     exec('''
 GenericRiemannHydro%(ndim)id = PYB11TemplateClass(GenericRiemannHydro, template_parameters="%(Dimension)s")
-GSPHHydroBase%(ndim)id = PYB11TemplateClass(GSPHHydroBase, template_parameters="%(Dimension)s")
-MFMHydroBase%(ndim)id = PYB11TemplateClass(MFMHydroBase, template_parameters="%(Dimension)s")
-MFVHydroBase%(ndim)id = PYB11TemplateClass(MFVHydroBase, template_parameters="%(Dimension)s")
+GSPH%(ndim)id = PYB11TemplateClass(GSPH, template_parameters="%(Dimension)s")
+MFM%(ndim)id = PYB11TemplateClass(MFM, template_parameters="%(Dimension)s")
+MFV%(ndim)id = PYB11TemplateClass(MFV, template_parameters="%(Dimension)s")
 WaveSpeedBase%(ndim)id = PYB11TemplateClass(WaveSpeedBase, template_parameters="%(Dimension)s")
 AcousticWaveSpeed%(ndim)id = PYB11TemplateClass(AcousticWaveSpeed, template_parameters="%(Dimension)s")
 DavisWaveSpeed%(ndim)id = PYB11TemplateClass(DavisWaveSpeed, template_parameters="%(Dimension)s")

@@ -349,9 +349,7 @@ inline
 double
 Mesh<Dimension>::
 minimumScale() const {
-  
-  using namespace boost;
-
+ 
   // Minimum edge length.
   double result = std::numeric_limits<double>::max();
   for (unsigned i = 0; i != numEdges(); ++i) {

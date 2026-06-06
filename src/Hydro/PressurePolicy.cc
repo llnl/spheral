@@ -8,7 +8,6 @@
 #include "PressurePolicy.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Strength/SolidFieldNames.hh"
-#include "FSISPH/FSIFieldNames.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "Field/Field.hh"
@@ -26,19 +25,11 @@ namespace Spheral {
 template<typename Dimension>
 PressurePolicy<Dimension>::
 PressurePolicy():
-  FieldUpdatePolicy<Dimension>({HydroFieldNames::massDensity,
-                                HydroFieldNames::specificThermalEnergy,
-                                SolidFieldNames::porositySolidDensity,
-                                SolidFieldNames::porosityAlpha,
-                                SolidFieldNames::tensorDamage}) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PressurePolicy<Dimension>::
-~PressurePolicy() {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::massDensity,
+                                        HydroFieldNames::specificThermalEnergy,
+                                        SolidFieldNames::porositySolidDensity,
+                                        SolidFieldNames::porosityAlpha,
+                                        SolidFieldNames::tensorDamage}) {
 }
 
 //------------------------------------------------------------------------------
@@ -56,7 +47,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE((fieldKey == HydroFieldNames::pressure or 
-           fieldKey == FSIFieldNames::damagedPressure));
+           fieldKey == SolidFieldNames::damagedPressure));
   auto& P = state.field(key, Scalar());
 
   // Get the eos.  This cast is ugly, but is a work-around for now.
@@ -99,16 +90,16 @@ update(const KeyType& key,
 
   // Is someone trying to keep the damaged pressure in an independent Field?
   // (I'm looking at you FSISPH)
-  const auto separateDamage = state.registered(buildKey(FSIFieldNames::damagedPressure));
+  const auto separateDamage = state.registered(buildKey(SolidFieldNames::damagedPressure));
   Field<Dimension, Scalar>* PdPtr = nullptr;
-  if (separateDamage) PdPtr = &state.field(buildKey(FSIFieldNames::damagedPressure), 0.0);
+  if (separateDamage) PdPtr = &state.field(buildKey(SolidFieldNames::damagedPressure), 0.0);
 
   // If there's damage for this material, apply it to the pressure
   // This is complicated by FSISPH, which wants to keep track of the damaged pressure separately,
   // so we check if someone has registered damaged pressure as a field for this NodeList, in
   // which case we apply the damage to a new copy of the pressure.
   if (state.registered(buildKey(SolidFieldNames::tensorDamage))) {
-    const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero);
+    const auto& D = state.field(buildKey(SolidFieldNames::tensorDamage), SymTensor::zero());
 
     // Check for the appropriate minimum pressure
     const auto* solidEOSptr = dynamic_cast<const SolidEquationOfState<Dimension>*>(&eos);

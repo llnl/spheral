@@ -20,7 +20,7 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class ArtificialConductionPolicy: public FieldUpdatePolicy<Dimension> {
+class ArtificialConductionPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -31,7 +31,7 @@ public:
 
   // Constructors, destructor.
   ArtificialConductionPolicy(PolicyPointer& energyPolicy);
-  virtual ~ArtificialConductionPolicy();
+  virtual ~ArtificialConductionPolicy() = default;
 
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -58,11 +58,12 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
+  // Forbidden methods
+  ArtificialConductionPolicy(const ArtificialConductionPolicy& rhs) = delete;
+  ArtificialConductionPolicy& operator=(const ArtificialConductionPolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
-  ArtificialConductionPolicy(const ArtificialConductionPolicy& rhs);
-  ArtificialConductionPolicy& operator=(const ArtificialConductionPolicy& rhs);
-
   typename State<Dimension>::PolicyPointer mEnergyPolicy;
 };
 

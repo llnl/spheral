@@ -151,9 +151,6 @@ commandLine(nx = 100,
             redistributeStep = 500,
             checkRestart = False,
             dataDir = "dumps-Convection-Test-2d",
-            outputFile = "None",
-            comparisonFile = "None",
-            
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             
             bArtificialConduction = False,
@@ -368,7 +365,7 @@ packages.append(RL)
 #-------------------------------------------------------------------------------
 
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,aMin,aMax)
     
     packages.append(evolveReducingViscosityMultiplier)
 

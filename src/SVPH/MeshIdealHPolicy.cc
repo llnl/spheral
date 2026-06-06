@@ -73,7 +73,7 @@ update(const KeyType& key,
     mFired = true;
 
     // Get the state fields.
-    FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero);
+    FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const Mesh<Dimension>& mesh = state.mesh();
     const size_t numNodeLists = H.numFields();
 
@@ -93,7 +93,7 @@ update(const KeyType& key,
     }
 
     // // Now go through and filter the H tensor locally.
-    // FieldList<Dimension, SymTensor> Havg = derivs.fields(ReplaceBoundedState<Dimension, SymTensor, Scalar>::prefix() + HydroFieldNames::H, SymTensor::zero);
+    // FieldList<Dimension, SymTensor> Havg = derivs.fields(ReplaceBoundedState<Dimension, SymTensor, Scalar>::prefix() + HydroFieldNames::H, SymTensor::zero());
     // for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
     //   const unsigned n = H[nodeListi]->numInternalElements();
     //   for (unsigned i = 0; i != n; ++i) {

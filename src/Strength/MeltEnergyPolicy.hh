@@ -18,12 +18,12 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class MeltEnergyPolicy: public FieldUpdatePolicy<Dimension> {
+class MeltEnergyPolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   MeltEnergyPolicy();
@@ -40,10 +40,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  MeltEnergyPolicy(const MeltEnergyPolicy& rhs);
-  MeltEnergyPolicy& operator=(const MeltEnergyPolicy& rhs);
+  // Forbidden methods
+  MeltEnergyPolicy(const MeltEnergyPolicy& rhs) = delete;
+  MeltEnergyPolicy& operator=(const MeltEnergyPolicy& rhs) = delete;
 };
 
 }

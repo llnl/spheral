@@ -7,8 +7,12 @@
 #ifndef __Spheral_Communicator__
 #define __Spheral_Communicator__
 
-#ifdef USE_MPI
+
+#ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
+#include "Utilities/DBC.hh"
+#else
+typedef int MPI_Comm;
 #endif
 
 namespace Spheral {
@@ -21,19 +25,14 @@ public:
   static Communicator& instance() { static Communicator theInstance; return theInstance; }
 
   // Access the communicator.
-#ifdef USE_MPI
   static MPI_Comm& communicator() { return instance().mCommunicator; }
   static void communicator(MPI_Comm& comm) { instance().mCommunicator = comm; }
-#else
-  static int communicator() { return 0; }
-  static void communicator(int&) {}
-#endif
+  static MPI_Comm* comm_ptr();
+  static void finalize();
 
 private:
   //------------------------===== Private Interface =====----------------------//
-#ifdef USE_MPI
   MPI_Comm mCommunicator;
-#endif
 
   // No public constructors, destructor, or assignment.
   Communicator();

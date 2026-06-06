@@ -1,67 +1,75 @@
-if (NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_PYTHON)
 
-  # We Use the spack generated build time python path to
-  # pick up all of the python modules needed for our runtime.
-  # Some modules need to install from directories other that
-  # site-packages so we strip away site-packages pack and 
-  # copy the full contents of the python library prefix to
-  # our virtual env in spheral-setup-venv.sh
-  string(REGEX REPLACE "lib\/python3.9\/site-packages\/?[A-Za-z]*:" "* " VIRTUALENV_PYTHONPATH_COPY "${SPACK_PYTHONPATH}:")
-
-  set(SPHERAL_ATS_BUILD_CONFIG_ARGS )
-
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    list(APPEND SPHERAL_ATS_BUILD_CONFIG_ARGS "--filter='\"level<100\"'")
-  endif()
-
-  if (NOT ENABLE_MPI)
-    list(APPEND SPHERAL_ATS_BUILD_CONFIG_ARGS "--filter='\"np<2\"'")
-  endif()
-
-  if (NOT SPHERAL_ENABLE_GSPH)
-     list(APPEND SPHERAL_ATS_BUILD_CONFIG_ARGS "--filter='\"not gsph\"'")
-  endif()
-
-  if (NOT SPHERAL_ENABLE_SVPH)
-     list(APPEND SPHERAL_ATS_BUILD_CONFIG_ARGS "--filter='\"not svph\"'")
-  endif()
-
-  if ($ENV{SYS_TYPE} MATCHES ".*blueos.*")
-    list(APPEND SPHERAL_ATS_BUILD_CONFIG_ARGS "--addOp --smpi_off")
-  endif()
-
-  string(REPLACE ";" " " SPHERAL_ATS_BUILD_CONFIG_ARGS_STRING "${SPHERAL_ATS_BUILD_CONFIG_ARGS}")
-  
+  # Our runtime-requirements file needs to be configured with the ATS
+  # submodule path.
   configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/spheral-setup-venv.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/spheral-setup-venv.sh"
-    )
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime-requirements.txt.in"
+    "${SPHERAL_BINARY_DIR}/scripts/runtime-requirements.txt"
+  )
 
+  # ***********
+  # Build Stage
+  # ***********
+
+  # Configure the build time scripts to run a build dir spheral environment.
+  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
+  string(REPLACE ";" "\n" SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/spheral-env.sh"
-    )
+    "${CMAKE_BINARY_DIR}/bin/spheral"
+    @ONLY
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  )
 
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/atstest.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/atstest.sh"
-    )
+  # *************
+  # Install Stage
+  # *************
 
-  configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/lcatstest.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/lcatstest.sh"
-    )
+  # Set up the target for building the install python virtual environment.
+  Spheral_Python_Env(python_runtime_env
+    REQUIREMENTS ${SPHERAL_BINARY_DIR}/scripts/runtime-requirements.txt
+    PREFIX ${CMAKE_INSTALL_PREFIX}
+  )
 
-  install(FILES 
-      "${CMAKE_CURRENT_BINARY_DIR}/spheral-setup-venv.sh"
-      "${CMAKE_CURRENT_BINARY_DIR}/spheral-env.sh"
-      "${CMAKE_CURRENT_BINARY_DIR}/atstest.sh"
-      "${CMAKE_CURRENT_BINARY_DIR}/lcatstest.sh"
-      "${CMAKE_CURRENT_SOURCE_DIR}/lc/lcats"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/scripts"
-    )
+  # Ensure devtool scripts are available on install.
+  install(FILES
+      "${CMAKE_CURRENT_SOURCE_DIR}/spheral_ats.py"
+      "${CMAKE_CURRENT_SOURCE_DIR}/devtools/performance_analysis.py"
+    DESTINATION scripts
+  )
 
-  install(CODE "execute_process( \
-    COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/spheral-setup-venv.sh \ 
-    )")
+  install(FILES
+    "${CMAKE_BINARY_DIR}/bin/spheral"
+    DESTINATION bin
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  )
+
+  install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/atstest.sh"
+    RENAME "spheral-ats"
+    DESTINATION bin
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  )
+
+  # Configure scripts for the install stage.
+  install( CODE "
+  message(\"-- Setting up spheral python virtual environment.\")
+
+  execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target python_runtime_env)
+  ")
+
+  # byte compile all of the venv site-packages.
+  install(CODE "
+  message(\"-- Byte compiling the Spheral Virtual Environment ...\")
+  execute_process(
+    COMMAND ${CMAKE_INSTALL_PREFIX}/bin/spheral -m compileall -q ${CMAKE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}
+  )
+  message(\"-- Byte compilation complete.\")
+  ")
+
+  # This is unused so no need to do it at the moment
+  # message("-- Creating local Silo module path file.")
+  # file(WRITE "${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/silo_lib.pth"
+  #   "@CONFIG_SILO_DIR@/lib"
+  # )
 endif()

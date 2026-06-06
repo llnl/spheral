@@ -14,7 +14,11 @@ from ArtificialConduction import *
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
-PYB11includes += ['"ArtificialConduction/ArtificialConduction.hh"']
+PYB11includes += ['"ArtificialConduction/ArtificialConduction.hh"',
+                  '"Field/FieldList.hh"',
+                  '"DataBase/DataBase.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"']
 
 #-------------------------------------------------------------------------------
 # Namespaces

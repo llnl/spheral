@@ -5,16 +5,17 @@ from PYB11Generator import *
 from PhysicsAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralPhysics")
+@PYB11module("SpheralCompiledModules.SpheralPhysics")
 class Physics:
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef typename Physics<%(Dimension)s>::TimeStepType TimeStepType;
+    using Scalar = typename %(Dimension)s::Scalar;
+    using Vector = typename %(Dimension)s::Vector;
+    using Tensor = typename %(Dimension)s::Tensor;
+    using SymTensor = typename %(Dimension)s::SymTensor;
+    using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+    using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+    using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................
@@ -24,6 +25,26 @@ class Physics:
 
     #...........................................................................
     # Virtual methods
+    @PYB11virtual
+    @PYB11const
+    def dtImplicit(self,
+                   dataBase = "const DataBase<%(Dimension)s>&",
+                   state = "const State<%(Dimension)s>&",
+                   derivs = "const StateDerivatives<%(Dimension)s>&",
+                   currentTime = "const Scalar"):
+        "Optionally compute a timestep for implicit time advancement"
+        return "TimeStepType"
+
+    @PYB11virtual
+    @PYB11const
+    def maxResidual(self,
+                    dataBase = "const DataBase<%(Dimension)s>&",
+                    state1 = "const State<%(Dimension)s>&",
+                    state0 = "const State<%(Dimension)s>&",
+                    tol = "const Scalar"):
+        "Compute the maximum residual difference between the States"
+        return "ResidualType"
+
     @PYB11virtual
     def applyGhostBoundaries(self,
                              state = "State<%(Dimension)s>&",
@@ -74,8 +95,8 @@ temperature or pressure."""
                    dataBase = "const DataBase<%(Dimension)s>&", 
                    state = "State<%(Dimension)s>&",
                    derivs = "StateDerivatives<%(Dimension)s>&"):
-        "Some packages might want a hook to do some initializations before the evaluateDerivatives() method is called."
-        return "void"
+        "Some packages might want a hook to do some initializations before the evaluateDerivatives() method is called.  Returns a bool indicating if boundary conditions should be applied."
+        return "bool"
 
     @PYB11virtual
     def finalize(self,
@@ -105,8 +126,9 @@ temperature or pressure."""
                         dataBase = "const DataBase<%(Dimension)s>&", 
                         state = "State<%(Dimension)s>&",
                         derivs = "StateDerivatives<%(Dimension)s>&"):
-        "Provide a hook to be called after the state has been updated and boundary conditions have been enforced."
-        return "void"
+        """Provide a hook to be called after the state has been updated and boundary conditions have been enforced.
+Returns a bool indicating if boundary conditions should be applied."""
+        return "bool"
 
     @PYB11virtual
     @PYB11const
@@ -130,6 +152,12 @@ temperature or pressure."""
     @PYB11const
     def requireIntersectionConnectivity(self):
         "Some physics algorithms require intersection connectivity to be constructed."
+        return "bool"
+
+    @PYB11virtual
+    @PYB11const
+    def requireVoronoiCells(self):
+        "Some physics algorithms require the Voronoi cells per point be computed."
         return "bool"
 
     @PYB11virtual
@@ -188,11 +216,26 @@ temperature or pressure."""
         "Test if the given Boundary condition is registered."
         return "bool"
 
-    @PYB11returnpolicy("reference_internal")
-    @PYB11const
-    def boundaryConditions(self):
-        "Access the list of boundary conditions."
-        return "const std::vector<Boundary<%(Dimension)s>*>&"
+    # @PYB11returnpolicy("reference_internal")
+    # @PYB11const
+    # def boundaryConditions(self):
+    #     "Access the list of boundary conditions."
+    #     return "const std::vector<Boundary<%(Dimension)s>*>&"
+
+    def appendSubPackage(self, package="Physics<%(Dimension)s>&"):
+        "Add a package to be run after this one"
+        return "void"
+    
+    def prependSubPackage(self, package="Physics<%(Dimension)s>&"):
+        "Add a package to run before this one"
+        return "void"
+
+    #...........................................................................
+    # Properties
+    #"std::vector<Boundary<%(Dimension)s>*>", 
+    boundaryConditions = PYB11property(doc="The set of boundary conditions")
+    postSubPackages = PYB11property(doc="Packages that should be run after this one")
+    preSubPackages = PYB11property(doc="Packages that should be run before this one")
 
 #-------------------------------------------------------------------------------
 # Inject abstract interface

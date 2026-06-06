@@ -129,6 +129,25 @@ def extractFieldComponents(nodeLists, time, cycle,
     return result
 
 #-------------------------------------------------------------------------------
+# Get subdirs for the variable names. They need to be sorted s.t. parent dirs
+# are created first. 
+#-------------------------------------------------------------------------------
+def getSubDirs(fieldwad):
+    dirs = set()
+    if len(fieldwad) > 0:
+        for name, desc, type, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
+            subdirs = name.split("/")[:-1]
+            for i in range(len(subdirs)):
+                dirs.add("/".join(subdirs[:i+1]))
+    return sorted(dirs, key=lambda x: x.count("/"))
+
+#-------------------------------------------------------------------------------
+# Return name with / replaced by _
+#-------------------------------------------------------------------------------
+def unslashify(name):
+    return name.replace("/", "_")
+
+#-------------------------------------------------------------------------------
 # Write the master file.
 #-------------------------------------------------------------------------------
 def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldwad,
@@ -154,7 +173,10 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
         # Make directories for variables.
         assert silo.DBMkDir(db, "CELLS") == 0
         assert silo.DBMkDir(db, "POINTS") == 0      # HACK
-
+        for d in getSubDirs(fieldwad):
+            assert silo.DBMkDir(db, "CELLS/" + d) == 0
+            assert silo.DBMkDir(db, "POINTS/" + d) == 0
+        
         # Pattern for constructing per domain variables.
         domainNamePatterns = [("%s/domain%i.silo:" % (p1, i)) + "%s" for i in range(mpi.procs) if numZonesPerDomain[i] > 0]
         numDomains = len(domainNamePatterns)
@@ -162,7 +184,7 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
         # Write the domain file names and types.
         domainNames = vector_of_string([p % "MESH" for p in domainNamePatterns])
         meshTypes = vector_of_int([meshType]*numDomains)
-        optlist = silo.DBoptlist(1024)
+        optlist = silo.DBoptlist(2)
         assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
         assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
         assert silo.DBPutMultimesh(db, "MMESH", domainNames, meshTypes, optlist) == 0
@@ -171,7 +193,7 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
         if nodeLists and mpi.rank == 0:
             domainNames = vector_of_string([p % "PointMESH" for p in domainNamePatterns])
             meshTypes = vector_of_int([silo.DB_POINTMESH]*numDomains)
-            optlist = silo.DBoptlist(1024)
+            optlist = silo.DBoptlist(2)
             assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
             assert silo.DBPutMultimesh(db, "MPointMESH", domainNames, meshTypes, optlist) == 0
@@ -186,7 +208,7 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
             assert len(material_names) == numDomains
             assert len(matnames) == len(nodeLists)
             assert len(matnos) == len(nodeLists)
-            optlist = silo.DBoptlist(1024)
+            optlist = silo.DBoptlist(5)
             assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
             assert optlist.addOption(silo.DBOPT_MMESH_NAME, "MMESH") == 0
@@ -199,7 +221,7 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
             assert len(material_names) == numDomains
             assert len(matnames) == len(nodeLists)
             assert len(matnos) == len(nodeLists)
-            optlist = silo.DBoptlist(1024)
+            optlist = silo.DBoptlist(5)
             assert optlist.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert optlist.addOption(silo.DBOPT_DTIME, time) == 0
             assert optlist.addOption(silo.DBOPT_MMESH_NAME, "MPointMESH") == 0
@@ -230,12 +252,12 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
             # Write the variables descriptors.
             ucdTypes = vector_of_int([silo.DB_UCDVAR]*numDomains)
             for name, desc, type, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
-                domainVarNames = vector_of_string([p % ("CELLS_" + name) for p in domainNamePatterns])
+                domainVarNames = vector_of_string([p % ("CELLS_" + unslashify(name)) for p in domainNamePatterns])
                 assert len(domainVarNames) == numDomains
                 assert silo.DBPutMultivar(db, "CELLS/" + name, domainVarNames, ucdTypes, optlistMV) == 0
                 if desc != None:
                     for subname, vals in subvars:
-                        domainVarNames = vector_of_string([p % ("CELLS_" + subname) for p in domainNamePatterns])
+                        domainVarNames = vector_of_string([p % ("CELLS_" + unslashify(subname)) for p in domainNamePatterns])
                         assert len(domainVarNames) == numDomains
                         assert silo.DBPutMultivar(db, "CELLS/" + subname, domainVarNames, ucdTypes, optlistVar) == 0
         
@@ -245,14 +267,14 @@ def writeMasterMeshSiloFile(dirName, mesh, label, nodeLists, time, cycle, fieldw
             # for name, desc, type, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
             #     domainVarNames = []
             #     for p in domainNamePatterns:
-            #         domainVarNames.append(p % ("POINTS_" + name))
+            #         domainVarNames.append(p % ("POINTS_" + unslashify(name)))
             #     assert len(domainVarNames) == numDomains
             #     assert silo.DBPutMultivar(db, "POINTS/" + name, domainVarNames, ptTypes, optlistMV) == 0
             #     if desc != None:
             #         for subname, vals in subvars:
             #             domainVarNames = []
             #             for p in domainNamePatterns:
-            #                 domainVarNames.append(p % ("POINTS_" + subname))
+            #                 domainVarNames.append(p % ("POINTS_" + unslashify(subname)))
             #             assert len(domainVarNames) == numDomains
             #             assert silo.DBPutMultivar(db, "POINTS/" + subname, domainVarNames, ptTypes, optlistVar) == 0
         
@@ -293,6 +315,9 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
         # Make directories for variables.
         assert silo.DBMkDir(db, "CELLS") == 0
         assert silo.DBMkDir(db, "POINTS") == 0      # HACK
+        for d in getSubDirs(fieldwad):
+            assert silo.DBMkDir(db, "CELLS/" + d) == 0
+            assert silo.DBMkDir(db, "POINTS/" + d) == 0
 
         # Determine our dimensionality
         if isinstance(mesh, polytope.Tessellation2d):
@@ -342,7 +367,7 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
         # start = TIME.clock()
 
         # Write the mesh itself.
-        meshOpts = silo.DBoptlist(1024)
+        meshOpts = silo.DBoptlist(8)
         assert meshOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
         assert meshOpts.addOption(silo.DBOPT_DTIME, time) == 0
         assert meshOpts.addOption(silo.DBOPT_COORDSYS, silo.DB_CARTESIAN) == 0
@@ -376,7 +401,7 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
             assert len(matlist) == numZones
             assert len(matnames) == len(nodeLists)
             assert len(matnos) == len(nodeLists)
-            matOpts = silo.DBoptlist(1024)
+            matOpts = silo.DBoptlist(3)
             assert matOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert matOpts.addOption(silo.DBOPT_DTIME, time) == 0
             assert matOpts.addOption(silo.DBOPT_MATNAMES, silo.DBOPT_NMATNOS, matnames) == 0
@@ -393,7 +418,7 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
             #writeDefvars(db, fieldwad)
         
             # Write the field components.
-            varOpts = silo.DBoptlist(1024)
+            varOpts = silo.DBoptlist(2)
             assert varOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert varOpts.addOption(silo.DBOPT_DTIME, time) == 0
             for name, desc, vtype, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
@@ -403,13 +428,13 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
                             ctor = vector_of_double
                         else:
                             ctor = vector_of_int
-                        assert silo.DBPutUcdvar1(db, "CELLS_" + subname, "MESH", ctor(vals), ctor([]), silo.DB_ZONECENT, varOpts) == 0
+                        assert silo.DBPutUcdvar1(db, "CELLS_" + unslashify(subname), "MESH", ctor(vals), ctor([]), silo.DB_ZONECENT, varOpts) == 0
 
             # print "      --> %g sec to DBPutUcdvar1" % (TIME.clock() - start)
             # start = TIME.clock()
 
             # # HACK: Write the field components on the point mesh as well.  Remove when the vardef version is working.
-            # varOpts = silo.DBoptlist(1024)
+            # varOpts = silo.DBoptlist(8)
             # assert varOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
             # assert varOpts.addOption(silo.DBOPT_DTIME, time) == 0
             # for name, desc, vtype, optlistDef, optlistMV, optlistVar, subvars in fieldwad:
@@ -419,7 +444,7 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
             #                 ctor = vector_of_double
             #             else:
             #                 ctor = vector_of_int
-            #             assert silo.DBPutPointvar1(db, "POINTS_" + subname, "PointMESH", ctor(vals), varOpts) == 0
+            #             assert silo.DBPutPointvar1(db, "POINTS_" + unslashify(subname), "PointMESH", ctor(vals), varOpts) == 0
 
             # print "      --> %g sec to DBPutPointvar1" % (TIME.clock() - start)
             # start = TIME.clock()
@@ -498,7 +523,7 @@ def writeDomainMeshSiloFile(dirName, mesh, index2zone, label, nodeLists, time, c
             coords = vector_of_vector_of_double([vector_of_double(vals) for vals in coords])
 
             # Write the Pointmesh.
-            meshOpts = silo.DBoptlist(1024)
+            meshOpts = silo.DBoptlist(2)
             assert meshOpts.addOption(silo.DBOPT_CYCLE, cycle) == 0
             assert meshOpts.addOption(silo.DBOPT_DTIME, time) == 0
             assert silo.DBPutPointmesh(db, "PointMESH", coords, meshOpts) == 0
@@ -538,7 +563,7 @@ def extractFields(nodeLists, time, cycle, fields,
             assert len(subfields) <= len(nodeLists)
 
             # Build the meta-data for this field entry.
-            name = str(fieldName).replace(" ", "_")
+            name = str(fieldName).replace(" ", "_").replace("-", "_")
             varDef, varType, optlistDef, optlistMV, optlistVar = metaDataMethod(name, time, cycle, dim)
 
             # Build the complete values for this field.

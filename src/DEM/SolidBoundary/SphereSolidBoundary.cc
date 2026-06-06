@@ -26,7 +26,7 @@ SphereSolidBoundary(const Vector& center,
   SolidBoundaryBase<Dimension>(),
   mCenter(center),
   mRadius(radius),
-  mVelocity(Vector::zero),
+  mVelocity(Vector::zero()),
   mAngularVelocity(angularVelocity){
 }
 
@@ -62,8 +62,8 @@ registerState(DataBase<Dimension>& dataBase,
   const auto pointKey = boundaryKey +"_point";
   const auto velocityKey = boundaryKey +"_velocity";
 
-  state.enrollAny(pointKey,mCenter);
-  state.enrollAny(pointKey,mVelocity);
+  state.enroll(pointKey,mCenter);
+  state.enroll(pointKey,mVelocity);
 
 }
 

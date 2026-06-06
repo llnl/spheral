@@ -8,12 +8,6 @@
 #include "Boundary/Boundary.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -23,7 +17,9 @@ namespace Spheral {
 template<typename Dimension>
 Physics<Dimension>::
 Physics():
-  mBoundaryConditions() {
+  mBoundaryConditions(),
+  mPreSubPackages(),
+  mPostSubPackages() {
 }
 
 //------------------------------------------------------------------------------
@@ -41,12 +37,9 @@ template<typename Dimension>
 void
 Physics<Dimension>::
 appendBoundary(Boundary<Dimension>& boundary) {
-//   if (!haveBoundary(boundary)) {
-    mBoundaryConditions.push_back(&boundary);
-//   } else {
-//     cerr << "Warning: attempt to append Boundary condition " << &boundary
-//          << "to Physics " << this << " which already has it." << endl;
-//   }
+  mBoundaryConditions.push_back(&boundary);
+  for (auto* pkg: mPreSubPackages) pkg->appendBoundary(boundary);
+  for (auto* pkg: mPostSubPackages) pkg->appendBoundary(boundary);
 }
 
 //------------------------------------------------------------------------------
@@ -56,12 +49,9 @@ template<typename Dimension>
 void
 Physics<Dimension>::
 prependBoundary(Boundary<Dimension>& boundary) {
-//   if (!haveBoundary(boundary)) {
-    mBoundaryConditions.insert(mBoundaryConditions.begin(), &boundary);
-//   } else {
-//     cerr << "Warning: attempt to prepend Boundary condition " << &boundary
-//          << "to Physics " << this << " which already has it." << endl;
-//   }
+  mBoundaryConditions.insert(mBoundaryConditions.begin(), &boundary);
+  for (auto* pkg: mPreSubPackages) pkg->prependBoundary(boundary);
+  for (auto* pkg: mPostSubPackages) pkg->prependBoundary(boundary);
 }
 
 //------------------------------------------------------------------------------
@@ -72,6 +62,8 @@ void
 Physics<Dimension>::
 clearBoundaries() {
   mBoundaryConditions = vector<Boundary<Dimension>*>();
+  for (auto* pkg: mPreSubPackages) pkg->clearBoundaries();
+  for (auto* pkg: mPostSubPackages) pkg->clearBoundaries();
 }
 
 //------------------------------------------------------------------------------
@@ -102,6 +94,46 @@ void
 Physics<Dimension>::
 enforceBoundaries(State<Dimension>& /*state*/,
                   StateDerivatives<Dimension>& /*derivs*/) {
+}
+
+//------------------------------------------------------------------------------
+// Add a physics package to be run after this one
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+Physics<Dimension>::
+appendSubPackage(Physics<Dimension>& package) {
+  mPostSubPackages.push_back(&package);
+}
+
+//------------------------------------------------------------------------------
+// Add a physics package to be run before this one
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+Physics<Dimension>::
+prependSubPackage(Physics<Dimension>& package) {
+  mPreSubPackages.push_back(&package);
+}
+
+//------------------------------------------------------------------------------
+// The set of packages to be run after this one
+//------------------------------------------------------------------------------
+template<typename Dimension>
+const std::vector<Physics<Dimension>*>&
+Physics<Dimension>::
+postSubPackages() const {
+  return mPostSubPackages;
+}
+
+//------------------------------------------------------------------------------
+// The set of packages to be run before this one
+//------------------------------------------------------------------------------
+template<typename Dimension>
+const std::vector<Physics<Dimension>*>&
+Physics<Dimension>::
+preSubPackages() const {
+  return mPreSubPackages;
 }
 
 //------------------------------------------------------------------------------
@@ -139,13 +171,14 @@ preStepInitialize(const DataBase<Dimension>& /*dataBase*/,
 // Provide a default no-op initialization method.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-void
+bool
 Physics<Dimension>::
 initialize(const typename Dimension::Scalar /*time*/,
            const typename Dimension::Scalar /*dt*/,
            const DataBase<Dimension>& /*dataBase*/,
            State<Dimension>& /*state*/,
            StateDerivatives<Dimension>& /*derivs*/) {
+  return false;
 }
 
 //------------------------------------------------------------------------------
@@ -178,115 +211,14 @@ finalizeDerivatives(const typename Dimension::Scalar /*time*/,
 // Provide a default no-op postStateUpdate method.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-void
+bool
 Physics<Dimension>::
 postStateUpdate(const Scalar /*time*/, 
                 const Scalar /*dt*/,
                 const DataBase<Dimension>& /*dataBase*/, 
                 State<Dimension>& /*state*/,
                 StateDerivatives<Dimension>& /*derivatives*/) {
-}
-
-//------------------------------------------------------------------------------
-// By default assume connectivity needs to be constructed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-requireConnectivity() const {
-  return true;
-}
-
-//------------------------------------------------------------------------------
-// By default assume ghost connectivity is not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-requireGhostConnectivity() const {
   return false;
-}
-
-//------------------------------------------------------------------------------
-// By default assume overlap connectivity is not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-requireOverlapConnectivity() const {
-  return false;
-}
-
-//------------------------------------------------------------------------------
-// By default assume intersect connectivity is not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-requireIntersectionConnectivity() const {
-  return false;
-}
-
-//------------------------------------------------------------------------------
-// By default assume reproducing kernels are not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-std::set<RKOrder>
-Physics<Dimension>::
-requireReproducingKernels() const {
-  return std::set<RKOrder>();
-}
-
-//------------------------------------------------------------------------------
-// By default assume reproducing kernels second derivatives are not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-requireReproducingKernelHessian() const {
-  return false;
-}
-
-//------------------------------------------------------------------------------
-// By default assume reproducing kernel correction in finalize is not needed.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-Physics<Dimension>::
-updateReproducingKernelsInFinalize() const {
-  return false;
-}
-
-//------------------------------------------------------------------------------
-// Provide a default method for the extraEnergy method, which will return 0.0
-// for classes that don't have their own energy.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-Physics<Dimension>::
-extraEnergy() const {
-  return 0.0;
-}
-
-//------------------------------------------------------------------------------
-// Provide a default method for the extraMomentum method, which will return 
-// the zero vector for classes that don't have their own momentum.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Vector
-Physics<Dimension>::
-extraMomentum() const {
-  return typename Dimension::Vector();
-}
-
-//------------------------------------------------------------------------------
-// Defaul noop for extra viz state.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-Physics<Dimension>::
-registerAdditionalVisualizationState(DataBase<Dimension>& /*dataBase*/,
-                                     State<Dimension>& /*state*/) {
 }
 
 }

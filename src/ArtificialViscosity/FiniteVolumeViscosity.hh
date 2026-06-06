@@ -1,14 +1,13 @@
 //---------------------------------Spheral++----------------------------------//
-// A finite-volume based viscosity.  Assumes you have constructred the 
+// A finite-volume based viscosity.  Assumes you have constructed the
 // tessellation in the state.
 //
 // Created by JMO, Tue Aug 13 09:43:37 PDT 2013
 //----------------------------------------------------------------------------//
-#ifndef FiniteVolumeViscosity_HH
-#define FiniteVolumeViscosity_HH
+#ifndef __Spheral_FiniteVolumeViscosity__
+#define __Spheral_FiniteVolumeViscosity__
 
-#include "ArtificialViscosity.hh"
-#include "Field/FieldList.hh"
+#include "FiniteVolumeViscosityView.hh"
 
 namespace Spheral {
 
@@ -16,63 +15,73 @@ template<typename Dimension>
 class FiniteVolumeViscosity: public ArtificialViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = FiniteVolumeViscosityView<Dimension>;
 
-  typedef typename ArtificialViscosity<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
-
-  // Constructors.
+  // Constructor, destructor
   FiniteVolumeViscosity(const Scalar Clinear,
                         const Scalar Cquadratic,
-                        const bool scalar);
+                        const TableKernel<Dimension>& WT) :
+    ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) { }
 
-  // Destructor.
-  virtual ~FiniteVolumeViscosity();
+  virtual ~FiniteVolumeViscosity() { m_viewPtr.free(); }
 
-  // Initialize the artificial viscosity for all FluidNodeLists in the given
-  // DataBase.
-  virtual void initialize(const DataBase<Dimension>& dataBase,
-                          const State<Dimension>& state,
-                          const StateDerivatives<Dimension>& derivs,
-                          ConstBoundaryIterator boundaryBegin,
-                          ConstBoundaryIterator boundaryEnd,
-                          const Scalar time, 
-                          const Scalar dt,
-                          const TableKernel<Dimension>& W);
+  // No default construction, copying, or assignment
+  FiniteVolumeViscosity() = delete;
+  FiniteVolumeViscosity(const FiniteVolumeViscosity&) = delete;
+  FiniteVolumeViscosity& operator=(const FiniteVolumeViscosity&) const = delete;
 
-  // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
-                                         const Vector& xi,
-                                         const Vector& etai,
-                                         const Vector& vi,
-                                         const Scalar rhoi,
-                                         const Scalar csi,
-                                         const SymTensor& Hi,
-                                         const Vector& xj,
-                                         const Vector& etaj,
-                                         const Vector& vj,
-                                         const Scalar rhoj,
-                                         const Scalar csj,
-                                         const SymTensor& Hj) const;
+  // We are going to use a velocity gradient
+  virtual bool requireVelocityGradient()             const override { return true; }
+
+  // Override the method of computing the velocity gradient
+  virtual void updateVelocityGradient(const DataBase<Dimension>& db,
+                                      const State<Dimension>& state,
+                                      const StateDerivatives<Dimension>& derivs) override;
 
   // Restart methods.
-  virtual std::string label() const { return "FiniteVolumeViscosity"; }
+  virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
-  // Access the internal state.
-  bool scalar() const;
-  const FieldList<Dimension, Tensor>& DvDx() const;
+  // View methods
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Scalar));
+  }
 
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  }
+
+  // Useful for testing
+  chai::managed_ptr<ViewType> getView() {
+    initView();
+    return m_viewPtr;
+  }
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear, mCquadratic);
+    }
+  }
+
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
 private:
-  //--------------------------- Private Interface ---------------------------//
-  bool mScalar;
-  FieldList<Dimension, Tensor> mDvDx;
-
-  FiniteVolumeViscosity();
-  FiniteVolumeViscosity(const FiniteVolumeViscosity&);
-  FiniteVolumeViscosity& operator=(const FiniteVolumeViscosity&) const;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

@@ -17,18 +17,19 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_rtd_theme
+from datetime import datetime
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'Spheral'
-copyright = '2012, LLNS'
+copyright = '2025, LLNS'
 author = 'J. Michael Owen'
 
 # The short X.Y version
-version = '2024.06.1'
+version = '2025.12.0'
 # The full version, including alpha/beta/rc tags
-release = '2024.06.1'
+release = '2025.12.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,6 +42,7 @@ release = '2024.06.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx_design',
     'sphinx.ext.autodoc',
     #'sphinx.ext.imgmath',
     'sphinx.ext.mathjax',
@@ -65,7 +67,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -103,7 +105,7 @@ html_static_path = ['']  # ['_static']
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-
+html_context = {"last_updated": datetime.now().strftime("%b %d, %Y")}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

@@ -13,7 +13,7 @@
 #ifndef __Spheral_ProbabilisticDamagePolicy_hh__
 #define __Spheral_ProbabilisticDamagePolicy_hh__
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 
 #include <string>
 
@@ -26,22 +26,21 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class ProbabilisticDamagePolicy: 
-    public UpdatePolicyBase<Dimension> {
+class ProbabilisticDamagePolicy: public FieldUpdatePolicy<Dimension, typename Dimension::SymTensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename UpdatePolicyBase<Dimension>::KeyType KeyType;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using KeyType = typename FieldUpdatePolicy<Dimension, SymTensor>::KeyType;
 
   // Constructors, destructor.
   ProbabilisticDamagePolicy(const bool damageInCompression,  // allow damage in compression
                             const double kWeibull,           // coefficient in Weibull power-law
                             const double mWeibull);          // exponenent in Weibull power-law
-  virtual ~ProbabilisticDamagePolicy();
+  virtual ~ProbabilisticDamagePolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -56,14 +55,15 @@ public:
 
   static const std::string prefix() { return "delta "; }
 
+  // Forbidden methods
+  ProbabilisticDamagePolicy() = delete;
+  ProbabilisticDamagePolicy(const ProbabilisticDamagePolicy& rhs) = delete;
+  ProbabilisticDamagePolicy& operator=(const ProbabilisticDamagePolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   bool mDamageInCompression;
   double mkWeibull, mmWeibull;
-
-  ProbabilisticDamagePolicy();
-  ProbabilisticDamagePolicy(const ProbabilisticDamagePolicy& rhs);
-  ProbabilisticDamagePolicy& operator=(const ProbabilisticDamagePolicy& rhs);
 };
 
 }

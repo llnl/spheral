@@ -15,11 +15,11 @@ namespace Spheral {
 template<typename Dimension> class StateDerivatives;
 
 template<typename Dimension, typename ValueType>
-class MaxReplaceState: public FieldUpdatePolicy<Dimension> {
+class MaxReplaceState: public FieldUpdatePolicy<Dimension, ValueType> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, ValueType>::KeyType;
 
   // Constructors, destructor.
   MaxReplaceState(std::initializer_list<std::string> depends = {});

@@ -17,12 +17,6 @@
 using std::vector;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -53,8 +47,8 @@ MonaghanGingoldViscosityGSRZ::
 pair<Dim<2>::Tensor,
      Dim<2>::Tensor>
 MonaghanGingoldViscosityGSRZ::
-Piij(const unsigned nodeListi, const unsigned i, 
-     const unsigned nodeListj, const unsigned j,
+Piij(const size_t nodeListi, const size_t i, 
+     const size_t nodeListj, const size_t j,
      const Vector& xi,
      const Vector& etai,
      const Vector& vi,
@@ -117,8 +111,8 @@ Piij(const unsigned nodeListi, const unsigned i,
   CHECK2(ej >= 0.0 or (mLinearInExpansion or mQuadraticInExpansion), ej << " " << csj << " " << muj << " " << murj);
 
   // Now compute the symmetrized artificial viscous pressure.
-  return make_pair(ei/rhoRZi*Tensor::one,
-                   ej/rhoRZj*Tensor::one);
+  return make_pair(ei/rhoRZi*Tensor::one(),
+                   ej/rhoRZj*Tensor::one());
 }
 
 }

@@ -10,12 +10,6 @@
 #include "Utilities/DBC.hh"
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -25,7 +19,7 @@ namespace Spheral {
 template<typename Dimension>
 ConstantZVelocityBoundary<Dimension>::
 ConstantZVelocityBoundary(const NodeList<Dimension>& nodeList,
-                          const vector<int>& nodeIndices):
+                          const vector<size_t>& nodeIndices):
   ConstantVelocityBoundary<Dimension>(nodeList, nodeIndices) {
 }
 
@@ -51,15 +45,15 @@ enforceBoundary(Field<Dimension, typename Dimension::Vector>& field) const {
       field.name() == HydroFieldNames::velocity) {
 
     // This is the velocity field, so enforce the boundary.
-    int i = 0;
-    const vector<int> nodeIDs = this->nodeIndices();
-    for (vector<int>::const_iterator itr = nodeIDs.begin();
-         itr < nodeIDs.end();
-         ++itr, ++i) {
-      CHECK(*itr < (int)field.numElements());
-      CHECK(i < (int)this->velocityCondition().size());
-      field[*itr].z(this->velocityCondition()[i].z());
+    size_t k = 0;
+    const auto nodeIDs = this->nodeIndices();
+    for (auto i: nodeIDs) {
+      CHECK(i < field.numElements());
+      CHECK(k < this->velocityCondition().size());
+      field[i].z(this->velocityCondition()[k].z());
+      ++k;
     }
+    CHECK(k == nodeIDs.size());
   }
 }
 

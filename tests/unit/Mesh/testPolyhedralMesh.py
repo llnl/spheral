@@ -7,7 +7,6 @@ import unittest
 
 from Spheral3d import *
 from generateMesh import *
-from SpheralTestUtilities import fuzzyEqual
 
 #===============================================================================
 # Load mpi, and figure out how may domains to set up, and which domain we are.
@@ -23,7 +22,7 @@ nxyproc = nxproc*nxproc
 # Create a global random number generator.
 #===============================================================================
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Some boundary conditions.
@@ -506,9 +505,9 @@ class RandomPolyhedralMeshTests(unittest.TestCase, PolyhedralMeshGenericTests):
         xyznodes_all = []
         occupiedCells = set()
         for k in range(n):
-            i = rangen.randint(0, ncell)
+            i = random.randint(0, ncell)
             while i in occupiedCells:
-                i = rangen.randint(0, ncell)
+                i = random.randint(0, ncell)
             ix = i % nxcell
             iy = (i % nxycell) / nxcell
             iz = i / nxycell

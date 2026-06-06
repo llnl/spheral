@@ -93,8 +93,8 @@ commandLine(seed = "lattice",
             redistributeStep = 500,
             checkRestart = False,
             dataDir = "stir-3d",
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
             
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             )

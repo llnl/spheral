@@ -75,7 +75,7 @@ commandLine(
     plotFlaws = False,
     clearDirectories = False,
     dataDirBase = "dumps-TensileDisk-2d",
-    outputFile = "None",
+    outputFile = None,
 
     # Should we restart (-1 => find most advanced available restart)
     restoreCycle = -1,

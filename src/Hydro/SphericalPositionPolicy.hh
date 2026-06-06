@@ -35,6 +35,9 @@ public:
                       const double t,
                       const double dt);
 
+  // Should this policy be cloned per Field when registering for a FieldList?
+  virtual bool clonePerField() const { return true; }
+
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
 

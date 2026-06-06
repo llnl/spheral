@@ -123,7 +123,6 @@ commandLine(
     dataDir = "dumps-greshovortex-xy",
     graphics = True,
     smooth = None,
-    outputFile = "None",
     )
 
 assert not(boolReduceViscosity and boolCullenViscosity)

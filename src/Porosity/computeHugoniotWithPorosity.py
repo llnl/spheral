@@ -76,15 +76,16 @@ class PalphaCrushCurve:
 
         # Find alphae = alpha(Pe)
         self.alphae = alpha0   # Starting point
-        last_alphae = 0.0
-        iter = 0
-        while abs(self.alphae - last_alphae) > 1.0e-15 and iter < 1000:
-            iter += 1
-            last_alphae = self.alphae
-            self.alphae = scipy.integrate.solve_ivp(self.Dalpha_elasticDP,
-                                                    t_span = [self.P0, self.Pe],
-                                                    y0 = [self.alpha0],
-                                                    t_eval = [self.Pe]).y[0][0]
+        if alpha0 > 1.0:
+            last_alphae = 0.0
+            iter = 0
+            while abs(self.alphae - last_alphae) > 1.0e-15 and iter < 1000:
+                iter += 1
+                last_alphae = self.alphae
+                self.alphae = scipy.integrate.solve_ivp(self.Dalpha_elasticDP,
+                                                        t_span = [self.P0, self.Pe],
+                                                        y0 = [self.alpha0],
+                                                        t_eval = [self.Pe]).y[0][0]
 
         if self.alphat is None:
             self.alphat = self.alphae    # Reduces to Eq 8 in Jutzi 2008
@@ -96,8 +97,8 @@ class PalphaCrushCurve:
         return
 
     def h(self, alpha):
-        assert self.alphae > 1.0 and self.c0 < self.cS0, "alphae={}, c0={}, cS0={}".format(self.alphae, self.c0, self.cS0)
-        return 1.0 + (alpha - 1.0)*(self.c0 - self.cS0)/(self.cS0*(self.alphae - 1.0))
+        assert self.alphae >= 1.0 and self.c0 <= self.cS0, "alphae={}, c0={}, cS0={}".format(self.alphae, self.c0, self.cS0)
+        return 1.0 + (alpha - 1.0)*(self.c0 - self.cS0)/max(1.0e-20, self.cS0*(self.alphae - 1.0))
 
     def Dalpha_elasticDP(self, P, alpha):
         return alpha*alpha/self.K0*(1.0 - 1.0/self.h(alpha)**2)

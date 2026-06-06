@@ -1,7 +1,7 @@
 #ATS:t0 = test(SELF, "",       label="Periodic boundary unit test -- 2-D (serial)")
 #ATS:t1 = test(SELF, "", np=2, label="Periodic boundary unit test -- 2-D (parallel)")
 #-------------------------------------------------------------------------------
-# 1D test of periodic boundaries -- we simply allow a pressureless fluid to
+# 2D test of periodic boundaries -- we simply allow a pressureless fluid to
 # cycle around a box and check the sum density 
 #-------------------------------------------------------------------------------
 from math import *
@@ -10,7 +10,7 @@ from SpheralTestUtilities import *
 from SpheralPointmeshSiloDump import dumpPhysicsState
 import mpi
 
-title("1D periodic boundary test.")
+title("2D periodic boundary test.")
 
 #-------------------------------------------------------------------------------
 # Generic problem parameters
@@ -103,16 +103,10 @@ db = DataBase()
 db.appendNodeList(nodes1)
 
 #-------------------------------------------------------------------------------
-# Construct the artificial viscosity.
-#-------------------------------------------------------------------------------
-q = MonaghanGingoldViscosity(0.0, 0.0)
-
-#-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
 hydro = SPH(dataBase = db,
             W = WT, 
-            Q = q,
             cfl = cfl,
             densityUpdate = RigorousSumDensity,
             HUpdate = HEvolution)

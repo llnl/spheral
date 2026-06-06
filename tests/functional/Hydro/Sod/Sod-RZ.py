@@ -114,9 +114,9 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             checkEnergy = False,
             restoreCycle = -1,
             restartStep = 100,
-            outputFile = "None",
-            comparisonFile = "None",
-            normOutputFile = "None",
+            outputFile = None,
+            comparisonFile = None,
+            normOutputFile = None,
             writeOutputLabel = True,
 
             graphics = True,
@@ -387,10 +387,10 @@ packages = [hydro]
 # Construct the MMRV physics object.
 #-------------------------------------------------------------------------------
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nhQ,nhL,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nhQ,nhL,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 elif boolCullenViscosity:
-    evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection,cullenUseHydroDerivatives)
+    evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection,cullenUseHydroDerivatives)
     packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------

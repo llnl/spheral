@@ -7,7 +7,7 @@ import CXXTests
 
 # Build a random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Test the newtonRaphson root finding function.
@@ -35,9 +35,9 @@ class TestNewtonRaphson(unittest.TestCase):
 
             # Randomly pick three roots.  We want to know them
             # in sorted order too.
-            xlist = [rangen.uniform(self.xmin, self.xmax),
-                     rangen.uniform(self.xmin, self.xmax),
-                     rangen.uniform(self.xmin, self.xmax)]
+            xlist = [random.uniform(self.xmin, self.xmax),
+                     random.uniform(self.xmin, self.xmax),
+                     random.uniform(self.xmin, self.xmax)]
             xlist.sort()
             x0 = xlist[0]
             x1 = xlist[1]

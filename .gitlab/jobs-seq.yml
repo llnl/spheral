@@ -1,13 +1,20 @@
 # ------------------------------------------------------------------------------
 # BUILD JOBS
 
+toss_gcc_~mpi_init:
+  extends: [.gcc_~mpi, .init, .toss_shell1]
+
 toss_gcc_~mpi_tpls:
   extends: [.gcc_~mpi, .tpls, .toss_resource1]
-  
+  needs:
+    - job: toss_update_tpls
+      optional: true
+    - job: toss_gcc_~mpi_init
+
 toss_gcc_~mpi_build:
   extends: [.gcc_~mpi, .build_and_test, .toss_resource1]
   needs: [toss_gcc_~mpi_tpls]
-  
+
 toss_gcc_~mpi_test:
   extends: [.gcc_~mpi, .run_ats, .toss_resource1]
   needs: [toss_gcc_~mpi_build]
@@ -17,33 +24,49 @@ toss_gcc_~mpi_cleanup:
   needs: [toss_gcc_~mpi_test]
 
 
-blueos_cuda_11_gcc_~mpi_tpls:
-  extends: [.blueos_resource2, .cuda_11_gcc_~mpi, .tpls]
 
-blueos_cuda_11_gcc_~mpi_build:
-  extends: [.blueos_resource2, .cuda_11_gcc_~mpi, .build_and_test]
-  needs: [blueos_cuda_11_gcc_~mpi_tpls]
+cray_hip_rocm_~mpi_init:
+  extends: [.cray_shell1, .hip_rocm_~mpi, .init]
 
-blueos_cuda_11_gcc_~mpi_test:
-  extends: [.blueos_resource2, .cuda_11_gcc_~mpi, .run_ats]
-  needs: [blueos_cuda_11_gcc_~mpi_build]
+cray_hip_rocm_~mpi_tpls:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .tpls]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_hip_rocm_~mpi_init
 
-blueos_cuda_11_gcc_~mpi_cleanup:
-  extends: [.blueos_resource2, .cuda_11_gcc_~mpi, .cleanup_dir]
-  needs: [blueos_cuda_11_gcc_~mpi_test]
+cray_hip_rocm_~mpi_build:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .build_and_test]
+  needs: [cray_hip_rocm_~mpi_tpls]
+
+cray_hip_rocm_~mpi_test:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .run_ats]
+  needs: [cray_hip_rocm_~mpi_build]
+
+cray_hip_rocm_~mpi_cleanup:
+  extends: [.cray_resource2, .hip_rocm_~mpi, .cleanup_dir]
+  needs: [cray_hip_rocm_~mpi_test]
 
 
-blueos_gcc_~mpi_Debug_tpls:
-  extends: [.blueos_resource1, .gcc_~mpi_Debug, .tpls]
 
-blueos_gcc_~mpi_Debug_build:
-  extends: [.blueos_resource1, .gcc_~mpi_Debug, .build_and_test]
-  needs: [blueos_gcc_~mpi_Debug_tpls]
+cray_rocm_~mpi_Debug_init:
+  extends: [.cray_shell1, .rocm_~mpi_Debug, .init]
 
-blueos_gcc_~mpi_Debug_test:
-  extends: [.blueos_resource1, .gcc_~mpi_Debug, .run_ats]
-  needs: [blueos_gcc_~mpi_Debug_build]
+cray_rocm_~mpi_Debug_tpls:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .tpls]
+  needs:
+    - job: cray_update_tpls
+      optional: true
+    - job: cray_rocm_~mpi_Debug_init
 
-blueos_gcc_~mpi_Debug_cleanup:
-  extends: [.blueos_resource1, .gcc_~mpi_Debug, .cleanup_dir]
-  needs: [blueos_gcc_~mpi_Debug_test]
+cray_rocm_~mpi_Debug_build:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .build_and_test]
+  needs: [cray_rocm_~mpi_Debug_tpls]
+
+cray_rocm_~mpi_Debug_test:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .run_ats]
+  needs: [cray_rocm_~mpi_Debug_build]
+
+cray_rocm_~mpi_Debug_cleanup:
+  extends: [.cray_resource1, .rocm_~mpi_Debug, .cleanup_dir]
+  needs: [cray_rocm_~mpi_Debug_test]

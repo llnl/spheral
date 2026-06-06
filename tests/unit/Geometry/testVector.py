@@ -1,7 +1,6 @@
 #ATS:test(SELF, label="GeomVector unit tests")
 # Unit tests for the Spheral++ GeomVector
 
-from SpheralTestUtilities import fuzzyEqual
 from math import *
 import unittest
 
@@ -10,7 +9,6 @@ from Spheral import *
 # Create a global random number generator.
 import random
 random.seed(889)
-rangen = random.Random()
 
 #-------------------------------------------------------------------------------
 # Generic vector tests.
@@ -27,7 +25,7 @@ class VectorTestBase:
         assert self.lhs.x == 10.0
 
     def testSetX(self):
-        check = rangen.uniform(-1e10, 1e10)
+        check = random.uniform(-1e10, 1e10)
         self.lhs.x = check
         assert self.lhs.x == check
         assert self.lhs(0) == check
@@ -247,7 +245,7 @@ class Vector2dTest(VectorTestBase, unittest.TestCase):
         assert self.lhs.y == 431.0
 
     def testSetY(self):
-        check = rangen.uniform(-1e10, 1e10)
+        check = random.uniform(-1e10, 1e10)
         self.lhs.y = check
         assert self.lhs.y == check
         assert self.lhs(1) == check
@@ -289,7 +287,7 @@ class Vector3dTest(VectorTestBase, unittest.TestCase):
         assert self.lhs.y == 431.0
 
     def testSetY(self):
-        check = rangen.uniform(-1e10, 1e10)
+        check = random.uniform(-1e10, 1e10)
         self.lhs.y = check
         assert self.lhs.y == check
         assert self.lhs(1) == check
@@ -298,7 +296,7 @@ class Vector3dTest(VectorTestBase, unittest.TestCase):
         assert self.lhs.z == 945.5
 
     def testSetY(self):
-        check = rangen.uniform(-1e10, 1e10)
+        check = random.uniform(-1e10, 1e10)
         self.lhs.z = check
         assert self.lhs.z == check
         assert self.lhs(2) == check

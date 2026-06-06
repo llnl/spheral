@@ -11,21 +11,16 @@ set(Hydro_inst
     VolumePolicy
     VoronoiMassDensityPolicy
     GammaPolicy
-    SecondMomentHourglassControl
-    ThirdMomentHourglassControl
     computeSPHVolume
    )
 
-
-set(Hydro_sources
-    HydroFieldNames.cc
-    )
-
-if (ENABLE_2D)
-  list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)
+if (SPHERAL_ENABLE_2D)
+  list(APPEND Hydro_sources
+    RZNonSymmetricSpecificThermalEnergyPolicy.cc
+    AxisymmetricMassDensityPolicy.cc)
 endif()
 
-if (ENABLE_1D AND ENABLE_2D)
+if (SPHERAL_ENABLE_1D AND SPHERAL_ENABLE_2D)
   list(APPEND Hydro_sources SphericalPositionPolicy.cc)
 endif()
 
@@ -35,22 +30,16 @@ set(Hydro_headers
     EntropyPolicy.hh
     GammaPolicy.hh
     HydroFieldNames.hh
-    HydroInline.hh
     CompatibleDifferenceSpecificThermalEnergyPolicy.hh
     NonSymmetricSpecificThermalEnergyPolicy.hh
     PressurePolicy.hh
     RZNonSymmetricSpecificThermalEnergyPolicy.hh
-    SecondMomentHourglassControl.hh
-    SecondMomentHourglassControlInline.hh
+    AxisymmetricMassDensityPolicy.hh
     SoundSpeedPolicy.hh
     SpecificFromTotalThermalEnergyPolicy.hh
     SpecificThermalEnergyPolicy.hh
     SumVoronoiMassDensityPolicy.hh
-    ThirdMomentHourglassControl.hh
-    ThirdMomentHourglassControlInline.hh
     VolumePolicy.hh
-    VoronoiHourglassControl.hh
-    VoronoiHourglassControlInline.hh
     VoronoiMassDensityPolicy.hh
     computeSPHVolume.hh
     entropyWeightingFunction.hh

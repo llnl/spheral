@@ -18,18 +18,10 @@ namespace Spheral {
 template<typename Dimension>
 ArtificialConductionPolicy<Dimension>::
 ArtificialConductionPolicy(typename State<Dimension>::PolicyPointer& energyPolicy):
-  FieldUpdatePolicy<Dimension>(),
+  FieldUpdatePolicy<Dimension, Scalar>({}),
   mEnergyPolicy(energyPolicy){
   const auto& dependencies = energyPolicy->dependencies();
   for (const auto& depkey: dependencies) this->addDependency(depkey);
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ArtificialConductionPolicy<Dimension>::
-~ArtificialConductionPolicy() {
 }
 
 //------------------------------------------------------------------------------

@@ -45,36 +45,37 @@ vector_of_tuple_int_int_int      = PYB11_bind_vector("std::tuple<int, int, int>"
 map_string_double = PYB11_bind_map("std::string", "double", opaque=True, local=False)
 map_int_string    = PYB11_bind_map("int", "std::string", opaque=True, local=False)
 
-@PYB11template("T1", "T2")
-@PYB11namespace("std")
-class pair:
-    "A std::pair<%(T1)s, %(T2)s>"
+# @PYB11template("T1", "T2")
+# @PYB11namespace("std")
+# class pair:
+#     "A std::pair<%(T1)s, %(T2)s>"
 
-    def pyinit(self):
-        "Default constructor"
-        return
+#     def pyinit(self):
+#         "Default constructor"
+#         return
 
-    def pyinit(self,
-               first = "%(T1)s",
-               second = "%(T2)s"):
-        "Construct with values (%(T1)s, %(T2)s)"
-        return
+#     def pyinit(self,
+#                first = "%(T1)s",
+#                second = "%(T2)s"):
+#         "Construct with values (%(T1)s, %(T2)s)"
+#         return
 
-    # @PYB11implementation('[](const std::pair<%(T1)s, %(T2)s>& self) { std::ostringstream os; os << "(" << self.first << ", " << self.second << ")"; return os.str(); }')
-    # def __repr__(self):
-    #     return
+#     # @PYB11implementation('[](const std::pair<%(T1)s, %(T2)s>& self) { std::ostringstream os; os << "(" << self.first << ", " << self.second << ")"; return os.str(); }')
+#     # def __repr__(self):
+#     #     return
 
-    first = PYB11readonly(doc="first value", returnpolicy="copy")
-    second = PYB11readonly(doc="second value", returnpolicy="copy")
+#     first = PYB11readonly(doc="first value", returnpolicy="copy")
+#     second = PYB11readonly(doc="second value", returnpolicy="copy")
 
-# std::pair
-pair_double_string = PYB11TemplateClass(pair, template_parameters=("double", "std::string"))
-pair_double_double = PYB11TemplateClass(pair, template_parameters=("double", "double"))
+# # std::pair
+# pair_double_string = PYB11TemplateClass(pair, template_parameters=("double", "std::string"))
+# pair_double_double = PYB11TemplateClass(pair, template_parameters=("double", "double"))
 
 # RKCoefficients
 
 for ndim in dims:
-    exec('''
-vector_of_RKCoefficients%(ndim)id = PYB11_bind_vector("Spheral::RKCoefficients<%(Dimension)s>", opaque=True, local=False)
-''' % {"ndim"      : ndim,
-       "Dimension" : "Spheral::Dim<" + str(ndim) + ">"})
+    Dimension = f"Spheral::Dim<{ndim}>"
+    Vector = f"{Dimension}::Vector"
+    exec(f'''
+vector_of_RKCoefficients{ndim}d = PYB11_bind_vector("Spheral::RKCoefficients<{Dimension}>", opaque=True, local=False)
+''')

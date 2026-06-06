@@ -108,7 +108,7 @@ commandLine(nx1 = 200,
             restartStep = 100,
             dataDirBase = "dumps-Sod-planar-2d",
             restartBaseName = "Sod-planar-2d-restart",
-            outputFile = "None",
+            outputFile = None,
             checkRestart = False,
 
             vizCycle = None,
@@ -457,10 +457,10 @@ if not gsph:
     # Construct the MMRV physics object.
     #-------------------------------------------------------------------------------
     if boolReduceViscosity:
-        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nh,nh,aMin,aMax)
+        evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,nh,aMin,aMax)
         packages.append(evolveReducingViscosityMultiplier)
     elif boolCullenViscosity:
-        evolveCullenViscosityMultiplier = CullenDehnenViscosity(q,WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
+        evolveCullenViscosityMultiplier = CullenDehnenViscosity(WT,alphMax,alphMin,betaC,betaD,betaE,fKern,boolHopkinsCorrection)
         packages.append(evolveCullenViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -709,7 +709,7 @@ print("Energy conservation: original=%g, final=%g, error=%g" % (control.conserve
 rmin = x0
 rmax = x2
 if mpi.rank == 0:
-    if outputFile != "None":
+    if outputFile:
         outputFile = os.path.join(dataDir, outputFile)
         f = open(outputFile, "w")
         f.write(("#" + 12*" '%s'" + "\n") % ("x", "rho", "P", "v", "eps", "A", "h", 

@@ -11,16 +11,16 @@
 namespace Spheral {
 
 template<typename Dimension>
-class SpecificThermalEnergyVolumePolicy: public FieldUpdatePolicy<Dimension> {
+class SpecificThermalEnergyVolumePolicy: public FieldUpdatePolicy<Dimension, typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
   using Scalar = typename Dimension::Scalar;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
 
   // Constructors, destructor.
   SpecificThermalEnergyVolumePolicy();
-  virtual ~SpecificThermalEnergyVolumePolicy();
+  virtual ~SpecificThermalEnergyVolumePolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -33,10 +33,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  SpecificThermalEnergyVolumePolicy(const SpecificThermalEnergyVolumePolicy& rhs);
-  SpecificThermalEnergyVolumePolicy& operator=(const SpecificThermalEnergyVolumePolicy& rhs);
+  // Forbidden methods
+  SpecificThermalEnergyVolumePolicy(const SpecificThermalEnergyVolumePolicy& rhs) = delete;
+  SpecificThermalEnergyVolumePolicy& operator=(const SpecificThermalEnergyVolumePolicy& rhs) = delete;
 };
 
 }

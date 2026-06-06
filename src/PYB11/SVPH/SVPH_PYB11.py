@@ -18,8 +18,9 @@ from SVPHFacetedHydroBase import *
 PYB11includes += ['"SVPH/SVPHFieldNames.hh"',
                   '"SVPH/sampleFieldListSVPH.hh"',
                   '"SVPH/gradientFieldListSVPH.hh"',
-                  '"SVPH/SVPHHydroBase.hh"',
                   '"SVPH/SVPHFacetedHydroBase.hh"',
+                  '"DataBase/State.hh"',
+                  '"DataBase/StateDerivatives.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
                   '"FileIO/FileIO.hh"',
                   '"ArtificialViscosity/ArtificialViscosity.hh"']
@@ -58,30 +59,26 @@ def gradientFieldListSVPH(fieldList = "const FieldList<%(Dimension)s, %(DataType
 # Instantiate our types
 #-------------------------------------------------------------------------------
 for ndim in dims:
-    exec('''
-SVPHFacetedHydroBase%(ndim)id = PYB11TemplateClass(SVPHFacetedHydroBase, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">"})
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+SVPHFacetedHydroBase{ndim}d = PYB11TemplateClass(SVPHFacetedHydroBase, template_parameters="{Dimension}")
+''')
 
     # SVPH interpolation
-    for element in ("Dim<%i>::Scalar" % ndim,
-                    "Dim<%i>::Vector" % ndim,
-                    "Dim<%i>::Tensor" % ndim,
-                    "Dim<%i>::SymTensor" % ndim):
-        exec('''
-sampleFieldListSVPH%(label)s = PYB11TemplateFunction(sampleFieldListSVPH, template_parameters=("%(Dimension)s", "%(element)s"), pyname="sampleFieldListSVPH")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">",
-       "element"   : element,
-       "label"     : PYB11mangle(element)})
+    for element in (f"Dim<{ndim}>::Scalar",
+                    f"Dim<{ndim}>::Vector",
+                    f"Dim<{ndim}>::Tensor",
+                    f"Dim<{ndim}>::SymTensor"):
+        label = PYB11mangle(element)
+        exec(f'''
+sampleFieldListSVPH{label} = PYB11TemplateFunction(sampleFieldListSVPH, template_parameters=("{Dimension}", "{element}"), pyname="sampleFieldListSVPH")
+''')
 
     # SVPH gradient
-    for element in ("Dim<%i>::Scalar" % ndim,
-                    "Dim<%i>::Vector" % ndim):
-        exec('''
-gradientFieldListSVPH%(label)s = PYB11TemplateFunction(gradientFieldListSVPH, template_parameters=("%(Dimension)s", "%(element)s"), pyname="gradientFieldListSVPH")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">",
-       "element"   : element,
-       "label"     : PYB11mangle(element)})
+    for element in (f"Dim<{ndim}>::Scalar",
+                    f"Dim<{ndim}>::Vector"):
+        label = PYB11mangle(element)
+        exec(f'''
+gradientFieldListSVPH{label} = PYB11TemplateFunction(gradientFieldListSVPH, template_parameters=("{Dimension}", "{element}"), pyname="gradientFieldListSVPH")
+''')
 

@@ -51,12 +51,12 @@ def F(alpha, lamb, R0, R1, n):
 # Generic problem parameters
 # All (cm, gm, usec) units.
 #-------------------------------------------------------------------------------
-commandLine(nr = 10,                     # Radial resolution of the shell in points
+commandLine(nr = 20,                     # Radial resolution of the shell in points
             seed = "constantDTheta",     # "lattice" or "constantDTheta"
             geometry = "quadrant",       # choose ("quadrant", "full").
 
-            kernelOrder = 5,
-            nPerh = 1.35,
+            KernelConstructor = WendlandC4Kernel,
+            nPerh = 6.01,
 
             # Material specific bounds on the mass density.
             etamin = 1e-3,
@@ -67,7 +67,7 @@ commandLine(nr = 10,                     # Radial resolution of the shell in poi
 
             # Hydro parameters.
             crksph = False,
-            sph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
+            asph = False,   # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
             Cl = None,
             Cq = None,
             linearInExpansion = None,
@@ -86,8 +86,8 @@ commandLine(nr = 10,                     # Radial resolution of the shell in poi
             filter = 0.0,
             HUpdate = IdealH,
             densityUpdate = IntegrateDensity,
-            compatibleEnergy = False,
-            evolveTotalEnergy = True,
+            compatibleEnergy = True,
+            evolveTotalEnergy = False,
             gradhCorrection = False,
 
             # Time integration
@@ -106,7 +106,7 @@ commandLine(nr = 10,                     # Radial resolution of the shell in poi
             restartStep = 500,
             sampleFreq = 10,
             vizTime = 1.0,
-            vizStep = 100,
+            vizStep = None,
 
             graphics = True,
 
@@ -130,10 +130,16 @@ Fval = F(alpha, lamb, R0, R1, 1000)
 u0 = sqrt(4.0*Y0*R1*Fval/(3.0*rho0Be*delta))
 print("  lambda = %s\n  alpha = %s\n  F = %s\n  u0 = %s\n" % (lamb, alpha, Fval, u0))
 
+hydroname = ""
+if asph:
+    if asph == "Classic":
+        hydroname = "AClassic"
+    else:
+        hydroname = "A"
 if crksph:
-    hydroname = "CRKSPH"
+    hydroname += "CRKSPH"
 else:
-    hydroname = "SPH"
+    hydroname += "SPH"
 
 # Directories.
 dataDir = os.path.join(dataDirBase,
@@ -187,7 +193,7 @@ strengthModelBe = ConstantStrength(G0, Y0)
 # Create our interpolation kernels -- one for normal hydro interactions, and
 # one for use with the artificial viscosity
 #-------------------------------------------------------------------------------
-WT = TableKernel(NBSplineKernel(kernelOrder), 1000)
+WT = TableKernel(KernelConstructor(), 200)
 output("WT")
 
 #-------------------------------------------------------------------------------
@@ -226,7 +232,8 @@ gen = RZGenerator(GenerateNodeDistribution2d(nx, nx, rho0Be,
                                              xmax = xmax,
                                              theta = thetamax,
                                              rmin = R0, 
-                                             rmax = R1))
+                                             rmax = R1,
+                                             SPH = not asph))
 
 distributeNodes2d((nodesBe, gen))
 output("mpi.reduce(nodesBe.numInternalNodes, mpi.MIN)")
@@ -264,7 +271,8 @@ if crksph:
                    evolveTotalEnergy = evolveTotalEnergy,
                    XSPH = XSPH,
                    densityUpdate = densityUpdate,
-                   HUpdate = HUpdate)
+                   HUpdate = HUpdate,
+                   ASPH = asph)
 else:
     hydro = SPH(dataBase = db,
                 W = WT,
@@ -277,11 +285,11 @@ else:
                 HUpdate = HUpdate,
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
-                nTensile = nTensile)
+                nTensile = nTensile,
+                ASPH = asph)
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.kernel")
@@ -404,7 +412,8 @@ control = SpheralController(integrator, WT,
                             vizDir = vizDir,
                             vizTime = vizTime,
                             vizStep = vizStep,
-                            periodicWork = [(hist.sample, sampleFreq) for hist in histories])
+                            periodicWork = [(hist.sample, sampleFreq) for hist in histories],
+                            SPH = not asph)
 output("control")
 
 #-------------------------------------------------------------------------------
@@ -430,7 +439,7 @@ print("Total energy error: %g" % Eerror)
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     from SpheralTestUtilities import multiSort
     state = State(db, integrator.physicsPackages())
     outputFile = os.path.join(dataDir, outputFile)
@@ -474,32 +483,33 @@ if outputFile != "None":
 # Plot the state.
 #-------------------------------------------------------------------------------
 if graphics:
-    from SpheralGnuPlotUtilities import *
+    from SpheralMatplotlib import *
     state = State(db, integrator.physicsPackages())
     rhoPlot = plotFieldList(state.scalarFields("mass density"),
                             xFunction = "%s.magnitude()",
-                            plotStyle="points",
+                            plotStyle="ro",
                             winTitle="rho @ %g" % (control.time()))
     radialVelocity = radialVelocityFieldList(db.fluidPosition,
                                              db.fluidVelocity)
     velPlot = plotFieldList(radialVelocity,
                             xFunction = "%s.magnitude()",
-                            plotStyle="points",
+                            plotStyle="ro",
                             winTitle="vel @ %g" % (control.time()))
     mPlot = plotFieldList(state.scalarFields("mass"),
                           xFunction = "%s.magnitude()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="mass @ %g" % (control.time()))
     PPlot = plotFieldList(state.scalarFields("pressure"),
                           xFunction = "%s.magnitude()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="pressure @ %g" % (control.time()))
     hPlot = plotFieldList(state.symTensorFields("H"),
                           xFunction = "%s.magnitude()",
                           yFunction = "2.0/%s.Trace()",
-                          plotStyle="points",
+                          plotStyle="ro",
                           winTitle="h @ %g" % (control.time()))
     psPlot = plotFieldList(state.scalarFields(SolidFieldNames.plasticStrain),
                            xFunction = "%s.magnitude()",
-                           plotStyle="points",
+                           plotStyle="ro",
                            winTitle="plastic strain @ %g" % (control.time()))
+    EPlot = plotEHistory(control.conserve)

@@ -2,11 +2,12 @@ include_directories(.)
 set(CRKSPH_inst
     computeCRKSPHSumMassDensity
     computeSolidCRKSPHSumMassDensity
-    CRKSPHHydroBase
     detectSurface
-    SolidCRKSPHHydroBase
     editMultimaterialSurfaceTopology
     zerothOrderSurfaceCorrections
+    CRKSPHBase
+    CRKSPH
+    SolidCRKSPH
    )
 
 
@@ -14,14 +15,14 @@ set(CRKSPH_sources
     centerOfMass.cc
    )
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND CRKSPH_sources
-       CRKSPHHydroBaseRZ.cc
-       SolidCRKSPHHydroBaseRZ.cc
+       CRKSPHRZ.cc
+       SolidCRKSPHRZ.cc
       )
 endif()
 
-if(ENABLE_3D)
+if(SPHERAL_ENABLE_3D)
   list(APPEND CRKSPH_sources
       )
 endif()
@@ -29,13 +30,12 @@ endif()
 instantiate(CRKSPH_inst CRKSPH_sources)
 
 set(CRKSPH_headers
-    CRKSPHHydroBase.hh
-    CRKSPHHydroBaseInline.hh
-    CRKSPHHydroBaseRZ.hh
+    CRKSPHBase.hh
+    CRKSPH.hh
+    CRKSPHRZ.hh
     CRKSPHVariant.hh
-    SolidCRKSPHHydroBase.hh
-    SolidCRKSPHHydroBaseInline.hh
-    SolidCRKSPHHydroBaseRZ.hh
+    SolidCRKSPH.hh
+    SolidCRKSPHRZ.hh
     centerOfMass.hh
     computeCRKSPHEvaluation.hh
     computeCRKSPHIntegral.hh

@@ -11,7 +11,7 @@ template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension>
 void
-setUniqueNodeIDs(FieldList<Dimension,int>& uniqueIndex);
+setUniqueNodeIDs(FieldList<Dimension,size_t>& uniqueIndex);
 
 }
 

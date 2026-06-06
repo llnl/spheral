@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 #include "computeRKVolumes.hh"
 
-#include "computeVoronoiVolume.hh"
+#include "VoronoiCells/computeVoronoiVolume.hh"
 #include "computeHullVolumes.hh"
 #include "computeRKSumVolume.hh"
 #include "computeHVolumes.hh"
@@ -44,6 +44,7 @@ computeRKVolumes(const ConnectivityMap<Dimension>& connectivityMap,
   
   switch(volumeType) {
   case RKVolumeType::RKMassOverDensity:
+    CHECK(mass.size() == massDensity.size());
     volume.assignFields(mass/massDensity);
     break;
     

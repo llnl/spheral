@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "Physics/GenericBodyForce.cc"
 #include "Geometry/Dimension.hh"

@@ -20,7 +20,11 @@ PYB11includes += ['"Geometry/GeomPlane.hh"',
                   '"Neighbor/NestedGridNeighbor.hh"',
                   '"Neighbor/TreeNeighbor.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
-                  '"Neighbor/NodePairList.hh"']
+                  '"Neighbor/NodePairIdxType.hh"',
+                  '"Neighbor/NodePairList.hh"',
+                  '"Neighbor/PairwiseField.hh"',
+                  '<utility>']
+                  
 
 #-------------------------------------------------------------------------------
 # Namespaces
@@ -42,17 +46,32 @@ from Neighbor import *
 from NestedGridNeighbor import *
 from TreeNeighbor import *
 from ConnectivityMap import *
+from NodePairIdxType import *
 from NodePairList import *
+from PairwiseField import *
+from PairwiseMultiValueField import *
 
 for ndim in dims:
-    exec('''
-GridCellIndex%(ndim)id = PYB11TemplateClass(GridCellIndex, template_parameters="Dim<%(ndim)i>")
-GridCellPlane%(ndim)id = PYB11TemplateClass(GridCellPlane, template_parameters="Dim<%(ndim)i>")
-Neighbor%(ndim)id = PYB11TemplateClass(Neighbor, template_parameters="Dim<%(ndim)i>")
-NestedGridNeighbor%(ndim)id = PYB11TemplateClass(NestedGridNeighbor, template_parameters="Dim<%(ndim)i>")
-TreeNeighbor%(ndim)id = PYB11TemplateClass(TreeNeighbor, template_parameters="Dim<%(ndim)i>")
-ConnectivityMap%(ndim)id = PYB11TemplateClass(ConnectivityMap, template_parameters="Dim<%(ndim)i>")
+    suffix = f"{ndim}d"
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+GridCellIndex{suffix} = PYB11TemplateClass(GridCellIndex, template_parameters="{Dimension}")
+GridCellPlane{suffix} = PYB11TemplateClass(GridCellPlane, template_parameters="{Dimension}")
+Neighbor{suffix} = PYB11TemplateClass(Neighbor, template_parameters="{Dimension}")
+NestedGridNeighbor{suffix} = PYB11TemplateClass(NestedGridNeighbor, template_parameters="{Dimension}")
+TreeNeighbor{suffix} = PYB11TemplateClass(TreeNeighbor, template_parameters="{Dimension}")
+ConnectivityMap{suffix} = PYB11TemplateClass(ConnectivityMap, template_parameters="{Dimension}")
 
-vector_of_GridCellIndex%(ndim)id = PYB11_bind_vector("GridCellIndex<Dim<%(ndim)i>>", opaque=True, local=False)
-vector_of_vector_of_GridCellIndex%(ndim)id = PYB11_bind_vector("std::vector<GridCellIndex<Dim<%(ndim)i>>>", opaque=True, local=False)
-''' % {"ndim"      : ndim})
+vector_of_GridCellIndex{suffix} = PYB11_bind_vector("GridCellIndex<{Dimension}>", opaque=True, local=False)
+vector_of_vector_of_GridCellIndex{suffix} = PYB11_bind_vector("std::vector<GridCellIndex<{Dimension}>>", opaque=True, local=False)
+''')
+
+    for Value in ("Scalar", "Vector", "Tensor", "SymTensor"):
+        V = f"{Dimension}::{Value}"
+        exec(f'''
+{Value}PairwiseField{suffix} = PYB11TemplateClass(PairwiseField, template_parameters=("{Dimension}", "{V}", "1u"))
+''')
+
+    exec(f'''
+PairwiseFieldScalarScalar{suffix} = PYB11TemplateClass(PairwiseMultiValueField, template_parameters=("{Dimension}", "{Dimension}::Scalar", "2u"))
+''')

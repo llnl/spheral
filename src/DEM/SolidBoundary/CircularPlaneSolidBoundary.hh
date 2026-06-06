@@ -53,7 +53,7 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
-  virtual std::string label() const { return "CircularPlaneSolidBoundary" ; }
+  virtual std::string label() const override { return "CircularPlaneSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 

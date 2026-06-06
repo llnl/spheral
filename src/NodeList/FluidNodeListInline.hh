@@ -1,6 +1,5 @@
 #include "Field/Field.hh"
 #include "Utilities/SpheralFunctions.hh"
-#include "SmoothingScaleBase.hh"
 
 namespace Spheral {
 

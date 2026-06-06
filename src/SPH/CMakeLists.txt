@@ -1,34 +1,36 @@
 include_directories(.)
 set(SPH_inst
-    SPHHydroBase
-    PSPHHydroBase
-    SolidSPHHydroBase
-    computeSPHOmegaGradhCorrection
-    computeSPHSumMassDensity
-    correctSPHSumMassDensity
-    computePSPHCorrections
-    computeSumVoronoiCellMassDensity
-    )
-
+  SPHBase
+  SPH
+  PSPH
+  SolidSPH
+  SPH_RAJA
+  SolidSPH_RAJA
+  computeSPHOmegaGradhCorrection
+  computeSPHSumMassDensity
+  correctSPHSumMassDensity
+  computePSPHCorrections
+  computeSumVoronoiCellMassDensity
+)
 
 set(SPH_sources )
 
-if(ENABLE_1D)
+if(SPHERAL_ENABLE_1D)
   list(APPEND SPH_sources
        SphericalSPHInst.cc
-       SphericalSPHHydroBase.cc
-       SolidSphericalSPHHydroBase.cc
+       SphericalSPH.cc
+       SolidSphericalSPH.cc
       )
 endif()
 
-if(ENABLE_2D)
+if(SPHERAL_ENABLE_2D)
   list(APPEND SPH_sources
-       SPHHydroBaseRZ.cc
-       SolidSPHHydroBaseRZ.cc
+       SPHRZ.cc
+       SolidSPHRZ.cc
       )
 endif()
 
-if(ENABLE_3D)
+if(SPHERAL_ENABLE_3D)
   list(APPEND SPH_sources
        computeHydrostaticEquilibriumPressure.cc
       )
@@ -37,30 +39,30 @@ endif()
 instantiate(SPH_inst SPH_sources)
 
 set(SPH_headers
-    PSPHHydroBase.hh
-    PSPHHydroBaseInline.hh
-    SPHHydroBase.hh
-    SPHHydroBaseInline.hh
-    SPHHydroBaseRZ.hh
-    SphericalSPHHydroBase.hh
-    SolidSPHHydroBase.hh
-    SolidSPHHydroBaseInline.hh
-    SolidSPHHydroBaseRZ.hh
-    SolidSphericalSPHHydroBase.hh
-    computeHydrostaticEquilibriumPressure.hh
-    computePSPHCorrections.hh
-    computeSPHOmegaGradhCorrection.hh
-    computeSPHSumMassDensity.hh
-    computeSumVoronoiCellMassDensity.hh
-    correctSPHSumMassDensity.hh
-    )
+  SPH.hh
+  PSPH.hh
+  SPHBase.hh
+  SPHRZ.hh
+  SphericalSPH.hh
+  SolidSPH.hh
+  SolidSPHRZ.hh
+  SolidSphericalSPH.hh
+  SPH_RAJA.hh
+  SolidSPH_RAJA.hh
+  computeHydrostaticEquilibriumPressure.hh
+  computePSPHCorrections.hh
+  computeSPHOmegaGradhCorrection.hh
+  computeSPHSumMassDensity.hh
+  computeSumVoronoiCellMassDensity.hh
+  correctSPHSumMassDensity.hh
+  SPHRZUtilities.hh
+)
 
 spheral_install_python_files(
-    SPHHydros.py
-    PSPHHydros.py
-    SPHUtilities.py
-    FacetedSurfaceASPHHydro.py
-    )
+  SPHHydros.py
+  PSPHHydros.py
+  SPHUtilities.py
+)
 
 spheral_add_obj_library(SPH SPHERAL_OBJ_LIBS)
 

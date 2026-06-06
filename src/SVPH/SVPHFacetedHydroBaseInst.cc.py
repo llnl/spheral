@@ -1,6 +1,6 @@
 text = """
 //------------------------------------------------------------------------------
-// Explict instantiation.
+// Explicit instantiation.
 //------------------------------------------------------------------------------
 #include "SVPH/SVPHFacetedHydroBase.cc"
 #include "Geometry/Dimension.hh"

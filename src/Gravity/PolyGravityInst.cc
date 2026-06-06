@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// Explict instantiations.
+// Explicit instantiations.
 //------------------------------------------------------------------------------
 #include "PolyGravity.cc"
 #include "Geometry/Dimension.hh"

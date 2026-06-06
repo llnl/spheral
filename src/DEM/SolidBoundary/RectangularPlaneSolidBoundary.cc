@@ -24,7 +24,7 @@ RectangularPlaneSolidBoundary(const Vector& point, const Vector& extent, const T
   mPoint(point),
   mBasis(basis),
   mExtent(extent),
-  mVelocity(Vector::zero){
+  mVelocity(Vector::zero()){
 }
 
 template<typename Dimension>
@@ -57,8 +57,8 @@ registerState(DataBase<Dimension>& dataBase,
   const auto boundaryKey = "RectangularPlaneSolidBoundary_" + std::to_string(std::abs(this->uniqueIndex()));
   const auto pointKey = boundaryKey +"_point";
   const auto velocityKey = boundaryKey +"_velocity";
-  state.enrollAny(pointKey,mPoint);
-  state.enrollAny(velocityKey,mVelocity);
+  state.enroll(pointKey,mPoint);
+  state.enroll(velocityKey,mVelocity);
 }
 template<typename Dimension>
 void

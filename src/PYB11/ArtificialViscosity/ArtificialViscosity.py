@@ -1,20 +1,22 @@
 #-------------------------------------------------------------------------------
-# ArtificialViscosity base class
+# ArtificialViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from ArtificialViscosityAbstractMethods import *
+from Physics import *
+from PhysicsAbstractMethods import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralArtificialViscosity")
-class ArtificialViscosity:
+@PYB11module("SpheralCompiledModules.SpheralArtificialViscosity")
+class ArtificialViscosity(Physics):
 
     PYB11typedefs = """
-    typedef typename %(Dimension)s::Scalar Scalar;
-    typedef typename %(Dimension)s::Vector Vector;
-    typedef typename %(Dimension)s::Tensor Tensor;
-    typedef typename %(Dimension)s::SymTensor SymTensor;
-    typedef typename %(Dimension)s::ThirdRankTensor ThirdRankTensor;
+  using Scalar = typename %(Dimension)s::Scalar;
+  using Vector = typename %(Dimension)s::Vector;
+  using Tensor = typename %(Dimension)s::Tensor;
+  using SymTensor = typename %(Dimension)s::SymTensor;
+  using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+  using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
 """
 
     #...........................................................................
@@ -22,53 +24,90 @@ class ArtificialViscosity:
     def pyinit(self,
                Clinear = "const Scalar",
                Cquadratic = "const Scalar",
-               QcorrectionOrder = ("const RKOrder", "RKOrder::LinearOrder")):
+               kernel = "const TableKernel<%(Dimension)s>&"):
         "ArtificialViscosity constructor"
 
     #...........................................................................
     # Methods
+    @PYB11pure_virtual
+    @PYB11const
+    def QPiTypeIndex(self):
+        "Require ArtificialViscosities to specify the type_index of the descendant QPiType"
+        return "std::type_index"
+
+    @PYB11virtual
+    @PYB11const
+    def requireVelocityGradient(self):
+        "Some AVs need the velocity gradient computed, so they should override this to true"
+        return "bool"
+
+    @PYB11virtual
+    def updateVelocityGradient(self,
+                               dataBase = "const DataBase<%(Dimension)s>&",
+                               state = "const State<%(Dimension)s>&",
+                               derivs = "const StateDerivatives<%(Dimension)s>&"):
+        "Update the locally stored velocity gradient"
+        return "void"
+
+    @PYB11virtual
+    def applyGhostBoundaries(self,
+                             state = "State<%(Dimension)s>&",
+                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Apply boundary conditions to the physics specific fields"
+        return "void"
+
+    @PYB11virtual
+    def initializeProblemStartup(self,
+                                 dataBase = "DataBase<%(Dimension)s>&"):
+        "Initialize the artificial viscosity for all FluidNodeLists in the given DataBase"
+        return "void"
+
+    @PYB11virtual
+    def initializeProblemStartupDependencies(self,
+                                             dataBase = "DataBase<%(Dimension)s>&",
+                                             state = "State<%(Dimension)s>&",
+                                             derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Initialize the artificial viscosity for all FluidNodeLists in the given DataBase"
+        return "void"
+
+    @PYB11virtual
+    def initialize(self,
+                   time = "const Scalar",
+                   dt = "const Scalar",
+                   dataBase = "const DataBase<%(Dimension)s>&",
+                   state = "State<%(Dimension)s>&",
+                   derivs = "StateDerivatives<%(Dimension)s>&"):
+        "initialize is our chance to update the velocity gradient if needed"
+        return "bool"
+
+    @PYB11virtual
+    def postStateUpdate(self,
+                        time = "const Scalar",
+                        dt = "const Scalar",
+                        dataBase = "const DataBase<%(Dimension)s>&",
+                        state = "State<%(Dimension)s>&",
+                        derivs = "StateDerivatives<%(Dimension)s>&"):
+        "Post-state update is our chance to update the velocity gradient if needed"
+        return "bool"
+
     @PYB11const
     def curlVelocityMagnitude(self, DvDx="const Tensor&"):
         "Calculate the curl of the velocity given the stress tensor."
         return "Scalar"
 
     @PYB11const
-    def calculateLimiter(self,
-                         vi = "const Vector&",
-                         vj = "const Vector&",
-                         ci = "const Scalar",
-                         cj = "const Scalar",
-                         hi = "const Scalar",
-                         hj = "const Scalar",
-                         nodeListID = "const int",
-                         nodeID = "const int"):
-        "Method to return the limiter magnitude for the given node."
-        return "Tensor"
+    def calcBalsaraShearCorrection(self,
+                                   DvDx = "const Tensor&",
+                                   H = "const SymTensor&",
+                                   cs = "const Scalar&"):
+        "Find the Balsara shear correction multiplier"
+        return "Scalar"
 
-    @PYB11const
-    def shockDirection(self,
-                       ci = "const Scalar",
-                       hi = "const Scalar",
-                       nodeListID = "const int",
-                       nodeID = "const int"):
-        "Helper for the limiter, calculate the unit grad div v term for the given node"
-        return "Vector"
-
-    @PYB11const
-    def sigmaWeighting(self, r="const Vector&"):
-        "Helper method to calculate the weighting based on the given position for use in the sigma calculation."
-        return "Vector"
-
-    @PYB11const
-    def sigmaij(self,
-                rji = "const Vector&",
-                rjiUnit = "const Vector&",
-                vji = "const Vector&",
-                hi2 = "const Scalar&",
-                nodeListID = "const int",
-                nodeID = "const int"):
-        "Figure out the total stress-strain tensor for a given node pair based on the stored average value and the given (position, velocity) pair."
-        return "Tensor"
+    @PYB11pure_virtual
+    @PYB11protected
+    def updateManagedPtr(self):
+        "Update member data for managed pointer."
+        return "void"
 
     #...........................................................................
     # Properties
@@ -76,49 +115,26 @@ class ArtificialViscosity:
                        doc="The linear coefficient")
     Cq = PYB11property("Scalar", "Cq", "Cq",
                        doc="The quadratic coefficient")
-    QcorrectionOrder = PYB11property("RKOrder", "QcorrectionOrder", "QcorrectionOrder",
-                                     doc="The RK correction order used for computing gradients in the viscosity")
     balsaraShearCorrection = PYB11property("bool", "balsaraShearCorrection", "balsaraShearCorrection",
                                            doc="Toggle whether to use the Balsara suppression for shear flows")
-    ClMultiplier = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "ClMultiplier",
-                                 doc="Correction multiplier for the linear term")
-    CqMultiplier = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "CqMultiplier",
-                                 doc="Correction multiplier for the quadratic term")
-    shearCorrection = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "shearCorrection",
-                                    doc="Correction multiplier for Balsara shear suppression")
-    sigma = PYB11property("const FieldList<%(Dimension)s, Tensor>&", "sigma",
-                          doc="Access the internally computed estimate of sigma: sig^ab = partial v^a / partial x^b")
-    gradDivVelocity = PYB11property("const FieldList<%(Dimension)s, Vector>&", "gradDivVelocity",
-                                    doc="Access the internally computed estimate of the velocity gradient and grad div velocity")
-    limiter = PYB11property("bool", "limiter", "limiter",
-                            doc="Toggle whether to apply the del^2 velocity limiter")
+    limiter = PYB11property("bool", "limiter", "limiter", doc="Defunct option, to be removed")
     epsilon2 = PYB11property("Scalar", "epsilon2", "epsilon2",
                              doc="Safety factor in denominator for Q")
     negligibleSoundSpeed = PYB11property("Scalar", "negligibleSoundSpeed", "negligibleSoundSpeed",
                                          doc="The negligible sound speed parameter for use in the limiter")
-    csMultiplier = PYB11property("Scalar", "csMultiplier", "csMultiplier",
+    maxViscousPressure = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "maxViscousPressure",
+                                       doc="Store the maximum viscous pressure (Q) on each point")
+    effViscousPressure = PYB11property("const FieldList<%(Dimension)s, Scalar>&", "effViscousPressure",
+                                       doc="Store the effective (averaged) viscous pressure (Q) on each point")
+    DvDx = PYB11property("const FieldList<%(Dimension)s, Tensor>&", "DvDx",
+                         doc="The velocity gradient used for AV")
+    rigorousVelocityGradient = PYB11property("bool", "rigorousVelocityGradient", "rigorousVelocityGradient",
                                  doc="The multiplier for sound speed in the limiter")
-    energyMultiplier = PYB11property("Scalar", "energyMultiplier", "energyMultiplier",
-                                     doc="The multiplier for energy in the limiter.")
-
-    # This one is a protected property!
-    @PYB11const
-    @PYB11ignore
-    @PYB11protected
-    @PYB11cppname("calculateSigma")
-    def getcalculateSigma(self):
-        return "bool"
-
-    @PYB11ignore
-    @PYB11protected
-    @PYB11cppname("calculateSigma")
-    def setcalculateSigma(self, val="bool"):
-        return "void"
-
-    calculateSigma = property(getcalculateSigma, setcalculateSigma, doc="Toggle if sigma should be computed")
+    kernel = PYB11property("const TableKernel<%(Dimension)s>&", "kernel",
+                           doc="Interpolation kernel for estimating velocty gradient (if needed)")
     
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(ArtificialViscosityAbstractMethods, ArtificialViscosity, pure_virtual=True)
+PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, pure_virtual=False)
 PYB11inject(RestartMethods, ArtificialViscosity)

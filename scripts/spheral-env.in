@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
+@SPHERAL_ENV_LINES@
 
+# Determine the path of this script file
+SPHERAL_BIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Adding -B to prevent byte-compiling
-@CMAKE_INSTALL_PREFIX@/.venv/bin/python -B "$@"
+$SPHERAL_BIN_DIR/../.venv/bin/python -B "$@"
 exit_result=$?
 exit $exit_result

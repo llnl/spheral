@@ -82,9 +82,9 @@ conditions, connecting NodeLists across parallel domains."""
 
     @PYB11virtual
     def cullGhostNodes(self,
-                       flagSet = "const FieldList<%(Dimension)s, int>&",
-                       old2newIndexMap = "FieldList<%(Dimension)s, int>&",
-                       numNodesRemoved = "std::vector<int>&"):
+                       flagSet = "const FieldList<%(Dimension)s, size_t>&",
+                       old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
+                       numNodesRemoved = "std::vector<size_t>&"):
         "Override the Boundary method for culling ghost nodes."
         return "void"
 

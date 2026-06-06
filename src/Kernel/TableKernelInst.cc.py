@@ -23,6 +23,7 @@ text = """
 
 namespace Spheral {
   template class TableKernel< Dim< %(ndim)s > >;
+  template class TableKernelView< Dim< %(ndim)s > >;
 """
 
 for Wname in ("BSplineKernel",
@@ -41,7 +42,7 @@ for Wname in ("BSplineKernel",
               "WendlandC6Kernel",
               "ExpInvKernel"):
     text += """
-  template TableKernel<Dim<%%(ndim)s>>::TableKernel(const %(Wname)s<Dim<%%(ndim)s>>&, const unsigned);
+  template TableKernel<Dim<%%(ndim)s>>::TableKernel(const %(Wname)s<Dim<%%(ndim)s>>&, const unsigned, const double, const double);
 """ % {"Wname" : Wname}
 
 text += """

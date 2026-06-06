@@ -11,6 +11,10 @@
 #include "Utilities/packElement.hh"
 #include "Distributed/allReduce.hh"
 
+#ifdef SPHERAL_ENABLE_MPI
+#include <mpi.h>
+#endif
+
 namespace Spheral {
 
 
@@ -61,7 +65,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
 
   // Build a fake NodeList with Neighbor to help selecting shapes that might be neighbors.
   const double length = (surface.xmax() - surface.xmin()).maxElement();
-  const Vector xghost = surface.xmax() + length*Vector::one;
+  const Vector xghost = surface.xmax() + length*Vector::one();
 
   // Make a temporary NodeList so we can use it's neighbor logic.
   PhysicalConstants constants(1.0, 1.0, 1.0);
@@ -88,7 +92,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     }
     double Ri = Dimension::rootnu(shapes[i].volume()/M_PI);
     radius[i] = Ri;
-    H[i] = SymTensor::one / (2.0*Ri);
+    H[i] = SymTensor::one() / (2.0*Ri);
   }
 
   // First iterate the requested number of iterations with surface repulsion.
@@ -164,7 +168,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
       }
       tothers += std::clock() - t0;
 
-      // #ifdef USE_MPI
+      // #ifdef SPHERAL_ENABLE_MPI
       //     // Global broadcast of the new centers.
       //     for (int iproc = 0; iproc != nprocs; ++iproc) {
       //       int jmin = imin, jmax = imax;
@@ -213,7 +217,6 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
                   shapej = shapes[j] + centers[j];
                 }
                 if (shapei.intersect(shapej)) {
-                  const Vector centj = shapej.centroid();
                   const double Rj = radius[j];
                   auto overlap = max(0.0, (Ri + Rj - (shapei.centroid() - shapej.centroid()).magnitude())/(Ri + Rj));
 
@@ -247,7 +250,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
       }
       toverlap += std::clock() - t0;
 
-      // #ifdef USE_MPI
+      // #ifdef SPHERAL_ENABLE_MPI
       //     // Global broadcast of the new flags.
       //     for (int iproc = 0; iproc != nprocs; ++iproc) {
       //       int jmin = imin, jmax = imax;
@@ -299,7 +302,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     if (flags[i] == 3) {
       CHECK(maxoverlap > maxoverlapfrac);
       flags[i] = 0;
-      centers[i] = Vector::zero;
+      centers[i] = Vector::zero();
       // # # Make one last ditch attempt to randomly fit this shape in.
       // # centers[i] = self.randomCenter(i, centers)
       // # if centers[i]:
@@ -309,7 +312,7 @@ unsigned compactFacetedVolumes(std::vector<typename Dimension::FacetedVolume>& s
     }
   }
 
-#ifdef USE_MPI
+#ifdef SPHERAL_ENABLE_MPI
   const size_t rank = Process::getRank();
   const size_t nprocs = Process::getTotalNumberOfProcesses();
   // Global broadcast of the new geometry.

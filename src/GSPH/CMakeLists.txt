@@ -5,9 +5,9 @@ set(GSPH_inst
     computeMFMDensity
     initializeGradients
     GenericRiemannHydro
-    GSPHHydroBase
-    MFMHydroBase
-    MFVHydroBase
+    GSPH
+    MFM
+    MFV
     Policies/MassFluxPolicy
     Policies/MFVIncrementVelocityPolicy
     Policies/MFVIncrementSpecificThermalEnergyPolicy
@@ -27,18 +27,19 @@ set(GSPH_inst
     RiemannSolvers/HLLC
     RiemannSolvers/SecondOrderArtificialViscosity)
 
-set(GSPH_sources 
-    GSPHFieldNames.cc)
-
 set(GSPH_headers
     computeSumVolume.hh
     computeMFMDensity.hh
     initializeGradients.hh
     GSPHFieldNames.hh
     GenericRiemannHydro.hh
-    GSPHHydroBase.hh
-    MFMHydroBase.hh
-    MFVHydroBase.hh
+    GSPH.hh
+    MFM.hh
+    MFV.hh
+    GenericRiemannHydroInline.hh
+    GSPHInline.hh
+    MFMInline.hh
+    MFVInline.hh
     Policies/MassFluxPolicy.hh
     Policies/MFVIncrementVelocityPolicy.hh
     Policies/MFVIncrementSpecificThermalEnergyPolicy.hh

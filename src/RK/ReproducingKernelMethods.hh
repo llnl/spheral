@@ -26,7 +26,8 @@ public:
   ReproducingKernelMethods();
   ReproducingKernelMethods(const ReproducingKernelMethods& rhs);
   ReproducingKernelMethods& operator=(const ReproducingKernelMethods& rhs);
-  ~ReproducingKernelMethods();
+  virtual ~ReproducingKernelMethods() {}
+  bool operator==(const ReproducingKernelMethods& rhs) const;
 
   // Build a transformation operator
   TransformationMatrix transformationMatrix(const Tensor& T,

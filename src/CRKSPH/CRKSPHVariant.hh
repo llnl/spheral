@@ -10,12 +10,13 @@
 
 #include "Physics/GenericHydro.hh"
 #include "CRKSPHHydroBase.hh"
+#include "chai/managed_ptr.hpp"
 
 namespace Spheral {
   template<typename Dimension> class State;
   template<typename Dimension> class StateDerivatives;
   template<typename Dimension> class SmoothingScaleBase;
-  template<typename Dimension> class ArtificialViscosity;
+  template<typename Dimension> class ArtificialViscosityView;
   template<typename Dimension> class TableKernel;
   template<typename Dimension> class DataBase;
   template<typename Dimension, typename DataType> class Field;
@@ -43,7 +44,7 @@ public:
 
   // Constructors.
   CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
-                ArtificialViscosity<Dimension>& Q,
+                ArtificialViscosityView<Dimension>& Q,
                 const TableKernel<Dimension>& W,
                 const TableKernel<Dimension>& WPi,
                 const double filter,
@@ -79,7 +80,7 @@ public:
 
   // Initialize the Hydro before we start a derivative evaluation.
   virtual
-  void initialize(const Scalar time,
+  bool initialize(const Scalar time,
                   const Scalar dt,
                   const DataBase<Dimension>& dataBase,
                   State<Dimension>& state,

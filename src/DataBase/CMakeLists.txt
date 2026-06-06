@@ -40,7 +40,6 @@ set(DataBase_headers
     StateBase.hh
     StateBaseInline.hh
     StateDerivatives.hh
-    StateDerivativesInline.hh
     StateInline.hh
     applyPolicyToFieldList.hh
     updateStateFields.hh

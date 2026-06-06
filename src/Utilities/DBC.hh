@@ -11,6 +11,7 @@
 #include <exception>
 #include <cmath>
 #include "Distributed/Process.hh"
+#include "config.hh"
 
 #ifndef DBC_FUNCTIONS_HH
 #define DBC_FUNCTIONS_HH
@@ -103,27 +104,42 @@ inline bool nearlyEqual(const T& x,
 #endif
 
 //----------------------------------------------------------------------------
+//           Generic DBC macros used in the succeeding definitions
+//----------------------------------------------------------------------------
+#define DBC_ASSERTION_NOSTREAM(x, null_msg, kind)                        \
+  if (!(x)) {                                                            \
+    printf("%s\n...at line %d of file %s.\n", kind, __LINE__, __FILE__); \
+    abort();                                                             \
+  }
+
+#if defined(SPHERAL_GPU_ACTIVE)
+#define DBC_ASSERTION(x, msg, kind) DBC_ASSERTION_NOSTREAM(x, msg, kind)
+#else
+#define DBC_ASSERTION(x, msg, kind)                             \
+  if (::Spheral::dbc::assertionLock()) {                        \
+    if (!(x)) {                                                 \
+      std::stringstream s_SS;                                   \
+      s_SS << kind << ": " << msg << std::endl;                 \
+      s_SS << "...at line " << __LINE__ <<                      \
+        " of file " << __FILE__ << "." << std::endl;            \
+      ::Spheral::Process::haltAll(s_SS.str().c_str());          \
+    }                                                           \
+    ::Spheral::dbc::assertionUnLock();                          \
+  }
+#endif // SPHERAL_GPU_ACTIVE
+
+//----------------------------------------------------------------------------
 //                            REQUIRE -- Preconditions
 //----------------------------------------------------------------------------
-
 #ifdef DBC_USE_REQUIRE
-#define DBC_ASSERTION(x, msg, kind)                     \
-   if (::Spheral::dbc::assertionLock()) {               \
-      if (!(x)) {                                       \
-      std::stringstream s_SS;                           \
-      s_SS << kind << ": " << msg << std::endl;         \
-      s_SS << "...at line " << __LINE__ <<              \
-         " of file " << __FILE__ << "." << std::endl;   \
-      ::Spheral::Process::haltAll(s_SS.str().c_str());  \
-   }                                                    \
-   ::Spheral::dbc::assertionUnLock();                   \
-}
-#define REQUIRE2(x, msg) DBC_ASSERTION(x, msg, "Precondition violated")
+
 #define ASSERT2(x, msg) DBC_ASSERTION(x, msg, "Assertion violated")
-#else
+#define REQUIRE2(x, msg) DBC_ASSERTION(x, msg, "Precondition violated")
+
+#else  // DBC_USE_REQUIRE
 #define ASSERT2(x, msg)
 #define REQUIRE2(x, msg)
-#endif
+#endif  // DBC_USE_REQUIRE
 
 //----------------------------------------------------------------------------
 //                            ENSURE -- Postconditions and Invariants
@@ -162,6 +178,7 @@ inline bool nearlyEqual(const T& x,
 #define CHECK(x) ASSERT(x)
 #define CHECK2(x, msg) ASSERT2(x, msg)
 
+#ifndef SPHERAL_GPU_ACTIVE
 #define VERIFY2(x, msg) \
    if (!(x)) { \
       std::stringstream s; \
@@ -171,7 +188,15 @@ inline bool nearlyEqual(const T& x,
       ::Spheral::dbc::VERIFYError reason(s.str());\
       throw reason;\
    }
+#else // SPHERAL_GPU_ACTIVE
+#define VERIFY2(x, null_msg) \
+  if (!(x)) { \
+    printf("Verification failed:\n...at line %d of file %s.\n", __LINE__, __FILE__); \
+    abort(); \
+  }
+#endif // SPHERAL_GPU_ACTIVE
 #define VERIFY(x) VERIFY2(x, #x)
+
 
 // //----------------------------------------------------------------------------
 // // Make lower case versions of all the contracts.

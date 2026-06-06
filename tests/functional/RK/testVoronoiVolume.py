@@ -54,14 +54,13 @@ FacetedVolume = {"1d" : Box1d,
 #-------------------------------------------------------------------------------
 # Appropriately set generic object names based on the test dimensionality.
 #-------------------------------------------------------------------------------
-exec("from Spheral%s import *" % testDim)
+exec("from Spheral%s import *" % testDim, globals())
 
 #-------------------------------------------------------------------------------
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -127,7 +126,7 @@ output("nodes1.numNodes")
 #-------------------------------------------------------------------------------
 dx = (x1 - x0)/nx1
 for i in range(nodes1.numInternalNodes):
-    nodes1.positions()[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+    nodes1.positions()[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -249,15 +248,15 @@ assert numCellFaceFlags > 0
 if ranfrac == 0.0:
     if testDim == "1d":
         assert numVoidFaceFlags == 2
-        assert numCellFaceFlags == 2
+        assert numCellFaceFlags == 2*nx1
         assert numSurfacePoints == 2
     elif testDim == "2d":
         assert numVoidFaceFlags == 4*nx1
-        assert numCellFaceFlags == 4*nx1
+        assert numCellFaceFlags == 4*nx1*nx1
         assert numSurfacePoints == 4*(nx1 - 1)
     else:
         assert numVoidFaceFlags == 6*nx1**2
-        assert numCellFaceFlags == 6*nx1**2
+        assert numCellFaceFlags == 6*nx1**3
         assert numSurfacePoints == 6*(nx1 - 2)**2 + 12*(nx1 - 2) + 8
 
 # The cell face flag sum range should be in [-ndim, 0] even with randomization
@@ -282,4 +281,4 @@ if ranfrac == 0.0:
         else:
             assert Vi == 0.0
 else:
-    print("random displacments -- no error check.")
+    print("random displacements -- no error check.")

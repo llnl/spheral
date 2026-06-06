@@ -74,7 +74,7 @@ int jacobiDiagonalize(const typename Dimension::SymTensor& A,
           const double theta = 0.5*atan2(2.0*b, c - a);
           const double xhat = cos(theta);
           const double yhat = sin(theta);
-          Tensor R = Tensor::one;
+          Tensor R = Tensor::one();
           R(row, row) = xhat;
           R(row, column) = -yhat;
           R(column, row) = yhat;

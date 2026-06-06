@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+import sys
+
+if sys.version_info < (3, 7):
+    raise Exception("Must have Python 3.7 or higher")
+
 import subprocess
 
 # Helper function for executing commands stolen from uberenv

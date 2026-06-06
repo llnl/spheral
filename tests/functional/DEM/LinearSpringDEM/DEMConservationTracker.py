@@ -18,7 +18,7 @@ class TrackConservation1d:
     
         Ptotx = 0.0
 
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
 
         mass = self.db.DEMMass
         velocity = self.db.DEMVelocity
@@ -61,7 +61,7 @@ class TrackConservation2d:
         RtotVx  = 0.0
         RtotVy  = 0.0
 
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
 
         mass = self.db.DEMMass
         radius = self.db.DEMParticleRadius
@@ -121,7 +121,7 @@ class TrackConservation3d:
         Ptot = Vector3d.zero
         Rtot = Vector3d.zero
 
-        nodeLists = self.db.nodeLists()
+        nodeLists = self.db.nodeLists
 
         mass = self.db.DEMMass
         radius = self.db.DEMParticleRadius

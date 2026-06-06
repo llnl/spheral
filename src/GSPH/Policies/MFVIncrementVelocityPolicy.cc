@@ -28,15 +28,7 @@ namespace Spheral {
 template<typename Dimension>
 MFVIncrementVelocityPolicy<Dimension>::
 MFVIncrementVelocityPolicy(std::initializer_list<std::string> depends):
-  FieldUpdatePolicy<Dimension>(depends){
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MFVIncrementVelocityPolicy<Dimension>::
-~MFVIncrementVelocityPolicy() {
+  FieldUpdatePolicy<Dimension, Vector>(depends){
 }
 
 //------------------------------------------------------------------------------

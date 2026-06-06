@@ -36,11 +36,11 @@ Assumes the results is interpolated as
     def prime_x(self,
                 x = "const double",
                 y = "const double"):
-        """Returns the interpolated value \\\partial_x <F>(x,y)"""
+        """Returns the interpolated value partial_x <F>(x,y)"""
         return "double"
 
     def prime_y(self,
                 x = "const double",
                 y = "const double"):
-        """Returns the interpolated value \\\partial_y <F>(x,y)"""
+        """Returns the interpolated value partial_y <F>(x,y)"""
         return "double"

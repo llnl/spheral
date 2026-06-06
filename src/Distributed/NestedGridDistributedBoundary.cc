@@ -27,6 +27,17 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Singleton instance method.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+NestedGridDistributedBoundary<Dimension>&
+NestedGridDistributedBoundary<Dimension>::
+instance() {
+  static NestedGridDistributedBoundary<Dimension> theInstance;
+  return theInstance;
+}
+
+//------------------------------------------------------------------------------
 // Default constructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -483,7 +494,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase) {
 
   // Iterate over the other domains, and examine their occupied grid cells
   // one at a time.
-  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero, "H inverse");
+  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
   dataBase.globalHinverse(Hinverse);
   for (int neighborProc = 0; neighborProc != numProcs; ++neighborProc) {
     CHECK((int)mOccupiedGridCells[neighborProc].size() == numGridLevels);
@@ -520,7 +531,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase) {
         if (this->nodeListSharedWithDomain(**nodeListItr, neighborProc)) {
 
           // Remove any duplicate nodes that were created.
-          vector<int>& sendNodes = this->accessDomainBoundaryNodes(**nodeListItr, neighborProc).sendNodes;
+          auto& sendNodes = this->accessDomainBoundaryNodes(**nodeListItr, neighborProc).sendNodes;
 	  CHECK(sendNodes.size() > 0);
           sort(sendNodes.begin(), sendNodes.end());
           sendNodes.erase(unique(sendNodes.begin(), sendNodes.end()), sendNodes.end());
@@ -532,8 +543,8 @@ buildSendNodes(const DataBase<Dimension>& dataBase) {
             const Field<Dimension, Vector>& extents = neighbor.nodeExtentField();
 	    const Field<Dimension, SymTensor>& Hinv = *Hinverse[nodeListi];
             vector<int> indicesToKill;
-            for (auto k = 0u; k != sendNodes.size(); ++k) {
-              const int i = sendNodes[k];
+            for (auto k = 0u; k < sendNodes.size(); ++k) {
+              const auto i = sendNodes[k];
               const Vector& xi = positions(i);
               const Vector& extenti = extents(i);
 	      const Vector dr = xi - centroidDomain[neighborProc];

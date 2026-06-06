@@ -23,7 +23,7 @@ public:
 
   // Constructors, destructor.
   VolumePolicy();
-  virtual ~VolumePolicy();
+  virtual ~VolumePolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -44,10 +44,9 @@ public:
   // Equivalence.
   virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
-  VolumePolicy(const VolumePolicy& rhs);
-  VolumePolicy& operator=(const VolumePolicy& rhs);
+  // Forbidden methods
+  VolumePolicy(const VolumePolicy& rhs) = delete;
+  VolumePolicy& operator=(const VolumePolicy& rhs) = delete;
 };
 
 }

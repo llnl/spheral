@@ -6,7 +6,7 @@ import unittest
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Test our various segement-segment intersection scenarios.
@@ -20,15 +20,16 @@ class TestSegmentSegmentIntersection(unittest.TestCase):
         self.ntests = 100
         self.multMin = 0.001
         self.multMax = 1.0e5
+        self.tol = 1.0e-10
         return
 
     #===========================================================================
     # Randomly distort two line segments.
     #===========================================================================
     def randomDistortion(self, a0, a1, b0, b1):
-        T = (rangen.uniform(self.multMin, self.multMax)*
-             rotationMatrix(Vector(rangen.uniform(0.0, 1.0),
-                                   rangen.uniform(0.0, 1.0)).unitVector()))
+        T = (random.uniform(self.multMin, self.multMax)*
+             rotationMatrix(Vector(random.uniform(0.0, 1.0),
+                                   random.uniform(0.0, 1.0)).unitVector()))
         return T*a0, T*a1, T*b0, T*b1, T
 
     #===========================================================================
@@ -56,7 +57,7 @@ class TestSegmentSegmentIntersection(unittest.TestCase):
             code, result1, result2 = segmentSegmentIntersection(aa0, aa1, bb0, bb1)
             assert code == '1'
             assert result1 == result2
-            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0)
+            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0, self.tol)
 
     #===========================================================================
     # Intersecting at endpoint
@@ -71,7 +72,7 @@ class TestSegmentSegmentIntersection(unittest.TestCase):
             code, result1, result2 = segmentSegmentIntersection(aa0, aa1, bb0, bb1)
             assert code == 'v'
             assert result1 == result2
-            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0)
+            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0, self.tol)
 
     #===========================================================================
     # Overlapping segments.
@@ -88,8 +89,8 @@ class TestSegmentSegmentIntersection(unittest.TestCase):
             assert result1 != result2
             if result1.magnitude2() > result2.magnitude2():
                 result1, result2 = result2, result1
-            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0)
-            assert fuzzyEqual((result2 - T*Vector(2.0, 2.0)).magnitude(), 0.0)
+            assert fuzzyEqual((result1 - T*Vector(1.5, 1.5)).magnitude(), 0.0, self.tol)
+            assert fuzzyEqual((result2 - T*Vector(2.0, 2.0)).magnitude(), 0.0, self.tol)
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,38 +8,57 @@
 #
 # The following ATS setup is to generate reference data for the SpheralC tests.
 #
-# SPH 2D
-#ATS:test(SELF, "--geometry 2d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_1proc", np=1, label="Generate 1 proc SPH 2D reference data")
-#ATS:test(SELF, "--geometry 2d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_8proc", np=8, label="Generate 8 proc SPH 2D reference data")
+# ASPH 2D
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH 2D reference data")
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 2D reference data")
 #
-# SPH RZ
-#ATS:test(SELF, "--geometry RZ --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_1proc", np=1, label="Generate 1 proc SPH RZ reference data")
-#ATS:test(SELF, "--geometry RZ --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_8proc", np=8, label="Generate 8 proc SPH RZ reference data")
+# ASPH RZ
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH RZ reference data")
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH RZ reference data")
 #
-# SPH 3D
-#ATS:test(SELF, "--geometry 3d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_3d_state_snapshot_8proc", np=8, label="Generate 8 proc SPH 3D reference data")
+# ASPH 3D
+#ATS:test(SELF, "--geometry 3d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 3D reference data")
 #
-# SPH 2D (no grad h correction)
-#ATS:test(SELF, "--geometry 2d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_2d_state_snapshot_1proc", np=1, label="Generate 1 proc SPH 2D reference data (no grad h)")
-#ATS:test(SELF, "--geometry 2d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_2d_state_snapshot_8proc", np=8, label="Generate 8 proc SPH 2D reference data (no grad h)")
+# ASPH Classic 2D
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --asph Classic --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH 2D reference data")
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --asph Classic --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 2D reference data")
 #
-# SPH RZ (no grad h correction)
-#ATS:test(SELF, "--geometry RZ --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_rz_state_snapshot_1proc", np=1, label="Generate 1 proc SPH RZ reference data (no grad h)")
-#ATS:test(SELF, "--geometry RZ --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_rz_state_snapshot_8proc", np=8, label="Generate 8 proc SPH RZ reference data (no grad h)")
+# ASPH Classic RZ
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --asph Classic --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH RZ reference data")
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --asph Classic --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH RZ reference data")
 #
-# SPH 3D (no grad h correction)
-#ATS:test(SELF, "--geometry 3d --crksph False --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_3d_state_snapshot_8proc", np=8, label="Generate 8 proc SPH 3D reference data (no grad h)")
+# ASPH Classic 3D
+#ATS:test(SELF, "--geometry 3d --hydroType SPH --asph Classic --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 3D reference data")
 #
-# CRK 2D
-#ATS:test(SELF, "--geometry 2d --crksph True  --steps 100 --compatibleEnergy False --densityUpdate RigorousSumDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_1proc", np=1, label="Generate 1 proc CRK 2D reference data")
-#ATS:test(SELF, "--geometry 2d --crksph True  --steps 100 --compatibleEnergy False --densityUpdate RigorousSumDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_8proc", np=8, label="Generate 8 proc CRK 2D reference data")
+# ASPH 2D (no grad h correction)
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH 2D reference data (no grad h)")
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 2D reference data (no grad h)")
 #
-# CRK RZ
-#ATS:test(SELF, "--geometry RZ --crksph True  --steps 100 --compatibleEnergy False --densityUpdate RigorousSumDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, label="Generate 1 proc CRK RZ reference data")
-#ATS:test(SELF, "--geometry RZ --crksph True  --steps 100 --compatibleEnergy False --densityUpdate RigorousSumDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, label="Generate 8 proc CRK RZ reference data")
+# ASPH RZ (no grad h correction)
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc SPH RZ reference data (no grad h)")
+#ATS:test(SELF, "--geometry RZ --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH RZ reference data (no grad h)")
 #
-# CRK 3D
-#ATS:test(SELF, "--geometry 3d --crksph True  --steps 100 --compatibleEnergy False --densityUpdate RigorousSumDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, label="Generate 8 proc CRK 3D reference data")
+# ASPH 3D (no grad h correction)
+#ATS:test(SELF, "--geometry 3d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --gradhCorrection False --siloSnapShotFile Spheral_sph_nogradh_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc SPH 3D reference data (no grad h)")
+#
+# ACRK Classic 2D
+#ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK 2D reference data")
+#ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 2D reference data")
+#
+# ACRK Classic RZ
+#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK RZ reference data")
+#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK RZ reference data")
+#
+# ACRK Classic 3D
+#ATS:test(SELF, "--geometry 3d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 3D reference data")
+#
+# RAJA ASPH 2D
+#ATS:tack(raja_test = True)
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_8proc --raja True", np=8, level=100, label="Generate 8 proc SPH+RAJA 2D reference data")
+#
+# GPU RAJA ASPH 2D
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_1gpu --raja True", np=1, ngpu=1, level=100, label="Generate 1 GPU SPH+RAJA 2D reference data")
+#ATS:untack("raja_test")
 
 import os, shutil, sys
 from math import *
@@ -57,12 +76,12 @@ title("Cu taylor anvil impact strength test")
 # Generic problem parameters
 # All (cm, gm, usec) units.
 #-------------------------------------------------------------------------------
-commandLine(geometry = "2d",         # one of (2d, 3d, RZ)
+commandLine(geometry = "2d",                     # one of (2d, 3d, RZ)
 
             # Geometry
             rlength = 0.945,
             zlength = 7.5,
-            reflect = True,          # Use reflecting BC (True) or two rods (False)
+            reflect = True,                      # Use reflecting BC (True) or two rods (False)
 
             # Initial z velocity.
             vz0 = 2.05e-2,
@@ -75,19 +94,18 @@ commandLine(geometry = "2d",         # one of (2d, 3d, RZ)
             # Material.
             etamin = 0.2,
             etamax = 4.0,
-            strengthFit = "starting",  # "starting" or "fitted" from Eakins
+            strengthFit = "starting",            # "starting" or "fitted" from Eakins
 
             # hydro type
-            crksph = False,
-            fsisph = False,
+            hydroType = "SPH",                   # One of (SPH, FSISPH, CRKSPH)
+            asph = True,                         # Only for H evolution, not hydro algorithm.  One of (True, False, Classic)
+            raja = False,
 
             # general hydro options
-            asph = True,                         # Only for H evolution, not hydro algorithm
             HUpdate = IdealH,
             densityUpdate = IntegrateDensity,
             compatibleEnergy = True,
             evolveTotalEnergy = False,
-            filter = 0.0,
             useVelocityMagnitudeForDt = True,
             XSPH = True,
             epsilonTensile = 0.0,
@@ -100,17 +118,15 @@ commandLine(geometry = "2d",         # one of (2d, 3d, RZ)
             fsiXSPHCoeff = 0.0,
 
             # crksph options
-            correctionOrder = LinearOrder,                # CRKSPH
-            volumeType = RKVoronoiVolume,                 # CRKSPH
+            correctionOrder = LinearOrder,       # CRKSPH
+            volumeType = RKVoronoiVolume,        # CRKSPH
 
             # artificial viscosity
-            Cl = 1.0,                                      # Linear Q coefficient
-            Cq = 1.0,                                      # Quadratic Q coefficient
-            Qlimiter = False,                              # Q directional limiter switch
-            balsaraCorrection = False,                     # Q shear switch
+            Cl = 1.0,                            # Linear Q coefficient
+            Cq = 1.0,                            # Quadratic Q coefficient
+            balsaraCorrection = False,           # Q shear switch
             epsilon2 = 1e-2,                               
-            negligibleSoundSpeed = 1e-5,
-            csMultiplier = 1e-4,
+            rigorousVelocityGradient = False,
             
             # kernel
             hmin = 1e-5, 
@@ -131,7 +147,7 @@ commandLine(geometry = "2d",         # one of (2d, 3d, RZ)
             restartStep = 1000,
             restoreCycle = -1,
             redistributeStep = 2000,
-            vizCycle = 50,
+            vizCycle = None,
             vizTime = 1.0,
             baseDir = "dumps-TaylorImpact",
             verbosedt = False,
@@ -141,50 +157,68 @@ commandLine(geometry = "2d",         # one of (2d, 3d, RZ)
             siloSnapShotFile = "",
             )
 
+hydroType = hydroType.upper()
+
 assert geometry in ("2d", "3d", "RZ")
 assert not (compatibleEnergy and evolveTotalEnergy)
-assert not (fsisph and geometry=="RZ")
+assert not (hydroType == "FSISPH" and geometry == "RZ")
 
-exec("from Spheral%s import *" % geometry)
+exec("from Spheral%s import *" % geometry, globals())
 
-if crksph:
+if hydroType == "CRKSPH":
     hydroname = os.path.join("CRKSPH",
                              str(correctionOrder),
                              str(volumeType))
-elif fsisph:
+elif hydroType == "FSISPH":
     hydroname = "FSISPH"
 else:
+    assert hydroType == "SPH"
     hydroname = os.path.join("SPH", "gradh=%s" % gradhCorrection)
+
 if asph:
-    hydroname = "A" + hydroname
+    if asph == "Classic":
+        hydroname = "AClassic" + hydroname
+    else:
+        hydroname = "A" + hydroname
+
+if raja:
+    hydroname = "RAJA" + hydroname
 
 # Restart and output files.
-dataDir = os.path.join(baseDir,
-                       geometry,
-                       hydroname,
-                       "XSPH=%s" % XSPH,
-                       "reflect=%s" % reflect,
-                       "%ix%i" % (nr, nz),
-                       "procs=%i" % mpi.procs)
-restartDir = os.path.join(dataDir, "restarts", "proc-%04i" % mpi.rank)
-vizDir = os.path.join(dataDir, "viz")
-restartBaseName = os.path.join(restartDir, "TaylorImpact-%i-%i" % (nr, nz))
+if baseDir:
+    dataDir = os.path.join(baseDir,
+                           geometry,
+                           hydroname,
+                           "XSPH=%s" % XSPH,
+                           "reflect=%s" % reflect,
+                           "%ix%i" % (nr, nz),
+                           "procs=%i" % mpi.procs)
+    restartDir = os.path.join(dataDir, "restarts", "proc-%04i" % mpi.rank)
+    vizDir = os.path.join(dataDir, "viz")
+    restartBaseName = os.path.join(restartDir, "TaylorImpact-%i-%i" % (nr, nz))
+else:
+    dataDir = None
+    restartBaseName = None
+    vizDir = None
+if vizTime is None and vizCycle is None:
+    vizBaseName = None
+else:
+    vizBaseName = "TaylorImpact"
 
 #-------------------------------------------------------------------------------
 # Check if the necessary output directories exist.  If not, create them.
 #-------------------------------------------------------------------------------
-if mpi.rank == 0:
+if mpi.rank == 0 and dataDir:
     if clearDirectories and os.path.exists(dataDir):
         shutil.rmtree(dataDir)
     if not os.path.exists(dataDir):
         os.makedirs(dataDir)
     if not os.path.exists(vizDir):
         os.makedirs(vizDir)
+mpi.barrier()
+if dataDir:
     if not os.path.exists(restartDir):
         os.makedirs(restartDir)
-mpi.barrier()
-if not os.path.exists(restartDir):
-    os.makedirs(restartDir)
 mpi.barrier()
 
 #-------------------------------------------------------------------------------
@@ -291,8 +325,7 @@ del n
 # Create our interpolation kernels -- one for normal hydro interactions, and
 # one for use with the artificial viscosity
 #-------------------------------------------------------------------------------
-WT = TableKernel(NBSplineKernel(3), 1000)
-output('WT')
+WT = TableKernel(NBSplineKernel(3), 100)
 
 #-------------------------------------------------------------------------------
 # Set node properties (positions, masses, H's, etc.)
@@ -302,7 +335,7 @@ print("Generating node distribution.")
 # 2D
 if geometry == "2d":
     from GenerateNodeDistribution2d import *
-    from VoronoiDistributeNodes import distributeNodes2d as distributeNodes
+    from PeanoHilbertDistributeNodes import distributeNodes2d as distributeNodes
     generator1 = GenerateNodeDistribution2d(nz, 2*nr, 
                                             rho = rho0,
                                             distributionType = "lattice",
@@ -325,7 +358,7 @@ if geometry == "2d":
 # RZ
 elif geometry == "RZ":
     from GenerateNodeDistribution2d import *
-    from VoronoiDistributeNodes import distributeNodes2d as distributeNodes
+    from PeanoHilbertDistributeNodes import distributeNodes2d as distributeNodes
     generator1 = RZGenerator(GenerateNodeDistribution2d(nz, nr,
                                                         rho = rho0,
                                                         distributionType = "lattice",
@@ -348,7 +381,7 @@ elif geometry == "RZ":
 # 3D
 else:
     from GenerateNodeDistribution3d import *
-    from VoronoiDistributeNodes import distributeNodes3d as distributeNodes
+    from PeanoHilbertDistributeNodes import distributeNodes3d as distributeNodes
     rmin = 0.0
     rmax = rlength
     zmin = 0.0
@@ -428,10 +461,10 @@ output('db.numFluidNodeLists')
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
-if crksph:
+if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
+                   W = WT,
                    order = correctionOrder,
-                   filter = filter,
                    cfl = cfl,
                    compatibleEnergyEvolution = compatibleEnergy,
                    evolveTotalEnergy = evolveTotalEnergy,
@@ -439,7 +472,7 @@ if crksph:
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate,
                    ASPH = asph)
-elif fsisph:
+elif hydroType == "FSISPH":
     hydro = FSISPH(dataBase = db,
                 W = WT,
                 cfl = cfl, 
@@ -452,9 +485,9 @@ elif fsisph:
                 epsTensile = epsilonTensile,
                 nTensile = nTensile)
 else:
+    assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
-                filter = filter,
                 cfl = cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
                 evolveTotalEnergy = evolveTotalEnergy,
@@ -465,14 +498,15 @@ else:
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                ASPH = asph)
+                ASPH = asph,
+                RAJA = raja)
 
 for bc in bcs:
     hydro.appendBoundary(bc)
 output("hydro")
 output("hydro.cfl")
 output("hydro.useVelocityMagnitudeForDt")
-output("hydro.HEvolution")
+output("hydro._smoothingScaleMethod.HEvolution")
 output("hydro.densityUpdate")
 output("hydro.compatibleEnergyEvolution")
 
@@ -486,16 +520,16 @@ if Cq:
     q.Cq = Cq
 if epsilon2:
     q.epsilon2 = epsilon2
-if Qlimiter:
-    q.limiter = Qlimiter
 if balsaraCorrection:
     q.balsaraShearCorrection = balsaraCorrection
+q.rigorousVelocityGradient = rigorousVelocityGradient
 output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
 output("q.limiter")
 output("q.balsaraShearCorrection")
+output("q.rigorousVelocityGradient")
 try:
     output("q.linearInExpansion")
     output("q.quadraticInExpansion")
@@ -534,11 +568,11 @@ control = SpheralController(integrator, WT,
                             redistributeStep = redistributeStep,
                             restartBaseName = restartBaseName,
                             restoreCycle = restoreCycle,
-                            vizBaseName = "TaylorImpact",
+                            vizBaseName = vizBaseName,
                             vizDir = vizDir,
                             vizStep = vizCycle,
-                            vizTime = vizTime)
-output("control")
+                            vizTime = vizTime,
+                            SPH = not asph)
 
 #-------------------------------------------------------------------------------
 # In the two material case, it's useful to smooth the initial velocity field
@@ -558,7 +592,7 @@ if (not reflect) and control.totalSteps == 0:
     control.dropViz(control.totalSteps, 0.0, 0.0)
 
 #-------------------------------------------------------------------------------
-# Advance to completetion.
+# Advance to completion.
 #-------------------------------------------------------------------------------
 if not steps is None:
     control.step(steps)
@@ -577,10 +611,11 @@ if siloSnapShotFile:
     state0 = State(db, integrator.physicsPackages())
     state0.copyState()
     derivs = StateDerivatives(db, integrator.physicsPackages())
-    derivs.Zero()
+    integrator.applyGhostBoundaries(state, derivs)
     integrator.preStepInitialize(state, derivs)
     dt = integrator.selectDt(dtmin, dtmax, state, derivs)
     integrator.initializeDerivatives(control.time() + dt, dt, state, derivs)
+    derivs.Zero()
     integrator.evaluateDerivatives(control.time() + dt, dt, db, state, derivs)
     integrator.finalizeDerivatives(control.time() + dt, dt, db, state, derivs)
 
@@ -598,6 +633,7 @@ if siloSnapShotFile:
     mu = state0.scalarFields(SolidFieldNames.shearModulus)
     Y = state0.scalarFields(SolidFieldNames.yieldStrength)
     ps = state0.scalarFields(SolidFieldNames.plasticStrain)
+    DvelDxQ = state0.tensorFields(HydroFieldNames.ArtificialViscosityVelocityGradient)
     massSum = derivs.scalarFields("new " + HydroFieldNames.massDensity)
     DrhoDt = derivs.scalarFields("delta " + HydroFieldNames.massDensity)
     DvelDt = derivs.vectorFields(HydroFieldNames.hydroAcceleration)
@@ -606,11 +642,17 @@ if siloSnapShotFile:
     DHDt = derivs.symTensorFields("delta " + HydroFieldNames.H)
     Hideal = derivs.symTensorFields("new " + HydroFieldNames.H)
     DSDt = derivs.symTensorFields("delta " + SolidFieldNames.deviatoricStress)
+    fieldLists = [mass, rho, pos, eps, vel, H, P, S, cs, K, mu, Y, ps, DvelDxQ,
+                  massSum, DrhoDt, DvelDt, DepsDt, DvelDx, DHDt, Hideal, DSDt]
+    if geometry == "RZ":
+        massRZ = state0.scalarFields(HydroFieldNames.massRZ)
+        rhoRZ = state0.scalarFields(HydroFieldNames.massDensityRZ)
+        DrhoDtRZ = derivs.scalarFields("delta " + HydroFieldNames.massDensityRZ)
+        fieldLists += [massRZ, rhoRZ, DrhoDtRZ]
 
     # Write the sucker.
     siloPointmeshDump(siloSnapShotFile, 
-                      fieldLists = [mass, rho, pos, eps, vel, H, P, S, cs, K, mu, Y, ps,
-                                    massSum, DrhoDt, DvelDt, DepsDt, DvelDx, DHDt, Hideal, DSDt],
+                      fieldLists = fieldLists,
                       baseDirectory = dataDir,
                       label = "Spheral++ snapshot of state and derivatives.",
                       time = control.time(),

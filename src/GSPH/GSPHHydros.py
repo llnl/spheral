@@ -7,28 +7,27 @@ dims = spheralDimensions()
 # GSPH convience wrapper function
 #-------------------------------------------------------------------------------
 def GSPH(dataBase,
-        W,
-        riemannSolver=None,
-        specificThermalEnergyDiffusionCoefficient = 0.0,
-        cfl = 0.25,
-        gradientType = HydroAccelerationGradient,
-        densityUpdate = IntegrateDensity,
-        useVelocityMagnitudeForDt = False,
-        compatibleEnergyEvolution = True,
-        evolveTotalEnergy = False,
-        XSPH = False,
-        correctVelocityGradient = False,
-        HUpdate = IdealH,
-        epsTensile = 0.0,
-        nTensile = 4.0,
-        damageRelieveRubble = False,
-        negativePressureInDamage = False,
-        strengthInDamage = False,
-        xmin = (-1e100, -1e100, -1e100),
-        xmax = ( 1e100,  1e100,  1e100),
-        ASPH = False,
-        RZ = False):
-
+         W,
+         riemannSolver=None,
+         specificThermalEnergyDiffusionCoefficient = 0.0,
+         cfl = 0.25,
+         gradientType = HydroAccelerationGradient,
+         densityUpdate = IntegrateDensity,
+         useVelocityMagnitudeForDt = False,
+         compatibleEnergyEvolution = True,
+         evolveTotalEnergy = False,
+         XSPH = False,
+         correctVelocityGradient = False,
+         HUpdate = IdealH,
+         epsTensile = 0.0,
+         nTensile = 4.0,
+         damageRelieveRubble = False,
+         negativePressureInDamage = False,
+         strengthInDamage = False,
+         xmin = (-1e100, -1e100, -1e100),
+         xmax = ( 1e100,  1e100,  1e100),
+         ASPH = False,
+         smoothingScaleMethod = None):
 
     assert densityUpdate in (RigorousSumDensity,IntegrateDensity)
 
@@ -43,13 +42,7 @@ def GSPH(dataBase,
         print("            which will result in fluid behaviour for those nodes.")
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
-    Constructor = eval("GSPHHydroBase%id" % ndim)
-
-    # Smoothing scale update
-    if ASPH:
-        smoothingScaleMethod = eval("ASPHSmoothingScale%id()" % ndim)
-    else:
-        smoothingScaleMethod = eval("SPHSmoothingScale%id()" % ndim)
+    Constructor = eval("GSPH%id" % ndim)
 
     if riemannSolver is None:
         waveSpeedMethod = eval("DavisWaveSpeed%id()" % (ndim))
@@ -58,15 +51,11 @@ def GSPH(dataBase,
         riemannSolver = eval("HLLC%id(slopeLimiter,waveSpeedMethod,linearReconstruction)" % (ndim))
    
     # Build the constructor arguments
-    xmin = (ndim,) + xmin
-    xmax = (ndim,) + xmax
-
-    kwargs = {"smoothingScaleMethod" : smoothingScaleMethod,
-              "dataBase" : dataBase,
+    Vector = eval(f"Vector{ndim}d")
+    kwargs = {"dataBase" : dataBase,
               "riemannSolver" : riemannSolver,
               "W" : W,
               "epsDiffusionCoeff" : specificThermalEnergyDiffusionCoefficient,
-              "dataBase" : dataBase,
               "cfl" : cfl,
               "useVelocityMagnitudeForDt" : useVelocityMagnitudeForDt,
               "compatibleEnergyEvolution" : compatibleEnergyEvolution,
@@ -75,16 +64,25 @@ def GSPH(dataBase,
               "correctVelocityGradient" : correctVelocityGradient,
               "gradType" : gradientType,
               "densityUpdate" : densityUpdate,
-              "HUpdate" : HUpdate,
               "epsTensile" : epsTensile,
               "nTensile" : nTensile,
-              "xmin" : eval("Vector%id(%g, %g, %g)" % xmin),
-              "xmax" : eval("Vector%id(%g, %g, %g)" % xmax)}
-
+              "xmin" : eval("Vector(%g, %g, %g)" % xmin),
+              "xmax" : eval("Vector(%g, %g, %g)" % xmax)}
 
     # Build and return the thing.
     result = Constructor(**kwargs)
+
+    # Smoothing scale update
+    if smoothingScaleMethod is None:
+        if ASPH:
+            if isinstance(ASPH, str) and ASPH.upper() == "CLASSIC":
+                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d(HUpdate, W)")
+            else:
+                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d(HUpdate, W)")
+        else:
+            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d(HUpdate, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
+    result.appendSubPackage(smoothingScaleMethod)
 
     return result
     
@@ -112,7 +110,7 @@ def MFM(dataBase,
         xmin = (-1e100, -1e100, -1e100),
         xmax = ( 1e100,  1e100,  1e100),
         ASPH = False,
-        RZ = False):
+        smoothingScaleMethod = None):
 
     # for now we'll just piggy back off this enum
     assert densityUpdate in (RigorousSumDensity,IntegrateDensity)
@@ -128,14 +126,7 @@ def MFM(dataBase,
         print("            which will result in fluid behaviour for those nodes.")
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
-    Constructor = eval("MFMHydroBase%id" % ndim)
-
-    # Smoothing scale update
-    if ASPH:
-        smoothingScaleMethod = eval("ASPHSmoothingScale%id()" % ndim)
-    else:
-        smoothingScaleMethod = eval("SPHSmoothingScale%id()" % ndim)
-
+    Constructor = eval("MFM%id" % ndim)
 
     if riemannSolver is None:
         waveSpeedMethod = eval("DavisWaveSpeed%id()" % (ndim))
@@ -147,8 +138,7 @@ def MFM(dataBase,
     xmin = (ndim,) + xmin
     xmax = (ndim,) + xmax
 
-    kwargs = {"smoothingScaleMethod" : smoothingScaleMethod,
-              "dataBase" : dataBase,
+    kwargs = {"dataBase" : dataBase,
               "riemannSolver" : riemannSolver,
               "W" : W,
               "epsDiffusionCoeff" : specificThermalEnergyDiffusionCoefficient,
@@ -161,20 +151,27 @@ def MFM(dataBase,
               "correctVelocityGradient" : correctVelocityGradient,
               "gradType" : gradientType,
               "densityUpdate" : densityUpdate,
-              "HUpdate" : HUpdate,
               "epsTensile" : epsTensile,
               "nTensile" : nTensile,
               "xmin" : eval("Vector%id(%g, %g, %g)" % xmin),
               "xmax" : eval("Vector%id(%g, %g, %g)" % xmax)}
 
-
     # Build and return the thing.
     result = Constructor(**kwargs)
+
+    # Smoothing scale update
+    if smoothingScaleMethod is None:
+        if ASPH:
+            if isinstance(ASPH, str) and ASPH.upper() == "CLASSIC":
+                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d(HUpdate, W)")
+            else:
+                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d(HUpdate, W)")
+        else:
+            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d(HUpdate, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
+    result.appendSubPackage(smoothingScaleMethod)
 
     return result
-
-
 
 #-------------------------------------------------------------------------------
 # MFM convience wrapper function
@@ -202,7 +199,8 @@ def MFV(dataBase,
         xmin = (-1e100, -1e100, -1e100),
         xmax = ( 1e100,  1e100,  1e100),
         ASPH = False,
-        RZ = False):
+        RZ = False,
+        smoothingScaleMethod = None):
 
     # for now we'll just piggy back off this enum
     assert densityUpdate in (RigorousSumDensity,IntegrateDensity)
@@ -213,19 +211,12 @@ def MFV(dataBase,
     nfluid = dataBase.numFluidNodeLists
     nsolid = dataBase.numSolidNodeLists
     if nsolid > 0 and nsolid != nfluid:
-        print("MFM  Error: you have provided both solid and fluid NodeLists, which is currently not supported.")
+        print("MFV  Error: you have provided both solid and fluid NodeLists, which is currently not supported.")
         print("            If you want some fluids active, provide SolidNodeList without a strength option specfied,")
         print("            which will result in fluid behaviour for those nodes.")
         raise RuntimeError("Cannot mix solid and fluid NodeLists.")
 
-    Constructor = eval("MFVHydroBase%id" % ndim)
-
-    # Smoothing scale update
-    if ASPH:
-        smoothingScaleMethod = eval("ASPHSmoothingScale%id()" % ndim)
-    else:
-        smoothingScaleMethod = eval("SPHSmoothingScale%id()" % ndim)
-
+    Constructor = eval("MFV%id" % ndim)
 
     if riemannSolver is None:
         waveSpeedMethod = eval("DavisWaveSpeed%id()" % (ndim))
@@ -237,8 +228,7 @@ def MFV(dataBase,
     xmin = (ndim,) + xmin
     xmax = (ndim,) + xmax
 
-    kwargs = {"smoothingScaleMethod" : smoothingScaleMethod,
-              "dataBase" : dataBase,
+    kwargs = {"dataBase" : dataBase,
               "riemannSolver" : riemannSolver,
               "W" : W,
               "epsDiffusionCoeff" : specificThermalEnergyDiffusionCoefficient,
@@ -253,16 +243,40 @@ def MFV(dataBase,
               "nodeMotionType" : nodeMotionType,
               "gradType" : gradientType,
               "densityUpdate" : densityUpdate,
-              "HUpdate" : HUpdate,
               "epsTensile" : epsTensile,
               "nTensile" : nTensile,
               "xmin" : eval("Vector%id(%g, %g, %g)" % xmin),
               "xmax" : eval("Vector%id(%g, %g, %g)" % xmax)}
 
-    #print(nodeMotionType)
     # Build and return the thing.
     result = Constructor(**kwargs)
+
+    # Smoothing scale update
+    if smoothingScaleMethod is None:
+        if ASPH:
+            if isinstance(ASPH, str) and ASPH.upper() == "CLASSIC":
+                smoothingScaleMethod = eval(f"ASPHClassicSmoothingScale{ndim}d(HUpdate, W)")
+            else:
+                smoothingScaleMethod = eval(f"ASPHSmoothingScale{ndim}d(HUpdate, W)")
+        else:
+            smoothingScaleMethod = eval(f"SPHSmoothingScale{ndim}d(HUpdate, W)")
     result._smoothingScaleMethod = smoothingScaleMethod
+    result.appendSubPackage(smoothingScaleMethod)
+
     #print(result.nodeMotionType)
     return result
 
+#-------------------------------------------------------------------------------
+# Provide shorthand names for ASPH
+#-------------------------------------------------------------------------------
+def AGSPH(*args, **kwargs):
+    kwargs.update({"ASPH" : True})
+    return GSPH(*args, **kwargs)
+
+def AMFM(*args, **kwargs):
+    kwargs.update({"ASPH" : True})
+    return MFM(*args, **kwargs)
+
+def AMFV(*args, **kwargs):
+    kwargs.update({"ASPH" : True})
+    return MFV(*args, **kwargs)

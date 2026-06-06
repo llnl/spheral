@@ -32,7 +32,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension, Scalar>::KeyType;
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
 
   // Constructors, destructor.
@@ -40,7 +40,7 @@ public:
                                             const DataBase<Dimension>& dataBase,
                                             ConstBoundaryIterator boundaryBegin,
                                             ConstBoundaryIterator boundaryEnd);
-  virtual ~CompatibleFaceSpecificThermalEnergyPolicy();
+  virtual ~CompatibleFaceSpecificThermalEnergyPolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -51,7 +51,11 @@ public:
                       const double dt) override;
 
   // Equivalence.
-  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
+  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
+
+  // Forbidden methods
+  CompatibleFaceSpecificThermalEnergyPolicy(const CompatibleFaceSpecificThermalEnergyPolicy& rhs) = delete;
+  CompatibleFaceSpecificThermalEnergyPolicy& operator=(const CompatibleFaceSpecificThermalEnergyPolicy& rhs) = delete;
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -59,9 +63,6 @@ private:
   const DataBase<Dimension>& mDataBase;
   ConstBoundaryIterator mBoundaryBegin, mBoundaryEnd;
   static bool mFired;
-
-  CompatibleFaceSpecificThermalEnergyPolicy(const CompatibleFaceSpecificThermalEnergyPolicy& rhs);
-  CompatibleFaceSpecificThermalEnergyPolicy& operator=(const CompatibleFaceSpecificThermalEnergyPolicy& rhs);
 };
 
 }

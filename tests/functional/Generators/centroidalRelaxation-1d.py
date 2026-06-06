@@ -56,8 +56,7 @@ def gradrhofunc(posi):
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -100,7 +99,7 @@ output("nodes.numNodes")
 dx = (x1 - x0)/nx
 pos = nodes.positions()
 for i in range(nodes.numInternalNodes):
-   pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+   pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
 
 # Initialize the mass and densities.
 m = nodes.mass()

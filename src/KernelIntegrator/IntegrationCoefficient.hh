@@ -23,6 +23,7 @@ template<typename Dimension, typename CoefficientType>
 class IntegrationCoefficient {
 public:
   IntegrationCoefficient() { }
+  virtual ~IntegrationCoefficient() { }
   virtual CoefficientType evaluateCoefficient(const KernelIntegrationData<Dimension>& kid) const = 0;
 };
     
@@ -35,6 +36,7 @@ template<typename Dimension, typename CoefficientType>
 class ConstantIntegrationCoefficient : public IntegrationCoefficient<Dimension, CoefficientType> {
 public:
   ConstantIntegrationCoefficient();
+  virtual ~ConstantIntegrationCoefficient() {}
   ConstantIntegrationCoefficient(CoefficientType coeff);
   virtual CoefficientType evaluateCoefficient(const KernelIntegrationData<Dimension>& kid) const override;
   virtual const CoefficientType& getData() const;
@@ -53,6 +55,7 @@ template<typename Dimension, typename CoefficientType>
 class DefaultIntegrationCoefficient : public IntegrationCoefficient<Dimension, CoefficientType> {
 public:
   DefaultIntegrationCoefficient() { }
+  virtual ~DefaultIntegrationCoefficient() { }
   virtual CoefficientType evaluateCoefficient(const KernelIntegrationData<Dimension>& kid) const override;
 };
 
@@ -66,6 +69,7 @@ template<typename Dimension, typename CoefficientType>
 class FieldListIntegrationCoefficient : public IntegrationCoefficient<Dimension, CoefficientType> {
 public:
   FieldListIntegrationCoefficient();
+  virtual ~FieldListIntegrationCoefficient() {};
   FieldListIntegrationCoefficient(const FieldList<Dimension, CoefficientType>& data);
   virtual const FieldList<Dimension, CoefficientType>& getData() const;
   virtual void setData(const FieldList<Dimension, CoefficientType>& data);
@@ -88,7 +92,9 @@ public:
   IntegralDependsOnCoefficient()  {
     mCoefficient = std::make_shared<DefaultIntegrationCoefficient<Dimension, CoefficientType>>();
   }
-  
+
+  virtual ~IntegralDependsOnCoefficient() { }
+
   // Give the coefficient to the integal
   virtual void setCoefficient(std::shared_ptr<IntegrationCoefficient<Dimension, CoefficientType>> coeff) {
     mCoefficient = coeff;
@@ -115,6 +121,8 @@ public:
   IntegralDependsOnFieldListCoefficient()  {
     mCoefficient = std::make_shared<FieldListIntegrationCoefficient<Dimension, CoefficientType>>();
   }
+
+  virtual ~IntegralDependsOnFieldListCoefficient() { }
   
   // Give the coefficient to the integal
   virtual void setCoefficient(std::shared_ptr<FieldListIntegrationCoefficient<Dimension, CoefficientType>> coeff) {

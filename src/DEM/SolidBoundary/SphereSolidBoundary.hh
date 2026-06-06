@@ -54,7 +54,7 @@ public:
   const RotationType& angularVelocity() const;
   void angularVelocity(const RotationType& value);
 
-  virtual std::string label() const { return "SphereSolidBoundary" ; }
+  virtual std::string label() const override { return "SphereSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 

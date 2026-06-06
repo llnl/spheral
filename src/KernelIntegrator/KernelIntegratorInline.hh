@@ -16,16 +16,17 @@ KernelIntegrator<Dimension>::
 coefficientsToValue(const FieldList<Dimension, DataType>& coeffs,
                     FieldList<Dimension, DataType>& value) const {
   VERIFY(mFlatConnectivity.indexingInitialized());
-  VERIFY(mState.fieldNameRegistered(HydroFieldNames::position) &&
-         mState.fieldNameRegistered(HydroFieldNames::H) &&
-         mState.fieldNameRegistered(HydroFieldNames::volume));
+  VERIFY(mState);
+  VERIFY(mState->fieldNameRegistered(HydroFieldNames::position) &&
+         mState->fieldNameRegistered(HydroFieldNames::H) &&
+         mState->fieldNameRegistered(HydroFieldNames::volume));
                                     
   CHECK(coeffs.size() == value.size());
   
   const auto numInternalNodes = mFlatConnectivity.numInternalNodes();
-  const auto position = mState.fields(HydroFieldNames::position, Vector::zero);
-  const auto H = mState.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto volume = mState.fields(HydroFieldNames::volume, 0.0);
+  const auto position = mState->fields(HydroFieldNames::position, Vector::zero());
+  const auto H = mState->fields(HydroFieldNames::H, SymTensor::zero());
+  const auto volume = mState->fields(HydroFieldNames::volume, 0.0);
   auto& kvals = mScratchData.values;
   auto& dkvals = mScratchData.dvalues;
   auto& indices = mScratchData.indices;
@@ -328,7 +329,7 @@ getQuadrature(const FacetedVolume& region,
   const auto Jdet = std::abs(J.Determinant());
   for (auto i = 0; i < mNumOrdinates; ++i) {
     weights[i] = mBaseWeights[i] * Jdet;
-    ordinates[i] = p0 + J * (mBaseOrdinates[i] + Vector::one);
+    ordinates[i] = p0 + J * (mBaseOrdinates[i] + Vector::one());
   }
 }
 

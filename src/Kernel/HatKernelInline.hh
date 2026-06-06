@@ -52,14 +52,6 @@ HatKernel< Dim<3> >::HatKernel(double eta0, double W0):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-HatKernel<Dimension>::~HatKernel() {
-}
-
-//------------------------------------------------------------------------------
 // Return the kernel weight for a given normalized distance.
 //------------------------------------------------------------------------------
 template<typename Dimension>

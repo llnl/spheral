@@ -63,6 +63,10 @@ public:
 
   virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;
 
+  virtual void preStepInitialize(const DataBase<Dimension>& dataBase, 
+                                       State<Dimension>& state,
+                                       StateDerivatives<Dimension>& derivs) override;
+
   virtual void registerState(DataBase<Dimension>& dataBase,
                              State<Dimension>& state) override;
 
@@ -88,6 +92,8 @@ public:
                                 const Scalar time) const;
 
   TimeStepType fixedTimeStep() const;
+
+  void recomputeContactDuration();
 
   // generalized spring damper functions (inlined)
   void slidingSpringDamper(const Scalar  k,
@@ -174,8 +180,8 @@ public:
   //****************************************************************************
   // Methods required for restarting.
   virtual std::string label() const override { return "LinearSpringDEM" ; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 private:
   //--------------------------- Private Interface ---------------------------//

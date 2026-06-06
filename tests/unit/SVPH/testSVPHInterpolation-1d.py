@@ -85,8 +85,7 @@ else:
 # Create a random number generator.
 #-------------------------------------------------------------------------------
 import random
-rangen = random.Random()
-rangen.seed(seed)
+random.seed(seed)
 
 #-------------------------------------------------------------------------------
 # Material properties.
@@ -128,7 +127,7 @@ nodes1.massDensity(ScalarField("tmp", nodes1, rho1))
 #-------------------------------------------------------------------------------
 dx = (x1 - x0)/nx1
 for i in range(nodes1.numInternalNodes):
-    nodes1.positions()[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+    nodes1.positions()[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -142,22 +141,19 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct some boundary conditions.
 #-------------------------------------------------------------------------------
-bounds = vector_of_Boundary()
 xbc0 = ReflectingBoundary(Plane(Vector(x0), Vector( 1.0)))
 xbc1 = ReflectingBoundary(Plane(Vector(x1), Vector(-1.0)))
-bounds.append(xbc0)
-bounds.append(xbc1)
+bounds = vector_of_Boundary([xbc0, xbc1])
 
 #-------------------------------------------------------------------------------
 # Iterate the h to convergence if requested.
 #-------------------------------------------------------------------------------
 if iterateH:
-    method = SPHSmoothingScale()
-    emptyBounds = vector_of_Boundary()
+    method = SPHSmoothingScale(IdealH, WT)
+    pkgs = vector_of_Physics([method])
     iterateIdealH(db,
-                  emptyBounds,
-                  WT,
-                  method,
+                  pkgs,
+                  vector_of_Boundary(),
                   maxHIterations,
                   Htolerance)
 

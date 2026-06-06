@@ -13,12 +13,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -117,7 +111,7 @@ hessianRK(const FieldList<Dimension, DataType>& fieldList,
     for (auto i = 0u; i < n; ++i) {
       const auto& Hi = H(nodeListi, i);
       const auto& correctionsi = corrections(nodeListi, i);
-      result(nodeListi, i) += weight(nodeListi, i)*outerProduct<Dimension>(WR.evaluateHessian(Vector::zero, Hi, correctionsi), fieldList(nodeListi, i));
+      result(nodeListi, i) += weight(nodeListi, i)*outerProduct<Dimension>(WR.evaluateHessian(Vector::zero(), Hi, correctionsi), fieldList(nodeListi, i));
     }
   }
 

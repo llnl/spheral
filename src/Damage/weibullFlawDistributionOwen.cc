@@ -27,12 +27,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -47,7 +41,7 @@ weibullFlawDistributionOwen(const unsigned seed,
                             const double mWeibull,
                             const FluidNodeList<Dimension>& nodeList,
                             const State<Dimension>& state,
-                            const int minFlawsPerNode,
+                            const size_t minFlawsPerNode,
                             const double volumeMultiplier,
                             const Field<Dimension, int>& mask) {
 

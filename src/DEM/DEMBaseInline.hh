@@ -151,7 +151,7 @@ isActiveContact() const {
 
 template<typename Dimension>
 inline
-const FieldList<Dimension, vector<int>>&
+const FieldList<Dimension, vector<size_t>>&
 DEMBase<Dimension>::
 neighborIndices() const {
   return mNeighborIndices;

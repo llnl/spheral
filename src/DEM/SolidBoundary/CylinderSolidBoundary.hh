@@ -57,7 +57,7 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
-  virtual std::string label() const { return "CylinderSolidBoundary" ; }
+  virtual std::string label() const override { return "CylinderSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 

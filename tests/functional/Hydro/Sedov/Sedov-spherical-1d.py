@@ -66,7 +66,7 @@ commandLine(nr = 100,
             graphics = True,
             clearDirectories = True,
             dataDirBase = "dumps-spherical-Sedov",
-            outputFile = "None",
+            outputFile = None,
             )
 
 if smallPressure:
@@ -332,7 +332,7 @@ if mpi.rank == 0:
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None" and mpi.rank == 0:
+if outputFile and mpi.rank == 0:
     outputFile = os.path.join(dataDir, outputFile)
     f = open(outputFile, "w")
     f.write(("# " + 16*"%15s " + "\n") % ("r", "x", "y", "z", "rho", "m", "P", "v", "eps", "A",

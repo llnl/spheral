@@ -19,31 +19,8 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PredictorCorrector<Dimension>::PredictorCorrector():
-  Integrator<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PredictorCorrector<Dimension>::
-PredictorCorrector(DataBase<Dimension>& dataBase):
-  Integrator<Dimension>(dataBase) {
-}
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
@@ -53,26 +30,6 @@ PredictorCorrector<Dimension>::
 PredictorCorrector(DataBase<Dimension>& dataBase,
                const vector<Physics<Dimension>*>& physicsPackages):
   Integrator<Dimension>(dataBase, physicsPackages) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PredictorCorrector<Dimension>::~PredictorCorrector() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PredictorCorrector<Dimension>&
-PredictorCorrector<Dimension>::
-operator=(const PredictorCorrector<Dimension>& rhs) {
-  if (this != &rhs) {
-    Integrator<Dimension>::operator=(rhs);
-  }
-  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -118,10 +75,10 @@ step(typename Dimension::Scalar maxTime,
   // Enforce Boundary conditions.
   this->enforceBoundaries(state, derivs);
   this->applyGhostBoundaries(state, derivs);
+  this->finalizeGhostBoundaries();
                                
   // Do any physics specific stuff relating to the fact the state was just updated.
   this->postStateUpdate(t + dt, dt, db, state, derivs);
-  this->finalizeGhostBoundaries();
 
   // Check if the timestep is still a good idea...
   if (this->allowDtCheck()) {
@@ -160,10 +117,10 @@ step(typename Dimension::Scalar maxTime,
   // Enforce boundaries.
   this->enforceBoundaries(state, derivs);
   this->applyGhostBoundaries(state, derivs);
+  this->finalizeGhostBoundaries();
 
   // Do any physics specific stuff relating to the fact the state was just updated.
   this->postStateUpdate(t + dt, dt, db, state, derivs);
-  this->finalizeGhostBoundaries();
 
   // Apply any physics specific finalizations.
   this->postStepFinalize(t + dt, dt, state, derivs);

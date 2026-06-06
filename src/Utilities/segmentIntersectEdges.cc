@@ -11,12 +11,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -60,7 +54,7 @@ bool segmentIntersectEdges(const Dim<3>::Vector& a0,
   typedef FacetedVolume::Facet Facet;
 
   // Determine our normalization.
-  const double scale = max(tol, (poly.xmax() - poly.xmin()).maxAbsElement());
+  const double scale = std::max(tol, (poly.xmax() - poly.xmin()).maxAbsElement());
   const double scaleInv = 1.0/scale;
 
   // Scale the geometry.

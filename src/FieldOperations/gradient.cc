@@ -8,6 +8,7 @@
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
 #include "Field/NodeIterators.hh"
+#include "Neighbor/ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
@@ -16,12 +17,6 @@
 namespace Spheral {
 
 using std::vector;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 //------------------------------------------------------------------------------
 // Calculate the gradient of a FieldList.
@@ -164,11 +159,11 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
   typedef typename MathTraits<Dimension, DataType>::GradientType GradientType;
 
   // Get size of vector
-  const auto vectorSize = (fieldList.numInternalNodes() > 0 ?
+  const auto vectorSize = (fieldList.numInternalElements() > 0 ?
                            fieldList(fieldList.internalNodeBegin()).size() :
                            0);
   
- // Return FieldList.
+  // Return FieldList.
   FieldList<Dimension, std::vector<GradientType>> result;
   vector< vector<bool> > flagNodeDone(fieldList.numFields());
   result.copyFields();
@@ -178,7 +173,7 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
        ++fieldItr) {
     result.appendField(Field<Dimension, std::vector<GradientType>>("grad",
                                                                    (*fieldItr)->nodeList(),
-                                                                   std::vector<GradientType>(vectorSize, GradientType::zero)));
+                                                                   std::vector<GradientType>(vectorSize, GradientType::zero())));
     flagNodeDone[fieldItr - fieldList.begin()].resize((*fieldItr)->nodeListPtr()->numInternalNodes(), false);
   }
 
@@ -284,6 +279,60 @@ gradient(const FieldList<Dimension, std::vector<DataType>>& fieldList,
 }
 
 //------------------------------------------------------------------------------
+// Calculate the gradient of a FieldList.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+void
+gradientPairs(FieldList<Dimension, typename MathTraits<Dimension, DataType>::GradientType>& result,
+              const FieldList<Dimension, DataType>& field,
+              const FieldList<Dimension, typename Dimension::Vector>& position,
+              const FieldList<Dimension, typename Dimension::Scalar>& weight,
+              const FieldList<Dimension, typename Dimension::SymTensor>& H,
+              const ConnectivityMap<Dimension>& conn,
+              const TableKernel<Dimension>& kernel) {
+  typedef typename MathTraits<Dimension, DataType>::GradientType GradientType;
+  result = GradientType::zero();
+  
+  const auto& pairs = conn.nodePairList();
+  const auto  npairs = pairs.size();
+
+  for (auto k = 0u; k < npairs; ++k) {
+      const auto ni = pairs[k].i_list;
+      const auto nj = pairs[k].j_list;
+      const auto i = pairs[k].i_node;
+      const auto j = pairs[k].j_node;
+      
+      const auto& ri = position(ni, i);
+      const auto& rj = position(nj, j);
+      const auto& vi = weight(ni, i);
+      const auto& vj = weight(nj, j);
+      const auto& hi = H(ni, i);
+      const auto& hj = H(nj, j);
+      const auto& fi = field(ni, i);
+      const auto& fj = field(nj, j);
+
+      const auto rij = ri - rj;
+      const auto hdeti = hi.Determinant();
+      const auto hdetj = hj.Determinant();
+      const auto etai = hi * rij;
+      const auto etaj = hj * rij;
+      const auto etaMagi = etai.magnitude();
+      const auto etaMagj = etaj.magnitude();
+      const auto etaUniti = etai.unitVector();
+      const auto etaUnitj = etaj.unitVector();
+      const auto hetaUniti = hi * etaUniti;
+      const auto hetaUnitj = hj * etaUnitj;
+      
+      const auto dwi = hetaUniti * kernel.gradValue(etaMagi, hdeti);
+      const auto dwj = hetaUnitj * kernel.gradValue(etaMagj, hdetj);
+      const auto dwij = 0.5 * (dwi + dwj);
+
+      result(ni, i) += vj * (fj - fi) * dwij;
+      result(nj, j) -= vi * (fi - fj) * dwij;
+  }
+}
+
+//------------------------------------------------------------------------------
 // The limiter method.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -374,7 +423,7 @@ limiter(const FieldList<Dimension, DataType>& fieldList,
         const GradientType& gradi = gradient(masterItr);
 
         // Prepare the result for this node.
-        SymTensor phi = SymTensor::one;
+        SymTensor phi = SymTensor::one();
 
         // We iterate on the limiter.
         int iter = 0;
@@ -406,7 +455,7 @@ limiter(const FieldList<Dimension, DataType>& fieldList,
             const Scalar Wi = kernel(etai.magnitude(), 1.0)/W0;
             CHECK(Wi >= 0.0 and Wi <= 1.0);
             weightSum += Wi;
-            phii += Wi*phiij/(phiij*phiij + tiny) * SymTensor::one;
+            phii += Wi*phiij/(phiij*phiij + tiny) * SymTensor::one();
             phimin = min(phimin, Wi*phiij + (1.0 - Wi)*phimin);
           }
 

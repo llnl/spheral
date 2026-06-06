@@ -7,7 +7,7 @@ import unittest
 
 # Create a global random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Test whether a line segment intersects a polyhedron.
@@ -18,9 +18,9 @@ class TestLineSegmentPolyhedronIntersection(unittest.TestCase):
     # Randomly distort two line segments.
     #===========================================================================
     def randomDistortion(self, a0, a1, vertices):
-        l = rangen.uniform(self.multMin, self.multMax)
-        theta = rangen.uniform(0.0, 2.0*pi)
-        phi = rangen.uniform(0.0, pi)
+        l = random.uniform(self.multMin, self.multMax)
+        theta = random.uniform(0.0, 2.0*pi)
+        phi = random.uniform(0.0, pi)
         T = l*rotationMatrix(Vector(cos(theta)*sin(phi),
                                     sin(theta)*sin(phi),
                                     cos(phi)))
@@ -85,9 +85,9 @@ class TestLineSegmentPolyhedronIntersection(unittest.TestCase):
     #===========================================================================
     def testNonintersectingSegment3(self):
         for i in range(self.ntests):
-            faces = rangen.sample(self.faces, 2)
-            theta0, theta1 = rangen.uniform(0.0, 2.0*pi), rangen.uniform(0.0, 2.0*pi)
-            l0, l1 = rangen.uniform(0.0, 0.49), rangen.uniform(0.0, 0.49)
+            faces = random.sample(self.faces, 2)
+            theta0, theta1 = random.uniform(0.0, 2.0*pi), random.uniform(0.0, 2.0*pi)
+            l0, l1 = random.uniform(0.0, 0.49), random.uniform(0.0, 0.49)
 
             a0 = Vector(faces[0][0])
             a0[faces[0][1]] += l0*cos(theta0)
@@ -113,8 +113,8 @@ class TestLineSegmentPolyhedronIntersection(unittest.TestCase):
     def testSegmentIntersectingRandomEdge1(self):
         a0 = Vector(1.5, 1.5, 1.5)
         for i in range(self.ntests):
-            edge = rangen.choice(self.edges)
-            a1 = edge[0] + rangen.random()*edge[1]
+            edge = random.choice(self.edges)
+            a1 = edge[0] + random.random()*edge[1]
             a1 = a0 + 2.0*(a1 - a0)
             aa0, aa1, polyhedron, T = self.randomDistortion(a0, a1, self.vertices)
             result = segmentIntersectEdges(aa0, aa1, polyhedron)
@@ -129,8 +129,8 @@ class TestLineSegmentPolyhedronIntersection(unittest.TestCase):
     def testSegmentIntersectingRandomEdge2(self):
         a0 = Vector(1.5, 1.5, 1.5)
         for i in range(self.ntests):
-            edge = rangen.choice(self.edges)
-            a1 = edge[0] + rangen.random()*edge[1]
+            edge = random.choice(self.edges)
+            a1 = edge[0] + random.random()*edge[1]
             aa0, aa1, polyhedron, T = self.randomDistortion(a0, a1, self.vertices)
             result = segmentIntersectEdges(aa0, aa1, polyhedron)
             Tinv = T.Inverse()
@@ -144,7 +144,7 @@ class TestLineSegmentPolyhedronIntersection(unittest.TestCase):
     def testSegmentIntersectingRandomVertex(self):
         a0 = Vector(1.5, 1.5, 1.5)
         for i in range(self.ntests):
-            a1 = rangen.choice(self.vertices)
+            a1 = random.choice(self.vertices)
             aa0, aa1, polyhedron, T = self.randomDistortion(a0, a1, self.vertices)
             result = segmentIntersectEdges(aa0, aa1, polyhedron)
             Tinv = T.Inverse()

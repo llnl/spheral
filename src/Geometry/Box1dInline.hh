@@ -472,4 +472,13 @@ operator!=(const Box1d& rhs) const {
   return not (*this == rhs);
 }
 
+//------------------------------------------------------------------------------
+// ostream operator.
+//------------------------------------------------------------------------------
+inline
+std::ostream& operator<<(std::ostream& os, const Box1d& box) {
+  os << "Box(" << box.xmin().x() << " " << box.xmax().x() << ")";
+  return os;
+}
+
 }

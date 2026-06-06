@@ -13,6 +13,7 @@ namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
+template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension>
 class GenericBodyForce: public Physics<Dimension> {

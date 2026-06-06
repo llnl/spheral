@@ -1,0 +1,45 @@
+diff -u -r leos-8.5.2/cmake/TPL_Setup/SetupUmpire.cmake newleos/cmake/TPL_Setup/SetupUmpire.cmake
+--- leos-8.5.2/cmake/TPL_Setup/SetupUmpire.cmake	2025-07-03 04:04:38.000000000 -0700
++++ newleos/cmake/TPL_Setup/SetupUmpire.cmake	2025-09-03 16:26:05.717203000 -0700
+@@ -5,26 +5,8 @@
+ #---------------------------------------------------------------------
+ # Setup paths to point to directory which can hold umpire-config.cmake
+ #---------------------------------------------------------------------
+-string(FIND ${UMPIRE_DIR} "lib/cmake/umpire"   NEW_UMPIRE_CONFIG_LOC)
+-string(FIND ${UMPIRE_DIR} "share/umpire/cmake" OLD_UMPIRE_CONFIG_LOC)
+-
+-if ( NEW_UMPIRE_CONFIG_LOC GREATER_EQUAL 0 )
+-  string(REPLACE "/lib/cmake/umpire" "" BASE_UMPIRE_DIR ${UMPIRE_DIR} )
+-elseif ( OLD_UMPIRE_CONFIG_LOC GREATER_EQUAL 0 )
+-  string(REPLACE "/share/umpire/cmake" "" BASE_UMPIRE_DIR ${UMPIRE_DIR} )
+-else()
+-  # Look for directory with umpire-config.cmake
+-  set ( BASE_UMPIRE_DIR ${UMPIRE_DIR} )
+-
+-  # Check for directory holding umpire-config.cmake
+-  if ( IS_DIRECTORY ${BASE_UMPIRE_DIR}/lib/cmake/umpire)
+-    set (UMPIRE_DIR ${BASE_UMPIRE_DIR}/lib/cmake/umpire)
+-  elseif(IS_DIRECTORY ${BASE_UMPIRE_DIR}/share/umpire/cmake)
+-    set (UMPIRE_DIR ${BASE_UMPIRE_DIR}/share/umpire/cmake)
+-  elseif(NOT EXISTS ${UMPIRE_DIR}/umpire-config.cmake)
+-    message(SEND_ERROR "Cannot find path to umpire-config.cmake")
+-  endif()
+-endif()
++# Look for directory with umpire-config.cmake
++set ( BASE_UMPIRE_DIR ${UMPIRE_DIR} )
+ 
+ if( NOT DEFINED camp_DIR)
+ 
+@@ -46,7 +28,11 @@
+ endif( NOT DEFINED camp_DIR)
+ 
+ #set(UMPIRE_MIN_VERSION "5.0") 
+-find_package(UMPIRE ${UMPIRE_MIN_VERSION} REQUIRED)
++find_package(UMPIRE ${UMPIRE_MIN_VERSION} REQUIRED NO_DEFAULT_PATH
++  PATHS ${UMPIRE_DIR}/share/umpire/cmake
++  ${UMPIRE_DIR}/lib/cmake/umpire
++  ${UMPIRE_DIR}/lib64/cmake/umpire
++  ${UMPIRE_DIR})
+ 
+ if (UMPIRE_FOUND) 
+ 

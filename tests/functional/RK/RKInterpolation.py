@@ -111,7 +111,7 @@ if mpi.procs > 1:
 #-------------------------------------------------------------------------------
 # Choose correct dimension aliases
 #-------------------------------------------------------------------------------
-exec("from Spheral%id import *" % dimension)
+exec("from Spheral%id import *" % dimension, globals())
 
 #-------------------------------------------------------------------------------
 # Set up data
@@ -232,9 +232,8 @@ output("numLocal")
 # Randomize nodes
 #-------------------------------------------------------------------------------
 import random
-seed = 2
-rangen = random.Random()
-rangen.seed(seed)
+seed = 459297849234
+random.seed(seed)
 
 if randomizeNodes:
     dx = (x1 - x0)/nx
@@ -243,24 +242,22 @@ if randomizeNodes:
     pos = nodes.positions()
     for i in range(nodes.numInternalNodes):
         if dimension == 1:
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
         elif dimension == 2:
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * dy * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * dy * random.uniform(-1.0, 1.0)
         elif dimension == 3:
-            pos[i].x += ranfrac * dx * rangen.uniform(-1.0, 1.0)
-            pos[i].y += ranfrac * dy * rangen.uniform(-1.0, 1.0)
-            pos[i].z += ranfrac * dz * rangen.uniform(-1.0, 1.0)
+            pos[i].x += ranfrac * dx * random.uniform(-1.0, 1.0)
+            pos[i].y += ranfrac * dy * random.uniform(-1.0, 1.0)
+            pos[i].z += ranfrac * dz * random.uniform(-1.0, 1.0)
             
 #-------------------------------------------------------------------------------
 # Iterate h
 #-------------------------------------------------------------------------------
-bounds = vector_of_Boundary()
-method = SPHSmoothingScale()
+method = SPHSmoothingScale(IdealH, WT)
 iterateIdealH(dataBase,
-              bounds,
-              WT,
-              method,
+              vector_of_Physics([method]),
+              vector_of_Boundary(),
               100, # max h iterations
               1.e-4) # h tolerance
 dataBase.updateConnectivityMap(True)

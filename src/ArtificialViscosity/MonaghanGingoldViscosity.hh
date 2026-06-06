@@ -1,15 +1,16 @@
 //---------------------------------Spheral++----------------------------------//
 // A simple form for the artificial viscosity due to Monaghan & Gingold.
-// References: 
+// References:
 //   Monaghan, J. J, & Gingold, R. A. 1983, J. Comput. Phys., 52, 374
 //   Monaghan, J. J. 1992, ARA&A, 30, 543
 //
 // Created by JMO, Sun May 21 23:46:02 PDT 2000
 //----------------------------------------------------------------------------//
-#ifndef MonaghanGingoldViscosity_HH
-#define MonaghanGingoldViscosity_HH
+#ifndef __Spheral_MonaghanGingoldViscosity__
+#define __Spheral_MonaghanGingoldViscosity__
 
 #include "ArtificialViscosity.hh"
+#include "MonaghanGingoldViscosityView.hh"
 
 namespace Spheral {
 
@@ -17,56 +18,82 @@ template<typename Dimension>
 class MonaghanGingoldViscosity: public ArtificialViscosity<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename ArtificialViscosity<Dimension>::ConstBoundaryIterator ConstBoundaryIterator;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
+  using ViewType = MonaghanGingoldViscosityView<Dimension>;
 
   // Constructors.
   MonaghanGingoldViscosity(const Scalar Clinear,
                            const Scalar Cquadratic,
+                           const TableKernel<Dimension>& kernel,
                            const bool linearInExpansion,
-                           const bool quadraticInExpansion);
+                           const bool quadraticInExpansion) :
+    ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
+    mLinearInExpansion(linearInExpansion),
+    mQuadraticInExpansion(quadraticInExpansion) { }
 
-  // Destructor.
-  virtual ~MonaghanGingoldViscosity();
+  virtual ~MonaghanGingoldViscosity() { m_viewPtr.free(); }
 
-  // The required method to compute the artificial viscous P/rho^2.
-  virtual std::pair<Tensor, Tensor> Piij(const unsigned nodeListi, const unsigned i, 
-                                         const unsigned nodeListj, const unsigned j,
-                                         const Vector& xi,
-                                         const Vector& etai,
-                                         const Vector& vi,
-                                         const Scalar rhoi,
-                                         const Scalar csi,
-                                         const SymTensor& Hi,
-                                         const Vector& xj,
-                                         const Vector& etaj,
-                                         const Vector& vj,
-                                         const Scalar rhoj,
-                                         const Scalar csj,
-                                         const SymTensor& Hj) const;
-
-  // Access the switches for acting in expansion.
-  bool linearInExpansion() const;
-  void linearInExpansion(const bool x);
-
-  bool quadraticInExpansion() const;
-  void quadraticInExpansion(const bool x);
+  // No default construction, copying, or assignment
+  MonaghanGingoldViscosity() = delete;
+  MonaghanGingoldViscosity(const MonaghanGingoldViscosity&) = delete;
+  MonaghanGingoldViscosity& operator=(const MonaghanGingoldViscosity&) = delete;
 
   // Restart methods.
-  virtual std::string label() const { return "MonaghanGingoldViscosity"; }
+  virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
+  // Access data members
+  bool linearInExpansion()                const { return mLinearInExpansion; }
+  bool quadraticInExpansion()             const { return mQuadraticInExpansion; }
+  void linearInExpansion(const bool x)          { mLinearInExpansion = x; updateManagedPtr(); }
+  void quadraticInExpansion(const bool x)       { mQuadraticInExpansion = x; updateManagedPtr(); }
+
+  // View methods
+  virtual std::type_index QPiTypeIndex() const override {
+    return std::type_index(typeid(Scalar));
+  }
+
+  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
+    initView();
+    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  }
+
+  // Useful for testing
+  chai::managed_ptr<ViewType> getView() {
+    initView();
+    return m_viewPtr;
+  }
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  bool mLinearInExpansion, mQuadraticInExpansion;
+  // Initialize the managed pointer if it doesn't exist
+  void initView() {
+    if (!m_viewPtr) {
+      m_viewPtr = chai::make_managed<ViewType>(mClinear,
+                                               mCquadratic,
+                                               mLinearInExpansion,
+                                               mQuadraticInExpansion);
+    }
+  }
 
+  // Reinitialize the managed pointer if it exists so member variables are up to date
+  virtual void updateManagedPtr() override {
+    if (m_viewPtr) {
+      m_viewPtr.free();
+      initView();
+    }
+  }
+
+  // Not ideal but there is repeated member data between the value and view
+  using ArtificialViscosity<Dimension>::mClinear;
+  using ArtificialViscosity<Dimension>::mCquadratic;
+  bool mLinearInExpansion = false;
+  bool mQuadraticInExpansion = false;
 private:
-  //--------------------------- Private Interface ---------------------------//
-  MonaghanGingoldViscosity();
-  MonaghanGingoldViscosity(const MonaghanGingoldViscosity&);
-  MonaghanGingoldViscosity& operator=(const MonaghanGingoldViscosity&) const;
+  std::type_index m_viewType = typeid(ViewType);
+  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

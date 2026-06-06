@@ -7,7 +7,7 @@ import unittest
 
 # Build a random number generator.
 import random
-rangen = random.Random()
+random.seed(4599281940)
 
 #===============================================================================
 # Implement a simple linear function in x.

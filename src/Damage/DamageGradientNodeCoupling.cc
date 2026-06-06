@@ -41,9 +41,9 @@ DamageGradientNodeCoupling(const State<Dimension>& state,
   TIME_BEGIN("DamageGradientCoupling");
 
   const auto npairs = pairs.size();
-  const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
   const auto numNodeLists = position.numFields();

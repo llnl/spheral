@@ -8,7 +8,7 @@ class CubicHermiteInterpolator:
     "An (optionally monotonic) form of cubic Hermite interpolation."
 
     def pyinit(self):
-        "Default constuctor -- returns a non-functional interpolator until initialized"
+        "Default constructor -- returns a non-functional interpolator until initialized"
         return
 
     def pyinit_func(self,
@@ -36,12 +36,32 @@ class CubicHermiteInterpolator:
         "Initialize from tabulated values"
         return
 
-    def initialize(self,
-                   xmin = "const double",
-                   xmax = "const double",
-                   yvals = "const std::vector<double>&"):
+    @PYB11pycppname("initialize")
+    def initialize_func(self,
+                        xmin = "const double",
+                        xmax = "const double",
+                        n = "const size_t",
+                        F = "const PythonBoundFunctors::SpheralFunctor<double, double>&"):
+        "Initialize based on the given function"
+        return "void"
+
+    @PYB11pycppname("initialize")
+    def initialize_gradfunc(self,
+                            xmin = "const double",
+                            xmax = "const double",
+                            n = "const size_t",
+                            F = "const PythonBoundFunctors::SpheralFunctor<double, double>&",
+                            Fgrad = "const PythonBoundFunctors::SpheralFunctor<double, double>&"):
+        "Initialize based on the given function and its gradient"
+        return "void"
+
+    @PYB11pycppname("initialize")
+    def initialize_table(self,
+                         xmin = "const double",
+                         xmax = "const double",
+                         yvals = "const std::vector<double>&"):
         "Initializes the interpolator for yvals sampled in x in [xmin, xmax]"
-        return
+        return "void"
 
     def makeMonotonic(self):
         """Force interpolation to be monotonic.  This generally degrades accuracy, and can introduce structure between
@@ -60,6 +80,10 @@ tabulated knots (although that structure should still be monotonic between the t
                    x = "const double",
                    i0 = "const size_t"):
         "Returns the interpolated value <y>(x)"
+        return "double"
+
+    @PYB11cppname("operator[]")
+    def __getitem__(self, index="size_t"):
         return "double"
 
     @PYB11const
@@ -121,8 +145,8 @@ tabulated knots (although that structure should still be monotonic between the t
         return "double"
 
     # Attributes
-    N = PYB11property(doc="The number of the tabulated values used")
+    size = PYB11property(doc="The number of the tabulated values used")
     xmin = PYB11property(doc="Minimum x coordinate for table")
     xmax = PYB11property(doc="Maximum x coordinate for table")
     xstep = PYB11property(doc="delta x between tabulated values")
-    vals = PYB11property(doc="tabulated values and gradients (sequentially)")
+

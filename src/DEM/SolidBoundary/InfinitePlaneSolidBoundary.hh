@@ -48,7 +48,7 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
-  virtual std::string label() const { return "InfinitePlaneSolidBoundary" ; }
+  virtual std::string label() const override { return "InfinitePlaneSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
 

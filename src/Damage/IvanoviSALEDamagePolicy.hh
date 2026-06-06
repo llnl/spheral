@@ -36,7 +36,7 @@
 #ifndef __Spheral_IvanoviSALEDamagePolicy_hh__
 #define __Spheral_IvanoviSALEDamagePolicy_hh__
 
-#include "DataBase/UpdatePolicyBase.hh"
+#include "DataBase/FieldUpdatePolicy.hh"
 
 #include <string>
 
@@ -49,23 +49,22 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class IvanoviSALEDamagePolicy: 
-    public UpdatePolicyBase<Dimension> {
+class IvanoviSALEDamagePolicy: public FieldUpdatePolicy<Dimension, typename Dimension::SymTensor> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename UpdatePolicyBase<Dimension>::KeyType KeyType;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using KeyType = typename UpdatePolicyBase<Dimension>::KeyType;
 
   // Constructors, destructor.
   explicit IvanoviSALEDamagePolicy(const double minPlasticFailure,             // minimum plastic strain for failure
                                    const double plasticFailurePressureSlope,   // slope for critical plastic strain
                                    const double plasticFailurePressureOffset,  // intercept for critical plastic strain
                                    const double tensileFailureStress);         // threshold for tensile failure
-  virtual ~IvanoviSALEDamagePolicy();
+  virtual ~IvanoviSALEDamagePolicy() = default;
   
   // Overload the methods describing how to update Fields.
   virtual void update(const KeyType& key,
@@ -80,13 +79,14 @@ public:
 
   static const std::string prefix() { return "delta "; }
 
+  // Forbidden methods
+  IvanoviSALEDamagePolicy() = delete;
+  IvanoviSALEDamagePolicy(const IvanoviSALEDamagePolicy& rhs) = delete;
+  IvanoviSALEDamagePolicy& operator=(const IvanoviSALEDamagePolicy& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   double mEpsPfb, mB, mPc, mTensileFailureStress;
-
-  IvanoviSALEDamagePolicy();
-  IvanoviSALEDamagePolicy(const IvanoviSALEDamagePolicy& rhs);
-  IvanoviSALEDamagePolicy& operator=(const IvanoviSALEDamagePolicy& rhs);
 };
 
 }

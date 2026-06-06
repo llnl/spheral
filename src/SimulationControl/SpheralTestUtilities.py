@@ -1,8 +1,8 @@
 # SpheralTestUtilities -- small helper functions used in Spheral unit tests.
 
-import sys
+import sys, inspect
 from math import *
-from collections import Iterable
+from collections.abc import Iterable
 
 #-------------------------------------------------------------------------------
 # Helper method, sort a set of lists by the first one.
@@ -52,16 +52,20 @@ def globalFrame():
 #-------------------------------------------------------------------------------
 def title(titleText, lineLength=80):
     fillerText = "-"*((lineLength - len(titleText))//2)
+    from SpheralCompiledPackages import adiak_value
+    adiak_value("test_name", titleText)
     print(fillerText, titleText, fillerText)
 
 #-------------------------------------------------------------------------------
 # Provide a standard title text
 #-------------------------------------------------------------------------------
 def output(cmd, dict=None):
-    if not dict:
-        frame = globalFrame()
-        dict = frame.f_globals
-    print(cmd, " : ", eval(cmd, dict))
+    if dict is None:
+        frame = inspect.currentframe().f_back
+        ns = {}
+        ns.update(frame.f_globals)
+        ns.update(frame.f_locals)
+    print(cmd, " : ", eval(cmd, ns))
 
 #-------------------------------------------------------------------------------
 # Functions to help testing neighbor selection.
@@ -109,11 +113,11 @@ def findScatterNeighborNodes(pos1, radius, nodes,
 def findOverlapNeighbors(pos1, H1, radius, db):
     pos = db.globalPosition
     H = db.globalHfield
-    result = [findNeighborNodes(pos1, H1, radius, nodes) for nodes in db.nodeLists()]
-    for iNL, inodes in enumerate(db.nodeLists()):
+    result = [findNeighborNodes(pos1, H1, radius, nodes) for nodes in db.nodeLists]
+    for iNL, inodes in enumerate(db.nodeLists):
         mygather = findGatherNeighborNodes(pos1, H1, radius, inodes)
         for i in mygather:
-            for jNL, jnodes in enumerate(db.nodeLists()):
+            for jNL, jnodes in enumerate(db.nodeLists):
                 result[jNL] += findScatterNeighborNodes(pos(iNL, i), radius, jnodes)
     result = [list(set(x)) for x in result]
     return result
@@ -191,32 +195,32 @@ def allValues(fieldList):
         result.extend(vals)
     return result
 
-#-------------------------------------------------------------------------------
-# Fuzzy comparisons.
-#-------------------------------------------------------------------------------
-def fuzzyEqual(lhs, rhs,
-               fuzz = 1.0e-5):
-    if isinstance(lhs, Iterable):
-        assert isinstance(rhs, Iterable) and len(lhs) == len(rhs)
-        return min([fuzzyEqual(x, y, fuzz) for (x, y) in zip(lhs, rhs)])
-    else:
-        return abs(lhs - rhs)/max(1.0, abs(lhs) + abs(rhs)) < fuzz;
+# #-------------------------------------------------------------------------------
+# # Fuzzy comparisons.
+# #-------------------------------------------------------------------------------
+# def fuzzyEqual(lhs, rhs,
+#                fuzz = 1.0e-5):
+#     if isinstance(lhs, Iterable):
+#         assert isinstance(rhs, Iterable) and len(lhs) == len(rhs)
+#         return min([fuzzyEqual(x, y, fuzz) for (x, y) in zip(lhs, rhs)])
+#     else:
+#         return abs(lhs - rhs)/max(1.0, abs(lhs) + abs(rhs)) < fuzz;
 
-def fuzzyLessThanOrEqual(lhs, rhs,
-                         fuzz = 1.0e-5):
-    return lhs < rhs or fuzzyEqual(lhs, rhs, fuzz);
+# def fuzzyLessThanOrEqual(lhs, rhs,
+#                          fuzz = 1.0e-5):
+#     return lhs < rhs or fuzzyEqual(lhs, rhs, fuzz);
 
-def fuzzyGreaterThanOrEqual(lhs, rhs,
-                            fuzz = 1.0e-5):
-    return lhs > rhs or fuzzyEqual(lhs, rhs, fuzz)
+# def fuzzyGreaterThanOrEqual(lhs, rhs,
+#                             fuzz = 1.0e-5):
+#     return lhs > rhs or fuzzyEqual(lhs, rhs, fuzz)
 
-def distinctlyLessThan(lhs, rhs,
-                       fuzz = 1.0e-5):
-    return lhs < rhs and not fuzzyEqual(lhs, rhs, fuzz)
+# def distinctlyLessThan(lhs, rhs,
+#                        fuzz = 1.0e-5):
+#     return lhs < rhs and not fuzzyEqual(lhs, rhs, fuzz)
 
-def distinctlyGreaterThan(lhs, rhs,
-                          fuzz = 1.0e-5):
-    return lhs > rhs and not fuzzyEqual(lhs, rhs, fuzz)
+# def distinctlyGreaterThan(lhs, rhs,
+#                           fuzz = 1.0e-5):
+#     return lhs > rhs and not fuzzyEqual(lhs, rhs, fuzz)
 
 #-------------------------------------------------------------------------------
 # sign functions.
@@ -372,4 +376,52 @@ def testParallelConsistency(mesh, xmin, xmax):
 
     return msg
 
+#-------------------------------------------------------------------------------
+# Estimate number of radial and axial SPH nodes.
+#-------------------------------------------------------------------------------
+def num_3d_cyl_nodes(rmin, rmax, zmin, zmax, thetamin, thetamax, nr0, nz0, Ntot):
+    """
+    This routine estimates values for nr and nz for a 3D cylindrical distribution
+    to closely match a total desired number of SPH nodes
 
+    Parameters:
+    rmin, rmax: Inner/outer radial location
+    zmin, zmax: Lower/upper axial locations
+    thetamin, thetamax: Lower/upper polar angles
+    nr0, nz0: Initial guesses for number of radial and axial SPH nodes
+    Ntot: Desired total number of nodes
+    Returns:
+    nr, nz: Optimal number of radial and axial SPH nodes
+    """
+    import numpy as np
+    from scipy.optimize import basinhopping
+
+    class takestep:
+        def __init__(self, x0):
+            self.x0 = int(x0)
+        def __call__(self, x):
+            x += self.x0
+            return x
+    x0 = 1 # Optimal step size
+    ig = [nr0, nz0]
+    zlen = zmax - zmin
+    if nr0*nz0 > Ntot:
+        raise Exception("Initial guesses are too high")
+    rlen = rmax - rmin
+    Dtheta = thetamax - thetamin
+    mintheta = int(Dtheta/(0.5*np.pi) + 0.5)
+    def calc_ntot(x):
+        nr = int(x[0])
+        nz = int(x[1])
+        dz = zlen / nz
+        dr = rlen / nr
+        maxd = max(dr, dz)
+        new_tot = 0
+        for i in range(nr):
+            ri = rmin + (i + 0.5)*dr
+            n_th = max(mintheta, int(ri*Dtheta/maxd))
+            new_tot += n_th
+        return abs(new_tot*nz - Ntot)
+    result = basinhopping(calc_ntot, ig, take_step=takestep(x0))
+    nr, nz = result.x[0], result.x[1]
+    return int(nr), int(nz)

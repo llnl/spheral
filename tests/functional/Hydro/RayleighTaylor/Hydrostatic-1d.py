@@ -97,9 +97,7 @@ commandLine(nx1 = 128,
             redistributeStep = 500,
             checkRestart = False,
             dataDir = "dumps-Rayleigh-Taylor-1d_hopkins",
-            outputFile = "None",
-            comparisonFile = "None",
-            
+
             serialDump = False, #whether to dump a serial ascii file at the end for viz
             graphics = True,
             

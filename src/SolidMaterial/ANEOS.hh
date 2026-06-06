@@ -27,10 +27,10 @@ class ANEOS: public SolidEquationOfState<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors, destructors.
   ANEOS(const int materialNumber,
@@ -47,13 +47,13 @@ public:
         const double minimumPressureDamage,
         const MaterialPressureMinType minPressureType,
         const bool useInterpolation);
-  ANEOS(const ANEOS& rhs);
-  ~ANEOS();
+  ANEOS(const ANEOS& rhs) = default;
+  ~ANEOS() = default;
 
   // We require any equation of state to define the following properties.
   virtual void setPressure(Field<Dimension, Scalar>& Pressure,
                            const Field<Dimension, Scalar>& massDensity,
-                           const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                           const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   virtual void setPressureAndDerivs(Field<Dimension, Scalar>& Pressure,           // set pressure
                                     Field<Dimension, Scalar>& dPdu,               // set (\partial P)/(\partial u) (specific thermal energy)
@@ -63,31 +63,31 @@ public:
 
   virtual void setTemperature(Field<Dimension, Scalar>& temperature,
                               const Field<Dimension, Scalar>& massDensity,
-                              const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                              const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   virtual void setSpecificThermalEnergy(Field<Dimension, Scalar>& specificThermalEnergy,
                                         const Field<Dimension, Scalar>& massDensity,
-                                        const Field<Dimension, Scalar>& temperature) const;
+                                        const Field<Dimension, Scalar>& temperature) const override;
 
   virtual void setSpecificHeat(Field<Dimension, Scalar>& specificHeat,
                                const Field<Dimension, Scalar>& massDensity,
-                               const Field<Dimension, Scalar>& temperature) const;
+                               const Field<Dimension, Scalar>& temperature) const override;
 
   virtual void setSoundSpeed(Field<Dimension, Scalar>& soundSpeed,
                              const Field<Dimension, Scalar>& massDensity,
-                             const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                             const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   virtual void setGammaField(Field<Dimension, Scalar>& gamma,
                              const Field<Dimension, Scalar>& massDensity,
-                             const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                             const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   virtual void setBulkModulus(Field<Dimension, Scalar>& bulkModulus,
                              const Field<Dimension, Scalar>& massDensity,
-                             const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                             const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   virtual void setEntropy(Field<Dimension, Scalar>& entropy,
                           const Field<Dimension, Scalar>& massDensity,
-                          const Field<Dimension, Scalar>& specificThermalEnergy) const;
+                          const Field<Dimension, Scalar>& specificThermalEnergy) const override;
 
   // We also want the equivalent functions for individual calculations.
   Scalar pressure(const Scalar massDensity,
@@ -120,7 +120,7 @@ public:
                  const Scalar specificThermalEnergy) const;
 
   // The valid method.
-  virtual bool valid() const;
+  virtual bool valid() const override;
 
   // Access local variables used to lookup eps based on T.
   int materialNumber() const;
@@ -142,8 +142,11 @@ private:
   int mMaterialNumber;
   unsigned mNumRhoVals, mNumTvals;
   double mRhoMin, mRhoMax, mTmin, mTmax, mEpsMin, mEpsMax;
-  std::shared_ptr<CubicHermiteInterpolator> mEpsMinInterp, mEpsMaxInterp;
-  std::shared_ptr<BiCubicInterpolator> mEpsInterp, mTinterp, mPinterp, mCVinterp, mCSinterp, mKinterp, mSinterp, mDPDepsInterp, mDPDRinterp;
+
+  using InterpolatorType = CubicHermiteInterpolator;
+  using BiInterpolatorType = BiCubicInterpolator;
+  std::shared_ptr<InterpolatorType> mEpsMinInterp, mEpsMaxInterp;
+  std::shared_ptr<BiInterpolatorType> mEpsInterp, mTinterp, mPinterp, mCVinterp, mCSinterp, mKinterp, mSinterp, mDPDepsInterp, mDPDRinterp;
 
   // ANEOS internal units.
   PhysicalConstants mANEOSunits;

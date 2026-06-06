@@ -93,8 +93,8 @@ commandLine(
     # Should we run in domain independent mode, and if so should we check
     # for domain independence?
     domainIndependent = False,
-    outputFile = "None",
-    comparisonFile = "None",
+    outputFile = None,
+    comparisonFile = None,
     )
 
 Sapphire1Range = (0.0, Sapphire1Thickness)
@@ -639,7 +639,7 @@ print("Test passed.")
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(restartDir, outputFile)
     pos = db.fluidPosition
     rho = db.fluidMassDensity
@@ -672,7 +672,7 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Also we can optionally compare the current results with another file.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None":
+        if comparisonFile:
             comparisonFile = os.path.join(restartDir, comparisonFile)
             import filecmp
             assert filecmp.cmp(outputFile, comparisonFile)

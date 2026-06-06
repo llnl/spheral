@@ -19,31 +19,8 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
-
-//------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK4<Dimension>::SynchronousRK4():
-  Integrator<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK4<Dimension>::
-SynchronousRK4(DataBase<Dimension>& dataBase):
-  Integrator<Dimension>(dataBase) {
-}
 
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
@@ -53,26 +30,6 @@ SynchronousRK4<Dimension>::
 SynchronousRK4(DataBase<Dimension>& dataBase,
                const vector<Physics<Dimension>*>& physicsPackages):
   Integrator<Dimension>(dataBase, physicsPackages) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK4<Dimension>::~SynchronousRK4() {
-}
-
-//------------------------------------------------------------------------------
-// Assignment
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SynchronousRK4<Dimension>&
-SynchronousRK4<Dimension>::
-operator=(const SynchronousRK4<Dimension>& rhs) {
-  if (this != &rhs) {
-    Integrator<Dimension>::operator=(rhs);
-  }
-  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -119,8 +76,8 @@ step(typename Dimension::Scalar maxTime,
   // Get derivs2(t_n + 0.5*dt, state(t_n + 0.5*dt*derivs1))
   tmpstate.update(derivs1, 0.5*dt, t, 0.5*dt);
   this->applyGhostBoundaries(tmpstate, derivs1);
-  this->postStateUpdate(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs1);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs1);
   this->initializeDerivatives(t + 0.5*dt, 0.5*dt, tmpstate, derivs2);
   derivs2.Zero();
   this->evaluateDerivatives(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs2);
@@ -144,8 +101,8 @@ step(typename Dimension::Scalar maxTime,
   tmpstate.copyState();
   tmpstate.update(derivs2, 0.5*dt, t, 0.5*dt);
   this->applyGhostBoundaries(tmpstate, derivs2);
-  this->postStateUpdate(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs2);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs2);
   this->initializeDerivatives(t + 0.5*dt, 0.5*dt, tmpstate, derivs3);
   derivs3.Zero();
   this->evaluateDerivatives(t + 0.5*dt, 0.5*dt, db, tmpstate, derivs3);
@@ -169,8 +126,8 @@ step(typename Dimension::Scalar maxTime,
   tmpstate.copyState();
   tmpstate.update(derivs3, dt, t, dt);
   this->applyGhostBoundaries(tmpstate, derivs3);
-  this->postStateUpdate(t + dt, dt, db, tmpstate, derivs3);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + dt, dt, db, tmpstate, derivs3);
   this->initializeDerivatives(t + dt, dt, tmpstate, derivs4);
   derivs4.Zero();
   this->evaluateDerivatives(t + dt, dt, db, tmpstate, derivs4);
@@ -197,8 +154,8 @@ step(typename Dimension::Scalar maxTime,
   state.update(derivs3, dt/3.0, t, dt);
   state.update(derivs4, dt/6.0, t, dt);
   this->applyGhostBoundaries(state, derivs4);
-  this->postStateUpdate(t + dt, dt, db, state, derivs4);
   this->finalizeGhostBoundaries();
+  this->postStateUpdate(t + dt, dt, db, state, derivs4);
 
   // Apply any physics specific finalizations.
   this->postStepFinalize(t + dt, dt, state, derivs4);

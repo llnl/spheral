@@ -50,7 +50,7 @@ public:
   // Compute eta = rho/refrho, bounded to be in [etamin, etamax].
   double boundedEta(const double rho) const;
 
-  virtual bool valid() const;
+  virtual bool valid() const override;
 
 private:
   //--------------------------- Private Interface ---------------------------//

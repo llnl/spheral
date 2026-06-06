@@ -94,8 +94,8 @@ commandLine(KernelConstructor = BSplineKernel,
             restartStep = 10000,
             dataDir = "dumps-planar",
             restartBaseName = "Noh-planar-1d",
-            outputFile = "None",
-            comparisonFile = "None",
+            outputFile = None,
+            comparisonFile = None,
 
             graphics = True,
             serialDump = False #whether to dump a serial ascii file at the end for viz
@@ -240,7 +240,7 @@ packages = [hydro]
 
 if boolReduceViscosity:
     #q.reducingViscosityCorrection = True
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(q,nhQ,nhL,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nhQ,nhL,aMin,aMax)
     
     packages.append(evolveReducingViscosityMultiplier)
 
@@ -354,7 +354,7 @@ else:
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
     mof = mortonOrderIndices(db)
@@ -391,7 +391,7 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Also we can optionally compare the current results with another file.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None":
+        if comparisonFile:
             comparisonFile = os.path.join(dataDir, comparisonFile)
             import filecmp
             assert filecmp.cmp(outputFile, comparisonFile)

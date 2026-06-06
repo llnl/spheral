@@ -8,7 +8,6 @@
 #include "DataBase/DataBase.hh"
 #include "Boundary/Boundary.hh"
 #include "Kernel/TableKernel.hh"
-#include "NodeList/SmoothingScaleBase.hh"
 #include "Geometry/Dimension.hh"
 
 #include <vector>
@@ -20,11 +19,11 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 struct WeightingFunctor {
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   WeightingFunctor() {}
   virtual ~WeightingFunctor() {}
@@ -43,7 +42,6 @@ relaxNodeDistribution(DataBase<Dimension>& dataBase,
                       const typename Dimension::FacetedVolume& boundary,
                       const std::vector<Boundary<Dimension>*>& boundaries,
                       const TableKernel<Dimension>& W,
-                      const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
                       const WeightingFunctor<Dimension>& weightingFunctor,
                       const WeightingFunctor<Dimension>& massDensityFunctor,
                       const double targetMass,

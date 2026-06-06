@@ -29,7 +29,7 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>
@@ -37,12 +37,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -126,7 +120,7 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
 inline
 Dim<1>::Tensor
 effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one;
+  return Dim<1>::Tensor::one();
 }
 
 inline
@@ -165,19 +159,11 @@ IvanoviSALEDamagePolicy(const double minPlasticFailure,             // minimum p
                         const double plasticFailurePressureSlope,   // slope for critical plastic strain
                         const double plasticFailurePressureOffset,  // intercept for critical plastic strain
                         const double tensileFailureStress):         // threshold for tensile failure
-  UpdatePolicyBase<Dimension>({SolidFieldNames::strain}),
+  FieldUpdatePolicy<Dimension, SymTensor>({SolidFieldNames::strain}),
   mEpsPfb(minPlasticFailure),
   mB(plasticFailurePressureSlope),
   mPc(plasticFailurePressureOffset),
   mTensileFailureStress(tensileFailureStress) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-IvanoviSALEDamagePolicy<Dimension>::
-~IvanoviSALEDamagePolicy() {
 }
 
 //------------------------------------------------------------------------------
@@ -195,7 +181,7 @@ update(const KeyType& key,
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero);
+  auto& stateField = state.field(key, SymTensor::zero());
 
   // Get the state fields.
   const auto strainKey = State<Dimension>::buildFieldKey(SolidFieldNames::effectiveStrainTensor, nodeListKey);
@@ -208,11 +194,11 @@ update(const KeyType& key,
   CHECK(state.registered(Pkey));
   CHECK(derivs.registered(DdamageDtKey));
   CHECK(derivs.registered(DvDxKey));
-  const auto& strain = state.field(strainKey, SymTensor::zero);
-  const auto& S = state.field(Skey, SymTensor::zero);
+  const auto& strain = state.field(strainKey, SymTensor::zero());
+  const auto& S = state.field(Skey, SymTensor::zero());
   const auto& P = state.field(Pkey, 0.0);
   const auto& DDDt = derivs.field(DdamageDtKey, 0.0);
-  const auto& localDvDx = derivs.field(DvDxKey, Tensor::zero);
+  const auto& localDvDx = derivs.field(DvDxKey, Tensor::zero());
 
   // Iterate over the internal nodes.
   const auto ni = stateField.numInternalElements();
@@ -262,7 +248,7 @@ update(const KeyType& key,
     }
 
     // Now apply any tensile damage.
-    const auto stressi = S(i) - P(i)*SymTensor::one;
+    const auto stressi = S(i) - P(i)*SymTensor::one();
     auto tensile_eigeni = stressi.eigenVectors();
     sortEigen(tensile_eigeni);
 

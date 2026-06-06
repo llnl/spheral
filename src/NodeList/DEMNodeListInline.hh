@@ -66,7 +66,7 @@ DEMNodeList<Dimension>::compositeParticleIndex() const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-Field<Dimension, int>&
+Field<Dimension, size_t>&
 DEMNodeList<Dimension>::uniqueIndex() {
   REQUIRE(mUniqueIndex.nodeListPtr() == this);
   return mUniqueIndex;
@@ -74,7 +74,7 @@ DEMNodeList<Dimension>::uniqueIndex() {
 
 template<typename Dimension>
 inline
-const Field<Dimension, int>&
+const Field<Dimension, size_t>&
 DEMNodeList<Dimension>::uniqueIndex() const {
   REQUIRE(mUniqueIndex.nodeListPtr() == this);
   return mUniqueIndex;

@@ -186,9 +186,9 @@ class FacetedVolumeBoundary(Boundary):
 
     @PYB11virtual
     def cullGhostNodes(self,
-                       flagSet = "const FieldList<%(Dimension)s, int>&",
-                       old2newIndexMap = "FieldList<%(Dimension)s, int>&",
-                       numNodesRemoved = "std::vector<int>&"):
+                       flagSet = "const FieldList<%(Dimension)s, size_t>&",
+                       old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
+                       numNodesRemoved = "std::vector<size_t>&"):
         "Use a set of flags to cull out inactive ghost nodes."
         return "void"
 

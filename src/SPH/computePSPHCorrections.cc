@@ -13,12 +13,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -159,7 +153,7 @@ computePSPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
       const Scalar Hdeti = Hi.Determinant();
       const Scalar mi = mass(nodeListi, i);
       const Scalar invhi = (Hi.Trace()/Dimension::nDim);
-      const Scalar epsi = specificThermalEnergy(nodeListi, i);
+      const Scalar epsi = std::max(0.0, specificThermalEnergy(nodeListi, i));
       const Scalar gammai = gamma(nodeListi, i);
      
       const Scalar xi = (gammai-1.0)*mi*epsi;

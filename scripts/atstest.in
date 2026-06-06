@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-@CMAKE_INSTALL_PREFIX@/.venv/bin/ats -e @CMAKE_INSTALL_PREFIX@/spheral @SPHERAL_ATS_BUILD_CONFIG_ARGS_STRING@ "$@"

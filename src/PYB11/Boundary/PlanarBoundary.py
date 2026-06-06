@@ -6,7 +6,7 @@ from Boundary import *
 from RestartMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralBoundary")
+@PYB11module("SpheralCompiledModules.SpheralBoundary")
 class PlanarBoundary(Boundary):
 
     PYB11typedefs = """
@@ -73,7 +73,7 @@ class PlanarBoundary(Boundary):
     # Methods
     def setGhostNodes(self,
                       nodeList = "NodeList<%(Dimension)s>&",
-                      presetControlNodes = "const std::vector<int>&"):
+                      presetControlNodes = "const std::vector<size_t>&"):
         "Set the ghost nodes for a predefined set of control nodes"
         return "void"
 

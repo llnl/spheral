@@ -809,7 +809,7 @@ enforceBoundaries(State<Dimension>& state,
 
 //------------------------------------------------------------------------------
 template <typename Dimension>
-void 
+bool
 SPHGravity<Dimension>::
 initialize(const Scalar& time, 
            const Scalar& dt,
@@ -818,6 +818,7 @@ initialize(const Scalar& time,
            StateDerivatives<Dimension>& derivs)
 {
   mComputeMatrixStructure(db, state);
+  return false;
 }
 //------------------------------------------------------------------------------
 
@@ -886,28 +887,6 @@ SPHGravity<Dimension>::
 extraEnergy() const
 {
   return mExtraEnergy;
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-template <typename Dimension>
-boost::python::handle<PyObject>
-SPHGravity<Dimension>::
-matrix() const
-{
-  return boost::python::handle<PyObject>(mMatrix);
-}
-//------------------------------------------------------------------------------
-
-
-//------------------------------------------------------------------------------
-template <typename Dimension>
-boost::python::handle<PyObject>
-SPHGravity<Dimension>::
-RHS() const
-{
-  return boost::python::handle<PyObject>(mRHS);
 }
 //------------------------------------------------------------------------------
 

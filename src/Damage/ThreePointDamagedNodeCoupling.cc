@@ -64,9 +64,9 @@ ThreePointDamagedNodeCoupling(const State<Dimension>& state,
   NodeCoupling() {
 
   TIME_BEGIN("ThreePointCoupling");
-  const auto  position = state.fields(HydroFieldNames::position, Vector::zero);
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero);
-  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero);
+  const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto& connectivity = state.connectivityMap();
   const auto  W0 = W.kernelValue(0.0, 1.0);
   const auto  npairs = pairs.size();

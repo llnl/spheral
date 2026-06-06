@@ -42,12 +42,6 @@ using std::vector;
 using std::string;
 using std::pair;
 using std::make_pair;
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::min;
-using std::max;
-using std::abs;
 
 namespace Spheral {
 
@@ -349,7 +343,7 @@ applyGhostBoundaries(State<Dimension>& state,
   const Key nodeListName = this->nodeList().name();
   const Key DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
   CHECK(state.registered(DKey));
-  auto& D = state.field(DKey, SymTensor::zero);
+  auto& D = state.field(DKey, SymTensor::zero());
 
   // Apply ghost boundaries to the damage.
   for (auto boundaryItr = this->boundaryBegin();
@@ -373,7 +367,7 @@ enforceBoundaries(State<Dimension>& state,
   const Key nodeListName = this->nodeList().name();
   const Key DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
   CHECK(state.registered(DKey));
-  auto& D = state.field(DKey, SymTensor::zero);
+  auto& D = state.field(DKey, SymTensor::zero());
 
   // Enforce!
   for (auto boundaryItr = this->boundaryBegin(); 

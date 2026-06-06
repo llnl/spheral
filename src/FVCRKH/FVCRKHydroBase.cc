@@ -149,19 +149,19 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 //   // State FieldLists.
 //   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
 //   const auto volume = state.fields(HydroFieldNames::volume, 0.0);
-//   const auto position = state.fields(HydroFieldNames::position, Vector::zero);
-//   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero);
+//   const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+//   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
 //   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
 //   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-//   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero);
+//   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
 //   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
 //   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
 //   const auto A = state.fields(HydroFieldNames::A_CRKSPH, 0.0);
-//   const auto B = state.fields(HydroFieldNames::B_CRKSPH, Vector::zero);
-//   const auto C = state.fields(HydroFieldNames::C_CRKSPH, Tensor::zero);
-//   const auto gradA = state.fields(HydroFieldNames::gradA_CRKSPH, Vector::zero);
-//   const auto gradB = state.fields(HydroFieldNames::gradB_CRKSPH, Tensor::zero);
-//   const auto gradC = state.fields(HydroFieldNames::gradC_CRKSPH, ThirdRankTensor::zero);
+//   const auto B = state.fields(HydroFieldNames::B_CRKSPH, Vector::zero());
+//   const auto C = state.fields(HydroFieldNames::C_CRKSPH, Tensor::zero());
+//   const auto gradA = state.fields(HydroFieldNames::gradA_CRKSPH, Vector::zero());
+//   const auto gradB = state.fields(HydroFieldNames::gradB_CRKSPH, Tensor::zero());
+//   const auto gradC = state.fields(HydroFieldNames::gradC_CRKSPH, ThirdRankTensor::zero());
 //   const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
 //   const auto cells = state.fields(HydroFieldNames::cells, FacetedVolume());
 //   CHECK(mass.size() == numNodeLists);
@@ -182,22 +182,22 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 //   CHECK(cells.size() == numNodeLists);
 
 //   // Derivative FieldLists.
-//   auto DxDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero);
+//   auto DxDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
 //   auto DrhoDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::massDensity, 0.0);
-//   auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero);
+//   auto DvDt = derivatives.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
 //   auto DepsDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, Scalar> >::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-//   auto DvDx = derivatives.fields(HydroFieldNames::velocityGradient, Tensor::zero);
-//   auto localDvDx = derivatives.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero);
-//   auto DHDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, SymTensor::zero);
-//   auto Hideal = derivatives.fields(ReplaceBoundedFieldList<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, SymTensor::zero);
+//   auto DvDx = derivatives.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+//   auto localDvDx = derivatives.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
+//   auto DHDt = derivatives.fields(IncrementFieldList<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, SymTensor::zero());
+//   auto Hideal = derivatives.fields(ReplaceBoundedFieldList<Dimension, Field<Dimension, SymTensor> >::prefix() + HydroFieldNames::H, SymTensor::zero());
 //   auto maxViscousPressure = derivatives.fields(HydroFieldNames::maxViscousPressure, 0.0);
 //   auto effViscousPressure = derivatives.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
 //   auto viscousWork = derivatives.fields(HydroFieldNames::viscousWork, 0.0);
 //   auto pairAccelerations = derivatives.fields(HydroFieldNames::pairAccelerations, vector<Vector>());
-//   auto XSPHDeltaV = derivatives.fields(HydroFieldNames::XSPHDeltaV, Vector::zero);
+//   auto XSPHDeltaV = derivatives.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
 //   auto weightedNeighborSum = derivatives.fields(HydroFieldNames::weightedNeighborSum, 0.0);
-//   auto massSecondMoment = derivatives.fields(HydroFieldNames::massSecondMoment, SymTensor::zero);
-//   auto gradRho = derivatives.fields(HydroFieldNames::massDensityGradient, Vector::zero);
+//   auto massSecondMoment = derivatives.fields(HydroFieldNames::massSecondMoment, SymTensor::zero());
+//   auto gradRho = derivatives.fields(HydroFieldNames::massDensityGradient, Vector::zero());
 //   CHECK(DxDt.size() == numNodeLists);
 //   CHECK(DrhoDt.size() == numNodeLists);
 //   CHECK(DvDt.size() == numNodeLists);
@@ -231,10 +231,10 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 //   // Some scratch variables.
 //   Scalar Ai, Aj;
 //   Vector gradAi, gradAj, forceij, forceji;
-//   Vector Bi = Vector::zero, Bj = Vector::zero;
-//   Tensor Ci = Tensor::zero, Cj = Tensor::zero;
-//   Tensor gradBi = Tensor::zero, gradBj = Tensor::zero;
-//   ThirdRankTensor gradCi = ThirdRankTensor::zero, gradCj = ThirdRankTensor::zero;
+//   Vector Bi = Vector::zero(), Bj = Vector::zero();
+//   Tensor Ci = Tensor::zero(), Cj = Tensor::zero();
+//   Tensor gradBi = Tensor::zero(), gradBj = Tensor::zero();
+//   ThirdRankTensor gradCi = ThirdRankTensor::zero(), gradCj = ThirdRankTensor::zero();
 //   Scalar gWi, gWj, Wi, Wj, gW0i, gW0j, W0i, W0j;
 //   Vector gradWi, gradWj, gradW0i, gradW0j, gradWij;
 //   Vector deltagrad;

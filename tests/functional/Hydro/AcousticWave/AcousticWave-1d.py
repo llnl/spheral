@@ -73,7 +73,7 @@ commandLine(nx1 = 100,
             correctionOrder = LinearOrder,
             steps = None,
             goalTime = 5.0,
-            dt = 1.0e-10,
+            dt = 1.0e-2,
             dtMin = 1.0e-10, 
             dtMax = 0.1,
             dtGrowth = 2.0,
@@ -85,8 +85,15 @@ commandLine(nx1 = 100,
             HUpdate = IntegrateH,
             densityUpdate = RigorousSumDensity,
             compatibleEnergy = True,
+            evolveTotalEnergy = False,
             gradhCorrection = True,
             linearConsistent = False,
+
+            ftol = None,
+            convergenceTolerance = None,
+            maxIterations = None,
+            maxAllowedDtMultiplier = None,
+            beta = None,
 
             restoreCycle = None,
             restartStep = 10000,
@@ -96,7 +103,7 @@ commandLine(nx1 = 100,
             normOutputFile = "Limited_asciiDump.dat",
             writeOutputLabel = True,
 
-            graphics = "gnu",
+            graphics = True,
 
             checkReversibility = False,
             )
@@ -258,6 +265,7 @@ if svph:
                  W = WT,
                  cfl = cfl,
                  compatibleEnergyEvolution = compatibleEnergy,
+                 evolveTotalEnergy = evolveTotalEnergy,
                  XSVPH = XSPH,
                  linearConsistent = linearConsistent,
                  densityUpdate = densityUpdate,
@@ -270,6 +278,7 @@ elif crksph:
                    cfl = cfl,
                    order = correctionOrder,
                    compatibleEnergyEvolution = compatibleEnergy,
+                   evolveTotalEnergy = evolveTotalEnergy,
                    XSPH = XSPH,
                    densityUpdate = densityUpdate,
                    HUpdate = HUpdate)
@@ -279,6 +288,7 @@ elif psph:
                  W = WT,
                  filter = filter,
                  compatibleEnergyEvolution = compatibleEnergy,
+                 evolveTotalEnergy = evolveTotalEnergy,
                  densityUpdate = densityUpdate,
                  HUpdate = HUpdate,
                  XSPH = XSPH)
@@ -288,6 +298,7 @@ elif fsisph:
                    cfl = cfl,
                    sumDensityNodeLists = [nodes1],
                    compatibleEnergyEvolution = compatibleEnergy,          
+                   evolveTotalEnergy = evolveTotalEnergy,
                    epsTensile = epsilonTensile)
 else:
     hydro = SPH(dataBase = db,
@@ -295,6 +306,7 @@ else:
                 W = WT, 
                 cfl = cfl,
                 compatibleEnergyEvolution = compatibleEnergy,
+                evolveTotalEnergy = evolveTotalEnergy,
                 gradhCorrection = gradhCorrection,
                 XSPH = XSPH,
                 correctVelocityGradient=False,
@@ -329,8 +341,7 @@ hydro.appendBoundary(xbc)
 #-------------------------------------------------------------------------------
 # Construct a time integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-integrator.appendPhysicsPackage(hydro)
+integrator = IntegratorConstructor(db, [hydro])
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
@@ -343,6 +354,26 @@ output("integrator.dtMin")
 output("integrator.dtMax")
 output("integrator.dtGrowth")
 output("integrator.rigorousBoundaries")
+output("integrator.verbose")
+
+# Special stuff for implicit integrators
+if isinstance(integrator, ImplicitIntegrator):
+    if beta:
+        integrator.beta = beta
+    if convergenceTolerance:
+        integrator.convergenceTolerance = convergenceTolerance
+    if maxIterations:
+        integrator.maxIterations = maxIterations
+    if maxAllowedDtMultiplier:
+        integrator.maxAllowedDtMultiplier = maxAllowedDtMultiplier
+    output("integrator.beta")
+    output("integrator.convergenceTolerance")
+    output("integrator.maxIterations")
+    output("integrator.maxAllowedDtMultiplier")
+if isinstance(integrator, BackwardEulerIntegrator):
+    if ftol:
+        integrator.ftol = ftol
+    output("integrator.ftol")
 
 def printTotalEnergy(cycle,time,dt):
     Etot=0.0
@@ -354,7 +385,7 @@ def printTotalEnergy(cycle,time,dt):
     vel00=db.fluidVelocity
     eps00=db.fluidSpecificThermalEnergy
     rho00 = db.fluidMassDensity
-    nodeLists = db.nodeLists()
+    nodeLists = db.nodeLists
     for nodelisti in range(db.numNodeLists):
 
         for i in range(nodeLists[nodelisti].numInternalNodes):
@@ -405,7 +436,7 @@ else:
 #-------------------------------------------------------------------------------
 import AcousticWaveSolution
 xlocal = [pos.x for pos in nodes1.positions().internalValues()]
-xprof = mpi.reduce(xlocal, mpi.SUM)
+xprof = np.array(mpi.reduce(xlocal, mpi.SUM))
 dx = (x1 - x0)/nx1
 h1 = nPerh*dx
 answer = AcousticWaveSolution.AcousticWaveSolution(eos, 
@@ -469,17 +500,17 @@ print("Total energy error: %g" % Eerror)
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
-    mprof = mpi.reduce(nodes1.mass().internalValues(), mpi.SUM)
-    rhoprof = mpi.reduce(nodes1.massDensity().internalValues(), mpi.SUM)
+    mprof = np.array(mpi.reduce(nodes1.mass().internalValues(), mpi.SUM))
+    rhoprof = np.array(mpi.reduce(nodes1.massDensity().internalValues(), mpi.SUM))
     P = ScalarField("pressure", nodes1)
     nodes1.pressure(P)
-    Pprof = mpi.reduce(P.internalValues(), mpi.SUM)
-    vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
-    epsprof = mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM)
-    hprof = mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM)
+    Pprof = np.array(mpi.reduce(P.internalValues(), mpi.SUM))
+    vprof = np.array(mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM))
+    epsprof = np.array(mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM))
+    hprof = np.array(mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM))
     xans, vans, uans, rhoans, Pans, hans = answer.solution(control.time(), xprof)
 
     labels = ["x", "m", "rho", "P", "v", "eps", "h", 
@@ -500,7 +531,7 @@ if outputFile != "None":
         # While we're at it compute and report the error norms.
         import Pnorm
         print("\tQuantity \t\tL1 \t\t\tL2 \t\t\tLinf")
-        if normOutputFile != "None":
+        if normOutputFile:
             f = open(normOutputFile, "a")
             if writeOutputLabel:
                 f.write(("#" + 13*"%17s " + "\n") % ('"nx"',
@@ -522,12 +553,12 @@ if outputFile != "None":
             L2 = Pn.gridpnorm(2, xmin, xmax)
             Linf = Pn.gridpnorm("inf", xmin, xmax)
             print("\t%s \t\t%g \t\t%g \t\t%g" % (name, L1, L2, Linf))
-            if normOutputFile != "None":
+            if normOutputFile:
                 f.write((3*"%16.12e ") % (L1, L2, Linf))
             # if name == "Mass Density":
             #     pickleDumpL1 = L1
 
-        if normOutputFile != "None":
+        if normOutputFile:
             f.write("\n")
             f.close()
 

@@ -21,7 +21,6 @@ list(APPEND _packages
   DataBase
   DataOutput
   Distributed
-  FSISPH
   Field
   FieldOperations
   FileIO
@@ -38,10 +37,12 @@ list(APPEND _packages
   Physics
   Porosity
   RK
+  VoronoiCells
   SPH
   SolidMaterial
   Strength
   Utilities
+  SmoothingScale
   )
 
 if (SPHERAL_ENABLE_ARTIFICIAL_CONDUCTION)
@@ -50,6 +51,10 @@ endif()
 
 if (SPHERAL_ENABLE_EXTERNAL_FORCE)
   list(APPEND _packages ExternalForce)
+endif()
+
+if (SPHERAL_ENABLE_FSISPH)
+  list(APPEND _packages FSISPH)
 endif()
 
 if (SPHERAL_ENABLE_GRAVITY)
@@ -64,7 +69,15 @@ if (SPHERAL_ENABLE_SVPH)
   list(APPEND _packages SVPH)
 endif()
 
-if(NOT ENABLE_CXXONLY)
+if (SPHERAL_ENABLE_SUNDIALS)
+  list(APPEND _packages Solvers)
+endif()
+
+if (SPHERAL_ENABLE_LEOS)
+  list(APPEND _packages LEOS)
+endif()
+
+if(SPHERAL_ENABLE_PYTHON)
   list(APPEND _packages
     SimulationControl
     PYB11)
@@ -72,19 +85,23 @@ endif()
 
 configure_file(config.hh.in
   ${PROJECT_BINARY_DIR}/src/config.hh)
+install(FILES ${PROJECT_BINARY_DIR}/src/config.hh
+  DESTINATION include)
 
 foreach(_package ${_packages})
   add_subdirectory(${_package})
 endforeach()
 
+# For dev builds, we must call LLNLSpheralInstallObjs.cmake
+# to ensure LLNLSpheral libraries are added to the Spheral_CXX
+# target
 if(NOT ENABLE_DEV_BUILD)
-  # Retrieve the global list populated in spheral_obj_add_library
-  get_property(SPHERAL_OBJ_LIBS GLOBAL PROPERTY SPHERAL_OBJ_LIBS)
-
   set(CXX_sources spheralCXX.cc)
-  # Must use quotes when passing lists as inputs for functions
-  spheral_add_cxx_library(CXX "${SPHERAL_OBJ_LIBS}")
 endif()
+# Retrieve the global list populated in spheral_obj_add_library
+get_property(SPHERAL_OBJ_LIBS GLOBAL PROPERTY SPHERAL_OBJ_LIBS)
+# Must use quotes when passing lists as inputs for functions
+spheral_add_cxx_library(CXX "${SPHERAL_OBJ_LIBS}")
 
 # This calls LLNLSpheralInstallObjs.cmake
 if(EXISTS ${EXTERNAL_SPHERAL_OBJ_CMAKE})

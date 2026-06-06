@@ -18,8 +18,7 @@
 
 #include "Field/FieldBase.hh"
 
-#include "boost/any.hpp"
-
+#include <any>
 #include <string>
 #include <utility>
 #include <memory>
@@ -28,17 +27,18 @@
 #include <list>
 #include <set>
 
-#include "Field/FieldBase.hh"
-
 namespace Spheral {
 
 // Forward declaration.
 template<typename Dimension> class NodeList;
+template<typename Dimension> class FieldBase;
 template<typename Dimension> class FieldListBase;
-template<typename Dimension, typename DataType> class Field;
-template<typename Dimension, typename DataType> class FieldList;
+template<typename Dimension, typename Value> class Field;
+template<typename Dimension, typename Value> class FieldList;
 template<typename Dimension> class ConnectivityMap;
 template<typename Dimension> class Mesh;
+template<typename Dimension> class ReproducingKernel;
+enum class RKOrder : int;
 
 template<typename Dimension>
 class StateBase {
@@ -46,33 +46,67 @@ class StateBase {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Vector3d Vector3d;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Spheral::ConnectivityMap<Dimension> ConnectivityMapType;
-  typedef typename Spheral::Mesh<Dimension> MeshType;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using ConnectivityMapType = typename Spheral::ConnectivityMap<Dimension>;
+  using MeshType = typename Spheral::Mesh<Dimension>;
 
-  typedef std::shared_ptr<ConnectivityMapType> ConnectivityMapPtr;
-  typedef std::shared_ptr<MeshType> MeshPtr;
+  using ConnectivityMapPtr = std::shared_ptr<ConnectivityMapType>;
+  using MeshPtr = std::shared_ptr<MeshType>;
 
-  typedef std::string KeyType;
-  typedef typename FieldBase<Dimension>::FieldName FieldName;
+  using KeyType = std::string;
+  using FieldName = typename FieldBase<Dimension>::FieldName;
 
   // Constructors, destructor.
   StateBase();
-  StateBase(const StateBase& rhs);
-  virtual ~StateBase();
-
-  // Assignment.
-  StateBase& operator=(const StateBase& rhs);
+  StateBase(const StateBase& rhs) = default;
+  StateBase& operator=(const StateBase& rhs) = default;
+  virtual ~StateBase() = default;
 
   // Test if two StateBases have equivalent fields.
   virtual bool operator==(const StateBase& rhs) const;
+
+  //............................................................................
+  // Enroll state
+  virtual              void enroll(FieldBase<Dimension>& field);
+  virtual              void enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr);
+  virtual              void enroll(FieldListBase<Dimension>& fieldList);
+  template<typename T> void enroll(const KeyType& key, T& thing);
+  template<typename T> void enrollCopy(const KeyType& key, T& thing);
+
+  //............................................................................
+  // Access Fields
+  template<typename Value> Field<Dimension, Value>& field(const KeyType& key) const;
+  template<typename Value> Field<Dimension, Value>& field(const KeyType& key,
+                                                          const Value& dummy) const;
+
+  // Get all registered fields of the given data type
+  template<typename Value> std::vector<Field<Dimension, Value>*> allFields() const;
+  template<typename Value> std::vector<Field<Dimension, Value>*> allFields(const Value& dummy) const;
+
+  //............................................................................
+  // Access FieldLists
+  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name,
+                                                              bool allowNone = false) const;
+  template<typename Value> FieldList<Dimension, Value> fields(const std::string& name, 
+                                                              const Value& dummy,
+                                                              bool allowNone = false) const;
+
+  //............................................................................
+  // Access an arbitrary type
+  template<typename Value> Value& get(const KeyType& key) const;
+  template<typename Value> Value& get(const KeyType& key, const Value& dummy) const;
+
+  //............................................................................
+  // Access an arbitrary type as a pointer.
+  // Returns nullptr on failure
+  template<typename Value> Value* getPtr(const KeyType& key) const;
+  template<typename Value> Value* getPtr(const KeyType& key, const Value& dummy) const;
 
   //............................................................................
   // Test if the specified Field or key is currently registered.
@@ -82,47 +116,18 @@ public:
   bool fieldNameRegistered(const FieldName& fieldName) const;
 
   //............................................................................
-  // Enroll a Field.
-  virtual void enroll(FieldBase<Dimension>& field);
-  virtual void enroll(std::shared_ptr<FieldBase<Dimension>>& fieldPtr);
-
-  // Return the field for the given key.
-  template<typename Value>
-  Field<Dimension, Value>& field(const KeyType& key,
-                                 const Value& dummy) const;
-
-  // Return all the fields of the given Value.
-  template<typename Value>
-  std::vector<Field<Dimension, Value>*> allFields(const Value& dummy) const;
-
-  //............................................................................
-  // Enroll a FieldList.
-  virtual void enroll(FieldListBase<Dimension>& fieldList);
-
-  // Return FieldLists constructed from all registered Fields with the given name.
-  template<typename Value>
-  FieldList<Dimension, Value> fields(const std::string& name, 
-                                     const Value& dummy) const;
-
-  //............................................................................
-  // Enroll an arbitrary type
-  template<typename Value>
-  void enrollAny(const KeyType& key, Value& thing);
-
-  // Return an arbitrary type (held by any)
-  template<typename Value>
-  Value& getAny(const KeyType& key) const;
-
-  template<typename Value>
-  Value& getAny(const KeyType& key, const Value& dummy) const;
-
-  //............................................................................
-  // Return the complete set of keys registered.
+  // Return the complete set of keys registered
   std::vector<KeyType> keys() const;
+
+  // The field keys including mangling with NodeList names
+  std::vector<KeyType> fullFieldKeys() const;
+
+  // The non-field (miscellaneous) keys
+  std::vector<KeyType> miscKeys() const;
 
   // Return the set of known field names (unencoded from our internal mangling
   // convention with the NodeList name).
-  std::vector<FieldName> fieldKeys() const;
+  std::vector<FieldName> fieldNames() const;
 
   //............................................................................
   // A state object can carry around a reference to a ConnectivityMap.
@@ -162,14 +167,12 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  typedef std::map<KeyType, boost::any> StorageType;
-  typedef std::list<std::shared_ptr<FieldBase<Dimension>>> FieldCacheType;
-  typedef std::list<boost::any> CacheType;
+  using StorageType = std::map<KeyType, std::any>;
+  using CacheType = std::list<std::any>;
 
   // Protected data.
-  StorageType mStorage;
-  CacheType mCache;
-  FieldCacheType mFieldCache;
+  StorageType     mStorage;
+  CacheType       mCache;
   std::set<const NodeList<Dimension>*> mNodeListPtrs;
   ConnectivityMapPtr mConnectivityMapPtr;
   MeshPtr mMeshPtr;

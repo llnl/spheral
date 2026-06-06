@@ -511,7 +511,7 @@ packages += [hydro]
 # Physics Package : AV limiters
 #-------------------------------------------------------------------------------
 if boolReduceViscosity:
-    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(hydro.Q,nh,nh,aMin,aMax)
+    evolveReducingViscosityMultiplier = MorrisMonaghanReducingViscosity(nh,nh,aMin,aMax)
     packages.append(evolveReducingViscosityMultiplier)
 
 #-------------------------------------------------------------------------------
@@ -547,7 +547,7 @@ class clipOutflow:
         self.database = database
         self.plane = plane
     def periodicWorkFunction(self,cycle,time,dt):
-        nodeLists = self.database.nodeLists()
+        nodeLists = self.database.nodeLists
         for nodeList in nodeLists:
             cullList=[]
             pos = nodeList.positions()
@@ -789,7 +789,7 @@ class trackCenterlinePressure:
     def write(self,cycle,time,dt):
         
         numNodeLists = self.database.numNodeLists
-        nodeLists = self.database.nodeLists()
+        nodeLists = self.database.nodeLists
 
         P   = []
         rho = []

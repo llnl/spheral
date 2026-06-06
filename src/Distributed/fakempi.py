@@ -7,6 +7,8 @@ procs = 1
 MIN = -1
 MAX = -2
 SUM = -3
+MINLOC = -4
+MAXLOC = -5
 
 def is_fake_mpi():
     return True

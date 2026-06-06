@@ -98,7 +98,6 @@ commandLine(KernelConstructor = WendlandC4Kernel3d,
             XSPH = False,
             epsilonTensile = 0.0,
             nTensile = 4.0,
-            filter = 0.0,
 
             IntegratorConstructor = VerletIntegrator,
             goalTime = 0.6,
@@ -133,31 +132,31 @@ commandLine(KernelConstructor = WendlandC4Kernel3d,
             restartStep = 10000,
             dataDirBase = "dumps-spherical-Noh",
             restartBaseName = "Noh-spherical-1d",
-            outputFile = "None",
-            comparisonFile = "None",
-            normOutputFile = "None",
+            outputFile = None,
+            comparisonFile = None,
+            normOutputFile = None,
             writeOutputLabel = True,
 
             # Parameters for the test acceptance.,
-            L1rho =   2.69127,    
-            L2rho =   0.281878,   
-            Linfrho = 30.5888,    
-                                  
-            L1P =     0.278704,   
-            L2P =     0.0707798,  
-            LinfP =   10.0543,    
-                                  
-            L1v =     0.0242779,  
-            L2v =     0.00819669, 
-            Linfv =   0.917158,   
-                                  
-            L1eps =   0.0211726,  
-            L2eps =   0.00273082, 
-            Linfeps = 0.325892,   
-                                  
-            L1h =     0.00131914, 
-            L2h =     0.000368327,
-            Linfh =   0.0267029,  
+            L1rho =   2.69219,   
+            L2rho =   0.281965,  
+            Linfrho = 30.5929,   
+                                 
+            L1P =     0.278906,  
+            L2P =     0.0707854, 
+            LinfP =   10.0544,   
+                                 
+            L1v =     0.0242732, 
+            L2v =     0.00819671,
+            Linfv =   0.91712,   
+                                 
+            L1eps =   0.0211726, 
+            L2eps =   0.00273052,
+            Linfeps = 0.325865,  
+                                 
+            L1h =     0.0013171, 
+            L2h =     0.00036826,
+            Linfh =   0.0267045, 
 
             tol = 1.0e-5,
 
@@ -190,8 +189,7 @@ dataDir = os.path.join(dataDirBase,
                        hydroname,
                        "nPerh=%f" % nPerh,
                        "compatibleEnergy=%s" % compatibleEnergy,
-                       "Cullen=%s" % boolCullenViscosity,
-                       "filter=%f" % filter)
+                       "Cullen=%s" % boolCullenViscosity)
 restartDir = os.path.join(dataDir, "restarts")
 restartBaseName = os.path.join(restartDir, "Noh-spherical-1d-%i" % nr)
 
@@ -282,7 +280,6 @@ output("db.numFluidNodeLists")
 if crksph:
     hydro = CRKSPH(dataBase = db,
                    order = correctionOrder,
-                   filter = filter,
                    cfl = cfl,
                    useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
@@ -294,7 +291,6 @@ if crksph:
 elif psph:
     hydro = PSPH(dataBase = db,
                  W = WT,
-                 filter = filter,
                  cfl = cfl,
                  useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                  compatibleEnergyEvolution = compatibleEnergy,
@@ -307,7 +303,6 @@ elif psph:
 elif fsisph:
     hydro = FSISPH(dataBase = db,
                    W = WT,
-                   filter = filter,
                    cfl = cfl,
                    interfaceMethod = ModulusInterface,
                    sumDensityNodeLists=[nodes1],                       
@@ -340,7 +335,6 @@ elif gsph:
 else:
     hydro = SPH(dataBase = db,
                 W = WT,
-                filter = filter,
                 cfl = cfl,
                 useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                 compatibleEnergyEvolution = compatibleEnergy,
@@ -506,7 +500,7 @@ L1 = 0.0
 for i in range(len(rho)):
   L1 = L1 + abs(rho[i]-rhoans[i])
 L1_tot = L1 / len(rho)
-if mpi.rank == 0 and outputFile != "None":
+if mpi.rank == 0 and outputFile:
  print("L1=",L1_tot,"\n")
  with open("Converge.txt", "a") as myfile:
     myfile.write("%s %s\n" % (nr, L1_tot))
@@ -583,7 +577,7 @@ xprof = mpi.reduce([x.x for x in nodes1.positions().internalValues()], mpi.SUM)
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
 #-------------------------------------------------------------------------------
-if outputFile != "None":
+if outputFile:
     outputFile = os.path.join(dataDir, outputFile)
     from SpheralTestUtilities import multiSort
     mof = mortonOrderIndices(db)
@@ -620,7 +614,7 @@ if outputFile != "None":
         #---------------------------------------------------------------------------
         # Also we can optionally compare the current results with another file.
         #---------------------------------------------------------------------------
-        if comparisonFile != "None":
+        if comparisonFile:
             comparisonFile = os.path.join(dataDir, comparisonFile)
             import filecmp
             assert filecmp.cmp(outputFile, comparisonFile)
@@ -635,7 +629,7 @@ if mpi.rank == 0 :
     failure = False
     hD = []
 
-    if normOutputFile != "None":
+    if normOutputFile:
        f = open(normOutputFile, "a")
        if writeOutputLabel:
           f.write(("#" + 13*"%17s " + "\n") % ('"nx"',
@@ -658,7 +652,7 @@ if mpi.rank == 0 :
         L2 = Pn.gridpnorm(2, rmin, rmax)
         Linf = Pn.gridpnorm("inf", rmin, rmax)
         print("\t%s \t\t%g \t\t%g \t\t%g" % (name, L1, L2, Linf))
-        if normOutputFile != "None":
+        if normOutputFile:
            f.write((3*"%16.12e ") % (L1, L2, Linf))
         hD.append([L1,L2,Linf])
 
@@ -679,8 +673,6 @@ if mpi.rank == 0 :
                                                                                             Linf,
                                                                                             Linfexpect))
                     failure = True
-                if failure:
-                    raise ValueError("Error bounds violated.")
 
             if fsisph or gsph: # for fsi check if the norms are order of mag same as sph 
             
@@ -699,20 +691,11 @@ if mpi.rank == 0 :
                                                                                             Linf,
                                                                                             Linfexpect))
                     failure = True
-                if failure:
-                    raise ValueError("Error bounds violated.")
-  
-    if normOutputFile != "None":
+    if normOutputFile:
        f.write("\n")
                                              
-    # print "%d\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t %g\t" % (nr,hD[0][0],hD[1][0],hD[2][0],hD[3][0],
-    #                                                                             hD[0][1],hD[1][1],hD[2][1],hD[3][1],
-    #                                                                             hD[0][2],hD[1][2],hD[2][2],hD[3][2])
-
-
-
-
-
+    if failure:
+        raise ValueError("Error bounds violated.")
 
 Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[0])/control.conserve.EHistory[0]
 print("Total energy error: %g" % Eerror)
