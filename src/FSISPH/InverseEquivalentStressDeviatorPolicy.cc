@@ -64,7 +64,7 @@ computeJ2(const Dim<1>::SymTensor& S) {
 template<typename Dimension>
 InverseEquivalentStressDeviatorPolicy<Dimension>::
 InverseEquivalentStressDeviatorPolicy():
-  FieldUpdatePolicy<Dimension>({SolidFieldNames::plasticStrain}) {
+  FieldUpdatePolicy<Dimension,typename Dimension::Scalar>({SolidFieldNames::plasticStrain}) {
 }
 
 //------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ update(const KeyType& key,
   // Get the state we depend on.
   const auto buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
   auto&       invSeff = state.field(key, 0.0);
-  const auto& deviatoricStress = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero);
+  const auto& deviatoricStress = state.field(buildKey(SolidFieldNames::deviatoricStress), SymTensor::zero());
 
   // Iterate over the internal nodes.
   const auto n = invSeff.numInternalElements();

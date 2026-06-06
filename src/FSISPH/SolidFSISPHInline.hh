@@ -433,7 +433,7 @@ plasticStrain0() const {
 template<typename Dimension>
 inline
 const FieldList<Dimension, typename Dimension::Scalar>&
-SolidFSISPHHydroBase<Dimension>::
+SolidFSISPH<Dimension>::
 inverseEquivalentDeviatoricStress() const {
   return mInverseEquivalentDeviatoricStress;
 }

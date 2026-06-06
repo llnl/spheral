@@ -21,7 +21,7 @@ template<typename Dimension> class FluidNodeList;
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension>
-class InverseEquivalentStressDeviatorPolicy: public FieldUpdatePolicy<Dimension> {
+class InverseEquivalentStressDeviatorPolicy: public FieldUpdatePolicy<Dimension,typename Dimension::Scalar> {
 public:
   //--------------------------- Public Interface ---------------------------//
   // Useful typedefs
@@ -29,7 +29,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using KeyType = typename FieldUpdatePolicy<Dimension>::KeyType;
+  using KeyType = typename FieldUpdatePolicy<Dimension,Scalar>::KeyType;
 
   // Constructors, destructor.
   InverseEquivalentStressDeviatorPolicy();

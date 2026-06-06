@@ -319,21 +319,10 @@ registerState(DataBase<Dimension>& dataBase,
   auto interfaceAreaVectorsPolicy = make_policy<PureReplaceState<Dimension,Vector>>();
   auto interfaceNormalsPolicy = make_policy<PureReplaceState<Dimension,Vector>>();
   auto interfaceSmoothnessPolicy = make_policy<PureReplaceState<Dimension,Scalar>>();
-<<<<<<< HEAD:src/FSISPH/SolidFSISPHHydroBase.cc
   auto invEqvStressDevPolicy = make_policy<InverseEquivalentStressDeviatorPolicy<Dimension>>();
 
-  if(this->planeStrain()){
-    auto deviatoricStressPolicy = make_policy<IncrementState<Dimension, SymTensor>>();
-    state.enroll(deviatoricStress, deviatoricStressPolicy);
-  }else{
-    auto deviatoricStressPolicy = make_policy<DeviatoricStressPolicy<Dimension>>();
-    state.enroll(deviatoricStress, deviatoricStressPolicy);
-  }
-=======
-  
   auto deviatoricStressPolicy = make_policy<DeviatoricStressPolicy<Dimension>>();
   state.enroll(deviatoricStress, deviatoricStressPolicy);
->>>>>>> develop:src/FSISPH/SolidFSISPH.cc
 
   if(this->compatibleEnergyEvolution()){
     auto  thermalEnergyPolicy = make_policy<CompatibleDifferenceSpecificThermalEnergyPolicy<Dimension>>(dataBase);

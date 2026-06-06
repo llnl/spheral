@@ -435,7 +435,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
       const auto negligableShearWave = max(mui,muj) < tinyNonDimensional*min(Ki,Kj);
 
       // do we reduce our deviatoric stress
-      const auto isTensile = (((Si+Sj)-(Pdi+Pdj)*SymTensor::one).dot(rhatij)).dot(rhatij) > 0;
+      const auto isTensile = (((Si+Sj)-(Pdi+Pdj)*SymTensor::one()).dot(rhatij)).dot(rhatij) > 0;
       const auto damageReduceStress = isTensile or differentMatij;
       //const auto decouple = isExpanding and isFullyDamaged and isTensile;
 
@@ -646,8 +646,8 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
           linearReconstruction(ri,rj,epsi,epsj,DepsDxi,DepsDxj,epsLineari,epsLinearj);
           const auto cijEff = max(min(cij + (vi-vj).dot(rhatij), cij),0.0);
           const auto diffusion =  epsDiffusionCoeff*cijEff*(epsLineari-epsLinearj)*etaij.dot(gradWij)/(rhoij*etaMagij*etaMagij+tiny);
-          pairDepsDt[2*kk]   += fDij*diffusion; 
-          pairDepsDt[2*kk+1] -= fDij*diffusion;
+          pairDepsDt[kk][0]  += fDij*diffusion; 
+          pairDepsDt[kk][1] -= fDij*diffusion;
         }
 
         // normalization 
