@@ -306,12 +306,10 @@ else:
     assert problem == "spherical"
     nz = n1
     nr = n1
-    if seed == "lattice":
-        nz *= 2
     rmin, rmax = 0.0, 1.0
-    z0, z1 = -1.0, 1.0
-    r0, r1 =  0.0, 1.0
-    theta = pi
+    z0, z1 = 0.0, 1.0
+    r0, r1 = 0.0, 1.0
+    theta = pi/2.0
 
 generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
                                        xmin = (z0, r0),
