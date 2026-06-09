@@ -309,6 +309,66 @@ In pseudo-code:
 This method is where package requirements first influence the shared data
 structures for the step. It is also where transient state containers are built.
 
+Objects Used During This Step
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The main Spheral objects used during the base C++ step are:
+
+``Integrator<Dimension>``
+  The orchestration object. It stores the active package order, time
+  bookkeeping, retry multiplier, boundary cadence, and connectivity requirement
+  flags.
+
+``DataBase<Dimension>``
+  The shared collection of node lists and the current ``ConnectivityMap``. It
+  also supplies database-wide field lists such as the per-node work field.
+
+``Physics<Dimension>`` packages
+  The active equation and model packages. The step queries them for
+  connectivity requirements and ``dt`` votes, asks them to register state and
+  derivative fields, and calls their initialization, derivative, boundary, and
+  finalization hooks.
+
+``Boundary<Dimension>`` objects
+  The unique boundary conditions gathered from the physics packages. They
+  define ghost nodes, update ghost-node positions and ``H`` tensors, finalize
+  ghost communication, and identify violation nodes for enforcement.
+
+``NodeList`` objects
+  The durable node storage, including internal and ghost nodes. Fluid and DEM
+  node lists own the per-node fields that ``State`` usually references.
+
+``Neighbor<Dimension>`` and ``ConnectivityMap<Dimension>``
+  The neighbor-search and pair-connectivity structures. They are refreshed as
+  ghost nodes change and are rebuilt when package requirements ask for
+  connectivity.
+
+``Field`` and ``FieldList`` objects
+  Typed per-node data containers registered into ``State`` and
+  ``StateDerivatives``. They are the field-level views used by packages and
+  update policies.
+
+``State<Dimension>``
+  A per-step registry over mutable state and update policies. Most entries are
+  references to durable ``NodeList`` or package-owned fields rather than owned
+  copies.
+
+``StateDerivatives<Dimension>``
+  A per-step registry for derivative, scratch, and pairwise data. Concrete
+  integrators zero it before derivative evaluations and physics packages fill
+  it.
+
+``UpdatePolicyBase<Dimension>`` and concrete policies
+  The field-update rules applied by ``State::update`` inside concrete
+  integrators. They decide whether fields are incremented, replaced, bounded,
+  or recomputed from dependencies.
+
+Concrete ``Integrator<Dimension>`` subclasses
+  The numerical time-centering implementation, such as ``SynchronousRK2``,
+  ``PredictorCorrector``, ``ForwardEuler``, ``Verlet``, or an implicit method.
+  The base step prepares common objects, then delegates to one of these
+  subclasses.
+
 State Construction
 ------------------
 

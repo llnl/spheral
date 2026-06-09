@@ -98,6 +98,121 @@ The shared base entry point has the following shape:
        dtMultiplier = 1.0
        return success
 
+Base Step Dependency Diagram
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The public base step builds the shared object context before any concrete
+time-centering method runs. The objects mostly already live in the
+``DataBase``, ``NodeList`` objects, ``Physics`` packages, and ``Boundary``
+objects. The base step creates transient registries over those objects, applies
+ghost field values, and then gives the concrete integrator a consistent view.
+
+.. figure:: integrator_base_step_dependencies.svg
+   :alt: Dependency diagram for the six phases of the public Integrator step.
+   :width: 100%
+
+   Dependency flow for the six shared phases in
+   ``Integrator<Dimension>::step(maxTime)``.
+
+::
+
+   Existing durable objects
+   ------------------------
+
+   Integrator
+     |-- mPhysicsPackages --> Physics packages --> Boundary objects
+     `-- mDataBase        --> DataBase --> NodeLists, Neighbors, ConnectivityMap
+
+
+   (1) Collect Connectivity Requirements
+       uses:    Physics packages
+       updates: Integrator requirement flags
+                mRequireConnectivity
+                mRequireGhostConnectivity
+                mRequireOverlapConnectivity
+                mRequireIntersectionConnectivity
+              |
+              v
+
+   (2) Set Ghost Boundaries / Nodes
+       uses:    DataBase, Boundary objects, NodeLists, Neighbors,
+                requirement flags
+       updates: NodeList ghost-node counts
+                Boundary control-node and ghost-node maps
+                Neighbor node caches
+                DataBase ConnectivityMap, when required
+              |
+              v
+
+   (3) Build State Registry
+       creates: State<Dimension> state
+       uses:    DataBase, Physics packages, current ConnectivityMap pointer
+       updates: state registry entries and update policies through
+                Physics::registerState
+              |
+              v
+
+   (4) Build Derivative Registry
+       creates: StateDerivatives<Dimension> derivs
+       uses:    DataBase, Physics packages, current ConnectivityMap pointer
+       updates: derivative registry entries through
+                Physics::registerDerivatives
+              |
+              v
+
+   (5) Apply Ghost Boundaries to New State / Derivatives
+       uses:    state, derivs, DataBase, Boundary objects, Physics packages
+       updates: ghost positions and H fields
+                Neighbor node caches
+                registered ghost field values in state and derivs
+              |
+              v
+
+   (6) Try New Integrator Step
+       uses:    state, derivs, DataBase, Physics packages
+       creates: concrete-integrator temporaries, such as snapshots or
+                staged derivative registries
+       updates: durable fields through State::update
+                derivative storage during staged evaluations
+                integrator time, cycle, and lastDt on success
+                retry multiplier on failure
+
+.. list-table:: Object lifecycle in the public base step
+   :header-rows: 1
+   :widths: 18 22 30 30
+
+   * - Step
+     - Created
+     - Used
+     - Updated
+   * - Collect connectivity requirements
+     - None
+     - ``mPhysicsPackages`` and each package's ``require*Connectivity`` hooks
+     - Integrator requirement flags
+   * - Set ghost boundaries / nodes
+     - Ghost-node entries and connectivity contents as needed
+     - ``DataBase``, ``NodeList`` objects, ``Neighbor`` objects, unique
+       ``Boundary`` objects, and requirement flags
+     - Ghost counts, boundary control/ghost maps, neighbor caches, and
+       ``DataBase::connectivityMap()``
+   * - Build state registry
+     - ``State<Dimension> state``
+     - ``DataBase``, physics packages, and current connectivity pointer
+     - State registry entries, field references, and update policies
+   * - Build derivative registry
+     - ``StateDerivatives<Dimension> derivs``
+     - ``DataBase``, physics packages, and current connectivity pointer
+     - Derivative registry entries and field references
+   * - Apply ghost boundaries to new registries
+     - Usually none
+     - ``state``, ``derivs``, ``DataBase``, boundaries, and physics packages
+     - Ghost positions, ghost ``H`` values, neighbor caches, and registered
+       ghost field values
+   * - Try concrete integrator step
+     - Scheme-specific temporaries
+     - ``state``, ``derivs``, ``DataBase``, and physics packages
+     - Durable state fields, derivative storage, and integrator bookkeeping
+
 The derived method receives registries that refer to durable data owned
 elsewhere. Any field changes made through ``state`` mutate the underlying
 ``NodeList`` or package-owned fields.

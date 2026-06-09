@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="980" viewBox="0 0 1180 980" role="img" aria-labelledby="title desc">
+  <title id="title">Integrator base step dependency diagram</title>
+  <desc id="desc">Dependency diagram for the six shared phases in Integrator step maxTime, showing durable objects, created transient registries, and updated objects.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <marker id="softArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #475569; }
+      .section { font: 700 14px Arial, sans-serif; fill: #334155; letter-spacing: 0.4px; }
+      .boxTitle { font: 700 15px Arial, sans-serif; fill: #0f172a; }
+      .boxText { font: 400 13px Arial, sans-serif; fill: #334155; }
+      .smallText { font: 400 12px Arial, sans-serif; fill: #475569; }
+      .stepNum { font: 700 18px Arial, sans-serif; fill: #ffffff; }
+      .durable { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.4; }
+      .step { fill: #eef6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .created { fill: #ecfdf5; stroke: #059669; stroke-width: 1.5; }
+      .updated { fill: #fff7ed; stroke: #ea580c; stroke-width: 1.5; }
+      .stepBadge { fill: #2563eb; }
+      .line { fill: none; stroke: #334155; stroke-width: 1.7; marker-end: url(#arrow); }
+      .softLine { fill: none; stroke: #64748b; stroke-width: 1.3; stroke-dasharray: 5 5; marker-end: url(#softArrow); }
+      .note { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="980" fill="#ffffff"/>
+  <text x="40" y="46" class="title">Integrator::step(maxTime) base-step dependencies</text>
+  <text x="40" y="70" class="subtitle">The base step prepares a consistent DataBase/State/StateDerivatives view before the concrete integrator advances time.</text>
+
+  <text x="40" y="116" class="section">EXISTING DURABLE OBJECTS</text>
+  <rect x="40" y="132" width="230" height="92" rx="6" class="durable"/>
+  <text x="60" y="160" class="boxTitle">Integrator</text>
+  <text x="60" y="184" class="boxText">mPhysicsPackages</text>
+  <text x="60" y="204" class="boxText">mDataBase</text>
+
+  <rect x="330" y="132" width="230" height="92" rx="6" class="durable"/>
+  <text x="350" y="160" class="boxTitle">Physics packages</text>
+  <text x="350" y="184" class="boxText">connectivity hooks</text>
+  <text x="350" y="204" class="boxText">state/derivative registration</text>
+
+  <rect x="620" y="132" width="220" height="92" rx="6" class="durable"/>
+  <text x="640" y="160" class="boxTitle">Boundary objects</text>
+  <text x="640" y="184" class="boxText">control-node maps</text>
+  <text x="640" y="204" class="boxText">ghost-node maps</text>
+
+  <rect x="900" y="132" width="230" height="92" rx="6" class="durable"/>
+  <text x="920" y="160" class="boxTitle">DataBase</text>
+  <text x="920" y="184" class="boxText">NodeLists and Neighbors</text>
+  <text x="920" y="204" class="boxText">ConnectivityMap pointer</text>
+
+  <path d="M270 178 L330 178" class="softLine"/>
+  <path d="M560 178 L620 178" class="softLine"/>
+  <path d="M270 196 C480 250 690 250 900 196" class="softLine"/>
+
+  <text x="40" y="274" class="section">SIX BASE-STEP PHASES</text>
+
+  <rect x="40" y="300" width="380" height="88" rx="7" class="step"/>
+  <circle cx="74" cy="344" r="20" class="stepBadge"/>
+  <text x="68" y="351" class="stepNum">1</text>
+  <text x="108" y="328" class="boxTitle">Collect connectivity requirements</text>
+  <text x="108" y="352" class="boxText">Uses Physics::require*Connectivity hooks</text>
+  <text x="108" y="372" class="boxText">Updates Integrator requirement flags</text>
+
+  <rect x="500" y="300" width="280" height="88" rx="7" class="updated"/>
+  <text x="520" y="328" class="boxTitle">Updated</text>
+  <text x="520" y="352" class="boxText">mRequireConnectivity</text>
+  <text x="520" y="372" class="boxText">ghost, overlap, intersection flags</text>
+
+  <path d="M420 344 L500 344" class="line"/>
+
+  <rect x="40" y="420" width="380" height="108" rx="7" class="step"/>
+  <circle cx="74" cy="474" r="20" class="stepBadge"/>
+  <text x="68" y="481" class="stepNum">2</text>
+  <text x="108" y="448" class="boxTitle">Set ghost boundaries / nodes</text>
+  <text x="108" y="472" class="boxText">Uses DataBase, Boundary objects, NodeLists,</text>
+  <text x="108" y="492" class="boxText">Neighbors, and requirement flags</text>
+  <text x="108" y="512" class="boxText">May rebuild DataBase ConnectivityMap</text>
+
+  <rect x="500" y="420" width="280" height="108" rx="7" class="updated"/>
+  <text x="520" y="448" class="boxTitle">Updated</text>
+  <text x="520" y="472" class="boxText">ghost-node counts and maps</text>
+  <text x="520" y="492" class="boxText">neighbor caches</text>
+  <text x="520" y="512" class="boxText">ConnectivityMap contents</text>
+
+  <path d="M230 388 L230 420" class="line"/>
+  <path d="M420 474 L500 474" class="line"/>
+
+  <rect x="40" y="560" width="380" height="88" rx="7" class="step"/>
+  <circle cx="74" cy="604" r="20" class="stepBadge"/>
+  <text x="68" y="611" class="stepNum">3</text>
+  <text x="108" y="588" class="boxTitle">Build State registry</text>
+  <text x="108" y="612" class="boxText">Calls Physics::registerState</text>
+  <text x="108" y="632" class="boxText">Enrolls current ConnectivityMap pointer</text>
+
+  <rect x="500" y="560" width="280" height="88" rx="7" class="created"/>
+  <text x="520" y="588" class="boxTitle">Created</text>
+  <text x="520" y="612" class="boxText">State&lt;Dimension&gt; state</text>
+  <text x="520" y="632" class="boxText">field refs and update policies</text>
+
+  <path d="M230 528 L230 560" class="line"/>
+  <path d="M420 604 L500 604" class="line"/>
+
+  <rect x="40" y="680" width="380" height="88" rx="7" class="step"/>
+  <circle cx="74" cy="724" r="20" class="stepBadge"/>
+  <text x="68" y="731" class="stepNum">4</text>
+  <text x="108" y="708" class="boxTitle">Build derivative registry</text>
+  <text x="108" y="732" class="boxText">Calls Physics::registerDerivatives</text>
+  <text x="108" y="752" class="boxText">Enrolls current ConnectivityMap pointer</text>
+
+  <rect x="500" y="680" width="280" height="88" rx="7" class="created"/>
+  <text x="520" y="708" class="boxTitle">Created</text>
+  <text x="520" y="732" class="boxText">StateDerivatives&lt;Dimension&gt; derivs</text>
+  <text x="520" y="752" class="boxText">derivative and scratch field refs</text>
+
+  <path d="M230 648 L230 680" class="line"/>
+  <path d="M420 724 L500 724" class="line"/>
+
+  <rect x="40" y="800" width="380" height="108" rx="7" class="step"/>
+  <circle cx="74" cy="854" r="20" class="stepBadge"/>
+  <text x="68" y="861" class="stepNum">5</text>
+  <text x="108" y="828" class="boxTitle">Apply ghost boundaries to registries</text>
+  <text x="108" y="852" class="boxText">Uses state, derivs, DataBase, boundaries,</text>
+  <text x="108" y="872" class="boxText">and Physics::applyGhostBoundaries</text>
+  <text x="108" y="892" class="boxText">Finalizes boundary state</text>
+
+  <rect x="500" y="800" width="280" height="108" rx="7" class="updated"/>
+  <text x="520" y="828" class="boxTitle">Updated</text>
+  <text x="520" y="852" class="boxText">ghost positions and H</text>
+  <text x="520" y="872" class="boxText">registered ghost field values</text>
+  <text x="520" y="892" class="boxText">neighbor caches</text>
+
+  <path d="M230 768 L230 800" class="line"/>
+  <path d="M420 854 L500 854" class="line"/>
+
+  <rect x="850" y="560" width="280" height="348" rx="7" class="step"/>
+  <circle cx="884" cy="604" r="20" class="stepBadge"/>
+  <text x="878" y="611" class="stepNum">6</text>
+  <text x="918" y="588" class="boxTitle">Try concrete integrator step</text>
+  <text x="918" y="612" class="boxText">Calls step(maxTime, state, derivs)</text>
+  <text x="918" y="646" class="boxTitle">Uses</text>
+  <text x="918" y="670" class="boxText">state and derivs by reference</text>
+  <text x="918" y="690" class="boxText">DataBase and Physics packages</text>
+  <text x="918" y="724" class="boxTitle">Creates</text>
+  <text x="918" y="748" class="boxText">scheme-specific snapshots</text>
+  <text x="918" y="768" class="boxText">staged derivative registries</text>
+  <text x="918" y="802" class="boxTitle">Updates</text>
+  <text x="918" y="826" class="boxText">durable state via State::update</text>
+  <text x="918" y="846" class="boxText">derivative storage during stages</text>
+  <text x="918" y="866" class="boxText">time, cycle, lastDt on success</text>
+  <text x="918" y="886" class="boxText">retry multiplier on failure</text>
+
+  <path d="M230 908 C230 940 810 940 900 908" class="line"/>
+  <path d="M780 604 L850 604" class="softLine"/>
+  <path d="M780 724 L850 724" class="softLine"/>
+  <path d="M900 224 C870 340 830 470 850 610" class="softLine"/>
+  <path d="M330 224 C260 270 245 285 230 300" class="softLine"/>
+  <path d="M620 224 C555 310 475 390 420 460" class="softLine"/>
+
+  <rect x="820" y="300" width="310" height="150" rx="7" class="note"/>
+  <text x="842" y="330" class="boxTitle">Key dependency</text>
+  <text x="842" y="356" class="boxText">State and StateDerivatives are created only</text>
+  <text x="842" y="376" class="boxText">after ghost nodes and connectivity are current.</text>
+  <text x="842" y="408" class="boxText">That lets package registration see the right</text>
+  <text x="842" y="428" class="boxText">field sizes and the current connectivity pointer.</text>
+</svg>
