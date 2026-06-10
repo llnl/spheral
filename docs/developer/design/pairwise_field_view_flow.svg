@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="320" viewBox="0 0 1060 320" role="img" aria-labelledby="title desc">
+  <title id="title">PairwiseField view flow</title>
+  <desc id="desc">Flow from ConnectivityMap supplying the active NodePairList through PairwiseField construction and PairwiseField::view returning a PairwiseFieldView.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .background { fill: #ffffff; }
+      .rail { fill: none; stroke: #bfdbfe; stroke-width: 8; stroke-linecap: round; }
+      .arrow { fill: none; stroke: #2563eb; stroke-width: 2.2; marker-end: url(#arrow); }
+      .card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+      .cardPrimary { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .label { font: 700 13px Arial, sans-serif; fill: #2563eb; letter-spacing: 0.5px; }
+      .title { font: 700 17px Arial, sans-serif; fill: #0f172a; }
+      .text { font: 400 13.5px Arial, sans-serif; fill: #334155; }
+      .code { font: 700 15px "SFMono-Regular", Consolas, "Liberation Mono", monospace; fill: #0f172a; }
+      .badge { fill: #2563eb; }
+      .badgeText { font: 700 13px Arial, sans-serif; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="background" x="0" y="0" width="1060" height="320"/>
+  <path class="rail" d="M140 160 L920 160"/>
+
+  <rect class="card" x="24" y="86" width="220" height="148" rx="8"/>
+  <circle class="badge" cx="52" cy="114" r="15"/>
+  <text class="badgeText" x="48" y="119">1</text>
+  <text class="label" x="80" y="114">PAIRS</text>
+  <text class="title" x="44" y="150">Active NodePairList</text>
+  <text class="text" x="44" y="180">ConnectivityMap supplies</text>
+  <text class="text" x="44" y="204">the current pair list</text>
+
+  <path class="arrow" d="M244 160 L296 160"/>
+
+  <rect class="cardPrimary" x="296" y="56" width="252" height="208" rx="8"/>
+  <circle class="badge" cx="324" cy="84" r="15"/>
+  <text class="badgeText" x="320" y="89">2</text>
+  <text class="label" x="352" y="84">ALLOCATE</text>
+  <text class="code" x="316" y="122">PairwiseField(...)</text>
+  <text class="text" x="316" y="158">Stores weak pointer to pairs</text>
+  <text class="text" x="316" y="182">Sizes value storage to</text>
+  <text class="code" x="316" y="206">numElements * pairs.size()</text>
+  <text class="text" x="316" y="232">Binds the value storage</text>
+
+  <path class="arrow" d="M548 160 L600 160"/>
+
+  <rect class="card" x="600" y="86" width="220" height="148" rx="8"/>
+  <circle class="badge" cx="628" cy="114" r="15"/>
+  <text class="badgeText" x="624" y="119">3</text>
+  <text class="label" x="656" y="114">VIEW</text>
+  <text class="code" x="620" y="152">PairwiseField::view()</text>
+  <text class="text" x="620" y="186">Returns current value</text>
+  <text class="text" x="620" y="210">array view</text>
+
+  <path class="arrow" d="M820 160 L872 160"/>
+
+  <rect class="card" x="872" y="86" width="164" height="148" rx="8"/>
+  <circle class="badge" cx="900" cy="114" r="15"/>
+  <text class="badgeText" x="896" y="119">4</text>
+  <text class="label" x="928" y="114">KERNEL</text>
+  <text class="title" x="892" y="150">Pair loop</text>
+  <text class="text" x="892" y="180">Uses the same</text>
+  <text class="text" x="892" y="204">pair ordering</text>
+</svg>

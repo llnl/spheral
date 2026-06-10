@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="300" viewBox="0 0 1060 300" role="img" aria-labelledby="title desc">
+  <title id="title">NodePairList view flow</title>
+  <desc id="desc">Flow from pair schedule construction through NodePairList::initView and NodePairList::view to a RAJA pair loop reading pairs by index.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .background { fill: #ffffff; }
+      .rail { fill: none; stroke: #bfdbfe; stroke-width: 8; stroke-linecap: round; }
+      .arrow { fill: none; stroke: #2563eb; stroke-width: 2.2; marker-end: url(#arrow); }
+      .card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+      .cardPrimary { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .label { font: 700 13px Arial, sans-serif; fill: #2563eb; letter-spacing: 0.5px; }
+      .title { font: 700 17px Arial, sans-serif; fill: #0f172a; }
+      .text { font: 400 13.5px Arial, sans-serif; fill: #334155; }
+      .code { font: 700 15px "SFMono-Regular", Consolas, "Liberation Mono", monospace; fill: #0f172a; }
+      .badge { fill: #2563eb; }
+      .badgeText { font: 700 13px Arial, sans-serif; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="background" x="0" y="0" width="1060" height="300"/>
+  <path class="rail" d="M140 150 L920 150"/>
+
+  <rect class="card" x="24" y="76" width="220" height="148" rx="8"/>
+  <circle class="badge" cx="52" cy="104" r="15"/>
+  <text class="badgeText" x="48" y="109">1</text>
+  <text class="label" x="80" y="104">SCHEDULE</text>
+  <text class="title" x="44" y="140">Pair list is built</text>
+  <text class="text" x="44" y="170">Connectivity creates or</text>
+  <text class="text" x="44" y="194">replaces pair ordering</text>
+
+  <path class="arrow" d="M244 150 L296 150"/>
+
+  <rect class="cardPrimary" x="296" y="66" width="224" height="168" rx="8"/>
+  <circle class="badge" cx="324" cy="94" r="15"/>
+  <text class="badgeText" x="320" y="99">2</text>
+  <text class="label" x="352" y="94">BIND</text>
+  <text class="code" x="316" y="132">NodePairList::initView()</text>
+  <text class="text" x="316" y="166">Wraps vector storage</text>
+  <text class="text" x="316" y="190">for span or CHAI access</text>
+
+  <path class="arrow" d="M520 150 L572 150"/>
+
+  <rect class="card" x="572" y="76" width="208" height="148" rx="8"/>
+  <circle class="badge" cx="600" cy="104" r="15"/>
+  <text class="badgeText" x="596" y="109">3</text>
+  <text class="label" x="628" y="104">VIEW</text>
+  <text class="code" x="592" y="142">NodePairList::view()</text>
+  <text class="text" x="592" y="176">Returns NodePairListView</text>
+
+  <path class="arrow" d="M780 150 L832 150"/>
+
+  <rect class="card" x="832" y="76" width="204" height="148" rx="8"/>
+  <circle class="badge" cx="860" cy="104" r="15"/>
+  <text class="badgeText" x="856" y="109">4</text>
+  <text class="label" x="888" y="104">KERNEL</text>
+  <text class="title" x="852" y="140">RAJA pair loop</text>
+  <text class="text" x="852" y="170">Reads pairs by index</text>
+  <text class="code" x="852" y="196">pairs[kk]</text>
+</svg>

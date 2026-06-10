@@ -1,24 +1,289 @@
-Current Device-Facing Object Families
+Current Kernel-Facing Object Families
 =====================================
 
 Purpose
 -------
 
 This document is the concrete family reference for Spheral's current
-device-facing object model. It complements
+kernel-facing object model. It complements
 :doc:`value_view_and_device_execution_model`, which defines the value/view and
 managed view pointer shapes, and :doc:`raja_chai_execution_patterns`, which
 describes how those objects are used around RAJA launches.
 
-Each section identifies:
+Each family section answers four practical kernel-setup questions:
 
-* the durable owner-side role;
-* the device-facing member that kernels capture, index, or call through;
-* the owner method or refresh point that makes the device-facing object current;
-* lifetime or invalidation constraints that matter to kernel setup.
+* What stays alive on the host? This is the object that owns storage or
+  configuration and enforces the rules for keeping that data valid.
+* What is passed to the kernel? This is the view object or managed pointer that
+  a RAJA lambda captures. The family section also names the indexed accessors
+  or ``SPHERAL_HOST_DEVICE`` methods that kernel code calls through that object.
+* How is that kernel-facing object made current? This is the constructor,
+  ``view()``, ``initView()``, ``assignDataSpan()``, or accessor that binds the
+  kernel-facing object to the current host-side data before launch.
+* When should an old view not be reused? These are the host-object changes that
+  can leave a previously captured object pointing at out-of-date storage,
+  out-of-date membership, or the wrong pair ordering.
 
-Source Map
-----------
+Family Overview
+---------------
+
+The current RAJA-facing object model is organized around long-lived host
+objects and small kernel-facing objects:
+
+* field and field-list views expose node-indexed simulation state;
+* pair-list and pairwise-field views expose flattened pair schedules and data
+  aligned to those schedules;
+* kernel and interpolator views expose tabulated lookup data for SPH
+  evaluations;
+* artificial-viscosity managed views preserve behavior that must be selected at
+  runtime inside the kernel.
+
+``FieldBase``, ``Field``, and ``FieldView``
+-------------------------------------------
+
+``Field<Dimension, DataType>`` is the primary value/view example. It owns one
+value of ``DataType`` per node on one ``NodeList``. It inherits the typed view
+interface from ``FieldView<Dimension, DataType>`` while ``FieldBase<Dimension>``
+provides the host-side type-erased interface.
+
+Host object:
+
+* ``Field`` owns ``std::vector<DataType, DataAllocator<DataType>> mDataArray``;
+* ``FieldBase`` supports boundary dispatch, restart registration, serialization,
+  packing, cloning, and generic state registration;
+* ``Field`` responds to node-list resizing, deletion, reordering, copying, and
+  deserialization.
+
+Kernel-facing object:
+
+* ``FieldView`` stores ``mDataSpan`` plus primitive metadata such as internal
+  and ghost counts;
+* ``operator()``, ``operator[]``, and ``at`` provide typed indexed access;
+* ``move``, ``touch``, and ``data`` manage CHAI-backed storage where needed;
+* element accessors used by kernels are marked ``SPHERAL_HOST_DEVICE``.
+
+How kernels get a current view:
+
+.. image:: field_view_rebinding_flow.svg
+   :alt: Flow from field storage or node layout changes through Field::assignDataSpan to Field::view returning a shallow FieldView copy for kernels.
+   :align: center
+
+``FieldBase`` is intentionally not the inner-loop interface. Kernels use typed
+``FieldView`` objects or field-list views built from them.
+
+When old views should not be reused:
+
+* resizing, deletion, reordering, copying, or deserialization can rebind the
+  field storage or change the node counts recorded in the view;
+* take a fresh ``Field::view()`` after those host-object changes, after
+  ``Field::assignDataSpan()`` has updated the storage binding.
+
+``FieldList`` and ``FieldListView``
+-----------------------------------
+
+``FieldList<Dimension, DataType>`` aggregates same-typed fields across node
+lists. It may reference fields owned elsewhere or own copied fields in
+``mFieldCache``.
+
+Host object:
+
+* ``FieldList`` manages field membership and reference-vs-copy storage mode;
+* ``buildDependentArrays`` sorts fields in ``NodeListRegistrar`` order;
+* the host object maintains typed field pointers, ``FieldBase`` pointers,
+  node-list pointers, and node-list index maps.
+
+Kernel-facing object:
+
+* ``FieldListView`` stores an array of ``FieldView`` objects;
+* kernels use ``operator()(fieldIndex, nodeIndex)`` for direct value access;
+* arithmetic, local reductions, and size/count queries operate over the view;
+* ``move(space, recursive=true)`` can move both the outer array and each nested
+  field view's data.
+
+How kernels get a current view:
+
+.. image:: field_list_view_rebinding_flow.svg
+   :alt: Flow from FieldList membership or ownership changes through buildDependentArrays to FieldList::view returning a FieldListView over current field views.
+   :align: center
+
+This lets a RAJA kernel use syntax such as ``mass(nodeListi, i)`` while the
+host object preserves node-list ordering, type-erased compatibility, and field
+membership semantics.
+
+When old views should not be reused:
+
+* changing field membership, reference-vs-copy ownership, cached fields, or
+  node-list ordering requires rebuilding the dependent arrays;
+* a ``FieldListView`` contains shallow ``FieldView`` copies, so it does not
+  automatically track later changes to the ``FieldList`` or its member fields.
+
+``NodePairList`` and ``NodePairListView``
+------------------------------------------
+
+``NodePairList`` is the host-object/view family for an already-built flat pair
+schedule. ``NodePairListView`` is the kernel-facing object captured by RAJA pair
+kernels.
+
+Host object:
+
+* ``NodePairList`` owns ``std::vector<NodePairIdxType>``;
+* the host object has lookup support for mapping a pair value to an index;
+* connectivity construction replaces or updates the ``NodePairList`` when
+  pair topology changes.
+
+Kernel-facing object:
+
+* ``NodePairListView`` holds a span or ``chai::ManagedArray`` over the pair
+  vector;
+* kernels index it by integer pair position with ``pairs[kk]``;
+* the view exposes pair-array size, data pointer, movement, and touch.
+
+How kernels get a current view:
+
+.. image:: node_pair_list_view_flow.svg
+   :alt: Flow from pair schedule construction through NodePairList::initView and NodePairList::view to a RAJA pair loop reading pairs by index.
+   :align: center
+
+``ConnectivityMap`` is important context for this family because it builds and
+provides the current ``NodePairList``. The kernel-facing family member remains
+``NodePairListView``.
+
+When old views should not be reused:
+
+* connectivity updates can replace the ``NodePairList`` and change pair order;
+* mutating the pair vector with ``fill``, ``insert``, or ``clear`` changes the
+  storage exposed by the view;
+* take a fresh ``NodePairList::view()`` after pair-list construction or
+  mutation.
+
+``PairwiseField`` and ``PairwiseFieldView``
+--------------------------------------------
+
+``PairwiseField<Dimension, Value, numElements>`` stores values indexed by the
+active pair-list position rather than by node. It is intentionally ephemeral
+because connectivity can change step to step.
+
+Host object:
+
+* ``PairwiseField`` stores a weak pointer to the active ``NodePairList``;
+* the host object sizes ``mArray`` to ``numElements * pairs.size()``;
+* host code can access values by ``NodePairIdxType`` through the pair-list
+  lookup.
+
+Kernel-facing object:
+
+* ``PairwiseFieldView`` exposes strided indexed access over the value array;
+* kernels use integer pair-index access aligned with ``NodePairListView``
+  traversal;
+* movement and touch operate on the pairwise-value storage.
+
+How kernels get a current view:
+
+.. image:: pairwise_field_view_flow.svg
+   :alt: Flow from ConnectivityMap supplying the active NodePairList through PairwiseField construction and PairwiseField::view returning a PairwiseFieldView.
+   :align: center
+
+The view does not know how pair ids map to indices. Rebuilding or patching
+connectivity can orphan the host-side pair association and invalidate existing
+views.
+
+When old views should not be reused:
+
+* the field is tied to the ``NodePairList`` used at construction time;
+* rebuilding connectivity can replace that pair list, changing both lifetime
+  and pair-index ordering;
+* use a ``PairwiseFieldView`` only with the matching ``NodePairListView``
+  traversal from the same connectivity state.
+
+``TableKernel`` and ``TableKernelView``
+----------------------------------------
+
+``TableKernel<Dimension>`` owns tabulated interpolation data for SPH kernel
+evaluation. ``TableKernelView<Dimension>`` is the kernel-facing object used by
+RAJA hydro kernels.
+
+Host object:
+
+* ``TableKernel`` owns interpolation tables such as ``mInterpVal``,
+  ``mGradInterpVal``, and ``mGrad2InterpVal``;
+* the host object initializes lookup tables from the selected kernel;
+* construction binds the inherited view members to those owned lookup tables.
+
+Kernel-facing object:
+
+* ``TableKernelView`` contains interpolator views and primitive lookup metadata;
+* kernels call host/device methods such as ``kernelValue``, ``gradValue``,
+  ``grad2Value``, and ``kernelAndGradValue``;
+* ``TableKernelView::move`` recursively moves nested interpolator views.
+
+The nested movement is the same general issue as ``FieldListView`` movement:
+moving only the outer object is not sufficient when it contains managed data in
+its child views.
+
+How kernels get a current view:
+
+.. image:: table_kernel_view_flow.svg
+   :alt: Flow from TableKernel construction through binding owned interpolation tables to TableKernel::view returning a TableKernelView.
+   :align: center
+
+When old views should not be reused:
+
+* a ``TableKernelView`` is tied to the lookup tables of the ``TableKernel`` it
+  came from;
+* construct or select the final ``TableKernel`` before taking the view for a
+  launch;
+* when running with explicit CHAI movement, move the ``TableKernelView`` so its
+  nested interpolator views move with it.
+
+``ArtificialViscosity`` and ``ArtificialViscosityView``
+--------------------------------------------------------
+
+Artificial viscosity follows the host-object/kernel-facing split but uses a
+managed pointer for behavior selected at runtime rather than a plain value view.
+The kernel-facing object is a ``chai::managed_ptr`` to an
+``ArtificialViscosityView<Dimension, QPiType>`` base object.
+
+Host object:
+
+* ``ArtificialViscosity`` descendants own host parameters, package-facing APIs,
+  restart identity, and configuration setters;
+* concrete classes choose which concrete view class represents them;
+* setters update host values and update existing managed views.
+
+Kernel-facing object:
+
+* ``ArtificialViscosityView`` defines the virtual ``SPHERAL_HOST_DEVICE``
+  ``QPiij`` interface;
+* concrete view descendants contain only the data and methods needed by kernels;
+* RAJA pair kernels capture a ``chai::managed_ptr`` to the base view and call
+  ``Q->QPiij(...)``.
+
+How kernels get a current managed pointer:
+
+.. image:: artificial_viscosity_view_flow.svg
+   :alt: Flow from the host ArtificialViscosity object through getScalarView or getTensorView to a managed base pointer captured by a RAJA lambda and used for QPiij calls on device.
+   :align: center
+
+Host code first selects the scalar or tensor templated path. The only behavior
+still chosen at runtime inside that path is the concrete artificial-viscosity
+calculation. This keeps most type selection on the host while preserving the
+runtime behavior that the pair kernel needs.
+
+When old managed pointers should not be reused:
+
+* changing artificial-viscosity coefficients or options updates the host object
+  and can require the concrete managed view to be recreated;
+* use the host-object accessor, such as ``getScalarView()`` or
+  ``getTensorView()``, during kernel setup instead of caching a pointer across
+  host-object configuration changes.
+
+.. _current-kernel-facing-source-map:
+
+Source Map by Family
+--------------------
+
+Use this map as an implementation reference after the host and kernel-facing
+roles above are clear.
 
 Field and field-list families:
 
@@ -44,247 +309,26 @@ Kernel and interpolation families:
 * ``src/Utilities/QuadraticInterpolatorView.hh``
 * ``src/Utilities/CubicHermiteInterpolatorView.hh``
 
-Managed-dispatch family:
+Managed-pointer family with behavior selected at runtime:
 
 * ``src/ArtificialViscosity/ArtificialViscosity.hh``
 * ``src/ArtificialViscosity/ArtificialViscosityView.hh``
-* concrete artificial-viscosity owners and view implementations
-
-``FieldBase``, ``Field``, and ``FieldView``
--------------------------------------------
-
-``Field<Dimension, DataType>`` is the primary value/view example. It owns one
-value of ``DataType`` per node on one ``NodeList``. It inherits the typed view
-interface from ``FieldView<Dimension, DataType>`` while ``FieldBase<Dimension>``
-provides the host-side type-erased interface.
-
-Owner-side role:
-
-* ``Field`` owns ``std::vector<DataType, DataAllocator<DataType>> mDataArray``;
-* ``FieldBase`` supports boundary dispatch, restart registration, serialization,
-  packing, cloning, and generic state registration;
-* ``Field`` responds to node-list resizing, deletion, reordering, copying, and
-  deserialization.
-
-Device-facing role:
-
-* ``FieldView`` stores ``mDataSpan`` plus primitive metadata such as internal
-  and ghost counts;
-* ``operator()``, ``operator[]``, and ``at`` provide typed indexed access;
-* ``move``, ``touch``, and ``data`` manage CHAI-backed storage where needed;
-* element accessors used by kernels are marked ``SPHERAL_HOST_DEVICE``.
-
-Refresh point:
-
-::
-
-   Field storage or node layout changes
-     |
-     v
-   Field::assignDataSpan()
-     updates span/ManagedArray binding
-     refreshes internal and ghost metadata
-     records CPU touch and callback where needed
-     |
-     v
-   Field::view()
-     returns shallow FieldView copy
-
-``FieldBase`` is intentionally not the inner-loop interface. Kernels use typed
-``FieldView`` objects or field-list views built from them.
-
-``FieldList`` and ``FieldListView``
------------------------------------
-
-``FieldList<Dimension, DataType>`` aggregates same-typed fields across node
-lists. It may reference fields owned elsewhere or own copied fields in
-``mFieldCache``.
-
-Owner-side role:
-
-* ``FieldList`` manages field membership and reference-vs-copy storage mode;
-* ``buildDependentArrays`` sorts fields in ``NodeListRegistrar`` order;
-* the owner maintains typed field pointers, ``FieldBase`` pointers, node-list
-  pointers, and node-list index maps.
-
-Device-facing role:
-
-* ``FieldListView`` stores an array of ``FieldView`` objects;
-* kernels use ``operator()(fieldIndex, nodeIndex)`` for direct value access;
-* arithmetic, local reductions, and size/count queries operate over the view;
-* ``move(space, recursive=true)`` can move both the outer array and each nested
-  field view's data.
-
-Refresh point:
-
-::
-
-   FieldList membership or ownership changes
-     |
-     v
-   buildDependentArrays()
-     sort field pointers
-     rebuild node-list index map
-     assign mFieldViews[i] = field->view()
-     |
-     v
-   FieldList::view()
-     returns FieldListView over current field views
-
-This lets a RAJA kernel use syntax such as ``mass(nodeListi, i)`` while the
-host owner preserves node-list ordering, type-erased compatibility, and field
-membership semantics.
-
-``NodePairList`` and ``NodePairListView``
-------------------------------------------
-
-``NodePairList`` is the owner/view family for an already-built flat pair
-schedule. ``NodePairListView`` is the device-facing member captured by RAJA pair
-kernels.
-
-Owner-side role:
-
-* ``NodePairList`` owns ``std::vector<NodePairIdxType>``;
-* the owner has host-side lookup support for mapping a pair value to an index;
-* connectivity construction replaces or refreshes the owner when pair topology
-  changes.
-
-Device-facing role:
-
-* ``NodePairListView`` holds a span or ``chai::ManagedArray`` over the pair
-  vector;
-* kernels index it by integer pair position with ``pairs[kk]``;
-* the view exposes pair-array size, data pointer, movement, and touch.
-
-Refresh path:
-
-::
-
-   pair schedule is built or replaced
-     |
-     v
-   NodePairList::initView()
-     wraps vector storage for CHAI/span access
-     |
-     v
-   NodePairList::view()
-     returns NodePairListView
-     |
-     v
-   RAJA pair loop reads pairs[kk]
-
-``ConnectivityMap`` is important context for this family because it builds and
-provides the current ``NodePairList``. The device-facing family member remains
-``NodePairListView``.
-
-``PairwiseField`` and ``PairwiseFieldView``
---------------------------------------------
-
-``PairwiseField<Dimension, Value, numElements>`` stores values indexed by the
-active pair-list position rather than by node. It is intentionally ephemeral
-because connectivity can change step to step.
-
-Owner-side role:
-
-* ``PairwiseField`` stores a weak pointer to the active ``NodePairList``;
-* the owner sizes ``mArray`` to ``numElements * pairs.size()``;
-* host code can access values by ``NodePairIdxType`` through the pair-list
-  lookup.
-
-Device-facing role:
-
-* ``PairwiseFieldView`` exposes strided indexed access over the value array;
-* kernels use integer pair-index access aligned with ``NodePairListView``
-  traversal;
-* movement and touch operate on the pairwise-value storage.
-
-The view does not know how pair ids map to indices. Rebuilding or patching
-connectivity can orphan the owner-side pair association and invalidate existing
-views.
-
-``TableKernel`` and ``TableKernelView``
-----------------------------------------
-
-``TableKernel<Dimension>`` owns tabulated interpolation data for SPH kernel
-evaluation. ``TableKernelView<Dimension>`` is the device-facing member used by
-RAJA hydro kernels.
-
-Owner-side role:
-
-* ``TableKernel`` owns interpolation tables such as ``mInterpVal``,
-  ``mGradInterpVal``, and ``mGrad2InterpVal``;
-* the owner initializes lookup tables from the selected kernel;
-* construction and assignment refresh the embedded view members.
-
-Device-facing role:
-
-* ``TableKernelView`` contains interpolator views and primitive lookup metadata;
-* kernels call host/device methods such as ``kernelValue``, ``gradValue``,
-  ``grad2Value``, and ``kernelAndGradValue``;
-* ``TableKernelView::move`` recursively moves nested interpolator views.
-
-The nested movement is the same general issue as ``FieldListView`` movement:
-moving only the outer object is not sufficient when it contains managed data in
-its child views.
-
-``ArtificialViscosity`` and ``ArtificialViscosityView``
---------------------------------------------------------
-
-Artificial viscosity follows the owner/device-facing split but uses managed
-runtime dispatch rather than a plain value view. The device-facing member is a
-``chai::managed_ptr`` to an ``ArtificialViscosityView<Dimension, QPiType>`` base
-object.
-
-Owner-side role:
-
-* ``ArtificialViscosity`` descendants own host parameters, package-facing APIs,
-  restart identity, and configuration setters;
-* concrete owners choose which concrete view class represents them;
-* setters update owner-side values and refresh existing managed views.
-
-Device-facing role:
-
-* ``ArtificialViscosityView`` defines the virtual ``SPHERAL_HOST_DEVICE``
-  ``QPiij`` interface;
-* concrete view descendants contain only the data and methods needed by kernels;
-* RAJA pair kernels capture a ``chai::managed_ptr`` to the base view and call
-  ``Q->QPiij(...)``.
-
-Dispatch path:
-
-::
-
-   host ArtificialViscosity owner
-     reports QPiTypeIndex()
-     lazily owns chai::managed_ptr<ConcreteView>
-     |
-     | getScalarView() or getTensorView()
-     v
-   chai::managed_ptr<ArtificialViscosityView<Dimension, QPiType>>
-     base pointer with device-valid concrete view object
-     |
-     | captured by RAJA lambda
-     v
-   virtual QPiij dispatch on device
-
-Host code first selects the scalar or tensor templated path. Dynamic
-polymorphism remains only for the concrete artificial-viscosity behavior inside
-that path. This keeps most type selection on the host while preserving the
-runtime behavior that the pair kernel needs.
+* concrete artificial-viscosity classes and view implementations
 
 Shared Observations
 -------------------
 
 Across the current families:
 
-* owners define lifetime and invariants;
+* host objects define lifetime and invariants;
 * views expose the smallest useful kernel-facing API;
 * host setup chooses concrete types and gathers state before launch;
-* kernels capture views or managed view pointers, not package owners;
-* view freshness depends on storage, membership, and pair ordering remaining
-  unchanged after the view is created;
-* managed polymorphism is reserved for behavior that cannot be selected entirely
-  on the host side.
+* kernels capture views or managed view pointers, not package-level host
+  objects;
+* whether a view is current depends on storage, membership, and pair ordering
+  remaining unchanged after the view is created;
+* managed pointers are reserved for behavior that cannot be selected entirely on
+  the host side before launch.
 
 The important distinction is the responsibility split, not the class-name
 pairing itself.

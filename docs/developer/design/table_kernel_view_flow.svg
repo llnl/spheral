@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="300" viewBox="0 0 940 300" role="img" aria-labelledby="title desc">
+  <title id="title">TableKernel view flow</title>
+  <desc id="desc">Flow from TableKernel construction through binding owned interpolation tables to TableKernel::view returning a TableKernelView.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .background { fill: #ffffff; }
+      .rail { fill: none; stroke: #bfdbfe; stroke-width: 8; stroke-linecap: round; }
+      .arrow { fill: none; stroke: #2563eb; stroke-width: 2.2; marker-end: url(#arrow); }
+      .card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+      .cardPrimary { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .label { font: 700 13px Arial, sans-serif; fill: #2563eb; letter-spacing: 0.5px; }
+      .title { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .text { font: 400 14px Arial, sans-serif; fill: #334155; }
+      .code { font: 700 16px "SFMono-Regular", Consolas, "Liberation Mono", monospace; fill: #0f172a; }
+      .badge { fill: #2563eb; }
+      .badgeText { font: 700 14px Arial, sans-serif; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="background" x="0" y="0" width="940" height="300"/>
+  <path class="rail" d="M170 150 L770 150"/>
+
+  <rect class="card" x="30" y="66" width="250" height="168" rx="8"/>
+  <circle class="badge" cx="58" cy="94" r="15"/>
+  <text class="badgeText" x="54" y="99">1</text>
+  <text class="label" x="86" y="94">BUILD</text>
+  <text class="code" x="50" y="132">TableKernel(...)</text>
+  <text class="text" x="50" y="166">Builds owned interpolation</text>
+  <text class="text" x="50" y="190">and lookup tables</text>
+
+  <path class="arrow" d="M280 150 L334 150"/>
+
+  <rect class="cardPrimary" x="334" y="46" width="272" height="208" rx="8"/>
+  <circle class="badge" cx="362" cy="74" r="15"/>
+  <text class="badgeText" x="358" y="79">2</text>
+  <text class="label" x="390" y="74">BIND TABLE VIEWS</text>
+  <text class="text" x="354" y="112">Assigns inherited view members:</text>
+  <text class="code" x="354" y="144">mInterp, mGradInterp</text>
+  <text class="code" x="354" y="168">mGrad2Interp</text>
+  <text class="code" x="354" y="192">mNperhLookup, mWsumLookup</text>
+  <text class="text" x="354" y="222">to owned table views</text>
+
+  <path class="arrow" d="M606 150 L660 150"/>
+
+  <rect class="card" x="660" y="66" width="250" height="168" rx="8"/>
+  <circle class="badge" cx="688" cy="94" r="15"/>
+  <text class="badgeText" x="684" y="99">3</text>
+  <text class="label" x="716" y="94">VIEW</text>
+  <text class="code" x="680" y="132">TableKernel::view()</text>
+  <text class="text" x="680" y="166">Returns TableKernelView</text>
+  <text class="text" x="680" y="190">for kernel setup</text>
+</svg>
