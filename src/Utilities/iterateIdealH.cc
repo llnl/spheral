@@ -63,16 +63,15 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   vector<double> nperh0;
   // Pulled divide by nPerhForIteration out of loop to improve optimization
   if (distinctlyGreaterThan(nPerhForIteration, 0.0)) {
-    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
       const auto nperh = nodeListPtr->nodesPerSmoothingScale();
       nperh0.push_back(nperh);
       auto& Hfield = **(H.fieldForNodeList(*nodeListPtr));
       Hfield *= Dimension::rootnu(nperh / nPerhForIteration);
       nodeListPtr->nodesPerSmoothingScale(nPerhForIteration);
     }
-  }
-  else {
-    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  } else {
+    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
       const auto nperh = nodeListPtr->nodesPerSmoothingScale();
       nperh0.push_back(nperh);
     }
@@ -118,6 +117,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   // Since we don't have a hydro there are a few other fields we need registered.
   auto zerothMoment = dataBase.newFluidFieldList(0.0, HydroFieldNames::massZerothMoment);
   auto firstMoment = dataBase.newFluidFieldList(Vector::zero(), HydroFieldNames::massFirstMoment);
+  auto secondMoment = dataBase.newFluidFieldList(SymTensor::zero(), HydroFieldNames::massSecondMoment);
   auto DvDx = dataBase.newFluidFieldList(Tensor::zero(), HydroFieldNames::velocityGradient);
   auto DHDt = dataBase.newFluidFieldList(SymTensor::zero(), IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
   auto H1 = dataBase.newFluidFieldList(SymTensor::zero(), ReplaceBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H);
@@ -131,7 +131,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     // flagNodeDone = 0;
 
     // Remove any old ghost node information from the NodeLists.
-    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
       nodeListPtr->numGhostNodes(0);
       nodeListPtr->neighbor().updateNodes();
     }
@@ -139,11 +139,14 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     // Enforce boundary conditions.
     for (auto* boundaryPtr: boundaries) {
       boundaryPtr->setAllGhostNodes(dataBase);
+      boundaryPtr->finalizeGhostBoundary();
+      for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) nodeListPtr->neighbor().updateNodes();
+    }
+    for (auto* boundaryPtr: boundaries) {
       boundaryPtr->applyFieldListGhostBoundary(m);
       boundaryPtr->applyFieldListGhostBoundary(rho);
-      boundaryPtr->finalizeGhostBoundary();
-      for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) nodeListPtr->neighbor().updateNodes();
     }
+    for (auto* boundaryPtr: boundaries) boundaryPtr->finalizeGhostBoundary();
 
     // Update connectivity
     dataBase.updateConnectivityMap(false, false, false);
@@ -157,6 +160,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     state.enroll(rho);
     derivs.enroll(zerothMoment);
     derivs.enroll(firstMoment);
+    derivs.enroll(secondMoment);
     derivs.enroll(DvDx);
     derivs.enroll(DHDt);
     derivs.enroll(H1);
@@ -240,20 +244,20 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   }
 
   // Leave the boundary conditions properly enforced.
-  for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
     nodeListPtr->numGhostNodes(0);
     nodeListPtr->neighbor().updateNodes();
   }
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
+  for (auto* boundaryPtr: boundaries) {
     boundaryPtr->setAllGhostNodes(dataBase);
     boundaryPtr->finalizeGhostBoundary();
-    for (auto* nodeListPtr: range(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
       nodeListPtr->neighbor().updateNodes();
     }
   }
 
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) boundaryPtr->applyFieldListGhostBoundary(m);
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) boundaryPtr->finalizeGhostBoundary();
+  for (auto* boundaryPtr: boundaries) boundaryPtr->applyFieldListGhostBoundary(m);
+  for (auto* boundaryPtr: boundaries) boundaryPtr->finalizeGhostBoundary();
 
   // // Restore ASPH radialOnly choice if necessary
   // if (radialOnly) {
