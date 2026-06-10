@@ -58,7 +58,7 @@
   <rect class="card" x="872" y="86" width="164" height="148" rx="8"/>
   <circle class="badge" cx="900" cy="114" r="15"/>
   <text class="badgeText" x="896" y="119">4</text>
-  <text class="label" x="928" y="114">KERNEL</text>
+  <text class="label" x="928" y="114">RAJA LOOP</text>
   <text class="title" x="892" y="150">Pair loop</text>
   <text class="text" x="892" y="180">Uses the same</text>
   <text class="text" x="892" y="204">pair ordering</text>

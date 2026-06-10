@@ -51,5 +51,5 @@
   <text class="label" x="716" y="94">VIEW</text>
   <text class="code" x="680" y="132">TableKernel::view()</text>
   <text class="text" x="680" y="166">Returns TableKernelView</text>
-  <text class="text" x="680" y="190">for kernel setup</text>
+  <text class="text" x="680" y="190">for RAJA setup</text>
 </svg>

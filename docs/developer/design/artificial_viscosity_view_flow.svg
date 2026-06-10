@@ -58,7 +58,7 @@
   <rect class="card" x="902" y="82" width="194" height="156" rx="8"/>
   <circle class="badge" cx="930" cy="110" r="15"/>
   <text class="badgeText" x="926" y="115">4</text>
-  <text class="label" x="958" y="110">KERNEL</text>
+  <text class="label" x="958" y="110">RAJA LOOP</text>
   <text class="title" x="922" y="146">RAJA lambda</text>
   <text class="text" x="922" y="176">Captures pointer and</text>
   <text class="text" x="922" y="200">calls QPiij on device</text>

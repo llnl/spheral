@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="940" height="300" viewBox="0 0 940 300" role="img" aria-labelledby="title desc">
   <title id="title">Field view rebinding flow</title>
-  <desc id="desc">Flow from field storage or node layout changes through Field::assignDataSpan to Field::view returning a shallow FieldView copy for kernels.</desc>
+  <desc id="desc">Flow from field storage or node layout changes through Field::assignDataSpan to Field::view returning a shallow FieldView copy for RAJA setup.</desc>
   <defs>
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
       <path d="M2,2 L10,6 L2,10 z" fill="#2563eb"/>
@@ -52,5 +52,5 @@
   <text class="code" x="680" y="132">Field::view()</text>
   <text class="text" x="680" y="166">Returns a shallow</text>
   <text class="text" x="680" y="190">FieldView copy for</text>
-  <text class="text" x="680" y="214">kernel setup</text>
+  <text class="text" x="680" y="214">RAJA setup</text>
 </svg>
