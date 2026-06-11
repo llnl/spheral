@@ -37,7 +37,7 @@ template<typename Dimension>
 void
 Physics<Dimension>::
 appendBoundary(Boundary<Dimension>& boundary) {
-  mBoundaryConditions.push_back(&boundary);
+  if (not haveBoundary(boundary)) mBoundaryConditions.push_back(&boundary);
   for (auto* pkg: mPreSubPackages) pkg->appendBoundary(boundary);
   for (auto* pkg: mPostSubPackages) pkg->appendBoundary(boundary);
 }
@@ -49,7 +49,7 @@ template<typename Dimension>
 void
 Physics<Dimension>::
 prependBoundary(Boundary<Dimension>& boundary) {
-  mBoundaryConditions.insert(mBoundaryConditions.begin(), &boundary);
+  if (not haveBoundary(boundary)) mBoundaryConditions.insert(mBoundaryConditions.begin(), &boundary);
   for (auto* pkg: mPreSubPackages) pkg->prependBoundary(boundary);
   for (auto* pkg: mPostSubPackages) pkg->prependBoundary(boundary);
 }
@@ -61,7 +61,7 @@ template<typename Dimension>
 void
 Physics<Dimension>::
 clearBoundaries() {
-  mBoundaryConditions = vector<Boundary<Dimension>*>();
+  mBoundaryConditions.clear();
   for (auto* pkg: mPreSubPackages) pkg->clearBoundaries();
   for (auto* pkg: mPostSubPackages) pkg->clearBoundaries();
 }

@@ -155,9 +155,8 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // Need mass for density calculation
-  auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(mass);
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
+  this->applyGhostBoundaries(state, derivs);
+  for (auto* boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
   
   // Calculate the density that will actually be used
   this->preStepInitialize(dataBase, state, derivs);
