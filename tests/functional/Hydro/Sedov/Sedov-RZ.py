@@ -31,7 +31,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             rho0 = 1.0,
             eps0 = 0.0,
             Espike = 1.0,
-            smoothSpikeScale = 0.25,   # How much to smooth the spike in eta space
+            smoothSpikeScale = 2.0,    # How much to smooth the spike in eta space
 
             solid = False,             # If true, use the fluid limit of the solid hydro option
 
