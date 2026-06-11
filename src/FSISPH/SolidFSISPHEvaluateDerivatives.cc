@@ -860,7 +860,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
       // logic
       //---------------------------------------
       const auto sameMatij = (nodeListi == nodeListj and fragIDi == fragIDj);
-      const auto differentMatij = (nodeListi!=nodeListj);
+      const auto differentMatij = !sameMatij;
       const auto averageKernelij = ( (differentMatij and averageInterfaceKernels) or alwaysAverageKernels);
 
       // Kernels
