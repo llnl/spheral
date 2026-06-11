@@ -11,10 +11,13 @@ contract page for the pattern; concrete class families are described in
 :doc:`raja_chai_execution_patterns`.
 
 In this context, a RAJA-captured object is the object that setup code makes
-available to a RAJA lambda. It may be a small view value, or it may be a managed
+available to a RAJA lambda. It may be a small view object, or it may be a managed
 view object whose host/device methods are called from the RAJA loop body. The
 matching host object is included when it owns the data or configuration and
 produces the RAJA-captured object.
+
+This page uses RAJA loop or RAJA lambda for the accelerator launch body. SPH
+kernel refers only to interpolation-kernel objects such as ``TableKernel``.
 
 The recurring split is:
 
@@ -25,38 +28,14 @@ The recurring split is:
 * RAJA lambdas receive views or managed view pointers rather than the full host
   object graph.
 
-Source Map
-----------
-
-Core infrastructure:
-
-* ``src/config.hh.in``
-* ``src/Utilities/GPUUtils.hh``
-
-Representative value/view families:
-
-* ``src/Field/Field.hh`` and ``src/Field/FieldView.hh``
-* ``src/Field/FieldList.hh`` and ``src/Field/FieldListView.hh``
-* ``src/Neighbor/NodePairList.hh`` and ``src/Neighbor/NodePairListView.hh``
-* ``src/Neighbor/PairwiseField.hh`` and ``src/Neighbor/PairwiseFieldView.hh``
-* ``src/Kernel/TableKernel.hh`` and ``src/Kernel/TableKernelView.hh``
-
-Representative family that uses managed pointers for behavior selected at
-runtime:
-
-* ``src/ArtificialViscosity/ArtificialViscosity.hh``
-* ``src/ArtificialViscosity/ArtificialViscosityView.hh``
-* concrete artificial-viscosity classes and view implementations
-
 RAJA-Captured Object Shapes
 ---------------------------
 
 Device-capable RAJA loops need a narrower representation than the host object
-usually
-contains. The current examples expose:
+usually contains. The current captured representations expose:
 
-* small values that can be captured by value in a RAJA lambda;
-* methods annotated with ``SPHERAL_HOST_DEVICE`` where they run in RAJA loops;
+* small view objects and primitive values captured by value in RAJA lambdas;
+* methods annotated with ``SPHERAL_HOST_DEVICE`` when they run in RAJA loops;
 * spans, CHAI-managed arrays, or managed pointers valid in the selected
   execution space;
 * primitive metadata needed by the RAJA loop body;
@@ -70,22 +49,9 @@ Value/View Shape
 The value/view shape appears where device code needs direct access to data
 owned by an object that also carries host-only responsibilities.
 
-::
-
-   host object
-     owns storage, identity, registration, restart, resizing, host API
-     rebinds the view when storage or layout changes
-     |
-     | view()
-     v
-   view
-     contains spans, managed arrays, primitive metadata, small access API
-     is cheap to copy
-     has SPHERAL_HOST_DEVICE methods where needed
-     |
-     | captured by value
-     v
-   RAJA loop
+.. image:: value_view_shape_flow.svg
+   :alt: Flow from a host object through view rebinding to a small view object captured by value in a RAJA lambda.
+   :align: center
 
 The host object keeps responsibilities such as:
 
@@ -109,21 +75,9 @@ Managed Pointer Shape for Runtime-Selected Behavior
 This shape appears where device code needs to call behavior selected at
 runtime. The artificial-viscosity family is the current example.
 
-::
-
-   host object
-     selects concrete behavior
-     owns long-lived parameters and restart state
-     lazily owns chai::managed_ptr<ConcreteView>
-     |
-     | getScalarView() or getTensorView()
-     v
-   chai::managed_ptr<BaseView>
-     points at device-valid concrete view object
-     |
-     | captured by RAJA lambda
-     v
-   virtual SPHERAL_HOST_DEVICE method
+.. image:: managed_pointer_shape_flow.svg
+   :alt: Flow from host-side runtime selection through a managed view pointer to a virtual host/device method called from a RAJA lambda.
+   :align: center
 
 Prefer host-side type selection or concrete value views when the RAJA loop can be
 specialized before launch. Use a managed pointer with a virtual method call only
@@ -132,8 +86,9 @@ code, this is used for ``ArtificialViscosityView::QPiij``.
 
 The managed view is an object with behavior, not just a span over host-object
 storage. The C++ virtual-method machinery has to be valid on device, so the
-host object constructs and makes the managed view object current when its
-concrete parameters change.
+host object constructs or recreates the managed view object when its concrete
+parameters change. RAJA lambdas capture the managed pointer, not the host
+``ArtificialViscosity`` object.
 
 Device Memory Semantics
 -----------------------
@@ -171,12 +126,14 @@ movement. It gives each container one local place to implement movement
 behavior, and it gives RAJA setup code a clear set of captured objects to move
 or touch before launch.
 
-View Lifetime and Rebinding
----------------------------
+RAJA-Captured Object Lifetime and Rebinding
+-------------------------------------------
 
-Views are shallow. A previously created view can become invalid or out of date
-when the host object changes storage, layout, membership, node counts, or pair
-ordering. Recreate or rebind views after changes such as:
+RAJA-captured objects are shallow launch-time handles. A previously created
+view or managed pointer can become invalid or out of date when the host object
+changes storage, layout, membership, node counts, pair ordering, or
+runtime-selected configuration. Recreate, rebind, or reacquire captured objects
+after changes such as:
 
 * field assignment, resizing, deletion, or deserialization;
 * node-list internal or ghost count changes;
@@ -184,11 +141,13 @@ ordering. Recreate or rebind views after changes such as:
 * domain redistribution;
 * field-list membership changes;
 * pair-related storage reallocation after connectivity changes;
+* artificial-viscosity coefficient or option changes that recreate the managed
+  view object;
 * destruction of scratch host objects.
 
-Physics code commonly creates views immediately before the RAJA loops that consume
-them, and then reacquires views after operations that change the host object
-state.
+RAJA setup code commonly creates captured objects immediately before the RAJA
+loops that consume them, and then reacquires those objects after operations that
+change the host object state.
 
 Relationship to the Other Design Docs
 -------------------------------------
@@ -196,7 +155,8 @@ Relationship to the Other Design Docs
 :doc:`value_view_conversion_case_studies` is the current family reference. It
 answers which host object owns the data, what object is captured by RAJA
 lambdas, how that object is made current, and when old views should not be
-reused.
+reused. Its :ref:`current-raja-captured-source-map` section is the
+implementation source-file index for these object families.
 
 :doc:`raja_chai_execution_patterns` explains how RAJA launch code gathers host
 objects, creates views, moves/touches data, launches RAJA loops, and returns

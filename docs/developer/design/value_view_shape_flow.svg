@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="330" viewBox="0 0 1120 330" role="img" aria-labelledby="title desc">
+  <title id="title">Value view RAJA capture flow</title>
+  <desc id="desc">Flow from a host object through view rebinding to a small view object captured by value in a RAJA lambda.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .background { fill: #ffffff; }
+      .rail { fill: none; stroke: #bfdbfe; stroke-width: 8; stroke-linecap: round; }
+      .arrow { fill: none; stroke: #2563eb; stroke-width: 2.2; marker-end: url(#arrow); }
+      .card { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.4; }
+      .cardPrimary { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .label { font: 700 13px Arial, sans-serif; fill: #2563eb; letter-spacing: 0.5px; }
+      .titleText { font: 700 17px Arial, sans-serif; fill: #0f172a; }
+      .text { font: 400 13.5px Arial, sans-serif; fill: #334155; }
+      .code { font: 700 14.5px "SFMono-Regular", Consolas, "Liberation Mono", monospace; fill: #0f172a; }
+      .badge { fill: #2563eb; }
+      .badgeText { font: 700 13px Arial, sans-serif; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="background" x="0" y="0" width="1120" height="330"/>
+  <path class="rail" d="M150 165 L970 165"/>
+
+  <rect class="card" x="24" y="78" width="230" height="174" rx="8"/>
+  <circle class="badge" cx="52" cy="106" r="15"/>
+  <text class="badgeText" x="48" y="111">1</text>
+  <text class="label" x="80" y="106">HOST OBJECT</text>
+  <text class="titleText" x="44" y="142">Owns durable state</text>
+  <text class="text" x="44" y="172">Storage and lifetime</text>
+  <text class="text" x="44" y="196">Identity and restart</text>
+  <text class="text" x="44" y="220">Host-only APIs</text>
+
+  <path class="arrow" d="M254 165 L306 165"/>
+
+  <rect class="cardPrimary" x="306" y="68" width="240" height="194" rx="8"/>
+  <circle class="badge" cx="334" cy="96" r="15"/>
+  <text class="badgeText" x="330" y="101">2</text>
+  <text class="label" x="362" y="96">REBIND</text>
+  <text class="code" x="326" y="134">view()</text>
+  <text class="text" x="326" y="166">Updates spans or</text>
+  <text class="text" x="326" y="190">ManagedArray bindings</text>
+  <text class="text" x="326" y="214">Refreshes primitive</text>
+  <text class="text" x="326" y="238">metadata when needed</text>
+
+  <path class="arrow" d="M546 165 L598 165"/>
+
+  <rect class="card" x="598" y="68" width="252" height="194" rx="8"/>
+  <circle class="badge" cx="626" cy="96" r="15"/>
+  <text class="badgeText" x="622" y="101">3</text>
+  <text class="label" x="654" y="96">RAJA-CAPTURED VIEW</text>
+  <text class="titleText" x="618" y="132">Small copyable object</text>
+  <text class="text" x="618" y="162">Spans, managed arrays,</text>
+  <text class="text" x="618" y="186">primitive metadata, and</text>
+  <text class="code" x="618" y="214">SPHERAL_HOST_DEVICE</text>
+  <text class="text" x="618" y="238">access methods</text>
+
+  <path class="arrow" d="M850 165 L902 165"/>
+
+  <rect class="card" x="902" y="78" width="194" height="174" rx="8"/>
+  <circle class="badge" cx="930" cy="106" r="15"/>
+  <text class="badgeText" x="926" y="111">4</text>
+  <text class="label" x="958" y="106">RAJA LOOP</text>
+  <text class="titleText" x="922" y="142">RAJA lambda</text>
+  <text class="text" x="922" y="172">Captures view by</text>
+  <text class="text" x="922" y="196">value and uses only</text>
+  <text class="text" x="922" y="220">device-valid state</text>
+</svg>
