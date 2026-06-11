@@ -134,6 +134,13 @@ public:
                              const State<Dimension>& state,
                                    StateDerivatives<Dimension>& derivatives,
                              chai::managed_ptr<QType> Q) const;
+  template<typename QType>
+  void secondDerivativesLoopLegacy(const Scalar time,
+                                   const Scalar dt,
+                                   const DataBase<Dimension>& dataBase,
+                                   const State<Dimension>& state,
+                                   StateDerivatives<Dimension>& derivatives,
+                                   chai::managed_ptr<QType> Q) const;
 
   virtual 
   void finalizeDerivatives(const Scalar time, 
@@ -172,6 +179,9 @@ public:
   KernelAveragingMethod kernelAveragingMethod() const;
   void kernelAveragingMethod(KernelAveragingMethod method);
 
+  bool legacyModel() const;
+  void legacyModel(bool val);
+
   bool compatibleEnergyEvolution() const;
   void compatibleEnergyEvolution(bool val);
 
@@ -184,8 +194,8 @@ public:
   bool applySelectSumDensity() const;
   void applySelectSumDensity(bool x);
 
-  bool planeStrain()                                const { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
-  void planeStrain(bool val)                              { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
+  bool planeStrain() const { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
+  void planeStrain(bool val) { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
   
   bool decoupleDamagedMaterial() const;
   void decoupleDamagedMaterial(bool val);
@@ -277,7 +287,8 @@ private:
   FSIMassDensityMethod mDensityUpdate;
   InterfaceMethod mInterfaceMethod;                   // switch for material interface method
   KernelAveragingMethod mKernelAveragingMethod;       // how do we handle our kernels?
-
+  
+  bool mLegacyMode;
   bool mCompatibleEnergyEvolution;
   bool mEvolveTotalEnergy; 
   bool mLinearCorrectGradients;

@@ -78,6 +78,24 @@ kernelAveragingMethod() const {
 }
 
 //------------------------------------------------------------------------------
+// toggle legacy mode on and off
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+bool
+SolidFSISPH<Dimension>::legacyMode() const {
+  return mLegacyMode;
+}
+
+template<typename Dimension>
+inline
+void
+SolidFSISPH<Dimension>::legacyMode(bool val) {
+  mLegacyMode = val;
+}
+
+
+//------------------------------------------------------------------------------
 // Access the flag determining if we're using the compatible energy evolution 
 // algorithm.
 //------------------------------------------------------------------------------
