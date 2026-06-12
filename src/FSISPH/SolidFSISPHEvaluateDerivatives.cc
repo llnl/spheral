@@ -1434,7 +1434,7 @@ secondDerivativesLoopLegacy(const typename Dimension::Scalar time,
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one();
-      const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
+      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti += spinCorrection + 2.0*mui*deviatoricDeformation;
       
     } //loop-nodes

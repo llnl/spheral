@@ -36,6 +36,7 @@ Notable changes include:
     * SPH now requests volume from RK.
     * Fixed a circular dependency in the Johnson-Cook damage model.
     * Fixed a bug that could allow multiple copies of the same boundary condition in Physics subpackages.
+    * Fixed a bug in the definition of the Jaumann stress rate in all the solid hydro packages.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
