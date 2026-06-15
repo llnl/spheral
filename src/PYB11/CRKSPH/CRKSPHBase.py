@@ -30,6 +30,7 @@ class CRKSPHBase(GenericHydro):
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
@@ -138,4 +139,3 @@ temperature or pressure."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, CRKSPHBase)
-

@@ -28,6 +28,7 @@ class SPHRZ(SPHBase):
                WPi = "const TableKernel<%(Dimension)s>&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                gradhCorrection = "const bool",
