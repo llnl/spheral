@@ -72,11 +72,13 @@ template<typename Dimension>
 GenericHydro<Dimension>::
 GenericHydro(ArtificialViscosity<Dimension>& Q,
              const double cfl,
-             const bool useVelocityMagnitudeForDt):
+             const bool useVelocityMagnitudeForDt,
+             const bool useNewAccelerationMagnitudeForDt):
   Physics<Dimension>(),
   mArtificialViscosity(Q),
   mCFL(cfl),
   mUseVelocityMagnitudeForDt(useVelocityMagnitudeForDt),
+  mUseNewAccelerationMagnitudeForDt(useNewAccelerationMagnitudeForDt),
   mMinMasterNeighbor(INT_MAX),
   mMaxMasterNeighbor(0),
   mSumMasterNeighbor(0),
@@ -299,14 +301,18 @@ dt(const DataBase<Dimension>& dataBase,
 
           // Total acceleration limit.
           const auto vmagi = vi.magnitude();
-          const auto dtAcc = 0.1*std::max(nodeScalei/(vmagi + tiny), vmagi/(DvDt(nodeListi, i).magnitude() + tiny));
+          const auto amagi = DvDt(nodeListi, i).magnitude();
+          const auto dtAcc = (useNewAccelerationMagnitudeForDt() ?
+                              std::sqrt(2*nodeScalei/( amagi + tiny)):
+                              0.1*std::max(nodeScalei/(vmagi + tiny), vmagi/(amagi + tiny)));
+            
           if (dtAcc < minDt_local.first) {
-            minDt_local = TimeStepType(dtAcc, ("Total acceleration limit: dt = " + to_string(dtAcc) + "\n" + 
-                                               "              |acceleration| = " + to_string(DvDt(nodeListi, i).magnitude()) + "\n" +
-                                               "                   nodeScale = " + to_string(nodeScalei) + "\n" +
-                                               "                    material = " + fluidNodeListPtr->name() + "\n" +
-                                               "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
-                                               "                  @ position = " + vec_to_string(position(nodeListi, i))));
+            minDt_local = TimeStepType(dtAcc, ("Total acceleration limit: dt = " + to_string(dtAcc) + "\n" +
+                                              "              |acceleration| = " + to_string(amagi) + "\n" +
+                                              "                   nodeScale = " + to_string(nodeScalei) + "\n" +
+                                              "                    material = " + fluidNodeListPtr->name() + "\n" +
+                                              "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
+                                              "                  @ position = " + vec_to_string(position(nodeListi, i))));
             DTrank_local = rank;
             DTNodeList_local = nodeListi;
             DTnode_local = i;
@@ -315,10 +321,10 @@ dt(const DataBase<Dimension>& dataBase,
 
           // If requested, limit against the absolute velocity.
           if (useVelocityMagnitudeForDt()) {
-            const auto velDt = nodeScalei/(velocity(nodeListi, i).magnitude() + 1.0e-10);
+            const auto velDt = nodeScalei/(vmagi + 1.0e-10);
             if (velDt < minDt_local.first) {
               minDt_local = TimeStepType(velDt, ("Velocity magnitude limit: dt = " + to_string(velDt) + "\n" +
-                                                 "                        |vi| = " + to_string(velocity(nodeListi, i).magnitude()) + "\n" +
+                                                 "                        |vi| = " + to_string(vmagi) + "\n" +
                                                  "                   nodeScale = " + to_string(nodeScalei) + "\n" +
                                                  "                    material = " + fluidNodeListPtr->name() + "\n" +
                                                  "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
@@ -371,7 +377,7 @@ dt(const DataBase<Dimension>& dataBase,
         const auto  vij = vi - vj;
         const auto  dtVelDiff = std::min(nodeScalei, nodeScalej)*safeInvVar(vij.magnitude(), tiny);
         if (dtVelDiff < minDt_local.first) {
-          minDt_local = TimeStepType(dtVelDiff, ("Pairwise velocity difference limit: dt = " + to_string(dtVelDiff) + "\n" + 
+          minDt_local = TimeStepType(dtVelDiff, ("Pairwise velocity difference limit: dt = " + to_string(dtVelDiff) + "\n" +
                                                  "                              material = " + fluidNodeListPtr->name() + "\n" +
                                                  "                  (nodeListi, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
                                                  "                  (nodeListj, i, rank) = (" + to_string(nodeListj) + " " + to_string(j) + " " + to_string(rank) + ")\n" +

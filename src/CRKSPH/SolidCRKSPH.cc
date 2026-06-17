@@ -99,6 +99,7 @@ SolidCRKSPH(DataBase<Dimension>& dataBase,
             const RKOrder order,
             const double cfl,
             const bool useVelocityMagnitudeForDt,
+            const bool useNewAccelerationMagnitudeForDt,
             const bool compatibleEnergyEvolution,
             const bool evolveTotalEnergy,
             const bool XSPH,
@@ -111,6 +112,7 @@ SolidCRKSPH(DataBase<Dimension>& dataBase,
                     order,
                     cfl,
                     useVelocityMagnitudeForDt,
+                    useNewAccelerationMagnitudeForDt,
                     compatibleEnergyEvolution,
                     evolveTotalEnergy,
                     XSPH,
@@ -687,4 +689,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

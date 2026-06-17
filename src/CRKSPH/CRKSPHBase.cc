@@ -63,13 +63,14 @@ CRKSPHBase(DataBase<Dimension>& dataBase,
            const RKOrder order,
            const double cfl,
            const bool useVelocityMagnitudeForDt,
+           const bool useNewAccelerationMagnitudeForDt,
            const bool compatibleEnergyEvolution,
            const bool evolveTotalEnergy,
            const bool XSPH,
            const MassDensityType densityUpdate,
            const double epsTensile,
            const double nTensile):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mOrder(order),
   mDensityUpdate(densityUpdate),
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
@@ -397,4 +398,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-
