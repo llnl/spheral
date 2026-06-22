@@ -196,7 +196,7 @@ private:
   std::vector<int> mOffsets;
   ConnectivityStorageType mConnectivity;
 
-  // List of Node conncetion pairs.
+  // List of Node connection pairs.
   std::shared_ptr<NodePairList> mNodePairListPtr;
 
   // Same for overlap connectivity.
