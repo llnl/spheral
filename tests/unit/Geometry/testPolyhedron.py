@@ -4,7 +4,6 @@
 import unittest
 from math import *
 import time
-from SpheralTestUtilities import fuzzyEqual
 
 from Spheral3d import *
 

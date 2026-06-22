@@ -22,6 +22,8 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/BuildData.hh"',
                   '"Utilities/Functors.hh"',
                   '"Utilities/erff.hh"',
+                  '"Utilities/safeInv.hh"',
+                  '"Utilities/SpheralFunctions.hh"',
                   '"Utilities/newtonRaphson.hh"',
                   '"Utilities/bisectRoot.hh"',
                   '"Utilities/simpsonsIntegration.hh"',
@@ -793,6 +795,71 @@ for (value, label) in (("int", "Int"),
 adiak_value{label} = PYB11TemplateFunction(adiak_value, "{value}", pyname="adiak_value")
 adiak_value2{label} = PYB11TemplateFunction(adiak_value2, "{value}", pyname="adiak_value")
 """)
+
+#...............................................................................
+def safeInv(x = "const double&",
+            fuzz = ("const double", "1e-30")):
+    "Return an inverse protected from div by zero"
+    return "double"
+            
+def safeInvVar(x = "const double&",
+               fuzz = ("const double", "1e-30")):
+    "Return an inverse protected from div by zero"
+    return "double"
+
+#...............................................................................
+def fuzzyEqual(lhs = "const double&",
+               rhs = "const double&",
+               fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def fuzzyLessThanOrEqual(lhs = "const double&",
+                         rhs = "const double&",
+                         fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def fuzzyGreaterThanOrEqual(lhs = "const double&",
+                            rhs = "const double&",
+                            fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def distinctlyLessThan(lhs = "const double&",
+                       rhs = "const double&",
+                       fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def distinctlyGreaterThan(lhs = "const double&",
+                          rhs = "const double&",
+                          fuzz = ("const double", "1e-15")):
+    return "bool"
+
+#...............................................................................
+def sgn(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >= 0 -> sgn(x) = 1
+    x <  0 -> sgn(x) = -1"""
+    return "double"
+
+def isgn(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >= 0 -> sgn(x) = 1
+    x <  0 -> sgn(x) = -1"""
+    return "int"
+
+#...............................................................................
+def sgn0(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >  0 -> sgn0(x) = 1
+    x == 0 -> sgn0(x) = 0
+    x <  0 -> sgn0(x) = -1"""
+    return "double"
+
+def isgn0(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >  0 -> sgn0(x) = 1
+    x == 0 -> sgn0(x) = 0
+    x <  0 -> sgn0(x) = -1"""
+    return "int"
 
 #...............................................................................
 # Axom stuff

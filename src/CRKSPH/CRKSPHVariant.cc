@@ -83,6 +83,7 @@ CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
               const double filter,
               const double cfl,
               const bool useVelocityMagnitudeForDt,
+              const bool useNewAccelerationMagnitudeForDt,
               const bool compatibleEnergyEvolution,
               const bool evolveTotalEnergy,
               const bool XSPH,
@@ -100,6 +101,7 @@ CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
                              filter,
                              cfl,
                              useVelocityMagnitudeForDt,
+                             useNewAccelerationMagnitudeForDt,
                              compatibleEnergyEvolution,
                              evolveTotalEnergy,
                              XSPH,
@@ -854,4 +856,3 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 }
 
 }
-

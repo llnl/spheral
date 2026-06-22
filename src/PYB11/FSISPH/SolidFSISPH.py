@@ -35,6 +35,7 @@ class SolidFSISPH(GenericHydro):
                kernelAveragingMethod = "const KernelAveragingMethod",
                sumDensityNodeLists = "std::vector<int>",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                linearCorrectGradients = "const bool",

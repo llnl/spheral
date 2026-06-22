@@ -83,6 +83,7 @@ class GenericHydro(Physics):
     artificialViscosity = PYB11property("ArtificialViscosity<%(Dimension)s>&", "artificialViscosity", doc="The artificial viscosity object")
     cfl = PYB11property("Scalar", "cfl", "cfl", doc="The Courant-Friedrichs-Lewy timestep limit multiplier")
     useVelocityMagnitudeForDt = PYB11property("bool", "useVelocityMagnitudeForDt", "useVelocityMagnitudeForDt", doc="Should the pointwise velocity magnitude be used to limit the timestep?")
+    useNewAccelerationMagnitudeForDt = PYB11property("bool", "useNewAccelerationMagnitudeForDt", "useNewAccelerationMagnitudeForDt", doc="Should the pointwise velocity magnitude be used to limit the timestep?")
     minMasterNeighbor = PYB11property("int", "minMasterNeighbor", doc="minimum number of master neighbors found")
     maxMasterNeighbor = PYB11property("int", "maxMasterNeighbor", doc="maximum number of master neighbors found")
     averageMasterNeighbor = PYB11property("double", "averageMasterNeighbor", doc="average number of master neighbors found")

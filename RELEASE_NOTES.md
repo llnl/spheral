@@ -25,12 +25,18 @@ Notable changes include:
     * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * Require minimum CMake version 3.24.
+    * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
+      * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
+    * The explicitly bound C++ pair types for Python have been removed -- just use Python tuples instead --
+      i.e. use (1.0, "Howdy") rather than pair_double_string(1.0, "Howdy").
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
     * SPH now requests volume from RK.
     * Fixed a circular dependency in the Johnson-Cook damage model.
+    * Fixed a bug that could allow multiple copies of the same boundary condition in Physics subpackages.
+    * Fixed a bug in the definition of the Jaumann stress rate in all the solid hydro packages.
 
   * Build changes / improvements:
     * Updated to PYB11Generator 2025.12.1.
@@ -69,6 +75,9 @@ Notable changes include:
       * ROCM version updated from 6.2.0 to 6.4.3.
       * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
       * CHAI, Umpire, and RAJA updated to 2025.12.0.
+    * Addig PySide6 as default PIP package install for better Matplotlib performance.
+    * Python wrapped the C++ fuzzyEqual methods and removed the slightly different pure Python implementations from SpheralTestUtilities.
+    * Updating to PYB11Generator v2026.5.0.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================

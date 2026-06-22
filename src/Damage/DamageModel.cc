@@ -17,7 +17,7 @@
 #include "Boundary/Boundary.hh"
 #include "Kernel/TableKernel.hh"
 #include "Neighbor/ConnectivityMap.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/NodeCoupling.hh"
 #include "Damage/PairMaxDamageNodeCoupling.hh"

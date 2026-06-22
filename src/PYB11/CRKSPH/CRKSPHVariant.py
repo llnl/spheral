@@ -29,6 +29,7 @@ class CRKSPHVariant(CRKSPHHydroBase):
                filter = "const double",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",

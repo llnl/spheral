@@ -11,14 +11,11 @@
 // Created by JMO, Mon May  9 11:01:51 PDT 2016
 //----------------------------------------------------------------------------//
 #include "SPH/SolidSPHRZ.hh"
+#include "SPH/SPHRZUtilities.hh"
 #include "FileIO/FileIO.hh"
 #include "Hydro/HydroFieldNames.hh"
-#include "Hydro/SpecificThermalEnergyPolicy.hh"
-#include "Hydro/SpecificFromTotalThermalEnergyPolicy.hh"
-#include "Hydro/RZNonSymmetricSpecificThermalEnergyPolicy.hh"
 #include "Strength/SolidFieldNames.hh"
 #include "NodeList/SolidNodeList.hh"
-#include "Strength/DeviatoricStressPolicy.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/IncrementState.hh"
@@ -27,7 +24,6 @@
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
@@ -75,6 +71,7 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
            const TableKernel<Dimension>& WGrad,
            const double cfl,
            const bool useVelocityMagnitudeForDt,
+           const bool useNewAccelerationMagnitudeForDt,
            const bool compatibleEnergyEvolution,
            const bool evolveTotalEnergy,
            const bool gradhCorrection,
@@ -95,6 +92,7 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
                       WGrad,
                       cfl,
                       useVelocityMagnitudeForDt,
+                      useNewAccelerationMagnitudeForDt,
                       compatibleEnergyEvolution,
                       evolveTotalEnergy,
                       gradhCorrection,
@@ -109,7 +107,66 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
                       xmin,
                       xmax),
   mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
-  mSelfAccelerations(FieldStorageType::CopyFields) {
+  mPairWorkPtr(std::make_unique<PairWorkType>()),
+  mSelfAccelerations(FieldStorageType::CopyFields),
+  mMassRZ(FieldStorageType::CopyFields),
+  mMassDensityRZ(FieldStorageType::CopyFields),
+  mDmassDensityDtRZ(FieldStorageType::CopyFields) {
+}
+
+//------------------------------------------------------------------------------
+// On problem start up, we need to initialize our internal data.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+initializeProblemStartup(DataBase<Dimension>& dataBase) {
+  SPHBase<Dimension>::initializeProblemStartup(dataBase);  // SolidSPH doesn't have one of these
+  mMassRZ = dataBase.newFluidFieldList(0.0, HydroFieldNames::massRZ);
+  mMassDensityRZ = dataBase.newFluidFieldList(0.0, HydroFieldNames::massDensityRZ);
+  mDmassDensityDtRZ = dataBase.newFluidFieldList(0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
+}
+
+//------------------------------------------------------------------------------
+// On problem start up, we need to initialize our internal data.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
+                                     State<Dimension>& state,
+                                     StateDerivatives<Dimension>& derivs) {
+  dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ, false);
+  dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ, false);
+  dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
+
+  // When we come in the initial conditions for mass and density are 2D areal
+  // values, so we need to set up our areal and real 3D values appropriately.
+  if (mMassRZ.max() == 0.0) {  // Don't allow more than one time through the following!
+    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
+    auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
+
+    const auto nfields = mass.numFields();
+    for (auto k = 0u; k < nfields; ++k) {
+      const auto n = mass[k]->numInternalElements();
+      for (auto i = 0u; i < n; ++i) {
+        CHECK(rho(k,i) > 0.0);
+        const auto ri = abs(pos(k,i).y());
+        // const auto Ai = mass(k,i)/rho(k,i);
+        // const auto Vi = 2.0*M_PI*ri*Ai;
+        // const auto di = std::sqrt(Ai);
+        // const auto Vi = cylindricalToroidalVolume(di, ri);
+        // const auto Ri = std::sqrt(Ai/M_PI);
+        // const auto Vi = circularToroidalVolume(Ri, ri);
+        mMassRZ(k,i) = mass(k,i);
+        mMassDensityRZ(k,i) = rho(k,i);
+        mass(k,i) *= 2.0*M_PI*ri;
+        // mass(k,i) = rho(k,i)*Vi;
+      }
+    }
+  }
+
+  // Base class
+  SolidSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
 }
 
 //------------------------------------------------------------------------------
@@ -119,39 +176,8 @@ void
 SolidSPHRZ::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-
-  // Call the ancestor.
   SolidSPH<Dimension>::registerState(dataBase, state);
-
-  // // Reregister the plastic strain policy to the RZ specialized version
-  // // that accounts for the theta-theta component of the stress.  Also the deviatoric stress.
-  // auto ps = state.fields(SolidFieldNames::plasticStrain, 0.0);
-  // auto S = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
-  // PolicyPointer plasticStrainPolicy(new RZPlasticStrainPolicy());
-  // PolicyPointer deviatoricStressPolicy(new DeviatoricStressPolicy<Dimension>(false));
-  // state.enroll(ps, plasticStrainPolicy);
-  // state.enroll(S, deviatoricStressPolicy);
-
-  // We have to choose either compatible or total energy evolution.
-  const auto compatibleEnergy = this->compatibleEnergyEvolution();
-  const auto evolveTotalEnergy = this->evolveTotalEnergy();
-  VERIFY2(not (compatibleEnergy and evolveTotalEnergy),
-          "SPH error : you cannot simultaneously use both compatibleEnergyEvolution and evolveTotalEnergy");
-
-  // Register the specific thermal energy.
-  auto specificThermalEnergy = dataBase.fluidSpecificThermalEnergy();
-  if (compatibleEnergy) {
-    state.enroll(specificThermalEnergy, make_policy<RZNonSymmetricSpecificThermalEnergyPolicy>(dataBase));
-
-  } else if (evolveTotalEnergy) {
-    // If we're doing total energy, we register the specific energy to advance with the
-    // total energy policy.
-    state.enroll(specificThermalEnergy, make_policy<SpecificFromTotalThermalEnergyPolicy<Dimension>>());
-
-  } else {
-    // Otherwise we're just time-evolving the specific energy.
-    state.enroll(specificThermalEnergy, make_policy<IncrementState<Dimension, Scalar>>());
-  }
+  SPHRZUtilities::registerState(*this, dataBase, state, mMassRZ, mMassDensityRZ);
 }
 
 //------------------------------------------------------------------------------
@@ -162,13 +188,16 @@ SolidSPHRZ::
 registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   SolidSPH<Dimension>::registerDerivatives(dataBase, derivs);
+  derivs.enroll(mDmassDensityDtRZ);
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
+    mPairWorkPtr = std::make_unique<PairWorkType>(connectivityMap);
     dataBase.resizeFluidFieldList(mSelfAccelerations, Vector::zero(), HydroFieldNames::selfAccelerations, false);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(HydroFieldNames::pairWork, *mPairWorkPtr);
   derivs.enroll(mSelfAccelerations);
 }
 
@@ -180,44 +209,7 @@ SolidSPHRZ::
 preStepInitialize(const DataBase<Dimension>& dataBase, 
                   State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
-
-  // If we're going to do the SPH summation density, we need to convert the mass
-  // to mass per unit length first.
-  if (densityUpdate() == MassDensityType::RigorousSumDensity or
-      densityUpdate() == MassDensityType::CorrectedSumDensity) {
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-    const auto numNodeLists = mass.numFields();
-    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
-      const auto n = mass[nodeListi]->numElements();
-      for (auto i = 0u; i < n; ++i) {
-        const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-        mass(nodeListi, i) /= circi;
-      }
-    }
-  }
-
-  // Base class finalization does most of the work.
-  SolidSPH<Dimension>::preStepInitialize(dataBase, state, derivs);
-
-  // Now convert back to true masses and mass densities.  We also apply the RZ
-  // correction factor to the mass density.
-  if (densityUpdate() == MassDensityType::RigorousSumDensity or
-      densityUpdate() == MassDensityType::CorrectedSumDensity) {
-    const auto position = state.fields(HydroFieldNames::position, Vector::zero());
-    const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-    const auto numNodeLists = massDensity.numFields();
-    for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
-      const auto n = massDensity[nodeListi]->numElements();
-      for (auto i = 0u; i != n; ++i) {
-        const auto& xi = position(nodeListi, i);
-        const auto  circi = 2.0*M_PI*abs(xi.y());
-        mass(nodeListi, i) *= circi;
-      }
-    }
-  }
+  SPHRZUtilities::preStepInitialize(*this, dataBase, state, derivs);
 }
 
 //------------------------------------------------------------------------------
@@ -269,7 +261,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   // A few useful constants we'll use in the following loop.
   const auto tiny = 1.0e-30;
   const auto W0 = W(0.0, 1.0);
-  const auto WQ0 = WQ(0.0, 1.0);
+  // const auto WQ0 = WQ(0.0, 1.0);
   const auto epsTensile = this->epsilonTensile();
   const auto compatibleEnergy = this->compatibleEnergyEvolution();
   const auto evolveTotalEnergy = this->evolveTotalEnergy();
@@ -289,9 +281,11 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   // Get the state and derivative FieldLists.
   // State FieldLists.
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   const auto position = state.fields(HydroFieldNames::position, Vector::zero());
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
@@ -309,9 +303,11 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   auto fClQView = fClQ.view();
   auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
+  CHECK(massRZ.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
+  CHECK(massDensityRZ.size() == numNodeLists);
   CHECK(specificThermalEnergy.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
   CHECK(pressure.size() == numNodeLists);
@@ -332,6 +328,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   auto  rhoSum = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
   auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
   auto  DrhoDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
+  auto  DrhoDtRZ = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ, 0.0);
   auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
   auto  DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
   auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
@@ -342,6 +339,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto  rhoSumCorrection = derivs.fields(HydroFieldNames::massDensityCorrection, 0.0);
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairWork = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   auto  selfAccelerations = derivs.fields(HydroFieldNames::selfAccelerations, Vector::zero(), true);
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
@@ -349,6 +347,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   CHECK(rhoSum.size() == numNodeLists);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
+  CHECK(DrhoDtRZ.size() == numNodeLists);
   CHECK(DvDt.size() == numNodeLists);
   CHECK(DepsDt.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
@@ -362,6 +361,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
   CHECK((compatibleEnergy     and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy     and pairWork.size() == npairs) or not compatibleEnergy);
   CHECK((compatibleEnergy     and selfAccelerations.size() == numNodeLists) or
         (not compatibleEnergy and selfAccelerations.size() == 0u));
 
@@ -405,25 +405,20 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = abs(posi.y());
-      const auto  circi = 2.0*M_PI*ri;
-      const auto  mi = mass(nodeListi, i);
-      const auto  mRZi = mi/circi;
+      const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
       const auto  rhoi = massDensity(nodeListi, i);
-      //const auto  epsi = specificThermalEnergy(nodeListi, i);
+      const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto  ci = soundSpeed(nodeListi, i);
-      const auto  omegai = omega(nodeListi, i);
+      // const auto  omegai = omega(nodeListi, i);
       const auto& Si = S(nodeListi, i);
-      //const auto  mui = mu(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
-      const auto  safeOmegai = safeInv(omegai, tiny);
+      // const auto  safeOmegai = safeInv(omegai, tiny);
       //const auto  fragIDi = fragIDs(nodeListi, i);
       const auto  pTypei = pTypes(nodeListi, i);
       const auto  zetai = abs((Hi*posi).y());
-      CHECK(mi > 0.0);
       CHECK(rhoi > 0.0);
       CHECK(Hdeti > 0.0);
 
@@ -442,25 +437,20 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Get the state for node j.
       const auto& posj = position(nodeListj, j);
-      const auto  rj = abs(posj.y());
-      const auto  circj = 2.0*M_PI*rj;
-      const auto  mj = mass(nodeListj, j);
-      const auto  mRZj = mj/circj;
+      const auto  mRZj = massRZ(nodeListj, j);
       const auto& vj = velocity(nodeListj, j);
       const auto  rhoj = massDensity(nodeListj, j);
-      //const auto  epsj = specificThermalEnergy(nodeListj, j);
+      const auto  rhoRZj = massDensityRZ(nodeListj, j);
       const auto  Pj = pressure(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
       const auto  cj = soundSpeed(nodeListj, j);
-      const auto  omegaj = omega(nodeListj, j);
+      // const auto  omegaj = omega(nodeListj, j);
       const auto& Sj = S(nodeListj, j);
-      //const auto  muj = mu(nodeListj, j);
       const auto  Hdetj = Hj.Determinant();
-      const auto  safeOmegaj = safeInv(omegaj, tiny);
+      // const auto  safeOmegaj = safeInv(omegaj, tiny);
       //const auto  fragIDj = fragIDs(nodeListj, j);
       const auto  pTypej = pTypes(nodeListj, j);
       const auto  zetaj = abs((Hj*posj).y());
-      CHECK(mj > 0.0);
       CHECK(rhoj > 0.0);
       CHECK(Hdetj > 0.0);
 
@@ -535,17 +525,21 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto vij = vi - vj;
       Q->QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
-               posi, Hi, etai, vi, rhoi, ci,  
-               posj, Hj, etaj, vj, rhoj, cj,
+               posi, Hi, etai, vi, rhoRZi, ci,  
+               posj, Hj, etaj, vj, rhoRZj, cj,
                fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
-      const auto workQi = vij.dot(Qacci);
-      const auto workQj = vij.dot(Qaccj);
+      const auto workQi = 0.5*(QPiij*vij).dot(gradWQi);
+      const auto workQj = 0.5*(QPiji*vij).dot(gradWQj);
+      // const auto workQzi = 0.5*(QPiij*vij)[0]*gradWQi[0];
+      // const auto workQzj = 0.5*(QPiji*vij)[0]*gradWQj[0];
+      // const auto workQri = 0.5*(QPiij*vij)[1]*gradWQi[1];// - Qi/(rhoRZj*rhoi)*WQj * integrate_vr_over_r(vri, ri, 0.0, hri, dt);
+      // const auto workQrj = 0.5*(QPiji*vij)[1]*gradWQj[1];// - Qj/(rhoRZi*rhoj)*WQi * integrate_vr_over_r(vrj, rj, 0.0, hrj, dt);
       maxViscousPressurei = max(maxViscousPressurei, Qi);
       maxViscousPressurej = max(maxViscousPressurej, Qj);
-      effViscousPressurei += mRZj*Qi*WQi/rhoj;
-      effViscousPressurej += mRZi*Qj*WQj/rhoi;
+      effViscousPressurei += mRZj*Qi*WQi/rhoRZj;
+      effViscousPressurej += mRZi*Qj*WQj/rhoRZi;
 
       // Compute the stress tensors.
       if (sameMatij) {
@@ -568,16 +562,11 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       // Acceleration.
       CHECK(rhoi > 0.0);
       CHECK(rhoj > 0.0);
-      const auto sigmarhoi = safeOmegai*sigmai/(rhoi*rhoi);
-      const auto sigmarhoj = safeOmegaj*sigmaj/(rhoj*rhoj);
-      const auto deltaDvDt = sigmarhoi*gradWi + sigmarhoj*gradWj - Qacci - Qaccj;
+      const auto deltaDvDti = mRZj*(rhoRZi/rhoi * (sigmai/(rhoRZi*rhoRZi)*gradWi + sigmaj/(rhoRZj*rhoRZj)*gradWj) - Qacci - Qaccj);
+      const auto deltaDvDtj = mRZi*(rhoRZj/rhoj * (sigmai/(rhoRZi*rhoRZi)*gradWi + sigmaj/(rhoRZj*rhoRZj)*gradWj) - Qacci - Qaccj);
       if (freeParticle) {
-        DvDti += mRZj*deltaDvDt;
-        DvDtj -= mRZi*deltaDvDt;
-        if (compatibleEnergy) {
-          pairAccelerations[kk][0] =  mRZj*deltaDvDt;
-          pairAccelerations[kk][1] = -mRZi*deltaDvDt;
-        }
+        DvDti += deltaDvDti;
+        DvDtj -= deltaDvDtj;
       }
 
       // Pair-wise portion of grad velocity.
@@ -585,8 +574,24 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto deltaDvDxj = fDij * vij.dyad(gradWGj);
 
       // Specific thermal energy evolution.
-      DepsDti -= mRZj*(sigmarhoi.doubledot(deltaDvDxi.Symmetric()) - workQi);
-      DepsDtj -= mRZi*(sigmarhoj.doubledot(deltaDvDxj.Symmetric()) - workQj);
+      const auto worki = -mRZj*(sigmai.doubledot(deltaDvDxi)/(rhoi*rhoRZi) - workQi);
+      const auto workj = -mRZi*(sigmaj.doubledot(deltaDvDxj)/(rhoj*rhoRZj) - workQj);
+      // const auto worki = -mRZj*((sigmai.xx()*deltaDvDxi.xx() + sigmai.xy()*deltaDvDxi.yx() +
+      //                            sigmai.xy()*deltaDvDxi.xy() + sigmai.yy()*deltaDvDxi.yy())/(rhoi*rhoRZi) - workQi);
+      // const auto workj = -mRZi*((sigmaj.xx()*deltaDvDxj.xx() + sigmaj.xy()*deltaDvDxj.yx() +
+      //                            sigmaj.xy()*deltaDvDxj.xy() + sigmaj.yy()*deltaDvDxj.yy())/(rhoj*rhoRZj) - workQj);
+      if (freeParticle) {
+        DepsDti += worki;
+        DepsDtj += workj;
+      }
+
+      // Update the history for compatible energy update
+      if (compatibleEnergy) {
+        pairAccelerations[kk][0] =  deltaDvDti;
+        pairAccelerations[kk][1] = -deltaDvDtj;
+        pairWork[kk][0] = worki;
+        pairWork[kk][1] = workj;
+      }
 
       // Velocity gradient.
       DvDxi -= mRZj*deltaDvDxi;
@@ -598,7 +603,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Estimate of delta v (for XSPH).
       if (sameMatij or min(zetai, zetaj) < 1.0) {
-        const auto wXSPHij = 0.5*(mRZi/rhoi*Wi + mRZj/rhoj*Wj);
+        const auto wXSPHij = 0.5*(mRZi/rhoRZi*Wi + mRZj/rhoRZj*Wj);
         XSPHWeightSumi += wXSPHij;
         XSPHWeightSumj += wXSPHij;
         XSPHDeltaVi -= wXSPHij*vij;
@@ -639,50 +644,49 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Get the state for node i.
       const auto& posi = position(nodeListi, i);
-      const auto  ri = abs(posi.y());
-      const auto  circi = 2.0*M_PI*ri;
+      const auto  ri = posi.y();                    // Can be negative for ghost points!
       const auto  mi = mass(nodeListi, i);
-      const auto  mRZi = mi/circi;
+      const auto  mRZi = massRZ(nodeListi, i);
       const auto& vi = velocity(nodeListi, i);
+      const auto  vri = vi.y();
       const auto  rhoi = massDensity(nodeListi, i);
+      const auto  rhoRZi = massDensityRZ(nodeListi, i);
       const auto  Pi = pressure(nodeListi, i);
+      const auto  effViscousPressurei = effViscousPressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& Si = S(nodeListi, i);
       const auto  STTi = -Si.Trace();
       const auto  mui = mu(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
+      const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
+      const auto  hri = ri*safeInv(zetai);          // Always positive
+      CHECK(hri >= 0.0);
+      const auto  riInv = safeInvVar(ri, 0.01*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
-      const auto  zetai = abs((Hi*posi).y());
-      const auto  hri = ri*safeInv(zetai);
-      const auto  riInv = safeInv(ri, 0.25*hri);
       CHECK(mi > 0.0);
-      CHECK(rhoi > 0.0);
+      CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
+      CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);
       CHECK(Hdeti > 0.0);
 
-      auto& rhoSumi = rhoSum(nodeListi, i);
       auto& DxDti = DxDt(nodeListi, i);
       auto& DrhoDti = DrhoDt(nodeListi, i);
+      auto& DrhoDtRZi = DrhoDtRZ(nodeListi, i);
       auto& DvDti = DvDt(nodeListi, i);
       auto& DepsDti = DepsDt(nodeListi, i);
       auto& DvDxi = DvDx(nodeListi, i);
       auto& localDvDxi = localDvDx(nodeListi, i);
       auto& Mi = M(nodeListi, i);
       auto& localMi = localM(nodeListi, i);
-      auto& effViscousPressurei = effViscousPressure(nodeListi, i);
-      auto& rhoSumCorrectioni = rhoSumCorrection(nodeListi, i);
       auto& XSPHWeightSumi = XSPHWeightSum(nodeListi, i);
       auto& XSPHDeltaVi = XSPHDeltaV(nodeListi, i);
       auto& DSDti = DSDt(nodeListi, i);
 
-      // Add the self-contribution to density sum.
-      rhoSumi += mRZi*W0*Hdeti;
-      rhoSumi /= circi;
+      // // Add the self-contribution to density sum.
+      // rhoSumi += mRZi*W0*Hdeti;
+      // rhoSumi /= circi;
 
-      // Add the self-contribution to density sum correction.
-      rhoSumCorrectioni += mRZi*WQ0*Hdeti/rhoi ;
-
-      // Correct the effective viscous pressure.
-      effViscousPressurei /= rhoSumCorrectioni ;
+      // // Add the self-contribution to density sum correction.
+      // rhoSumCorrectioni += mRZi*WQ0*Hdeti/rhoi ;
 
       // Finish the acceleration -- self hoop strain.
       const Vector deltaDvDti(Si(1,0)/rhoi*riInv,
@@ -709,14 +713,17 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
         localDvDxi /= rhoi;
       }
 
+      const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
+
       // Evaluate the continuity equation.
-      XSPHWeightSumi += Hdeti*mRZi/rhoi*W0;
+      XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
-      const auto vri = vi.y(); // + XSPHDeltaVi.y();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vri*riInv);
+      DrhoDtRZi = -rhoRZi*DvDxi.Trace();
+      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
 
       // Finish the specific thermal energy evolution.
+      DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
       DepsDti += (STTi - Pi)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
@@ -744,13 +751,38 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
-      const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
+      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + (2.0*mui)*deviatoricDeformation;
 
       // In the presence of damage, add a term to reduce the stress on this point.
       DSDti = (1.0 - Di)*DSDti - Di*Si*0.25/dt;
     }
   }
+}
+
+//------------------------------------------------------------------------------
+// Finalize derivatives
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+finalizeDerivatives(const Scalar time,
+                    const Scalar dt,
+                    const DataBase<Dim<2>>& dataBase,
+                    const State<Dim<2>>& state,
+                    StateDerivatives<Dim<2>>& derivs) const {
+
+  // If we're using compatible energy mode we need to apply BCs to DepsDt
+  const auto compatibleEnergy = this->compatibleEnergyEvolution();
+  if (compatibleEnergy) {
+    auto DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
+    auto DepsDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
+    for (auto* bptr: this->boundaryConditions()) {
+      bptr->applyFieldListGhostBoundary(DvDt);
+      bptr->applyFieldListGhostBoundary(DepsDt);
+    }
+    for (auto* bptr: this->boundaryConditions()) bptr->finalizeGhostBoundary();
+  }
+
 }
 
 //------------------------------------------------------------------------------
@@ -761,38 +793,38 @@ SolidSPHRZ::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
 
+  // Our state
+  auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
+  auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
+  for (auto boundaryPtr: this->boundaryConditions()) {
+    boundaryPtr->applyFieldListGhostBoundary(massRZ);
+    boundaryPtr->applyFieldListGhostBoundary(rhoRZ);
+  }
+
   // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto numNodeLists = mass.numFields();
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) /= ri;
     }
   }
 
   // Apply ordinary SPH BCs.
-  SolidSPH<Dimension>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
+  SolidSPH<Dim<2>>::applyGhostBoundaries(state, derivs);
+  for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
 
   // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) *= ri;
     }
   }
 }
@@ -805,41 +837,65 @@ SolidSPHRZ::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
 
+  // Our state
+  auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
+  auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
+  for (auto boundaryPtr: this->boundaryConditions()) {
+    boundaryPtr->enforceFieldListBoundary(massRZ);
+    boundaryPtr->enforceFieldListBoundary(rhoRZ);
+  }
+
   // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) /= circi;
-#else
-      mass(nodeListi, i) /= circi;
-#endif
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto numNodeLists = mass.numFields();
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) /= ri;
     }
   }
 
   // Apply ordinary SPH BCs.
-  SolidSPH<Dimension>::enforceBoundaries(state, derivs);
+  SolidSPH<Dim<2>>::enforceBoundaries(state, derivs);
 
   // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-#ifdef WIN32
-      if (circi > 0.0) mass(nodeListi, i) *= circi;
-#else
-      mass(nodeListi, i) *= circi;
-#endif
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto n = mass[nodeListi]->numElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto ri = abs(pos(nodeListi, i).y());
+      CHECK(ri > 0.0);
+      mass(nodeListi, i) *= ri;
     }
   }
+}
+
+//------------------------------------------------------------------------------
+// Dump the current state to the given file.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+dumpState(FileIO& file, const string& pathName) const {
+  SolidSPH<Dim<2>>::dumpState(file, pathName);
+  file.write(mSelfAccelerations, pathName + "/selfAcceleration");
+  file.write(mMassRZ, pathName + "/massRZ");
+  file.write(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.write(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
+}
+
+//------------------------------------------------------------------------------
+// Restore the state from the given file.
+//------------------------------------------------------------------------------
+void
+SolidSPHRZ::
+restoreState(const FileIO& file, const string& pathName) {
+  SolidSPH<Dim<2>>::restoreState(file, pathName);
+  file.read(mSelfAccelerations, pathName + "/selfAcceleration");
+  file.read(mMassRZ, pathName + "/massRZ");
+  file.read(mMassDensityRZ, pathName + "/massDensityRZ");
+  file.read(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
 }
 
 }

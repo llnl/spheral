@@ -1,7 +1,6 @@
 #ATS:test(SELF, label="GeomVector unit tests")
 # Unit tests for the Spheral++ GeomVector
 
-from SpheralTestUtilities import fuzzyEqual
 from math import *
 import unittest
 
