@@ -202,6 +202,42 @@ Boundary<Dimension>::violationNodes(const NodeList<Dimension>& nodeList) const {
 }
 
 //------------------------------------------------------------------------------
+// Query if a node is one of our control nodes
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+Boundary<Dimension>::isControlNode(const NodeList<Dimension>& nodeList,
+                                   const size_t i) const {
+  if (mBoundaryNodes.empty()) return false;
+  const auto& indices = this->controlNodes(nodeList);
+  return std::find(indices.begin(), indices.end(), i) != indices.end();
+}
+
+//------------------------------------------------------------------------------
+// Query if a node is one of our ghost nodes
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+Boundary<Dimension>::isGhostNode(const NodeList<Dimension>& nodeList,
+                                 const size_t i) const {
+  if (mBoundaryNodes.empty() or i <= nodeList.firstGhostNode()) return false;
+  const auto& indices = this->ghostNodes(nodeList);
+  return std::find(indices.begin(), indices.end(), i) != indices.end();
+}
+
+//------------------------------------------------------------------------------
+// Query if a node is one of our violation nodes
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+Boundary<Dimension>::isViolationNode(const NodeList<Dimension>& nodeList,
+                                     const size_t i) const {
+  if (mBoundaryNodes.empty()) return false;
+  const auto& indices = this->violationNodes(nodeList);
+  return std::find(indices.begin(), indices.end(), i) != indices.end();
+}
+
+//------------------------------------------------------------------------------
 // Return begin/end iterators for the control nodes of the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>

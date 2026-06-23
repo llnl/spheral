@@ -124,8 +124,13 @@ if(POLYTOPE_FOUND)
   # Install Polytope python library to our site-packages
   if (SPHERAL_ENABLE_PYTHON)
     install(FILES ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so
-      DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
+      DESTINATION .venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
     )
+    configure_file(
+      ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+      COPYONLY)
     if (NOT EXISTS ${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so)
       message(FATAL_ERROR
         "${POLYTOPE_INSTALL_PREFIX}/${POLYTOPE_SITE_PACKAGES_PATH}/polytope.so not found")
@@ -155,24 +160,13 @@ endif()
 
 message("-----------------------------------------------------------------------------")
 # HDF5
-# This is a hack to allow other codes to use old versions of hdf5
-# Ideally, if(NOT ENABLE_STATIC_TPL) would be replaced and the
-# find_package call would be moved outside of the if statement:
-#
-# find_package(hdf5 NO_DEFAULT_PATH PATHS ${hdf5_DIR})
-# if (hdf5_FOUND)
 
-
-if(NOT ENABLE_STATIC_TPL)
+if(NOT SPHERAL_EXTERNAL_INSTALL)
   find_package(hdf5 REQUIRED NO_DEFAULT_PATH PATHS ${hdf5_DIR})
   message("Found HDF5 External Package.")
   list(APPEND SPHERAL_FP_TPLS hdf5)
   list(APPEND SPHERAL_FP_DIRS ${hdf5_DIR})
-  if(ENABLE_STATIC_TPL)
-    list(APPEND SPHERAL_BLT_DEPENDS hdf5-static hdf5_hl-static)
-  else()
-    list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
-  endif()
+  list(APPEND SPHERAL_BLT_DEPENDS hdf5-shared hdf5_hl-shared)
 else()
   list(APPEND SPHERAL_EXTERN_LIBS hdf5)
 endif()
@@ -218,6 +212,18 @@ if (SPHERAL_ENABLE_SUNDIALS)
   endif()
 endif()
 
+message("-----------------------------------------------------------------------------")
+if(NOT SPHERAL_EXTERNAL_INSTALL)
+  find_package(Boost REQUIRED NO_DEFAULT_PATH COMPONENTS filesystem PATHS ${boost_DIR})
+  if(Boost_FOUND)
+    list(APPEND SPHERAL_BLT_DEPENDS Boost::filesystem)
+    message("Found Boost External Package version ${Boost_VERSION}")
+  endif()
+else()
+  # This is used in case a code wants to use an unconventional Boost install
+  list(APPEND SPHERAL_EXTERN_LIBS boost)
+endif()
+
 set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
 set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
@@ -225,7 +231,7 @@ message("-----------------------------------------------------------------------
 # In case we start using find_package on Silo, we should save the silo_DIR path
 set(CONFIG_SILO_DIR "${silo_DIR}" CACHE PATH "Configuration Silo directory")
 # TPLs that must be imported
-list(APPEND SPHERAL_EXTERN_LIBS boost eigen qhull silo)
+list(APPEND SPHERAL_EXTERN_LIBS eigen qhull silo)
 
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS leos IF SPHERAL_ENABLE_LEOS)
 blt_list_append( TO SPHERAL_EXTERN_LIBS ELEMENTS aneos IF SPHERAL_ENABLE_ANEOS)
@@ -244,16 +250,4 @@ blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
   include(${EXTERNAL_SPHERAL_TPL_CMAKE})
-endif()
-
-if (SPHERAL_ENABLE_PYTHON)
-  configure_file(
-    ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    ${CMAKE_BINARY_DIR}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-    COPYONLY)
-
-  install(FILES ${POLYTOPE_INSTALL_PREFIX}/${SPHERAL_SITE_PACKAGES_PATH}/polytope/polytope.so
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/.venv/${SPHERAL_SITE_PACKAGES_PATH}/polytope/
-  )
 endif()

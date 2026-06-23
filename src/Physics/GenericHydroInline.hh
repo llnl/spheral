@@ -10,7 +10,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-ArtificialViscosityHandle<Dimension>&
+ArtificialViscosity<Dimension>&
 GenericHydro<Dimension>::artificialViscosity() const {
   return mArtificialViscosity;
 }
@@ -50,6 +50,25 @@ void
 GenericHydro<Dimension>::
 useVelocityMagnitudeForDt(bool x) {
   mUseVelocityMagnitudeForDt = x;
+}
+
+//------------------------------------------------------------------------------
+// Flag to toggle between legacy dt criterion based on the acceleration magnitude
+// or the new version.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+bool
+GenericHydro<Dimension>::useNewAccelerationMagnitudeForDt() const {
+  return mUseNewAccelerationMagnitudeForDt;
+}
+
+template<typename Dimension>
+inline
+void
+GenericHydro<Dimension>::
+useNewAccelerationMagnitudeForDt(bool x) {
+  mUseNewAccelerationMagnitudeForDt = x;
 }
 
 //------------------------------------------------------------------------------

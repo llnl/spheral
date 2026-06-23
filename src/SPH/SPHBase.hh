@@ -18,7 +18,7 @@ namespace Spheral {
 
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class DataBase;
 template<typename Dimension, typename Value> class Field;
@@ -39,11 +39,12 @@ public:
 
   // Constructors.
   SPHBase(DataBase<Dimension>& dataBase,
-          ArtificialViscosityHandle<Dimension>& Q,
+          ArtificialViscosity<Dimension>& Q,
           const TableKernel<Dimension>& W,
           const TableKernel<Dimension>& WPi,
           const double cfl,
           const bool useVelocityMagnitudeForDt,
+          const bool useNewAccelerationMagnitudeForDt,
           const bool compatibleEnergyEvolution,
           const bool evolveTotalEnergy,
           const bool gradhCorrection,
@@ -122,10 +123,8 @@ public:
   void enforceBoundaries(State<Dimension>& state,
                          StateDerivatives<Dimension>& derivs) override;
 
-  // A method to fill in the volume in the State, optionally enforcing
-  // boundary conditions.
-  void updateVolume(State<Dimension>& state,
-                    const bool boundaries) const;
+  virtual bool requireVoronoiCells() const override { return (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
+                                                              this->densityUpdate() == MassDensityType::SumVoronoiCellDensity); }
 
   // Flag to choose whether we want to sum for density, or integrate the continuity equation.
   MassDensityType densityUpdate()                                               const { return mDensityUpdate; }
@@ -178,7 +177,6 @@ public:
   const FieldList<Dimension, int>&          timeStepMask()                      const { return mTimeStepMask; }
   const FieldList<Dimension, Scalar>&       pressure()                          const { return mPressure; }
   const FieldList<Dimension, Scalar>&       soundSpeed()                        const { return mSoundSpeed; }
-  const FieldList<Dimension, Scalar>&       volume()                            const { return mVolume; }
   const FieldList<Dimension, Scalar>&       omegaGradh()                        const { return mOmegaGradh; }
   const FieldList<Dimension, Scalar>&       entropy()                           const { return mEntropy; }
   const FieldList<Dimension, Scalar>&       massDensityCorrection()             const { return mMassDensityCorrection; }
@@ -247,8 +245,6 @@ protected:
   FieldList<Dimension, Vector>             mGradRho;
   FieldList<Dimension, Tensor>             mM;
   FieldList<Dimension, Tensor>             mLocalM;
-
-  FieldList<Dimension, Scalar>             mVolume;
 
 protected:
   //--------------------------- Protected Interface ---------------------------//

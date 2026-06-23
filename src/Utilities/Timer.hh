@@ -29,6 +29,7 @@
 #define TIME_PHASE_END(regionName)
 
 #endif // SPHERAL_ENABLE_TIMERS
+
 // Note: This class is initialized in
 // SimulationControl/SpheralTimingParser.py
 namespace Spheral {
@@ -39,6 +40,7 @@ private:
   TimerMgr(const TimerMgr&) = delete;
   TimerMgr& operator=(const TimerMgr&) = delete;
   bool started = false;
+  bool advanced_timers = false;
   std::string caliperFilename = "";
   std::string caliperConfig = "";
 public:
@@ -60,6 +62,25 @@ public:
   }
   static std::string get_filename() {
     return instance().caliperFilename;
+  }
+  static void enable_advanced_timers() {
+    instance().advanced_timers = true;
+  }
+  static void disable_advanced_timers() {
+    instance().advanced_timers = false;
+  }
+  static bool advanced_timers_enabled() {
+    return instance().advanced_timers;
+  }
+  static void adv_timer_begin(std::string regionName) {
+    if (advanced_timers_enabled()) {
+      TIME_BEGIN(regionName.c_str());
+    }
+  }
+  static void adv_timer_end(std::string regionName) {
+    if (advanced_timers_enabled()) {
+      TIME_END(regionName.c_str());
+    }
   }
 #ifdef SPHERAL_ENABLE_TIMERS
 private:
@@ -118,4 +139,6 @@ public:
 #endif
 };
 }
+#define ADV_TIME_BEGIN(regionName) Spheral::TimerMgr::adv_timer_begin(regionName);
+#define ADV_TIME_END(regionName) Spheral::TimerMgr::adv_timer_end(regionName);
 #endif

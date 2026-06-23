@@ -27,7 +27,7 @@
 #include "Hydro/SoundSpeedPolicy.hh"
 #include "Mesh/MeshPolicy.hh"
 #include "Mesh/generateMesh.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "ArtificialViscosity/TensorSVPHViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
@@ -60,9 +60,10 @@ namespace Spheral {
 template<typename Dimension>
 SVPHFacetedHydroBase<Dimension>::
 SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
-                     ArtificialViscosityHandle<Dimension>& Q,
+                     ArtificialViscosity<Dimension>& Q,
                      const double cfl,
                      const bool useVelocityMagnitudeForDt,
+                     const bool useNewAccelerationMagnitudeForDt,
                      const bool compatibleEnergyEvolution,
                      const bool XSVPH,
                      const bool linearConsistent,
@@ -72,7 +73,7 @@ SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
                      const Scalar fcellPressure,
                      const Vector& xmin,
                      const Vector& xmax):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mKernel(W),
   mDensityUpdate(densityUpdate),
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
@@ -361,7 +362,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   using Zone = typename Mesh<Dimension>::Zone;
   using Face = typename Mesh<Dimension>::Face;
 
-  // Get our special ArtificialViscosity.
+  // Get our special ArtificialViscosityView.
   const auto& Q = dynamic_cast<TensorSVPHViscosity<Dimension>&>(this->artificialViscosity());
 
   // The kernels and such.
@@ -1055,4 +1056,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

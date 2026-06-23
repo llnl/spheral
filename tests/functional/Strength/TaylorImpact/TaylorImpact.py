@@ -45,12 +45,20 @@
 #ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK 2D reference data")
 #ATS:test(SELF, "--geometry 2d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_2d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 2D reference data")
 #
-# ACRK Classic RZ
-#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK RZ reference data")
-#ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK RZ reference data")
+# # ACRK Classic RZ   # Suspeneded until updated to new RZ formalism
+# #ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_1proc", np=1, level=100, label="Generate 1 proc CRK RZ reference data")
+# #ATS:test(SELF, "--geometry RZ --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_rz_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK RZ reference data")
 #
 # ACRK Classic 3D
 #ATS:test(SELF, "--geometry 3d --hydroType CRKSPH --asph Classic --steps 100 --compatibleEnergy False --densityUpdate SumVoronoiCellDensity --clearDirectories True --siloSnapShotFile Spheral_crk_3d_state_snapshot_8proc", np=8, level=100, label="Generate 8 proc CRK 3D reference data")
+#
+# RAJA ASPH 2D
+#ATS:tack(raja_test = True)
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_8proc --raja True", np=8, level=100, label="Generate 8 proc SPH+RAJA 2D reference data")
+#
+# GPU RAJA ASPH 2D
+#ATS:test(SELF, "--geometry 2d --hydroType SPH --steps 100 --compatibleEnergy False --clearDirectories True --siloSnapShotFile Spheral_sph_raja_2d_state_snapshot_1gpu --raja True", np=1, ngpu=1, level=100, label="Generate 1 GPU SPH+RAJA 2D reference data")
+#ATS:untack("raja_test")
 
 import os, shutil, sys
 from math import *
@@ -91,6 +99,7 @@ commandLine(geometry = "2d",                     # one of (2d, 3d, RZ)
             # hydro type
             hydroType = "SPH",                   # One of (SPH, FSISPH, CRKSPH)
             asph = True,                         # Only for H evolution, not hydro algorithm.  One of (True, False, Classic)
+            raja = False,
 
             # general hydro options
             HUpdate = IdealH,
@@ -138,7 +147,7 @@ commandLine(geometry = "2d",                     # one of (2d, 3d, RZ)
             restartStep = 1000,
             restoreCycle = -1,
             redistributeStep = 2000,
-            vizCycle = 50,
+            vizCycle = None,
             vizTime = 1.0,
             baseDir = "dumps-TaylorImpact",
             verbosedt = False,
@@ -171,6 +180,9 @@ if asph:
         hydroname = "AClassic" + hydroname
     else:
         hydroname = "A" + hydroname
+
+if raja:
+    hydroname = "RAJA" + hydroname
 
 # Restart and output files.
 if baseDir:
@@ -486,7 +498,8 @@ else:
                 XSPH = XSPH,
                 epsTensile = epsilonTensile,
                 nTensile = nTensile,
-                ASPH = asph)
+                ASPH = asph,
+                RAJA = raja)
 
 for bc in bcs:
     hydro.appendBoundary(bc)
@@ -579,7 +592,7 @@ if (not reflect) and control.totalSteps == 0:
     control.dropViz(control.totalSteps, 0.0, 0.0)
 
 #-------------------------------------------------------------------------------
-# Advance to completetion.
+# Advance to completion.
 #-------------------------------------------------------------------------------
 if not steps is None:
     control.step(steps)
@@ -629,11 +642,17 @@ if siloSnapShotFile:
     DHDt = derivs.symTensorFields("delta " + HydroFieldNames.H)
     Hideal = derivs.symTensorFields("new " + HydroFieldNames.H)
     DSDt = derivs.symTensorFields("delta " + SolidFieldNames.deviatoricStress)
+    fieldLists = [mass, rho, pos, eps, vel, H, P, S, cs, K, mu, Y, ps, DvelDxQ,
+                  massSum, DrhoDt, DvelDt, DepsDt, DvelDx, DHDt, Hideal, DSDt]
+    if geometry == "RZ":
+        massRZ = state0.scalarFields(HydroFieldNames.massRZ)
+        rhoRZ = state0.scalarFields(HydroFieldNames.massDensityRZ)
+        DrhoDtRZ = derivs.scalarFields("delta " + HydroFieldNames.massDensityRZ)
+        fieldLists += [massRZ, rhoRZ, DrhoDtRZ]
 
     # Write the sucker.
     siloPointmeshDump(siloSnapShotFile, 
-                      fieldLists = [mass, rho, pos, eps, vel, H, P, S, cs, K, mu, Y, ps, DvelDxQ,
-                                    massSum, DrhoDt, DvelDt, DepsDt, DvelDx, DHDt, Hideal, DSDt],
+                      fieldLists = fieldLists,
                       baseDirectory = dataDir,
                       label = "Spheral++ snapshot of state and derivatives.",
                       time = control.time(),

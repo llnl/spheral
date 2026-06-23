@@ -2,7 +2,6 @@
 # Test interpolation of a constant field using the TableKernel
 #-------------------------------------------------------------------------------
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 from GenerateNodeProfile import *
 from SortAndDivideRedistributeNodes import *
 import matplotlib.pyplot as plt

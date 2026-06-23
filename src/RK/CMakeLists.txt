@@ -22,10 +22,6 @@ set(RK_inst
     hessianRK
     )
 
-set(RK_sources
-    RKFieldNames.cc
-    )
-
 if(SPHERAL_ENABLE_2D)
   list(APPEND RK_sources
     ContinuityVolumePolicyRZ.cc

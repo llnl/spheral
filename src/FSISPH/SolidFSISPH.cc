@@ -31,7 +31,7 @@
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/IncrementState.hh"
-#include "DataBase/ReplaceBoundedState.hh"
+#include "DataBase/ReplaceState.hh"
 #include "DataBase/IncrementBoundedState.hh"
 #include "DataBase/ReplaceBoundedState.hh"
 #include "DataBase/PureReplaceState.hh"
@@ -112,7 +112,7 @@ tensileStressCorrection(const Dim<3>::SymTensor& sigma) {
 template<typename Dimension>
 SolidFSISPH<Dimension>::
 SolidFSISPH(DataBase<Dimension>& dataBase,
-            ArtificialViscosityHandle<Dimension>& Q,
+            ArtificialViscosity<Dimension>& Q,
             SlideSurface<Dimension>& slides,
             const TableKernel<Dimension>& W,
             const double cfl,
@@ -124,6 +124,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
             const KernelAveragingMethod kernelAveragingMethod,
             const std::vector<int> sumDensityNodeLists,
             const bool useVelocityMagnitudeForDt,
+            const bool useNewAccelerationMagnitudeForDt,
             const bool compatibleEnergyEvolution,
             const bool evolveTotalEnergy,
             const bool linearCorrectGradients,
@@ -135,7 +136,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
             const double nTensile,
             const Vector& xmin,
             const Vector& xmax):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mKernel(W),
   mSlideSurface(slides),
   mDensityUpdate(densityUpdate),
@@ -157,8 +158,8 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mnTensile(nTensile),
   mxmin(xmin),
   mxmax(xmax),
-  mPairAccelerationsPtr(),
-  mPairDepsDtPtr(),
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
+  mPairDepsDtPtr(std::make_unique<PairWorkType>()),
   mTimeStepMask(FieldStorageType::CopyFields),
   mPressure(FieldStorageType::CopyFields),
   mDamagedPressure(FieldStorageType::CopyFields),
@@ -410,9 +411,9 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
     mPairDepsDtPtr = std::make_unique<PairWorkType>(connectivityMap);
-    derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
-    derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
   }
+  derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  derivs.enroll(HydroFieldNames::pairWork, *mPairDepsDtPtr);
 
   derivs.enroll(plasticStrainRate);
   derivs.enroll(mXSPHDeltaV);

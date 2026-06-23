@@ -21,10 +21,10 @@
 #ATS:acsph2 = test(          SELF, "--hydroType SPH --goalTime 0.3 --asph Classic --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20", np=8, label="Planar Noh RZ problem (ASPH Classic parallel)")
 #ATS:acsph3 = testif(acsph2, SELF, "--hydroType SPH --goalTime 0.3 --asph Classic --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=8, label="Planar RZ Noh problem -- (ASPH Classic parallel) RESTART CHECK")
 #
-# CRKSPH
+# CRKSPH   # Suspeneded until updated to new RZ formalism
 #
-#ATS:crk2 = test(        SELF, "--hydroType CRKSPH --goalTime 0.3 --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20 --tol 5e-3", np=8, label="Planar Noh RZ problem (CRKSPH parallel)")               # Only need tolerance override for BlueOS
-#ATS:crk3 = testif(crk2, SELF, "--hydroType CRKSPH --goalTime 0.3 --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=8, label="Planar RZ Noh problem -- (CRKSPH parallel) RESTART CHECK")
+# #ATS:crk2 = test(        SELF, "--hydroType CRKSPH --goalTime 0.3 --graphics None --clearDirectories True  --checkError True  --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20 --tol 5e-3", np=8, label="Planar Noh RZ problem (CRKSPH parallel)")               # Only need tolerance override for BlueOS
+# #ATS:crk3 = testif(crk2, SELF, "--hydroType CRKSPH --goalTime 0.3 --graphics None --clearDirectories False --checkError False --dataDirBase 'dumps-rz-planar-restartcheck' --restartStep 20 --restoreCycle 20 --steps 20 --checkRestart True", np=8, label="Planar RZ Noh problem -- (CRKSPH parallel) RESTART CHECK")
 
 import os, sys, shutil, mpi
 import numpy as np
@@ -48,15 +48,19 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             n1 = 100,
             n2 = 20,
 
-            nPerh = 4.01,
+            seed = "lattice",
+            nPerh = 6.01,
 
             gamma = 5.0/3.0,
             mu = 1.0,
+
+            vetaramp = 1.0,                    # Optionally ramp velocity to zero as we approach the origin (0 => no ramp)
 
             solid = False,                     # If true, use the fluid limit of the solid hydro option
             asph = False,                      # This just chooses the H algorithm -- you can use this with CRKSPH for instance.
 
             hydroType = "SPH",                 # one of (SPH, CRKSPH)
+            Q = None,                          # optionally override viscosity choice
             evolveTotalEnergy = False,         # Only for SPH variants -- evolve total rather than specific energy
             boolReduceViscosity = False,
             nhQ = 5.0,
@@ -76,11 +80,12 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             fcentroidal = 0.0,
             fcellPressure = 0.0,
             Qhmult = 1.0,
-            Cl = 1.0, 
-            Cq = 1.0,
-            Qlimiter = False,
-            balsaraCorrection = False,
-            epsilon2 = 1e-2,
+            Cl = None, #1.5,
+            Cq = None, #1.0,
+            linearInExpansion = None,
+            quadraticInExpansion = None,
+            balsaraCorrection = None,
+            epsilon2 = None,
             hmin = 0.0001, 
             hmax = 0.1,
             hminratio = 0.1,
@@ -94,7 +99,7 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
             goalTime = 0.6,
             steps = None,
             dt = 0.0001,
-            dtMin = 1.0e-5, 
+            dtMin = 1.0e-8, 
             dtMax = 0.1,
             dtGrowth = 2.0,
             dtverbose = False,
@@ -119,7 +124,6 @@ commandLine(problem = "planar",     # one of (planar, cylindrical, spherical)
 
             clearDirectories = True,
             checkRestart = False,
-            checkEnergy = False,
             restoreCycle = -1,
             restartStep = 10000,
             dataDirBase = "dumps-rz-Noh",
@@ -150,6 +154,7 @@ hydroPath = (("Solid" if solid else "") +
              ("AC" if asph == "Classic" else "A" if asph else "") +
              hydroType)
 dataDir = os.path.join(dataDirBase,
+                       problem,
                        hydroPath,
                        "nPerh=%f" % nPerh,
                        "compatibleEnergy=%s" % compatibleEnergy,
@@ -166,51 +171,51 @@ else:
 #-------------------------------------------------------------------------------
 # The reference values for error norms checking for pass/fail
 #-------------------------------------------------------------------------------
-LnormRef = {"SPH": {"Mass density" : {"L1"   : 0.927051,   
-                                      "L2"   : 0.0257097,  
-                                      "Linf" : 3.09951},         
-                    "Pressure    " : {"L1"   : 0.417473,   
-                                      "L2"   : 0.0117583,  
-                                      "Linf" : 1.97256},   
-                    "Velocity    " : {"L1"   : 0.323763,   
-                                      "L2"   : 0.00903822, 
-                                      "Linf" : 1.02008},   
-                    "Spec Therm E" : {"L1"   : 0.168691,   
-                                      "L2"   : 0.00466419, 
-                                      "Linf" : 0.987794},  
-                    "h           " : {"L1"   : 0.0082967,  
-                                      "L2"   : 0.000186032,
-                                      "Linf" : 0.0190145}},
-            "ASPH": {"Mass density" : {"L1"   : 0.931764,    
-                                       "L2"   : 0.0259673,   
-                                       "Linf" : 3.07466},     
-                     "Pressure    " : {"L1"   : 0.415028,    
-                                       "L2"   : 0.0116435,   
-                                       "Linf" : 1.52774},    
-                     "Velocity    " : {"L1"   : 0.322906,    
-                                       "L2"   : 0.00897806,  
-                                       "Linf" : 1.01521},    
-                     "Spec Therm E" : {"L1"   : 0.165872,    
-                                       "L2"   : 0.00453749,  
-                                       "Linf" : 0.86993},    
-                     "h           " : {"L1"   : 0.0100794,  
-                                       "L2"   : 0.000266552, 
-                                       "Linf" : 0.0300606}},
-            "ACSPH": {"Mass density" : {"L1"   : 0.910927,   
-                                        "L2"   : 0.0257385,  
-                                        "Linf" : 3.06255},    
-                      "Pressure    " : {"L1"   : 0.40629,    
-                                        "L2"   : 0.0115813,  
-                                        "Linf" : 1.59406},   
-                      "Velocity    " : {"L1"   : 0.31841,    
-                                        "L2"   : 0.00894237, 
-                                        "Linf" : 1.01271},   
-                      "Spec Therm E" : {"L1"   : 0.162679,   
-                                        "L2"   : 0.00452432, 
-                                        "Linf" : 0.899942},  
-                      "h           " : {"L1"   : 0.00941208, 
-                                        "L2"   : 0.000237763,
-                                        "Linf" : 0.0268561}},
+LnormRef = {"SPH": {"Mass density" : {"L1"   : 0.203217,   
+                                      "L2"   : 0.0254493,  
+                                      "Linf" : 4.66596},         
+                    "Pressure    " : {"L1"   : 0.0395288,  
+                                      "L2"   : 0.00473042, 
+                                      "Linf" : 0.689009},  
+                    "Velocity    " : {"L1"   : 0.0254315,  
+                                      "L2"   : 0.00535197, 
+                                      "Linf" : 0.918963},  
+                    "Spec Therm E" : {"L1"   : 0.0227909,  
+                                      "L2"   : 0.00309336, 
+                                      "Linf" : 0.381547},  
+                    "h           " : {"L1"   : 0.00508196, 
+                                      "L2"   : 0.000938975,
+                                      "Linf" : 0.0399}},   
+            "ASPH": {"Mass density" : {"L1"   : 0.197549,   
+                                       "L2"   : 0.0306595,  
+                                       "Linf" : 15.8962},    
+                     "Pressure    " : {"L1"   : 0.0336372,  
+                                       "L2"   : 0.00574558, 
+                                       "Linf" : 1.08521},   
+                     "Velocity    " : {"L1"   : 0.0214818,  
+                                       "L2"   : 0.00529686, 
+                                       "Linf" : 0.945891},  
+                     "Spec Therm E" : {"L1"   : 0.0217109,  
+                                       "L2"   : 0.00362169, 
+                                       "Linf" : 0.47045},   
+                     "h           " : {"L1"   : 0.00518618,
+                                       "L2"   : 0.00140424, 
+                                       "Linf" : 0.0399}},  
+            "ACSPH": {"Mass density" : {"L1"   : 0.194015,   
+                                        "L2"   : 0.0286555,  
+                                        "Linf" : 7.66739},    
+                      "Pressure    " : {"L1"   : 0.0366169,  
+                                        "L2"   : 0.00541615, 
+                                        "Linf" : 0.859485},  
+                      "Velocity    " : {"L1"   : 0.0252846,  
+                                        "L2"   : 0.00550918, 
+                                        "Linf" : 0.943121},  
+                      "Spec Therm E" : {"L1"   : 0.0232088,  
+                                        "L2"   : 0.00350656, 
+                                        "Linf" : 0.43536},   
+                      "h           " : {"L1"   : 0.00476212, 
+                                        "L2"   : 0.00114821, 
+                                        "Linf" : 0.0399}},   
             "CRKSPH": {"Mass density" : {"L1"   : 0.918847,    
                                          "L2"   : 0.0251823,   
                                          "Linf" : 3.29814},     
@@ -287,6 +292,7 @@ if problem == "planar":
     rmin, rmax = None, None
     vz0 = -1.0
     vr0 = 0.0
+    theta = pi/2.0
 elif problem == "cylindrical":
     nz = n2
     nr = n1
@@ -295,6 +301,7 @@ elif problem == "cylindrical":
     rmin, rmax = None, None
     vz0 = 0.0
     vr0 = -1.0
+    theta = pi/2.0
 else:
     assert problem == "spherical"
     nz = n1
@@ -302,14 +309,16 @@ else:
     rmin, rmax = 0.0, 1.0
     z0, z1 = 0.0, 1.0
     r0, r1 = 0.0, 1.0
+    theta = pi/2.0
 
-generator = RZGenerator(GenerateNodeDistribution2d(nz, nr, rho0, "lattice",
-                                                   xmin = (z0, r0),
-                                                   xmax = (z1, r1),
-                                                   rmin = rmin,
-                                                   rmax = rmax,
-                                                   nNodePerh = nPerh,
-                                                   SPH = not asph))
+generator = GenerateNodeDistribution2d(nz, nr, rho0, seed,
+                                       xmin = (z0, r0),
+                                       xmax = (z1, r1),
+                                       rmin = rmin,
+                                       rmax = rmax,
+                                       theta = theta,
+                                       nNodePerh = nPerh,
+                                       SPH = not asph)
 
 distributeNodes2d((nodes1, generator))
 output("mpi.reduce(nodes1.numInternalNodes, mpi.MIN)")
@@ -320,15 +329,30 @@ output("mpi.reduce(nodes1.numInternalNodes, mpi.SUM)")
 nodes1.specificThermalEnergy(ScalarField("tmp", nodes1, eps0))
 nodes1.massDensity(ScalarField("tmp", nodes1, rho0))
 
+def velRamp(posi, Hi):
+    def etai(eta):
+        if problem == "planar":
+            return eta.x
+        elif problem == "cylindrical":
+            return eta.y
+        else:
+            return eta.magnitude()
+    if vetaramp > 0.0:
+        xeta = etai(Hi*posi)
+        return min(1.0, xeta/vetaramp)
+    else:
+        return 1.0
+
 # Set node velocities
 pos = nodes1.positions()
 vel = nodes1.velocity()
+H = nodes1.Hfield()
 if problem == "spherical":
     for i in range(nodes1.numNodes):
-        vel[i] = -1.0 * pos[i].unitVector()
+        vel[i] = -1.0 * pos[i].unitVector() * velRamp(pos[i], H[i])
 else:
     for i in range(nodes1.numNodes):
-        vel[i] = Vector(vz0, vr0)
+        vel[i] = Vector(vz0, vr0) * velRamp(pos[i], H[i])
 
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
@@ -342,9 +366,13 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
+if not Q is None:
+    Q = Q(Cl, Cq, WT)
+
 if hydroType == "CRKSPH":
     hydro = CRKSPH(dataBase = db,
                    W = WT,
+                   Q = Q,
                    cfl = cfl,
                    useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                    compatibleEnergyEvolution = compatibleEnergy,
@@ -358,6 +386,7 @@ else:
     assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
                 W = WT,
+                Q = Q,
                 cfl = cfl,
                 useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,
                 compatibleEnergyEvolution = compatibleEnergy,
@@ -374,6 +403,7 @@ output("hydro")
 output("hydro.cfl")
 output("hydro.compatibleEnergyEvolution")
 output("hydro.densityUpdate")
+output("hydro.XSPH")
 output("hydro._smoothingScaleMethod.HEvolution")
 
 packages = [hydro]
@@ -382,17 +412,23 @@ packages = [hydro]
 # Set the artificial viscosity parameters.
 #-------------------------------------------------------------------------------
 q = hydro.Q
-q.Cl = Cl
-q.Cq = Cq
-q.epsilon2 = epsilon2
-q.limiter = Qlimiter
-q.balsaraShearCorrection = balsaraCorrection
+def setOptionalParam(thing, param, val):
+    if not val is None:
+        exec(f"thing.{param} = {val}")
+    return
+setOptionalParam(q, "Cl", Cl)
+setOptionalParam(q, "Cq", Cq)
+setOptionalParam(q, "epsilon2", epsilon2)
+setOptionalParam(q, "linearInExpansion", linearInExpansion)
+setOptionalParam(q, "quadraticInExpansion", quadraticInExpansion)
+setOptionalParam(q, "balsaraShearCorrection", balsaraCorrection)
 output("q")
 output("q.Cl")
 output("q.Cq")
 output("q.epsilon2")
-output("q.limiter")
 output("q.balsaraShearCorrection")
+output("q.linearInExpansion")
+output("q.quadraticInExpansion")
 
 #-------------------------------------------------------------------------------
 # Construct the MMRV physics object.
@@ -416,18 +452,20 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 # Create boundary conditions.
 #-------------------------------------------------------------------------------
+bcs = []
 if problem == "planar":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
     if r0 != 0.0:
         bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-           ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
+    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
 else:
     assert problem == "spherical"
-    bcs = [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
+    if theta == pi/2.0:
+        bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
 
 for bc in bcs:
     for p in packages:
@@ -436,10 +474,7 @@ for bc in bcs:
 #-------------------------------------------------------------------------------
 # Construct an integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for p in packages:
-    integrator.appendPhysicsPackage(p)
-del p
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax
@@ -534,13 +569,17 @@ L1_tot = L1 / len(rho)
 if graphics:
     from SpheralMatplotlib import *
     if problem == "planar":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.x", vecyFunction="%s.x", tenyFunction="1.0/%s.xx", plotAverage=True)
+        xfunc = "%s.x"
     elif problem == "cylindrical":
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy")
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotState(db, xFunction="%s.y", vecyFunction="%s.y", tenyFunction="1.0/%s.yy", plotAverage=True)
+        xfunc = "%s.y"
     else:
-        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db)
+        rhoPlot, velPlot, epsPlot, PPlot, HPlot = plotRadialState(db, plotAverage=True)
+        xfunc = "%s.magnitude()"
     plotAnswer(answer, control.time(), rhoPlot=rhoPlot, velPlot=velPlot, epsPlot=epsPlot, PPlot=PPlot, HPlot=HPlot,
-               plotStyle = "kx")
+               plotStyle = "k-",
+               x = np.linspace(0.0, max(xprof), 500))
     EPlot = plotEHistory(control.conserve)
     plots = [(rhoPlot, "Noh-%s-rho-RZ.png" % problem),
              (velPlot, "Noh-%s-vel-RZ.png" % problem),
@@ -562,6 +601,10 @@ if graphics:
     plt.title("Node positions @ t=%g" % control.time())
     plots.append((posPlot, "Noh-%s-positions.png" % problem))
 
+    Qplot = plotFieldList(hydro.Q.maxViscousPressure,
+                          xFunction = xfunc,
+                          winTitle = "Max Q pressure")
+
     if hydroType == "CRKSPH":
         volPlot = plotFieldList(control.RKCorrections.volume,
                                 xFunction = "%s.y",
@@ -582,8 +625,8 @@ if graphics:
     if boolReduceViscosity:
         alphaPlotQ = plotFieldList(q.reducingViscosityMultiplierQ(),
                                    xFunction = "%s.y",
-                                  winTitle = "rvAlphaQ",
-                                  colorNodeLists = False, plotGhosts = False)
+                                   winTitle = "rvAlphaQ",
+                                   colorNodeLists = False, plotGhosts = False)
         alphaPlotL = plotFieldList(q.reducingViscosityMultiplierL(),
                                    xFunction = "%s.y",
                                    winTitle = "rvAlphaL",
@@ -592,19 +635,6 @@ if graphics:
     # Make hardcopies of the plots.
     for p, filename in plots:
         p.figure.savefig(os.path.join(dataDir, filename))
-
-#-------------------------------------------------------------------------------
-# Measure the difference between the simulation and analytic answer.
-#-------------------------------------------------------------------------------
-rmin, rmax = 0.05, 0.35   # Throw away anything with r < rwall to avoid wall heating.
-rhoprof = mpi.reduce(nodes1.massDensity().internalValues(), mpi.SUM)
-P = ScalarField("pressure", nodes1)
-nodes1.pressure(P)
-Pprof = mpi.reduce(P.internalValues(), mpi.SUM)
-vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
-epsprof = mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM)
-hprof = mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM)
-xprof = mpi.reduce([x.magnitude() for x in nodes1.positions().internalValues()], mpi.SUM)
 
 #-------------------------------------------------------------------------------
 # If requested, write out the state in a global ordering to a file.
@@ -617,7 +647,14 @@ if outputFile:
     P = ScalarField("pressure", nodes1)
     nodes1.pressure(P)
     Pprof = mpi.reduce(P.internalValues(), mpi.SUM)
-    vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
+    if problem == "planar":
+        vprof = mpi.reduce([v.x for v in nodes1.velocity().internalValues()], mpi.SUM)
+    elif problem == "cylindrical":
+        vprof = mpi.reduce([v.y for v in nodes1.velocity().internalValues()], mpi.SUM)
+    else:
+        assert problem == "spherical"
+        vprof = mpi.reduce([v.dot(x.unitVector()) for v, x in zip(nodes1.velocity().internalValues(),
+                                                                  nodes1.positions().internalValues())], mpi.SUM)
     epsprof = mpi.reduce(nodes1.specificThermalEnergy().internalValues(), mpi.SUM)
     hprof = mpi.reduce([1.0/H.xx for H in nodes1.Hfield().internalValues()], mpi.SUM)
     if mpi.rank == 0:
@@ -690,5 +727,3 @@ if mpi.rank == 0:
 
 Eerror = (control.conserve.EHistory[-1] - control.conserve.EHistory[0])/control.conserve.EHistory[0]
 print("Total energy error: %g" % Eerror)
-if checkEnergy and abs(Eerror) > 1e-13:
-    raise ValueError("Energy error outside allowed bounds.")

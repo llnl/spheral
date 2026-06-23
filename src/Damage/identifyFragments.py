@@ -3,7 +3,6 @@ import mpi
 
 import sys
 import time
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Helper method to get the unique items in a list.

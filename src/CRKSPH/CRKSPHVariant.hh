@@ -10,12 +10,13 @@
 
 #include "Physics/GenericHydro.hh"
 #include "CRKSPHHydroBase.hh"
+#include "chai/managed_ptr.hpp"
 
 namespace Spheral {
   template<typename Dimension> class State;
   template<typename Dimension> class StateDerivatives;
   template<typename Dimension> class SmoothingScaleBase;
-  template<typename Dimension> class ArtificialViscosity;
+  template<typename Dimension> class ArtificialViscosityView;
   template<typename Dimension> class TableKernel;
   template<typename Dimension> class DataBase;
   template<typename Dimension, typename DataType> class Field;
@@ -43,12 +44,13 @@ public:
 
   // Constructors.
   CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
-                ArtificialViscosity<Dimension>& Q,
+                ArtificialViscosityView<Dimension>& Q,
                 const TableKernel<Dimension>& W,
                 const TableKernel<Dimension>& WPi,
                 const double filter,
                 const double cfl,
                 const bool useVelocityMagnitudeForDt,
+                const bool useNewAccelerationMagnitudeForDt,
                 const bool compatibleEnergyEvolution,
                 const bool evolveTotalEnergy,
                 const bool XSPH,

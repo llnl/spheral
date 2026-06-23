@@ -9,7 +9,7 @@
 import mpi
 
 import SpheralConfigs
-from SpheralUtilities import BuildData
+from SpheralCompiledModules.SpheralUtilities import BuildData
 if not BuildData.cxx_compiler_id == "GNU":
     try:
         import sys, os
@@ -28,6 +28,11 @@ import scipy.spatial
 # Import the compiled packages.
 # ------------------------------------------------------------------------------
 from SpheralCompiledPackages import *
+
+# ------------------------------------------------------------------------------
+# Run initGPUs() to increase the device stack size.
+# ------------------------------------------------------------------------------
+initGPUs()
 
 # Aliases for a few objects
 FacetedVolume1d = Box1d

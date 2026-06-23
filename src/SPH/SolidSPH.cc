@@ -120,12 +120,13 @@ inline Dim<3>::SymTensor oneMinusEigenvalues(const Dim<3>::SymTensor& x) {
 template<typename Dimension>
 SolidSPH<Dimension>::
 SolidSPH(DataBase<Dimension>& dataBase,
-         ArtificialViscosityHandle<Dimension>& Q,
+         ArtificialViscosity<Dimension>& Q,
          const TableKernel<Dimension>& W,
          const TableKernel<Dimension>& WPi,
          const TableKernel<Dimension>& WGrad,
          const double cfl,
          const bool useVelocityMagnitudeForDt,
+         const bool useNewAccelerationMagnitudeForDt,
          const bool compatibleEnergyEvolution,
          const bool evolveTotalEnergy,
          const bool gradhCorrection,
@@ -145,6 +146,7 @@ SolidSPH(DataBase<Dimension>& dataBase,
                  WPi,
                  cfl,
                  useVelocityMagnitudeForDt,
+                 useNewAccelerationMagnitudeForDt,
                  compatibleEnergyEvolution,
                  evolveTotalEnergy,
                  gradhCorrection,
@@ -185,7 +187,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   TIME_BEGIN("SolidSPHinitializeStartup");
 
   // Call the ancestor.
-  SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
+  SPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
 
   // Set the moduli.
   updateStateFields(SolidFieldNames::bulkModulus, state, derivs);
@@ -284,15 +286,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosity, dispatch the call to
+  // Depending on the type of the ArtificialViscosityView, dispatch the call to
   // the secondDerivativesLoop
   auto& Qhandle = this->artificialViscosity();
   if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
+    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   } else {
     CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosity<Dimension, Tensor>&>(Qhandle);
+    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
     this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
   }
 }
@@ -309,7 +311,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        const QType& Q) const {
+                        chai::managed_ptr<QType>& Q) const {
 
   TIME_BEGIN("SolidSPHevalDerivs");
   TIME_BEGIN("SolidSPHevalDerivs_initial");
@@ -356,9 +358,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto damage = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
   const auto fragID = state.fields(SolidFieldNames::fragmentIDs, int(0));
-  const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  const auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
+  auto DvDxQView = DvDxQ.view();
+  auto fClQView = fClQ.view();
+  auto fCqQView = fCqQ.view();
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -393,7 +398,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto  XSPHWeightSum = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto  DSDt = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto* pairAccelerationsPtr = derivs.template getPtr<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
   CHECK(rhoSum.size() == numNodeLists);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
@@ -409,7 +414,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(XSPHWeightSum.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK(DSDt.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerationsPtr->size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
   // The scale for the tensile correction.
   const auto& nodeList = mass[0]->nodeList();
@@ -584,11 +589,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q.QPiij(QPiij, QPiji, Qi, Qj,
-              nodeListi, i, nodeListj, j,
-              ri, Hi, etai, vi, rhoi, ci,  
-              rj, Hj, etaj, vj, rhoj, cj,
-              fClQ, fCqQ, DvDxQ); 
+      Q->QPiij(QPiij, QPiji, Qi, Qj,
+               nodeListi, i, nodeListj, j,
+               ri, Hi, etai, vi, rhoi, ci,  
+               rj, Hj, etaj, vj, rhoj, cj,
+               fClQView, fCqQView, DvDxQView);
       const auto Qacci = 0.5*(QPiij*gradWQi);
       const auto Qaccj = 0.5*(QPiji*gradWQj);
       const auto workQi = vij.dot(Qacci);
@@ -624,7 +629,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
         DvDti += mj*deltaDvDt;
         DvDtj -= mi*deltaDvDt;
       }
-      if (compatibleEnergy) (*pairAccelerationsPtr)[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
+      if (compatibleEnergy) pairAccelerations[kk] = mj*deltaDvDt;  // Acceleration for i (j anti-symmetric)
 
       // Pair-wise portion of grad velocity.
       const auto deltaDvDxi = fDij * vij.dyad(gradWGi);
@@ -759,7 +764,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one();
-      const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
+      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
       // Optionally use damage to ramp down stress on damaged material.

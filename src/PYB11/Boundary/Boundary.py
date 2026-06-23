@@ -5,7 +5,7 @@ from PYB11Generator import *
 from BoundaryAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralBoundary")
+@PYB11module("SpheralCompiledModules.SpheralBoundary")
 class Boundary:
 
     PYB11typedefs = """
@@ -389,6 +389,27 @@ class Boundary:
     def violationNodes(self, nodeList="const NodeList<%(Dimension)s>&"):
         "Violation nodes for a given NodeList"
         return "const std::vector<size_t>&"
+
+    @PYB11const
+    def isControlNode(self,
+                      nodeList = "const NodeList<%(Dimension)s>&",
+                      i = "const size_t"):
+        "Query if the given node is one of our control nodes"
+        return "bool"
+
+    @PYB11const
+    def isGhostNode(self,
+                    nodeList = "const NodeList<%(Dimension)s>&",
+                    i = "const size_t"):
+        "Query if the given node is one of our ghost nodes"
+        return "bool"
+
+    @PYB11const
+    def isViolationNode(self,
+                        nodeList = "const NodeList<%(Dimension)s>&",
+                        i = "const size_t"):
+        "Query if the given node is one of our violation nodes"
+        return "bool"
 
     #...........................................................................
     # applyFieldListGhostBoundary/enforceFieldListBoundary

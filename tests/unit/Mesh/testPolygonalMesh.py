@@ -9,7 +9,7 @@ import time
 
 from Spheral2d import *
 from generateMesh import *
-from SpheralTestUtilities import fuzzyEqual, testParallelConsistency
+from SpheralTestUtilities import testParallelConsistency
 from SpheralGnuPlotUtilities import *
 
 #===============================================================================

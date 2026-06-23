@@ -18,9 +18,12 @@ dims = spheralDimensions()
 PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/packElement.hh"',
                   '"boost/math/special_functions/legendre.hpp"',
+                  '"Utilities/GPUUtils.hh"',
                   '"Utilities/BuildData.hh"',
                   '"Utilities/Functors.hh"',
                   '"Utilities/erff.hh"',
+                  '"Utilities/safeInv.hh"',
+                  '"Utilities/SpheralFunctions.hh"',
                   '"Utilities/newtonRaphson.hh"',
                   '"Utilities/bisectRoot.hh"',
                   '"Utilities/simpsonsIntegration.hh"',
@@ -60,47 +63,16 @@ PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/uniform_random.hh"',
                   '"Utilities/Timer.hh"',
                   '"Utilities/initializeAxom.hh"',
-                  '"Distributed/Communicator.hh"',
+                  '"Utilities/initializeAdiak.hh"',
                   '"adiak.hpp"',
                   '<algorithm>']
 
 #-------------------------------------------------------------------------------
 # Preamble
 #-------------------------------------------------------------------------------
-PYB11preamble += """
-namespace Spheral {
-
-inline void spheral_adiak_init() {
-  adiak::init((void*) Communicator::comm_ptr());
-  // Always collect some curated default adiak information
-  adiak::adiakversion();
-  adiak::user();
-  adiak::uid();
-  adiak::launchdate();
-  adiak::workdir();
-  adiak::hostname();
-  adiak::clustername();
-  adiak::walltime();
-  adiak::cputime();
-  adiak::jobsize();
-  adiak::numhosts();
-  adiak::hostlist();
-  adiak::mpi_library_version();
-}
-
-enum adiak_categories {
-unset = 0,
-all,
-general,
-performance,
-control
-};
-}
-"""
-
 PYB11modulepreamble = """
 TIME_PHASE_BEGIN("main");
-Spheral::spheral_adiak_init();
+Spheral::initializeAdiak();
 
 // Call these routines when module is exited
 auto atexit = py::module_::import("atexit");
@@ -112,6 +84,7 @@ atexit.attr("register")(py::cpp_function([]() {
    } else {
       Communicator::finalize();
    }
+   adiak::clean();
 }));
 """
 
@@ -824,9 +797,89 @@ adiak_value2{label} = PYB11TemplateFunction(adiak_value2, "{value}", pyname="adi
 """)
 
 #...............................................................................
+def safeInv(x = "const double&",
+            fuzz = ("const double", "1e-30")):
+    "Return an inverse protected from div by zero"
+    return "double"
+            
+def safeInvVar(x = "const double&",
+               fuzz = ("const double", "1e-30")):
+    "Return an inverse protected from div by zero"
+    return "double"
+
+#...............................................................................
+def fuzzyEqual(lhs = "const double&",
+               rhs = "const double&",
+               fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def fuzzyLessThanOrEqual(lhs = "const double&",
+                         rhs = "const double&",
+                         fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def fuzzyGreaterThanOrEqual(lhs = "const double&",
+                            rhs = "const double&",
+                            fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def distinctlyLessThan(lhs = "const double&",
+                       rhs = "const double&",
+                       fuzz = ("const double", "1e-15")):
+    return "bool"
+
+def distinctlyGreaterThan(lhs = "const double&",
+                          rhs = "const double&",
+                          fuzz = ("const double", "1e-15")):
+    return "bool"
+
+#...............................................................................
+def sgn(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >= 0 -> sgn(x) = 1
+    x <  0 -> sgn(x) = -1"""
+    return "double"
+
+def isgn(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >= 0 -> sgn(x) = 1
+    x <  0 -> sgn(x) = -1"""
+    return "int"
+
+#...............................................................................
+def sgn0(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >  0 -> sgn0(x) = 1
+    x == 0 -> sgn0(x) = 0
+    x <  0 -> sgn0(x) = -1"""
+    return "double"
+
+def isgn0(x = "double"):
+    """Return the sign of the argument determined as follows:
+    x >  0 -> sgn0(x) = 1
+    x == 0 -> sgn0(x) = 0
+    x <  0 -> sgn0(x) = -1"""
+    return "int"
+
+#...............................................................................
 # Axom stuff
 def initializeAxom():
     return "void"
 
 def finalizeAxom():
+    return "void"
+
+#...............................................................................
+# init GPUs
+# stack_mult is the number of bytes to increase the device stack limit to
+@PYB11cppname("GPUUtils::deviceCount")
+def deviceCount():
+    return "int"
+
+@PYB11cppname("GPUUtils::initGPUs")
+def initGPUs(stack_mult = ("int", "8")):
+    return "void"
+
+@PYB11cppname("GPUUtils::deviceSync")
+def deviceSync():
     return "void"

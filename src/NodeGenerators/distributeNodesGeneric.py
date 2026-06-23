@@ -68,8 +68,8 @@ def distributeNodesGeneric(listOfNodeTuples,
             m[i] = generator.localMass(i)
             vel[i] = generator.localVelocity(i)
             H[i] = generator.localHtensor(i)
-       
-        # DEM mod -- we'll want to clean this up at some point...
+
+        # Set fields for fluids and solids, if applicable
         #------------------------------------------------------
         try:
             rho = nodes.massDensity()
@@ -78,6 +78,15 @@ def distributeNodesGeneric(listOfNodeTuples,
         except:
             pass
 
+        try:
+            matE = nodes.specificThermalEnergy()
+            for i in range(nlocal):
+                matE[i] = generator.localMatE(i)
+        except:
+            pass
+
+        # DEM mod -- we'll want to clean this up at some point...
+        #------------------------------------------------------
         try:
             rad = nodes.particleRadius()
             for i in range(nlocal):

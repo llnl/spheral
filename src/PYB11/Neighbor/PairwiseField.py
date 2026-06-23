@@ -4,7 +4,7 @@ from PYB11Generator import *
 # PairwiseField
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension", "Value", "size_t numElements")
-@PYB11module("SpheralNeighbor")
+@PYB11module("SpheralCompiledModules.SpheralNeighbor")
 class PairwiseField:
 
     PYB11typedefs = """
@@ -59,6 +59,11 @@ class PairwiseField:
     def pairs(self):
         "NodePairList this PairwiseField is defined on"
         return "const NodePairList&"
+
+    @PYB11const
+    def empty(self):
+        "Check if PairwiseField is empty"
+        return "bool"
 
     #...........................................................................
     # Properties

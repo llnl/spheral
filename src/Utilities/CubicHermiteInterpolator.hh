@@ -9,9 +9,6 @@
 #define __Spheral_CubicHermiteInterpolator__
 
 #include "CubicHermiteInterpolatorView.hh"
-#include "chai/ManagedArray.hpp"
-#include "chai/config.hpp"
-#include "config.hh"
 
 #include <cstddef>
 #include <vector>
@@ -61,12 +58,12 @@ public:
 
   CubicHermiteInterpolatorView view() { return static_cast<CubicHermiteInterpolatorView>(*this); }
 
-#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
+#if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
     mVals.setUserCallback(getNPLCallback(std::forward<F>(extension)));
-  }
 #endif
+  }
 
 protected:
   template<typename F>

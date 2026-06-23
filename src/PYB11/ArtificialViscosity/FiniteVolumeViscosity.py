@@ -3,10 +3,8 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from ArtificialViscosity import *
-from ArtificialViscosityAbstractMethods import *
 
 @PYB11template("Dimension")
-@PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
 class FiniteVolumeViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
@@ -17,7 +15,6 @@ class FiniteVolumeViscosity(ArtificialViscosity):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-    using ReturnType = %(QPiType)s;
 """
 
     #...........................................................................
@@ -48,8 +45,32 @@ class FiniteVolumeViscosity(ArtificialViscosity):
     @PYB11const
     def label(self):
         return "std::string"
-    
-#-------------------------------------------------------------------------------
-# Inject abstract interface
-#-------------------------------------------------------------------------------
-PYB11inject(ArtificialViscosityAbstractMethods, FiniteVolumeViscosity, virtual=True, pure_virtual=False)
+
+# from ArtificialViscosityView import *
+# from ArtificialViscosityAbstractMethods import *
+# @PYB11template("Dimension")
+# @PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
+# class FiniteVolumeViscosityView(ArtificialViscosityView):
+
+#     PYB11typedefs = """
+#     using Scalar = typename %(Dimension)s::Scalar;
+#     using Vector = typename %(Dimension)s::Vector;
+#     using Tensor = typename %(Dimension)s::Tensor;
+#     using SymTensor = typename %(Dimension)s::SymTensor;
+#     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
+#     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
+#     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+#     using ReturnType = %(QPiType)s;
+# """
+
+#     #...........................................................................
+#     # Constructors
+#     def pyinit(self,
+#                Clinear = "const Scalar",
+#                Cquadratic = "const Scalar"):
+#         "FiniteVolumeViscosityView constructor"
+
+# #-------------------------------------------------------------------------------
+# # Inject abstract interface
+# #-------------------------------------------------------------------------------
+# PYB11inject(ArtificialViscosityAbstractMethods, FiniteVolumeViscosityView, virtual=True, pure_virtual=False)

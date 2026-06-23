@@ -2,7 +2,6 @@
 # Test spherical interpolation of a constant field using the spherical kernel
 #-------------------------------------------------------------------------------
 from SphericalSpheral import *
-from SpheralTestUtilities import fuzzyEqual
 from GenerateSphericalNodeProfile1d import *
 from SortAndDivideRedistributeNodes import *
 import matplotlib.pyplot as plt

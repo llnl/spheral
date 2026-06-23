@@ -12,7 +12,7 @@
 #include "DataBase/IncrementState.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Strength/SolidFieldNames.hh"
@@ -70,13 +70,15 @@ vec_to_string(const Vector& vec) {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 GenericHydro<Dimension>::
-GenericHydro(ArtificialViscosityHandle<Dimension>& Q,
+GenericHydro(ArtificialViscosity<Dimension>& Q,
              const double cfl,
-             const bool useVelocityMagnitudeForDt):
+             const bool useVelocityMagnitudeForDt,
+             const bool useNewAccelerationMagnitudeForDt):
   Physics<Dimension>(),
   mArtificialViscosity(Q),
   mCFL(cfl),
   mUseVelocityMagnitudeForDt(useVelocityMagnitudeForDt),
+  mUseNewAccelerationMagnitudeForDt(useNewAccelerationMagnitudeForDt),
   mMinMasterNeighbor(INT_MAX),
   mMaxMasterNeighbor(0),
   mSumMasterNeighbor(0),
@@ -156,6 +158,12 @@ dt(const DataBase<Dimension>& dataBase,
   const auto Fdiv = (GeometryRegistrar::coords() == CoordinateType::Spherical ? +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi[0] + 2.0*veli[0]*safeInv(posi[0]); } :
                      GeometryRegistrar::coords() == CoordinateType::RZ        ? +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi.Trace() + veli[1]*safeInv(posi[1]); } :
                                                                                 +[](const Tensor& DvDxi, const Vector& posi, const Vector& veli) { return DvDxi.Trace(); });
+
+  // Extract r-component for curvilinear coordinates
+  const auto rcomponent = (GeometryRegistrar::coords() == CoordinateType::Spherical ? +[](const Vector& posi) { return posi[0]; } :
+                           GeometryRegistrar::coords() == CoordinateType::RZ        ? +[](const Vector& posi) { return posi[1]; } :
+                                                                                      +[](const Vector& posi) { CHECK2(false, "You really shouldn't be here"); return 0.0; });
+
   // Loop over every fluid node.
   // #pragma omp declare reduction (MINPAIR : pair<double,string> : omp_out = (omp_out.first < omp_in.first ? omp_out : omp_in)) initializer(omp_priv = pair<double,string>(std::numeric_limits<double>::max(), string("null")))
   // #pragma omp parallel for reduction(MINPAIR:minDt) collapse(2)
@@ -293,14 +301,18 @@ dt(const DataBase<Dimension>& dataBase,
 
           // Total acceleration limit.
           const auto vmagi = vi.magnitude();
-          const auto dtAcc = 0.1*std::max(nodeScalei/(vmagi + tiny), vmagi/(DvDt(nodeListi, i).magnitude() + tiny));
+          const auto amagi = DvDt(nodeListi, i).magnitude();
+          const auto dtAcc = (useNewAccelerationMagnitudeForDt() ?
+                              std::sqrt(2*nodeScalei/( amagi + tiny)):
+                              0.1*std::max(nodeScalei/(vmagi + tiny), vmagi/(amagi + tiny)));
+            
           if (dtAcc < minDt_local.first) {
-            minDt_local = TimeStepType(dtAcc, ("Total acceleration limit: dt = " + to_string(dtAcc) + "\n" + 
-                                               "              |acceleration| = " + to_string(DvDt(nodeListi, i).magnitude()) + "\n" +
-                                               "                   nodeScale = " + to_string(nodeScalei) + "\n" +
-                                               "                    material = " + fluidNodeListPtr->name() + "\n" +
-                                               "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
-                                               "                  @ position = " + vec_to_string(position(nodeListi, i))));
+            minDt_local = TimeStepType(dtAcc, ("Total acceleration limit: dt = " + to_string(dtAcc) + "\n" +
+                                              "              |acceleration| = " + to_string(amagi) + "\n" +
+                                              "                   nodeScale = " + to_string(nodeScalei) + "\n" +
+                                              "                    material = " + fluidNodeListPtr->name() + "\n" +
+                                              "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
+                                              "                  @ position = " + vec_to_string(position(nodeListi, i))));
             DTrank_local = rank;
             DTNodeList_local = nodeListi;
             DTnode_local = i;
@@ -309,10 +321,10 @@ dt(const DataBase<Dimension>& dataBase,
 
           // If requested, limit against the absolute velocity.
           if (useVelocityMagnitudeForDt()) {
-            const auto velDt = nodeScalei/(velocity(nodeListi, i).magnitude() + 1.0e-10);
+            const auto velDt = nodeScalei/(vmagi + 1.0e-10);
             if (velDt < minDt_local.first) {
               minDt_local = TimeStepType(velDt, ("Velocity magnitude limit: dt = " + to_string(velDt) + "\n" +
-                                                 "                        |vi| = " + to_string(velocity(nodeListi, i).magnitude()) + "\n" +
+                                                 "                        |vi| = " + to_string(vmagi) + "\n" +
                                                  "                   nodeScale = " + to_string(nodeScalei) + "\n" +
                                                  "                    material = " + fluidNodeListPtr->name() + "\n" +
                                                  "       (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
@@ -321,6 +333,25 @@ dt(const DataBase<Dimension>& dataBase,
               DTNodeList_local = nodeListi;
               DTnode_local = i;
               DTreason_local = "velocity magnitude";
+            }
+          }
+
+          // In curvilinear coordinates limit such that we shouldn't cross r=0 in a timestep
+          if (GeometryRegistrar::coords() != CoordinateType::Cartesian) {
+            const auto ri = rcomponent(position(nodeListi, i));
+            const auto vri = rcomponent(velocity(nodeListi, i));
+            const auto rvelDt = -ri*safeInvVar(vri);  // Only care if we're going toward the axis
+            if (rvelDt > 0.0 and rvelDt < minDt_local.first) {
+              minDt_local = TimeStepType(rvelDt, ("   r velocity limit: dt = " + to_string(rvelDt) + "\n" +
+                                                  "                    vri = " + to_string(vri) + "\n" +
+                                                  "                     ri = " + to_string(ri) + "\n" +
+                                                  "               material = " + fluidNodeListPtr->name() + "\n" +
+                                                  "  (nodeListID, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
+                                                  "             @ position = " + vec_to_string(position(nodeListi, i))));
+              DTrank_local = rank;
+              DTNodeList_local = nodeListi;
+              DTnode_local = i;
+              DTreason_local = "r velocity to origin";
             }
           }
         }
@@ -346,7 +377,7 @@ dt(const DataBase<Dimension>& dataBase,
         const auto  vij = vi - vj;
         const auto  dtVelDiff = std::min(nodeScalei, nodeScalej)*safeInvVar(vij.magnitude(), tiny);
         if (dtVelDiff < minDt_local.first) {
-          minDt_local = TimeStepType(dtVelDiff, ("Pairwise velocity difference limit: dt = " + to_string(dtVelDiff) + "\n" + 
+          minDt_local = TimeStepType(dtVelDiff, ("Pairwise velocity difference limit: dt = " + to_string(dtVelDiff) + "\n" +
                                                  "                              material = " + fluidNodeListPtr->name() + "\n" +
                                                  "                  (nodeListi, i, rank) = (" + to_string(nodeListi) + " " + to_string(i) + " " + to_string(rank) + ")\n" +
                                                  "                  (nodeListj, i, rank) = (" + to_string(nodeListj) + " " + to_string(j) + " " + to_string(rank) + ")\n" +

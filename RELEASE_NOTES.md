@@ -1,3 +1,83 @@
+Version v2026.06.0 -- Release date 2026-06-19
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+    * Now require C++20.
+    * Added view class for PairwiseField (PairwiseFieldView)
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * ArtificialViscosity has been refactored for use on the GPU.
+        * ArtificialViscosity is now ArtificialViscosityView.
+        * ArtificialViscosityHandle is now ArtificialViscosity.
+        * Both inherit from ArtificialViscosityBase.
+        * FiniteVolumeViscosity, MonGViscosity, LimitedMonGViscosity, and TensorMonGViscosity are split into a value and view class.
+    * Added RAJAfied versions of SPH and SolidSPH called SPH_RAJA and SolidSPH_RAJA.
+        * These allow us to test the evaluate derivatives call on device.
+        * Added wrappers for RAJA atomics.
+        * Added performance tests for evaluate derivates to track RAJA kernel performance.
+    * Added SPHERAL_ENABLE_ASAN CMake option for doing ASAN builds.
+    * Added view class for PairwiseField (PairwiseFieldView).
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
+    * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
+    * Added a page to the docs about GPU development. 
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
+    * Require minimum CMake version 3.24.
+    * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
+      * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
+    * The explicitly bound C++ pair types for Python have been removed -- just use Python tuples instead --
+      i.e. use (1.0, "Howdy") rather than pair_double_string(1.0, "Howdy").
+
+  * Bug fixes:
+    * Adiak memory leak is fixed by calling adiak::clean() before exit.
+    * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
+    * SPH now requests volume from RK.
+    * Fixed a circular dependency in the Johnson-Cook damage model.
+    * Fixed a bug that could allow multiple copies of the same boundary condition in Physics subpackages.
+    * Fixed a bug in the definition of the Jaumann stress rate in all the solid hydro packages.
+
+  * Build changes / improvements:
+    * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
+      For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
+      so there is no user interface impact.
+    * Fixed bug with incorrect optimizations when for Debug builds with hip enabled.
+    * Updated from ROCM 6.2.0 to 6.4.3.
+    * Added update-tpls commit message trigger.
+    * Updated LC Clang from 14.0.6 to 19.1.3 to use C++20.
+    * Spheral mpi python interface ensures proper allocation calls are used on Flux machines to avoid strange hangs that can occur if running outside of allocations.
+    * tpl-manager.py updates:
+      * Added --no-upstream option for when on LC machines but cannot access upstream.
+      * Added --dry-run option for testing purposes.
+    * Performance testing and CI improvements:
+      * Structure for performance tests is different, with the tests themselves set in a perf_tests.py file and run_perf.py runs the perf tests using ATS.
+      * The cleanup old directories job is now a scheduled pipelines that runs weekly.
+      * The performance tests and deploy jobs are now scheduled pipelines that run on a schedule.
+      * Gitlab pages now uses Plotly for interactive visualizations.
+      * Gathering of performance data for the deploy stage is now parallelized over ranks and threads.
+      * Merges to develop will create installs to a shared directory for use by the performance testing scripts.
+      * Added umask command for updating upstreams and removed separate job to update permissions.
+      * Build and test job now fails if import of Spheral module fails.
+      * Number of ranks on RZAdams increased from 84 to 96 per node for performance tests.
+      * Created advanced timers for lower level timers. These are disabled by default for cleaner Caliper timer trees.
+    * Builds and installs are cleaner:
+      * Rpaths are no longer overwritten, allowing things set in the Spack host config file to be used.
+      * Spheral libraries are only installed once now and a Spheral.pth with a relative path to the install lib is used in the virtual python environment.
+    * Updated build system support spack v1.
+      * Updated TPL Manager to support spack v1.1.0.
+      * Updated CI to support python v3.12 and Ubuntu 24.04.
+      * Added actual Spheral release versions and TPL conditions to Spheral package.
+      * Added more system libraries to make building on LC faster.
+    * TPL updates:
+      * LEOS updated from 8.4.2 to 8.5.2.
+      * ROCM version updated from 6.2.0 to 6.4.3.
+      * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
+      * CHAI, Umpire, and RAJA updated to 2025.12.0.
+    * Addig PySide6 as default PIP package install for better Matplotlib performance.
+    * Python wrapped the C++ fuzzyEqual methods and removed the slightly different pure Python implementations from SpheralTestUtilities.
+    * Updating to PYB11Generator v2026.5.0.
+
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================
   * Important Notes:
@@ -40,6 +120,7 @@ Notable changes include:
       * Added std::span (boost::span until we move to C++20) version of view classes for Field and FieldList. This allows us to avoid complicated external systems like CHAI::ManagedArray for unified memory systems.
         * New CMake configuration variable SPHERAL_UNIFIED_MEMORY switches between using span or ManagedArray in the view classes (default to OFF, which means ManagedArray).
       * Converted Geometry Tensor types to be entirely inlined and host/device compliant.
+      * FieldNames are inlined for easier use on device.
       * Silo python wrappers are now installed and accessible through the Spheral virtual python environment but currently unused.
 
   * Bug fixes
@@ -71,6 +152,7 @@ Notable changes include:
         `add_compile_definition` or `add_compile_options`.
       * Compiler flags are set for HIP or CXX depending on the configuration.
       * Update BLT to version 0.7.1.
+      * Added `CXX_LINK_FLAGS`.
     * Target exporting is now being tested in the CI on the RZ.
     * Updating boost function calls to std library implementations where possible.
     * Switched the CZ CI to use Dane instead of Ruby.
@@ -253,12 +335,12 @@ Version v2024.06.1 -- Release date 2024-07-09
 
   * Bug Fixes / improvements:
     * CD pipeline hotfix for installing release builds on LC machines.
-    * Fixes an issue with the use of the axom::quest::SignedDistance interface. 
+    * Fixes an issue with the use of the axom::quest::SignedDistance interface.
 
 Version v2024.06.0 -- Release date 2024-06-27
 ==============================================
   * Important Notes:
-    * External users of the code will need to supply config files for tpl-manager to find system libraries correctly. Steps to do this are detailed in the external user build guide. 
+    * External users of the code will need to supply config files for tpl-manager to find system libraries correctly. Steps to do this are detailed in the external user build guide.
 
 Notable changes include:
 
@@ -300,7 +382,7 @@ Notable changes include:
     * DEM
       * new field list to track max particle overlap
       * user can optional turn off fast time stepping
-      
+
   * Build changes / improvements:
     * Improved the target export functionality.
 
@@ -311,13 +393,13 @@ Notable changes include:
     * Initial volumes for damage models were incorrectly not taking into account pore space when computing failure statistics for seeding flaws.  Fixed.
     * DEM
       * fixed bug in solid boundary unique indices that causes particle sticking
-      * fixed bug in solid boundary update policies 
+      * fixed bug in solid boundary update policies
       * fixed solid boundary restartability for moving bcs
 
 Version v2024.01.00 -- Release date 2024-01-19
 ==============================================
   * Important Notes:
-    * The PolyClipper, BLT, and PYB11Generator submodules have been modified. Be sure to recursively update the submodules.  
+    * The PolyClipper, BLT, and PYB11Generator submodules have been modified. Be sure to recursively update the submodules.
 
 Notable changes include:
 
@@ -345,7 +427,7 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Fixed melt behavior in Steinberg-Guinan strength model, which was ignoring melt for damaged material.
     * Fixed range of dimensionless melt temperature for Johnson-Cook strength.
-    * FSISPH new features and modifications to method. 
+    * FSISPH new features and modifications to method.
       * NOTE constructor inputs have changed.
       * strength implementation modified.
       * new features added including plane strain option and settable minP for interfaces.
@@ -417,7 +499,7 @@ Notable changes include:
     * Adding user specified functions for shear modulus and yield strength as a function of damage.
 
   * Build changes / improvements:
-    * The C++ library interface is compiled into a single Spheral_CXX library. 
+    * The C++ library interface is compiled into a single Spheral_CXX library.
     * Previous Spheral C++ libraries are still CMAKE targets, but are "ojbect" libraries.
     * ATS bumped to version 7.0.9 for blueos smpi option support.
     * Eigen bumped to 3.4.0 for NVCC compatiblity.
@@ -476,7 +558,7 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Spheral fixed when running in Debug mode with MPI=Off.
     * Typos fixed in quickstart guide. https://github.com/LLNL/spheral/pull/116
-    * Pedantic check for expired pointer to the RestartRegistrar. Ensures we don't call into deleted objects. 
+    * Pedantic check for expired pointer to the RestartRegistrar. Ensures we don't call into deleted objects.
     * Switching GammaLaw and Polytropic EOS to the isentrpic bulk modulus for consistency w/ Solid EOS.
     * Update scalar and tensor damage calc in FSISPH to be more consistent with SolidSPHHydro.
     * CullenDehnen segfault fix.
@@ -490,7 +572,19 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Added verbose time step frequency to `SpheralController`, allowing time step information to be printed every N steps instead of every step.
+    * Periodic work frequencies in `SpheralController` can now be callables, enabling dynamic frequency changes during a simulation.
+    * Added `gradientPairs` to modernize the gradient calculation using node pairs. 
+    * Silo output now supports subdirectories within silo files.
+    * Added support for 1D silo output, readable as curves in VisIt.
+    * Added a damping factor to the ideal H iteration in both SPH and ASPH smoothing scales to improve convergence for difficult initial distributions.
+    * Added a check in `SpheralController` that limits the initial neighbor count to a reasonable value before `iterateIdealH` begins.
+    * `iterateIdealH` now supports extra packages during the initial H iteration and a flag to force Voronoi tessellation.
 
   * Build changes / improvements:
+    * Cleaned up the gradient instantiation template.
 
   * Bug Fixes / improvements:
+    * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
+    * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
+

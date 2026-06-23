@@ -11,6 +11,7 @@
 #define __Spheral_RZNonSymmetricSpecificThermalEnergyPolicy_hh__
 
 #include "DataBase/UpdatePolicyBase.hh"
+#include "Field/FieldList.hh"
 #include "Geometry/Dimension.hh"
 
 #include <string>
@@ -68,6 +69,7 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   const DataBase<Dimension>* mDataBasePtr;
+  FieldList<Dimension, Scalar> mWeight;
 };
 
 }

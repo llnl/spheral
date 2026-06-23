@@ -187,6 +187,11 @@ public:
   const std::vector<size_t>& ghostNodes(const NodeList<Dimension>& nodeList) const;
   const std::vector<size_t>& violationNodes(const NodeList<Dimension>& nodeList) const;
 
+  // Query if a given node is in one of this Boundary's sets
+  bool isControlNode(const NodeList<Dimension>& nodeList, const size_t i) const;
+  bool isGhostNode(const NodeList<Dimension>& nodeList, const size_t i) const;
+  bool isViolationNode(const NodeList<Dimension>& nodeList, const size_t i) const;
+
   // Provide iterators over the control, ghost, and violation nodes for a
   // given NodeList.
   std::vector<size_t>::const_iterator controlBegin(const NodeList<Dimension>& nodeList) const;

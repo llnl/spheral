@@ -12,7 +12,7 @@
 
 namespace Spheral {
 
-template<typename Dimension> class ArtificialViscosityHandle;
+template<typename Dimension> class ArtificialViscosity;
 template<typename Dimension> class DataBase;
 
 // Many hydro algorithms have these sorts of choices for the mass density and H.
@@ -38,9 +38,10 @@ public:
   using ResidualType = typename Physics<Dimension>::ResidualType;
 
   // Constructors.
-  GenericHydro(ArtificialViscosityHandle<Dimension>& Q,
+  GenericHydro(ArtificialViscosity<Dimension>& Q,
                const double cfl,
-               const bool useVelocityMagnitudeForDt);
+               const bool useVelocityMagnitudeForDt,
+               const bool useNewAccelerationMagnitudeForDt = false);
 
   // Destructor.
   virtual ~GenericHydro();
@@ -70,7 +71,7 @@ public:
                                    const Scalar tol) const override;
 
   // Allow access to the artificial viscosity.
-  ArtificialViscosityHandle<Dimension>& artificialViscosity() const { return mArtificialViscosity; }
+  ArtificialViscosity<Dimension>& artificialViscosity() const { return mArtificialViscosity; }
 
   // Also allow access to the CFL timestep safety criteria.
   Scalar cfl()                              const { return mCFL; }
@@ -80,6 +81,9 @@ public:
   // be used in determining the timestep.
   bool useVelocityMagnitudeForDt()          const { return mUseVelocityMagnitudeForDt; }
   void useVelocityMagnitudeForDt(bool x)          { mUseVelocityMagnitudeForDt = x; }
+
+  bool useNewAccelerationMagnitudeForDt()          const { return mUseNewAccelerationMagnitudeForDt; }
+  void useNewAccelerationMagnitudeForDt(bool x)          { mUseNewAccelerationMagnitudeForDt = x; }
 
   // Return the cumulative neighboring statistics.
   int minMasterNeighbor()                   const { return mMinMasterNeighbor; }
@@ -119,9 +123,10 @@ protected:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  ArtificialViscosityHandle<Dimension>& mArtificialViscosity;
+  ArtificialViscosity<Dimension>& mArtificialViscosity;
   Scalar mCFL;
   bool mUseVelocityMagnitudeForDt;
+  bool mUseNewAccelerationMagnitudeForDt;
 
   mutable int mMinMasterNeighbor, mMaxMasterNeighbor, mSumMasterNeighbor;
   mutable int mMinCoarseNeighbor, mMaxCoarseNeighbor, mSumCoarseNeighbor;

@@ -33,7 +33,7 @@ NodePairList::computeLookup() const {
 
 void
 NodePairList::clear() {
-  mData.free();
+  GPUUtils::freeMAView(mData);
   mNodePairList.clear();
   mPair2Index.clear();
 }

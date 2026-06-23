@@ -5,7 +5,7 @@ from PYB11Generator import *
 from DEMBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralDEM")
+@PYB11module("SpheralCompiledModules.SpheralDEM")
 class LinearSpringDEM(DEMBase):
 
     PYB11typedefs = """

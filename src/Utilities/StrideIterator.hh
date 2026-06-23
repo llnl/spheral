@@ -8,26 +8,34 @@
 #ifndef __Spheral_StrideIterator__
 #define __Spheral_StrideIterator__
 
+#include <cstddef>
 #include <iterator>
+#include <type_traits>
 
 namespace Spheral {
 
 template<typename T, size_t stride>
-class StrideIterator: public std::iterator<std::random_access_iterator_tag, T> {
+class StrideIterator {
 public:
-  StrideIterator(T* ptr): mptr(ptr)                  {}
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = std::remove_cv_t<T>;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
+  SPHERAL_HOST_DEVICE StrideIterator(T* ptr): mptr(ptr)                  {}
 
-  T& operator*()                               const { return *mptr; }
-  StrideIterator& operator++()                       { mptr += stride; return *this; }
-  StrideIterator operator++(int)                     { StrideIterator tmp = *this; ++(*this); return tmp; }
-  StrideIterator& operator--()                       { mptr -= stride; return *this; }
-  StrideIterator operator--(int)                     { StrideIterator tmp = *this; --(*this); return tmp; }
+  SPHERAL_HOST_DEVICE T& operator*()                               const { return *mptr; }
+  SPHERAL_HOST_DEVICE StrideIterator& operator++()                       { mptr += stride; return *this; }
+  SPHERAL_HOST_DEVICE StrideIterator operator++(int)                     { StrideIterator tmp = *this; ++(*this); return tmp; }
+  SPHERAL_HOST_DEVICE StrideIterator& operator--()                       { mptr -= stride; return *this; }
+  SPHERAL_HOST_DEVICE StrideIterator operator--(int)                     { StrideIterator tmp = *this; --(*this); return tmp; }
 
-  bool operator==(const StrideIterator& other) const { return mptr == other.mptr; }
-  bool operator!=(const StrideIterator& other) const { return !(*this == other); }
+  SPHERAL_HOST_DEVICE bool operator==(const StrideIterator& other) const { return mptr == other.mptr; }
+  SPHERAL_HOST_DEVICE bool operator!=(const StrideIterator& other) const { return !(*this == other); }
 
 private:
-  T* mptr;
+  template<typename, size_t> friend class StrideIterator;
+  pointer mptr;
 };
 
 }

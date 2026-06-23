@@ -38,7 +38,7 @@
 #include "Hydro/EntropyPolicy.hh"
 #include "Mesh/MeshPolicy.hh"
 #include "Mesh/generateMesh.hh"
-#include "ArtificialViscosity/ArtificialViscosity.hh"
+#include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/NodeIterators.hh"
@@ -71,12 +71,13 @@ namespace Spheral {
 SPHHydroBaseGSRZ::
 SPHHydroBaseGSRZ(const SmoothingScaleBase<Dim<2> >& smoothingScaleMethod,
                  DataBase<Dimension>& dataBase,
-                 ArtificialViscosity<Dim<2> >& Q,
+                 ArtificialViscosityView<Dim<2> >& Q,
                  const TableKernel<Dim<2> >& W,
                  const TableKernel<Dim<2> >& WPi,
                  const double filter,
                  const double cfl,
                  const bool useVelocityMagnitudeForDt,
+                 const bool useNewAccelerationMagnitudeForDt,
                  const bool compatibleEnergyEvolution,
                  const bool evolveTotalEnergy,
                  const bool gradhCorrection,
@@ -97,6 +98,7 @@ SPHHydroBaseGSRZ(const SmoothingScaleBase<Dim<2> >& smoothingScaleMethod,
                         filter,
                         cfl,
                         useVelocityMagnitudeForDt,
+                        useNewAccelerationMagnitudeForDt,
                         compatibleEnergyEvolution,
                         evolveTotalEnergy,
                         gradhCorrection,
@@ -205,8 +207,8 @@ evaluateDerivatives(const Dim<2>::Scalar /*time*/,
                     const State<Dim<2> >& state,
                     StateDerivatives<Dim<2> >& derivatives) const {
 
-  // Get the ArtificialViscosity.
-  ArtificialViscosity<Dimension>& Q = this->artificialViscosity();
+  // Get the ArtificialViscosityView.
+  ArtificialViscosityView<Dimension>& Q = this->artificialViscosity();
 
   // The kernels and such.
   const TableKernel<Dimension>& W = this->kernel();

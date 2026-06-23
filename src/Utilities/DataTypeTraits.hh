@@ -110,24 +110,27 @@ struct DataTypeTraits<int> {
   SPHERAL_HOST_DEVICE static int zero() { return 0; }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return MPI_INT; }
+  static MPI_Datatype MpiLocDataType() { return MPI_2INT; }
 #endif
   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::INT_ID; }
   using AxomType = int;
 };
 
 //------------------------------------------------------------------------------
-// template<>
-// struct DataTypeTraits<size_t> {
-//   typedef size_t ElementType;
-//   static bool fixedSize() { return true; }
-//   static size_t numElements(const ElementType& x) { return 1; }
-//   static size_t zero() { return 0U; }
-// #ifdef SPHERAL_ENABLE_MPI
-//   static MPI_Datatype MpiDataType() { return SPHERAL_MPI_SIZE_T; }
-// #endif
-//   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
-//   using AxomType = uint64_t;
-// };
+#ifdef __APPLE__
+template<>
+struct DataTypeTraits<size_t> {
+  typedef size_t ElementType;
+  static bool fixedSize() { return true; }
+  static size_t numElements(const ElementType& x) { return 1; }
+  static size_t zero() { return 0U; }
+#ifdef SPHERAL_ENABLE_MPI
+  static MPI_Datatype MpiDataType() { return SPHERAL_MPI_SIZE_T; }
+#endif
+  static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
+  using AxomType = uint64_t;
+};
+#endif
 
 //------------------------------------------------------------------------------
 template<>
@@ -174,6 +177,7 @@ struct DataTypeTraits<float> {
   SPHERAL_HOST_DEVICE static float zero() { return 0.0; }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return MPI_FLOAT; }
+  static MPI_Datatype MpiLocDataType() { return MPI_FLOAT_INT; }
 #endif
   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::FLOAT_ID; }
   using AxomType = float;
@@ -188,6 +192,7 @@ struct DataTypeTraits<double> {
   SPHERAL_HOST_DEVICE static double zero() { return 0.0; }
 #ifdef SPHERAL_ENABLE_MPI
   static MPI_Datatype MpiDataType() { return MPI_DOUBLE; }
+  static MPI_Datatype MpiLocDataType() { return MPI_DOUBLE_INT; }
 #endif
   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::DOUBLE_ID; }
   using AxomType = double;

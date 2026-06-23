@@ -5,7 +5,7 @@ from PYB11Generator import *
 from CRKSPHHydroBase import *
 
 @PYB11template("Dimension")
-@PYB11module("SpheralCRKSPH")
+@PYB11module("SpheralCompiledModules.SpheralCRKSPH")
 @PYB11dynamic_attr
 class CRKSPHVariant(CRKSPHHydroBase):
     "CRKSPHVariant -- A development variant of CRKSPH for experimentation."
@@ -23,12 +23,13 @@ class CRKSPHVariant(CRKSPHHydroBase):
 """
 
     def pyinit(self,
-               Q = "ArtificialViscosityHandle<%(Dimension)s>&",
+               Q = "ArtificialViscosity<%(Dimension)s>&",
                W = "const TableKernel<%(Dimension)s>&",
                WPi = "const TableKernel<%(Dimension)s>&",
                filter = "const double",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
