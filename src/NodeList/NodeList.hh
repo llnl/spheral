@@ -10,12 +10,13 @@
 #define __Spheral_NodeList__
 
 #include "DataOutput/registerWithRestart.hh"
-#include "Utilities/span.hh"
+#include "NodeList/NodeListBase.hh"
+#include "NodeList/NodeListView.hh"
+#include "Utilities/DBC.hh"
 
 #include <string>
 #include <list>
 #include <vector>
-#include <functional>
 
 namespace Spheral {
 
@@ -33,13 +34,10 @@ template<typename Dimension> class FieldBase;
 template<typename Dimension, typename Value> class Field;
 class FileIO;
 
-enum class NodeType {
-  InternalNode = 0,
-  GhostNode = 1
-};
-
 template<typename Dimension>
-class NodeList {
+class NodeList:
+    public NodeListBase<Dimension>,
+    public NodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -48,10 +46,26 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using FieldBaseSpan = SPHERAL_SPAN_TYPE<std::reference_wrapper<FieldBase<Dimension>>>;
+  using BaseType = NodeListBase<Dimension>;
+  using ViewType = NodeListView<Dimension>;
 
-  using FieldBaseIterator = typename std::vector<std::reference_wrapper<FieldBase<Dimension>>>::iterator;
-  using const_FieldBaseIterator = typename std::vector<std::reference_wrapper<FieldBase<Dimension>>>::const_iterator;
+  using FieldBaseSpan = typename BaseType::FieldBaseSpan;
+  using FieldBaseIterator = typename BaseType::FieldBaseIterator;
+  using const_FieldBaseIterator = typename BaseType::const_FieldBaseIterator;
+
+  using BaseType::registeredFieldsBegin;
+  using BaseType::registeredFieldsEnd;
+  using BaseType::registeredFields;
+  using BaseType::numFields;
+  using BaseType::haveField;
+  using BaseType::neighbor;
+  using BaseType::registerNeighbor;
+  using BaseType::unregisterNeighbor;
+  using BaseType::nodesPerSmoothingScale;
+  using BaseType::maxNumNeighbors;
+  using BaseType::hmin;
+  using BaseType::hmax;
+  using BaseType::hminratio;
 
   // Constructors
   explicit NodeList(std::string name,
@@ -67,14 +81,15 @@ public:
   virtual ~NodeList();
 
   // Access the name of the NodeList.
-  std::string name()                                  const { return mName; }
+  std::string name() const { return BaseType::name(); }
 
   // Get or set the number of Nodes.
-  size_t numNodes()                                   const { return mNumNodes; }
-  size_t numInternalNodes()                           const { return mFirstGhostNode; }
-  size_t numGhostNodes()                              const { CHECK(mFirstGhostNode <= mNumNodes); return mNumNodes - mFirstGhostNode; }
-  void numInternalNodes(size_t size);
-  void numGhostNodes(size_t size);
+  virtual size_t numNodes()                           const override { return ViewType::numNodes(); }
+  virtual size_t numInternalNodes()                   const override { return ViewType::numInternalNodes(); }
+  virtual size_t numGhostNodes()                      const override { CHECK(ViewType::firstGhostNode() <= ViewType::numNodes()); return ViewType::numNodes() - ViewType::firstGhostNode(); }
+  virtual size_t firstGhostNode()                     const override { CHECK(ViewType::firstGhostNode() <= ViewType::numNodes()); return ViewType::firstGhostNode(); }
+  virtual void numInternalNodes(size_t size) override;
+  virtual void numGhostNodes(size_t size) override;
 
   // Provide the standard NodeIterators over the nodes of this NodeList.
   AllNodeIterator<Dimension> nodeBegin() const;
@@ -118,45 +133,9 @@ public:
   // These are quantities which are not stored, but can be computed.
   void Hinverse(Field<Dimension, SymTensor>& field) const;
 
-  // Provide iterators over the FieldBases defined on this NodeList.
-  FieldBaseIterator registeredFieldsBegin()                     { return mFieldBases.begin(); }    
-  FieldBaseIterator registeredFieldsEnd()                       { return mFieldBases.end(); }      
-
-  const_FieldBaseIterator registeredFieldsBegin()         const { return mFieldBases.begin(); }    
-  const_FieldBaseIterator registeredFieldsEnd()           const { return mFieldBases.end(); }       
-
-  FieldBaseSpan registeredFields()                        const { return FieldBaseSpan(mFieldBases.data(), mFieldBases.size()); }
-
-  // Provide methods to add and subtract Fields which are defined over a
-  // NodeList.
-  size_t numFields() const { return mFieldBases.size(); }
-  bool haveField(const FieldBase<Dimension>& field) const;
-
   // NodeLists can contain ghost nodes (either communicated from neighbor
   // processors, or simply created for boundary conditions).
   NodeType nodeType(size_t i) const;
-  size_t firstGhostNode()                                  const {CHECK(mFirstGhostNode <= mNumNodes); return mFirstGhostNode; }
-
-  // Access the neighbor object.
-  Neighbor<Dimension>& neighbor()                          const { CHECK(mNeighborPtr != nullptr); return *mNeighborPtr; }
-
-  // The target number of nodes per smoothing scale (for calculating the ideal H).
-  Scalar nodesPerSmoothingScale()                          const { return mNodesPerSmoothingScale; }
-  void nodesPerSmoothingScale(Scalar val)                        { mNodesPerSmoothingScale = val; }
-
-  // The maximum number of neighbors we want to have (for calculating the ideal H).
-  size_t maxNumNeighbors()                                 const { return mMaxNumNeighbors; }
-  void maxNumNeighbors(size_t val)                               { mMaxNumNeighbors = val; }
-
-  // Allowed range of smoothing scales for use in calculating H.
-  Scalar hmin()                                            const { return mhmin; }
-  void hmin(Scalar val)                                          { mhmin = val; }
-
-  Scalar hmax()                                            const { return mhmax; }
-  void hmax(Scalar val)                                          { mhmax = val; }
-
-  Scalar hminratio()                                       const { return mhminratio; }
-  void hminratio(Scalar val)                                     { mhminratio = val; }
 
   //****************************************************************************
   // Methods for adding/removing individual nodes to/from the NodeList
@@ -174,18 +153,17 @@ public:
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label()                              const { return "NodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label()                              const override { return "NodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // Some operators.
   bool operator==(const NodeList& rhs)                     const { return this == &rhs; }
   bool operator!=(const NodeList& rhs)                     const { return !(*this == rhs); }
 
-  // Neighbor object registration
-  void registerNeighbor(Neighbor<Dimension>& neighbor);
-  void unregisterNeighbor();
+  // Get the view of NodeList-owned data needed by ConnectivityMap.
+  ViewType view() const;
 
   // No default constructor, copying, or assignment.
   NodeList() = delete;
@@ -194,17 +172,15 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // Methods to handle registering Fields and Neighbors
-  void registerField(FieldBase<Dimension>& field) const;
-  void unregisterField(FieldBase<Dimension>& field) const;
+  void refreshView();
+
+  void registerField(FieldBase<Dimension>& field) const { BaseType::registerField(field); }
+  void unregisterField(FieldBase<Dimension>& field) const { BaseType::unregisterField(field); }
 
   friend class FieldBase<Dimension>;
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  size_t mNumNodes, mFirstGhostNode;
-  std::string mName;
-
   // State fields.
   Field<Dimension, Scalar> mMass;
   Field<Dimension, Vector> mPositions;
@@ -214,20 +190,17 @@ private:
   // The work field is mutable.
   mutable Field<Dimension, Scalar> mWork;
 
-  // Stuff for how H is handled.
-  Scalar mhmin, mhmax, mhminratio;
-  Scalar mNodesPerSmoothingScale;
-  size_t mMaxNumNeighbors;
-
-  // List of Fields that are defined over this NodeList.
-  mutable std::vector<std::reference_wrapper<FieldBase<Dimension>>> mFieldBases;
-  Neighbor<Dimension>* mNeighborPtr;
-
   // Provide a dummy vector to buid NodeIterators against.
   std::vector<NodeList<Dimension>*> mDummyList;
 
   // The restart registration.
   RestartRegistrationType mRestart;
+
+  using BaseType::mName;
+  using BaseType::mFieldBases;
+  using BaseType::mNeighborPtr;
+  using ViewType::mNumNodes;
+  using ViewType::mFirstGhostNode;
 };
 
 }

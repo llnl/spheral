@@ -44,21 +44,13 @@ NodeList<Dimension>::NodeList(std::string name,
                               const Scalar hminratio,
                               const Scalar nPerh,
                               const size_t maxNumNeighbors):
-  mNumNodes(numInternal + numGhost),
-  mFirstGhostNode(numInternal),
-  mName(name),
+  NodeListBase<Dimension>(name, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
+  NodeListView<Dimension>(numInternal + numGhost, numInternal),
   mMass(HydroFieldNames::mass),
   mPositions(HydroFieldNames::position),
   mVelocity(HydroFieldNames::velocity),
   mH(HydroFieldNames::H),
   mWork(HydroFieldNames::work),
-  mhmin(hmin),
-  mhmax(hmax),
-  mhminratio(hminratio),
-  mNodesPerSmoothingScale(nPerh),
-  mMaxNumNeighbors(maxNumNeighbors),
-  mFieldBases(),
-  mNeighborPtr(nullptr),
   mDummyList(),
   mRestart(registerWithRestart(*this, 10)) {
   NodeListRegistrar<Dimension>::instance().registerNodeList(*this);
@@ -70,6 +62,7 @@ NodeList<Dimension>::NodeList(std::string name,
   mDummyList.push_back(this);
   // It's never valid to have zero H's.
   mH = SymTensor::one();
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -77,7 +70,7 @@ NodeList<Dimension>::NodeList(std::string name,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 NodeList<Dimension>::~NodeList() {
-  DEBUG_LOG << "NodeList::~NodeList " << mName << " " << this;
+  DEBUG_LOG << "NodeList::~NodeList " << this->name() << " " << this;
   auto startingFields = mFieldBases;
   for (auto x: startingFields) x.get().unregisterNodeList();
 
@@ -100,6 +93,7 @@ NodeList<Dimension>::numInternalNodes(size_t size) {
   mFirstGhostNode = size;
   mNumNodes = size + numGhost;
   for (auto x: mFieldBases)     x.get().resizeFieldInternal(size, oldFirstGhostNode);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -111,6 +105,7 @@ NodeList<Dimension>::numGhostNodes(size_t size) {
   const auto numInternal = numInternalNodes();
   mNumNodes = numInternal + size;
   for (auto x: mFieldBases)     x.get().resizeFieldGhost(size);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -275,6 +270,7 @@ NodeList<Dimension>::
 positions(const Field<Dimension, typename Dimension::Vector>& r) {
   mPositions = r;
   mPositions.name(HydroFieldNames::position);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -297,6 +293,7 @@ NodeList<Dimension>::
 Hfield(const Field<Dimension, typename Dimension::SymTensor>& H) {
   mH = H;
   mH.name(HydroFieldNames::H);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -323,14 +320,27 @@ Hinverse(Field<Dimension, typename Dimension::SymTensor>& field) const {
 }
 
 //------------------------------------------------------------------------------
-// Check if the given field is registered with this NodeList.
+// Refresh the ConnectivityMap-facing NodeList view.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-bool
-NodeList<Dimension>::haveField(const FieldBase<Dimension>& field) const {
-  return (find_if(mFieldBases.begin(),
-                  mFieldBases.end(),
-                  [&](const std::reference_wrapper<FieldBase<Dimension>>& x) { return &(x.get()) == &field; }) != mFieldBases.end());
+void
+NodeList<Dimension>::
+refreshView() {
+  this->mPositionsView = mPositions.view();
+  this->mHfieldView = mH.view();
+  ENSURE(this->mPositionsView.numElements() == mNumNodes);
+  ENSURE(this->mHfieldView.numElements() == mNumNodes);
+}
+
+//------------------------------------------------------------------------------
+// Get the view of NodeList-owned data needed by ConnectivityMap.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename NodeList<Dimension>::ViewType
+NodeList<Dimension>::
+view() const {
+  const_cast<NodeList<Dimension>*>(this)->refreshView();
+  return static_cast<const ViewType&>(*this);
 }
 
 //------------------------------------------------------------------------------
@@ -375,6 +385,7 @@ deleteNodes(const vector<size_t>& nodeIDs) {
     // Now iterate over the Fields defined on this NodeList, and remove the appropriate
     // elements from each.
     for (auto x: mFieldBases)     x.get().deleteElements(uniqueIDs);
+    refreshView();
   }
 
   // Post-conditions.
@@ -446,6 +457,7 @@ appendInternalNodes(const size_t numNewNodes,
       ++bufItr;
     }
     CHECK(bufItr == packedFieldValues.end());
+    refreshView();
   }
 }
 
@@ -489,6 +501,7 @@ reorderNodes(const vector<size_t>& newOrdering) {
     ++bufItr;
   }
   CHECK(bufItr == packedFieldValues.end());
+  refreshView();
 
   // Post-conditions.
   ENSURE(this->numInternalNodes() == n);
@@ -542,59 +555,8 @@ restoreState(const FileIO& file, const string& pathName) {
 
   // The neighbor object doesn't actually write out state, but does need to be
   // reinitialized with the new NodeList state.
-  mNeighborPtr->updateNodes();
-}
-
-//------------------------------------------------------------------------------
-// Register a field with this NodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::registerField(FieldBase<Dimension>& field) const {
-  DEBUG_LOG << "NodeList::registerField : " << mName << " " << this << " : " << field.name() << " " << &field;
-  if (haveField(field)) {
-    SpheralMessage("WARNING: Attempt to register field " << &field << " (" << field.name()
-                   << ") with NodeList " << this << " (" << this->name() << ") that already has it.");
-  } else {
-    mFieldBases.push_back(std::ref(field));
-  }
-}
-
-//------------------------------------------------------------------------------
-// Unregister a field that is listed with this NodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::unregisterField(FieldBase<Dimension>& field) const {
-  DEBUG_LOG << "NodeList::unregisterField : " << mName << " " << this << " : " << field.name() << " " << &field;
-#pragma omp critical
-  {
-    auto itr = find_if(mFieldBases.begin(),
-                       mFieldBases.end(),
-                       [&](const std::reference_wrapper<FieldBase<Dimension>>& x) { return &(x.get()) == &field; });
-    if (itr != mFieldBases.end()) mFieldBases.erase(itr);
-  }
-}
-
-//------------------------------------------------------------------------------
-// Register the given neighbor object with this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::
-registerNeighbor(Neighbor<Dimension>& neighbor) {
-  DEBUG_LOG << "NodeList::registerNeighbor : " << mName << " " << this << " : " << &neighbor;
-  mNeighborPtr = &neighbor;
-}
-
-//------------------------------------------------------------------------------
-// Unregister the current neighbor object from this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::unregisterNeighbor() {
-  DEBUG_LOG << "NodeList::unregisterNeighbor : " << mName << " " << this;
-  mNeighborPtr = nullptr;
+  if (mNeighborPtr != nullptr) mNeighborPtr->updateNodes();
+  refreshView();
 }
 
 // //------------------------------------------------------------------------------
