@@ -214,33 +214,6 @@ overlapConnectivityForNode(const int nodeListID,
 }
 
 //------------------------------------------------------------------------------
-// Compute the number of neighbors for the given node.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-size_t
-ConnectivityMap<Dimension>::
-numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
-                    const int nodeID) const {
-  const std::vector< std::vector<int> >& neighbors = connectivityForNode(nodeListPtr, nodeID);
-  size_t result = 0u;
-  for (std::vector< std::vector<int> >::const_iterator itr = neighbors.begin();
-       itr != neighbors.end();
-       ++itr) result += itr->size();
-  return result;
-}
-
-template<typename Dimension>
-inline
-size_t
-ConnectivityMap<Dimension>::
-numNeighborsForNode(const int nodeListID,
-                    const int nodeID) const {
-  REQUIRE(nodeListID < (int)mNodeLists.size());
-  return this->numNeighborsForNode(mNodeLists[nodeListID], nodeID);
-}
-
-//------------------------------------------------------------------------------
 // Compute the number of overlap neighbors for the given node.
 //------------------------------------------------------------------------------
 template<typename Dimension>

@@ -388,6 +388,36 @@ connectivityUnionForNodes(const int nodeListi, const int i,
 }
 
 //------------------------------------------------------------------------------
+// Compute the number of neighbors for the given node.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+size_t
+ConnectivityMap<Dimension>::
+numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
+                    const int nodeID) const {
+  return numNeighborsForNode(nodeListIndex(nodeListPtr), nodeID);
+}
+
+template<typename Dimension>
+size_t
+ConnectivityMap<Dimension>::
+numNeighborsForNode(const int nodeListID,
+                    const int nodeID) const {
+  REQUIRE(nodeListID < (int)mNodeLists.size());
+  size_t result = 0u;
+  if (not mConnectivity.empty()) {
+    const auto& fullNeighbors = connectivityForNode(nodeListID, nodeID);
+    for (const auto& neighbors: fullNeighbors) result += neighbors.size();
+  } else {
+    for (const auto& p: *mNodePairListPtr) {
+      if ((p.i_list == size_t(nodeListID) and p.i_node == size_t(nodeID)) or
+          (p.j_list == size_t(nodeListID) and p.j_node == size_t(nodeID))) ++result;
+    }
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Return the connectivity in terms of global node IDs.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -985,8 +1015,6 @@ buildPerPointConnectivity() {
     const auto j = pair.j_node;
     CHECK(ki < numNodeLists);
     CHECK(kj < numNodeLists);
-    CHECK(i < numNodesInNodeList(ki));
-    CHECK(j < numNodesInNodeList(kj));
 
     CHECK(mOffsets[ki] + i < mConnectivity.size());
     auto& neighborsi = mConnectivity[mOffsets[ki] + i];
