@@ -59,11 +59,6 @@ public:
   void patchConnectivity(const FieldList<Dimension, size_t>& flags,
                          const FieldList<Dimension, size_t>& old2new);
 
-  // Remove connectivity between neighbors.
-  // Note this method assumes neighbor info is symmetric, and removes the pair connectivity for each
-  // member of a pair (maintaining symmetry).
-  void removeConnectivity(const FieldList<Dimension, std::vector<std::vector<int>>>& neighborsToCut);
-
   // Are we computing neighbors for ghosts?
   bool buildGhostConnectivity() const;
 
@@ -193,7 +188,7 @@ private:
   // The full connectivity map.  This might be quite large!
   // [offset[NodeList] + nodeID] [NodeListID] [neighborIndex]
   using ConnectivityStorageType = std::vector<std::vector<std::vector<int>>>;
-  std::vector<int> mOffsets;
+  std::vector<size_t> mOffsets;
   ConnectivityStorageType mConnectivity;
 
   // List of Node connection pairs.
@@ -219,6 +214,7 @@ private:
   // Internal method to fill in the connectivity, once the set of NodeLists 
   // is determined.
   void computeConnectivity();
+  void buildPerPointConnectivity();
 };
 
 }
