@@ -10,6 +10,8 @@
 #define __Spheral_NodeList__
 
 #include "DataOutput/registerWithRestart.hh"
+#include "NodeList/NodeType.hh"
+#include "NodeList/NodeListView.hh"
 #include "Utilities/span.hh"
 
 #include <string>
@@ -33,11 +35,6 @@ template<typename Dimension> class FieldBase;
 template<typename Dimension, typename Value> class Field;
 class FileIO;
 
-enum class NodeType {
-  InternalNode = 0,
-  GhostNode = 1
-};
-
 template<typename Dimension>
 class NodeList {
 
@@ -47,6 +44,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+
+  using ViewType = NodeListView<Dimension>;
 
   using FieldBaseSpan = SPHERAL_SPAN_TYPE<std::reference_wrapper<FieldBase<Dimension>>>;
 
@@ -182,6 +181,9 @@ public:
   // Some operators.
   bool operator==(const NodeList& rhs)                     const { return this == &rhs; }
   bool operator!=(const NodeList& rhs)                     const { return !(*this == rhs); }
+
+  // Get the view of NodeList-owned data.
+  ViewType view();
 
   // Neighbor object registration
   void registerNeighbor(Neighbor<Dimension>& neighbor);

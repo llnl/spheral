@@ -334,6 +334,16 @@ NodeList<Dimension>::haveField(const FieldBase<Dimension>& field) const {
 }
 
 //------------------------------------------------------------------------------
+// Get the view of NodeList-owned data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename NodeList<Dimension>::ViewType
+NodeList<Dimension>::
+view() {
+  return ViewType(numNodes(), firstGhostNode(), mPositions.view(), mH.view());
+}
+
+//------------------------------------------------------------------------------
 // Return the type of node (internal or ghost).
 //------------------------------------------------------------------------------
 template<typename Dimension>
