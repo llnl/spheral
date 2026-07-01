@@ -187,6 +187,7 @@ private:
 
   // The full connectivity map.  This might be quite large!
   // [offset[NodeList] + nodeID] [NodeListID] [neighborIndex]
+  // Note this is only built as needed, we assume only the NodePairList by default
   using ConnectivityStorageType = std::vector<std::vector<std::vector<int>>>;
   std::vector<size_t> mOffsets;
   ConnectivityStorageType mConnectivity;
@@ -203,6 +204,9 @@ private:
   // The set of keys we may compute for each node.
   using Key = typename KeyTraits::Key;
   FieldList<Dimension, Key> mKeys;
+
+  // The number of neighbors per node
+  FieldList<Dimension, size_t> mNumNeighbors;
 
   // The coupling functor for coupling between points.
   NodeCouplingPtr mCouplingPtr;

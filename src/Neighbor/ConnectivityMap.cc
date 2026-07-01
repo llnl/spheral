@@ -126,6 +126,7 @@ ConnectivityMap():
   mConnectivity(),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
+  mNumNeighbors(FieldStorageType::CopyFields),
   mCouplingPtr(std::make_shared<NodeCoupling>()),
   mIntersectionConnectivity() {
 }
@@ -232,13 +233,18 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   mNodePairListPtr = std::make_shared<NodePairList>(std::move(culledPairs));
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
-  {
-    auto& pairs = *mNodePairListPtr;
-    if (domainDecompIndependent) {
-      sortPairs(pairs, mKeys);
-    } else {
-      std::sort(pairs.begin(), pairs.end());
-    }
+  auto& pairs = *mNodePairListPtr;
+  if (domainDecompIndependent) {
+    sortPairs(pairs, mKeys);
+  } else {
+    std::sort(pairs.begin(), pairs.end());
+  }
+
+  // Rebuild the number of neighbors per point
+  mNumNeighbors = 0u;
+  for (const auto& p: pairs) {
+    ++mNumNeighbors(p.i_list, p.i_node);
+    ++mNumNeighbors(p.j_list, p.j_node);
   }
 
   // If needed, rebuild the per-point connectivity
@@ -384,36 +390,6 @@ connectivityUnionForNodes(const int nodeListi, const int i,
   }
 
   // That's it.
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Compute the number of neighbors for the given node.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-ConnectivityMap<Dimension>::
-numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
-                    const int nodeID) const {
-  return numNeighborsForNode(nodeListIndex(nodeListPtr), nodeID);
-}
-
-template<typename Dimension>
-size_t
-ConnectivityMap<Dimension>::
-numNeighborsForNode(const int nodeListID,
-                    const int nodeID) const {
-  REQUIRE(nodeListID < (int)mNodeLists.size());
-  size_t result = 0u;
-  if (not mConnectivity.empty()) {
-    const auto& fullNeighbors = connectivityForNode(nodeListID, nodeID);
-    for (const auto& neighbors: fullNeighbors) result += neighbors.size();
-  } else {
-    for (const auto& p: *mNodePairListPtr) {
-      if ((p.i_list == size_t(nodeListID) and p.i_node == size_t(nodeID)) or
-          (p.j_list == size_t(nodeListID) and p.j_node == size_t(nodeID))) ++result;
-    }
-  }
   return result;
 }
 
@@ -669,6 +645,24 @@ valid() const {
     }
   }
 
+  // // Check that the number of neighbors is set correctly
+  // FieldList<Dimension, size_t> numNeighborsCheck(FieldStorageType::CopyFields);
+  // for (const auto* nptr: mNodeLists) numNeighborsCheck.appendNewField("Number of neighbors", *nptr, 0u);
+  // for (const auto& p: *mNodePairListPtr) {
+  //   ++numNeighborsCheck(p.i_list, p.i_node);
+  //   ++numNeighborsCheck(p.j_list, p.j_node);
+  // }
+  // if (mNumNeighbors != numNeighborsCheck) {
+  //   cerr << "ConnectivityMap::valid: numNeighbors not tallied correctly:" << endl;
+  //   for (auto k = 0u; k < numNodeLists; ++k) {
+  //     const auto n = mNodeLists[k]->numNodes();
+  //     for (auto i = 0u; i < n; ++i) {
+  //       if (mNumNeighbors(k,i) != numNeighborsCheck(k,i)) cerr << "  @(" << k << "," << i << ") : " << mNumNeighbors(k,i) << " != " << numNeighborsCheck(k,i) << endl;
+  //     }
+  //   }
+  //   return false;
+  // }
+
   // Everything must be OK.
   TIME_END("ConnectivityMap_valid");
   return true;
@@ -717,6 +711,7 @@ computeConnectivity() {
   mConnectivity.clear();
   mNodeTraversalIndices = vector<vector<int>>(numNodeLists);
   mIntersectionConnectivity.clear();
+  mNumNeighbors = dataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
 
   // If we're trying to be domain decomposition independent, we need a key to sort
   // by that will give us a unique ordering regardless of position.  The Morton ordered
@@ -744,8 +739,7 @@ computeConnectivity() {
   }
 
   // Create a list of flags to keep track of which nodes have been completed thus far.
-  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(int());
-  flagNodeDone = 0;
+  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(0);
 
   // Get the position and H fields.
   const auto position = dataBase.globalPosition();
@@ -843,6 +837,12 @@ computeConnectivity() {
     sortPairs(*mNodePairListPtr, mKeys);
   } else {
     std::sort(mNodePairListPtr->begin(), mNodePairListPtr->end());
+  }
+
+  // Build the number of neighbors per point
+  for (const auto& p: *mNodePairListPtr) {
+    ++mNumNeighbors(p.i_list, p.i_node);
+    ++mNumNeighbors(p.j_list, p.j_node);
   }
 
   // Overlap  and intersection connectivity are based on the per-point neighbors, so build that if necessary
@@ -982,9 +982,11 @@ ConnectivityMap<Dimension>::
 buildPerPointConnectivity() {
   TIME_BEGIN("ConnectivityMap_buildPerPointConnectivity");
 
-  // Preconditions
-  REQUIRE(mOffsets.empty());
-  REQUIRE(mConnectivity.empty());
+  // cerr << "ConnectivityMap::buildPerPointConnectivity" << endl;
+
+  // Double check we're starting fresh
+  mOffsets.clear();
+  mConnectivity.clear();
 
   // Count how many nodes we need to use per NodeList
   const bool domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
