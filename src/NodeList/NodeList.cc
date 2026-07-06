@@ -1,7 +1,7 @@
 //---------------------------------Spheral++----------------------------------//
 // NodeList -- An abstract base class for the NodeLists.
 //
-// We will define here the basic functionality we expect all NodeLists to 
+// We will define here the basic functionality we expect all NodeLists to
 // provide.
 //
 // Created by JMO, Wed Sep  8 21:54:50 PDT 1999
@@ -44,19 +44,19 @@ NodeList<Dimension>::NodeList(std::string name,
                               const Scalar hminratio,
                               const Scalar nPerh,
                               const size_t maxNumNeighbors):
-  mNumNodes(numInternal + numGhost),
-  mFirstGhostNode(numInternal),
+  NodeListView<Dimension>(numInternal + numGhost,
+                          numInternal,
+                          hmin,
+                          hmax,
+                          hminratio,
+                          nPerh,
+                          maxNumNeighbors),
   mName(name),
   mMass(HydroFieldNames::mass),
   mPositions(HydroFieldNames::position),
   mVelocity(HydroFieldNames::velocity),
   mH(HydroFieldNames::H),
   mWork(HydroFieldNames::work),
-  mhmin(hmin),
-  mhmax(hmax),
-  mhminratio(hminratio),
-  mNodesPerSmoothingScale(nPerh),
-  mMaxNumNeighbors(maxNumNeighbors),
   mFieldBases(),
   mNeighborPtr(nullptr),
   mDummyList(),
@@ -70,6 +70,7 @@ NodeList<Dimension>::NodeList(std::string name,
   mDummyList.push_back(this);
   // It's never valid to have zero H's.
   mH = SymTensor::one();
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -95,11 +96,12 @@ NodeList<Dimension>::~NodeList() {
 template<typename Dimension>
 void
 NodeList<Dimension>::numInternalNodes(size_t size) {
-  const auto numGhost = numGhostNodes();
-  const auto oldFirstGhostNode = mFirstGhostNode;
-  mFirstGhostNode = size;
-  mNumNodes = size + numGhost;
+  const auto numGhost = this->numGhostNodes();
+  const auto oldFirstGhostNode = this->mFirstGhostNode;
+  this->mFirstGhostNode = size;
+  this->mNumNodes = size + numGhost;
   for (auto x: mFieldBases)     x.get().resizeFieldInternal(size, oldFirstGhostNode);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -108,9 +110,10 @@ NodeList<Dimension>::numInternalNodes(size_t size) {
 template<typename Dimension>
 void
 NodeList<Dimension>::numGhostNodes(size_t size) {
-  const auto numInternal = numInternalNodes();
-  mNumNodes = numInternal + size;
+  const auto numInternal = this->numInternalNodes();
+  this->mNumNodes = numInternal + size;
   for (auto x: mFieldBases)     x.get().resizeFieldGhost(size);
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -160,7 +163,7 @@ NodeList<Dimension>::ghostNodeBegin() const {
   return GhostNodeIterator<Dimension>(mDummyList.begin(),
                                       mDummyList.begin(),
                                       mDummyList.end(),
-                                      firstGhostNode());
+                                      this->firstGhostNode());
 }
 
 template<typename Dimension>
@@ -264,6 +267,7 @@ NodeList<Dimension>::
 mass(const Field<Dimension, typename Dimension::Scalar>& m) {
   mMass = m;
   mMass.name(HydroFieldNames::mass);
+  refreshMassView();
 }
 
 //------------------------------------------------------------------------------
@@ -275,6 +279,7 @@ NodeList<Dimension>::
 positions(const Field<Dimension, typename Dimension::Vector>& r) {
   mPositions = r;
   mPositions.name(HydroFieldNames::position);
+  refreshPositionsView();
 }
 
 //------------------------------------------------------------------------------
@@ -286,6 +291,7 @@ NodeList<Dimension>::
 velocity(const Field<Dimension, typename Dimension::Vector>& v) {
   mVelocity = v;
   mVelocity.name(HydroFieldNames::velocity);
+  refreshVelocityView();
 }
 
 //------------------------------------------------------------------------------
@@ -297,6 +303,7 @@ NodeList<Dimension>::
 Hfield(const Field<Dimension, typename Dimension::SymTensor>& H) {
   mH = H;
   mH.name(HydroFieldNames::H);
+  refreshHfieldView();
 }
 
 //------------------------------------------------------------------------------
@@ -308,6 +315,7 @@ NodeList<Dimension>::
 work(const Field<Dimension, typename Dimension::Scalar>& w) {
   mWork = w;
   mWork.name(HydroFieldNames::work);
+  refreshWorkView();
 }
 
 //------------------------------------------------------------------------------
@@ -318,7 +326,7 @@ void
 NodeList<Dimension>::
 Hinverse(Field<Dimension, typename Dimension::SymTensor>& field) const {
   REQUIRE(field.nodeListPtr() == this);
-  for (auto i = 0u; i < numInternalNodes(); ++i) field(i) = mH(i).Inverse();
+  for (auto i = 0u; i < this->numInternalNodes(); ++i) field(i) = mH(i).Inverse();
   field.name("H inverse");
 }
 
@@ -340,19 +348,63 @@ template<typename Dimension>
 typename NodeList<Dimension>::ViewType
 NodeList<Dimension>::
 view() {
-  return ViewType(numNodes(), firstGhostNode(), mPositions.view(), mH.view());
+  refreshView();
+  return static_cast<ViewType>(*this);
 }
 
 //------------------------------------------------------------------------------
-// Return the type of node (internal or ghost).
+// Refresh the inherited view state from the owned Fields.
+//
+// NodeList owns several mutable Fields, exposes Field& accessors, and supports
+// node-count, append/delete/reorder, and restore paths that can rebind storage;
+// refresh so the inherited view handles describe the current owned storage.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-NodeType
-NodeList<Dimension>::nodeType(size_t i) const {
-  REQUIRE(i < mNumNodes);
-  return (i < mFirstGhostNode ? 
-          NodeType::InternalNode :
-          NodeType::GhostNode);
+void
+NodeList<Dimension>::refreshView() {
+  refreshMassView();
+  refreshPositionsView();
+  refreshVelocityView();
+  refreshHfieldView();
+  refreshWorkView();
+}
+
+//------------------------------------------------------------------------------
+// Refresh a single inherited FieldView from the owned Field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::refreshMassView() {
+  this->mMassView = mMass.view();
+  CHECK(this->mMassView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+void
+NodeList<Dimension>::refreshPositionsView() {
+  this->mPositionsView = mPositions.view();
+  CHECK(this->mPositionsView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+void
+NodeList<Dimension>::refreshVelocityView() {
+  this->mVelocityView = mVelocity.view();
+  CHECK(this->mVelocityView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+void
+NodeList<Dimension>::refreshHfieldView() {
+  this->mHfieldView = mH.view();
+  CHECK(this->mHfieldView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+void
+NodeList<Dimension>::refreshWorkView() {
+  this->mWorkView = mWork.view();
+  CHECK(this->mWorkView.numElements() == this->mNumNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -368,30 +420,31 @@ deleteNodes(const vector<size_t>& nodeIDs) {
     vector<size_t> uniqueIDs(nodeIDs);
     std::sort(uniqueIDs.begin(), uniqueIDs.end());
     uniqueIDs.erase(std::unique(uniqueIDs.begin(), uniqueIDs.end()), uniqueIDs.end());
-    CHECK(uniqueIDs.size() <= numNodes());
+    CHECK(uniqueIDs.size() <= this->numNodes());
     CHECK(uniqueIDs.size() == 0 or uniqueIDs.back() < this->numNodes());
 
     // Determine how many internal, ghost, and total nodes we should end with.
     auto ghostDeleteItr = uniqueIDs.begin();
     while (ghostDeleteItr < uniqueIDs.end() &&
-           *ghostDeleteItr < mFirstGhostNode) ++ghostDeleteItr;
+           *ghostDeleteItr < this->mFirstGhostNode) ++ghostDeleteItr;
     CHECK(ghostDeleteItr >= uniqueIDs.begin() && ghostDeleteItr <= uniqueIDs.end());
     const size_t numInternalNodesRemoved = std::distance(uniqueIDs.begin(), ghostDeleteItr);
-    CHECK(numInternalNodesRemoved <= numInternalNodes());
-    mNumNodes -= uniqueIDs.size();
-    mFirstGhostNode -= numInternalNodesRemoved;
-    CHECK(mFirstGhostNode <= mNumNodes);
+    CHECK(numInternalNodesRemoved <= this->numInternalNodes());
+    this->mNumNodes -= uniqueIDs.size();
+    this->mFirstGhostNode -= numInternalNodesRemoved;
+    CHECK(this->mFirstGhostNode <= this->mNumNodes);
 
     // Now iterate over the Fields defined on this NodeList, and remove the appropriate
     // elements from each.
     for (auto x: mFieldBases)     x.get().deleteElements(uniqueIDs);
+    refreshView();
   }
 
   // Post-conditions.
   BEGIN_CONTRACT_SCOPE
   for (auto x: mFieldBases) {
     CONTRACT_VAR(x) ;
-    ENSURE(x.get().size() == mNumNodes);
+    ENSURE(x.get().size() == this->mNumNodes);
   }
   END_CONTRACT_SCOPE
 }
@@ -412,10 +465,10 @@ packNodeFieldValues(const vector<size_t>& nodeIDs) const {
   vector<size_t> uniqueIDs(nodeIDs);
   std::sort(uniqueIDs.begin(), uniqueIDs.end());
   uniqueIDs.erase(unique(uniqueIDs.begin(), uniqueIDs.end()), uniqueIDs.end());
-  CHECK(uniqueIDs.size() <= numNodes());
+  CHECK(uniqueIDs.size() <= this->numNodes());
   CHECK(uniqueIDs.size() == 0 or uniqueIDs.back() < this->numNodes());
 
-  // Iterate over all the Fields defined on this NodeList, and append it's packed 
+  // Iterate over all the Fields defined on this NodeList, and append it's packed
   // field values to the stack.
   for (auto x: mFieldBases) {
     result.push_back(x.get().packValues(uniqueIDs));
@@ -441,9 +494,9 @@ appendInternalNodes(const size_t numNewNodes,
   if (numNewNodes > 0) {
 
     // Begin by resizing this NodeList appropriately.
-    const auto beginInsertionIndex = numInternalNodes();
-    numInternalNodes(beginInsertionIndex + numNewNodes);
-    CHECK(numInternalNodes() == beginInsertionIndex + numNewNodes);
+    const auto beginInsertionIndex = this->numInternalNodes();
+    this->numInternalNodes(beginInsertionIndex + numNewNodes);
+    CHECK(this->numInternalNodes() == beginInsertionIndex + numNewNodes);
 
     // Loop over each Field, and have them fill in the new values from the
     // packed char buffers.
@@ -456,6 +509,7 @@ appendInternalNodes(const size_t numNewNodes,
       ++bufItr;
     }
     CHECK(bufItr == packedFieldValues.end());
+    refreshView();
   }
 }
 
@@ -499,6 +553,7 @@ reorderNodes(const vector<size_t>& newOrdering) {
     ++bufItr;
   }
   CHECK(bufItr == packedFieldValues.end());
+  refreshView();
 
   // Post-conditions.
   ENSURE(this->numInternalNodes() == n);
@@ -517,7 +572,7 @@ dumpState(FileIO& file, const string& pathName) const {
 
   // Dump the number of internal nodes (we assume that ghost information
   // does not need to be stored).
-  file.write(numInternalNodes(), pathName + "/numNodes");
+  file.write(this->numInternalNodes(), pathName + "/numNodes");
 
   // Dump each of the internal fields of the NodeList.
   file.write(mMass, pathName + "/mass");
@@ -525,7 +580,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mVelocity, pathName + "/velocity");
   file.write(mH, pathName + "/H");
   file.write(mWork, pathName + "/work");
-}  
+}
 
 //------------------------------------------------------------------------------
 // Restore the state of the NodeList from the given file.
@@ -541,7 +596,7 @@ restoreState(const FileIO& file, const string& pathName) {
   // Read and reset the number of internal nodes.
   size_t numNodes;
   file.read(numNodes, pathName + "/numNodes");
-  numInternalNodes(numNodes);
+  this->numInternalNodes(numNodes);
 
   // Now we can restore each of the internal fields of the NodeList.
   file.read(mMass, pathName + "/mass");
@@ -549,6 +604,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mVelocity, pathName + "/velocity");
   file.read(mH, pathName + "/H");
   file.read(mWork, pathName + "/work");
+  refreshView();
 
   // The neighbor object doesn't actually write out state, but does need to be
   // reinitialized with the new NodeList state.
@@ -607,33 +663,4 @@ NodeList<Dimension>::unregisterNeighbor() {
   mNeighborPtr = nullptr;
 }
 
-// //------------------------------------------------------------------------------
-// // Notify all Fields registered on this NodeList to cache their coarse neighbor
-// // values.
-// //------------------------------------------------------------------------------
-// template<typename Dimension>
-// void
-// NodeList<Dimension>::
-// notifyFieldsCacheCoarseValues() const {
-//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBases.begin();
-//        fieldItr < mFieldBases.end();
-//        ++fieldItr) {
-//     (*fieldItr)->notifyNewCoarseNodes();
-//   }
-// }
-
-// //------------------------------------------------------------------------------
-// // Notify all Fields registered on this NodeList to cache their refine neighbor
-// // values.
-// //------------------------------------------------------------------------------
-// template<typename Dimension>
-// void
-// NodeList<Dimension>::
-// notifyFieldsCacheRefineValues() const {
-//   for (typename vector<FieldBase<Dimension>*>::iterator fieldItr = mFieldBases.begin();
-//        fieldItr < mFieldBases.end();
-//        ++fieldItr) {
-//     (*fieldItr)->notifyNewRefineNodes();
-//   }
-// }
 }

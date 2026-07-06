@@ -18,7 +18,6 @@ set(NodeList_headers
     FluidNodeListInline.hh
     FluidNodeTraits.hh
     NodeList.hh
-    NodeType.hh
     NodeListView.hh
     NodeListViewInline.hh
     NodeListRegistrar.hh
@@ -39,4 +38,3 @@ spheral_install_python_files(
   )
 
 spheral_add_obj_library(NodeList SPHERAL_OBJ_LIBS)
-

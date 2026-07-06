@@ -1,6 +1,6 @@
 #include "Utilities/DBC.hh"
 #include "Neighbor/Neighbor.hh"
-#include "NodeList/NodeType.hh"
+#include "NodeList/NodeListView.hh"
 #include "NodeList/NodeList.hh"
 
 #include <vector>
@@ -204,4 +204,3 @@ operator>=(const NodeIteratorBase<Dimension>& rhs) const {
 }
 
 }
-

@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
+#include <vector>
 
 using DIM3 = Spheral::Dim<3>;
 using Vector = typename DIM3::Vector;
@@ -59,15 +60,23 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DefaultAndExplicitConstruction) {
     SPHERAL_ASSERT_EQ(emptyView.numNodes(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.numInternalNodes(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.firstGhostNode(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.mass().numElements(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.positions().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.velocity().numElements(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.Hfield().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.work().numElements(), 0u);
 
     NodeListView_t sizedView(Ntotal, Ninternal);
     SPHERAL_ASSERT_EQ(sizedView.numNodes(), Ntotal);
     SPHERAL_ASSERT_EQ(sizedView.numInternalNodes(), Ninternal);
     SPHERAL_ASSERT_EQ(sizedView.firstGhostNode(), Ninternal);
+    SPHERAL_ASSERT_EQ(sizedView.numGhostNodes(), Nghost);
+    SPHERAL_ASSERT_EQ(sizedView.nodeType(0u), Spheral::NodeType::InternalNode);
+    SPHERAL_ASSERT_EQ(sizedView.nodeType(Ninternal), Spheral::NodeType::GhostNode);
     SPHERAL_ASSERT_EQ(sizedView.positions().numElements(), 0u);
     SPHERAL_ASSERT_EQ(sizedView.Hfield().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(sizedView.nodesPerSmoothingScale(), 2.01);
+    SPHERAL_ASSERT_EQ(sizedView.maxNumNeighbors(), 500u);
   EXEC_IN_SPACE_END()
 
   NodeList_t nodes("NodeListViewExplicit", Ninternal, Nghost);
@@ -105,8 +114,11 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ValueSemantics) {
   SPHERAL_ASSERT_EQ(copiedView.numNodes(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(copiedView.firstGhostNode(), Ninternal);
+  SPHERAL_ASSERT_EQ(copiedView.mass().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.positions().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.velocity().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.work().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.position(0).x(), 0.0);
   SPHERAL_ASSERT_EQ(copiedView.H(0).xx(), 1.0);
 
@@ -312,11 +324,85 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ResizeAndReacquire) {
 }
 
 //------------------------------------------------------------------------------
-// NodeList host state remains directly available while the view is value-only.
+// Appending internal nodes should rebind the inherited view to the resized Fields.
 //------------------------------------------------------------------------------
-GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndValueView) {
-  static_assert(!std::is_base_of<NodeListView_t, NodeList_t>::value,
-                "NodeList should return NodeListView by value, not inherit from it");
+GPU_TYPED_TEST_P(NodeListViewTypedTest, AppendInternalNodesRefreshesInheritedView) {
+  NodeList_t nodes("NodeListViewAppend", Ninternal, Nghost);
+  gpu_this->initialize(nodes);
+
+  NodeListView_t& inheritedView = nodes;
+  auto oldView = nodes.view();
+
+  const std::vector<size_t> sourceIDs = {1u, Ninternal - 1u};
+  const auto packedValues = nodes.packNodeFieldValues(sourceIDs);
+  nodes.appendInternalNodes(sourceIDs.size(), packedValues);
+
+  const auto expectedInternal = Ninternal + sourceIDs.size();
+  const auto expectedTotal = Ntotal + sourceIDs.size();
+  SPHERAL_ASSERT_EQ(oldView.numNodes(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodes.numNodes(), expectedTotal);
+  SPHERAL_ASSERT_EQ(nodes.numInternalNodes(), expectedInternal);
+  SPHERAL_ASSERT_EQ(inheritedView.numNodes(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.firstGhostNode(), expectedInternal);
+  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal).x(), double(sourceIDs[0]));
+  SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal + 1u).x(), double(sourceIDs[1]));
+  SPHERAL_ASSERT_EQ(inheritedView.H(Ninternal).xx(), 1.0);
+  SPHERAL_ASSERT_EQ(inheritedView.H(Ninternal + 1u).xx(), 1.0);
+
+  auto nodesView = nodes.view();
+  SPHERAL_ASSERT_EQ(nodesView.position(Ninternal).x(), double(sourceIDs[0]));
+  SPHERAL_ASSERT_EQ(nodesView.position(Ninternal + 1u).x(), double(sourceIDs[1]));
+  SPHERAL_ASSERT_EQ(nodesView.H(Ninternal).xx(), 1.0);
+  SPHERAL_ASSERT_EQ(nodesView.H(Ninternal + 1u).xx(), 1.0);
+
+  // The first old ghost node should have moved after the appended internals.
+  SPHERAL_ASSERT_EQ(nodesView.position(expectedInternal).x(), double(Ninternal));
+}
+
+//------------------------------------------------------------------------------
+// Reordering should rebind the inherited view to the reordered internal Fields.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, ReorderNodesRefreshesInheritedView) {
+  NodeList_t nodes("NodeListViewReorder", Ninternal, Nghost);
+  gpu_this->initialize(nodes);
+
+  NodeListView_t& inheritedView = nodes;
+  std::vector<size_t> newOrdering(Ninternal);
+  for (auto i = 0u; i < Ninternal; ++i) newOrdering[i] = Ninternal - i - 1u;
+  nodes.reorderNodes(newOrdering);
+
+  SPHERAL_ASSERT_EQ(nodes.numNodes(), Ninternal);
+  SPHERAL_ASSERT_EQ(nodes.numInternalNodes(), Ninternal);
+  SPHERAL_ASSERT_EQ(nodes.numGhostNodes(), 0u);
+  SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.firstGhostNode(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.position(0).x(), double(Ninternal - 1u));
+  SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal - 1u).x(), 0.0);
+
+  auto nodesView = nodes.view();
+  RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+    [=] SPHERAL_HOST_DEVICE (size_t i) {
+      SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(Ninternal - i - 1u));
+      SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+    });
+}
+
+//------------------------------------------------------------------------------
+// NodeList owns host state while inheriting allocation-free view state.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndInheritedView) {
+  static_assert(std::is_base_of<NodeListView_t, NodeList_t>::value,
+                "NodeList should inherit NodeListView");
 
   NodeList_t nodes("NodeListHostState", Ninternal, Nghost);
 
@@ -326,9 +412,19 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndValueView) {
   SPHERAL_ASSERT_EQ(nodes.numGhostNodes(), Nghost);
   SPHERAL_ASSERT_EQ(nodes.firstGhostNode(), Ninternal);
 
+  NodeListView_t& inheritedView = nodes;
+  SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), Ntotal);
+
   nodes.numGhostNodes(2u*Nghost);
   SPHERAL_ASSERT_EQ(nodes.numNodes(), Ninternal + 2u*Nghost);
   SPHERAL_ASSERT_EQ(nodes.view().numNodes(), Ninternal + 2u*Nghost);
+  SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ninternal + 2u*Nghost);
+  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ninternal + 2u*Nghost);
 
   nodes.nodesPerSmoothingScale(3.25);
   nodes.maxNumNeighbors(123u);
@@ -340,6 +436,13 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndValueView) {
   SPHERAL_ASSERT_EQ(nodes.hmin(), 1.0e-8);
   SPHERAL_ASSERT_EQ(nodes.hmax(), 1.0e8);
   SPHERAL_ASSERT_EQ(nodes.hminratio(), 0.25);
+
+  auto nodesView = nodes.view();
+  SPHERAL_ASSERT_EQ(nodesView.nodesPerSmoothingScale(), 3.25);
+  SPHERAL_ASSERT_EQ(nodesView.maxNumNeighbors(), 123u);
+  SPHERAL_ASSERT_EQ(nodesView.hmin(), 1.0e-8);
+  SPHERAL_ASSERT_EQ(nodesView.hmax(), 1.0e8);
+  SPHERAL_ASSERT_EQ(nodesView.hminratio(), 0.25);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
@@ -350,7 +453,9 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             TouchForwardsToContainedViews,
                             TouchAfterHostMutation,
                             ResizeAndReacquire,
-                            HostStateAndValueView);
+                            AppendInternalNodesRefreshesInheritedView,
+                            ReorderNodesRefreshesInheritedView,
+                            HostStateAndInheritedView);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodeList,
                                NodeListViewTypedTest,

@@ -10,7 +10,6 @@
 #define __Spheral_NodeList__
 
 #include "DataOutput/registerWithRestart.hh"
-#include "NodeList/NodeType.hh"
 #include "NodeList/NodeListView.hh"
 #include "Utilities/span.hh"
 
@@ -36,7 +35,7 @@ template<typename Dimension, typename Value> class Field;
 class FileIO;
 
 template<typename Dimension>
-class NodeList {
+class NodeList: public NodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -46,6 +45,8 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   using ViewType = NodeListView<Dimension>;
+  using ViewType::numInternalNodes;
+  using ViewType::numGhostNodes;
 
   using FieldBaseSpan = SPHERAL_SPAN_TYPE<std::reference_wrapper<FieldBase<Dimension>>>;
 
@@ -68,10 +69,7 @@ public:
   // Access the name of the NodeList.
   std::string name()                                  const { return mName; }
 
-  // Get or set the number of Nodes.
-  size_t numNodes()                                   const { return mNumNodes; }
-  size_t numInternalNodes()                           const { return mFirstGhostNode; }
-  size_t numGhostNodes()                              const { CHECK(mFirstGhostNode <= mNumNodes); return mNumNodes - mFirstGhostNode; }
+  // Set the number of Nodes.
   void numInternalNodes(size_t size);
   void numGhostNodes(size_t size);
 
@@ -131,31 +129,8 @@ public:
   size_t numFields() const { return mFieldBases.size(); }
   bool haveField(const FieldBase<Dimension>& field) const;
 
-  // NodeLists can contain ghost nodes (either communicated from neighbor
-  // processors, or simply created for boundary conditions).
-  NodeType nodeType(size_t i) const;
-  size_t firstGhostNode()                                  const {CHECK(mFirstGhostNode <= mNumNodes); return mFirstGhostNode; }
-
   // Access the neighbor object.
   Neighbor<Dimension>& neighbor()                          const { CHECK(mNeighborPtr != nullptr); return *mNeighborPtr; }
-
-  // The target number of nodes per smoothing scale (for calculating the ideal H).
-  Scalar nodesPerSmoothingScale()                          const { return mNodesPerSmoothingScale; }
-  void nodesPerSmoothingScale(Scalar val)                        { mNodesPerSmoothingScale = val; }
-
-  // The maximum number of neighbors we want to have (for calculating the ideal H).
-  size_t maxNumNeighbors()                                 const { return mMaxNumNeighbors; }
-  void maxNumNeighbors(size_t val)                               { mMaxNumNeighbors = val; }
-
-  // Allowed range of smoothing scales for use in calculating H.
-  Scalar hmin()                                            const { return mhmin; }
-  void hmin(Scalar val)                                          { mhmin = val; }
-
-  Scalar hmax()                                            const { return mhmax; }
-  void hmax(Scalar val)                                          { mhmax = val; }
-
-  Scalar hminratio()                                       const { return mhminratio; }
-  void hminratio(Scalar val)                                     { mhminratio = val; }
 
   //****************************************************************************
   // Methods for adding/removing individual nodes to/from the NodeList
@@ -199,12 +174,17 @@ protected:
   // Methods to handle registering Fields and Neighbors
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
+  void refreshView();
+  void refreshMassView();
+  void refreshPositionsView();
+  void refreshVelocityView();
+  void refreshHfieldView();
+  void refreshWorkView();
 
   friend class FieldBase<Dimension>;
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  size_t mNumNodes, mFirstGhostNode;
   std::string mName;
 
   // State fields.
@@ -215,11 +195,6 @@ private:
 
   // The work field is mutable.
   mutable Field<Dimension, Scalar> mWork;
-
-  // Stuff for how H is handled.
-  Scalar mhmin, mhmax, mhminratio;
-  Scalar mNodesPerSmoothingScale;
-  size_t mMaxNumNeighbors;
 
   // List of Fields that are defined over this NodeList.
   mutable std::vector<std::reference_wrapper<FieldBase<Dimension>>> mFieldBases;
