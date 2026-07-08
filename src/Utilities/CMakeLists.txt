@@ -144,6 +144,8 @@ set(Utilities_headers
     SpheralMessage.hh
     initializeAxom.hh
     initializeAdiak.hh
+    ViewManager.hh
+    ViewManagerInline.hh
   )
 
 spheral_install_python_files(fitspline.py)

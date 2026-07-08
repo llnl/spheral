@@ -5,6 +5,7 @@
 //
 // Created by J. Michael Owen, Sun Oct 30 15:36:33 PST 2005
 //----------------------------------------------------------------------------//
+#include "config.hh"
 #include "ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Neighbor/Neighbor.hh"

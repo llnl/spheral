@@ -10,6 +10,7 @@
 #ifndef _Spheral_NeighborSpace_PairwiseFieldView_
 #define _Spheral_NeighborSpace_PairwiseFieldView_
 
+#include "Neighbor/PairwiseFieldViewBase.hh"
 #include "Neighbor/PairwiseFieldElementAccessor.hh"
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/StrideIterator.hh"
@@ -23,7 +24,9 @@ namespace Spheral {
 struct NodePairIdxType;
 
 template<typename Value, size_t numElements=1>
-class PairwiseFieldView {
+class PairwiseFieldView:
+    public PairwiseFieldViewBase {
+
 public:
   //--------------------------- Public Interface ---------------------------//
 #ifdef SPHERAL_UNIFIED_MEMORY
@@ -71,9 +74,9 @@ public:
   // Zero the Field
   SPHERAL_HOST_DEVICE void Zero()                                                { for (auto& x: mSpan) x = DataTypeTraits<value_type>::zero(); }
 
-  SPHERAL_HOST void move(chai::ExecutionSpace space)                             { GPUUtils::move(mSpan, space); }
+  SPHERAL_HOST virtual void move(chai::ExecutionSpace space) override            { GPUUtils::move(mSpan, space); }
 
-  SPHERAL_HOST void touch(chai::ExecutionSpace space)                            { GPUUtils::touch(mSpan, space); }
+  SPHERAL_HOST virtual void touch(chai::ExecutionSpace space) override           { GPUUtils::touch(mSpan, space); }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//

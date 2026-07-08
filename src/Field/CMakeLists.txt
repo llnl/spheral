@@ -22,6 +22,7 @@ set(Field_headers
     CoarseNodeIteratorInline.hh
     FieldBase.hh
     FieldBaseInline.hh
+    FieldViewBase.hh
     FieldView.hh
     FieldViewInline.hh
     Field.hh
@@ -30,6 +31,7 @@ set(Field_headers
     FieldListBaseInline.hh
     FieldList.hh
     FieldListInline.hh
+    FieldListViewBase.hh
     FieldListView.hh
     FieldListViewInline.hh
     FieldListSet.hh
