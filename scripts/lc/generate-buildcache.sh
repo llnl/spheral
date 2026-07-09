@@ -7,7 +7,7 @@ run_cmd() {
     fi
 }
 
-### Create a tar file containing:
+### Create a tar file called $DEV_PKG_NAME.tar.gz containing:
 # dev-pkg/
 #   *cloned spheral repo.*
 #   resources/
@@ -18,6 +18,9 @@ run_cmd() {
 #       metadata/
 #       bootstrap_cache/
 
+# Also creates a tar file called $DEV_PKG_NAME-spack.tar.gz containing:
+# spack
+# packages
 ###############################################################################
 ###############################################################################
 
@@ -34,6 +37,9 @@ DEV_PKG_NAME=${DEV_PKG_NAME:-$SYS_TYPE-spheral-dev-pkg-undefined}
 # CI_BUILD_DIR Place to put the build cache tar file
 CI_BUILD_DIR=${CI_BUILD_DIR:-$PWD/../}
 
+# TPL_DIR Where to create the TPL directory
+TPL_DIR=${TPL_DIR:-$PWD/../spheral-spack-tpls}
+
 ###############################################################################
 ###############################################################################
 
@@ -48,6 +54,10 @@ RESOURCE_DIR=$PWD/resources
 echo $PWD
 echo $RESOURCE_DIR
 echo $SPHERAL_PIP_CACHE_DIR
+echo $TPL_DIR
+
+SPACK_CACHE_DIR=${DEV_PKG_NAME}-spack
+echo $SPACK_CACHE_DIR
 
 # Clear the stage directory, create resource dir and copy the Spheral repo into
 # the current directory
@@ -61,10 +71,12 @@ cp -a $SPHERAL_PIP_CACHE_DIR/. $RESOURCE_DIR/pip_cache
 # Creates a local Spack repo
 # Activates and concretizes the dev_pkg Spheral Spack environment
 # Installs the Spheral dependencies for all specs
-run_cmd "./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean"
+# --spack-cache-dir causes tpl-manager to create a tar file called
+# <spack-cache-dir>.tar.gz of the --tpl-dir before any installs occur
+run_cmd "./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean --tpl-dir $TPL_DIR --spack-cache-dir $SPACK_CACHE_DIR"
 
 # Source Spack for the current terminal
-source ../spheral-spack-tpls/spack/share/spack/setup-env.sh
+source $TPL_DIR/spack/share/spack/setup-env.sh
 
 # Activate our dev spack environment
 run_cmd "spack env activate ./scripts/spack/environments/dev_pkg"

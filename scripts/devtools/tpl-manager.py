@@ -15,18 +15,6 @@ spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"   # Spack version: v1.
 
 # Current repo (either LLNLSpheral or Spheral)
 base_dir = os.getcwd()
-package_dirs = {"spheral": base_dir}
-
-# Find if this repo is LLNLSpheral by checking the submodule list
-git_mod_cmd = "git config --file .gitmodules --name-only --get-regexp path$"
-git_mod_out = sexe(git_mod_cmd, ret_output=True, echo=False)
-if "spheral" in git_mod_out:
-    package_name = "llnlspheral"
-    package_dirs["spheral"] = os.path.join(base_dir, "spheral")
-    package_dirs.update({"llnlspheral": base_dir})
-else:
-    package_name = "spheral"
-print(f"Managing {package_name} TPLs")
 
 class SpheralTPL:
     def parse_args(self):
@@ -69,6 +57,10 @@ class SpheralTPL:
                             help="Tells tpl-manager to use the dev_pkg environment. "+\
                             "Assumes TPLs are for buildcache creation if no --spec is provided. "+\
                             "Assumes building from a buildcache if --spec is provided.")
+        parser.add_argument("--spack-cache-dir", type=str, default=None,
+                            help="If a string is provided, TPL manager will make a tar file "+\
+                            "of the --tpl-dir before installing any TPLs. The tar file will be named "+\
+                            "<spack-cache-dir>.tar.gz. Ideally, --tpl-dir should not exist when this is called.")
         parser.add_argument("--spack-url", type=str, default=default_spack_url,
                             help="URL to download spack.")
         parser.add_argument("--spack-debug-level", type=int, default=0,
@@ -83,8 +75,18 @@ class SpheralTPL:
         if (not self.args.spec and self.args.ci_run):
             raise Exception("Must specify a --spec if doing --ci-run")
 
-        if (self.args.spec and not self.args.spec.startswith(package_name)):
-            raise Exception(f"--spec must start with {package_name}")
+        package_dirs = {"spheral": base_dir}
+        if (self.args.spec):
+            if (self.args.spec.startswith("spheral")):
+                package_name = "spheral"
+            elif (self.args.spec.startswith("llnlspheral")):
+                package_name = "llnlspheral"
+                package_dirs["spheral"] = os.path.join(base_dir, "spheral")
+                package_dirs.update({"llnlspheral": base_dir})
+            else:
+                raise RuntimeError("Spack package name unrecognized")
+            print(f"Managing {package_name} TPLs")
+
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
 
@@ -113,12 +115,13 @@ class SpheralTPL:
         install_status = spack.spec.Spec.install_status
         print(spack.spec.tree(specs, format=spack.spec.DISPLAY_FORMAT, status_fn=install_status, hashes=True, hashlen=6))
 
-    def clone_spack(self):
+    def clone_spack(self, tpl_root):
         "Clone Spack and add paths to use spack python"
-        tpl_root = self.args.tpl_dir
         if (not os.path.exists(tpl_root)):
             os.mkdir(tpl_root)
         spack_dir = os.path.join(tpl_root, "spack")
+        if (self.args.skip_init and not os.path.exists(spack_dir)):
+            raise FileNotFoundError(f"{spack_dir} not found, must run without --skip-init")
         if (not self.args.skip_init):
             if (not os.path.exists(spack_dir)):
                 sexe(f"git -C {tpl_root} clone --depth=2 {self.args.spack_url}")
@@ -292,8 +295,9 @@ class SpheralTPL:
             from spack import environment
             self.spack_env = environment.Environment(self.env_dir)
             environment.activate(self.spack_env)
-            repo_cmd = SpackCommand("repo")
-            repo_cmd(*["update"])
+            if (not self.args.skip_init):
+                repo_cmd = SpackCommand("repo")
+                repo_cmd(*["update"])
         else:
             # Otherwise, check if environment has been created
             arch_cmd = SpackCommand("arch")
@@ -389,7 +393,7 @@ class SpheralTPL:
 
     def __init__(self):
         self.parse_args()
-        self.clone_spack()
+        self.clone_spack(self.args.tpl_dir)
         if (self.args.init_only):
             return
 
@@ -398,6 +402,11 @@ class SpheralTPL:
             tty.set_debug(self.args.spack_debug_level)
 
         self.activate_spack_env()
+        if (self.args.spack_cache_dir):
+            spack_cache = os.path.join(os.path.dirname(self.args.tpl_dir), self.args.spack_cache_dir)
+            shutil.make_archive(base_name=spack_cache,
+                                format="gztar",
+                                root_dir=self.args.tpl_dir)
 
         debug_cmd = SpackCommand("debug")
         debug_cmd("report")

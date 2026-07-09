@@ -169,13 +169,14 @@
     - DEV_PKG_NAME=$SYS_TYPE-spheral-dev-pkg-$SPHERAL_REV_STR
     - INSTALL_DIR=/usr/gapps/Spheral/$SYS_TYPE/spheral-$SPHERAL_REV_STR
     - CI_BUILD_DIR=$SPHERAL_BUILDS_DIR/$CI_JOB_ID
+    - TPL_DIR=$CI_BUILD_DIR/dev-pkg-spheral-spack-tpls
     - echo $DEV_PKG_NAME &> dev-pkg-name.txt
     - echo $CI_BUILD_DIR &> ci-dir.txt
     - echo $INSTALL_DIR &> install-dir.txt
     - mkdir -p $CI_BUILD_DIR/$DEV_PKG_NAME && cp -a $CI_PROJECT_DIR/. $CI_BUILD_DIR/$DEV_PKG_NAME
     - cd $CI_BUILD_DIR/$DEV_PKG_NAME
 
-    - env SCRIPT_DIR=$SCRIPT_DIR DEV_PKG_NAME=$DEV_PKG_NAME CI_BULD_DIR=$CI_BUILD_DIR
+    - env SCRIPT_DIR=$SCRIPT_DIR DEV_PKG_NAME=$DEV_PKG_NAME CI_BULD_DIR=$CI_BUILD_DIR TPL_DIR=$TPL_DIR
       bash ./$SCRIPT_DIR/lc/generate-buildcache.sh
 
   artifacts:
@@ -199,8 +200,11 @@
     - cp $CI_BUILD_DIR/$DEV_PKG_NAME.tar.gz .
     - tar -xzf $DEV_PKG_NAME.tar.gz
     - cd $DEV_PKG_NAME
+    # Bring the tar of the spack and spack package repos
+    - SPACK_CACHE_DIR=$DEV_PKG_NAME-spack.tar.gz
+    - cp $CI_BUILD_DIR/$SPACK_CACHE_DIR .
 
-    - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR
+    - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR SPACK_CACHE_DIR=$SPACK_CACHE_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
     - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR
