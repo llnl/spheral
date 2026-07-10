@@ -16,7 +16,7 @@ if [[ -z "${INSTALL_DIR}" ]]; then
 fi
 # Check if a tar file of the spack and spack package repos exists
 SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
-if [[ -f '$SPACK_CACHE_DIR' ]]; then
+if [[ -f "$SPACK_CACHE_DIR" ]]; then
     # Extract the TPL_DIR name from the tar file to the install dir
     TPL_DIR=$INSTALL_DIR/$(tar -tzf $SPACK_CACHE_DIR | head -1 | cut -d/ -f1)
     if [[ ! -d "${TPL_DIR}" ]]; then
@@ -27,10 +27,10 @@ else
     TPL_DIR=${TPL_DIR:-$INSTALL_DIR/spheral-spack-tpls}
 fi
 # Now ensure the proper directories exist
-if [[ -d "${TPL_DIR}/spack" ]]; then
+if [[ ! -d "${TPL_DIR}/spack" ]]; then
     echo "Spack repo must exist in TPL_DIR"
     exit 1
-elif [[ -d "${TPL_DIR}/packages" ]]; then
+elif [[ ! -d "${TPL_DIR}/packages" ]]; then
     echo "Spack package repo must exist in TPL_DIR"
     exit 1
 fi
