@@ -75,17 +75,17 @@ class SpheralTPL:
         if (not self.args.spec and self.args.ci_run):
             raise Exception("Must specify a --spec if doing --ci-run")
 
-        package_dirs = {"spheral": base_dir}
+        self.package_dirs = {"spheral": base_dir}
         if (self.args.spec):
             if (self.args.spec.startswith("spheral")):
-                package_name = "spheral"
+                self.sph_package_name = "spheral"
             elif (self.args.spec.startswith("llnlspheral")):
-                package_name = "llnlspheral"
-                package_dirs["spheral"] = os.path.join(base_dir, "spheral")
-                package_dirs.update({"llnlspheral": base_dir})
+                self.sph_package_name = "llnlspheral"
+                self.package_dirs["spheral"] = os.path.join(base_dir, "spheral")
+                self.package_dirs.update({"llnlspheral": base_dir})
             else:
                 raise RuntimeError("Spack package name unrecognized")
-            print(f"Managing {package_name} TPLs")
+            print(f"Managing {self.sph_package_name} TPLs")
 
         if (self.args.spec):
             print(f"Installing {self.args.spec}")
@@ -138,7 +138,7 @@ class SpheralTPL:
         if (not os.path.exists(spack_lock)):
             return False
         lock_time = os.path.getmtime(spack_lock)
-        for package, path in package_dirs.items():
+        for package, path in self.package_dirs.items():
             internal_spack_dir = os.path.join(os.path.abspath(get_config_dir(path)), "**")
             sp_files = glob.glob(internal_spack_dir, recursive=True)
             ctimes = [os.path.getmtime(ff) for ff in sp_files\
@@ -212,7 +212,7 @@ class SpheralTPL:
                 develop_dict = {}
                 repos_list = []
 
-                for package, path in package_dirs.items():
+                for package, path in self.package_dirs.items():
                     repo_path = os.path.abspath(os.path.join(get_config_dir(path), f"spack_repo/{package}"))
                     repos_list.append(repo_path)
                     dev_path = os.path.abspath(path)
@@ -351,7 +351,7 @@ class SpheralTPL:
         "Install TPLs and create host config file for given spec"
         spec = self.args.spec
         # Load the spack package recipe python class
-        if (package_name == "llnlspheral"):
+        if (self.sph_package_name == "llnlspheral"):
             from spack_repo.llnlspheral.packages.llnlspheral.package import Llnlspheral
             spack_spheral = Llnlspheral(self.spack_spec)
         else:
@@ -388,7 +388,7 @@ class SpheralTPL:
             os.rename("orig"+host_config_file, host_config_file)
             host_config_file = new_name
         print(f"Created {host_config_file}. To configure, run:\n")
-        scr_path = os.path.relpath(package_dirs['spheral'], base_dir)
+        scr_path = os.path.relpath(self.package_dirs['spheral'], base_dir)
         print(f"{scr_path}/scripts/devtools/host-config-build.py --host-config {host_config_file}\n")
 
     def __init__(self):
