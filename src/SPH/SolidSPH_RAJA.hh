@@ -44,6 +44,7 @@ public:
                 const TableKernel<Dimension>& WGrad,
                 const double cfl,
                 const bool useVelocityMagnitudeForDt,
+                const bool useNewAccelerationMagnitudeForDt,
                 const bool compatibleEnergyEvolution,
                 const bool evolveTotalEnergy,
                 const bool gradhCorrection,

@@ -31,6 +31,7 @@ class SolidCRKSPHRZ(SolidCRKSPH):
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
@@ -110,4 +111,3 @@ mass density, velocity, and specific thermal energy."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, SolidCRKSPHRZ)
-
