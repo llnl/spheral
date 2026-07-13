@@ -65,8 +65,7 @@ ViewManager<Dimension>::fields(const KeyType& key,
                                bool allowNone) {
   REQUIRE2(mStateBasePtr != nullptr,
            "ViewManager ERROR: attempt to extract fields " << key << " from null State pointer");
-  auto fl0 = mStateBasePtr->template fields<Value>(key, allowNone);
-  mValueCache.push_back(fl0);
+  mValueCache.emplace_back(mStateBasePtr->template fields<Value>(key, allowNone));
   auto& fl = std::any_cast<FieldList<Dimension, Value>&>(mValueCache.back());
   auto flv = fl.view();
   this->enroll(flv);

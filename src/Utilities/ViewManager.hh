@@ -53,7 +53,7 @@ public:
 
   // Get an arbitrary type from the StateBase
   template<typename Value, typename View = typename Value::ViewType> View get(const KeyType& key);
-\
+
   // Generic methods we can call on all stored View types
   void move(chai::ExecutionSpace space);
   void touch(chai::ExecutionSpace space);
