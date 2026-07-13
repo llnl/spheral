@@ -7,7 +7,7 @@
 #ifndef _Spheral_NeighborSpace_PairwiseFieldViewBase_
 #define _Spheral_NeighborSpace_PairwiseFieldViewBase_
 
-#include "Utilities/GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 namespace Spheral {
 

@@ -26,7 +26,7 @@
 #include "Utilities/range.hh"
 #include "Utilities/Timer.hh"
 #include "Utilities/timingUtilities.hh"
-#include "Utilities/ViewManager.hh"
+#include "Threading/ViewManager.hh"
 
 #include <algorithm>
 #include <fstream>

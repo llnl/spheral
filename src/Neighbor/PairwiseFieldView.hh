@@ -16,7 +16,7 @@
 #include "Utilities/StrideIterator.hh"
 #include "Utilities/DBC.hh"
 
-#include "Utilities/GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 namespace Spheral {
 

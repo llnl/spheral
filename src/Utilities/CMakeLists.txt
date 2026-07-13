@@ -35,7 +35,6 @@ set(Utilities_sources
     clipFacetedVolume.cc
     uniform_random.cc
     initializeAxom.cc
-    GPUUtils.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -46,7 +45,6 @@ set(Utilities_headers
     BuildData.hh
     CounterClockwiseComparator.hh
     DBC.hh
-    GPUUtils.hh
     LinearInterpolator.hh
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
@@ -76,7 +74,6 @@ set(Utilities_headers
     Logger.hh
     NodeCoupling.hh
     NodeListHashMap.hh
-    OpenMP_wrapper.hh
     PairComparisons.hh
     PeanoHilbertTransform.hh
     RedistributionNotification.hh
@@ -144,8 +141,6 @@ set(Utilities_headers
     SpheralMessage.hh
     initializeAxom.hh
     initializeAdiak.hh
-    ViewManager.hh
-    ViewManagerInline.hh
   )
 
 spheral_install_python_files(fitspline.py)
