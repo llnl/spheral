@@ -410,6 +410,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
     GPU_ERROR_CHECK
   }
   TIME_END("SPHevalDerivs_pairs_RAJA");
+
   // Finish up the derivatives for each point.
   TIME_BEGIN("SPHevalDerivs_final_RAJA");
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
