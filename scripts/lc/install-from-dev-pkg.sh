@@ -14,6 +14,9 @@ if [[ -z "${INSTALL_DIR}" ]]; then
   echo "INSTALL_DIR var must be set."
   exit 1
 fi
+
+mkdir -p $INSTALL_DIR
+
 # Check if a tar file of the spack and spack package repos exists
 SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
 if [[ -f "$SPACK_CACHE_DIR" ]]; then
@@ -41,7 +44,6 @@ echo $SCRIPT_DIR
 echo $BUILD_ALLOC
 echo $PWD
 
-mkdir -p $INSTALL_DIR
 cp -a $PWD/resources/pip_cache/. $SPHERAL_PIP_CACHE_DIR
 
 source $TPL_DIR/spack/share/spack/setup-env.sh
