@@ -1,3 +1,16 @@
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+
+  * Build changes / improvements:
+
+  * Bug Fixes / improvements:
+    * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
+
 Version v2026.06.0 -- Release date 2026-06-19
 ==============================================
   * Important Notes:
