@@ -34,6 +34,7 @@ class SolidFSISPH(GenericHydro):
                interfaceMethod = "const InterfaceMethod",
                kernelAveragingMethod = "const KernelAveragingMethod",
                sumDensityNodeLists = "std::vector<int>",
+               legacyMode = "const bool",
                useVelocityMagnitudeForDt = "const bool",
                useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
@@ -96,6 +97,7 @@ temperature or pressure."""
     interfaceMethod = PYB11property("InterfaceMethod", "interfaceMethod", "interfaceMethod",doc="Flag to select how we want construct material interfaces")
     kernelAveragingMethod = PYB11property("KernelAveragingMethod", "kernelAveragingMethod", "kernelAveragingMethod",doc="Flag to select our kernel type")
 
+    legacyMode = PYB11property("bool", "legacyMode", "legacyMode",doc="false uses the revamped FSISPH 2026.")
     planeStrain = PYB11property("bool", "planeStrain", "planeStrain",doc="use plane strain approach for 1D or 2D problems.")
     decoupleDamagedMaterial = PYB11property("bool", "decoupleDamagedMaterial", "decoupleDamagedMaterial",doc="turn off decoupling algo for same-material damaged interactions.")
     compatibleEnergyEvolution = PYB11property("bool", "compatibleEnergyEvolution", "compatibleEnergyEvolution",doc="Flag to determine if we're using the total energy conserving compatible energy evolution scheme.")

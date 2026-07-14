@@ -21,6 +21,7 @@ struct FSIFieldNames {
   const inline static std::string smoothedInterfaceNormals = "smoothedInterfaceNormals";
   const inline static std::string interfaceSmoothnessNormalization = "interfaceSmoothnessNormalization";
   const inline static std::string inverseEquivalentDeviatoricStress = "inverse Equiv Dev Stress";
+  const inline static std::string deviatoricStressGradient = "deviatoric stress gradient";
 };
 
 }

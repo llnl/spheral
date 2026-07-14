@@ -30,7 +30,8 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  
   using PackageList = std::vector<Physics<Dimension>*>;
   using PackageIterator = typename PackageList::iterator;
 

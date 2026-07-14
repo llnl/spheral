@@ -57,6 +57,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
 
@@ -76,6 +77,7 @@ public:
               const InterfaceMethod interfaceMethod,
               const KernelAveragingMethod kernelAveragingMethod,
               const std::vector<int> sumDensityNodeLists,
+              const bool legacyMode,
               const bool useVelocityMagnitudeForDt,
               const bool useNewAccelerationMagnitudeForDt,
               const bool compatibleEnergyEvolution,
@@ -166,7 +168,15 @@ public:
                             const typename Dimension::Vector& DyDxj,
                                   typename Dimension::Scalar& ytildei,
                                   typename Dimension::Scalar& ytildej) const;
-
+  
+  void linearReconstruction(const typename Dimension::Vector& ri,
+                            const typename Dimension::Vector& rj,
+                            const typename Dimension::SymTensor& yi,
+                            const typename Dimension::SymTensor& yj,
+                            const typename Dimension::ThirdRankTensor& DyDxi,
+                            const typename Dimension::ThirdRankTensor& DyDxj,
+                                  typename Dimension::SymTensor& ytildei,
+                                  typename Dimension::SymTensor& ytildej) const;
 
   const TableKernel<Dimension>& kernel() const;
   SlideSurface<Dimension>& slideSurface() const;
@@ -180,8 +190,8 @@ public:
   KernelAveragingMethod kernelAveragingMethod() const;
   void kernelAveragingMethod(KernelAveragingMethod method);
 
-  bool legacyModel() const;
-  void legacyModel(bool val);
+  bool legacyMode() const;
+  void legacyMode(bool val);
 
   bool compatibleEnergyEvolution() const;
   void compatibleEnergyEvolution(bool val);
@@ -260,6 +270,7 @@ public:
   const FieldList<Dimension, Tensor>&    M() const;
   const FieldList<Dimension, Tensor>&    localM() const;
   const FieldList<Dimension, Scalar>&    normalization() const;
+  const FieldList<Dimension, ThirdRankTensor>&  DSDx() const;
 
   const FieldList<Dimension, int>& interfaceFlags() const;
   const FieldList<Dimension, Vector>& interfaceAreaVectors() const;
@@ -337,6 +348,7 @@ private:
   FieldList<Dimension, Tensor>    mM;
   FieldList<Dimension, Tensor>    mLocalM;
   FieldList<Dimension, Scalar>    mNormalization;
+  FieldList<Dimension, ThirdRankTensor> mDSDx;
 
   FieldList<Dimension, int> mInterfaceFlags;                  // flags indicating interface type
   FieldList<Dimension, Vector> mInterfaceAreaVectors;         // interface area vectors that can be used for BCs

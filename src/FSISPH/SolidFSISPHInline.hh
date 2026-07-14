@@ -576,62 +576,13 @@ normalization() const {
   return mNormalization;
 }
 
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Vector>&
-// SolidFSISPH<Dimension>::
-// interfaceNormals() const {
-//   return mInterfaceNormals;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Scalar>&
-// SolidFSISPH<Dimension>::
-// interfaceFraction() const {
-//   return mInterfaceFraction;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Scalar>&
-// SolidFSISPH<Dimension>::
-// interfaceSmoothness() const {
-//   return mInterfaceSmoothness;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Vector>&
-// SolidFSISPH<Dimension>::
-// newInterfaceNormals() const {
-//   return mNewInterfaceNormals;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Vector>&
-// SolidFSISPH<Dimension>::
-// smoothedInterfaceNormals() const {
-//   return mSmoothedInterfaceNormals;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Scalar>&
-// SolidFSISPH<Dimension>::
-// newInterfaceFraction() const {
-//   return mNewInterfaceFraction;
-// }
-
-// template<typename Dimension>
-// inline
-// const FieldList<Dimension,  typename Dimension::Scalar>&
-// SolidFSISPH<Dimension>::
-// newInterfaceSmoothness() const {
-//   return mNewInterfaceSmoothness;
-// }
-
+template<typename Dimension>
+inline
+const FieldList<Dimension, typename Dimension::ThirdRankTensor>&
+SolidFSISPH<Dimension>::
+DSDx() const {
+  return mDSDx;
+}
 
 template<typename Dimension>
 inline

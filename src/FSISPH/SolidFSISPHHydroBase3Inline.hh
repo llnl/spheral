@@ -611,6 +611,14 @@ normalization() const {
 
 template<typename Dimension>
 inline
+const FieldList<Dimension, typename Dimension::ThirdRankTensor>&
+SolidFSISPHHydroBase<Dimension>::
+DSDx() const {
+  return mDSDx;
+}
+
+template<typename Dimension>
+inline
 const FieldList<Dimension, typename Dimension::Scalar>&
 SolidFSISPHHydroBase<Dimension>::
 weightedNeighborSum() const {

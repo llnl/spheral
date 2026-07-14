@@ -12,6 +12,9 @@
 #include "NodeList/SolidNodeList.hh"
 #include "SolidMaterial/SolidEquationOfState.hh" 
 
+#include "Geometry/outerProduct.hh"
+#include "Geometry/innerProduct.hh"
+
 #include "Hydro/computeSPHVolume.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Hydro/CompatibleDifferenceSpecificThermalEnergyPolicy.hh"
@@ -124,6 +127,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
             const InterfaceMethod interfaceMethod,
             const KernelAveragingMethod kernelAveragingMethod,
             const std::vector<int> sumDensityNodeLists,
+            const bool legacyMode,
             const bool useVelocityMagnitudeForDt,
             const bool useNewAccelerationMagnitudeForDt,
             const bool compatibleEnergyEvolution,
@@ -143,7 +147,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mDensityUpdate(densityUpdate),
   mInterfaceMethod(interfaceMethod),
   mKernelAveragingMethod(kernelAveragingMethod),
-  mLegacyMode(true),
+  mLegacyMode(legacyMode),
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
   mEvolveTotalEnergy(evolveTotalEnergy),
   mLinearCorrectGradients(linearCorrectGradients),
@@ -197,6 +201,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
   mInterfaceFraction(FieldStorageType::CopyFields),
   mNewInterfaceSmoothness(FieldStorageType::CopyFields),
   mInterfaceAngles(FieldStorageType::CopyFields),
+  mDSDx(FieldStorageType::CopyFields),
   mRestart(registerWithRestart(*this)) {
     mTimeStepMask = dataBase.newFluidFieldList(int(0), HydroFieldNames::timeStepMask);
     mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
@@ -233,6 +238,7 @@ SolidFSISPH(DataBase<Dimension>& dataBase,
     mInterfaceFraction = dataBase.newFluidFieldList(0.0, FSIFieldNames::interfaceFraction);
     mNewInterfaceSmoothness = dataBase.newFluidFieldList(0.0, PureReplaceState<Dimension,Scalar>::prefix() + FSIFieldNames::interfaceSmoothness);
     mInterfaceAngles = dataBase.newFluidFieldList(0.0, FSIFieldNames::interfaceAngles);
+    mDSDx = dataBase.newFluidFieldList(ThirdRankTensor::zero(), FSIFieldNames::deviatoricStressGradient);
 }
 
 //------------------------------------------------------------------------------
@@ -401,6 +407,7 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
   dataBase.resizeFluidFieldList(mInterfaceFraction, 0.0, FSIFieldNames::interfaceFraction,false); 
   dataBase.resizeFluidFieldList(mNewInterfaceSmoothness, 0.0,  PureReplaceState<Dimension,Scalar>::prefix() + FSIFieldNames::interfaceSmoothness,false);
   dataBase.resizeFluidFieldList(mInterfaceAngles, 0.0,  FSIFieldNames::interfaceAngles,false);
+  dataBase.resizeFluidFieldList(mDSDx, ThirdRankTensor::zero(),  FSIFieldNames::deviatoricStressGradient,false);
 
   if (not derivs.registered(mDxDt)) {
     dataBase.resizeFluidFieldList(mDxDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, false);
@@ -438,6 +445,7 @@ registerDerivatives(DataBase<Dimension>&  dataBase,
   derivs.enroll(mInterfaceFraction);
   derivs.enroll(mNewInterfaceSmoothness);
   derivs.enroll(mInterfaceAngles);
+  derivs.enroll(mDSDx)
 
   TIME_END("SolidFSISPHregisterDerivs");
 }
@@ -754,7 +762,7 @@ linearReconstruction(const typename Dimension::Vector& ri,
   const auto tiny = std::numeric_limits<Scalar>::epsilon();
 
   const auto rij = (ri-rj);
-
+  
   // relavant deltas in field value
   const auto Dy0 = (yi-yj);
   const auto Dyi = 0.5*DyDxi.dot(rij);
@@ -764,6 +772,51 @@ linearReconstruction(const typename Dimension::Vector& ri,
   const auto denom = 2.0 / (sgn(Dy0) * std::max(tiny,abs(Dy0)));
   const auto xi = Dyi * denom;
   const auto xj = Dyj * denom;
+
+  // limiter function - vanleer 1979
+  const auto phii = ( xi > 0.0 ?  min(4.0*xi/((1.0 + xi)*(1.0 + xi)),1.0) : 0.0 );
+  const auto phij = ( xj > 0.0 ?  min(4.0*xj/((1.0 + xj)*(1.0 + xj)),1.0) : 0.0 );        
+  const auto phi = 0.5*(phii+phij);
+
+  // linear constructed inteface values
+  ytildei = yi - phi * Dyi;
+  ytildej = yj + phi * Dyj;
+}
+
+//------------------------------------------------------------------------------
+// method for limited linear reconstruction between nodes
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+SolidFSISPH<Dimension>::
+linearReconstruction(const typename Dimension::Vector& ri,
+                     const typename Dimension::Vector& rj,
+                     const typename Dimension::SymTensor& yi,
+                     const typename Dimension::SymTensor& yj,
+                     const typename Dimension::ThirdRankTensor& DyDxi,
+                     const typename Dimension::ThirdRankTensor& DyDxj,
+                           typename Dimension::SymTensor& ytildei,
+                           typename Dimension::SymTensor& ytildej) const {
+  
+  const auto tiny = std::numeric_limits<Scalar>::epsilon();
+
+  const auto rij = (ri-rj);
+  const auto rhatij = rij.unitVector();
+  
+  // relavant deltas in field value
+  const auto Dy0 = (yi-yj);
+  const auto Dyi = 0.5*innerProduct<Dimension>(DyDxi,rij);
+  const auto Dyj = 0.5*innerProduct<Dimension>(DyDxj,rij);
+  
+  // traction component on the line of action
+  const auto Dy0s = Dy0.dot(rhatij).dot(rhatij);
+  const auto Dyis = Dyi.dot(rhatij).dot(rhatij);
+  const auto Dyjs = Dyj.dot(rhatij).dot(rhatij);
+
+  // ratios of SPH derivs to ij particle difference
+  const auto denom = 2.0 / (sgn(Dy0s) * std::max(tiny,abs(Dy0s)));
+  const auto xi = Dyis * denom;
+  const auto xj = Dyjs * denom;
 
   // limiter function - vanleer 1979
   const auto phii = ( xi > 0.0 ?  min(4.0*xi/((1.0 + xi)*(1.0 + xi)),1.0) : 0.0 );
