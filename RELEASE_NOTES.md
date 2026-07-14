@@ -7,6 +7,7 @@ Notable changes include:
   * New features / API changes:
 
   * Build changes / improvements:
+    * Update to Thicket version 2026.1.0.
 
   * Bug Fixes / improvements:
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.

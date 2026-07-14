@@ -5,7 +5,7 @@ Do a performance regression test on LC systems with the following steps:
 
   1. Run the performance test in Spheral
 
-     $> ./spheral-ats --numNodes 2 --logs test_dir_name tests/performance.py
+     $> ./spheral-ats --numNodes 2 --logs test_dir_name tests/run_perf.py
 
   2. Run this script and point to the directory created by ATS in step 1
 
@@ -33,8 +33,8 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # Set the region and metric to use for comparisons
 comp_region = "advance"
 comp_metric = "Avg time/rank" # Inclusive timer
-# Set the metric to use for display
-disp_metric = "Avg time/rank (exc)" # Exclusive timer
+# Keys to compare an individual test with
+comp_test_keys = ["spec", "jobsize", "threads_per_rank", "total_internal_nodes", "total_steps"]
 
 percent = 0.08
 def compute_threshold(sf, metric):
@@ -80,6 +80,23 @@ def get_times(gf, region, metric = "Avg time/rank"):
         times = [sum(gf.dataframe.loc[indx][metric].values)]
     return times
 
+def update_spec(spec):
+    "Spec names changes from spack 0.12 to 1.0, so we must update the names to match"
+    repl_dict = [("clang", "llvm"), ("rocmcc", "llvm-amdgpu"),
+                 ("cray-mpich", "mpi"), ("mvapich2", "mpi")]
+    if (type(spec) is list):
+        newspec = []
+        for j in range(len(spec)):
+            nns = spec[j]
+            for i in repl_dict:
+                nns = nns.replace(i[0], i[1])
+            newspec.append(nns)
+    else:
+        newspec = spec
+        for i in repl_dict:
+            newspec = newspec.replace(i[0], i[1])
+    return newspec
+
 def remove_nans(gf, metric="Avg time/rank"):
     "Remove rows with NANs in a GraphFrame or Thicket or list/dict of those types"
     if (type(gf) is dict or type(gf) is th.groupby.GroupBy):
@@ -111,36 +128,41 @@ def group_tests(data):
     Returns:
     filt: GroupBy of Thickets based on tests
     """
-    test_group = ["test_name", "total_internal_nodes", "total_steps"]
-    return data.groupby(test_group)
+    return data.groupby(["test_name"])
 
-def compare_metadata(cdata, rdata, tests):
-    cmdata = cdata.get_unique_metadata()
-    rmdata = rdata.get_unique_metadata()
+def compare_metadata(cmdata, rmdata, tests):
+    """
+    Compare metadata for one test with metadata from multiple tests.
+    Parameters:
+    cmdata: Unique metadata for a single test
+    rmdata: Unique metadata for reference tests
+    Returns:
+    failed_configs: String pointing out where metadata differs
+    """
     failed_configs = []
     for t in tests:
-        cval = cmdata[t]
+        cval = cmdata[t][0]
         rval = rmdata[t]
-        if (cval != rval):
+        if (t == "spec"):
+            cval = update_spec(cval)
+            rval = update_spec(rval)
+        if (cval not in rval):
             failed_configs.append(f"{t}: {cval} != {rval}")
     return failed_configs
 
-def compare_tests(cdata, rdata):
-    "Determine why a test configuration differs"
-    tests = ["total_internal_nodes", "total_steps"]
-    return compare_metadata(cdata, rdata, tests)
+def match_metadata(rdata, ref_dict):
+    for key, value in ref_dict.items():
+        rval = rdata.get(key)
+        if (key == "spec"):
+            rval = update_spec(rval)
+        if (rval != value):
+            return False
+    return True
 
-def compare_config(cdata, rdata):
-    """
-    Check if tests between two sets of data are compatible for direct comparison.
-    Do not use if comparing across hardware or install configurations.
-    Assumes Thicket data has comparable test_name, total_internal_nodes, and total_steps
-    """
-    hardware_tests = ["spec", "cluster", "jobsize", "threads_per_rank"]
-    return compare_metadata(cdata, rdata, hardware_tests)
-
-def filter_tests(data, test_name):
-    return data.filter_metadata(lambda x: x["test_name"] == test_name)
+def filter_tests(cmdata, refdata):
+    test_dict = {k: cmdata[k][0] for k in comp_test_keys if k in cmdata}
+    test_dict["spec"] = update_spec(test_dict["spec"])
+    return refdata.filter_metadata(lambda x: match_metadata(x, test_dict))
 
 def get_caliper_files_and_bench(file_path):
     atsFile = os.path.join(file_path, "atsr.py")
@@ -260,18 +282,22 @@ def main():
                 raise Exception(f"--ref location {args.ref} does not exist")
             cali_ref_files = get_caliper_files(args.ref)
         else:
-            # If no ref or benchmark_dir is provided, look for the benchmark in the
-            # atsr.py file
+            # If no ref or benchmark_dir is provided, see if atsr.py found one
             ref_files = benchmarks
-            # Check in a Caliper file
+            # Otherwise, check for benchmark_dir in the spheral_ats file
             if (not ref_files):
-                try:
-                    ref_files = curdata.metadata["benchmark_dir"].iloc[0]
-                except:
-                    raise Exception("No reference or benchmark data specified")
+                spheral_ats_file = os.path.join(os.path.dirname(__file__), "spheral_ats.py")
+                if (os.path.exists(spheral_ats_file)):
+                    # Look for benchmark_dir in spheral_ats.py
+                    with open(spheral_ats_file, 'r') as ff:
+                        for line in ff:
+                            if (line.startswith("benchmark_dir")):
+                                ref_files = line.split("=")[-1].strip().replace('"', '')
+                else:
+                    raise Exception("Must specify reference or benchmark data with --ref")
             # If using benchmark reference data, only grab the current install/machine
             # Get install config and machine name from current data
-            install_spec = curdata.metadata["spec"].iloc[0]
+            install_spec = update_spec(curdata.metadata["spec"].iloc[0])
             machine_name = curdata.metadata["cluster"].iloc[0]
             ref_loc = os.path.join(ref_files, machine_name, install_spec)
             if (not os.path.exists(ref_loc)):
@@ -284,39 +310,31 @@ def main():
     test_status = {}
     # Iterate over each test
     for test_key, ctest in cur_test_data.items():
+        cmdata = ctest.get_unique_metadata()
         test_name = test_key[0]
         if (args.test_name and args.test_name != test_name):
             continue
+        # Filter files based on the test name to get a subset of files
         ref_test_files = [i for i in cali_ref_files if test_name in i]
-        ref_test_data = th.Thicket.from_caliperreader(ref_test_files, disable_tqdm=True)
-        ref_test_data = group_tests(ref_test_data)
-        test_sph_nodes = test_key[1]
-        test_steps = test_key[2]
-        if (test_key not in ref_test_data):
-            # This means the test configurations differ (number of time steps etc)
-            if (test_name not in refdata.get_unique_metadata()["test_name"]):
-                skip_msg = f"{test_name} not found in reference data"
-                test_status.update({test_name: ("SKIPPED-TEST", [skip_msg])})
-            else:
-                rtest = filter_tests(refdata, test_name)
-                ftest_configs = compare_tests(ctest, rtest)
-                test_status.update({test_name: ("SKIPPED-TEST", ftest_configs)})
+        if (len(ref_test_files) == 0):
+            skip_msg = f"No tests named {test_name} found in reference data"
+            test_status.update({test_name: ("SKIPPED-TEST", "No reference data found")})
             continue
-        rtest = ref_test_data[test_key]
-        if (do_thresh_test):
-            fh_configs = compare_config(ctest, rtest)
-            if (fh_configs):
-                # This means the hardware/compiler configurations differs
-                test_status.update({test_name: ("SKIPPED-CONF", fh_configs)})
-                continue
-        metrics = [comp_metric, disp_metric]
-        cmetrics = [x+"_mean" for x in metrics]
+        refdata = th.Thicket.from_caliperreader(ref_test_files, disable_tqdm=True)
+        try:
+            rtest = filter_tests(cmdata, refdata)
+        except:
+            rmdata = refdata.get_unique_metadata()
+            ftest_configs = compare_metadata(cmdata, rmdata, comp_test_keys)
+            test_status.update({test_name: ("SKIPPED-TEST", ftest_configs)})
+            continue
+        cmetric = comp_metric+"_mean"
         # Get stats for current tests
-        th.stats.mean(ctest, metrics)
-        th.stats.mean(rtest, metrics)
+        th.stats.mean(ctest, [comp_metric])
+        th.stats.mean(rtest, [comp_metric])
         # Get stats for other tests
         if (len(rtest.profile) > 1):
-            th.stats.std(rtest, metrics)
+            th.stats.std(rtest, [comp_metric])
         # Extract times of comp_region
         if (not check_for_region(ctest, comp_region)):
             print(f"{comp_region} not found in {perfdata}")
@@ -324,35 +342,34 @@ def main():
         if (not check_for_region(rtest, comp_region)):
             print(f"{comp_region} not found in {os.path.dirname(ref_test_files[0])}")
             continue
-        cmain = get_times(ctest.statsframe, comp_region, cmetrics[0])[0]
-        rmain = get_times(rtest.statsframe, comp_region, cmetrics[0])[0]
+        cmain = get_times(ctest.statsframe, comp_region, cmetric)[0]
+        rmain = get_times(rtest.statsframe, comp_region, cmetric)[0]
         main_diff = cmain - rmain
         if (do_thresh_test):
             # Compute the max allowable time for the comp_region
-            ctest.statsframe.dataframe["thresh"] = compute_threshold(rtest.statsframe, metrics[0])
+            ctest.statsframe.dataframe["thresh"] = compute_threshold(rtest.statsframe, comp_metric)
             ref_thresh = get_times(ctest.statsframe, comp_region, "thresh")[0]
+            diff_var = "rel_diff"
+            vals1 = ctest.statsframe.dataframe[cmetric]
+            vals2 = rtest.statsframe.dataframe[cmetric]
+            ctest.statsframe.dataframe[diff_var] = (vals1/vals2 - 1.)*100.
             if (main_diff > ref_thresh):
                 cur_status = "FAILED"
                 if args.display:
                     # Display the relative difference of the exclusive avg time/rank
-                    vals1 = ctest.statsframe.dataframe[cmetrics[1]]
-                    vals2 = rtest.statsframe.dataframe[cmetrics[1]]
-                    ctest.statsframe.dataframe["exc_rel_diff_percent"] = (vals1/vals2 - 1.)*100.
-                    display(ctest.statsframe.tree("exc_rel_diff_percent", cmetrics[1]))
+                    display(ctest.statsframe.tree(diff_var, comp_metric))
             elif (main_diff < -ref_thresh):
                 cur_status = "PASSED"
                 if args.display:
-                    vals2 = rtest.statsframe.dataframe[cmetrics[1]]
-                    ctest.statsframe.dataframe["pdata2"] = vals2
-                    display(ctest.statsframe.tree(cmetrics[1], "pdata2"))
+                    display(ctest.statsframe.tree(diff_var, comp_metric))
             else:
                 cur_status = "PASSED"
             test_status.update({test_name: (cur_status, cmain, rmain, ref_thresh)})
         else:
             test_status.update({test_name: ("NA", cmain, rmain)})
             if args.display:
-                ctest.statsframe.dataframe["pdata2"] = rtest.statsframe.dataframe[cmetrics[1]]
-                display(ctest.statsframe.tree(cmetrics[1], "pdata2"))
+                ctest.statsframe.dataframe["pdata2"] = rtest.statsframe.dataframe[cmetric]
+                display(ctest.statsframe.tree(cmetric, "pdata2"))
     if (do_thresh_test):
         print("Negative values mean local data was faster than reference")
         print(f"Test name: test status, % change in time of {comp_region} region")
