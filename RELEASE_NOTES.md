@@ -1,4 +1,4 @@
-Version v2026.06.0 -- Release date 2026-06-19
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
 ==============================================
   * Important Notes:
 
