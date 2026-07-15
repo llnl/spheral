@@ -187,6 +187,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
   using QPiType = typename QType::ReturnType;
 
+  // Prepare the ViewManagers
+  ViewManager<Dimension> stateMgr(state);
+  ViewManager<Dimension> derivsMgr(derivs);
+
   // The kernels and such.
   const auto& W = this->kernel();
   const auto& WQ = this->PiKernel();
@@ -196,6 +200,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto WG_view = WG.view();
   const auto  oneKernelQ = (W == WQ);
   const auto  oneKernelG = (W == WG);
+  stateMgr.enroll(W_view);
+  stateMgr.enroll(WQ_view);
+  stateMgr.enroll(WG_view);
 
   // A few useful constants we'll use in the following loop.
   const auto tiny = 1.0e-30;
@@ -214,16 +221,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto pairs = pairs_v.view();
   const auto npairs = pairs.size();
   // const auto& coupling = connectivityMap.coupling();
-#ifdef SPHERAL_ENABLE_HIP
-  pairs.move(chai::GPU);
-  W_view.move(chai::GPU);
-  WQ_view.move(chai::GPU);
-  WG_view.move(chai::GPU);
-#endif
-
-  // Prepare the ViewManagers
-  ViewManager<Dimension> stateMgr(state);
-  ViewManager<Dimension> derivsMgr(derivs);
+  stateMgr.enroll(pairs);
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
@@ -244,9 +242,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto fClQ = stateMgr.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
   auto fCqQ = stateMgr.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
   auto DvDxQ = stateMgr.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
-#ifdef SPHERAL_ENABLE_HIP
-  stateMgr.move(chai::GPU)
-#endif
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -282,9 +277,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto XSPHDeltaV = derivsMgr.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto DSDt = derivsMgr.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
   auto pairAccelerations = derivsMgr.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
-#ifdef SPHERAL_ENABLE_HIP
-  derivsMgr.move(chai::GPU);
-#endif
   CHECK(rhoSum.size() == numNodeLists);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
@@ -300,6 +292,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
+#ifdef SPHERAL_ENABLE_HIP
+  stateMgr.move(chai::GPU);
+  derivsMgr.move(chai::GPU);
+#endif
   // The scale for the tensile correction.
   const auto  nPerh = nodeLists[0]->nodesPerSmoothingScale();
   const auto  WnPerh = W(1.0/nPerh, 1.0);

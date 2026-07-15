@@ -10,6 +10,8 @@
 #include "Field/FieldViewBase.hh"
 #include "Field/FieldListViewBase.hh"
 #include "Neighbor/PairwiseFieldViewBase.hh"
+#include "Neighbor/NodePairListView.hh"
+#include "Kernel/TableKernelView.hh"
 
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
@@ -28,7 +30,9 @@ public:
   // A variant type of all the View types we can manage
   using ViewType = std::variant<std::reference_wrapper<FieldViewBase<Dimension>>,
                                 std::reference_wrapper<FieldListViewBase<Dimension>>,
-                                std::reference_wrapper<PairwiseFieldViewBase>>;
+                                std::reference_wrapper<PairwiseFieldViewBase>,
+                                std::reference_wrapper<NodePairListView>,
+                                std::reference_wrapper<TableKernelView<Dimension>>>;
   using KeyType = typename StateBase<Dimension>::KeyType;
 
   // Constructors

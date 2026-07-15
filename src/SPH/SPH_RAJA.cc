@@ -125,7 +125,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
   using QPiType = typename QType::ReturnType;
 
-  //static double totalLoopTime = 0.0;
+  // Prepare the ViewManagers
+  ViewManager<Dimension> stateMgr(state);
+  ViewManager<Dimension> derivsMgr(derivs);
 
   // The kernels and such.
   auto& W = this->kernel();
@@ -151,10 +153,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const auto& pairs_v = connectivityMap.nodePairList();
   const auto  pairs = pairs_v.view();
   const auto  npairs = pairs.size();
-
-  // Prepare the ViewManagers
-  ViewManager<Dimension> stateMgr(state);
-  ViewManager<Dimension> derivsMgr(derivs);
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
