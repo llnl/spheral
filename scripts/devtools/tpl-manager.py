@@ -403,10 +403,17 @@ class SpheralTPL:
 
         self.activate_spack_env()
         if (self.args.spack_cache_dir):
-            spack_cache = os.path.join(os.path.dirname(self.args.tpl_dir), self.args.spack_cache_dir)
+            # Create tar.gz of tpl dir in directory that contains tpl dir
+            # This should run before doing any install on clean spack repo
+            root_dir = os.path.dirname(self.args.tpl_dir)
+            if (not root_dir):
+                root_dir = None
+            spack_cache = os.path.join(root_dir, self.args.spack_cache_dir)
+            base_dir = os.path.basename(self.args.tpl_dir)
             shutil.make_archive(base_name=spack_cache,
                                 format="gztar",
-                                root_dir=self.args.tpl_dir)
+                                root_dir=root_dir,
+                                base_dir=base_dir)
 
         debug_cmd = SpackCommand("debug")
         debug_cmd("report")

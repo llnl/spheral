@@ -21,7 +21,8 @@ mkdir -p $INSTALL_DIR
 SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
 if [[ -f "$SPACK_CACHE_DIR" ]]; then
     # Extract the TPL_DIR name from the tar file to the install dir
-    TPL_DIR=$INSTALL_DIR/$(tar -tzf $SPACK_CACHE_DIR | head -1 | cut -d/ -f1)
+    SPACK_DIR_NAME="$(tar -tzf $SPACK_CACHE_DIR | awk -F/ 'NR==1 {print $1; exit}')"
+    TPL_DIR=$INSTALL_DIR/$SPACK_DIR_NAME
     if [[ ! -d "${TPL_DIR}" ]]; then
         tar -xzf $SPACK_CACHE_DIR -C $INSTALL_DIR
     fi

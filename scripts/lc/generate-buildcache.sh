@@ -72,7 +72,7 @@ cp -a $SPHERAL_PIP_CACHE_DIR/. $RESOURCE_DIR/pip_cache
 # Activates and concretizes the dev_pkg Spheral Spack environment
 # Installs the Spheral dependencies for all specs
 # --spack-cache-dir causes tpl-manager to create a tar file called
-# <spack-cache-dir>.tar.gz of the --tpl-dir before any installs occur
+# <tpl_dir>/../<spack-cache-dir>.tar.gz of the --tpl-dir before any installs occur
 run_cmd "./$SCRIPT_DIR/devtools/tpl-manager.py --dev-pkg --clean --tpl-dir $TPL_DIR --spack-cache-dir $SPACK_CACHE_DIR"
 
 # Source Spack for the current terminal
