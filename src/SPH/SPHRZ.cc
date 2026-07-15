@@ -54,6 +54,7 @@ SPHRZ(DataBase<Dimension>& dataBase,
                const TableKernel<Dim<2>>& WPi,
                const double cfl,
                const bool useVelocityMagnitudeForDt,
+               const bool useNewAccelerationMagnitudeForDt,
                const bool compatibleEnergyEvolution,
                const bool evolveTotalEnergy,
                const bool gradhCorrection,
@@ -71,6 +72,7 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   WPi,
                   cfl,
                   useVelocityMagnitudeForDt,
+                  useNewAccelerationMagnitudeForDt,
                   compatibleEnergyEvolution,
                   evolveTotalEnergy,
                   gradhCorrection,
@@ -549,7 +551,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.05*hri);
+      const auto  riInv = safeInvVar(ri, 0.01*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
       CHECK2(rhoRZi > 0.0, "Bad rhoRZ (" << nodeListi << " " << i << ") : " << rhoRZi);

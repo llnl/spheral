@@ -1,4 +1,4 @@
-Version vYYYY.MM.p -- Release date YYYY-MM-DD
+Version v2026.06.0 -- Release date 2026-06-19
 ==============================================
   * Important Notes:
 
@@ -35,9 +35,10 @@ Notable changes include:
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
     * SPH now requests volume from RK.
     * Fixed a circular dependency in the Johnson-Cook damage model.
+    * Fixed a bug that could allow multiple copies of the same boundary condition in Physics subpackages.
+    * Fixed a bug in the definition of the Jaumann stress rate in all the solid hydro packages.
 
   * Build changes / improvements:
-    * Updated to PYB11Generator 2025.12.1.
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.

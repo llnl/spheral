@@ -26,6 +26,7 @@ class SphericalSPH(SPHBase):
                WPi = "const SphericalKernel&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                gradhCorrection = "const bool",

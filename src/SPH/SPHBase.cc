@@ -59,6 +59,7 @@ SPHBase(DataBase<Dimension>& dataBase,
         const TableKernel<Dimension>& WPi,
         const double cfl,
         const bool useVelocityMagnitudeForDt,
+        const bool useNewAccelerationMagnitudeForDt,
         const bool compatibleEnergyEvolution,
         const bool evolveTotalEnergy,
         const bool gradhCorrection,
@@ -70,7 +71,7 @@ SPHBase(DataBase<Dimension>& dataBase,
         const double nTensile,
         const Vector& xmin,
         const Vector& xmax):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mKernel(W),
   mPiKernel(WPi),
   mDensityUpdate(densityUpdate),
@@ -155,9 +156,8 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mOmegaGradh, 1.0, HydroFieldNames::omegaGradh);
 
   // Need mass for density calculation
-  auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->applyFieldListGhostBoundary(mass);
-  for (auto* boundPtr: this->boundaryConditions()) boundPtr->finalizeGhostBoundary();
+  this->applyGhostBoundaries(state, derivs);
+  for (auto* boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
   
   // Calculate the density that will actually be used
   this->preStepInitialize(dataBase, state, derivs);

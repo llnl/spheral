@@ -77,6 +77,7 @@ public:
               const KernelAveragingMethod kernelAveragingMethod,
               const std::vector<int> sumDensityNodeLists,
               const bool useVelocityMagnitudeForDt,
+              const bool useNewAccelerationMagnitudeForDt,
               const bool compatibleEnergyEvolution,
               const bool evolveTotalEnergy,
               const bool linearCorrectGradients,

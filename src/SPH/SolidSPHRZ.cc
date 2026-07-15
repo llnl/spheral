@@ -71,6 +71,7 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
            const TableKernel<Dimension>& WGrad,
            const double cfl,
            const bool useVelocityMagnitudeForDt,
+           const bool useNewAccelerationMagnitudeForDt,
            const bool compatibleEnergyEvolution,
            const bool evolveTotalEnergy,
            const bool gradhCorrection,
@@ -91,6 +92,7 @@ SolidSPHRZ(DataBase<Dimension>& dataBase,
                       WGrad,
                       cfl,
                       useVelocityMagnitudeForDt,
+                      useNewAccelerationMagnitudeForDt,
                       compatibleEnergyEvolution,
                       evolveTotalEnergy,
                       gradhCorrection,
@@ -659,7 +661,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
       const auto  hri = ri*safeInv(zetai);          // Always positive
       CHECK(hri >= 0.0);
-      const auto  riInv = safeInvVar(ri, 0.05*hri);
+      const auto  riInv = safeInvVar(ri, 0.01*hri);
       const auto  numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK(mi > 0.0);
       CHECK2(rhoi > 0.0, "Bad rho (" << nodeListi << " " << i << ") : " << rhoi);
@@ -749,7 +751,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
-      const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
+      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + (2.0*mui)*deviatoricDeformation;
 
       // In the presence of damage, add a term to reduce the stress on this point.
