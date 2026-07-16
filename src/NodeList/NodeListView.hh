@@ -7,6 +7,7 @@
 #define __Spheral_NodeListView_hh__
 
 #include "config.hh"
+#include "Utilities/DBC.hh"
 
 namespace Spheral {
 
@@ -75,41 +76,41 @@ public:
   SPHERAL_HOST_DEVICE NodeListView& operator=(NodeListView&& rhs) = default;
 
   // Node count accessors.
-  SPHERAL_HOST_DEVICE size_t numNodes() const;
-  SPHERAL_HOST_DEVICE size_t numInternalNodes() const;
-  SPHERAL_HOST_DEVICE size_t numGhostNodes() const;
-  SPHERAL_HOST_DEVICE size_t firstGhostNode() const;
-  SPHERAL_HOST_DEVICE NodeType nodeType(size_t i) const;
+  SPHERAL_HOST_DEVICE size_t numNodes() const         { return mNumNodes; }
+  SPHERAL_HOST_DEVICE size_t numInternalNodes() const { return mFirstGhostNode; }
+  SPHERAL_HOST_DEVICE size_t numGhostNodes() const    { CHECK(mFirstGhostNode <= mNumNodes); return mNumNodes - mFirstGhostNode; }
+  SPHERAL_HOST_DEVICE size_t firstGhostNode() const   { return mFirstGhostNode; }
+  SPHERAL_HOST_DEVICE NodeType nodeType(size_t i) const { REQUIRE(i < mNumNodes); return (i < mFirstGhostNode ? NodeType::InternalNode : NodeType::GhostNode); }
 
   // Smoothing scale controls.
-  SPHERAL_HOST_DEVICE Scalar nodesPerSmoothingScale() const;
-  SPHERAL_HOST_DEVICE void nodesPerSmoothingScale(Scalar val);
-  SPHERAL_HOST_DEVICE size_t maxNumNeighbors() const;
-  SPHERAL_HOST_DEVICE void maxNumNeighbors(size_t val);
-  SPHERAL_HOST_DEVICE Scalar hmin() const;
-  SPHERAL_HOST_DEVICE void hmin(Scalar val);
-  SPHERAL_HOST_DEVICE Scalar hmax() const;
-  SPHERAL_HOST_DEVICE void hmax(Scalar val);
-  SPHERAL_HOST_DEVICE Scalar hminratio() const;
-  SPHERAL_HOST_DEVICE void hminratio(Scalar val);
+  SPHERAL_HOST_DEVICE Scalar nodesPerSmoothingScale() const { return mNodesPerSmoothingScale; }
+  SPHERAL_HOST_DEVICE void nodesPerSmoothingScale(Scalar val) { mNodesPerSmoothingScale = val; }
+  SPHERAL_HOST_DEVICE size_t maxNumNeighbors() const { return mMaxNumNeighbors; }
+  SPHERAL_HOST_DEVICE void maxNumNeighbors(size_t val) { mMaxNumNeighbors = val; }
+  SPHERAL_HOST_DEVICE Scalar hmin() const { return mhmin; }
+  SPHERAL_HOST_DEVICE void hmin(Scalar val) { mhmin = val; }
+  SPHERAL_HOST_DEVICE Scalar hmax() const { return mhmax; }
+  SPHERAL_HOST_DEVICE void hmax(Scalar val) { mhmax = val; }
+  SPHERAL_HOST_DEVICE Scalar hminratio() const { return mhminratio; }
+  SPHERAL_HOST_DEVICE void hminratio(Scalar val) { mhminratio = val; }
 
   // Field views.
-  SPHERAL_HOST_DEVICE MassView& mass();
-  SPHERAL_HOST_DEVICE const MassView& mass() const;
-  SPHERAL_HOST_DEVICE PositionView& positions();
-  SPHERAL_HOST_DEVICE const PositionView& positions() const;
-  SPHERAL_HOST_DEVICE VelocityView& velocity();
-  SPHERAL_HOST_DEVICE const VelocityView& velocity() const;
-  SPHERAL_HOST_DEVICE HfieldView& Hfield();
-  SPHERAL_HOST_DEVICE const HfieldView& Hfield() const;
-  SPHERAL_HOST_DEVICE WorkView& work();
-  SPHERAL_HOST_DEVICE const WorkView& work() const;
+  SPHERAL_HOST_DEVICE MassView& mass() { return mMassView; }
+  SPHERAL_HOST_DEVICE const MassView& mass() const { return mMassView; }
+  SPHERAL_HOST_DEVICE PositionView& positions() { return mPositionsView; }
+  SPHERAL_HOST_DEVICE const PositionView& positions() const { return mPositionsView; }
+  SPHERAL_HOST_DEVICE VelocityView& velocity() { return mVelocityView; }
+  SPHERAL_HOST_DEVICE const VelocityView& velocity() const { return mVelocityView; }
+  SPHERAL_HOST_DEVICE HfieldView& Hfield() { return mHfieldView; }
+  SPHERAL_HOST_DEVICE const HfieldView& Hfield() const { return mHfieldView; }
+  SPHERAL_HOST_DEVICE WorkView& work() { return mWorkView; }
+  SPHERAL_HOST_DEVICE const WorkView& work() const { return mWorkView; }
 
-  SPHERAL_HOST_DEVICE Scalar& mass(const size_t nodeID) const;
-  SPHERAL_HOST_DEVICE Vector& position(const size_t nodeID) const;
-  SPHERAL_HOST_DEVICE Vector& velocity(const size_t nodeID) const;
-  SPHERAL_HOST_DEVICE SymTensor& H(const size_t nodeID) const;
-  SPHERAL_HOST_DEVICE Scalar& work(const size_t nodeID) const;
+  SPHERAL_HOST_DEVICE Scalar& mass(const size_t nodeID) const { REQUIRE(nodeID < mMassView.numElements()); return mMassView[nodeID]; }
+  SPHERAL_HOST_DEVICE Vector& position(const size_t nodeID) const { REQUIRE(nodeID < mPositionsView.numElements()); return mPositionsView[nodeID]; }
+  SPHERAL_HOST_DEVICE Vector& velocity(const size_t nodeID) const { REQUIRE(nodeID < mVelocityView.numElements()); return mVelocityView[nodeID]; }
+  SPHERAL_HOST_DEVICE SymTensor& H(const size_t nodeID) const { REQUIRE(nodeID < mHfieldView.numElements()); return mHfieldView[nodeID]; }
+  SPHERAL_HOST_DEVICE Scalar& work(const size_t nodeID) const { REQUIRE(nodeID < mWorkView.numElements()); return mWorkView[nodeID]; }
 
   // CHAI/ManagedArray specific operations for the contained FieldViews.
   SPHERAL_HOST void move(chai::ExecutionSpace space);
