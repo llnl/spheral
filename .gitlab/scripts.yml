@@ -204,7 +204,8 @@
     - SPACK_CACHE_DIR=$DEV_PKG_NAME-spack.tar.gz
     - cp $CI_BUILD_DIR/$SPACK_CACHE_DIR .
 
-    - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC BUILD_ALLOC="" SCRIPT_DIR=$SCRIPT_DIR SPACK_CACHE_DIR=$SPACK_CACHE_DIR
+    # Since TPL_DIR is not set, we assume SPACK_CACHE_DIR untars to spheral-spack-tpls
+    - env INSTALL_DIR=$INSTALL_DIR DEV_PKG_SPEC=$DEV_PKG_SPEC SCRIPT_DIR=$SCRIPT_DIR SPACK_CACHE_DIR=$SPACK_CACHE_DIR
       bash ./$SCRIPT_DIR/lc/install-from-dev-pkg.sh
     - ml load mpifileutils
     - $RUN_CMD -n $NPROC dchmod --mode go+rx $INSTALL_DIR

@@ -1,7 +1,7 @@
 set -Eeuo pipefail
 trap 'echo "# $BASH_COMMAND"' DEBUG
 
-BUILD_ALLOC=${BUILD_ALLOC}
+BUILD_ALLOC=${BUILD_ALLOC:-""}
 SCRIPT_DIR=${SCRIPT_DIR:-'scripts'}
 SPHERAL_PIP_CACHE_DIR=${SPHERAL_PIP_CACHE_DIR:-~/.cache/spheral_pip}
 
@@ -19,16 +19,13 @@ mkdir -p $INSTALL_DIR
 
 # Check if a tar file of the spack and spack package repos exists
 SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
+TPL_DIR=${TPL_DIR:-spheral-spack-tpls}
 if [[ -f "$SPACK_CACHE_DIR" ]]; then
-    # Extract the TPL_DIR name from the tar file to the install dir
-    SPACK_DIR_NAME="$(tar -tzf $SPACK_CACHE_DIR | awk -F/ 'NR==1 {print $1; exit}')"
+    # Untar into the install directory
     TPL_DIR=$INSTALL_DIR/$SPACK_DIR_NAME
     if [[ ! -d "${TPL_DIR}" ]]; then
         tar -xzf $SPACK_CACHE_DIR -C $INSTALL_DIR
     fi
-else
-    # Otherwise, see if the TPL_DIR has been set explicitly
-    TPL_DIR=${TPL_DIR:-$INSTALL_DIR/spheral-spack-tpls}
 fi
 # Now ensure the proper directories exist
 if [[ ! -d "${TPL_DIR}/spack" ]]; then

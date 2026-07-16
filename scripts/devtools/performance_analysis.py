@@ -357,11 +357,11 @@ def main():
                 cur_status = "FAILED"
                 if args.display:
                     # Display the relative difference of the exclusive avg time/rank
-                    display(ctest.statsframe.tree(diff_var, comp_metric))
+                    display(ctest.statsframe.tree(diff_var, cmetric))
             elif (main_diff < -ref_thresh):
                 cur_status = "PASSED"
                 if args.display:
-                    display(ctest.statsframe.tree(diff_var, comp_metric))
+                    display(ctest.statsframe.tree(diff_var, cmetric))
             else:
                 cur_status = "PASSED"
             test_status.update({test_name: (cur_status, cmain, rmain, ref_thresh)})
