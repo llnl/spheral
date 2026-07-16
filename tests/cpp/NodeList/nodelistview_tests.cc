@@ -8,7 +8,6 @@
 #include "NodeList/NodeList.hh"
 
 #include <type_traits>
-#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -45,6 +44,19 @@ public:
       if (action == chai::ACTION_FREE)
         (space == chai::CPU) ? fieldCount.HNumFree++ : fieldCount.DNumFree++;
     };
+  }
+
+  void expectFieldCount(const GPUCounters& expected) const {
+  #ifndef SPHERAL_UNIFIED_MEMORY
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.HToDCopies, expected.HToDCopies, "Failed HToDCopies\n");
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.DToHCopies, expected.DToHCopies, "Failed DToHCopies\n");
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.HNumAlloc,  expected.HNumAlloc,  "Failed HNumAlloc\n");
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.DNumAlloc,  expected.DNumAlloc,  "Failed DNumAlloc\n");
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.HNumFree,   expected.HNumFree,   "Failed HNumFree\n");
+    SPHERAL_ASSERT_EQ_MSG(fieldCount.DNumFree,   expected.DNumFree,   "Failed DNumFree\n");
+  #else
+    (void)expected;
+  #endif
   }
 };
 
@@ -187,6 +199,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ViewCapture) {
 // NodeListView::move should migrate device writes for all contained FieldViews.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(NodeListViewTypedTest, MoveCopiesDeviceWritesToHost) {
+  const auto checkCounts = std::is_same<GPU_TEST_TYPE, TypeParam>::value;
+
   {
     NodeList_t nodes("NodeListViewMove", Ninternal, Nghost);
     gpu_this->initialize(nodes);
@@ -217,43 +231,165 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, MoveCopiesDeviceWritesToHost) {
   }
 
   GPUCounters refCount;
-  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
-    refCount = {2, 2, 0, 2, 0, 2};
+  if (checkCounts) {
+    refCount = {2, 2, 0, 2, 0, 2}; // DNumFree: 0->2
   }
   COMP_COUNTERS(gpu_this->fieldCount, refCount);
 }
 
 //------------------------------------------------------------------------------
-// NodeListView::touch should mark both contained FieldViews as CPU-modified.
+// A RAJA host loop should implicitly migrate data written by a RAJA device loop.
 //------------------------------------------------------------------------------
-GPU_TYPED_TEST_P(NodeListViewTypedTest, TouchForwardsToContainedViews) {
+GPU_TYPED_TEST_P(NodeListViewTypedTest, RAJAHostAfterRAJADeviceMutation) {
+  const auto checkCounts = std::is_same<GPU_TEST_TYPE, TypeParam>::value;
+
   {
-    NodeList_t nodes("NodeListViewTouch", Ninternal, Nghost);
+    NodeList_t nodes("NodeListViewDeviceThenHost", Ninternal, Nghost);
     gpu_this->initialize(nodes);
     nodes.positions().setCallback(gpu_this->fieldCallback());
     nodes.Hfield().setCallback(gpu_this->fieldCallback());
 
     auto nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({0, 0, 0, 0, 0, 0}); // Initial counters.
+    }
+
     RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
       [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
-        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+        nodesView.position(i) = Vector(10.0 + double(i),
+                                       20.0 + double(i),
+                                       30.0 + double(i));
+        nodesView.H(i).xx(40.0 + double(i));
+        nodesView.H(i).yy(50.0 + double(i));
+        nodesView.H(i).zz(60.0 + double(i));
       });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // HToDCopies: 0->2, DNumAlloc: 0->2
+    }
 
-    nodesView.touch(chai::CPU);
-
-    nodesView = nodes.view();
-    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
-      [=] SPHERAL_HOST_DEVICE (size_t i) {
-        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
-        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, nodesView.numNodes()),
+      [=] (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), 10.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.position(i).y(), 20.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.position(i).z(), 30.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 40.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).yy(), 50.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).zz(), 60.0 + double(i));
       });
-    nodesView.touch(chai::CPU);
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 2, 0, 2, 0, 0}); // DToHCopies: 0->2
+    }
   }
 
   GPUCounters refCount;
-  if (typeid(GPU_TEST_TYPE) == typeid(TypeParam)) {
-    refCount = {4, 0, 0, 2, 0, 2};
+  if (checkCounts) {
+    refCount = {2, 2, 0, 2, 0, 2}; // DNumFree: 0->2
+  }
+  COMP_COUNTERS(gpu_this->fieldCount, refCount);
+}
+
+//------------------------------------------------------------------------------
+// A RAJA device loop should implicitly migrate data written by a RAJA host loop.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, RAJADeviceAfterRAJAHostMutation) {
+  const auto checkCounts = std::is_same<GPU_TEST_TYPE, TypeParam>::value;
+
+  {
+    NodeList_t nodes("NodeListViewHostThenDevice", Ninternal, Nghost);
+    gpu_this->initialize(nodes);
+    nodes.positions().setCallback(gpu_this->fieldCallback());
+    nodes.Hfield().setCallback(gpu_this->fieldCallback());
+
+    auto nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({0, 0, 0, 0, 0, 0}); // Initial counters.
+    }
+
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // HToDCopies: 0->2, DNumAlloc: 0->2
+    }
+
+    RAJA::forall<LOOP_EXEC_POLICY>(TRS_UINT(0, nodesView.numNodes()),
+      [=] (size_t i) {
+        nodesView.position(i) = Vector(100.0 + double(i),
+                                       200.0 + double(i),
+                                       300.0 + double(i));
+        nodesView.H(i).xx(400.0 + double(i));
+        nodesView.H(i).yy(500.0 + double(i));
+        nodesView.H(i).zz(600.0 + double(i));
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 2, 0, 2, 0, 0}); // DToHCopies: 0->2
+    }
+
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), 100.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.position(i).y(), 200.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.position(i).z(), 300.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 400.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).yy(), 500.0 + double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).zz(), 600.0 + double(i));
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({4, 2, 0, 2, 0, 0}); // HToDCopies: 2->4
+    }
+  }
+
+  GPUCounters refCount;
+  if (checkCounts) {
+    refCount = {4, 2, 0, 2, 0, 2}; // DNumFree: 0->2
+  }
+  COMP_COUNTERS(gpu_this->fieldCount, refCount);
+}
+
+//------------------------------------------------------------------------------
+// Read-only RAJA captures should not require touch calls between kernels.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, ReadOnlyRAJACaptureDoesNotNeedTouch) {
+  const auto checkCounts = std::is_same<GPU_TEST_TYPE, TypeParam>::value;
+
+  {
+    NodeList_t nodes("NodeListViewReadOnly", Ninternal, Nghost);
+    gpu_this->initialize(nodes);
+    nodes.positions().setCallback(gpu_this->fieldCallback());
+    nodes.Hfield().setCallback(gpu_this->fieldCallback());
+
+    auto nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({0, 0, 0, 0, 0, 0}); // Initial counters.
+    }
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // HToDCopies: 0->2, DNumAlloc: 0->2
+    }
+
+    nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // No counter changes.
+    }
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // No counter changes.
+    }
+  }
+
+  GPUCounters refCount;
+  if (checkCounts) {
+    refCount = {2, 0, 0, 2, 0, 2}; // DNumFree: 0->2
   }
   COMP_COUNTERS(gpu_this->fieldCount, refCount);
 }
@@ -262,35 +398,61 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, TouchForwardsToContainedViews) {
 // NodeListView::touch is the usage hook after host-side Field mutation.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(NodeListViewTypedTest, TouchAfterHostMutation) {
-  NodeList_t nodes("NodeListViewHostTouch", Ninternal, Nghost);
-  gpu_this->initialize(nodes);
+  const auto checkCounts = std::is_same<GPU_TEST_TYPE, TypeParam>::value;
 
-  auto nodesView = nodes.view();
-  RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
-    [=] SPHERAL_HOST_DEVICE (size_t i) {
-      SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
-      SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
-    });
+  {
+    NodeList_t nodes("NodeListViewHostTouch", Ninternal, Nghost);
+    gpu_this->initialize(nodes);
+    nodes.positions().setCallback(gpu_this->fieldCallback());
+    nodes.Hfield().setCallback(gpu_this->fieldCallback());
 
-  nodes.positions()[0] = Vector(100.0, 200.0, 300.0);
-  nodes.Hfield()[0].xx(400.0);
-  nodes.Hfield()[0].yy(500.0);
-  nodes.Hfield()[0].zz(600.0);
-  nodesView.touch(chai::CPU);
+    auto nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({0, 0, 0, 0, 0, 0}); // Initial counters.
+    }
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), double(i));
+        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 1.0);
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // HToDCopies: 0->2, DNumAlloc: 0->2
+    }
 
-  nodesView = nodes.view();
-  RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
-    [=] SPHERAL_HOST_DEVICE (size_t i) {
-      if (i == 0u) {
-        SPHERAL_ASSERT_EQ(nodesView.position(i).x(), 100.0);
-        SPHERAL_ASSERT_EQ(nodesView.position(i).y(), 200.0);
-        SPHERAL_ASSERT_EQ(nodesView.position(i).z(), 300.0);
-        SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 400.0);
-        SPHERAL_ASSERT_EQ(nodesView.H(i).yy(), 500.0);
-        SPHERAL_ASSERT_EQ(nodesView.H(i).zz(), 600.0);
-      }
-    });
-  nodesView.touch(chai::CPU);
+    nodes.positions()[0] = Vector(100.0, 200.0, 300.0);
+    nodes.Hfield()[0].xx(400.0);
+    nodes.Hfield()[0].yy(500.0);
+    nodes.Hfield()[0].zz(600.0);
+    nodesView.touch(chai::CPU);
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // No counter changes.
+    }
+
+    nodesView = nodes.view();
+    if (checkCounts) {
+      gpu_this->expectFieldCount({2, 0, 0, 2, 0, 0}); // No counter changes.
+    }
+    RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        if (i == 0u) {
+          SPHERAL_ASSERT_EQ(nodesView.position(i).x(), 100.0);
+          SPHERAL_ASSERT_EQ(nodesView.position(i).y(), 200.0);
+          SPHERAL_ASSERT_EQ(nodesView.position(i).z(), 300.0);
+          SPHERAL_ASSERT_EQ(nodesView.H(i).xx(), 400.0);
+          SPHERAL_ASSERT_EQ(nodesView.H(i).yy(), 500.0);
+          SPHERAL_ASSERT_EQ(nodesView.H(i).zz(), 600.0);
+        }
+      });
+    if (checkCounts) {
+      gpu_this->expectFieldCount({4, 0, 0, 2, 0, 0}); // HToDCopies: 2->4
+    }
+  }
+
+  GPUCounters refCount;
+  if (checkCounts) {
+    refCount = {4, 0, 0, 2, 0, 2}; // DNumFree: 0->2
+  }
+  COMP_COUNTERS(gpu_this->fieldCount, refCount);
 }
 
 //------------------------------------------------------------------------------
@@ -450,7 +612,9 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             ValueSemantics,
                             ViewCapture,
                             MoveCopiesDeviceWritesToHost,
-                            TouchForwardsToContainedViews,
+                            RAJAHostAfterRAJADeviceMutation,
+                            RAJADeviceAfterRAJAHostMutation,
+                            ReadOnlyRAJACaptureDoesNotNeedTouch,
                             TouchAfterHostMutation,
                             ResizeAndReacquire,
                             AppendInternalNodesRefreshesInheritedView,
