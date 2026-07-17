@@ -22,7 +22,7 @@ SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
 TPL_DIR=${TPL_DIR:-spheral-spack-tpls}
 if [[ -f "$SPACK_CACHE_DIR" ]]; then
     # Untar into the install directory
-    TPL_DIR=$INSTALL_DIR/$SPACK_DIR_NAME
+    TPL_DIR=$INSTALL_DIR/$TPL_DIR
     if [[ ! -d "${TPL_DIR}" ]]; then
         tar -xzf $SPACK_CACHE_DIR -C $INSTALL_DIR
     fi
