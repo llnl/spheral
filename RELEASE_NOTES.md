@@ -1,3 +1,13 @@
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * Build changes / improvements:
+    * Performance testing and CI improvements:
+      * Enable CI to run for Debug HIP builds
+
 Version v2026.06.0 -- Release date 2026-06-19
 ==============================================
   * Important Notes:
