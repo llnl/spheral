@@ -10,6 +10,7 @@ option(ENABLE_WARNINGS_AS_ERRORS "make warnings errors" OFF)
 option(ENABLE_UNUSED_VARIABLE_WARNINGS "show unused variable compiler warnings" ON)
 option(ENABLE_UNUSED_PARAMETER_WARNINGS "show unused parameter warnings" OFF)
 option(ENABLE_MISSING_INCLUDE_DIR_WARNINGS "Warn for missing include directories" ON)
+option(SPHERAL_HIP_REPORT_STACK_USAGE "Emit HIP kernel stack usage metadata for devtools reporting" OFF)
 
 set(LANG_STR "CXX")
 if (ENABLE_HIP)
@@ -77,6 +78,15 @@ endif()
 if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_COMPILE_FLAGS -fsanitize=address)
 endif()
+
+if (SPHERAL_HIP_REPORT_STACK_USAGE)
+  if (ENABLE_HIP)
+    list(APPEND CXX_COMPILE_FLAGS --save-temps=obj -Wno-gnu-line-marker)
+  else()
+    message(WARNING "SPHERAL_HIP_REPORT_STACK_USAGE is enabled but ENABLE_HIP is OFF")
+  endif()
+endif()
+message("-- HIP stack usage reports ${SPHERAL_HIP_REPORT_STACK_USAGE}")
 
 set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS "${SPHERAL_CXX_FLAGS}"
   "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_COMPILE_FLAGS}>")
