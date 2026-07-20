@@ -13,6 +13,8 @@ set(Threading_headers
     OpenMP_wrapper.hh
     ViewManager.hh
     ViewManagerInline.hh
+    ManagedViewBase.hh
+    ManagedView.hh
   )
 
 spheral_add_obj_library(Threading SPHERAL_OBJ_LIBS)

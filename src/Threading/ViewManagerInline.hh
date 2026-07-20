@@ -13,7 +13,7 @@ namespace Spheral {
 template<typename Dimension>
 inline
 ViewManager<Dimension>::ViewManager(const StateBase<Dimension>& state):
-  mViews(),
+  mViewPtrs(),
   mValueCache(),
   mStateBasePtr(&state) {
 }
@@ -22,11 +22,11 @@ ViewManager<Dimension>::ViewManager(const StateBase<Dimension>& state):
 // Enroll a View
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<typename T>
+template<typename ViewType>
 inline
 void
-ViewManager<Dimension>::enroll(T& view) {
-  mViews.emplace_back(std::ref(view));
+ViewManager<Dimension>::enroll(ViewType& view) {
+  mViewPtrs.emplace_back(std::make_unique<ManagedView<ViewType>>(view));
 }
 
 //------------------------------------------------------------------------------
@@ -105,8 +105,8 @@ template<typename Dimension>
 inline
 void
 ViewManager<Dimension>::move(chai::ExecutionSpace space) {
-  for (auto& v: mViews) {
-    std::visit([&](auto&& v_ref_wrapper) { v_ref_wrapper.get().move(space); }, v);
+  for (auto& vptr: mViewPtrs) {
+    vptr->move(space);
   }
 }
 
@@ -117,8 +117,8 @@ template<typename Dimension>
 inline
 void
 ViewManager<Dimension>::touch(chai::ExecutionSpace space) {
-  for (auto& v: mViews) {
-    std::visit([&](auto&& v_ref_wrapper) { v_ref_wrapper.get().touch(space); }, v);
+  for (auto& vptr: mViewPtrs) {
+    vptr->touch(space);
   }
 }
 

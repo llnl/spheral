@@ -8,7 +8,8 @@
 #ifndef __Spheral_FieldView__
 #define __Spheral_FieldView__
 
-#include "Field/FieldViewBase.hh"
+#include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
 
 #ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
@@ -19,8 +20,7 @@ namespace Spheral {
 template<typename Dimension, typename DataType> class Field;
 
 template<typename Dimension, typename DataType>
-class FieldView:
-    public FieldViewBase<Dimension> {
+class FieldView: public chai::CHAICopyable {
    
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -137,12 +137,12 @@ public:
 
   //..........................................................................
   // These methods only make sense when we're using the ManagedArray
-  SPHERAL_HOST        virtual void move(chai::ExecutionSpace space) override;
-  SPHERAL_HOST        virtual void touch(chai::ExecutionSpace space) override;
-  SPHERAL_HOST_DEVICE         DataType* data() const;
-  SPHERAL_HOST                DataType* data(chai::ExecutionSpace space,
-                                             bool do_move = true) const;
-  SPHERAL_HOST_DEVICE         void shallowCopy(FieldView const& other) const;
+  SPHERAL_HOST_DEVICE DataType* data() const;
+  SPHERAL_HOST        DataType* data(chai::ExecutionSpace space,
+                                     bool do_move = true) const;
+  SPHERAL_HOST        void move(chai::ExecutionSpace space);
+  SPHERAL_HOST_DEVICE void shallowCopy(FieldView const& other) const;
+  SPHERAL_HOST        void touch(chai::ExecutionSpace space);
   //..........................................................................
 
 protected:

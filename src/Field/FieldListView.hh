@@ -9,7 +9,8 @@
 #ifndef __Spheral__FieldListView__
 #define __Spheral__FieldListView__
 
-#include "Field/FieldListViewBase.hh"
+#include "chai/ManagedArray.hpp"
+#include "chai/ExecutionSpaces.hpp"
 
 #ifdef SPHERAL_UNIFIED_MEMORY
 #include "Utilities/span.hh"
@@ -22,9 +23,7 @@ template<typename Dimension, typename DataType> class FieldView;
 template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension, typename DataType>
-class FieldListView:
-    public FieldListViewBase<Dimension> {
-
+class FieldListView: public chai::CHAICopyable {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -124,10 +123,10 @@ public:
 
   //..........................................................................
   // CHAI/ManagedArray specific operations
-  SPHERAL_HOST        virtual void move(chai::ExecutionSpace space, bool recursive = true) override;
-  SPHERAL_HOST        virtual void touch(chai::ExecutionSpace space, bool recursive = true) override;
-  SPHERAL_HOST_DEVICE         value_type* data() const;
-  SPHERAL_HOST                value_type* data(chai::ExecutionSpace space, bool do_move = true) const;
+  SPHERAL_HOST        void move(chai::ExecutionSpace space, bool recursive = true);
+  SPHERAL_HOST_DEVICE value_type* data() const;
+  SPHERAL_HOST        value_type* data(chai::ExecutionSpace space, bool do_move = true) const;
+  SPHERAL_HOST        void touch(chai::ExecutionSpace space, bool recursive = true);
   //..........................................................................
 
 private:
