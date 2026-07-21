@@ -97,7 +97,7 @@ computeSPHOmegaGradhCorrection(const ConnectivityMap<Dimension>& connectivityMap
     for (auto i = 0u; i < ni; ++i) {
 
       // If this point is isolated, we punt to unity.
-      if (connectivityMap.numNeighborsForNode(nodeListi, i) == 0) {
+      if (omegaGradh(nodeListi, i) < 1.0e-20) {
         omegaGradh(nodeListi, i) = 1.0;
 
       } else {

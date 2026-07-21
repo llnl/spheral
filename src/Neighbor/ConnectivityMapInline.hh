@@ -31,10 +31,7 @@ ConnectivityMap(const NodeListIterator& begin,
 
   // The private method does the grunt work of filling in the connectivity once we have
   // established the set of NodeLists.
-  this->rebuild(begin, end, mBuildGhostConnectivity, mBuildOverlapConnectivity, mBuildIntersectionConnectivity);
-
-  // We'd better be valid after the constructor is finished!
-  ENSURE(valid());
+  rebuild(begin, end, mBuildGhostConnectivity, mBuildOverlapConnectivity, mBuildIntersectionConnectivity);
 }
 
 //------------------------------------------------------------------------------
@@ -53,31 +50,14 @@ rebuild(const NodeListIterator& begin,
   mBuildGhostConnectivity = buildGhostConnectivity or buildIntersectionConnectivity;
   mBuildOverlapConnectivity = buildOverlapConnectivity;
   mBuildIntersectionConnectivity = buildIntersectionConnectivity;
+  mOffsets.clear();
 
   // Copy the set of NodeLists in the order prescribed by the NodeListRegistrar.
-  NodeListRegistrar<Dimension>& registrar = NodeListRegistrar<Dimension>::instance();
-  const bool domainDecompIndependent = registrar.domainDecompositionIndependent();
-  const unsigned numNodeLists = std::distance(begin, end);
-  mNodeLists.clear();
-  mOffsets.resize(numNodeLists);
-  std::vector<unsigned> numNodes(numNodeLists);
-  for (NodeListIterator itr = begin; itr != end; ++itr) {
-    typename std::vector<const NodeList<Dimension>*>::iterator posItr = 
-      registrar.findInsertionPoint(*itr, mNodeLists.begin(), mNodeLists.end());
-    const unsigned i = std::distance(mNodeLists.begin(), posItr);
-    CHECK(i < numNodeLists);
-    mNodeLists.insert(posItr, *itr);
-    numNodes[i] = ((domainDecompIndependent or mBuildGhostConnectivity or mBuildOverlapConnectivity) ?
-                   (*itr)->numNodes() :
-                   (*itr)->numInternalNodes());
-  }
+  auto& registrar = NodeListRegistrar<Dimension>::instance();
+  mNodeLists = std::vector<const NodeList<Dimension>*>(begin, end);
+  registrar.sortInNodeListOrder(mNodeLists.begin(), mNodeLists.end());
 
-  // Construct the offsets.
-  mOffsets[0] = 0;
-  for (unsigned i = 1; i != numNodeLists; ++i) mOffsets[i] = mOffsets[i - 1] + numNodes[i - 1];
-  CHECK(mOffsets.size() == mNodeLists.size());
-
-  this->computeConnectivity();
+  computeConnectivity();
   ENSURE(valid());
 }
 
@@ -155,6 +135,7 @@ const std::vector< std::vector<int> >&
 ConnectivityMap<Dimension>::
 connectivityForNode(const NodeList<Dimension>* nodeListPtr,
                     const int nodeID) const {
+  if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
@@ -164,7 +145,7 @@ connectivityForNode(const NodeList<Dimension>* nodeListPtr,
   const int nodeListID = std::distance(mNodeLists.begin(),
                                        std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
   REQUIRE(nodeListID < (int)mConnectivity.size() and nodeListID < (int)mOffsets.size());
-  REQUIRE(mOffsets[nodeListID] + nodeID < (int)mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -177,6 +158,7 @@ const std::vector< std::vector<int> >&
 ConnectivityMap<Dimension>::
 connectivityForNode(const int nodeListID,
                     const int nodeID) const {
+  if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
@@ -184,7 +166,7 @@ connectivityForNode(const int nodeListID,
   REQUIRE(nodeID >= 0 and 
           ((nodeID < (int)mNodeLists[nodeListID]->numInternalNodes()) or
           (ghostValid and nodeID < (int)mNodeLists[nodeListID]->numNodes())));
-  REQUIRE(mOffsets[nodeListID] + nodeID < (int)mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -207,7 +189,7 @@ overlapConnectivityForNode(const NodeList<Dimension>* nodeListPtr,
   const int nodeListID = std::distance(mNodeLists.begin(),
                                        std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
   REQUIRE(nodeListID < (int)mConnectivity.size() and nodeListID < (int)mOffsets.size());
-  REQUIRE(mOffsets[nodeListID] + nodeID < (int)mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -227,7 +209,7 @@ overlapConnectivityForNode(const int nodeListID,
   REQUIRE(nodeID >= 0 and 
           ((nodeID < (int)mNodeLists[nodeListID]->numInternalNodes()) or
           (ghostValid and nodeID < (int)mNodeLists[nodeListID]->numNodes())));
-  REQUIRE(mOffsets[nodeListID] + nodeID < (int)mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -240,12 +222,7 @@ size_t
 ConnectivityMap<Dimension>::
 numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
                     const int nodeID) const {
-  const std::vector< std::vector<int> >& neighbors = connectivityForNode(nodeListPtr, nodeID);
-  size_t result = 0u;
-  for (std::vector< std::vector<int> >::const_iterator itr = neighbors.begin();
-       itr != neighbors.end();
-       ++itr) result += itr->size();
-  return result;
+  return mNumNeighbors(nodeListIndex(nodeListPtr), nodeID);
 }
 
 template<typename Dimension>
@@ -254,8 +231,7 @@ size_t
 ConnectivityMap<Dimension>::
 numNeighborsForNode(const int nodeListID,
                     const int nodeID) const {
-  REQUIRE(nodeListID < (int)mNodeLists.size());
-  return this->numNeighborsForNode(mNodeLists[nodeListID], nodeID);
+  return mNumNeighbors(nodeListID, nodeID);
 }
 
 //------------------------------------------------------------------------------
@@ -267,11 +243,9 @@ size_t
 ConnectivityMap<Dimension>::
 numOverlapNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
                            const int nodeID) const {
-  const std::vector< std::vector<int> >& neighbors = overlapConnectivityForNode(nodeListPtr, nodeID);
+  const auto& allneighbors = overlapConnectivityForNode(nodeListPtr, nodeID);
   size_t result = 0u;
-  for (std::vector< std::vector<int> >::const_iterator itr = neighbors.begin();
-       itr != neighbors.end();
-       ++itr) result += itr->size();
+  for (const auto& neighbors: allneighbors) result += neighbors.size();
   return result;
 }
 
@@ -296,16 +270,9 @@ ConnectivityMap<Dimension>::
 calculatePairInteraction(const int nodeListi, const int i,
                          const int nodeListj, const int j,
                          const int firstGhostNodej) const {
-  // const bool domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
-  // if (domainDecompIndependent) {
-  //   return ((nodeListj > nodeListi) or
-  //           (nodeListj == nodeListi and 
-  //            (mKeys(nodeListj, j) == mKeys(nodeListi, i) ? j > 1 : mKeys(nodeListj, j) > mKeys(nodeListi, i))));
-  // } else {
-    return ((nodeListj > nodeListi) or
-            (nodeListj == nodeListi and j > i) or
-            (nodeListj < nodeListi and j >= firstGhostNodej));
-  // }
+  return ((nodeListj > nodeListi) or
+          (nodeListj == nodeListi and j > i) or
+          (nodeListj < nodeListi and j >= firstGhostNodej));
 }
 
 //------------------------------------------------------------------------------

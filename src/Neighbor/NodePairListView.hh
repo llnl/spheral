@@ -2,7 +2,7 @@
 #define Spheral_NodePairListView_hh
 
 #include "Neighbor/NodePairIdxType.hh"
-#include "Utilities/GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 #include <vector>
 #include <unordered_map>

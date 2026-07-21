@@ -33,6 +33,7 @@
 #include "Utilities/range.hh"
 #include "SolidMaterial/SolidEquationOfState.hh"
 #include "Utilities/Timer.hh"
+#include "Threading/ViewManager.hh"
 
 #include <algorithm>
 #include <fstream>
@@ -186,6 +187,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
   using QPiType = typename QType::ReturnType;
 
+  // Prepare the ViewManagers
+  ViewManager<Dimension> stateMgr(state);
+  ViewManager<Dimension> derivsMgr(derivs);
+
   // The kernels and such.
   const auto& W = this->kernel();
   const auto& WQ = this->PiKernel();
@@ -195,6 +200,9 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto WG_view = WG.view();
   const auto  oneKernelQ = (W == WQ);
   const auto  oneKernelG = (W == WG);
+  stateMgr.enroll(W_view);
+  stateMgr.enroll(WQ_view);
+  stateMgr.enroll(WG_view);
 
   // A few useful constants we'll use in the following loop.
   const auto tiny = 1.0e-30;
@@ -213,68 +221,27 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto pairs = pairs_v.view();
   const auto npairs = pairs.size();
   // const auto& coupling = connectivityMap.coupling();
-#ifdef SPHERAL_ENABLE_HIP
-  pairs.move(chai::GPU);
-  W_view.move(chai::GPU);
-  WQ_view.move(chai::GPU);
-  WG_view.move(chai::GPU);
-#endif
+  stateMgr.enroll(pairs);
 
   // Get the state and derivative FieldLists.
   // State FieldLists.
-  auto mass_v = state.fields(HydroFieldNames::mass, 0.0);
-  auto position_v = state.fields(HydroFieldNames::position, Vector::zero());
-  auto velocity_v = state.fields(HydroFieldNames::velocity, Vector::zero());
-  auto massDensity_v = state.fields(HydroFieldNames::massDensity, 0.0);
-  auto specificThermalEnergy_v = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
-  auto H_v = state.fields(HydroFieldNames::H, SymTensor::zero());
-  auto pressure_v = state.fields(HydroFieldNames::pressure, 0.0);
-  auto soundSpeed_v = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  auto S_v = state.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto mu_v = state.fields(SolidFieldNames::shearModulus, 0.0);
-  auto damage_v = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
-  auto pTypes_v = state.fields(SolidFieldNames::particleTypes, int(0));
-  auto fragID_v = state.fields(SolidFieldNames::fragmentIDs, int(0));
-  auto omega_v = state.fields(HydroFieldNames::omegaGradh, 0.0);
-  auto mass = mass_v.view();
-  auto position = position_v.view();
-  auto velocity = velocity_v.view();
-  auto massDensity = massDensity_v.view();
-  auto H = H_v.view();
-  auto pressure = pressure_v.view();
-  auto soundSpeed = soundSpeed_v.view();
-  auto omega = omega_v.view();
-  auto S = S_v.view();
-  auto mu = mu_v.view();
-  auto specificThermalEnergy = specificThermalEnergy_v.view();
-  auto damage = damage_v.view();
-  auto pTypes = pTypes_v.view();
-  auto fragID = fragID_v.view();
-  auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
-  auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
-  auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
-  auto DvDxQView = DvDxQ.view();
-  auto fClQView = fClQ.view();
-  auto fCqQView = fCqQ.view();
-#ifdef SPHERAL_ENABLE_HIP
-  mass.move(chai::GPU);
-  position.move(chai::GPU);
-  velocity.move(chai::GPU);
-  massDensity.move(chai::GPU);
-  H.move(chai::GPU);
-  pressure.move(chai::GPU);
-  soundSpeed.move(chai::GPU);
-  omega.move(chai::GPU);
-  S.move(chai::GPU);
-  mu.move(chai::GPU);
-  specificThermalEnergy.move(chai::GPU);
-  damage.move(chai::GPU);
-  pTypes.move(chai::GPU);
-  fragID.move(chai::GPU);
-  DvDxQView.move(chai::GPU);
-  fClQView.move(chai::GPU);
-  fCqQView.move(chai::GPU);
-#endif  
+  auto mass = stateMgr.fields(HydroFieldNames::mass, 0.0);
+  auto position = stateMgr.fields(HydroFieldNames::position, Vector::zero());
+  auto velocity = stateMgr.fields(HydroFieldNames::velocity, Vector::zero());
+  auto massDensity = stateMgr.fields(HydroFieldNames::massDensity, 0.0);
+  auto specificThermalEnergy = stateMgr.fields(HydroFieldNames::specificThermalEnergy, 0.0);
+  auto H = stateMgr.fields(HydroFieldNames::H, SymTensor::zero());
+  auto pressure = stateMgr.fields(HydroFieldNames::pressure, 0.0);
+  auto soundSpeed = stateMgr.fields(HydroFieldNames::soundSpeed, 0.0);
+  auto S = stateMgr.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
+  auto mu = stateMgr.fields(SolidFieldNames::shearModulus, 0.0);
+  auto damage = stateMgr.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
+  auto pTypes = stateMgr.fields(SolidFieldNames::particleTypes, int(0));
+  auto fragID = stateMgr.fields(SolidFieldNames::fragmentIDs, int(0));
+  auto omega = stateMgr.fields(HydroFieldNames::omegaGradh, 0.0);
+  auto fClQ = stateMgr.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
+  auto fCqQ = stateMgr.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
+  auto DvDxQ = stateMgr.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
   CHECK(mass.size() == numNodeLists);
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
@@ -294,74 +261,43 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
 
   // Derivative FieldLists.
-  auto  rhoSum_v = derivs.fields(ReplaceState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
-  auto  DxDt_v = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
-  auto  DrhoDt_v = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
-  auto  DvDt_v = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
-  auto  DepsDt_v = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
-  auto  DvDx_v = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
-  auto  localDvDx_v = derivs.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
-  auto  M_v = derivs.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
-  auto  localM_v = derivs.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero());
-  auto  effViscousPressure_v = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
-  auto  maxViscousPressure_v = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
-  auto  rhoSumCorrection_v = derivs.fields(HydroFieldNames::massDensityCorrection, 0.0);
-  auto  XSPHWeightSum_v = derivs.fields(HydroFieldNames::XSPHWeightSum, 0.0);
-  auto  XSPHDeltaV_v = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
-  auto  DSDt_v = derivs.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
-  auto& pairAccelerations_v = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
-  auto rhoSum = rhoSum_v.view();
-  auto DxDt = DxDt_v.view();
-  auto DrhoDt = DrhoDt_v.view();
-  auto DvDt = DvDt_v.view();
-  auto DepsDt = DepsDt_v.view();
-  auto DvDx = DvDx_v.view();
-  auto localDvDx = localDvDx_v.view();
-  auto M = M_v.view();
-  auto localM = localM_v.view();
-  auto maxViscousPressure = maxViscousPressure_v.view();
-  auto effViscousPressure = effViscousPressure_v.view();
-  auto XSPHWeightSum = XSPHWeightSum_v.view();
-  auto XSPHDeltaV = XSPHDeltaV_v.view();
-  auto DSDt = DSDt_v.view();
-  auto pairAccelerations = pairAccelerations_v.view();
-  auto rhoSumCorrection = rhoSumCorrection_v.view();
-#ifdef SPHERAL_ENABLE_HIP
-  rhoSum.move(chai::GPU);
-  DxDt.move(chai::GPU);
-  DrhoDt.move(chai::GPU);
-  DvDt.move(chai::GPU);
-  DepsDt.move(chai::GPU);
-  DvDx.move(chai::GPU);
-  localDvDx.move(chai::GPU);
-  M.move(chai::GPU);
-  localM.move(chai::GPU);
-  maxViscousPressure.move(chai::GPU);
-  effViscousPressure.move(chai::GPU);
-  XSPHWeightSum.move(chai::GPU);
-  XSPHDeltaV.move(chai::GPU);
-  DSDt.move(chai::GPU);
-  pairAccelerations.move(chai::GPU);
-  rhoSumCorrection.move(chai::GPU);
-#endif
-  CHECK(rhoSum_v.size() == numNodeLists);
-  CHECK(DxDt_v.size() == numNodeLists);
-  CHECK(DrhoDt_v.size() == numNodeLists);
-  CHECK(DvDt_v.size() == numNodeLists);
-  CHECK(DepsDt_v.size() == numNodeLists);
-  CHECK(DvDx_v.size() == numNodeLists);
-  CHECK(localDvDx_v.size() == numNodeLists);
-  CHECK(M_v.size() == numNodeLists);
-  CHECK(localM_v.size() == numNodeLists);
-  CHECK(maxViscousPressure_v.size() == numNodeLists);
-  CHECK(effViscousPressure_v.size() == numNodeLists);
-  CHECK(XSPHWeightSum_v.size() == numNodeLists);
-  CHECK(XSPHDeltaV_v.size() == numNodeLists);
-  CHECK((compatibleEnergy and pairAccelerations_v.size() == npairs) or not compatibleEnergy);
+  auto rhoSum = derivsMgr.fields(ReplaceState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
+  auto DxDt = derivsMgr.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DrhoDt = derivsMgr.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity, 0.0);
+  auto DvDt = derivsMgr.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
+  auto DepsDt = derivsMgr.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::specificThermalEnergy, 0.0);
+  auto DvDx = derivsMgr.fields(HydroFieldNames::velocityGradient, Tensor::zero());
+  auto localDvDx = derivsMgr.fields(HydroFieldNames::internalVelocityGradient, Tensor::zero());
+  auto M = derivsMgr.fields(HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  auto localM = derivsMgr.fields("local " + HydroFieldNames::M_SPHCorrection, Tensor::zero());
+  auto effViscousPressure = derivsMgr.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
+  auto maxViscousPressure = derivsMgr.fields(HydroFieldNames::maxViscousPressure, 0.0);
+  auto rhoSumCorrection = derivsMgr.fields(HydroFieldNames::massDensityCorrection, 0.0);
+  auto XSPHWeightSum = derivsMgr.fields(HydroFieldNames::XSPHWeightSum, 0.0);
+  auto XSPHDeltaV = derivsMgr.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
+  auto DSDt = derivsMgr.fields(IncrementState<Dimension, SymTensor>::prefix() + SolidFieldNames::deviatoricStress, SymTensor::zero());
+  auto pairAccelerations = derivsMgr.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  CHECK(rhoSum.size() == numNodeLists);
+  CHECK(DxDt.size() == numNodeLists);
+  CHECK(DrhoDt.size() == numNodeLists);
+  CHECK(DvDt.size() == numNodeLists);
+  CHECK(DepsDt.size() == numNodeLists);
+  CHECK(DvDx.size() == numNodeLists);
+  CHECK(localDvDx.size() == numNodeLists);
+  CHECK(M.size() == numNodeLists);
+  CHECK(localM.size() == numNodeLists);
+  CHECK(maxViscousPressure.size() == numNodeLists);
+  CHECK(effViscousPressure.size() == numNodeLists);
+  CHECK(XSPHWeightSum.size() == numNodeLists);
+  CHECK(XSPHDeltaV.size() == numNodeLists);
+  CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
+#ifdef SPHERAL_ENABLE_HIP
+  stateMgr.move(chai::GPU);
+  derivsMgr.move(chai::GPU);
+#endif
   // The scale for the tensile correction.
-  const auto& nodeList = mass_v[0]->nodeList();
-  const auto  nPerh = nodeList.nodesPerSmoothingScale();
+  const auto  nPerh = nodeLists[0]->nodesPerSmoothingScale();
   const auto  WnPerh = W(1.0/nPerh, 1.0);
   bool CorrectVelocityGradient = this->mCorrectVelocityGradient;
   TIME_END("SolidSPHevalDerivs_initial_RAJA");
@@ -371,10 +307,10 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   {
     RAJA::forall<EXEC_POLICY>(TRS_UINT(0u, npairs),
     [=] SPHERAL_HOST_DEVICE (size_t kk) {
-      size_t i = pairs[kk].i_node;
-      size_t j = pairs[kk].j_node;
-      size_t nodeListi = pairs[kk].i_list;
-      size_t nodeListj = pairs[kk].j_list;
+      const size_t i = pairs[kk].i_node;
+      const size_t j = pairs[kk].j_node;
+      const size_t nodeListi = pairs[kk].i_list;
+      const size_t nodeListj = pairs[kk].j_list;
 
       // Get the state for node i.
       const auto& ri = position(nodeListi, i);
@@ -508,7 +444,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
                rj, Hj, etaj, vj, rhoj, cj,
-               fClQView, fCqQView, DvDxQView);
+               fClQ, fCqQ, DvDxQ);
       // Contribution to the sum density (only if the same material).
       if (nodeListi == nodeListj) {
         GPUUtils::AtomicAddOp::apply(&rhoSumi, mj*Wi);
@@ -594,11 +530,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
     }); // loop over pairs
   }
   TIME_END("SolidSPHevalDerivs_pairs_RAJA");
+
   // Finish up the derivatives for each point.
   TIME_BEGIN("SolidSPHevalDerivs_final_RAJA");
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-    const auto& nodeList = mass_v[nodeListi]->nodeList();
-    const auto ni = nodeList.numInternalNodes();
+    const auto ni = nodeLists[nodeListi]->numInternalNodes();
 
     // // Check if we can identify a reference density.
     // auto rho0 = 0.0;
@@ -701,22 +637,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       // DSDti = (1.0 - Di)*DSDti - 0.25/dt*Di*Si;
     });
   }
-  rhoSum.move(chai::CPU);
-  DxDt.move(chai::CPU);
-  DrhoDt.move(chai::CPU);
-  DvDt.move(chai::CPU);
-  DepsDt.move(chai::CPU);
-  DvDx.move(chai::CPU);
-  localDvDx.move(chai::CPU);
-  M.move(chai::CPU);
-  localM.move(chai::CPU);
-  maxViscousPressure.move(chai::CPU);
-  effViscousPressure.move(chai::CPU);
-  XSPHWeightSum.move(chai::CPU);
-  XSPHDeltaV.move(chai::CPU);
-  DSDt.move(chai::CPU);
-  rhoSumCorrection.move(chai::CPU);
-  pairAccelerations.move(chai::CPU);
+  derivsMgr.move(chai::CPU);
   TIME_END("SolidSPHevalDerivs_final_RAJA");
   TIME_END("SolidSPHevalDerivs_RAJA");
 }
