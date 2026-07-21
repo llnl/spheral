@@ -32,10 +32,11 @@ public:
   using const_iterator = std::vector<int>::const_iterator;
   using NodeCouplingPtr = std::shared_ptr<NodeCoupling>;
   using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors, destructor.
   ConnectivityMap();
-  ~ConnectivityMap();
+  ~ConnectivityMap() = default;
 
   template<typename NodeListIterator>
   ConnectivityMap(const NodeListIterator& begin,
@@ -57,11 +58,6 @@ public:
   // old2new -- maps old -> new node indices.
   void patchConnectivity(const FieldList<Dimension, size_t>& flags,
                          const FieldList<Dimension, size_t>& old2new);
-
-  // Remove connectivity between neighbors.
-  // Note this method assumes neighbor info is symmetric, and removes the pair connectivity for each
-  // member of a pair (maintaining symmetry).
-  void removeConnectivity(const FieldList<Dimension, std::vector<std::vector<int>>>& neighborsToCut);
 
   // Are we computing neighbors for ghosts?
   bool buildGhostConnectivity() const;
@@ -177,6 +173,10 @@ public:
   // Check that the internal data structure is valid.
   bool valid() const;
 
+  // No copy constructor or assignment.
+  ConnectivityMap(const ConnectivityMap&) = delete;
+  ConnectivityMap& operator=(const ConnectivityMap&) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   // The set of NodeLists.
@@ -187,11 +187,12 @@ private:
 
   // The full connectivity map.  This might be quite large!
   // [offset[NodeList] + nodeID] [NodeListID] [neighborIndex]
+  // Note this is only built as needed, we assume only the NodePairList by default
   using ConnectivityStorageType = std::vector<std::vector<std::vector<int>>>;
-  std::vector<int> mOffsets;
+  std::vector<size_t> mOffsets;
   ConnectivityStorageType mConnectivity;
 
-  // List of Node conncetion pairs.
+  // List of Node connection pairs.
   std::shared_ptr<NodePairList> mNodePairListPtr;
 
   // Same for overlap connectivity.
@@ -204,6 +205,9 @@ private:
   using Key = typename KeyTraits::Key;
   FieldList<Dimension, Key> mKeys;
 
+  // The number of neighbors per node
+  FieldList<Dimension, size_t> mNumNeighbors;
+
   // The coupling functor for coupling between points.
   NodeCouplingPtr mCouplingPtr;
 
@@ -214,10 +218,7 @@ private:
   // Internal method to fill in the connectivity, once the set of NodeLists 
   // is determined.
   void computeConnectivity();
-
-  // No default constructor, copying, or assignment.
-  ConnectivityMap(const ConnectivityMap&);
-  ConnectivityMap& operator=(const ConnectivityMap&);
+  void buildPerPointConnectivity();
 };
 
 }
