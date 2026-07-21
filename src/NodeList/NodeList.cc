@@ -348,7 +348,6 @@ template<typename Dimension>
 typename NodeList<Dimension>::ViewType
 NodeList<Dimension>::
 view() {
-  refreshView();
   return static_cast<ViewType>(*this);
 }
 
