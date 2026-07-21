@@ -1,4 +1,19 @@
-Version v2026.06.0 -- Release date 2026-06-19
+Version vYYYY.MM.p -- Release date YYYY-MM-DD
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
+    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
+    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
+
+  * Build changes / improvements:
+    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+
+  * Bug Fixes / improvements:
+
+Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
   * Important Notes:
 
