@@ -11,6 +11,8 @@ Notable changes include:
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+    * Performance testing and CI improvements:
+      * Enable CI to run for Debug HIP builds
 
   * Bug Fixes / improvements:
 
