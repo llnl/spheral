@@ -4,11 +4,16 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 
 Notable changes include:
 
-  * Build changes / improvements:
-    * Performance testing and CI improvements:
-      * Enable CI to run for Debug HIP builds
+  * New features / API changes:
+    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
+    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
 
-Version v2026.06.0 -- Release date 2026-06-19
+  * Build changes / improvements:
+    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+
+  * Bug Fixes / improvements:
+
+Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
   * Important Notes:
 
