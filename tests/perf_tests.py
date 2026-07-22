@@ -112,7 +112,7 @@ class TestParams:
 #---------------------------------------------------------------------------
 class DummyTest(TestParams):
     def __init__(self, ncores, nnodes):
-        ats_dict = dict(np=ncores, nn=1)
+        ats_dict = dict(np=1, nn=1)
         gpu_ats_dict = dict(raja_test=True, np=1, nn=1, ngpu=1)
         inp_string = "--caliperConfig 'none'"
         init_dict = {}
