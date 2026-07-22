@@ -14,6 +14,7 @@ Notable changes include:
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
 
   * Bug Fixes / improvements:
+    * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

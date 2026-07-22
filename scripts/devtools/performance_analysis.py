@@ -178,18 +178,16 @@ def get_caliper_files_and_bench(file_path):
         state = globals()["state"]
         tests = [t for t in state["testlist"] if t['status'] == PASSED]
         for test in tests:
-            if ("caliper_filename" in test["options"]):
+            if ("caliper_filename" in test["options"] and test["options"]["caliper_filename"]):
                 cali_file = test["options"]["caliper_filename"]
-            else:
-                raise RuntimeError("This tool only works on ATS output from run_perf.py")
-            # Check if benchmark_dir is in ats options
-            if (not benchmarks and "benchmark_dir" in test["options"]):
-                benchmarks = test["options"]["benchmark_dir"]
-            # Check if the run_perf.py gathered the Caliper files or not
-            cfile = os.path.join(file_path, cali_file)
-            if (not os.path.exists(cfile)):
-                cfile = os.path.join(test["directory"], cali_file)
-            cali_files.append(cfile)
+                # Check if benchmark_dir is in ats options
+                if (not benchmarks and "benchmark_dir" in test["options"]):
+                    benchmarks = test["options"]["benchmark_dir"]
+                # Check if the run_perf.py gathered the Caliper files or not
+                cfile = os.path.join(file_path, cali_file)
+                if (not os.path.exists(cfile)):
+                    cfile = os.path.join(test["directory"], cali_file)
+                cali_files.append(cfile)
     else:
         newpath = os.path.join(file_path, "**/*.cali")
         print(f"Searching {newpath}")
@@ -352,15 +350,16 @@ def main():
             diff_var = "rel_diff"
             vals1 = ctest.statsframe.dataframe[cmetric]
             vals2 = rtest.statsframe.dataframe[cmetric]
-            ctest.statsframe.dataframe[diff_var] = (vals1/vals2 - 1.)*100.
             if (main_diff > ref_thresh):
                 cur_status = "FAILED"
                 if args.display:
                     # Display the relative difference of the exclusive avg time/rank
+                    ctest.statsframe.dataframe[diff_var] = (vals1/vals2 - 1.)*100.
                     display(ctest.statsframe.tree(diff_var, cmetric))
             elif (main_diff < -ref_thresh):
                 cur_status = "PASSED"
                 if args.display:
+                    ctest.statsframe.dataframe[diff_var] = (vals1/vals2 - 1.)*100.
                     display(ctest.statsframe.tree(diff_var, cmetric))
             else:
                 cur_status = "PASSED"
