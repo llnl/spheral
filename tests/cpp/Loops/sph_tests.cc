@@ -89,6 +89,7 @@ public:
     tree_neighbor(fluid_node_list,
                   Spheral::NeighborSearchType::GatherScatter,
                   kernelExtents, xmin, xmax) {
+    Spheral::GPUUtils::initGPUs();
     fluid_node_list.registerNeighbor(tree_neighbor);
   }
 

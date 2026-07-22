@@ -47,7 +47,7 @@ namespace GPUUtils {
 
 int deviceCount();
 
-void initGPUs(const int stack_mult);
+void initGPUs(const int stack_mult = 8);
 
 void deviceSync();
 
