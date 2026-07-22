@@ -95,16 +95,16 @@ public:
   SPHERAL_HOST_DEVICE void hminratio(Scalar val) { mhminratio = val; }
 
   // Field views.
-  SPHERAL_HOST_DEVICE MassView& mass() { return mMassView; }
-  SPHERAL_HOST_DEVICE const MassView& mass() const { return mMassView; }
-  SPHERAL_HOST_DEVICE PositionView& positions() { return mPositionsView; }
-  SPHERAL_HOST_DEVICE const PositionView& positions() const { return mPositionsView; }
-  SPHERAL_HOST_DEVICE VelocityView& velocity() { return mVelocityView; }
-  SPHERAL_HOST_DEVICE const VelocityView& velocity() const { return mVelocityView; }
-  SPHERAL_HOST_DEVICE HfieldView& Hfield() { return mHfieldView; }
-  SPHERAL_HOST_DEVICE const HfieldView& Hfield() const { return mHfieldView; }
-  SPHERAL_HOST_DEVICE WorkView& work() { return mWorkView; }
-  SPHERAL_HOST_DEVICE const WorkView& work() const { return mWorkView; }
+  SPHERAL_HOST_DEVICE MassView& massView() { return mMassView; }
+  SPHERAL_HOST_DEVICE const MassView& massView() const { return mMassView; }
+  SPHERAL_HOST_DEVICE PositionView& positionsView() { return mPositionsView; }
+  SPHERAL_HOST_DEVICE const PositionView& positionsView() const { return mPositionsView; }
+  SPHERAL_HOST_DEVICE VelocityView& velocityView() { return mVelocityView; }
+  SPHERAL_HOST_DEVICE const VelocityView& velocityView() const { return mVelocityView; }
+  SPHERAL_HOST_DEVICE HfieldView& hfieldView() { return mHfieldView; }
+  SPHERAL_HOST_DEVICE const HfieldView& hfieldView() const { return mHfieldView; }
+  SPHERAL_HOST_DEVICE WorkView& workView() { return mWorkView; }
+  SPHERAL_HOST_DEVICE const WorkView& workView() const { return mWorkView; }
 
   SPHERAL_HOST_DEVICE Scalar& mass(const size_t nodeID) const { REQUIRE(nodeID < mMassView.numElements()); return mMassView[nodeID]; }
   SPHERAL_HOST_DEVICE Vector& position(const size_t nodeID) const { REQUIRE(nodeID < mPositionsView.numElements()); return mPositionsView[nodeID]; }

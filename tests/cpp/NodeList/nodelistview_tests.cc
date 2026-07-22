@@ -72,11 +72,11 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DefaultAndExplicitConstruction) {
     SPHERAL_ASSERT_EQ(emptyView.numNodes(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.numInternalNodes(), 0u);
     SPHERAL_ASSERT_EQ(emptyView.firstGhostNode(), 0u);
-    SPHERAL_ASSERT_EQ(emptyView.mass().numElements(), 0u);
-    SPHERAL_ASSERT_EQ(emptyView.positions().numElements(), 0u);
-    SPHERAL_ASSERT_EQ(emptyView.velocity().numElements(), 0u);
-    SPHERAL_ASSERT_EQ(emptyView.Hfield().numElements(), 0u);
-    SPHERAL_ASSERT_EQ(emptyView.work().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.massView().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.positionsView().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.velocityView().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.hfieldView().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(emptyView.workView().numElements(), 0u);
 
     NodeListView_t sizedView(Ntotal, Ninternal);
     SPHERAL_ASSERT_EQ(sizedView.numNodes(), Ntotal);
@@ -85,8 +85,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DefaultAndExplicitConstruction) {
     SPHERAL_ASSERT_EQ(sizedView.numGhostNodes(), Nghost);
     SPHERAL_ASSERT_EQ(sizedView.nodeType(0u), Spheral::NodeType::InternalNode);
     SPHERAL_ASSERT_EQ(sizedView.nodeType(Ninternal), Spheral::NodeType::GhostNode);
-    SPHERAL_ASSERT_EQ(sizedView.positions().numElements(), 0u);
-    SPHERAL_ASSERT_EQ(sizedView.Hfield().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(sizedView.positionsView().numElements(), 0u);
+    SPHERAL_ASSERT_EQ(sizedView.hfieldView().numElements(), 0u);
     SPHERAL_ASSERT_EQ(sizedView.nodesPerSmoothingScale(), 2.01);
     SPHERAL_ASSERT_EQ(sizedView.maxNumNeighbors(), 500u);
   EXEC_IN_SPACE_END()
@@ -100,8 +100,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DefaultAndExplicitConstruction) {
                            nodes.Hfield().view());
 
   const NodeListView_t& constNodesView = nodesView;
-  SPHERAL_ASSERT_EQ(constNodesView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(constNodesView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(constNodesView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(constNodesView.hfieldView().numElements(), Ntotal);
 
   RAJA::forall<TypeParam>(TRS_UINT(0, nodesView.numNodes()),
     [=] SPHERAL_HOST_DEVICE (size_t i) {
@@ -126,11 +126,11 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ValueSemantics) {
   SPHERAL_ASSERT_EQ(copiedView.numNodes(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(copiedView.firstGhostNode(), Ninternal);
-  SPHERAL_ASSERT_EQ(copiedView.mass().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(copiedView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(copiedView.velocity().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(copiedView.Hfield().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(copiedView.work().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.massView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.velocityView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.hfieldView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copiedView.workView().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(copiedView.position(0).x(), 0.0);
   SPHERAL_ASSERT_EQ(copiedView.H(0).xx(), 1.0);
 
@@ -139,8 +139,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ValueSemantics) {
   SPHERAL_ASSERT_EQ(copyAssignedView.numNodes(), Ntotal);
   SPHERAL_ASSERT_EQ(copyAssignedView.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(copyAssignedView.firstGhostNode(), Ninternal);
-  SPHERAL_ASSERT_EQ(copyAssignedView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(copyAssignedView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copyAssignedView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(copyAssignedView.hfieldView().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(copyAssignedView.position(1).x(), 1.0);
   SPHERAL_ASSERT_EQ(copyAssignedView.H(1).xx(), 1.0);
 
@@ -148,8 +148,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ValueSemantics) {
   SPHERAL_ASSERT_EQ(moveConstructedView.numNodes(), Ntotal);
   SPHERAL_ASSERT_EQ(moveConstructedView.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(moveConstructedView.firstGhostNode(), Ninternal);
-  SPHERAL_ASSERT_EQ(moveConstructedView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(moveConstructedView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(moveConstructedView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(moveConstructedView.hfieldView().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(moveConstructedView.position(2).x(), 2.0);
   SPHERAL_ASSERT_EQ(moveConstructedView.H(2).xx(), 1.0);
 
@@ -158,8 +158,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ValueSemantics) {
   SPHERAL_ASSERT_EQ(moveAssignedView.numNodes(), Ntotal);
   SPHERAL_ASSERT_EQ(moveAssignedView.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(moveAssignedView.firstGhostNode(), Ninternal);
-  SPHERAL_ASSERT_EQ(moveAssignedView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(moveAssignedView.Hfield().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(moveAssignedView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(moveAssignedView.hfieldView().numElements(), Ntotal);
   SPHERAL_ASSERT_EQ(moveAssignedView.position(3).x(), 3.0);
   SPHERAL_ASSERT_EQ(moveAssignedView.H(3).xx(), 1.0);
 }
@@ -180,8 +180,8 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ViewCapture) {
       SPHERAL_ASSERT_EQ(nodesView.numNodes(), Ntotal);
       SPHERAL_ASSERT_EQ(nodesView.numInternalNodes(), Ninternal);
       SPHERAL_ASSERT_EQ(nodesView.firstGhostNode(), Ninternal);
-      SPHERAL_ASSERT_EQ(nodesView.positions().numElements(), Ntotal);
-      SPHERAL_ASSERT_EQ(nodesView.Hfield().numElements(), Ntotal);
+      SPHERAL_ASSERT_EQ(nodesView.positionsView().numElements(), Ntotal);
+      SPHERAL_ASSERT_EQ(nodesView.hfieldView().numElements(), Ntotal);
 
       const auto& ri = nodesView.position(i);
       SPHERAL_ASSERT_EQ(ri.x(), double(i));
@@ -480,7 +480,7 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ResizeAndReacquire) {
     [=] SPHERAL_HOST_DEVICE (size_t i) {
       SPHERAL_ASSERT_EQ(newView.numNodes(), newInternal + Nghost);
       SPHERAL_ASSERT_EQ(newView.firstGhostNode(), newInternal);
-      SPHERAL_ASSERT_EQ(newView.positions().numElements(), newInternal + Nghost);
+      SPHERAL_ASSERT_EQ(newView.positionsView().numElements(), newInternal + Nghost);
       SPHERAL_ASSERT_EQ(newView.position(i).x(), double(i));
     });
 }
@@ -506,11 +506,11 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, AppendInternalNodesRefreshesInheritedVie
   SPHERAL_ASSERT_EQ(nodes.numInternalNodes(), expectedInternal);
   SPHERAL_ASSERT_EQ(inheritedView.numNodes(), expectedTotal);
   SPHERAL_ASSERT_EQ(inheritedView.firstGhostNode(), expectedInternal);
-  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), expectedTotal);
-  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), expectedTotal);
-  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), expectedTotal);
-  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), expectedTotal);
-  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.massView().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.positionsView().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocityView().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.hfieldView().numElements(), expectedTotal);
+  SPHERAL_ASSERT_EQ(inheritedView.workView().numElements(), expectedTotal);
   SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal).x(), double(sourceIDs[0]));
   SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal + 1u).x(), double(sourceIDs[1]));
   SPHERAL_ASSERT_EQ(inheritedView.H(Ninternal).xx(), 1.0);
@@ -543,11 +543,11 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, ReorderNodesRefreshesInheritedView) {
   SPHERAL_ASSERT_EQ(nodes.numGhostNodes(), 0u);
   SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(inheritedView.firstGhostNode(), Ninternal);
-  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), Ninternal);
-  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ninternal);
-  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), Ninternal);
-  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), Ninternal);
-  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.massView().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.positionsView().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocityView().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.hfieldView().numElements(), Ninternal);
+  SPHERAL_ASSERT_EQ(inheritedView.workView().numElements(), Ninternal);
   SPHERAL_ASSERT_EQ(inheritedView.position(0).x(), double(Ninternal - 1u));
   SPHERAL_ASSERT_EQ(inheritedView.position(Ninternal - 1u).x(), 0.0);
 
@@ -573,20 +573,25 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndInheritedView) {
   SPHERAL_ASSERT_EQ(nodes.numInternalNodes(), Ninternal);
   SPHERAL_ASSERT_EQ(nodes.numGhostNodes(), Nghost);
   SPHERAL_ASSERT_EQ(nodes.firstGhostNode(), Ninternal);
+  SPHERAL_ASSERT_EQ(nodes.massView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodes.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodes.velocityView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodes.hfieldView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodes.workView().numElements(), Ntotal);
 
   NodeListView_t& inheritedView = nodes;
   SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ntotal);
-  SPHERAL_ASSERT_EQ(inheritedView.mass().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(inheritedView.velocity().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(inheritedView.Hfield().numElements(), Ntotal);
-  SPHERAL_ASSERT_EQ(inheritedView.work().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.massView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.positionsView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.velocityView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.hfieldView().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(inheritedView.workView().numElements(), Ntotal);
 
   nodes.numGhostNodes(2u*Nghost);
   SPHERAL_ASSERT_EQ(nodes.numNodes(), Ninternal + 2u*Nghost);
   SPHERAL_ASSERT_EQ(nodes.view().numNodes(), Ninternal + 2u*Nghost);
   SPHERAL_ASSERT_EQ(inheritedView.numNodes(), Ninternal + 2u*Nghost);
-  SPHERAL_ASSERT_EQ(inheritedView.positions().numElements(), Ninternal + 2u*Nghost);
+  SPHERAL_ASSERT_EQ(inheritedView.positionsView().numElements(), Ninternal + 2u*Nghost);
 
   nodes.nodesPerSmoothingScale(3.25);
   nodes.maxNumNeighbors(123u);
