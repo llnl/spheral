@@ -9,7 +9,7 @@ dims = spheralDimensions()
 # ProbabilisticDamageModel factory function
 #-------------------------------------------------------------------------------
 def PDMFactory(ndim, suffix):
-    IntField = eval("IntField{}d".format(ndim))
+    IntField = eval("IntField{}".format(suffix))
     CXXProbabilisticDamageModel = eval("ProbabilisticDamageModel{}".format(suffix))
     class ProbabilisticDamageModel(CXXProbabilisticDamageModel):
 
