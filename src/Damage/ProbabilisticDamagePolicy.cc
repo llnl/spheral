@@ -30,10 +30,7 @@
 #include "Utilities/DBC.hh"
 
 #include <algorithm>
-using std::vector;
-using std::string;
-using std::pair;
-using std::make_pair;
+#include <functional>
 
 namespace Spheral {
 
@@ -85,10 +82,10 @@ sortEigen(Dim<2>::SymTensor::EigenStructType& eigeni) {
 inline
 void
 sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
-  int i = 0;
-  int j = 1;
-  int k = 2;
-  bool flipped = true;
+  auto i = 0u;
+  auto j = 1u;
+  auto k = 2u;
+  auto flipped = true;
   while (flipped) {
     flipped = false;
     if (eigeni.eigenValues(i) < eigeni.eigenValues(j)) {
@@ -106,96 +103,8 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
   eigeni.eigenVectors = Dim<3>::Tensor(eigeni.eigenVectors(0,i), eigeni.eigenVectors(0,j), eigeni.eigenVectors(0,k),
                                        eigeni.eigenVectors(1,i), eigeni.eigenVectors(1,j), eigeni.eigenVectors(1,k),
                                        eigeni.eigenVectors(2,i), eigeni.eigenVectors(2,j), eigeni.eigenVectors(2,k));
-  ENSURE((eigeni.eigenValues(0) >= eigeni.eigenValues(1)) &&
+  ENSURE((eigeni.eigenValues(0) >= eigeni.eigenValues(1)) and
          (eigeni.eigenValues(1) >= eigeni.eigenValues(2)));
-}
-
-//------------------------------------------------------------------------------
-// Determine the effective rotational transformation from the given velocity
-// gradient.
-//------------------------------------------------------------------------------
-inline
-Dim<1>::Tensor
-effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one();
-}
-
-inline
-Dim<2>::Tensor
-effectiveRotation(const Dim<2>::Tensor& DvDx) {
-  const double theta = DvDx.xy() - DvDx.yx();
-  return Dim<2>::Tensor(cos(theta), sin(theta),
-                        -sin(theta), cos(theta));
-}
-
-inline
-Dim<3>::Tensor
-effectiveRotation(const Dim<3>::Tensor& DvDx) {
-  const Dim<3>::Vector theta(DvDx.yz() - DvDx.zy(),
-                             DvDx.zx() - DvDx.xz(),
-                             DvDx.xy() - DvDx.yx());
-  return (Dim<3>::Tensor(cos(theta.x()), sin(theta.x()), 0.0,
-                         -sin(theta.x()), cos(theta.x()), 0.0,
-                         0.0, 0.0, 1.0)*
-          Dim<3>::Tensor(cos(theta.y()), sin(theta.y()), 0.0,
-                         0.0, 1.0, 0.0,
-                         -sin(theta.y()), 0.0, cos(theta.y()))*
-          Dim<3>::Tensor(1.0, 0.0, 0.0,
-                         0.0, cos(theta.z()), sin(theta.z()),
-                         0.0, -sin(theta.z()), cos(theta.z())));
-}
-
-//------------------------------------------------------------------------------
-// Build a tensor of the requested type
-//------------------------------------------------------------------------------
-// Generic definition
-template<typename Dimension, typename OutTensorType>
-OutTensorType
-buildTensor(const size_t i,
-            const Field<Dimension, typename Dimension::SymTensor>& tfield,
-            const Field<Dimension, typename Dimension::Scalar>* ttfieldptr) {
-  return tfield(i);
-}
-
-// RZ specialization
-template<>
-Dim<3>::SymTensor
-buildTensor<Dim<2>, Dim<3>::SymTensor>(const size_t i,
-                                       const Field<Dim<2>, Dim<2>::SymTensor>& tfield,
-                                       const Field<Dim<2>, Dim<2>::Scalar>* ttfieldptr) {
-  REQUIRE(ttfieldptr != nullptr);
-  const auto& ti = tfield(i);
-  return Dim<3>::SymTensor(ti[0], ti[1], 0.0,
-                           ti[1], ti[2], 0.0,
-                           0.0,   0.0,   (*ttfieldptr)(i));
-}
-
-
-//------------------------------------------------------------------------------
-// Assign tensor components
-//------------------------------------------------------------------------------
-// Generic definition
-template<typename Dimension, typename InTensorType>
-void
-assignTensor(const size_t i,
-             const InTensorType& ti,
-             Field<Dimension, typename Dimension::SymTensor>& tfield,
-             Field<Dimension, typename Dimension::Scalar>* ttfieldptr) {
-  tfield(i) = ti;
-}
-
-// RZ specialization
-template<>
-void
-assignTensor<Dim<2>, Dim<3>::SymTensor>(const size_t i,
-                                        const Dim<3>::SymTensor& ti,
-                                        Field<Dim<2>, Dim<2>::SymTensor>& tfield,
-                                        Field<Dim<2>, Dim<2>::Scalar>* ttfieldptr) {
-  REQUIRE(ttfieldptr != nullptr);
-  tfield(i)[0] = ti[0];
-  tfield(i)[1] = ti[1];
-  tfield(i)[2] = ti[3];
-  (*ttfieldptr)(i) = ti[5];
 }
 
 }
@@ -226,30 +135,26 @@ update(const KeyType& key,
        const double multiplier,
        const double t,
        const double dt) {
-  if constexpr (Dimension::nDim == 2) {
-    if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-      this->updateImpl<Dim<3>::SymTensor>(key, state, derivs, multiplier, t, dt);
-    } else {
-      this->updateImpl<SymTensor>(key, state, derivs, multiplier, t, dt);
-    }
+  if (GeometryRegistrar::coords() == CoordinateType::Cartesian) {
+    updateImpl<&SymTensor::eigenValues, &SymTensor::eigenVectors, Dimension::nDim>(key, state, derivs, multiplier, t, dt);
   } else {
-    this->updateImpl<SymTensor>(key, state, derivs, multiplier, t, dt);
+    updateImpl<&SymTensor::eigenValues3D, &SymTensor::eigenVectors3D, 3>(key, state, derivs, multiplier, t, dt);
   }
-}  
+}
 
 //------------------------------------------------------------------------------
-// Update the field (implementation)
+// Update the field
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<typename DamageTensorType>
+template<auto EigenValuesMethod, auto EigenVectorsMethod, int effDims>
 void
 ProbabilisticDamagePolicy<Dimension>::
 updateImpl(const KeyType& key,
            State<Dimension>& state,
            StateDerivatives<Dimension>& derivs,
            const double multiplier,
-           const double /*t*/,
-           const double /*dt*/) {
+           const double t,
+           const double dt) {
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
@@ -270,14 +175,6 @@ updateImpl(const KeyType& key,
   const auto& maxFlaw = state.field(buildKey(SolidFieldNames::maxFlaw), 0.0);
   const auto& V0 = state.field(buildKey(SolidFieldNames::initialVolume), 0.0);
 
-  // Get any needed RZ components
-  const auto RZ = (GeometryRegistrar::coords() == CoordinateType::RZ);
-  Field<Dimension, Scalar> *DTTptr = nullptr, *strainTTptr = nullptr;
-  if (RZ) {
-    DTTptr = &state.field(buildKey(SolidFieldNames::tensorDamageTT), 0.0);
-    strainTTptr = &state.field(buildKey(SolidFieldNames::effectiveStrainTensorTT), 0.0);
-  }
-
   // Check if porosity is active for this material
   const auto usePorosity = state.registered(buildKey(SolidFieldNames::porosityAlpha));
   Field<Dimension, Scalar>* alpha0Ptr = nullptr;
@@ -293,25 +190,21 @@ updateImpl(const KeyType& key,
   const auto ni = D.numInternalElements();
 #pragma omp parallel for
   for (auto i = 0u; i < ni; ++i) {
-    auto straini = buildTensor<Dimension, DamageTensorType>(i, strain, strainTTptr);
-    auto Di = buildTensor<Dimension, DamageTensorType>(i, D, DTTptr);
-    CHECK(Di.eigenValues().minElement() >= 0.0 and
-          fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    const auto& straini = strain(i);
+    auto& Di = D(i);
+    CHECK(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+          fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
 
     // First apply the rotational term to the current damage.
     const auto spin = localDvDx(i).SkewSymmetric();
     const auto spinCorrection = (spin*Di - Di*spin).Symmetric();
     Di += multiplier*spinCorrection;
-    Di = max(1.0e-5, min(1.0 - 2.0e-5, Di));
-    {
-      const auto maxValue = Di.eigenValues().maxElement();
-      if (maxValue > 1.0) Di /= maxValue;
-    }
-    CHECK(Di.eigenValues().minElement() >= 0.0 and
-          fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    Di = Di.clampEigenValues(1.0e-5, 1.0);
+    CHECK(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+          fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
 
     // The tensor strain on this node.
-    auto eigeni = straini.eigenVectors();
+    auto eigeni = std::invoke(EigenVectorsMethod, straini);
 
     // If we're allowing damage in compression, force all strains to be abs value.
     if (mDamageInCompression) abs_in_place(eigeni.eigenValues);
@@ -320,12 +213,12 @@ updateImpl(const KeyType& key,
     sortEigen(eigeni);
 
     // Iterate over the eigen values/vectors of the strain.
-    for (auto j = 0u; j < DamageTensorType::nDimensions(); ++j) {
+    for (auto j = 0u; j < effDims; ++j) {
 
       // The direction of the strain, and projected current (starting) damage.
       const auto strainDirection = eigeni.eigenVectors.getColumn(j);
       CHECK(fuzzyEqual(strainDirection.magnitude2(), 1.0, 1.0e-10));
-      const auto D0 = max(0.0, min(1.0, (Di * strainDirection).magnitude()));
+      const auto D0 = max(0.0, min(1.0, (Di*strainDirection).magnitude()));
       CHECK(D0 >= 0.0 && D0 <= 1.0);
       const auto strainj = std::max(0.0, eigeni.eigenValues(j)*safeInvVar(1.0 - D0)); //   + plasticStrain(i))/(fDi*fDi + 1.0e-20);
 
@@ -376,24 +269,13 @@ updateImpl(const KeyType& key,
     }
 
     // Enforce bounds on the damage.
-    const auto Dvals = Di.eigenValues();
-    if (Dvals.minElement() < 0.0 or
-        Dvals.maxElement() > 1.0) {
-      const auto Deigen = Di.eigenVectors();
-      Di = constructSymTensorWithBoundedDiagonal(Deigen.eigenValues,
-                                                 1.0e-5,
-                                                 1.0);
-      Di.rotationalTransform(Deigen.eigenVectors);
-    }
-    ENSURE(Di.eigenValues().minElement() >= 0.0 and
-           fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    Di = Di.clampEigenValues(1.0e-5, 1.0);
+    ENSURE(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+           fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
     //     ENSURE(fuzzyGreaterThanOrEqual(Di.eigenValues().minElement(), 0.0, 1.0e-5) &&
     //            fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
     //     ENSURE(fuzzyGreaterThanOrEqual(Di.eigenValues().minElement(), 0.0) &&
     //            fuzzyLessThanOrEqual(Di.Trace(), 1.0));
-
-    // Put the new damage values back in the Field(s)
-    assignTensor<Dimension, DamageTensorType>(i, Di, D, DTTptr);
   }
 }
 

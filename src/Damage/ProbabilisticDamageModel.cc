@@ -84,15 +84,7 @@ ProbabilisticDamageModel(SolidNodeList<Dimension>& nodeList,
   mLongitudinalSoundSpeed(SolidFieldNames::longitudinalSoundSpeed, nodeList),
   mDdamageDt(ProbabilisticDamagePolicy<Dimension>::prefix() + SolidFieldNames::scalarDamage, nodeList),
   mStrain(SolidFieldNames::strainTensor, nodeList),
-  mEffectiveStrain(SolidFieldNames::effectiveStrainTensor, nodeList),
-  mDamageTT(),
-  mStrainTT(),
-  mEffectiveStrainTT() {
-  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-    mDamageTT = std::make_unique<Field<Dimension, Scalar>>(SolidFieldNames::tensorDamageTT, nodeList);
-    mStrainTT = std::make_unique<Field<Dimension, Scalar>>(SolidFieldNames::strainTensorTT, nodeList);
-    mEffectiveStrainTT = std::make_unique<Field<Dimension, Scalar>>(SolidFieldNames::effectiveStrainTensorTT, nodeList);
-  }
+  mEffectiveStrain(SolidFieldNames::effectiveStrainTensor, nodeList) {
 }
 
 //------------------------------------------------------------------------------
@@ -309,13 +301,6 @@ registerState(DataBase<Dimension>& dataBase,
   state.enroll(mMaxFlaw);
   state.enroll(mInitialVolume);
 
-  // In RZ we need the theta-theta tensor components
-  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-    state.enroll(*mDamageTT);
-    state.enroll(*mStrainTT);
-    state.enroll(*mEffectiveStrainTT);
-  }
-
   // Mask out nodes beyond the critical damage threshold from setting the timestep.
   auto maskKey = state.buildFieldKey(HydroFieldNames::timeStepMask, this->nodeList().name());
   auto& mask = state.field(maskKey, 0);
@@ -351,28 +336,10 @@ applyGhostBoundaries(State<Dimension>& state,
   const auto DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
   CHECK(state.registered(DKey));
   auto& D = state.field(DKey, SymTensor::zero());
-  const auto RZ = (GeometryRegistrar::coords() == CoordinateType::RZ);
-  Field<Dimension, Scalar> *DTT = nullptr, *sTT = nullptr, *esTT = nullptr;
-  if (RZ) {
-    const auto DTTkey = state.buildFieldKey(SolidFieldNames::tensorDamageTT, nodeListName);
-    const auto strainTTkey = state.buildFieldKey(SolidFieldNames::strainTensorTT, nodeListName);
-    const auto effectiveStrainTTkey = state.buildFieldKey(SolidFieldNames::effectiveStrainTensorTT, nodeListName);
-    CHECK(state.registered(DTTkey));
-    CHECK(state.registered(strainTTkey));
-    CHECK(state.registered(effectiveStrainTTkey));
-    DTT = &state.field(DTTkey, 0.0);
-    sTT = &state.field(strainTTkey, 0.0);
-    esTT = &state.field(effectiveStrainTTkey, 0.0);
-  }
 
   // Apply ghost boundaries to the damage.
   for (auto* boundaryPtr: this->boundaryConditions()) {
     boundaryPtr->applyGhostBoundary(D);
-    if (RZ) {
-      boundaryPtr->applyGhostBoundary(*DTT);
-      boundaryPtr->applyGhostBoundary(*sTT);
-      boundaryPtr->applyGhostBoundary(*esTT);
-    }
   }
 }
 
@@ -391,28 +358,10 @@ enforceBoundaries(State<Dimension>& state,
   const Key DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
   CHECK(state.registered(DKey));
   auto& D = state.field(DKey, SymTensor::zero());
-  const auto RZ = (GeometryRegistrar::coords() == CoordinateType::RZ);
-  Field<Dimension, Scalar> *DTT = nullptr, *sTT = nullptr, *esTT = nullptr;
-  if (RZ) {
-    const auto DTTkey = state.buildFieldKey(SolidFieldNames::tensorDamageTT, nodeListName);
-    const auto strainTTkey = state.buildFieldKey(SolidFieldNames::strainTensorTT, nodeListName);
-    const auto effectiveStrainTTkey = state.buildFieldKey(SolidFieldNames::effectiveStrainTensorTT, nodeListName);
-    CHECK(state.registered(DTTkey));
-    CHECK(state.registered(strainTTkey));
-    CHECK(state.registered(effectiveStrainTTkey));
-    DTT = &state.field(DTTkey, 0.0);
-    sTT = &state.field(strainTTkey, 0.0);
-    esTT = &state.field(effectiveStrainTTkey, 0.0);
-  }
 
   // Enforce!
   for (auto* boundaryPtr: this->boundaryConditions()) {
     boundaryPtr->enforceBoundary(D);
-    if (RZ) {
-      boundaryPtr->enforceBoundary(*DTT);
-      boundaryPtr->enforceBoundary(*sTT);
-      boundaryPtr->enforceBoundary(*esTT);
-    }
   }
 }
 
@@ -433,11 +382,6 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mStrain, pathName + "/strain");
   file.write(mEffectiveStrain, pathName + "/effectiveStrain");
   file.write(mMask, pathName + "/mask");
-  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-    file.write(*mDamageTT, pathName + "/damageTT");
-    file.write(*mStrainTT, pathName + "/strainTT");
-    file.write(*mEffectiveStrainTT, pathName + "/effectiveStrainTT");
-  }
 }
 
 //------------------------------------------------------------------------------
@@ -457,11 +401,6 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mStrain, pathName + "/strain");
   file.read(mEffectiveStrain, pathName + "/effectiveStrain");
   file.read(mMask, pathName + "/mask");
-  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-    file.read(*mDamageTT, pathName + "/damageTT");
-    file.read(*mStrainTT, pathName + "/strainTT");
-    file.read(*mEffectiveStrainTT, pathName + "/effectiveStrainTT");
-  }
 }
 
 }

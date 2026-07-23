@@ -145,30 +145,6 @@ DdamageDt() const {
 }
 
 template<typename Dimension>
-const Field<Dimension, typename Dimension::Scalar>&
-ProbabilisticDamageModel<Dimension>::
-damageTT() const {
-  VERIFY2(mDamageTT, "damageTT component only available in RZ calculations");
-  return *mDamageTT;
-}
-
-template<typename Dimension>
-const Field<Dimension, typename Dimension::Scalar>&
-ProbabilisticDamageModel<Dimension>::
-strainTT() const {
-  VERIFY2(mStrainTT, "strainTT component only available in RZ calculations");
-  return *mStrainTT;
-}
-
-template<typename Dimension>
-const Field<Dimension, typename Dimension::Scalar>&
-ProbabilisticDamageModel<Dimension>::
-effectiveStrainTT() const {
-  VERIFY2(mEffectiveStrainTT, "effectiveStrainTT component only available in RZ calculations");
-  return *mEffectiveStrainTT;
-}
-
-template<typename Dimension>
 const Field<Dimension, int>&
 ProbabilisticDamageModel<Dimension>::
 mask() const {

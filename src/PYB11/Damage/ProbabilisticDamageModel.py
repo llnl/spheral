@@ -141,9 +141,6 @@ temperature or pressure."""
     strain = PYB11property("const Field<%(Dimension)s, SymTensor>&", returnpolicy="reference_internal")
     effectiveStrain = PYB11property("const Field<%(Dimension)s, SymTensor>&", returnpolicy="reference_internal")
     DdamageDt = PYB11property("const Field<%(Dimension)s, Scalar>&", returnpolicy="reference_internal")
-    damageTT = PYB11property("const Field<%(Dimension)s, Scalar>&", returnpolicy="reference_internal")
-    strainTT = PYB11property("const Field<%(Dimension)s, Scalar>&", returnpolicy="reference_internal")
-    effectiveStrainTT = PYB11property("const Field<%(Dimension)s, Scalar>&", returnpolicy="reference_internal")
     mask = PYB11property("const Field<%(Dimension)s, int>&", "mask", "mask", returnpolicy="reference_internal")
     criticalDamageThreshold = PYB11property("double", "criticalDamageThreshold", "criticalDamageThreshold",
                                             doc="Optional damage threshold, beyond which points do not vote on a timestep")

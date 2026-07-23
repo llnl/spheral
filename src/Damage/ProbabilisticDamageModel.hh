@@ -13,7 +13,6 @@
 #define __Spheral_ProbabilisticDamageModel_hh__
 
 #include "DamageModel.hh"
-#include <memory>
 
 namespace Spheral {
 
@@ -107,9 +106,6 @@ public:
   const Field<Dimension, SymTensor>& strain() const;
   const Field<Dimension, SymTensor>& effectiveStrain() const;
   const Field<Dimension, Scalar>& DdamageDt() const;
-  const Field<Dimension, Scalar>& damageTT() const;
-  const Field<Dimension, Scalar>& strainTT() const;
-  const Field<Dimension, Scalar>& effectiveStrainTT() const;
 
   // Optionally the user can provide a mask to prevent damage modeling on some points.
   const Field<Dimension, int>& mask() const;
@@ -139,9 +135,6 @@ private:
   Field<Dimension, int> mNumFlaws, mMask;
   Field<Dimension, Scalar> mMinFlaw, mMaxFlaw, mInitialVolume, mYoungsModulus, mLongitudinalSoundSpeed, mDdamageDt;
   Field<Dimension, SymTensor> mStrain, mEffectiveStrain;
-
-  // In RZ we need an extra tensor component
-  std::unique_ptr<Field<Dimension, Scalar>> mDamageTT, mStrainTT, mEffectiveStrainTT;
 };
 
 }
