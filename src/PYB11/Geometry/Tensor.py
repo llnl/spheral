@@ -7,6 +7,11 @@ from PYB11Generator import *
 class Tensor:
     "Spheral geometric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
+    PYB11typedefs = """
+    using TensorType = Dim<%(ndim)s>::Tensor;
+    using SymTensorType = Dim<%(ndim)s>::SymTensor;
+"""
+
     # constexpr attributes
     nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
     numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
@@ -49,6 +54,16 @@ class Tensor:
                 yx="double", yy="double", yz="double",
                 zx="double", zy="double", zz="double"):
         "Construct with element values (3D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit6(self,
+                rhs = "const Dim<3>::SymTensor&"):
+        "Construct from a 3D SymTensor"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit7(self,
+                rhs = "const Dim<3>::Tensor&"):
+        "Construct from a 3D Tensor"
 
     # Sequence methods
     @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements(); }")
@@ -252,6 +267,16 @@ class Tensor:
     @PYB11pycppname("dot")
     def dot3D(self, rhs="const Dim<3>::Vector&"):
         "Product with a 3D vector"
+        return
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11pycppname("__iadd__")
+    def __iadd__ST3D(self, rhs="Dim<3>::Tensor()"):
+        return
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11pycppname("__mul__")
+    def __mul__V3D(self, rhs="Dim<3>::Vector()"):
         return
 
     # Properties

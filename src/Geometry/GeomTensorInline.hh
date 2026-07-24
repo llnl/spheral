@@ -109,31 +109,44 @@ GeomTensor(const GeomSymmetricTensor<nDim>& rhs) {
   this->operator=(rhs);
 }
 
-// //------------------------------------------------------------------------------
-// // Override the generic constructors to throw if they're called in the wrong 
-// // dimensions.
-// //------------------------------------------------------------------------------
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomTensor<nDim>::
-// GeomTensor(const double a11, const double a12,
-//            const double a21, const double a22,
-//            const double a33):
-//   GeomTensorBase<nDim>(0.0) {
-//   VERIFY2(false, "GeomTensor(a11, a12, a21, a22): not valid in " << nDim << " dimensions");
-// }
+//------------------------------------------------------------------------------
+// Copy constructor (3D tensors)
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<1>::
+GeomTensor(const GeomSymmetricTensor<3>& rhs):
+  GeomTensor(rhs.xx(), rhs.yy(), rhs.zz()) {
+}
 
-// template<int nDim>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomTensor<nDim>::
-// GeomTensor(const double, const double, const double,
-//            const double, const double, const double,
-//            const double, const double, const double):
-//   GeomTensorBase<nDim>(0.0) {
-//   VERIFY2(false, "GeomTensor(a11, a12, a13, a21, a22, a23, a31, a32, a33): not valid in " << nDim << " dimensions");
-// }
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<2>::
+GeomTensor(const GeomSymmetricTensor<3>& rhs):
+  GeomTensor(rhs.xx(), rhs.xy(),
+             rhs.yx(), rhs.yy(),
+             rhs.zz()) {
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<1>::
+GeomTensor(const GeomTensor<3>& rhs):
+  GeomTensor(rhs.xx(), rhs.yy(), rhs.zz()) {
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<2>::
+GeomTensor(const GeomTensor<3>& rhs):
+  GeomTensor(rhs.xx(), rhs.xy(),
+             rhs.yx(), rhs.yy(),
+             rhs.zz()) {
+}
 
 //------------------------------------------------------------------------------
 // Construct from an Eigen Tensor.
@@ -2143,19 +2156,6 @@ GeomTensor<nDim>::Determinant3D() const {
 }
 
 //------------------------------------------------------------------------------
-// Multiply a tensor with a vector (strictly 3D)
-//------------------------------------------------------------------------------
-template<int nDim>
-SPHERAL_HOST_DEVICE
-inline
-GeomVector<3>
-GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3u) {
-  return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
-                       yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
-                       zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
-}
-
-//------------------------------------------------------------------------------
 // doubledot product (a_ij * b_ji -- strictly 3D)
 //------------------------------------------------------------------------------
 template<int nDim>
@@ -2194,6 +2194,64 @@ GeomTensor<nDim>::
 selfDoubledot3D() const {
   return (xx()*xx() + 2.0*xy()*yx() + 2.0*xz()*zx() +
           yy()*yy() + 2.0*yz()*zy() + zz()*zz());
+}
+
+//------------------------------------------------------------------------------
+// Multiply a tensor with a vector (strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+  return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
+                       yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
+                       zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+  return dot(rhs);
+}
+
+//------------------------------------------------------------------------------
+// Addition with a 3D tensor
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<1>&
+GeomTensor<1>::operator+=(const GeomTensor<3>& rhs) {
+  REQUIRE(rhs.xy() == 0.0 and
+          rhs.xz() == 0.0 and
+          rhs.yx() == 0.0 and 
+          rhs.yz() == 0.0 and
+          rhs.zx() == 0.0 and
+          rhs.zy() == 0.0);
+  this->mxx += rhs.xx();
+  this->myy += rhs.yy();
+  this->mzz += rhs.zz();
+  return *this;
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<2>&
+GeomTensor<2>::operator+=(const GeomTensor<3>& rhs) {
+  REQUIRE(rhs.xz() == 0.0 and
+          rhs.yz() == 0.0 and
+          rhs.zx() == 0.0 and
+          rhs.zy() == 0.0);
+  this->mxx += rhs.xx();
+  this->mxy += rhs.xy();
+  this->myx += rhs.yx();
+  this->myy += rhs.yy();
+  this->mzz += rhs.zz();
+  return *this;
 }
 
 //------------------------------------------------------------------------------

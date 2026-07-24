@@ -22,6 +22,7 @@
 #include "Geometry/GeomSymmetricTensor_fwd.hh"
 #include "Geometry/EigenStruct_fwd.hh"
 #include "Geometry/GeomSymmetricTensorBase.hh"
+#include "Threading/GPUUtils.hh"
 
 #include <iostream>
 #include "Eigen/Dense"
@@ -62,10 +63,18 @@ public:
   SPHERAL_HOST_DEVICE GeomSymmetricTensor(const double a11, const double a12, const double a13,              // 3D
                                           const double a21, const double a22, const double a23,
                                           const double a31, const double a32, const double a33) requires (nDim == 3u);
-  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const GeomSymmetricTensor& ten) = default;
-  SPHERAL_HOST_DEVICE GeomSymmetricTensor(GeomSymmetricTensor&& ten) = default;
-  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const TensorType& ten);
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const GeomSymmetricTensor& rhs) = default;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor(GeomSymmetricTensor&& rhs) = default;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const TensorType& rhs);
+  SPHERAL_HOST_DEVICE explicit GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs) requires (nDim < 3u);
+  SPHERAL_HOST_DEVICE explicit GeomSymmetricTensor(const GeomTensor<3>& rhs) requires (nDim < 3u);
   template<typename Derived> GeomSymmetricTensor(const Eigen::MatrixBase<Derived>& ten);
+
+  // Construct with the given diagonal elements
+  SPHERAL_HOST_DEVICE explicit GeomSymmetricTensor(const VectorType& diagonal);
+  SPHERAL_HOST_DEVICE explicit GeomSymmetricTensor(const GeomVector<3>& diagonal) requires (nDim < 3u);
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const VectorType& diagonal,    const double minval, const double maxval);
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor(const GeomVector<3>& diagonal, const double minval, const double maxval) requires (nDim < 3u);
 
   // Assignment.
   SPHERAL_HOST_DEVICE GeomSymmetricTensor& operator=(const GeomSymmetricTensor& rhs) = default;
@@ -201,13 +210,15 @@ public:
 
   // Apply a rotational transform to this tensor ( R^-1 * (*this) * R ).
   SPHERAL_HOST_DEVICE void rotationalTransform(const TensorType& R);
+  SPHERAL_HOST_DEVICE void rotationalTransform(const GeomTensor<3>& R) requires (nDim < 3u);
 
   // Return the max absolute element.
   SPHERAL_HOST_DEVICE double maxAbsElement() const;
 
   // Enforce min/max eigenvalues
-  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMinEigenValue(const double& x) const;
-  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMaxEigenValue(const double& x) const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMinEigenValue(const double& minvalue) const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor enforceMaxEigenValue(const double& maxvalue) const;
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor clampEigenValues(const double& minvalue, const double& maxvalue) const;
 
   //  Convert to an Eigen Vector
   EigenType eigen() const;
@@ -216,13 +227,15 @@ public:
   SPHERAL_HOST_DEVICE GeomVector<3> diagonalElements3D() const;
   SPHERAL_HOST_DEVICE double Trace3D() const;
   SPHERAL_HOST_DEVICE double Determinant3D() const;
-  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& vec) const requires (nDim < 3u);  // Screen out as redundant with normal vector dot above in 3d
   SPHERAL_HOST_DEVICE double doubledot3D(const TensorType& rhs) const;
   SPHERAL_HOST_DEVICE double doubledot3D(const SymTensorType& rhs) const;
   SPHERAL_HOST_DEVICE double selfDoubledot3D() const;
   SPHERAL_HOST_DEVICE double maxAbsElement3D() const;
   SPHERAL_HOST_DEVICE GeomVector<3> eigenValues3D() const;
   SPHERAL_HOST_DEVICE EigenStruct<3> eigenVectors3D() const;
+  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& rhs) const                   requires (nDim < 3u);  // Screen out as redundant with normal vector dot above in 3d
+  SPHERAL_HOST_DEVICE GeomVector<3> operator*(const GeomVector<3>& rhs) const             requires (nDim < 3u);
+  SPHERAL_HOST_DEVICE GeomSymmetricTensor& operator+=(const GeomSymmetricTensor<3>& rhs)  requires (nDim < 3u);
 
   // Support for atomic operations on device
   template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const TensorType& rhs);
@@ -249,6 +262,9 @@ template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>::GeomSymmetricTensor(const
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3>::GeomSymmetricTensor(const double, const double, const double,
                                                                            const double, const double, const double,
                                                                            const double, const double, const double);
+
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>::GeomSymmetricTensor(const GeomSymmetricTensor<3>&);
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>::GeomSymmetricTensor(const GeomSymmetricTensor<3>&);
 
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>& GeomSymmetricTensor<1>::operator=(const GeomTensor<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>& GeomSymmetricTensor<2>::operator=(const GeomTensor<2>& rhs);
@@ -392,6 +408,21 @@ template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<3>::maxAbsElement() co
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<1>::maxAbsElement3D() const;
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<2>::maxAbsElement3D() const;
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<3>::maxAbsElement3D() const;
+
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>& GeomSymmetricTensor<1>::operator+=(const GeomSymmetricTensor<3>&);
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>& GeomSymmetricTensor<2>::operator+=(const GeomSymmetricTensor<3>&);
+
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1> GeomSymmetricTensor<1>::enforceMinEigenValue(const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2> GeomSymmetricTensor<2>::enforceMinEigenValue(const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3> GeomSymmetricTensor<3>::enforceMinEigenValue(const double&) const;
+
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1> GeomSymmetricTensor<1>::enforceMaxEigenValue(const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2> GeomSymmetricTensor<2>::enforceMaxEigenValue(const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3> GeomSymmetricTensor<3>::enforceMaxEigenValue(const double&) const;
+
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1> GeomSymmetricTensor<1>::clampEigenValues(const double&, const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2> GeomSymmetricTensor<2>::clampEigenValues(const double&, const double&) const;
+template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3> GeomSymmetricTensor<3>::clampEigenValues(const double&, const double&) const;
 
 template<> SPHERAL_HOST_DEVICE GeomVector<3> GeomSymmetricTensor<1>::eigenValues3D() const;
 template<> SPHERAL_HOST_DEVICE GeomVector<3> GeomSymmetricTensor<2>::eigenValues3D() const;

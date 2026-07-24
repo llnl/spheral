@@ -7,6 +7,11 @@ from PYB11Generator import *
 class SymTensor:
     "Spheral geometric symmetric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
+    PYB11typedefs = """
+    using TensorType = Dim<%(ndim)s>::Tensor;
+    using SymTensorType = Dim<%(ndim)s>::SymTensor;
+"""
+
     # constexpr attributes
     nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
     numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
@@ -18,11 +23,11 @@ class SymTensor:
         "Default constructor"
 
     def pyinit1(self,
-                rhs = "const Dim<%(ndim)s>::Tensor"):
+                rhs = "const TensorType"):
         "Copy constructor (tensor)"
 
     def pyinit2(self,
-                rhs = "const Dim<%(ndim)s>::SymTensor"):
+                rhs = "const SymTensorType"):
         "Copy constructor (symmetric tensor)"
 
     def pyinit_double(self,
@@ -50,43 +55,53 @@ class SymTensor:
                 zx="double", zy="double", zz="double"):
         "Construct with element values (3D)"
 
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit6(self,
+                rhs = "const Dim<3>::SymTensor&"):
+        "Construct from a 3D SymTensor"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    def pyinit7(self,
+                rhs = "const Dim<3>::Tensor&"):
+        "Construct from a 3D Tensor"
+
     # Sequence methods
-    @PYB11implementation("[](const Dim<%(ndim)s>::SymTensor&) { return Dim<%(ndim)s>::SymTensor::numElements(); }")
+    @PYB11implementation("[](const SymTensorType&) { return SymTensorType::numElements(); }")
     def __len__(self):
         "The size (number of elements) of the SymTensor."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::SymTensor &s, size_t i) { if (i >= Dim<%(ndim)s>::SymTensor::numElements()) throw py::index_error(); return s[i]; }") 
+    @PYB11implementation("[](const SymTensorType &s, size_t i) { if (i >= SymTensorType::numElements()) throw py::index_error(); return s[i]; }") 
     @PYB11returnpolicy("reference_internal")
     def __getitem__(self):
         "Python indexing to get an element."
 
-    @PYB11implementation("[](Dim<%(ndim)s>::SymTensor &s, size_t i, double v) { if (i >= Dim<%(ndim)s>::SymTensor::numElements()) throw py::index_error(); s[i] = v; }") 
+    @PYB11implementation("[](SymTensorType &s, size_t i, double v) { if (i >= SymTensorType::numElements()) throw py::index_error(); s[i] = v; }") 
     def __setitem__(self):
         "Python indexing to set an element."
 
-    @PYB11implementation("[](const Dim<%(ndim)s>::SymTensor &s) { return py::make_iterator(s.begin(), s.end()); }, py::keep_alive<0,1>()")
+    @PYB11implementation("[](const SymTensorType &s) { return py::make_iterator(s.begin(), s.end()); }, py::keep_alive<0,1>()")
     def __iter__(self):
         "Python iteration through a SymTensor."
 
     @PYB11const
     @PYB11returnpolicy("reference_internal")
     def __call__(self,
-                 row="Dim<%(ndim)s>::SymTensor::size_type", 
-                 col="Dim<%(ndim)s>::SymTensor::size_type"):
+                 row="SymTensorType::size_type", 
+                 col="SymTensorType::size_type"):
         "Extract the (row, column) element."
         return "double"
 
     @PYB11pycppname("__call__")
-    @PYB11implementation("[](Dim<%(ndim)s>::SymTensor& self, Dim<%(ndim)s>::SymTensor::size_type row, Dim<%(ndim)s>::SymTensor::size_type col, double val) { self(row,col) = val; }")
+    @PYB11implementation("[](SymTensorType& self, SymTensorType::size_type row, SymTensorType::size_type col, double val) { self(row,col) = val; }")
     def assignCall(self,
-                   row="Dim<%(ndim)s>::SymTensor::size_type", 
-                   col="Dim<%(ndim)s>::SymTensor::size_type",
+                   row="SymTensorType::size_type", 
+                   col="SymTensorType::size_type",
                    val="double"):
         return "void"
 
     # String representation
     @PYB11implementation("""
-[](const Dim<%(ndim)s>::SymTensor& self) {
+[](const SymTensorType& self) {
   std::string result = "SymTensor" + std::to_string(%(ndim)s) + "d(";
   for (auto val: self) result += (" " + std::to_string(val) + " ");
   result += ")";
@@ -98,25 +113,25 @@ class SymTensor:
     # Operators
     def __neg__(self):
         return
-    def __add__(self, rhs="Dim<%(ndim)s>::SymTensor()"):
+    def __add__(self, rhs="SymTensorType()"):
         return
-    def __sub__(self, rhs="Dim<%(ndim)s>::SymTensor()"):
+    def __sub__(self, rhs="SymTensorType()"):
         return
-    def __mul__(self, rhs="Dim<%(ndim)s>::SymTensor()"):
+    def __mul__(self, rhs="SymTensorType()"):
         return
-    def __iadd__(self, rhs="Dim<%(ndim)s>::SymTensor()"):
+    def __iadd__(self, rhs="SymTensorType()"):
         return
-    def __isub__(self, rhs="Dim<%(ndim)s>::SymTensor()"):
+    def __isub__(self, rhs="SymTensorType()"):
         return
 
     @PYB11pycppname("__add__")
-    def __add__T(self, rhs="Dim<%(ndim)s>::Tensor()"):
+    def __add__T(self, rhs="TensorType()"):
         return
     @PYB11pycppname("__sub__")
-    def __sub__T(self, rhs="Dim<%(ndim)s>::Tensor()"):
+    def __sub__T(self, rhs="TensorType()"):
         return
     @PYB11pycppname("__mul__")
-    def __mul__T(self, rhs="Dim<%(ndim)s>::Tensor()"):
+    def __mul__T(self, rhs="TensorType()"):
         return
 
     @PYB11pycppname("__mul__")
@@ -182,21 +197,21 @@ class SymTensor:
         return "Dim<%(ndim)s>::Vector"
     @PYB11const
     @PYB11pycppname("dot")
-    def dot2(self, rhs="const Dim<%(ndim)s>::Tensor&"):
+    def dot2(self, rhs="const TensorType&"):
         "Product with a Tensor%(ndim)sd."
-        return "Dim<%(ndim)s>::Tensor"
+        return "TensorType"
     @PYB11const
     @PYB11pycppname("dot")
-    def dot3(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
+    def dot3(self, rhs="const SymTensorType&"):
         "Product with a SymTensor%(ndim)sd."
-        return "Dim<%(ndim)s>::Tensor"
+        return "TensorType"
     @PYB11const
-    def doubledot(self, rhs="const Dim<%(ndim)s>::Tensor&"):
+    def doubledot(self, rhs="const TensorType&"):
         "Double dot contraction with another tensor (returns a scalar)."
         return "double"
     @PYB11const
     @PYB11pycppname("doubledot")
-    def doubledot2(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
+    def doubledot2(self, rhs="const SymTensorType&"):
         "Double dot contraction with a SymTensor (returns a scalar)."
         return "double"
     def selfDoubledot(self):
@@ -207,8 +222,10 @@ class SymTensor:
         "Returns the element-wise square of the tensor."
     def eigenValues(self):
         "Return a Vector%(ndim)sd with the eigenvalues of this tensor."
-    def rotationalTransform(self):
+    def rotationalTransform(self,
+                            R = "const TensorType&"):
         "Apply the given rotational transform to the tensor."
+        return "void"
     def maxAbsElement(self):
         "Return the maximum of the absolute values of the elements."
 
@@ -231,12 +248,12 @@ class SymTensor:
     def Determinant3D(self):
         "The full 3D determinant"
     @PYB11const
-    def doubledot3D(self, rhs="const Dim<%(ndim)s>::Tensor&"):
+    def doubledot3D(self, rhs="const TensorType&"):
         "3D double dot contraction (a_ij * b_ji)"
         return "double"
     @PYB11cppname("doubledot3D")
     @PYB11const
-    def doubledot3D_sym(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
+    def doubledot3D_sym(self, rhs="const SymTensorType&"):
         "3D double dot contraction (a_ij * b_ji)"
         return "double"
     @PYB11const
@@ -260,6 +277,16 @@ class SymTensor:
     @PYB11pycppname("dot")
     def dot3D(self, rhs="const Dim<3>::Vector&"):
         "Product with a 3D vector"
+        return
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11pycppname("__iadd__")
+    def __iadd__ST3D(self, rhs="Dim<3>::SymTensor()"):
+        return
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11pycppname("__mul__")
+    def __mul__V3D(self, rhs="Dim<3>::Vector()"):
         return
 
     # Properties

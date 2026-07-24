@@ -63,7 +63,9 @@ public:
                                  const double a31, const double a32, const double a33) requires (nDim == 3);
   SPHERAL_HOST_DEVICE GeomTensor(const GeomTensor& rhs) = default;
   SPHERAL_HOST_DEVICE GeomTensor(GeomTensor&& rhs) = default;
-  SPHERAL_HOST_DEVICE GeomTensor(const GeomSymmetricTensor<nDim>& rhs);
+  SPHERAL_HOST_DEVICE GeomTensor(const SymTensorType& rhs);
+  SPHERAL_HOST_DEVICE explicit GeomTensor(const GeomSymmetricTensor<3>& rhs) requires (nDim < 3u);
+  SPHERAL_HOST_DEVICE explicit GeomTensor(const GeomTensor<3>& rhs) requires (nDim < 3u);
   GeomTensor(const EigenType& rhs);
   template<typename Derived> GeomTensor(const Eigen::MatrixBase<Derived>& rhs);
 
@@ -204,12 +206,14 @@ public:
   SPHERAL_HOST_DEVICE GeomVector<3> diagonalElements3D() const;
   SPHERAL_HOST_DEVICE double Trace3D() const;
   SPHERAL_HOST_DEVICE double Determinant3D() const;
-  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& vec) const requires (nDim < 3u);  // Screen out as redundant with normal vector dot above in 3d
   SPHERAL_HOST_DEVICE double doubledot3D(const TensorType& rhs) const;
   SPHERAL_HOST_DEVICE double doubledot3D(const SymTensorType& rhs) const;
   SPHERAL_HOST_DEVICE double selfDoubledot3D() const;
   SPHERAL_HOST_DEVICE double maxAbsElement3D() const;
   SPHERAL_HOST_DEVICE GeomVector<3> eigenValues3D() const;
+  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& vec) const        requires (nDim < 3u);  // Screen out as redundant with normal vector dot above in 3d
+  SPHERAL_HOST_DEVICE GeomVector<3> operator*(const GeomVector<3>& rhs) const  requires (nDim < 3u);
+  SPHERAL_HOST_DEVICE GeomTensor& operator+=(const GeomTensor<3>& rhs)         requires (nDim < 3u);
 
   // Support for atomic operations on device
   template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const TensorType& rhs);
@@ -237,6 +241,12 @@ template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const double, const dou
 template<> SPHERAL_HOST_DEVICE GeomTensor<3>::GeomTensor(const double, const double, const double,
                                                          const double, const double, const double,
                                                          const double, const double, const double);
+
+template<> SPHERAL_HOST_DEVICE GeomTensor<1>::GeomTensor(const GeomSymmetricTensor<3>&);
+template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const GeomSymmetricTensor<3>&);
+
+template<> SPHERAL_HOST_DEVICE GeomTensor<1>::GeomTensor(const GeomTensor<3>&);
+template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const GeomTensor<3>&);
 
 template<> SPHERAL_HOST_DEVICE GeomTensor<1>& GeomTensor<1>::operator=(const GeomSymmetricTensor<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomTensor<2>& GeomTensor<2>::operator=(const GeomSymmetricTensor<2>& rhs);
