@@ -2203,7 +2203,7 @@ template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3) {
   return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
                        yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
                        zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
@@ -2213,7 +2213,7 @@ template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3) {
   return dot(rhs);
 }
 

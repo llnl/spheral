@@ -205,7 +205,7 @@ GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const VectorType& diagonal):
 template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal) requires (nDim < 3u):
+GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal) requires (nDim < 3):
   GeomSymmetricTensorBase<nDim>() {
   this->mxx = diagonal.x();
   this->myy = diagonal.y();
@@ -232,7 +232,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal,
                                                const double minvalue,
-                                               const double maxvalue) requires (nDim < 3u):
+                                               const double maxvalue) requires (nDim < 3):
   GeomSymmetricTensorBase<nDim>() {
   this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
   this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
@@ -2408,7 +2408,7 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<nDim>::
-rotationalTransform(const GeomTensor<3>& R) requires (nDim < 3u) {
+rotationalTransform(const GeomTensor<3>& R) requires (nDim != 3) {
   this->rotationalTransform(TensorType(R));
 }
 
@@ -2798,7 +2798,7 @@ template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomSymmetricTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+GeomSymmetricTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim != 3) {
   return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
                        yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
                        zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
@@ -2808,7 +2808,7 @@ template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomSymmetricTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3u) {
+GeomSymmetricTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim != 3) {
   return dot(rhs);
 }
 

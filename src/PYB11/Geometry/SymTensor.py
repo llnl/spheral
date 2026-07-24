@@ -8,6 +8,7 @@ class SymTensor:
     "Spheral geometric symmetric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
     PYB11typedefs = """
+    using VectorType = Dim<%(ndim)s>::Vector;
     using TensorType = Dim<%(ndim)s>::Tensor;
     using SymTensorType = Dim<%(ndim)s>::SymTensor;
 """
@@ -55,12 +56,12 @@ class SymTensor:
                 zx="double", zy="double", zz="double"):
         "Construct with element values (3D)"
 
-    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     def pyinit6(self,
                 rhs = "const Dim<3>::SymTensor&"):
         "Construct from a 3D SymTensor"
 
-    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     def pyinit7(self,
                 rhs = "const Dim<3>::Tensor&"):
         "Construct from a 3D Tensor"
@@ -151,7 +152,7 @@ class SymTensor:
         return
 
     @PYB11pycppname("__mul__")
-    def __mul__V(self, rhs="Dim<%(ndim)s>::Vector()"):
+    def __mul__V(self, rhs="VectorType()"):
         return
 
     # Comparison
@@ -192,9 +193,9 @@ class SymTensor:
     def Determinant(self):
         "Compute the determinant of the tensor."
     @PYB11const
-    def dot(self, rhs="const Dim<%(ndim)s>::Vector&"):
+    def dot(self, rhs="const VectorType&"):
         "Product with a Vector%(ndim)sd."
-        return "Dim<%(ndim)s>::Vector"
+        return "VectorType"
     @PYB11const
     @PYB11pycppname("dot")
     def dot2(self, rhs="const TensorType&"):
@@ -273,21 +274,23 @@ class SymTensor:
         "Compute the full 3D eigenvalues & eigenvectors (always returns an EigenStruct3d)"
         return
 
-    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     @PYB11pycppname("dot")
+    @PYB11const
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     def dot3D(self, rhs="const Dim<3>::Vector&"):
         "Product with a 3D vector"
-        return
+        return "Dim<3>::Vector"
 
-    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
     @PYB11pycppname("__iadd__")
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     def __iadd__ST3D(self, rhs="Dim<3>::SymTensor()"):
-        return
+        return "void"
 
-    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
     @PYB11pycppname("__mul__")
+    @PYB11const
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
     def __mul__V3D(self, rhs="Dim<3>::Vector()"):
-        return
+        return "Dim<3>::Vector"
 
     # Properties
     xx = PYB11property("double", "xx", "xx", doc="The xx element.")
