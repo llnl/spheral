@@ -655,7 +655,6 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto  effViscousPressurei = effViscousPressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& Si = S(nodeListi, i);
-      const auto  STTi = -Si.Trace();
       const auto  mui = mu(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
@@ -690,7 +689,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Finish the acceleration -- self hoop strain.
       const Vector deltaDvDti(Si(1,0)/rhoi*riInv,
-                              (Si(1,1) - STTi)/rhoi*riInv);
+                              (Si(1,1) - Si(2,2))/rhoi*riInv);
       DvDti += deltaDvDti;
       if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
@@ -713,18 +712,21 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
         localDvDxi /= rhoi;
       }
 
+      // Add the theta-theta contribution to velocity gradient
       const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
+      DvDxi.zz(vr_over_r);
+      localDvDxi.zz(vr_over_r);
 
       // Evaluate the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      DrhoDti = -rhoi*DvDxi.Trace3D();
 
       // Finish the specific thermal energy evolution.
       DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
-      DepsDti += (STTi - Pi)/rhoi*vri*riInv;
+      DepsDti += (Si(2,2) - Pi)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
@@ -738,7 +740,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Optionally use damage to ramp down stress on damaged material.
       const auto Di = (damageRelieveRubble ? 
-                       max(0.0, min(1.0, damage(nodeListi, i).Trace() - 1.0)) :
+                       max(0.0, min(1.0, damage(nodeListi, i).Trace3D() - 1.0)) :
                        0.0);
       // Hideali = (1.0 - Di)*Hideali + Di*Hfield0(nodeListi, i);
       // DHDti = (1.0 - Di)*DHDti + Di*(Hfield0(nodeListi, i) - Hi)*0.25/dt;
@@ -748,9 +750,8 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
-      const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
+      const auto deviatoricDeformation = deformation - (deformation.Trace3D()/3.0)*SymTensor::one();
       const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + (2.0*mui)*deviatoricDeformation;
 

@@ -595,14 +595,17 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
         localDvDxi /= rhoRZi;
       }
 
+      // Add the theta-theta contribution to velocity gradient
       const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv); //integrate_vr_over_r(vri, ri, DvDti[1], hri, dt));  //
+      DvDxi.zz(vr_over_r);
+      localDvDxi.zz(vr_over_r);
 
       // Finish the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      DrhoDti = -rhoi*DvDxi.Trace3D();
 
       // Finish the specific thermal energy evolution.
       DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
