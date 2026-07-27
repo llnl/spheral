@@ -7,11 +7,14 @@ Notable changes include:
   * New features / API changes:
     * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory.
     * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation).
+    * Added view class for NodeList (NodeListView).
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
     * Update to Thicket version 2026.1.0.
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
+    * Performance testing and CI improvements:
+      * Enable CI to run for Debug HIP builds.
 
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
