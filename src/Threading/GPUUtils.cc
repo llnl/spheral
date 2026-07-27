@@ -18,7 +18,7 @@ int deviceCount() {
   return device_count;
 }
 
-void initGPUs(const int stack_mult = 8) {
+void initGPUs(const int stack_mult) {
 #ifdef SPHERAL_ENABLE_HIP
   int device_count = deviceCount();
   if (device_count > 0) {

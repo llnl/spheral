@@ -7,9 +7,12 @@ Notable changes include:
   * New features / API changes:
     * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
     * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
+    * Added view class for NodeList (NodeListView)
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+    * Performance testing and CI improvements:
+      * Enable CI to run for Debug HIP builds
 
   * Bug Fixes / improvements:
 

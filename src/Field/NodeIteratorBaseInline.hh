@@ -203,4 +203,3 @@ operator>=(const NodeIteratorBase<Dimension>& rhs) const {
 }
 
 }
-
