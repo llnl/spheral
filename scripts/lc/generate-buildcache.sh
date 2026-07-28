@@ -56,7 +56,7 @@ echo $RESOURCE_DIR
 echo $SPHERAL_PIP_CACHE_DIR
 echo $TPL_DIR
 
-SPACK_CACHE_DIR=${DEV_PKG_NAME}-spack
+SPACK_CACHE_DIR=spack-dev-pkg
 echo $SPACK_CACHE_DIR
 
 # Clear the stage directory, create resource dir and copy the Spheral repo into

@@ -201,7 +201,7 @@
     - tar -xzf $DEV_PKG_NAME.tar.gz
     - cd $DEV_PKG_NAME
     # Bring the tar of the spack and spack package repos
-    - SPACK_CACHE_DIR=$DEV_PKG_NAME-spack.tar.gz
+    - SPACK_CACHE_DIR=spack-dev-pkg.tar.gz
     - cp $CI_BUILD_DIR/$SPACK_CACHE_DIR .
 
     # Since TPL_DIR is not set, we assume SPACK_CACHE_DIR untars to spheral-spack-tpls

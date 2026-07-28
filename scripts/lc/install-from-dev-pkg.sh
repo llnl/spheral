@@ -18,7 +18,7 @@ fi
 mkdir -p $INSTALL_DIR
 
 # Check if a tar file of the spack and spack package repos exists
-SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-${DEV_PKG_SPEC}-spack.tar.gz}
+SPACK_CACHE_DIR=${SPACK_CACHE_DIR:-spack-dev-pkg.tar.gz}
 TPL_DIR=${TPL_DIR:-spheral-spack-tpls}
 if [[ -f "$SPACK_CACHE_DIR" ]]; then
     # Untar into the install directory
