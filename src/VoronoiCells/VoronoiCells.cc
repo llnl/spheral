@@ -12,6 +12,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "FileIO/FileIO.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "Kernel/TableKernel.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Strength/SolidFieldNames.hh"
@@ -87,7 +88,12 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mCellFaceFlags, vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags, false);
   dataBase.resizeFluidFieldList(mDeltaCentroid, Vector::zero(), "delta centroid", false);
 
-  // Use our finalize method to compute the cell geometry
+  // // Initial volume estimate
+  // const auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  // const auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
+  // mVolume = mass/rho;
+
+  // Use our preStepInitialize method to compute the initial cell geometry
   this->preStepInitialize(dataBase, state, derivs);
 
   // Propagate our state to constant any ghost nodes
@@ -200,28 +206,34 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
                   StateDerivatives<Dimension>& derivs) {
 
   // State we need to compute the Voronoi cells
+  const auto massKey = (GeometryRegistrar::coords() == CoordinateType::RZ ?
+                        HydroFieldNames::massRZ :
+                        HydroFieldNames::mass);
+  const auto rhoKey = (GeometryRegistrar::coords() == CoordinateType::RZ ?
+                       HydroFieldNames::massDensityRZ :
+                       HydroFieldNames::massDensity);
   const auto& cm = state.connectivityMap();
   const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  // const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
-  // const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto  mass = state.fields(massKey, 0.0);
+  const auto  rho = state.fields(rhoKey, 0.0);
   const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
   auto& boundaries = this->boundaryConditions();
 
-//   // Use m/rho to estimate our weighting to roughly match cell volumes
-//   const auto numNodeLists = dataBase.numFluidNodeLists();
-//   for (auto k = 0u; k < numNodeLists; ++k) {
-//     const auto n = mass[k]->numInternalElements();
-// #pragma omp parallel for
-//     for (auto i = 0u; i < n; ++i) {
-//       CHECK(rho(k,i) > 0.0);
-//       mVolume(k,i) = mass(k,i)/rho(k,i);
-//     }
-//   }
-  
-//   // Enforce boundaries on the volume
-//   for (auto* bcPtr: boundaries) bcPtr->applyFieldListGhostBoundary(mVolume);
-//   for (auto* bcPtr: boundaries) bcPtr->finalizeGhostBoundary();
+  // Use m/rho to estimate our weighting to roughly match cell volumes
+  const auto numNodeLists = dataBase.numFluidNodeLists();
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto n = mass[k]->numInternalElements();
+#pragma omp parallel for
+    for (auto i = 0u; i < n; ++i) {
+      CHECK(rho(k,i) > 0.0);
+      mVolume(k,i) = mass(k,i)/rho(k,i);
+    }
+  }
+
+  // Enforce boundaries on the volume
+  for (auto* bcPtr: boundaries) bcPtr->applyFieldListGhostBoundary(mVolume);
+  for (auto* bcPtr: boundaries) bcPtr->finalizeGhostBoundary();
 
 //   // We can now compute the weights from our volumes (including ghosts)
 //   for (auto k = 0u; k < numNodeLists; ++k) {
