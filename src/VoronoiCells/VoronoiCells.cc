@@ -88,11 +88,6 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mCellFaceFlags, vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags, false);
   dataBase.resizeFluidFieldList(mDeltaCentroid, Vector::zero(), "delta centroid", false);
 
-  // // Initial volume estimate
-  // const auto mass = state.fields(HydroFieldNames::mass, 0.0);
-  // const auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
-  // mVolume = mass/rho;
-
   // Use our preStepInitialize method to compute the initial cell geometry
   this->preStepInitialize(dataBase, state, derivs);
 
@@ -220,7 +215,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
   const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
   auto& boundaries = this->boundaryConditions();
 
-  // Use m/rho to estimate our weighting to roughly match cell volumes
+  // Use m/rho as the intial estimate for the cell volumes (persists for surface points)
   const auto numNodeLists = dataBase.numFluidNodeLists();
   for (auto k = 0u; k < numNodeLists; ++k) {
     const auto n = mass[k]->numInternalElements();
