@@ -18,7 +18,7 @@ run_cmd() {
 #       metadata/
 #       bootstrap_cache/
 
-# Also creates a tar file called $DEV_PKG_NAME-spack.tar.gz containing:
+# Also creates a tar file called spack-dev-pkg.tar.gz containing:
 # spack
 # packages
 ###############################################################################
