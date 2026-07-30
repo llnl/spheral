@@ -727,7 +727,7 @@ workPerNode(const DataBase<Dimension>& dataBase,
   // Output some statistics.
   const Scalar minWeight = result.min();
   const Scalar maxWeight = result.max();
-  SpheralMessage("RedistributeNodes::workPerNode: min/max work : "<< minWeight << " " << maxWeight);
+  SpheralMessage << "RedistributeNodes::workPerNode: min/max work : "<< minWeight << " " << maxWeight << "\n";
 
   // Return the result.
   return result;

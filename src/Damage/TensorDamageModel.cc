@@ -68,7 +68,7 @@ TensorDamageModel(SolidNodeList<Dimension>& nodeList,
   mCriticalDamageThreshold(criticalDamageThreshold),
   mDamageInCompression(damageInCompression) {
   if (GeometryRegistrar::coords() != CoordinateType::Cartesian) {
-    SpheralWarning("TensorDamageModel does not support curvilinear coordinates");
+    SpheralWarning << "TensorDamageModel does not support curvilinear coordinates" << std::endl;
   }
 }
 

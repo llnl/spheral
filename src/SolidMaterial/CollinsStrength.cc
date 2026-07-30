@@ -17,7 +17,6 @@
 #include "SolidEquationOfState.hh"
 #include "Field/Field.hh"
 #include "NodeList/SolidNodeList.hh"
-#include "Utilities/SpheralMessage.hh"
 
 namespace Spheral {
 
