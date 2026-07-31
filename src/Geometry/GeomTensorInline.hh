@@ -272,8 +272,8 @@ inline
 double
 GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
                              const typename GeomTensor<nDim>::size_type column) const {
-  REQUIRE(row < nDim);
-  REQUIRE(column < nDim);
+  REQUIRE(row < nDim or row == nDim);
+  REQUIRE(column < nDim or row == nDim);
   return *(begin() + elementIndex(row, column));
 }
 
@@ -283,8 +283,8 @@ inline
 double&
 GeomTensor<nDim>::operator()(const typename GeomTensor<nDim>::size_type row,
                              const typename GeomTensor<nDim>::size_type column) {
-  REQUIRE(row < nDim);
-  REQUIRE(column < nDim);
+  REQUIRE(row < nDim or row == nDim);
+  REQUIRE(column < nDim or row == nDim);
   return *(begin() + elementIndex(row, column));
 }
 
