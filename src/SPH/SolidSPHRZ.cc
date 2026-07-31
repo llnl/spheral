@@ -138,32 +138,9 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ, false);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
 
-  // When we come in the initial conditions for mass and density are 2D areal
-  // values, so we need to set up our areal and real 3D values appropriately.
-  if (mMassRZ.max() == 0.0) {  // Don't allow more than one time through the following!
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
-
-    const auto nfields = mass.numFields();
-    for (auto k = 0u; k < nfields; ++k) {
-      const auto n = mass[k]->numInternalElements();
-      for (auto i = 0u; i < n; ++i) {
-        CHECK(rho(k,i) > 0.0);
-        const auto ri = abs(pos(k,i).y());
-        // const auto Ai = mass(k,i)/rho(k,i);
-        // const auto Vi = 2.0*M_PI*ri*Ai;
-        // const auto di = std::sqrt(Ai);
-        // const auto Vi = cylindricalToroidalVolume(di, ri);
-        // const auto Ri = std::sqrt(Ai/M_PI);
-        // const auto Vi = circularToroidalVolume(Ri, ri);
-        mMassRZ(k,i) = mass(k,i);
-        mMassDensityRZ(k,i) = rho(k,i);
-        mass(k,i) *= 2.0*M_PI*ri;
-        // mass(k,i) = rho(k,i)*Vi;
-      }
-    }
-  }
+  // Depending on density update (among other things), we might need the boundaries updated
+  this->applyGhostBoundaries(state, derivs);
+  for (auto* bptr: this->boundaryConditions()) bptr->finalizeGhostBoundary();
 
   // Base class
   SolidSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
@@ -177,7 +154,7 @@ SolidSPHRZ::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   SolidSPH<Dimension>::registerState(dataBase, state);
-  SPHRZUtilities::registerState(*this, dataBase, state, mMassRZ, mMassDensityRZ);
+  SPHRZUtilities::registerState(*this, dataBase, state);
 }
 
 //------------------------------------------------------------------------------

@@ -86,8 +86,6 @@ SPHRZ(DataBase<Dimension>& dataBase,
                   xmax),
   mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
   mPairWorkPtr(std::make_unique<PairWorkType>()),
-  mMassRZ(FieldStorageType::CopyFields),
-  mMassDensityRZ(FieldStorageType::CopyFields),
   mDmassDensityDtRZ(FieldStorageType::CopyFields) {
 }
 
@@ -97,12 +95,10 @@ SPHRZ(DataBase<Dimension>& dataBase,
 void
 SPHRZ::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
-  TIME_BEGIN("SPHRZInitializeStartup");
+  TIME_BEGIN("SPHRZInitializeProblemStartup");
   SPHBase<Dimension>::initializeProblemStartup(dataBase);
-  mMassRZ = dataBase.newFluidFieldList(0.0, HydroFieldNames::massRZ);
-  mMassDensityRZ = dataBase.newFluidFieldList(0.0, HydroFieldNames::massDensityRZ);
   mDmassDensityDtRZ = dataBase.newFluidFieldList(0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
-  TIME_END("SPHRZInitializeStartup");
+  TIME_END("SPHRZInitializeProblemStartup");
 }
 
 //------------------------------------------------------------------------------
@@ -114,36 +110,7 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
   TIME_BEGIN("SPHRZInitializeStartupDependencies");
-  dataBase.resizeFluidFieldList(mMassRZ, 0.0, HydroFieldNames::massRZ, false);
-  dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ, false);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
-
-  // When we come in the initial conditions for mass and density are 2D areal
-  // values, so we need to set up our areal and real 3D values appropriately.
-  if (mMassRZ.max() == 0.0) {  // Don't allow more than one time through the following!
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
-
-    const auto nfields = mass.numFields();
-    for (auto k = 0u; k < nfields; ++k) {
-      const auto n = mass[k]->numInternalElements();
-      for (auto i = 0u; i < n; ++i) {
-        CHECK(rho(k,i) > 0.0);
-        const auto ri = abs(pos(k,i).y());
-        // const auto Ai = mass(k,i)/rho(k,i);
-        // const auto Vi = 2.0*M_PI*ri*Ai;
-        // const auto di = std::sqrt(Ai);
-        // const auto Vi = cylindricalToroidalVolume(di, ri);
-        // const auto Ri = std::sqrt(Ai/M_PI);
-        // const auto Vi = circularToroidalVolume(Ri, ri);
-        mMassRZ(k,i) = mass(k,i);
-        mMassDensityRZ(k,i) = rho(k,i);
-        mass(k,i) *= 2.0*M_PI*ri;
-        // mass(k,i) = rho(k,i)*Vi;
-      }
-    }
-  }
 
   // Base class
   SPHBase<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
@@ -158,7 +125,7 @@ SPHRZ::
 registerState(DataBase<Dim<2>>& dataBase,
               State<Dim<2>>& state) {
   SPHBase<Dimension>::registerState(dataBase, state);
-  SPHRZUtilities::registerState(*this, dataBase, state, mMassRZ, mMassDensityRZ);
+  SPHRZUtilities::registerState(*this, dataBase, state);
 }
 
 //------------------------------------------------------------------------------
@@ -659,9 +626,9 @@ applyGhostBoundaries(State<Dim<2>>& state,
   // Our state
   auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
-  for (auto boundaryPtr: this->boundaryConditions()) {
-    boundaryPtr->applyFieldListGhostBoundary(massRZ);
-    boundaryPtr->applyFieldListGhostBoundary(rhoRZ);
+  for (auto bcPtr: this->boundaryConditions()) {
+    bcPtr->applyFieldListGhostBoundary(massRZ);
+    bcPtr->applyFieldListGhostBoundary(rhoRZ);
   }
 
   // Convert the mass to mass/length before BCs are applied.
@@ -679,7 +646,7 @@ applyGhostBoundaries(State<Dim<2>>& state,
 
   // Apply ordinary SPH BCs.
   SPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: this->boundaryConditions()) boundaryPtr->finalizeGhostBoundary();
+  for (auto bcPtr: this->boundaryConditions()) bcPtr->finalizeGhostBoundary();
 
   // Scale back to mass.
   for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
@@ -704,9 +671,9 @@ enforceBoundaries(State<Dim<2>>& state,
   // Our state
   auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0);
   auto rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0);
-  for (auto boundaryPtr: this->boundaryConditions()) {
-    boundaryPtr->enforceFieldListBoundary(massRZ);
-    boundaryPtr->enforceFieldListBoundary(rhoRZ);
+  for (auto bcPtr: this->boundaryConditions()) {
+    bcPtr->enforceFieldListBoundary(massRZ);
+    bcPtr->enforceFieldListBoundary(rhoRZ);
   }
 
   // Convert the mass to mass/length before BCs are applied.
@@ -743,8 +710,6 @@ void
 SPHRZ::
 dumpState(FileIO& file, const string& pathName) const {
   SPHBase<Dim<2>>::dumpState(file, pathName);
-  file.write(mMassRZ, pathName + "/massRZ");
-  file.write(mMassDensityRZ, pathName + "/massDensityRZ");
   file.write(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
 }
 
@@ -755,8 +720,6 @@ void
 SPHRZ::
 restoreState(const FileIO& file, const string& pathName) {
   SPHBase<Dim<2>>::restoreState(file, pathName);
-  file.read(mMassRZ, pathName + "/massRZ");
-  file.read(mMassDensityRZ, pathName + "/massDensityRZ");
   file.read(mDmassDensityDtRZ, pathName + "/DmassDensityDtRZ");
 }
 

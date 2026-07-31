@@ -7,10 +7,7 @@
 #ifndef __Spheral_FluidNodeList__
 #define __Spheral_FluidNodeList__
 
-#include "NodeList.hh"
-
-#include <float.h>
-#include <string>
+#include "NodeList/NodeList.hh"
 
 namespace Spheral {
 
@@ -59,13 +56,16 @@ public:
   virtual ~FluidNodeList() = default;
 
   // Access the fluid state variables.
-  Field<Dimension, Scalar>& massDensity();
-  Field<Dimension, Scalar>& specificThermalEnergy();
+  Field<Dimension, Scalar>& massDensity()           { return mMassDensity; }
+  Field<Dimension, Scalar>& massDensityRZ()         { VERIFY2(mMassDensityRZptr, "FluidNodeList::massDensityRZ ERROR: not allocated"); return *mMassDensityRZptr; }
+  Field<Dimension, Scalar>& specificThermalEnergy() { return mSpecificThermalEnergy; }
 
-  const Field<Dimension, Scalar>& massDensity() const;
-  const Field<Dimension, Scalar>& specificThermalEnergy() const;
+  const Field<Dimension, Scalar>& massDensity()           const { return mMassDensity; }
+  const Field<Dimension, Scalar>& massDensityRZ()         const { VERIFY2(mMassDensityRZptr, "FluidNodeList::massDensityRZ ERROR: not allocated"); return *mMassDensityRZptr; }
+  const Field<Dimension, Scalar>& specificThermalEnergy() const { return mSpecificThermalEnergy; }
 
   void massDensity(const Field<Dimension, Scalar>& rho);
+  void massDensityRZ(const Field<Dimension, Scalar>& rho);
   void specificThermalEnergy(const Field<Dimension, Scalar>& eps);
 
   // These are quantities which are not stored, but can be computed.
@@ -77,16 +77,16 @@ public:
   virtual void totalEnergy(Field<Dimension, Scalar>& field) const;
 
   // Access the equation of state.
-  const EquationOfState<Dimension>& equationOfState() const;
-  void equationOfState(const EquationOfState<Dimension>& eos);
+  const EquationOfState<Dimension>& equationOfState() const   { return *mEosPtr; }
+  void equationOfState(const EquationOfState<Dimension>& eos) { mEosPtr = &eos; }
 
   // Optional bounding mass densities for use when time integrating
   // the density.
-  Scalar rhoMin() const;
-  Scalar rhoMax() const;
+  Scalar rhoMin() const { return mRhoMin; }
+  Scalar rhoMax() const { return mRhoMax; }
 
-  void rhoMin(Scalar x);
-  void rhoMax(Scalar x);
+  void rhoMin(Scalar x) { mRhoMin = x; }
+  void rhoMax(Scalar x) { mRhoMax = x; }
 
   //****************************************************************************
   // Methods required for restarting.
@@ -109,14 +109,13 @@ private:
   // Fields that define the fluid's current state.
   Field<Dimension, Scalar> mMassDensity;
   Field<Dimension, Scalar> mSpecificThermalEnergy;
+  std::unique_ptr<Field<Dimension, Scalar>> mMassDensityRZptr;
 
   // Equation of state.
   const EquationOfState<Dimension>* mEosPtr;
 };
 
 }
-
-#include "FluidNodeListInline.hh"
 
 #endif
 
