@@ -8,6 +8,7 @@ Notable changes include:
     * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
     * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
     * Added view class for NodeList (NodeListView)
+    * Converted SpheralMessage macros to behave like streams rather than functions
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
