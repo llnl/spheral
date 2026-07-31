@@ -14,6 +14,7 @@ Notable changes include:
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+    * Changing LC GNU compiler to 13.3.1
     * Performance testing and CI improvements:
       * Enable CI to run for Debug HIP builds
 
