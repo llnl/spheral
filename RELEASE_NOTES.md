@@ -9,6 +9,8 @@ Notable changes include:
     * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
     * Added view class for NodeList (NodeListView)
     * Converted SpheralMessage macros to behave like streams rather than functions
+    * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations)
+    * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
