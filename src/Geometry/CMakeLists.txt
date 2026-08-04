@@ -82,7 +82,6 @@ set(Geometry_headers
     innerProduct.hh
     invertRankNTensor.hh
     outerProduct.hh
-    GeometricUtilities.hh
     RZGeometryOps.hh
     )
 

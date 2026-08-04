@@ -25,7 +25,6 @@
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
 #include "Geometry/GeometryRegistrar.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "Geometry/RZGeometryOps.hh"
 #include "Utilities/DBC.hh"
 

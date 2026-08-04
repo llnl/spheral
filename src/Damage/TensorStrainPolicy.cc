@@ -18,7 +18,6 @@
 #include "Utilities/DBC.hh"
 #include "Utilities/safeInv.hh"
 #include "Geometry/GeometryRegistrar.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "Geometry/RZGeometryOps.hh"
 #include "Kernel/TableKernel.hh"
 
