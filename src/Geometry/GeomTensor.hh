@@ -44,11 +44,12 @@ public:
   using TensorType = GeomTensor<nDim>;
 
   // Useful stuff known at compile time
-  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
-  SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return 3u + nDim*(nDim - 1u); }
-  SPHERAL_HOST_DEVICE static constexpr GeomTensor zero()                  { return GeomTensor(); }
-  SPHERAL_HOST_DEVICE static constexpr GeomTensor one()                   { GeomTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; }
-
+  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()               { return nDim; }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()               { return 3u + nDim*(nDim - 1u); }
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor zero()                     { return GeomTensor(); }
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor one() requires (nDim == 1) { GeomTensor result; result.mxx = 1.0; return result; }                                     
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor one() requires (nDim == 2) { GeomTensor result; result.mxx = 1.0; result.myy = 1.0; return result; }                   
+  SPHERAL_HOST_DEVICE static constexpr GeomTensor one() requires (nDim == 3) { GeomTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; } 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomTensor() = default;
   SPHERAL_HOST_DEVICE explicit GeomTensor(const double a);                                            // Any dimension
@@ -68,6 +69,12 @@ public:
   SPHERAL_HOST_DEVICE explicit GeomTensor(const GeomTensor<3>& rhs) requires (nDim < 3);
   GeomTensor(const EigenType& rhs);
   template<typename Derived> GeomTensor(const Eigen::MatrixBase<Derived>& rhs);
+
+  // Construct with the given diangonal elements
+  SPHERAL_HOST_DEVICE explicit GeomTensor(const VectorType& diagonal);
+  SPHERAL_HOST_DEVICE explicit GeomTensor(const GeomVector<3>& diagonal) requires (nDim < 3);
+  SPHERAL_HOST_DEVICE GeomTensor(const VectorType& diagonal,    const double minval, const double maxval);
+  SPHERAL_HOST_DEVICE GeomTensor(const GeomVector<3>& diagonal, const double minval, const double maxval) requires (nDim < 3);
 
   // Assignment.
   SPHERAL_HOST_DEVICE GeomTensor& operator=(const GeomTensor& rhs) = default;

@@ -44,12 +44,14 @@ public:
   using TensorType = GeomTensor<nDim>;
 
   // Useful stuff known at compile time
-  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()            { return nDim; }
-  SPHERAL_HOST_DEVICE static constexpr size_type numElements()            { return 3u + nDim*(nDim - 1u)/2u; }
-  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor zero()         { return GeomSymmetricTensor(); }
-  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one()          { GeomSymmetricTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; }
-  SPHERAL_HOST_DEVICE static constexpr double onethird()                  { return 1.0/3.0; }
-  SPHERAL_HOST_DEVICE static constexpr double sqrt3()                     { return std::sqrt(3.0); }
+  SPHERAL_HOST_DEVICE static constexpr size_type nDimensions()                        { return nDim; }
+  SPHERAL_HOST_DEVICE static constexpr size_type numElements()                        { return 3u + nDim*(nDim - 1u)/2u; }
+  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor zero()                     { return GeomSymmetricTensor(); }
+  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one() requires (nDim == 1) { GeomSymmetricTensor result; result.mxx = 1.0; return result; }                                   
+  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one() requires (nDim == 2) { GeomSymmetricTensor result; result.mxx = 1.0; result.myy = 1.0; return result; }                   
+  SPHERAL_HOST_DEVICE static constexpr GeomSymmetricTensor one() requires (nDim == 3) { GeomSymmetricTensor result; result.mxx = 1.0; result.myy = 1.0; result.mzz = 1.0; return result; } 
+  SPHERAL_HOST_DEVICE static constexpr double onethird()                              { return 1.0/3.0; }
+  SPHERAL_HOST_DEVICE static constexpr double sqrt3()                                 { return std::sqrt(3.0); }
 
   // Constructors.
   SPHERAL_HOST_DEVICE GeomSymmetricTensor() = default;

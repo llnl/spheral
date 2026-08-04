@@ -176,6 +176,56 @@ GeomTensor<3>::GeomTensor(const Eigen::MatrixBase<Derived>& ten):
 }
 
 //------------------------------------------------------------------------------
+// Construct from diagonal elements
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<nDim>::GeomTensor(const VectorType& diagonal):
+  GeomTensorBase<nDim>() {
+  this->mxx = diagonal.x();
+  this->myy = diagonal.y();
+  this->mzz = diagonal.z();
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<nDim>::GeomTensor(const GeomVector<3>& diagonal) requires (nDim < 3):
+  GeomTensorBase<nDim>() {
+  this->mxx = diagonal.x();
+  this->myy = diagonal.y();
+  this->mzz = diagonal.z();
+}
+
+//------------------------------------------------------------------------------
+// Construct from diagonal elements with bounding values
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<nDim>::GeomTensor(const VectorType& diagonal,
+                             const double minvalue,
+                             const double maxvalue):
+  GeomTensorBase<nDim>() {
+  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomTensor<nDim>::GeomTensor(const GeomVector<3>& diagonal,
+                             const double minvalue,
+                             const double maxvalue) requires (nDim < 3):
+  GeomTensorBase<nDim>() {
+  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+}
+
+//------------------------------------------------------------------------------
 // Assignment operators.
 //------------------------------------------------------------------------------
 template<>
