@@ -15,6 +15,7 @@ Notable changes include:
       * Enable CI to run for Debug HIP builds
 
   * Bug Fixes / improvements:
+    * Bugfix for strain-porosity in power-law compaction regime from Sean Wiggins (apparently the paper by Collins et al. had a typo).
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

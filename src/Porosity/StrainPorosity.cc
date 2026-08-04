@@ -47,8 +47,8 @@ StrainPorosity(const SolidNodeList<Dimension>& nodeList,
           "ERROR : epsE required to be epsE <= 0.0.");
   VERIFY2(mEpsX <= mEpsE,
           "StrainPorosity ERROR : epsX required to be epsX <= epsE.");
-  VERIFY2(kappa >= 0.0 and kappa <= 1.0,
-          "ERROR : kappa required to be in range kappa = [0.0, 1.0]");
+  VERIFY2(kappa > 0.0 and kappa <= 1.0,
+          "ERROR : kappa required to be in range kappa = (0.0, 1.0]");
 }
 
 //------------------------------------------------------------------------------
@@ -77,8 +77,8 @@ StrainPorosity(const SolidNodeList<Dimension>& nodeList,
           "ERROR : epsE required to be epsE <= 0.0.");
   VERIFY2(mEpsX <= mEpsE,
           "StrainPorosity ERROR : epsX required to be epsX <= epsE.");
-  VERIFY2(kappa >= 0.0 and kappa <= 1.0,
-          "ERROR : kappa required to be in range kappa = [0.0, 1.0]");
+  VERIFY2(kappa > 0.0 and kappa <= 1.0,
+          "ERROR : kappa required to be in range kappa = (0.0, 1.0]");
 }
 
 //------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ evaluateDerivatives(const Scalar /*time*/,
           // Power-law -- irreversible compaction.
           const auto epsCi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/(mKappa*alpha0i*exp(mKappa*(mEpsX - mEpsE))) + mEpsX;
           const auto PLcoefi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/FastMath::square(epsCi - mEpsX);
-          DalphaDepsi = PLcoefi*(mEpsE - epsi);
+          DalphaDepsi = PLcoefi*(epsCi - epsi);
           DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
         }
       }
