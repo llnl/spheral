@@ -280,7 +280,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
         auto psieigen = psi.eigenVectors();
         for (auto i = 0u; i < Dimension::nDim; ++i) psieigen.eigenValues(i) = 1.0/sqrt(psieigen.eigenValues(i));
         const auto psimin = (psieigen.eigenValues.maxElement()) * hminratio;
-        psi = constructSymTensorWithMaxDiagonal(psieigen.eigenValues, psimin);
+        psi = SymTensor(psieigen.eigenValues, psimin, std::numeric_limits<Scalar>::max());
         psi.rotationalTransform(psieigen.eigenVectors);
         CHECK(psi.Determinant() > 0.0);
         psi /= Dimension::rootnu(psi.Determinant() + tiny);
@@ -346,7 +346,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       // Apply limiting
       const auto hev = Hideali.eigenVectors();
       const auto hminEffInv = min(hminInv, max(hmaxInv, hev.eigenValues.minElement())/hminratio);
-      Hideali = constructSymTensorWithBoundedDiagonal(hev.eigenValues, hmaxInv, hminEffInv);
+      Hideali = SymTensor(hev.eigenValues, hmaxInv, hminEffInv);
       Hideali.rotationalTransform(hev.eigenVectors);
     }
   }
