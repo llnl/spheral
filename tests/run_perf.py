@@ -64,14 +64,16 @@ def gather_files(manager):
     log(f"Copying caliper files to {logdir}")
     for test in filtered:
         run_dir = test.directory
-        cali_filename = test.options["caliper_filename"]
-        cfile = os.path.join(run_dir, cali_filename)
-        test_name = test.options["label"]
-        outfile = os.path.join(logdir, cali_filename)
-        shutil.move(cfile, outfile)
+        if ("caliper_filename" in test.options and test.options["caliper_filename"]):
+            cali_filename = test.options["caliper_filename"]
+            cfile = os.path.join(run_dir, cali_filename)
+            test_name = test.options["label"]
+            outfile = os.path.join(logdir, cali_filename)
+            shutil.move(cfile, outfile)
 
 # If running CI, run gather_files on exit
 onExit(gather_files)
+# Set default priority lower so dummy tests run first
 glue(keep=True, independent=True, ngpu=0, nt=1)
 
 #---------------------------------------------------------------------------
@@ -83,12 +85,36 @@ import perf_tests as pt
 if(os.path.exists(perf_paths[-1])):
     import llnl_perf_tests
 
-all_tests = pt.get_all_tests(num_cores)
+all_tests = pt.get_all_tests(num_cores, num_nodes)
+
+# Gather a list of tests that must be first
+first_tests = []
 
 for t in all_tests:
     inp_dicts = t.create_test_inputs(test_path, test_runs, num_threads)
-    for i in inp_dicts:
-        test(**i)
+    if (t.first_tests()):
+        for i in inp_dicts:
+            first_tests.append(test(**i))
+    else:
+        for i in inp_dicts:
+            test(**i)
+
+def gate_tests(manager):
+    '''
+    This ensures all tests depend on the first_tests before running
+    but only if the first test is eligible to run.
+    '''
+    active_setup = [p for p in first_tests if p.status is CREATED]
+    for t in manager.testlist:
+        if t in active_setup or t.status is not CREATED:
+            continue
+
+        for p in active_setup:
+            p.addDependent(t)
+            if p not in t.waitUntil:
+                t.waitUntil = t.waitUntil + [p]
+
+onCollected(gate_tests)
 
 # Add a wait to ensure all timer files are done
 wait()

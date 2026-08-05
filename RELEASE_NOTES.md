@@ -5,16 +5,19 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
-    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
-    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
-    * Added view class for NodeList (NodeListView)
+    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory.
+    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation).
+    * Added view class for NodeList (NodeListView).
 
   * Build changes / improvements:
-    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
+    * Update to Thicket version 2026.1.0.
+    * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
     * Performance testing and CI improvements:
-      * Enable CI to run for Debug HIP builds
+      * Enable CI to run for Debug HIP builds.
 
   * Bug Fixes / improvements:
+    * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
@@ -24,8 +27,8 @@ Notable changes include:
 
   * New features / API changes:
     * Now require C++20.
-    * Added view class for PairwiseField (PairwiseFieldView)
-    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * Added view class for PairwiseField (PairwiseFieldView).
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * ArtificialViscosity has been refactored for use on the GPU.
         * ArtificialViscosity is now ArtificialViscosityView.
         * ArtificialViscosityHandle is now ArtificialViscosity.
@@ -40,7 +43,7 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
-    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N).
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * Require minimum CMake version 3.24.
     * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
