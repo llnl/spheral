@@ -55,18 +55,6 @@ public:
                                    const Scalar hminratio = 0.1,
                                    const Scalar nPerh = 2.01,
                                    const size_t maxNumNeighbors = 500);
-  // SPHERAL_HOST_DEVICE NodeListView(const size_t numNodes,
-  //                                  const size_t firstGhostNode,
-  //                                  const MassView& mass,
-  //                                  const PositionView& positions,
-  //                                  const VelocityView& velocity,
-  //                                  const HfieldView& Hfield,
-  //                                  const WorkView& work,
-  //                                  const Scalar hmin = 1.0e-20,
-  //                                  const Scalar hmax = 1.0e20,
-  //                                  const Scalar hminratio = 0.1,
-  //                                  const Scalar nPerh = 2.01,
-  //                                  const size_t maxNumNeighbors = 500);
   SPHERAL_HOST_DEVICE NodeListView(const NodeListView& rhs) = default;
   SPHERAL_HOST_DEVICE NodeListView(NodeListView&& rhs) = default;
   SPHERAL_HOST_DEVICE virtual ~NodeListView() = default;
