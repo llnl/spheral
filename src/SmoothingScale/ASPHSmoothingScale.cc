@@ -189,8 +189,15 @@ finalize(const Scalar time,
     CHECK2((surfacePoint.size() == numNodeLists) or not voronoi, cells.size() << " " << voronoi << " " << mFixShape << " " << mRadialOnly);
     CHECK(H.size() == numNodeLists);
     CHECK(Hideal.size() == numNodeLists);
-    CHECK((GeometryRegistrar::coords() == CoordinateType::RZ and massRZ.size() == numNodeLists and rhoRZ.size() == numNodeLists) or
-          (GeometryRegistrar::coords() != CoordinateType::RZ and massRZ.size() == 0u           and rhoRZ.size() == 0u));
+    CHECK(GeometryRegistrar::coords() == CoordinateType::RZ or (massRZ.size() == 0u and rhoRZ.size() == 0u));
+
+    // In RZ we prefer the areal mass, but that is only registered by the RZ hydro
+    // packages.  It is unavailable if we're running without such a package (for instance
+    // iterateIdealH called with only a smoothing scale package), in which case we fall
+    // back on the ordinary mass.
+    const auto useRZmass = (GeometryRegistrar::coords() == CoordinateType::RZ and
+                            massRZ.size() == numNodeLists and
+                            rhoRZ.size() == numNodeLists);
 
     // Pair connectivity
     const auto& pairs = cm.nodePairList();
@@ -321,7 +328,7 @@ finalize(const Scalar time,
         nodeListj = pairs[kk].j_list;
 
         // Get the state
-        if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+        if (useRZmass) {
           mi = massRZ(nodeListi, i);
           rhoi = rho(nodeListi, i);
           mj = massRZ(nodeListj, j);

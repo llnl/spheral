@@ -111,8 +111,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(mass.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
-  CHECK((GeometryRegistrar::coords() == CoordinateType::RZ and massRZ.size() == numNodeLists and massDensityRZ.size() == numNodeLists) or
-        (GeometryRegistrar::coords() != CoordinateType::RZ and massRZ.size() == 0u           and massDensityRZ.size() == 0u));
+  CHECK(GeometryRegistrar::coords() == CoordinateType::RZ or (massRZ.size() == 0u and massDensityRZ.size() == 0u));
+
+  // In RZ we prefer the areal mass and density, but those are only registered by the RZ
+  // hydro packages.  They are unavailable if we're running without such a package (for
+  // instance iterateIdealH called with only a smoothing scale package), in which case we
+  // fall back on the ordinary mass and density.
+  const auto useRZmass = (GeometryRegistrar::coords() == CoordinateType::RZ and
+                          massRZ.size() == numNodeLists and
+                          massDensityRZ.size() == numNodeLists);
 
   // Derivative FieldLists.
   auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
@@ -151,7 +158,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       nodeListj = pairs[kk].j_list;
 
       // Get the state
-      if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+      if (useRZmass) {
         mi = massRZ(nodeListi, i);
         rhoi = massDensityRZ(nodeListi, i);
         mj = massRZ(nodeListj, j);
