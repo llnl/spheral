@@ -9,7 +9,6 @@
 #include "computeHullVolumes.hh"
 #include "computeCRKSPHSumVolume.hh"
 #include "computeHVolumes.hh"
-#include "editMultimaterialSurfaceTopology.hh"
 #include "Utilities/SurfaceNodeCoupling.hh"
 #include "SPH/computeSPHSumMassDensity.hh"
 #include "SPH/correctSPHSumMassDensity.hh"
@@ -83,6 +82,7 @@ CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
               const double filter,
               const double cfl,
               const bool useVelocityMagnitudeForDt,
+              const bool useNewAccelerationMagnitudeForDt,
               const bool compatibleEnergyEvolution,
               const bool evolveTotalEnergy,
               const bool XSPH,
@@ -100,6 +100,7 @@ CRKSPHVariant(const SmoothingScaleBase<Dimension>& smoothingScaleMethod,
                              filter,
                              cfl,
                              useVelocityMagnitudeForDt,
+                             useNewAccelerationMagnitudeForDt,
                              compatibleEnergyEvolution,
                              evolveTotalEnergy,
                              XSPH,
@@ -854,4 +855,3 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 }
 
 }
-

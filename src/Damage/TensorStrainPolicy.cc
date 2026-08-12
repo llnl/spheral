@@ -17,7 +17,7 @@
 #include "Field/Field.hh"
 #include "Utilities/DBC.hh"
 #include "Utilities/safeInv.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Kernel/TableKernel.hh"
 
 #include <vector>

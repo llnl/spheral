@@ -15,7 +15,9 @@ set(Hydro_inst
    )
 
 if (SPHERAL_ENABLE_2D)
-  list(APPEND Hydro_sources RZNonSymmetricSpecificThermalEnergyPolicy.cc)
+  list(APPEND Hydro_sources
+    RZNonSymmetricSpecificThermalEnergyPolicy.cc
+    AxisymmetricMassDensityPolicy.cc)
 endif()
 
 if (SPHERAL_ENABLE_1D AND SPHERAL_ENABLE_2D)
@@ -32,6 +34,7 @@ set(Hydro_headers
     NonSymmetricSpecificThermalEnergyPolicy.hh
     PressurePolicy.hh
     RZNonSymmetricSpecificThermalEnergyPolicy.hh
+    AxisymmetricMassDensityPolicy.hh
     SoundSpeedPolicy.hh
     SpecificFromTotalThermalEnergyPolicy.hh
     SpecificThermalEnergyPolicy.hh

@@ -3,7 +3,6 @@ from math import *
 from NodeGeneratorBase import *
 
 from Spheral import Vector1d, Vector2d, Vector3d, SymTensor1d, SymTensor2d, SymTensor3d
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Wrapper Generator for DEM based on SPH generators

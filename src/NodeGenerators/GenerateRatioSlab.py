@@ -4,7 +4,6 @@ from NodeGeneratorBase import *
 
 from Spheral import Vector1d, Vector2d, Vector3d, Tensor1d, Tensor2d, \
     SymTensor1d, SymTensor2d, CylindricalBoundary, rotationMatrix2d, testPointInBox2d
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Estimate the mass of a volume given the bounding coordinates

@@ -3,7 +3,6 @@
 
 import unittest
 from math import *
-from SpheralTestUtilities import fuzzyEqual
 
 from Spheral import *
 

@@ -3,7 +3,6 @@
 # against direct equations spit out by Mathematica.
 import unittest
 from math import *
-from SpheralTestUtilities import fuzzyEqual
 from SolidSpheral1d import *
 
 #===============================================================================

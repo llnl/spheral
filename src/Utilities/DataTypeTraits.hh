@@ -117,18 +117,20 @@ struct DataTypeTraits<int> {
 };
 
 //------------------------------------------------------------------------------
-// template<>
-// struct DataTypeTraits<size_t> {
-//   typedef size_t ElementType;
-//   static bool fixedSize() { return true; }
-//   static size_t numElements(const ElementType& x) { return 1; }
-//   static size_t zero() { return 0U; }
-// #ifdef SPHERAL_ENABLE_MPI
-//   static MPI_Datatype MpiDataType() { return SPHERAL_MPI_SIZE_T; }
-// #endif
-//   static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
-//   using AxomType = uint64_t;
-// };
+#ifdef __APPLE__
+template<>
+struct DataTypeTraits<size_t> {
+  typedef size_t ElementType;
+  static bool fixedSize() { return true; }
+  static size_t numElements(const ElementType& x) { return 1; }
+  static size_t zero() { return 0U; }
+#ifdef SPHERAL_ENABLE_MPI
+  static MPI_Datatype MpiDataType() { return SPHERAL_MPI_SIZE_T; }
+#endif
+  static axom::sidre::DataTypeId axomTypeID() { return axom::sidre::UINT64_ID; }
+  using AxomType = uint64_t;
+};
+#endif
 
 //------------------------------------------------------------------------------
 template<>

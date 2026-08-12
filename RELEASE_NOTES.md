@@ -5,9 +5,30 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
+    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory.
+    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation).
+    * Added view class for NodeList (NodeListView).
+
+  * Build changes / improvements:
+    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
+    * Update to Thicket version 2026.1.0.
+    * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
+    * Performance testing and CI improvements:
+      * Enable CI to run for Debug HIP builds.
+
+  * Bug Fixes / improvements:
+    * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
+
+Version v2026.06.0 -- Release date 2026-06-22
+==============================================
+  * Important Notes:
+
+Notable changes include:
+
+  * New features / API changes:
     * Now require C++20.
-    * Added view class for PairwiseField (PairwiseFieldView)
-    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * Added view class for PairwiseField (PairwiseFieldView).
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * ArtificialViscosity has been refactored for use on the GPU.
         * ArtificialViscosity is now ArtificialViscosityView.
         * ArtificialViscosityHandle is now ArtificialViscosity.
@@ -22,21 +43,26 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
-    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N).
     * Volume calculation has been separated from RKCorrections into the VoronoiCells/VolumeUpdate physics packages.
     * Physics package requirements API consolidated for connectivity, volumes, and reproducing kernels.
     * Added a priority to Boundary to ensure boundary conditions are ordered consistently.
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * Require minimum CMake version 3.24.
+    * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
+      * This includes a usable version of the compatible energy update so RZ calcluations can conserve energy exactly.
+    * The explicitly bound C++ pair types for Python have been removed -- just use Python tuples instead --
+      i.e. use (1.0, "Howdy") rather than pair_double_string(1.0, "Howdy").
 
   * Bug fixes:
     * Adiak memory leak is fixed by calling adiak::clean() before exit.
     * Performance tests no longer import from Spheral proper but only rely on SpheralConfigs.py.
     * SPH now requests volume from RK.
     * Fixed a circular dependency in the Johnson-Cook damage model.
+    * Fixed a bug that could allow multiple copies of the same boundary condition in Physics subpackages.
+    * Fixed a bug in the definition of the Jaumann stress rate in all the solid hydro packages.
 
   * Build changes / improvements:
-    * Updated to PYB11Generator 2025.12.1.
     * Converted all Spheral Python modules to be submodules of a single PYB11Generator module (SpheralCompiledModules).
       For users importing from the master Spheral.py file (or it's dimensional specialization) this change is hidden,
       so there is no user interface impact.
@@ -72,6 +98,9 @@ Notable changes include:
       * ROCM version updated from 6.2.0 to 6.4.3.
       * Boost updated from 1.85 to 1.87 to prepare for using Clang 20 eventually.
       * CHAI, Umpire, and RAJA updated to 2025.12.0.
+    * Addig PySide6 as default PIP package install for better Matplotlib performance.
+    * Python wrapped the C++ fuzzyEqual methods and removed the slightly different pure Python implementations from SpheralTestUtilities.
+    * Updating to PYB11Generator v2026.5.0.
 
 Version v2025.12.0 -- Release date 2025-12-19
 ==============================================

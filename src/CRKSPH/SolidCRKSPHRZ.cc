@@ -101,6 +101,7 @@ SolidCRKSPHRZ(DataBase<Dimension>& dataBase,
               const RKOrder order,
               const double cfl,
               const bool useVelocityMagnitudeForDt,
+              const bool useNewAccelerationMagnitudeForDt,
               const bool compatibleEnergyEvolution,
               const bool evolveTotalEnergy,
               const bool XSPH,
@@ -113,6 +114,7 @@ SolidCRKSPHRZ(DataBase<Dimension>& dataBase,
                          order,
                          cfl,
                          useVelocityMagnitudeForDt,
+                         useNewAccelerationMagnitudeForDt,
                          compatibleEnergyEvolution,
                          evolveTotalEnergy,
                          XSPH,
@@ -608,7 +610,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
       const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
-      const auto spinCorrection = (spin*Si + Si*spin).Symmetric();
+      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
       // In the presence of damage, add a term to reduce the stress on this point.

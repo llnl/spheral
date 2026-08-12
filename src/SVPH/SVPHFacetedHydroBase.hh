@@ -40,6 +40,7 @@ public:
                        ArtificialViscosity<Dimension>& Q,
                        const double cfl,
                        const bool useVelocityMagnitudeForDt,
+                       const bool useNewAccelerationMagnitudeForDt,
                        const bool compatibleEnergyEvolution,
                        const bool XSVPH,
                        const bool linearConsistent,

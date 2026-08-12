@@ -54,7 +54,7 @@ CollinsStrength(const StrengthModel<Dimension>& shearModulusModel,
   mmud(0.0),
   mY0(Y0),
   mYm(Ym) {
-  DeprecationWarning("Deprecation WARNING: specifying the Collins strength model without the coefficient of friction in damage (mud) is deprecated");
+  SpheralDeprecationWarning("Deprecation WARNING: specifying the Collins strength model without the coefficient of friction in damage (mud) is deprecated");
 }
 
 //------------------------------------------------------------------------------

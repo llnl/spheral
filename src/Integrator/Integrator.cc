@@ -464,19 +464,18 @@ Integrator<Dimension>::setGhostNodes() const {
         (not mRequireOverlapConnectivity)) {
       const auto numNodeLists = db.numNodeLists();
       const auto& cm = db.connectivityMap();
+      const auto& pairs = cm.nodePairList();
 
       // First build the set of flags indicating which nodes are used.
       FieldList<Dimension, size_t> flags = db.newGlobalFieldList(size_t(0u), "active nodes");
+      for (auto p: pairs) {
+        flags(p.i_list, p.i_node) = 1;
+        flags(p.j_list, p.j_node) = 1;
+      }
+      
+      // Look for points needed for boundary conditions
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto& nodeList = *nodeListPtr;
-        for (auto i = 0u; i < nodeList.numInternalNodes(); ++i) {
-          flags(nodeListi, i) = 1;
-          const vector<vector<int> >& fullConnectivity = cm.connectivityForNode(&nodeList, i);
-          for (auto nodeListj = 0u; nodeListj < fullConnectivity.size(); ++nodeListj) {
-            const vector<int>& connectivity = fullConnectivity[nodeListj];
-            for (auto j: connectivity) flags(nodeListj, j) = 1;
-          }
-        }
 
         // Ghost nodes that are control nodes for other ghost nodes we're keeping must
         // be kept as well.

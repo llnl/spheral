@@ -36,8 +36,8 @@ public:
 
   using BoundaryIterator = typename std::vector<Boundary<Dimension>*>::iterator;
   using ConstBoundaryIterator = typename std::vector<Boundary<Dimension>*>::const_iterator;
-  using TimeStepType = typename std::pair<double, std::string>;
-  using ResidualType = typename std::pair<double, std::string>;
+  using TimeStepType = std::pair<double, std::string>;
+  using ResidualType = std::pair<double, std::string>;
   using VolumeRequirements = std::tuple<bool, bool, bool>;
   using RKRequirements = std::tuple<std::set<RKOrder>, std::set<RKOrder>, bool>;
   using ConnectivityRequirements = std::tuple<bool, bool, bool, bool>;

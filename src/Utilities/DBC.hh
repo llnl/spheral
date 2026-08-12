@@ -4,6 +4,13 @@
 //
 // DBC.hh -- Design by Contract tools.
 //
+// Use cases for DBC macros:
+//  REQUIRE: preconditions at start of a method.
+//  ENSURE: postconditions to check at the end of a method.
+//  CHECK/ASSERT: intermediate correctness checks sprinkled throughout a method.
+//  VERIFY: precondition checks that are always on. This is intended to check stuff users directly input.
+// VERIFY is always enabled. REQUIRE, ENSURE, and CHECK/ASSERT are enabled with built in Debug mode or when certain SPHERAL_DBC_MODE configure inputs are given.
+//
 //---------------------------------------------------------------------------
 #include <iostream>
 #include <sstream>
@@ -104,35 +111,42 @@ inline bool nearlyEqual(const T& x,
 #endif
 
 //----------------------------------------------------------------------------
-//                            REQUIRE -- Preconditions
+//           Generic DBC macros used in the succeeding definitions
 //----------------------------------------------------------------------------
-
-#ifdef DBC_USE_REQUIRE
-#if !defined(SPHERAL_GPU_ACTIVE)
-#define DBC_ASSERTION(x, msg, kind)                     \
-   if (::Spheral::dbc::assertionLock()) {               \
-      if (!(x)) {                                       \
-      std::stringstream s_SS;                           \
-      s_SS << kind << ": " << msg << std::endl;         \
-      s_SS << "...at line " << __LINE__ <<              \
-         " of file " << __FILE__ << "." << std::endl;   \
-      ::Spheral::Process::haltAll(s_SS.str().c_str());  \
-   }                                                    \
-   ::Spheral::dbc::assertionUnLock();                   \
-}
-#else // SPHERAL_GPU_ACTIVE
-#define DBC_ASSERTION(x, null_msg, kind) \
-  if (!(x)) { \
+#define DBC_ASSERTION_NOSTREAM(x, null_msg, kind)                        \
+  if (!(x)) {                                                            \
     printf("%s\n...at line %d of file %s.\n", kind, __LINE__, __FILE__); \
-    abort(); \
+    abort();                                                             \
+  }
+
+#if defined(SPHERAL_GPU_ACTIVE)
+#define DBC_ASSERTION(x, msg, kind) DBC_ASSERTION_NOSTREAM(x, msg, kind)
+#else
+#define DBC_ASSERTION(x, msg, kind)                             \
+  if (::Spheral::dbc::assertionLock()) {                        \
+    if (!(x)) {                                                 \
+      std::stringstream s_SS;                                   \
+      s_SS << kind << ": " << msg << std::endl;                 \
+      s_SS << "...at line " << __LINE__ <<                      \
+        " of file " << __FILE__ << "." << std::endl;            \
+      ::Spheral::Process::haltAll(s_SS.str().c_str());          \
+    }                                                           \
+    ::Spheral::dbc::assertionUnLock();                          \
   }
 #endif // SPHERAL_GPU_ACTIVE
-#define REQUIRE2(x, msg) DBC_ASSERTION(x, msg, "Precondition violated")
+
+//----------------------------------------------------------------------------
+//                            REQUIRE -- Preconditions
+//----------------------------------------------------------------------------
+#ifdef DBC_USE_REQUIRE
+
 #define ASSERT2(x, msg) DBC_ASSERTION(x, msg, "Assertion violated")
-#else
+#define REQUIRE2(x, msg) DBC_ASSERTION(x, msg, "Precondition violated")
+
+#else  // DBC_USE_REQUIRE
 #define ASSERT2(x, msg)
 #define REQUIRE2(x, msg)
-#endif
+#endif  // DBC_USE_REQUIRE
 
 //----------------------------------------------------------------------------
 //                            ENSURE -- Postconditions and Invariants

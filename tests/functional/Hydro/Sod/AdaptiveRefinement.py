@@ -10,7 +10,6 @@
 #  2006-03-18 : Created by JMO.
 #-------------------------------------------------------------------------------
 from Spheral import *
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Adaptive refinement is the topmost class you pass to the controller.
