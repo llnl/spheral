@@ -251,7 +251,7 @@ updateImpl(const KeyType& key,
       sgradvi.rotationalTransform(eigenv.eigenVectors);
       straini += multiplier*sgradvi;
 
-      const auto volstrain = straini.Trace();
+      const auto volstrain = std::invoke(TraceMethod, straini);
 
       // Update the effective strain according to the specified algorithm.
       switch(mStrainType) {

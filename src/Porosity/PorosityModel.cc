@@ -294,7 +294,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mAlpha, pathName + "/alpha");
   file.read(mDalphaDt, pathName + "/DalphaDt");
   file.read(mSolidMassDensity, pathName + "/solidMassDensity");
-  if (file.readIfAvailable(mc0, pathName + "/c0") != 0) SpheralWarning "PorosityModel: unable to load variable c0\n";
+  if (file.readIfAvailable(mc0, pathName + "/c0") != 0) SpheralWarning << "PorosityModel: unable to load variable c0\n";
   file.read(mfDS, pathName + "/fDS");
   file.read(mfDSnew, pathName + "/fDSnew");
 }
