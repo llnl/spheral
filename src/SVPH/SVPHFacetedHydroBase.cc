@@ -63,6 +63,7 @@ SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
                      ArtificialViscosity<Dimension>& Q,
                      const double cfl,
                      const bool useVelocityMagnitudeForDt,
+                     const bool useNewAccelerationMagnitudeForDt,
                      const bool compatibleEnergyEvolution,
                      const bool XSVPH,
                      const bool linearConsistent,
@@ -72,7 +73,7 @@ SVPHFacetedHydroBase(const TableKernel<Dimension>& W,
                      const Scalar fcellPressure,
                      const Vector& xmin,
                      const Vector& xmax):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mKernel(W),
   mDensityUpdate(densityUpdate),
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
@@ -1055,4 +1056,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

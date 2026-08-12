@@ -124,6 +124,19 @@ else:
         from DistributeNodes import distributeNodes3d
     distributeNodes3d((nodes, generator))
 
+#-------------------------------------------------------------------------------
+# In RZ the mass field is expected to hold the real (3D) mass, so that m/rho is
+# the physical volume.  The node generators hand us 2D areal masses, and that
+# conversion is normally done by the RZ hydro packages in
+# initializeProblemStartupDependencies.  We have no hydro package here, so we
+# apply the conversion ourselves.
+#-------------------------------------------------------------------------------
+if cylindrical:
+    m = nodes.mass()
+    pos = nodes.positions()
+    for i in range(nodes.numInternalNodes):
+        m[i] *= 2.0*pi*abs(pos[i].y)
+
 numInternal = nodes.numInternalNodes
 output("numInternal")
 

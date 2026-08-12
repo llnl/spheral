@@ -31,6 +31,7 @@ class SVPHFacetedHydroBase(GenericHydro):
                Q = "ArtificialViscosity<%(Dimension)s>&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                XSVPH = "const bool",
                linearConsistent = "const bool",
@@ -180,4 +181,3 @@ mass density, velocity, and specific thermal energy."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, SVPHFacetedHydroBase)
-

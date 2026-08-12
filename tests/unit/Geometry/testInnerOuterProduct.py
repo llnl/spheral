@@ -3,7 +3,6 @@
 
 import unittest
 from math import *
-from SpheralTestUtilities import fuzzyEqual
 
 # What dimensions are we testing?
 from spheralDimensions import spheralDimensions

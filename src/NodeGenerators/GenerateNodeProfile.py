@@ -6,7 +6,6 @@ from NodeGeneratorBase import *
 from Spheral import (Vector1d, Tensor1d, SymTensor1d,
                      Vector2d, Tensor2d, SymTensor2d, rotationMatrix2d, testPointInBox2d,
                      Vector3d, Tensor3d, SymTensor3d, rotationMatrix3d, testPointInBox3d)
-from SpheralTestUtilities import fuzzyEqual
 
 #-------------------------------------------------------------------------------
 # Class to generate 1-D node positions for a fixed node mass to fit the given

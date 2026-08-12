@@ -24,7 +24,7 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>

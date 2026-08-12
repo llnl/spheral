@@ -103,12 +103,23 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0, true);
+  const auto massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0, true);
   const auto DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   CHECK(position.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
   CHECK(mass.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
+  CHECK(GeometryRegistrar::coords() == CoordinateType::RZ or (massRZ.size() == 0u and massDensityRZ.size() == 0u));
+
+  // In RZ we prefer the areal mass and density, but those are only registered by the RZ
+  // hydro packages.  They are unavailable if we're running without such a package (for
+  // instance iterateIdealH called with only a smoothing scale package), in which case we
+  // fall back on the ordinary mass and density.
+  const auto useRZmass = (GeometryRegistrar::coords() == CoordinateType::RZ and
+                          massRZ.size() == numNodeLists and
+                          massDensityRZ.size() == numNodeLists);
 
   // Derivative FieldLists.
   auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
@@ -130,7 +141,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   {
     // Thread private scratch variables
     int i, j, nodeListi, nodeListj;
-    Scalar mi, mj, ri, rj, mRZi, mRZj, rhoi, rhoj, WSPHi, WSPHj, etaMagi, etaMagj, fweightij, fispherical, fjspherical;
+    Scalar mi, mj, rhoi, rhoj, WSPHi, WSPHj, etaMagi, etaMagj, fweightij, fispherical, fjspherical;
     Vector xij, etai, etaj;
     SymTensor xijdyad;
 
@@ -146,22 +157,27 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       nodeListi = pairs[kk].i_list;
       nodeListj = pairs[kk].j_list;
 
-      // Get the state for node i.
-      mi = mass(nodeListi, i);
-      rhoi = massDensity(nodeListi, i);
+      // Get the state
+      if (useRZmass) {
+        mi = massRZ(nodeListi, i);
+        rhoi = massDensityRZ(nodeListi, i);
+        mj = massRZ(nodeListj, j);
+        rhoj = massDensityRZ(nodeListj, j);
+      } else {
+        mi = mass(nodeListi, i);
+        rhoi = massDensity(nodeListi, i);
+        mj = mass(nodeListj, j);
+        rhoj = massDensity(nodeListj, j);
+      }
+
       const auto& xi = position(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
-
       auto& massZerothMomenti = massZerothMoment_thread(nodeListi, i);
       auto& massFirstMomenti = massFirstMoment_thread(nodeListi, i);
       auto& massSecondMomenti = massSecondMoment_thread(nodeListi, i);
 
-      // Get the state for node j
-      mj = mass(nodeListj, j);
-      rhoj = massDensity(nodeListj, j);
       const auto& xj = position(nodeListj, j);
       const auto& Hj = H(nodeListj, j);
-
       auto& massZerothMomentj = massZerothMoment_thread(nodeListj, j);
       auto& massFirstMomentj = massFirstMoment_thread(nodeListj, j);
       auto& massSecondMomentj = massSecondMoment_thread(nodeListj, j);
@@ -176,20 +192,8 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       CHECK(etaMagj >= 0.0);
 
       // Compute the node-node weighting
-      fweightij = 1.0;
-      fispherical = 1.0;
-      fjspherical = 1.0;
-      if (nodeListi != nodeListj) {
-        if (GeometryRegistrar::coords() == CoordinateType::RZ) {
-          ri = abs(xi.y());
-          rj = abs(xj.y());
-          mRZi = mi/(2.0*M_PI*ri);
-          mRZj = mj/(2.0*M_PI*rj);
-          fweightij = mRZj*rhoi/(mRZi*rhoj);
-        } else {
-          fweightij = mj*rhoi/(mi*rhoj);
-        }
-      } else if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
+      if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
+        fweightij = 1.0;
         const auto eii = Hi.xx()*xi.x();
         const auto eji = Hi.xx()*xj.x();
         const auto ejj = Hj.xx()*xj.x();
@@ -200,6 +204,10 @@ evaluateDerivatives(const typename Dimension::Scalar time,
         fjspherical = (ejj > etaMax ? 1.0 :
                        ejj < eij ? 2.0 :
                        0.0);
+      } else {
+        fweightij = nodeListi == nodeListj ? 1.0 : mj*rhoi/(mi*rhoj);
+        fispherical = 1.0;
+        fjspherical = 1.0;
       }
 
       // Symmetrized kernel weight

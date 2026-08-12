@@ -18,6 +18,8 @@ PYB11includes = ['"Geometry/Dimension.hh"',
                  '"polyclipper3d.hh"']
 
 PYB11preamble = """
+// #define PYBIND11_DETAILED_ERROR_MESSAGES
+
 typedef Spheral::GeomPlane<Spheral::Dim<1>> Plane1d;
 typedef Spheral::Dim<1>::Vector Vector1d;
 typedef Spheral::Dim<1>::Tensor Tensor1d;
@@ -86,11 +88,11 @@ PYB11opaque = ["std::vector<char>",
                "std::vector<std::vector<double>>",
                "std::vector<std::vector<std::string>>",
 
-               "std::pair<double, double>",
-               "std::pair<double, std::string>",
-               "std::pair<unsigned, unsigned>",
-               "std::pair<uint64_t, uint64_t>",
-               "std::pair<std::string, std::string>",
+               # "std::pair<double, double>",
+               # "std::pair<double, std::string>",
+               # "std::pair<unsigned, unsigned>",
+               # "std::pair<uint64_t, uint64_t>",
+               # "std::pair<std::string, std::string>",
 
                "std::map<std::string, double>",
                "std::map<int, std::string>",

@@ -1,4 +1,4 @@
-#include "Utilities/GeometricUtilities.hh"
+#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/rotationMatrix.hh"
 
 namespace Spheral {

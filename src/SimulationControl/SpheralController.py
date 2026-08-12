@@ -861,10 +861,12 @@ class SpheralController:
             if self.domainbc:
                 bcs.append(self.domainbc)
 
-            # Stable sort by priority (preserves insertion order among equal priorities)
+            # Stable sort by priority (preserves insertion order among equal priorities).
+            # The priorities that enforce ordering for particular boundaries (such as
+            # ConstantBoundary and InflowOutflowBoundary) are defined by Boundary::priority.
             sortedbcs = sorted(bcs, key=lambda bc: bc.priority)
 
-            # Reassign the package boundary conditions
+            # Reassign the package boundary conditions in proper order and including the parallel boundary
             package.clearBoundaries()
             for bc in sortedbcs:
                 package.appendBoundary(bc)
@@ -999,25 +1001,34 @@ class SpheralController:
         db = self.integrator.dataBase
         bcs = self.integrator.uniqueBoundaryConditions()
 
-        # Find the smoothing scale method
-        method = None
-        for pkg in self.integrator.physicsPackages():
-            if isinstance(pkg, eval(f"SmoothingScaleBase{self.dim}")):
-                method = pkg
-        if method is None:
-            print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
-            method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
+        # RZ is tricky because it needs to have extra state (massRZ and rhoRZ)
+        # that currently belong the hydro. For now we punt and just use the
+        # full package list if we're in RZ (to be fixed later)
+        if GeometryRegistrar.coords() == CoordinateType.RZ:
+            packages = self.integrator.physicsPackages()
 
-        # Get needed packages
-        packages = eval(f"vector_of_Physics{self.dim}()")
-        def _needsVoronoi(pkg):
-            r = pkg.requireVolumes()
-            return (r[0] or r[1]) and r[2]
-        if _needsVoronoi(method) or any(_needsVoronoi(p) for p in extraPackages):
-            packages.append(self.VoronoiCells)
-        packages.append(method)
-        for package in extraPackages:
-            packages.append(package)
+        else:
+
+            # Find the smoothing scale method
+            method = None
+            for pkg in self.integrator.physicsPackages():
+                if isinstance(pkg, eval(f"SmoothingScaleBase{self.dim}")):
+                    method = pkg
+            if method is None:
+                print("SpheralController::iterateIdealH no H update algorithm provided -- assuming standard SPH")
+                method = eval(f"SPHSmoothingScale{self.dim}(IdealH, self.kernel)")
+
+            # Get needed packages
+            # requireVolumes returns {explicit, implicit, needVoronoi}, so a package needs
+            # the VoronoiCells package if it wants volumes at all and requires the full
+            # Voronoi geometry to get them.
+            packages = eval(f"vector_of_Physics{self.dim}()")
+            def _needsVoronoi(pkg):
+                r = pkg.requireVolumes()
+                return (r[0] or r[1]) and r[2]
+            if _needsVoronoi(method) or any(_needsVoronoi(p) for p in extraPackages):
+                packages.append(self.VoronoiCells)
+            packages.append(method)
 
         # Make sure extra packages have boundary conditions
         for package in packages:
@@ -1026,6 +1037,10 @@ class SpheralController:
                 for extraPackage in extraPackages:
                     if not bc in extraPackage.boundaryConditions:
                         extraPackage.appendBoundary(bc)
+
+        # Add the extra packages
+        for package in extraPackages:
+            packages.append(package)
 
         # Perform the update
         iterateIdealH = eval(f"iterateIdealH{self.dim}")

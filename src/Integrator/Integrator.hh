@@ -180,8 +180,8 @@ public:
   ConstPackageIterator physicsPackagesEnd() const                                   { return mPhysicsPackages.end(); }
 
   // Flag to determine whether or not to be rigorous about about boundaries.
-  bool rigorousBoundaries() const                                                   { DeprecationWarning("Integrator::rigorousBoundaries"); return false; }
-  void rigorousBoundaries(const bool x)                                             { DeprecationWarning("Integrator::rigorousBoundaries"); }
+  bool rigorousBoundaries() const                                                   { SpheralDeprecationWarning("Integrator::rigorousBoundaries"); return false; }
+  void rigorousBoundaries(const bool x)                                             { SpheralDeprecationWarning("Integrator::rigorousBoundaries"); }
 
   // If we're not being rigorous about boundary conditions, how frequently
   // do we update them?

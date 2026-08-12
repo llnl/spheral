@@ -10,6 +10,7 @@
 #include "SmoothingScale/polySecondMoment.hh"
 #include "SmoothingScale/IncrementASPHHtensor.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "Kernel/TableKernel.hh"
 #include "Field/FieldList.hh"
 #include "Neighbor/ConnectivityMap.hh"
@@ -175,6 +176,8 @@ finalize(const Scalar time,
     auto        pos = state.fields(HydroFieldNames::position, Vector::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
     const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
+    const auto  massRZ = state.fields(HydroFieldNames::massRZ, 0.0, true);
+    const auto  rhoRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0, true);
     const auto  cells = state.fields(HydroFieldNames::cells, FacetedVolume());
     const auto  surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
     auto        H = state.fields(HydroFieldNames::H, SymTensor::zero());
@@ -186,6 +189,15 @@ finalize(const Scalar time,
     CHECK2((surfacePoint.size() == numNodeLists) or not voronoi, cells.size() << " " << voronoi << " " << mFixShape << " " << mRadialOnly);
     CHECK(H.size() == numNodeLists);
     CHECK(Hideal.size() == numNodeLists);
+    CHECK(GeometryRegistrar::coords() == CoordinateType::RZ or (massRZ.size() == 0u and rhoRZ.size() == 0u));
+
+    // In RZ we prefer the areal mass, but that is only registered by the RZ hydro
+    // packages.  It is unavailable if we're running without such a package (for instance
+    // iterateIdealH called with only a smoothing scale package), in which case we fall
+    // back on the ordinary mass.
+    const auto useRZmass = (GeometryRegistrar::coords() == CoordinateType::RZ and
+                            massRZ.size() == numNodeLists and
+                            rhoRZ.size() == numNodeLists);
 
     // Pair connectivity
     const auto& pairs = cm.nodePairList();
@@ -315,17 +327,24 @@ finalize(const Scalar time,
         nodeListi = pairs[kk].i_list;
         nodeListj = pairs[kk].j_list;
 
-        // State for node i
-        mi = mass(nodeListi, i);
-        rhoi = rho(nodeListi, i);
+        // Get the state
+        if (useRZmass) {
+          mi = massRZ(nodeListi, i);
+          rhoi = rho(nodeListi, i);
+          mj = massRZ(nodeListj, j);
+          rhoj = rho(nodeListj, j);
+        } else {
+          mi = mass(nodeListi, i);
+          rhoi = rho(nodeListi, i);
+          mj = mass(nodeListj, j);
+          rhoj = rho(nodeListj, j);
+        }
+
         const auto& ri = pos(nodeListi, i);
         const auto& Hi = H(nodeListi, i);
         auto& massZerothMomenti = massZerothMoment_thread(nodeListi, i);
         auto& massSecondMomenti = massSecondMoment_thread(nodeListi, i);
 
-        // Get the state for node j
-        mj = mass(nodeListj, j);
-        rhoj = rho(nodeListj, j);
         const auto& rj = pos(nodeListj, j);
         const auto& Hj = H(nodeListj, j);
         auto& massZerothMomentj = massZerothMoment_thread(nodeListj, j);

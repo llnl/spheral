@@ -53,6 +53,25 @@ useVelocityMagnitudeForDt(bool x) {
 }
 
 //------------------------------------------------------------------------------
+// Flag to toggle between legacy dt criterion based on the acceleration magnitude
+// or the new version.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+bool
+GenericHydro<Dimension>::useNewAccelerationMagnitudeForDt() const {
+  return mUseNewAccelerationMagnitudeForDt;
+}
+
+template<typename Dimension>
+inline
+void
+GenericHydro<Dimension>::
+useNewAccelerationMagnitudeForDt(bool x) {
+  mUseNewAccelerationMagnitudeForDt = x;
+}
+
+//------------------------------------------------------------------------------
 // Return the master neighboring statistics.
 //------------------------------------------------------------------------------
 template<typename Dimension>

@@ -297,6 +297,12 @@ public:
   // Collect the number of neighbors for each node from the ConnectivityMap.
   FieldList<Dimension, int> numNeighbors() const;
 
+  // Return the number of internal nodes for the sets of NodeLists
+  std::vector<size_t> numInternalNodesPerNodeList() const;
+  std::vector<size_t> numInternalNodesPerFluidNodeList() const;
+  std::vector<size_t> numInternalNodesPerSolidNodeList() const;
+  std::vector<size_t> numInternalNodesPerDEMNodeList() const;
+
   //............................................................................
   // Create new FieldLists of size the number of NodeLists or FluidNodeLists.
   template<typename DataType>
