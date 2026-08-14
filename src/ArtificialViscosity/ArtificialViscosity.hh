@@ -144,8 +144,8 @@ public:
   void negligibleSoundSpeed(Scalar x) { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; updateManagedPtr(); }
 
   // Deprecated options
-  bool limiter()               const { SpheralDeprecationWarning("ArtificialViscosity::limiter"); return false; }
-  void limiter(const bool x)         { SpheralDeprecationWarning("ArtificialViscosity::limiter"); }
+  bool limiter()               const { SpheralDeprecationWarning << "ArtificialViscosity::limiter" << std::endl; return false; }
+  void limiter(const bool x)         { SpheralDeprecationWarning << "ArtificialViscosity::limiter" << std::endl; }
 
   //...........................................................................
   // Methods required for restarting.

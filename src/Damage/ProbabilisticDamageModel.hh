@@ -13,7 +13,6 @@
 #define __Spheral_ProbabilisticDamageModel_hh__
 
 #include "DamageModel.hh"
-#include "TensorDamageModel.hh"             // For now, so we pick up the enums
 
 namespace Spheral {
 
@@ -45,7 +44,7 @@ public:
                            const bool damageInCompression,
                            const double criticalDamageThreshold,
                            const Field<Dimension, int>& mask);
-  virtual ~ProbabilisticDamageModel();
+  virtual ~ProbabilisticDamageModel() = default;
 
   //............................................................................
   // Override the Physics package interface.
@@ -116,6 +115,11 @@ public:
   double criticalDamageThreshold() const;
   void criticalDamageThreshold(const double val);
 
+  // No default constructor, copying or assignment.
+  ProbabilisticDamageModel() = delete;
+  ProbabilisticDamageModel(const ProbabilisticDamageModel&) = delete;
+  ProbabilisticDamageModel& operator=(const ProbabilisticDamageModel&) = delete;
+
   //............................................................................
   // Restart methods.
   virtual std::string label() const override { return "ProbabilisticDamageModel"; }
@@ -131,11 +135,6 @@ private:
   Field<Dimension, int> mNumFlaws, mMask;
   Field<Dimension, Scalar> mMinFlaw, mMaxFlaw, mInitialVolume, mYoungsModulus, mLongitudinalSoundSpeed, mDdamageDt;
   Field<Dimension, SymTensor> mStrain, mEffectiveStrain;
-
-  // No default constructor, copying or assignment.
-  ProbabilisticDamageModel();
-  ProbabilisticDamageModel(const ProbabilisticDamageModel&);
-  ProbabilisticDamageModel& operator=(const ProbabilisticDamageModel&);
 };
 
 }

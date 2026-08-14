@@ -467,7 +467,7 @@ finalize(const Scalar time,
         Hideali = (*mHidealFilterPtr)(k, i, Hi, Hideali);
         const auto hev = Hideali.eigenVectors();
         const auto hminEffInv = min(hminInv, max(hmaxInv, hev.eigenValues.minElement())/hminratio);
-        Hideali = constructSymTensorWithBoundedDiagonal(hev.eigenValues, hmaxInv, hminEffInv);
+        Hideali = SymTensor(hev.eigenValues, hmaxInv, hminEffInv);
         Hideali.rotationalTransform(hev.eigenVectors);
         Hi = Hideali;
       }
@@ -488,7 +488,7 @@ finalize(const Scalar time,
         H(k,i) = (*mHidealFilterPtr)(k, i, H(k,i), H(k,i));
         const auto hev = H(k,i).eigenVectors();
         const auto hminEffInv = min(hminInv, max(hmaxInv, hev.eigenValues.minElement())/hminratio);
-        H(k,i) = constructSymTensorWithBoundedDiagonal(hev.eigenValues, hmaxInv, hminEffInv);
+        H(k,i) = SymTensor(hev.eigenValues, hmaxInv, hminEffInv);
         H(k,i).rotationalTransform(hev.eigenVectors);
       }
     }
