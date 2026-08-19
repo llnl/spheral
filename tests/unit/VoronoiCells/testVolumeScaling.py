@@ -24,7 +24,7 @@ import mpi
 
 commandLine(dimension = 1,
             cartesian = True,
-            nx = 20,
+            nx = 10,
             x0 = 0.0,
             x1 = 1.5,
             rho0 = 2.0,
