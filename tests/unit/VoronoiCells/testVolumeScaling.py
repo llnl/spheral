@@ -91,20 +91,12 @@ if dimension == 1:
         distributeNodes1d((nodes, gen))
 elif dimension == 2:
     from GenerateNodeDistribution2d import *
-    if cartesian:
-        generator = GenerateNodeDistribution2d(distributionType="lattice",
-                                               nRadial = nx, nTheta = nx,
-                                               xmin = (x0, x0),
-                                               xmax = (x1, x1),
-                                               rho = rho0,
-                                               nNodePerh = nPerh)
-    else:
-        generator = RZGenerator(GenerateNodeDistribution2d(distributionType="lattice",
-                                                           nRadial = nx, nTheta = nx,
-                                                           xmin = (x0, x0),
-                                                           xmax = (x1, x1),
-                                                           rho = rho0,
-                                                           nNodePerh = nPerh))
+    generator = GenerateNodeDistribution2d(distributionType="lattice",
+                                           nRadial = nx, nTheta = nx,
+                                           xmin = (x0, x0),
+                                           xmax = (x1, x1),
+                                           rho = rho0,
+                                           nNodePerh = nPerh)
     if mpi.procs > 1:
         from VoronoiDistributeNodes import distributeNodes2d
     else:
@@ -123,19 +115,6 @@ else:
     else:
         from DistributeNodes import distributeNodes3d
     distributeNodes3d((nodes, generator))
-
-#-------------------------------------------------------------------------------
-# In RZ the mass field is expected to hold the real (3D) mass, so that m/rho is
-# the physical volume.  The node generators hand us 2D areal masses, and that
-# conversion is normally done by the RZ hydro packages in
-# initializeProblemStartupDependencies.  We have no hydro package here, so we
-# apply the conversion ourselves.
-#-------------------------------------------------------------------------------
-if cylindrical:
-    m = nodes.mass()
-    pos = nodes.positions()
-    for i in range(nodes.numInternalNodes):
-        m[i] *= 2.0*pi*abs(pos[i].y)
 
 numInternal = nodes.numInternalNodes
 output("numInternal")

@@ -13,6 +13,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "FileIO/FileIO.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Kernel/TableKernel.hh"
 #include "Neighbor/ConnectivityMap.hh"
@@ -44,14 +45,6 @@ VolumeUpdate(const VolumeType volumeType,
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-VolumeUpdate<Dimension>::
-~VolumeUpdate() {
-}
-
-//------------------------------------------------------------------------------
 // Compute volumes based on volume type
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -63,15 +56,24 @@ computeVolume(const DataBase<Dimension>& dataBase,
   auto vol3d = state.fields(HydroFieldNames::volume3d, 0.0);
   const auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
+  const auto massRZ = state.fields(HydroFieldNames::massRZ, 0.0, true);
+  const auto massDensityRZ = state.fields(HydroFieldNames::massDensityRZ, 0.0, true);
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  
+  const auto RZ = GeometryRegistrar::coords() == CoordinateType::RZ;
+  CHECK((not RZ) or massRZ.numFields() == mass.numFields());
+  CHECK((not RZ) or massDensityRZ.numFields() == massDensity.numFields());
 
   switch (mVolumeType) {
   case VolumeType::MassOverDensity:
     CHECK(mass.size() == massDensity.size());
-    // mass/rho gives V_phys in non-Cartesian; unscale to get V_coord
     vol3d.assignFields(mass / massDensity);
-    unscaleFromGeometry(position, vol3d, vol);
+    if (RZ) {
+      vol.assignFields(massRZ / massDensityRZ);
+    } else {
+      unscaleFromGeometry(position, vol3d, vol);
+    }
     break;
 
   case VolumeType::SumVolume:
@@ -158,6 +160,14 @@ registerState(DataBase<Dimension>& dataBase,
   if (not state.registered(mass)) state.enroll(mass);
   if (not state.registered(massDensity)) state.enroll(massDensity);
   if (not state.registered(H)) state.enroll(H);
+
+  // A few extras in curvlinear coordinates
+  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+    auto massRZ = dataBase.fluidMassRZ();
+    auto massDensityRZ = dataBase.fluidMassDensityRZ();
+    if (not state.registered(massRZ)) state.enroll(massRZ);
+    if (not state.registered(massDensityRZ)) state.enroll(massDensityRZ);
+  }
 }
 
 //------------------------------------------------------------------------------

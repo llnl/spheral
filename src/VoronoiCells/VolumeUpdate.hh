@@ -34,7 +34,7 @@ public:
                const bool updateInFinalize);
 
   // Destructor
-  virtual ~VolumeUpdate();
+  virtual ~VolumeUpdate() = default;
 
   // Volume computation — dispatches on mVolumeType.
   virtual void computeVolume(const DataBase<Dimension>& dataBase,
