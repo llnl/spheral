@@ -2,7 +2,7 @@
 #ATS:test(SELF, "--dimension 1 --cartesian False --approxTol 0.1", np=1, label="VolumeScaling 1D Spherical")
 #ATS:test(SELF, "--dimension 2", np=1, label="VolumeScaling 2D Cartesian")
 #ATS:test(SELF, "--dimension 2 --cartesian False", np=1, label="VolumeScaling 2D RZ")
-#ATS:test(SELF, "--dimension 3 --approxTol 0.2", np=4, label="VolumeScaling 3D Cartesian")
+#ATS:test(SELF, "--dimension 3", np=4, label="VolumeScaling 3D Cartesian")
 
 #-------------------------------------------------------------------------------
 # Test that the different volume types give the correct total volume in each
@@ -187,6 +187,15 @@ else:
             normal = Vector.zero
             normal[d] = 1.0 if n == 0 else -1.0
             boundaries.append(ReflectingBoundary(Plane(point, normal)))
+
+# If we're parallel we need a distributed boundary
+if mpi.procs > 1:
+    boundaries.append(TreeDistributedBoundary.instance())
+
+# Get the boundaries ordered coorectly
+sortedbcs = sorted(boundaries, key=lambda bc: bc.priority)
+boundaries = sortedbcs
+
 output("boundaries")
 
 #-------------------------------------------------------------------------------
