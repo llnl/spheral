@@ -7,6 +7,12 @@ from PYB11Generator import *
 class Tensor:
     "Spheral geometric tensor (rank 2: %(ndim)sx%(ndim)s) class"
 
+    PYB11typedefs = """
+    using VectorType = Dim<%(ndim)s>::Vector;
+    using TensorType = Dim<%(ndim)s>::Tensor;
+    using SymTensorType = Dim<%(ndim)s>::SymTensor;
+"""
+
     # constexpr attributes
     nDimensions = PYB11property(constexpr=True, static=True, doc="Number of dimensions")
     numElements = PYB11property(constexpr=True, static=True, doc="Number of elements stored in the type")
@@ -25,20 +31,40 @@ class Tensor:
                 rhs = "const Dim<%(ndim)s>::SymTensor"):
         "Copy constructor (symmetric tensor)"
 
-    def pyinit3(self,
-                xx="double"):
-        "Construct with element values."
+    def pyinit_double(self,
+                      a = "double"):
+        "Construct from a single scalar (results in a diagonal tensor with 'a' along the diagonal)"
 
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "1")
+    def pyinit3(self,
+                xx = "double",
+                yy = ("double", 0.0),
+                zz = ("double", 0.0)):
+        "Construct with element values (1D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "2")
     def pyinit4(self,
                 xx="double", xy="double",
-                yx="double", yy="double"):
-        "Construct with element values."
+                yx="double", yy="double",
+                zz=("double", 0.0)):
+        "Construct with element values (2D)"
 
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] != "3")
     def pyinit5(self,
                 xx="double", xy="double", xz="double",
                 yx="double", yy="double", yz="double",
                 zx="double", zy="double", zz="double"):
-        "Construct with element values."
+        "Construct with element values (3D)"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    def pyinit6(self,
+                rhs = "const Dim<3>::SymTensor&"):
+        "Construct from a 3D SymTensor"
+
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    def pyinit7(self,
+                rhs = "const Dim<3>::Tensor&"):
+        "Construct from a 3D Tensor"
 
     # Sequence methods
     @PYB11implementation("[](const Dim<%(ndim)s>::Tensor&) { return Dim<%(ndim)s>::Tensor::numElements(); }")
@@ -131,7 +157,7 @@ class Tensor:
         return
 
     @PYB11pycppname("__mul__")
-    def __mul__V(self, rhs="Dim<%(ndim)s>::Vector()"):
+    def __mul__V(self, rhs="VectorType()"):
         return
 
     # Comparison
@@ -172,9 +198,9 @@ class Tensor:
     def Determinant(self):
         "Compute the determinant of the tensor."
     @PYB11const
-    def dot(self, rhs="const Dim<%(ndim)s>::Vector&"):
+    def dot(self, rhs="const VectorType&"):
         "Product with a Vector%(ndim)sd."
-        return "Dim<%(ndim)s>::Vector"
+        return "VectorType"
     @PYB11const
     @PYB11pycppname("dot")
     def dot2(self, rhs="const Dim<%(ndim)s>::Tensor&"):
@@ -187,12 +213,12 @@ class Tensor:
         return "Dim<%(ndim)s>::Tensor"
     @PYB11const
     def doubledot(self, rhs="const Dim<%(ndim)s>::Tensor&"):
-        "Double dot contraction with another tensor (returns a scalar)."
+        "Double dot contraction with another tensor (a_ij * b_ji)"
         return "double"
     @PYB11const
     @PYB11pycppname("doubledot")
     def doubledot2(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
-        "Double dot contraction with a SymTensor (returns a scalar)."
+        "Double dot contraction with a SymTensor (a_ij * b_ji)"
         return "double"
     def selfDoubledot(self):
         "Double dot contraction with ourself (returns a scalar)."
@@ -206,6 +232,55 @@ class Tensor:
         "Apply the given rotational transform to the tensor."
     def maxAbsElement(self):
         "Return the maximum of the absolute values of the elements."
+
+    # A few methods using the full 3D elements
+    @PYB11const
+    def diagonalElements3D(self):
+        "Return a Vector3d with the 3D diagonal"
+    @PYB11const
+    def Trace3D(self):
+        "The full 3D trace"
+    @PYB11const
+    def Determinant3D(self):
+        "The full 3D determinant"
+    @PYB11const
+    def doubledot3D(self, rhs="const Dim<%(ndim)s>::Tensor&"):
+        "3D double dot contraction (a_ij * b_ji)"
+        return "double"
+    @PYB11cppname("doubledot3D")
+    @PYB11const
+    def doubledot3D_sym(self, rhs="const Dim<%(ndim)s>::SymTensor&"):
+        "3D double dot contraction (a_ij * b_ji)"
+        return "double"
+    @PYB11const
+    def selfDoubledot3D(self):
+        "3D double dot contraction with ourself (a_ij * a_ji)"
+        return "double"
+    @PYB11const
+    def maxAbsElement3D(self):
+        "Return the maximum of the absolute valuses of the elements (3D)"
+        return "double"
+    @PYB11const
+    def eigenValues3D(self):
+        "Compute the full 3D eigenvalues (always returns a Vector3d)"
+
+    @PYB11pycppname("dot")
+    @PYB11const
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    def dot3D(self, rhs="const Dim<3>::Vector&"):
+        "Product with a 3D vector"
+        return "Dim<3>::Vector"
+
+    @PYB11pycppname("__iadd__")
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    def __iadd__ST3D(self, rhs="Dim<3>::Tensor()"):
+        return "void"
+
+    @PYB11pycppname("__mul__")
+    @PYB11const
+    @PYB11ignoreTest(lambda m_attrs, k_attrs: k_attrs["template_dict"]["ndim"] == "3")
+    def __mul__V3D(self, rhs="Dim<3>::Vector()"):
+        return "Dim<3>::Vector"
 
     # Properties
     xx = PYB11property("double", "xx", "xx", doc="The xx element.")

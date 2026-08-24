@@ -14,8 +14,11 @@
 #include "DataBase/StateDerivatives.hh"
 #include "FileIO/FileIO.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
+#include "Kernel/TableKernel.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Strength/SolidFieldNames.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <limits>
 
@@ -47,14 +50,6 @@ VoronoiCells(const VolumeType volumeType,
   mDeltaCentroid(FieldStorageType::CopyFields),
   mFacetedBoundaries(facetedBoundaries),
   mFacetedHoles(facetedHoles) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-VoronoiCells<Dimension>::
-~VoronoiCells() {
 }
 
 //------------------------------------------------------------------------------
@@ -178,10 +173,10 @@ applyGhostBoundaries(State<Dimension>& state,
   auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
-  for (auto* boundaryPtr: this->boundaryConditions()) {
-    boundaryPtr->applyFieldListGhostBoundary(etaVoidPoints);
-    boundaryPtr->applyFieldListGhostBoundary(cells);
-    boundaryPtr->applyFieldListGhostBoundary(surfacePoint);
+  for (auto* bcPtr: this->boundaryConditions()) {
+    bcPtr->applyFieldListGhostBoundary(etaVoidPoints);
+    bcPtr->applyFieldListGhostBoundary(cells);
+    bcPtr->applyFieldListGhostBoundary(surfacePoint);
   }
 }
 
@@ -197,10 +192,10 @@ enforceBoundaries(State<Dimension>& state,
   auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
   auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
-  for (auto* boundaryPtr: this->boundaryConditions()) {
-    boundaryPtr->enforceFieldListBoundary(etaVoidPoints);
-    boundaryPtr->enforceFieldListBoundary(cells);
-    boundaryPtr->enforceFieldListBoundary(surfacePoint);
+  for (auto* bcPtr: this->boundaryConditions()) {
+    bcPtr->enforceFieldListBoundary(etaVoidPoints);
+    bcPtr->enforceFieldListBoundary(cells);
+    bcPtr->enforceFieldListBoundary(surfacePoint);
   }
 }
 
@@ -215,7 +210,7 @@ addFacetedBoundary(const FacetedVolume& bound,
   const auto numExisting = mFacetedBoundaries.size();
   for (auto i = 0u; i < numExisting; ++i) {
     if (bound == mFacetedBoundaries[i] and holes == mFacetedHoles[i]) {
-      std::cerr << "tried to add same faceted boundary twice" << std::endl;
+      SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
       return;
     }
   }

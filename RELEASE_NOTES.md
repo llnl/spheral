@@ -8,6 +8,9 @@ Notable changes include:
     * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory.
     * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation).
     * Added view class for NodeList (NodeListView).
+    * Converted SpheralMessage macros to behave like streams rather than functions.
+    * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations).
+    * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation.
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
@@ -15,9 +18,12 @@ Notable changes include:
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
     * Performance testing and CI improvements:
       * Enable CI to run for Debug HIP builds.
+    * Changing LC GNU compiler to 13.3.1.
+    * Using Hubcast instead of Gitlab mirroring to run CI on LC machines.
 
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
+    * Consistency fix for differentMatij material coupling in FSISPH
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

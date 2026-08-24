@@ -41,7 +41,7 @@ public:
                const bool updateInFinalize = false);
 
   // Destructor.
-  virtual ~VoronoiCells();
+  virtual ~VoronoiCells() = default;
 
   // Override computeVolume for Voronoi geometry
   virtual void computeVolume(const DataBase<Dimension>& dataBase,

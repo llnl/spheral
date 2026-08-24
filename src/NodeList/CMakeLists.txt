@@ -15,7 +15,6 @@ instantiate(NodeList_inst NodeList_sources)
 
 set(NodeList_headers
     FluidNodeList.hh
-    FluidNodeListInline.hh
     FluidNodeTraits.hh
     NodeList.hh
     NodeListView.hh

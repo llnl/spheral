@@ -16,7 +16,6 @@
 #include "DataBase/StateDerivatives.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 
 #include "Utilities/DBC.hh"
 

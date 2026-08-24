@@ -17,7 +17,8 @@ source("unit/Utilities/testFails.py")
 
 # Geometry unit tests
 source("unit/Geometry/testVector.py")
-source("unit/Geometry/testTensor.py")
+source("unit/Geometry/test_Tensor.py")
+source("unit/Geometry/test_SymTensor.py")
 source("unit/Geometry/testInnerOuterProduct.py")
 source("unit/Geometry/testEigen2d.py")
 source("unit/Geometry/testEigen3d.py")

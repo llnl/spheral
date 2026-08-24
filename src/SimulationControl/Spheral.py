@@ -130,8 +130,14 @@ for shadowedthing in ("TillotsonEquationOfState",
                       "StrainPorosity",
                       "PalphaPorosity",
                       "ANEOS"):
+    modname = f"Shadow{shadowedthing}"
+    exec(f"import {modname}")
+    stuff = eval(f"dir({modname})")
     for dim in dims:
-        exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
+        if f"{shadowedthing}{dim}d" in stuff:
+            exec(f"{shadowedthing}{dim}d = {modname}.{shadowedthing}{dim}d")
+    if f"{shadowedthing}RZ" in stuff:
+        exec(f"{shadowedthing}RZ = {modname}.{shadowedthing}RZ")
 
 #-------------------------------------------------------------------------------
 # Set up Axom
