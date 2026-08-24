@@ -23,7 +23,7 @@ Notable changes include:
 
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
-    * Consistency fix for differentMatij material coupling in FSISPH
+    * Consistency fix for differentMatij material coupling in FSISPH.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
