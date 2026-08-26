@@ -52,7 +52,7 @@ class SpheralController:
                  numHIterationsBetweenCycles = 0,
                  reinitializeNeighborsStep = 10,
                  volumeType = None,
-                 facetedBoundaries = None,
+                 facetedBoundaries = [],
                  forceVoronoi = False,
                  printAllTimers = False):
         self.restartBaseName = restartBaseName
@@ -178,7 +178,7 @@ class SpheralController:
                             initialHExtraPackages = [],
                             reinitializeNeighborsStep = 10,
                             volumeType = None,
-                            facetedBoundaries = None):
+                            facetedBoundaries = []):
 
         # Call the global C++ initialization method
         setGlobalFlags()
@@ -791,9 +791,10 @@ class SpheralController:
             if vt != VolumeType.VoronoiVolume:
                 print(f"WARNING: Voronoi volume will be overwritten by {vt.name}")
             VC = eval("VoronoiCells" + self.dim)
+            fb = eval("vector_of_FacetedVolume{}(facetedBoundaries)".format(self.dim))
             self.VoronoiCells = VC(volumeType = vt,
                                    W = W,
-                                   facetedBoundaries = facetedBoundaries,
+                                   facetedBoundaries = fb,
                                    updateInStep = needStep,
                                    updateInFinalize = needFinalize)
             self.VolumeUpdate = self.VoronoiCells
