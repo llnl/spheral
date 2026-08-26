@@ -791,18 +791,14 @@ class SpheralController:
             if vt != VolumeType.VoronoiVolume:
                 print(f"WARNING: Voronoi volume will be overwritten by {vt.name}")
             VC = eval("VoronoiCells" + self.dim)
-            fb = eval("vector_of_FacetedVolume{}()".format(self.dim)) if facetedBoundaries is None else facetedBoundaries
             self.VoronoiCells = VC(volumeType = vt,
                                    W = W,
-                                   facetedBoundaries = fb,
+                                   facetedBoundaries = facetedBoundaries,
                                    updateInStep = needStep,
                                    updateInFinalize = needFinalize)
             self.VolumeUpdate = self.VoronoiCells
             for bc in volbcs:
                 self.VoronoiCells.appendBoundary(bc)
-            if facetedBoundaries is not None:
-                for b in facetedBoundaries:
-                    self.VoronoiCells.addFacetedBoundary(b)
             packages.insert(index, self.VoronoiCells)
         else:
             # Simple volume computation (m/rho, sum, hull, H)

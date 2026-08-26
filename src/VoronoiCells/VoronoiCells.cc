@@ -21,6 +21,7 @@
 #include "Utilities/SpheralMessage.hh"
 
 #include <limits>
+#include <algorithm>
 
 namespace Spheral {
 
@@ -50,6 +51,8 @@ VoronoiCells(const VolumeType volumeType,
   mDeltaCentroid(FieldStorageType::CopyFields),
   mFacetedBoundaries(facetedBoundaries),
   mFacetedHoles(facetedHoles) {
+  if (facetedHoles.empty()) mFacetedHoles.resize(mFacetedBoundaries.size());
+  ENSURE(mFacetedBoundaries.size() == mFacetedHoles.size());
 }
 
 //------------------------------------------------------------------------------
@@ -207,15 +210,17 @@ void
 VoronoiCells<Dimension>::
 addFacetedBoundary(const FacetedVolume& bound,
                    const std::vector<FacetedVolume>& holes) {
-  const auto numExisting = mFacetedBoundaries.size();
-  for (auto i = 0u; i < numExisting; ++i) {
-    if (bound == mFacetedBoundaries[i] and holes == mFacetedHoles[i]) {
-      SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
-      return;
-    }
+  if (std::ranges::find(mFacetedBoundaries, bound) == mFacetedBoundaries.end()) {
+    mFacetedBoundaries.push_back(bound);
+  } else {
+    SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
   }
-  mFacetedBoundaries.push_back(bound);
-  mFacetedHoles.push_back(holes);
+  if (std::ranges::find(mFacetedHoles, holes) == mFacetedHoles.end()) {
+    mFacetedHoles.push_back(holes);
+  } else {
+    SpheralWarning << "tried to add same faceted holes twice" << std::endl;
+  }
+  ENSURE(mFacetedBoundaries.size() == mFacetedHoles.size());
 }
 
 //------------------------------------------------------------------------------
