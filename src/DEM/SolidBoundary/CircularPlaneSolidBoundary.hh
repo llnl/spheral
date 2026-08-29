@@ -8,6 +8,7 @@
 #ifndef __Spheral_CircularPlaneSolidBoundary_hh__
 #define __Spheral_CircularPlaneSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {
@@ -21,13 +22,15 @@ class CircularPlaneSolidBoundary : public SolidBoundaryBase<Dimension> {
 
     typedef typename Dimension::Scalar Scalar;
     typedef typename Dimension::Vector Vector;
+    typedef typename DEMDimension<Dimension>::AngularVector RotationType;
 
 public:
   //--------------------------- Public Interface ---------------------------//
 
   CircularPlaneSolidBoundary(const Vector& point,
-                      const Vector& normal,
-                      const Scalar& exent);
+                             const Vector& normal,
+                             const Scalar  exent,
+                             const RotationType& angularVelocity);
 
   ~CircularPlaneSolidBoundary();
 
@@ -44,7 +47,7 @@ public:
   const Vector& point() const;
   void point(const Vector& value);
 
-    const Vector& normal() const;
+  const Vector& normal() const;
   void normal(const Vector& value);
 
   Scalar extent() const;
@@ -52,6 +55,9 @@ public:
 
   const Vector& velocity() const;
   void velocity(const Vector& value);
+
+  const RotationType& angularVelocity() const;
+  void angularVelocity(const RotationType& value);
 
   virtual std::string label() const override { return "CircularPlaneSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
@@ -63,6 +69,7 @@ protected:
   Vector mNormal;
   Scalar mExtent;
   Vector mVelocity;
+  RotationType mAngularVelocity;
 
 private:
   //--------------------------- Private Interface ---------------------------//

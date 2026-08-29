@@ -183,7 +183,9 @@ dem = DEM(db,
 packages = [dem]
 
 # set the solid bcs and add to dem package
-solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), Vector(  0.0, 0.0, 1.0))
+solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                       Vector(0.0, 0.0, 1.0),
+                                       Vector(0.0, 0.0, 0.0))
 solidWall.velocity = Vector(0.0,0.0,vbc)
 
 dem.appendSolidBoundary(solidWall)

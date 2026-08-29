@@ -8,6 +8,7 @@
 #ifndef __Spheral_RectangularPlaneSolidBoundary_hh__
 #define __Spheral_RectangularPlaneSolidBoundary_hh__
 
+#include "DEM/DEMDimension.hh"
 #include "DEM/SolidBoundary/SolidBoundaryBase.hh"
 
 namespace Spheral {
@@ -22,13 +23,15 @@ class RectangularPlaneSolidBoundary : public SolidBoundaryBase<Dimension> {
     typedef typename Dimension::Scalar Scalar;
     typedef typename Dimension::Vector Vector;
     typedef typename Dimension::Tensor Tensor;
+    typedef typename DEMDimension<Dimension>::AngularVector RotationType;
 
 public:
   //--------------------------- Public Interface ---------------------------//
 
   RectangularPlaneSolidBoundary(const Vector& point,
-                         const Vector& exent, 
-                         const Tensor& basis);
+                                const Vector& exent, 
+                                const Tensor& basis,
+                                const RotationType& angularVelocity);
 
   ~RectangularPlaneSolidBoundary();
 
@@ -54,6 +57,9 @@ public:
   const Vector& velocity() const;
   void velocity(const Vector& value);
 
+  const RotationType& angularVelocity() const;
+  void angularVelocity(const RotationType& value);
+
   virtual std::string label() const override { return "RectangularPlaneSolidBoundary" ; }
   virtual void dumpState(FileIO& file, const std::string& pathName) const override;
   virtual void restoreState(const FileIO& file, const std::string& pathName) override;
@@ -64,6 +70,7 @@ protected:
   Tensor mBasis;
   Vector mExtent;
   Vector mVelocity;
+  RotationType mAngularVelocity;
 
 private:
   //--------------------------- Private Interface ---------------------------//
