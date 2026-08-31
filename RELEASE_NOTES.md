@@ -11,6 +11,11 @@ Notable changes include:
     * Converted SpheralMessage macros to behave like streams rather than functions.
     * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations).
     * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation.
+    * Adding a VolumeUpdate class to generalize VolumeUpdates as a Physics service package.  (from Brody at PF)
+      * Moved VoronoiCells to be an instance of VolumeUpdate.
+      * Adding Physics Method Physics::requireVolumes which returns tuple of (explicit, implicit, needVoronoi)
+      * Physics::requireConnectivity returns a tuple of (connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity)
+      * Physics::RKRequirements returns a tuple of ({explicity orders}, {implicit orders}, needHessian)
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
