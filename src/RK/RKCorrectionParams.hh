@@ -4,6 +4,8 @@
 
 #include "VoronoiCells/VolumeType.hh"
 
+#include <iostream>
+
 //Enumerated type for the corrected Kernels
 namespace Spheral {
 
