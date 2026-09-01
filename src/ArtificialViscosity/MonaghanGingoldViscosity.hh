@@ -42,6 +42,9 @@ public:
   MonaghanGingoldViscosity(const MonaghanGingoldViscosity&) = delete;
   MonaghanGingoldViscosity& operator=(const MonaghanGingoldViscosity&) = delete;
 
+  // We need the velocity gradient
+  virtual bool requireVelocityGradient() const override { return true; }
+
   // Restart methods.
   virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
