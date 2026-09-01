@@ -27,6 +27,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <limits>
 using std::vector;
 using std::map;
 
@@ -158,7 +159,12 @@ TreeNeighbor(NodeList<Dimension>& nodeList,
   mGridLevelConst0(0.0),
   mXmin(xmin),
   mXmax(xmax),
-  mTree() {
+  mTree(),
+  mViewValid(false),
+  mViewCells(),
+  mViewMembers(),
+  mViewDaughters(),
+  mView() {
   this->reinitialize(xmin, xmax, (xmax - xmin).maxElement()/4.0);
 }
 
@@ -168,6 +174,159 @@ TreeNeighbor(NodeList<Dimension>& nodeList,
 template<typename Dimension>
 TreeNeighbor<Dimension>::
 ~TreeNeighbor() {
+  mView.release();
+}
+
+//------------------------------------------------------------------------------
+// Return the flattened view, rebuilding it only when the host tree changed.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename TreeNeighbor<Dimension>::ViewType
+TreeNeighbor<Dimension>::
+view() const {
+  if (not mViewValid) this->rebuildView();
+  return mView;
+}
+
+//------------------------------------------------------------------------------
+// Invalidate any existing flattened view before mutating authoritative state.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+invalidateView() {
+  if (mViewValid) mView.release();
+  mViewValid = false;
+}
+
+//------------------------------------------------------------------------------
+// Convert a projection size or offset to the view's index type.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename TreeNeighbor<Dimension>::ViewType::Index
+TreeNeighbor<Dimension>::
+checkedViewIndex(const size_t value,
+                 const char* description) {
+  CONTRACT_VAR(description);
+  using Index = typename ViewType::Index;
+  CHECK2(value <= std::numeric_limits<Index>::max(),
+         "TreeNeighbor view " << description << " exceeds the 32-bit projection limit: " << value);
+  return Index(value);
+}
+
+//------------------------------------------------------------------------------
+// Compare host cells by key when constructing the deterministic projection.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+TreeNeighbor<Dimension>::
+cellPtrKeyLess(const typename TreeNeighbor<Dimension>::Cell* lhs,
+               const typename TreeNeighbor<Dimension>::Cell* rhs) {
+  return lhs->key < rhs->key;
+}
+
+//------------------------------------------------------------------------------
+// Compare a projected cell with a host cell key for daughter lookup.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+TreeNeighbor<Dimension>::
+cellRecordKeyLess(const typename TreeNeighbor<Dimension>::CellRecord& cell,
+                  const typename TreeNeighbor<Dimension>::CellKey key) {
+  return cell.key < key;
+}
+
+//------------------------------------------------------------------------------
+// Build deterministic, contiguous storage for a read-only tree view.
+// Cells are ordered by level and then by key.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+rebuildView() const {
+  using Index = typename ViewType::Index;
+  using NodeID = typename ViewType::NodeID;
+  CHECK2(mTree.size() <= num1dbits,
+         "TreeNeighbor view tree depth exceeds the cell-key limit: " << mTree.size());
+
+  mView.release();
+  mViewCells.clear();
+  mViewMembers.clear();
+  mViewDaughters.clear();
+
+  const auto numLevels = checkedViewIndex(mTree.size(), "level count");
+  std::vector<const Cell*> orderedCells;
+  std::vector<Index> levelOffsets;
+  levelOffsets.reserve(mTree.size() + 1u);
+  levelOffsets.push_back(0u);
+
+  // First flatten cells and members.  Sort each level by key so daughter keys
+  // can be resolved with lower_bound and comparisons with the host tree are
+  // deterministic.
+  for (const auto& level: mTree) {
+    std::vector<const Cell*> levelCells;
+    levelCells.reserve(level.size());
+    for (const auto& keyCell: level) levelCells.push_back(&keyCell.second);
+    std::sort(levelCells.begin(), levelCells.end(), cellPtrKeyLess);
+
+    for (const auto* cellPtr: levelCells) {
+      const auto& cell = *cellPtr;
+      const auto memberOffset = checkedViewIndex(mViewMembers.size(), "member offset");
+      const auto memberCount = checkedViewIndex(cell.members.size(), "cell member count");
+      checkedViewIndex(mViewMembers.size() + cell.members.size(), "member count");
+      for (const auto nodeID: cell.members) {
+        CHECK2(nodeID >= 0, "TreeNeighbor view cannot represent a negative node ID: " << nodeID);
+        mViewMembers.push_back(NodeID(nodeID));
+      }
+      mViewCells.push_back(CellRecord{cell.key, memberOffset, memberCount, 0u, 0u});
+      orderedCells.push_back(cellPtr);
+    }
+    levelOffsets.push_back(checkedViewIndex(mViewCells.size(), "cell count"));
+  }
+
+  // Translate each daughter key to the corresponding global cell index on the
+  // next level.  Daughter keys are sorted to keep the projection deterministic
+  // even when it originated in serialized input.
+  for (auto level = 0u; level < mTree.size(); ++level) {
+    const auto levelBegin = levelOffsets[level];
+    const auto levelEnd = levelOffsets[level + 1u];
+    const auto haveNextLevel = level + 1u < mTree.size();
+    const auto nextBegin = haveNextLevel ? levelOffsets[level + 1u] : levelEnd;
+    const auto nextEnd = haveNextLevel ? levelOffsets[level + 2u] : levelEnd;
+    for (auto cellIndex = levelBegin; cellIndex < levelEnd; ++cellIndex) {
+      auto& record = mViewCells[cellIndex];
+      const auto& hostCell = *orderedCells[cellIndex];
+      auto daughterKeys = hostCell.daughters;
+      std::sort(daughterKeys.begin(), daughterKeys.end());
+      CHECK2(daughterKeys.size() <= size_t(1u << Dimension::nDim),
+             "TreeNeighbor view cell " << hostCell.key << " on level " << level
+             << " has too many daughters: " << daughterKeys.size());
+      record.daughterOffset = checkedViewIndex(mViewDaughters.size(), "daughter offset");
+      record.daughterCount = checkedViewIndex(daughterKeys.size(), "cell daughter count");
+      checkedViewIndex(mViewDaughters.size() + daughterKeys.size(), "daughter count");
+      CHECK2(haveNextLevel or daughterKeys.empty(),
+             "TreeNeighbor view found daughters below the final tree level");
+      for (const auto daughterKey: daughterKeys) {
+        const auto first = mViewCells.begin() + nextBegin;
+        const auto last = mViewCells.begin() + nextEnd;
+        const auto itr = std::lower_bound(first, last, daughterKey, cellRecordKeyLess);
+        CHECK2(itr != last and itr->key == daughterKey,
+               "TreeNeighbor view could not resolve daughter key " << daughterKey
+               << " below level " << level);
+        mViewDaughters.push_back(checkedViewIndex(std::distance(mViewCells.begin(), itr),
+                                                  "daughter index"));
+      }
+    }
+  }
+
+  mView.initialize(mViewCells,
+                   mViewMembers,
+                   mViewDaughters,
+                   numLevels,
+                   mXmin,
+                   mBoxLength,
+                   mGridLevelConst0);
+  mViewValid = true;
 }
 
 //------------------------------------------------------------------------------
@@ -371,6 +530,7 @@ template<typename Dimension>
 void 
 TreeNeighbor<Dimension>::
 updateNodes() {
+  this->invalidateView();
 
   // Clear our internal data.
   mTree.clear();
@@ -743,6 +903,7 @@ void
 TreeNeighbor<Dimension>::
 deserialize(vector<char>::const_iterator& bufItr,
             const vector<char>::const_iterator& endItr) {
+  this->invalidateView();
   unpackElement(mBoxLength, bufItr, endItr);
   unpackElement(mGridLevelConst0, bufItr, endItr);
   unpackElement(mXmin, bufItr, endItr);
@@ -1251,6 +1412,7 @@ template<typename Dimension>
 void
 TreeNeighbor<Dimension>::
 reinitialize() {
+  this->invalidateView();
   const auto etaMax = this->kernelExtent();
   mBoxLength = (mXmax - mXmin).maxElement();
   mGridLevelConst0 = log(mBoxLength/etaMax)/log(2.0);
@@ -1263,6 +1425,7 @@ TreeNeighbor<Dimension>::
 reinitialize(const typename Dimension::Vector& xmin,
              const typename Dimension::Vector& xmax,
              const Scalar /*htarget*/) {
+  this->invalidateView();
   const auto etaMax = this->kernelExtent();
   mXmin = xmin;
   mXmax = xmax;

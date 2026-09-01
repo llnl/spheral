@@ -13,6 +13,7 @@
 #define __Spheral_TreeNeighbor_hh__
 
 #include "Neighbor.hh"
+#include "TreeNeighborView.hh"
 
 #include <stdint.h>
 #include <unordered_map>
@@ -35,6 +36,8 @@ public:
   // Data types we use to build the internal tree structure.
   typedef uint32_t LevelKey;
   typedef uint64_t CellKey;
+  using ViewType = TreeNeighborView<Dimension>;
+  using CellRecord = typename ViewType::CellRecord;
 
   // Constructors and destructors
   TreeNeighbor(NodeList<Dimension>& nodeList, 
@@ -113,6 +116,10 @@ public:
   const Vector& xmax() const;
   double boxLength() const;
 
+  // Return a lazily-built, read-only projection of the current host tree.
+  // The returned view is invalidated by the next tree mutation.
+  ViewType view() const;
+
   // Cell size on the given level
   double cellSize(const LevelKey levelID) const;
 
@@ -175,6 +182,12 @@ private:
   typedef std::unordered_map<CellKey, Cell> TreeLevel;
   typedef std::vector<TreeLevel> Tree;
 
+  // Helpers for constructing the flattened read-only projection.
+  static typename ViewType::Index checkedViewIndex(const size_t value,
+                                                   const char* description);
+  static bool cellPtrKeyLess(const Cell* lhs, const Cell* rhs);
+  static bool cellRecordKeyLess(const CellRecord& cell, const CellKey key);
+
   // Default constructor -- disabled.
   TreeNeighbor();
 
@@ -209,6 +222,10 @@ private:
 
   // Construct all the daughterPtrs in a tree.
   void constructDaughterPtrs(Tree& tree) const;
+
+  // Maintain the flattened read-only projection.
+  void invalidateView();
+  void rebuildView() const;
 
   // Actual method for setting the master list.
   void setTreeMasterList(const Vector& position,
@@ -262,6 +279,11 @@ private:
   double mBoxLength, mGridLevelConst0;
   Vector mXmin, mXmax;
   Tree mTree;
+  mutable bool mViewValid;
+  mutable std::vector<CellRecord> mViewCells;
+  mutable std::vector<typename ViewType::NodeID> mViewMembers;
+  mutable std::vector<typename ViewType::Index> mViewDaughters;
+  mutable ViewType mView;
 };
 
 }
