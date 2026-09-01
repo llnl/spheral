@@ -11,11 +11,18 @@ Notable changes include:
     * Converted SpheralMessage macros to behave like streams rather than functions.
     * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations).
     * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation.
-    * Adding a VolumeUpdate class to generalize VolumeUpdates as a Physics service package.  (from Brody at PF)
-      * Moved VoronoiCells to be an instance of VolumeUpdate.
-      * Adding Physics Method Physics::requireVolumes which returns tuple of (explicit, implicit, needVoronoi)
-      * Physics::requireConnectivity returns a tuple of (connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity)
-      * Physics::RKRequirements returns a tuple of ({explicity orders}, {implicit orders}, needHessian)
+    * Volume upgrade
+      * Separates the volume calculation from RKCorrections and adds controls for when the volume is updated. Previously, the Voronoi was being calculated way too often in VoronoiCells and getting overwritten by the volumes from RKCorrections.
+      * Makes VoronoiCells inherit from VolumeUpdate. It optionally overwrites its own volume calculation with the user's choice of volume.
+      * Lets the user choose the volume for all packages, not just RKCorrections.
+      * Stores both 3D (annulus or spherical shell) volume and patch volume, which are the same in Cartesian coordinates.
+    * Physics package requirements upgrade
+      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity
+        * Returns {conn, ghost, overlap, intersection}
+      * requireVoronoiCells has been replaced by requireVolumes
+        * Returns {explicit, implicit, voronoi}
+      * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels
+        * Returns tuple {explicit, implicit, hessian}
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
@@ -29,6 +36,7 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.
+    * GenerateRatioSphere accessing the wrong element when SPH = True
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
