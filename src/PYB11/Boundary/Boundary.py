@@ -446,6 +446,7 @@ eflgb%(L)s = PYB11TemplateMethod(enforceFieldListBoundary, template_parameters="
     #...........................................................................
     # Attributes
     numGhostNodes = PYB11property("int")
+    priority = PYB11property("int", doc="Controls the ordering of boundaries (lower priority applied first).")
 
     #---------------------------------------------------------------------------
     # BoundaryNodes

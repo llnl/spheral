@@ -1,9 +1,11 @@
 //---------------------------------Spheral++----------------------------------//
 // VoronoiCells
 //
-// Computes polytopes for each point similar to the Voronoi tessellation
+// Computes polytopes for each point similar to the Voronoi tessellation.
+// Inherits from VolumeUpdate; overrides computeVolume for Voronoi geometry.
 //----------------------------------------------------------------------------//
 #include "VoronoiCells/VoronoiCells.hh"
+#include "VoronoiCells/GeometryScaling.hh"
 #include "VoronoiCells/computeVoronoiVolume.hh"
 #include "VoronoiCells/UpdateVoronoiCells.hh"
 #include "Boundary/Boundary.hh"
@@ -19,6 +21,7 @@
 #include "Utilities/SpheralMessage.hh"
 
 #include <limits>
+#include <algorithm>
 
 namespace Spheral {
 
@@ -29,11 +32,17 @@ using std::vector;
 //------------------------------------------------------------------------------
 template<typename Dimension>
 VoronoiCells<Dimension>::
-VoronoiCells(const Scalar kernelExtent,
+VoronoiCells(const VolumeType volumeType,
+             const TableKernel<Dimension>& W,
              const vector<FacetedVolume>& facetedBoundaries,
-             const vector<vector<FacetedVolume>>& facetedHoles):
-  mEtaMax(kernelExtent),
-  mVolume(FieldStorageType::CopyFields),
+             const vector<vector<FacetedVolume>>& facetedHoles,
+             const bool updateInStep,
+             const bool updateInFinalize):
+  VolumeUpdate<Dimension>(volumeType,
+                          W,
+                          updateInStep,
+                          updateInFinalize),
+  mEtaMax(W.kernelExtent()),
   mWeight(FieldStorageType::CopyFields),
   mSurfacePoint(FieldStorageType::CopyFields),
   mEtaVoidPoints(FieldStorageType::CopyFields),
@@ -41,16 +50,55 @@ VoronoiCells(const Scalar kernelExtent,
   mCellFaceFlags(FieldStorageType::CopyFields),
   mDeltaCentroid(FieldStorageType::CopyFields),
   mFacetedBoundaries(facetedBoundaries),
-  mFacetedHoles(facetedHoles),
-  mRestart(registerWithRestart(*this)) {
+  mFacetedHoles(facetedHoles) {
+  if (facetedHoles.empty()) mFacetedHoles.resize(mFacetedBoundaries.size());
+  ENSURE(mFacetedBoundaries.size() == mFacetedHoles.size());
 }
 
 //------------------------------------------------------------------------------
-// Destructor
+// Compute the Voronoi cell geometry (overrides VolumeUpdate::computeVolume).
+// Always computes the full Voronoi tessellation (cells, surfacePoint, etc.)
+// but overwrites the volume field if the user chose a non-Voronoi volume type.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+void
 VoronoiCells<Dimension>::
-~VoronoiCells() {
+computeVolume(const DataBase<Dimension>& dataBase,
+              State<Dimension>& state) {
+  const auto& cm = state.connectivityMap();
+  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
+  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
+  const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto  rho = state.fields(HydroFieldNames::massDensity, 0.0);
+  auto vol = state.fields(HydroFieldNames::volume, 0.0);
+  auto vol3d = state.fields(HydroFieldNames::volume3d, 0.0);
+  auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  auto cells = state.fields(HydroFieldNames::cells, FacetedVolume());
+  auto cellFaceFlags = state.fields(HydroFieldNames::cellFaceFlags, std::vector<CellFaceFlag>());
+  auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
+  
+  // Pre-seed volumes with mass/density, then unscale the geometric factor
+  // so the seed is in raw coordinate-plane units.  computeVoronoiVolume1d
+  // reads these as fallback extents for boundary nodes.
+  vol.assignFields(mass / rho);
+  unscaleFromGeometry(pos, vol);
+
+  auto& boundaries = this->boundaryConditions();
+
+  // Always compute full Voronoi tessellation for cell geometry
+  computeVoronoiVolume(pos, H, cm, D, mFacetedBoundaries, mFacetedHoles, boundaries, mWeight,
+                       surfacePoint, vol, mDeltaCentroid, etaVoidPoints, cells, cellFaceFlags);
+
+  // If the user chose a non-Voronoi volume type, overwrite both volume fields
+  // (base class computeVolume handles both volume and volume3d)
+  if (this->volumeType() != VolumeType::VoronoiVolume) {
+    VolumeUpdate<Dimension>::computeVolume(dataBase, state);
+  }
+  else {
+    // Voronoi volume is coordinate-plane; scale into volume3d
+    scaleForGeometry(pos, vol, vol3d);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -60,7 +108,7 @@ template<typename Dimension>
 void
 VoronoiCells<Dimension>::
 initializeProblemStartup(DataBase<Dimension>& dataBase) {
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  VolumeUpdate<Dimension>::initializeProblemStartup(dataBase);
   // mWeight = dataBase.newFluidFieldList(0.0, "Voronoi weight");
   mSurfacePoint = dataBase.newFluidFieldList(0, HydroFieldNames::surfacePoint);
   mEtaVoidPoints = dataBase.newFluidFieldList(std::vector<Vector>(), HydroFieldNames::etaVoidPoints);
@@ -70,8 +118,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
 }
 
 //------------------------------------------------------------------------------
-// On problem initialization we need to compute the cells.  Onace a calculation
-// is going we rely on the cells being updated at the end of the prior step.
+// Compute initial cells
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
@@ -79,9 +126,7 @@ VoronoiCells<Dimension>::
 initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                                      State<Dimension>& state,
                                      StateDerivatives<Dimension>& derivs) {
-
-  // Ensure our state is sized correctly
-  dataBase.resizeFluidFieldList(mVolume, 0.0, HydroFieldNames::volume, false);
+  // Resize Voronoi-specific fields
   // dataBase.resizeFluidFieldList(mWeight, 0.0, "Voronoi weight", false);
   dataBase.resizeFluidFieldList(mSurfacePoint, 0, HydroFieldNames::surfacePoint, false);
   dataBase.resizeFluidFieldList(mEtaVoidPoints, vector<Vector>(), HydroFieldNames::etaVoidPoints, false);
@@ -89,41 +134,34 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mCellFaceFlags, vector<CellFaceFlag>(), HydroFieldNames::cellFaceFlags, false);
   dataBase.resizeFluidFieldList(mDeltaCentroid, Vector::zero(), "delta centroid", false);
 
-  // Use our preStepInitialize method to compute the initial cell geometry
-  this->preStepInitialize(dataBase, state, derivs);
-  this->applyGhostBoundaries(state, derivs);
-  for (auto* bcPtr: this->boundaryConditions()) bcPtr->finalizeGhostBoundary();
+  // Delegate to base for volume resize + computeVolume + ghost BCs
+  VolumeUpdate<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
+
+  // Apply boundaries to newly computed terms
+  auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
+  for (auto boundItr = this->boundaryBegin(); boundItr < this->boundaryEnd(); ++boundItr) {
+    (*boundItr)->applyFieldListGhostBoundary(surfacePoint);
+    (*boundItr)->applyFieldListGhostBoundary(etaVoidPoints);
+  }
+  for (auto boundItr = this->boundaryBegin(); boundItr < this->boundaryEnd(); ++boundItr) {
+    (*boundItr)->finalizeGhostBoundary();
+  }
 }
 
 //------------------------------------------------------------------------------
-// Register the state
+// Register the state — volume from base, plus Voronoi-specific fields
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 VoronoiCells<Dimension>::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
-  state.enroll(mVolume);
+  VolumeUpdate<Dimension>::registerState(dataBase, state);
   state.enroll(mSurfacePoint);
+  state.enroll(mEtaVoidPoints);
   state.enroll(mCellFaceFlags);
   state.enroll(mCells);
-  // state.enroll(mCells, make_policy<UpdateVoronoiCells<Dimension>>(mVolume,
-  //                                                                 mWeight,
-  //                                                                 mDeltaCentroid,
-  //                                                                 mEtaVoidPoints,
-  //                                                                 this->boundaryConditions(),
-  //                                                                 mFacetedBoundaries,
-  //                                                                 mFacetedHoles));
-}
-
-//------------------------------------------------------------------------------
-// No derivatives to register
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-VoronoiCells<Dimension>::
-registerDerivatives(DataBase<Dimension>& dataBase,
-                    StateDerivatives<Dimension>& derivs) {
 }
 
 //------------------------------------------------------------------------------
@@ -134,12 +172,13 @@ void
 VoronoiCells<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
+  VolumeUpdate<Dimension>::applyGhostBoundaries(state, derivs);
   auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
-  auto vol = state.fields(HydroFieldNames::volume, 0.0);
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
   for (auto* bcPtr: this->boundaryConditions()) {
+    bcPtr->applyFieldListGhostBoundary(etaVoidPoints);
     bcPtr->applyFieldListGhostBoundary(cells);
-    bcPtr->applyFieldListGhostBoundary(vol);
     bcPtr->applyFieldListGhostBoundary(surfacePoint);
   }
 }
@@ -152,115 +191,15 @@ void
 VoronoiCells<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
+  VolumeUpdate<Dimension>::enforceBoundaries(state, derivs);
   auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
-  auto vol = state.fields(HydroFieldNames::volume, 0.0);
   auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
   for (auto* bcPtr: this->boundaryConditions()) {
+    bcPtr->enforceFieldListBoundary(etaVoidPoints);
     bcPtr->enforceFieldListBoundary(cells);
-    bcPtr->enforceFieldListBoundary(vol);
     bcPtr->enforceFieldListBoundary(surfacePoint);
-  } 
-}
-
-//------------------------------------------------------------------------------
-// No time step vote
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename VoronoiCells<Dimension>::TimeStepType
-VoronoiCells<Dimension>::
-dt(const DataBase<Dimension>& /*dataBase*/, 
-   const State<Dimension>& /*state*/,
-   const StateDerivatives<Dimension>& /*derivs*/,
-   const Scalar /*currentTime*/) const {
-  return std::make_pair(std::numeric_limits<double>::max(), std::string("VoronoiCells: no vote"));
-}
-
-//------------------------------------------------------------------------------
-// No derivatives to evaluate
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-VoronoiCells<Dimension>::
-evaluateDerivatives(const Scalar /*time*/,
-                    const Scalar /*dt*/,
-                    const DataBase<Dimension>& /*dataBase*/,
-                    const State<Dimension>& /*state*/,
-                    StateDerivatives<Dimension>& /*derivatives*/) const {
-}
-
-//------------------------------------------------------------------------------
-// Initialize at the start of a physics cycle.
-// This is when we do the expensive operation of computing the Voronoi cell
-// geometry from scratch.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-VoronoiCells<Dimension>::
-preStepInitialize(const DataBase<Dimension>& dataBase, 
-                  State<Dimension>& state,
-                  StateDerivatives<Dimension>& derivs) {
-
-  // State we need to compute the Voronoi cells
-  const auto massKey = (GeometryRegistrar::coords() == CoordinateType::RZ ?
-                        HydroFieldNames::massRZ :
-                        HydroFieldNames::mass);
-  const auto rhoKey = (GeometryRegistrar::coords() == CoordinateType::RZ ?
-                       HydroFieldNames::massDensityRZ :
-                       HydroFieldNames::massDensity);
-  const auto& cm = state.connectivityMap();
-  const auto  pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  const auto  mass = state.fields(massKey, 0.0);
-  const auto  rho = state.fields(rhoKey, 0.0);
-  const auto  D = state.fields(SolidFieldNames::tensorDamage, SymTensor::zero(), true);
-  auto& boundaries = this->boundaryConditions();
-
-  // Use m/rho as the intial estimate for the cell volumes (persists for surface points)
-  const auto numNodeLists = dataBase.numFluidNodeLists();
-  for (auto k = 0u; k < numNodeLists; ++k) {
-    const auto n = mass[k]->numInternalElements();
-#pragma omp parallel for
-    for (auto i = 0u; i < n; ++i) {
-      CHECK(rho(k,i) > 0.0);
-      mVolume(k,i) = mass(k,i)/rho(k,i);
-    }
   }
-
-  // Enforce boundaries on the volume
-  for (auto* bcPtr: boundaries) bcPtr->applyFieldListGhostBoundary(mVolume);
-  for (auto* bcPtr: boundaries) bcPtr->finalizeGhostBoundary();
-
-//   // We can now compute the weights from our volumes (including ghosts)
-//   for (auto k = 0u; k < numNodeLists; ++k) {
-//     const auto n = mass[k]->numElements();    // ghosts as well!
-// #pragma omp parallel for
-//     for (auto i = 0u; i < n; ++i) {
-//       CHECK(mVolume(k,i) > 0.0);
-//       mWeight(k,i) = 1.0/Dimension::rootnu(mVolume(k,i));
-//     }
-//   }
-
-  // Compute the cell data.  Note we are using the fact the state versions of the things
-  // we're updating (mSurfacePoint, mCells, etc.) are just pointing at our internal fields.
-  computeVoronoiVolume(pos, H, cm, D, mFacetedBoundaries, mFacetedHoles, boundaries, mWeight,
-                       mSurfacePoint, mVolume, mDeltaCentroid, mEtaVoidPoints, mCells, mCellFaceFlags);
-
-}
-
-//------------------------------------------------------------------------------
-// Provide a hook to be called after the state has been updated and 
-// boundary conditions have been enforced.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-VoronoiCells<Dimension>::
-postStateUpdate(const Scalar time,
-                const Scalar dt,
-                const DataBase<Dimension>& dataBase, 
-                State<Dimension>& state,
-                StateDerivatives<Dimension>& derivs) {
-  this->preStepInitialize(dataBase, state, derivs);
-  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -271,15 +210,17 @@ void
 VoronoiCells<Dimension>::
 addFacetedBoundary(const FacetedVolume& bound,
                    const std::vector<FacetedVolume>& holes) {
-  const auto numExisting = mFacetedBoundaries.size();
-  for (auto i = 0u; i < numExisting; ++i) {
-    if (bound == mFacetedBoundaries[i] and holes == mFacetedHoles[i]) {
-      SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
-      return;
-    }
+  if (std::ranges::find(mFacetedBoundaries, bound) == mFacetedBoundaries.end()) {
+    mFacetedBoundaries.push_back(bound);
+  } else {
+    SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
   }
-  mFacetedBoundaries.push_back(bound);
-  mFacetedHoles.push_back(holes);
+  if (std::ranges::find(mFacetedHoles, holes) == mFacetedHoles.end()) {
+    mFacetedHoles.push_back(holes);
+  } else {
+    SpheralWarning << "tried to add same faceted holes twice" << std::endl;
+  }
+  ENSURE(mFacetedBoundaries.size() == mFacetedHoles.size());
 }
 
 //------------------------------------------------------------------------------
@@ -289,10 +230,8 @@ template<typename Dimension>
 void
 VoronoiCells<Dimension>::
 dumpState(FileIO& file, const std::string& pathName) const {
-  // file.write(mVolume, pathName + "/Voronoi_volume");
-  // file.write(mWeight, pathName + "/weight");
-  // file.write(mSurfacePoint, pathName + "/surfacePoint");
-  // file.write(mCellFaceFlags, pathName + "/cellFaceFlags");
+  VolumeUpdate<Dimension>::dumpState(file, pathName);
+  file.write(mSurfacePoint, pathName + "/surfacePoint");
 }
 
 //------------------------------------------------------------------------------
@@ -302,6 +241,8 @@ template<typename Dimension>
 void
 VoronoiCells<Dimension>::
 restoreState(const FileIO& file, const std::string& pathName) {
+  VolumeUpdate<Dimension>::restoreState(file, pathName);
+  file.read(mSurfacePoint, pathName + "/surfacePoint");
 }
 
 } // end namespace Spheral

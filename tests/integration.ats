@@ -130,7 +130,10 @@ source("functional/Porosity/PlanarCompaction/PlanarCompaction-1d.py")
 
 # RK tests
 source("functional/RK/RKInterpolation.py")
-source("functional/RK/testVoronoiVolume.py")
+
+# VoronoiCells tests
+source("functional/VoronoiCells/testVoronoiVolume.py")
+source("unit/VoronoiCells/testVolumeScaling.py")
 
 # KernelIntegrator tests
 source("unit/KernelIntegrator/TestIntegrator.py")

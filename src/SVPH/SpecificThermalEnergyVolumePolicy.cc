@@ -19,7 +19,7 @@ namespace Spheral {
 template<typename Dimension>
 SpecificThermalEnergyVolumePolicy<Dimension>::
 SpecificThermalEnergyVolumePolicy():
-  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::volume}) {
+  FieldUpdatePolicy<Dimension, Scalar>({HydroFieldNames::hydroVolume}) {
 }
 
 //------------------------------------------------------------------------------
@@ -42,8 +42,8 @@ update(const KeyType& key,
   // Get the state fields.
   const auto  buildKey = [&](const std::string& fkey) { return StateBase<Dimension>::buildFieldKey(fkey, nodeListKey); };
   auto&       eps = state.field(key, 0.0);
-  const auto& vol = state.field(buildKey(HydroFieldNames::volume), 0.0);
-  const auto& vol0 = state.field(buildKey(HydroFieldNames::volume + "0"), 0.0);
+  const auto& vol = state.field(buildKey(HydroFieldNames::hydroVolume), 0.0);
+  const auto& vol0 = state.field(buildKey(HydroFieldNames::hydroVolume + "0"), 0.0);
   const auto& P = state.field(buildKey(HydroFieldNames::pressure), 0.0);
   const auto& Q = derivs.field(buildKey(HydroFieldNames::maxViscousPressure), 0.0);
 

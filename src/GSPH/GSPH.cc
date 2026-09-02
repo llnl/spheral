@@ -120,7 +120,7 @@ registerState(DataBase<Dimension>& dataBase,
                                                                                                 (*itr)->rhoMax()));
   }
 
-  auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   state.enroll(volume, make_policy<ReplaceWithRatioPolicy<Dimension,Scalar>>({HydroFieldNames::massDensity},
                                                                              HydroFieldNames::mass,
                                                                              HydroFieldNames::massDensity));
@@ -165,7 +165,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
     const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-          auto  volume = state.fields(HydroFieldNames::volume, 0.0);
+          auto  volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
 
     computeSPHSumMassDensity(connectivityMap, this->kernel(), true, position, mass, H, massDensity);
     computeSPHVolume(mass,massDensity,volume);

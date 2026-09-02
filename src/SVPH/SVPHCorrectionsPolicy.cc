@@ -25,7 +25,7 @@ SVPHCorrectionsPolicy(const DataBase<Dimension>& dataBase,
                       const TableKernel<Dimension>& kernel):
   UpdatePolicyBase<Dimension>({HydroFieldNames::position + UpdatePolicyBase<Dimension>::wildcard(),
                                HydroFieldNames::H,
-                               HydroFieldNames::volume}),
+                               HydroFieldNames::hydroVolume}),
   mDataBase(dataBase),
   mKernel(kernel) {
 }
@@ -43,7 +43,7 @@ update(const KeyType& key,
        const double /*t*/,
        const double /*dt*/) {
 
-  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
 

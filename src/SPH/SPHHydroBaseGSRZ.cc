@@ -50,6 +50,8 @@
 #include "Mesh/Mesh.hh"
 #include "CRKSPH/volumeSpacing.hh"
 
+#include "VoronoiCells/GeometryScaling.hh"
+
 #include "SPHHydroBaseGSRZ.hh"
 
 #include <limits.h>
@@ -157,42 +159,11 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
       densityUpdate() == MassDensityType::CorrectedSumDensity) {
     FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
     const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-    const unsigned numNodeLists = mass.numFields();
-    for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-      const unsigned n = mass[nodeListi]->numElements();
-      for (unsigned i = 0; i != n; ++i) {
-        const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-        mass(nodeListi, i) *= safeInvVar(circi);
-      }
-    }
+    auto guard = unscaledRegion(pos, mass);
+    SPHHydroBase<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
-
-  // Base class finalization does most of the work.
-  SPHHydroBase<Dimension>::preStepInitialize(dataBase, state, derivs);
-
-  // Now convert back to true masses and mass densities.  We also apply the RZ
-  // correction factor to the mass density.
-  if (densityUpdate() == MassDensityType::RigorousSumDensity or
-      densityUpdate() == MassDensityType::CorrectedSumDensity) {
-    //const TableKernel<Dimension>& W = this->kernel();
-    const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
-    const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-    FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-    FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-    const unsigned numNodeLists = massDensity.numFields();
-    for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-      const unsigned n = massDensity[nodeListi]->numElements();
-      for (unsigned i = 0; i != n; ++i) {
-        const Vector& xi = position(nodeListi, i);
-        //const SymTensor& Hi = H(nodeListi, i);
-        //const Scalar zetai = abs((Hi*xi).y());
-        //const Scalar fi = W.f1(zetai);
-        const Scalar circi = 2.0*M_PI*abs(xi.y());
-        mass(nodeListi, i) *= circi;
-        // massDensity(nodeListi, i) *= fi;
-        // massDensity(nodeListi, i) *= fi*safeInvVar(2.0*M_PI*abs(xi.y()));
-      }
-    }
+  else {
+    SPHHydroBase<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
 }
 
@@ -644,30 +615,12 @@ applyGhostBoundaries(State<Dim<2> >& state,
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
   const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Apply ordinary SPH BCs.
-  SPHHydroBase<Dim<2> >::applyGhostBoundaries(state, derivs);
-  for (ConstBoundaryIterator boundItr = this->boundaryBegin();
-       boundItr != this->boundaryEnd();
-       ++boundItr) (*boundItr)->finalizeGhostBoundary();
-
-  // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) *= circi;
-    }
+  {
+    auto guard = unscaledRegion(pos, mass);
+    SPHHydroBase<Dim<2> >::applyGhostBoundaries(state, derivs);
+    for (ConstBoundaryIterator boundItr = this->boundaryBegin();
+         boundItr != this->boundaryEnd();
+         ++boundItr) (*boundItr)->finalizeGhostBoundary();
   }
 }
 
@@ -682,35 +635,27 @@ enforceBoundaries(State<Dim<2> >& state,
   // Convert the mass to mass/length before BCs are applied.
   FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
   FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
+  {
+    auto guard = unscaledInternalRegion(pos, mass);
 
-  // Apply ordinary SPH BCs.
-  SPHHydroBase<Dim<2> >::enforceBoundaries(state, derivs);
+    // Apply ordinary SPH BCs.
+    SPHHydroBase<Dim<2> >::enforceBoundaries(state, derivs);
 
-  // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const SymTensor& Hi = H(nodeListi, i);
-      const Scalar zetai = (Hi*posi).y();
-      const Scalar ri = posi.y();
-      const Scalar hrInvi = zetai*safeInvVar(ri);
-      const Scalar rmin = 0.5/(nPerh*hrInvi);
-      if (ri < rmin) posi.y(2.0*rmin - ri);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-      mass(nodeListi, i) *= circi;
+    // We also ensure no point approaches the z-axis too closely.
+    FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
+    const unsigned numNodeLists = mass.numFields();
+    for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+      const unsigned n = mass[nodeListi]->numInternalElements();
+      const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();
+      for (unsigned i = 0; i != n; ++i) {
+        Vector& posi = pos(nodeListi, i);
+        const SymTensor& Hi = H(nodeListi, i);
+        const Scalar zetai = (Hi*posi).y();
+        const Scalar ri = posi.y();
+        const Scalar hrInvi = zetai*safeInvVar(ri);
+        const Scalar rmin = 0.5/(nPerh*hrInvi);
+        if (ri < rmin) posi.y(2.0*rmin - ri);
+      }
     }
   }
 }

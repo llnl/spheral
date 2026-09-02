@@ -349,10 +349,10 @@ enforceBoundaries(State<Dimension>& state,
 // Return the RK orders we want to use
 //------------------------------------------------------------------------------
 template<typename Dimension>
-std::set<RKOrder>
+typename CRKSPHBase<Dimension>::RKRequirements
 CRKSPHBase<Dimension>::
 requireReproducingKernels() const {
-  return std::set<RKOrder>({RKOrder::ZerothOrder, mOrder});
+  return {{RKOrder::ZerothOrder, mOrder}, {}, false};
 }
 
 //------------------------------------------------------------------------------
