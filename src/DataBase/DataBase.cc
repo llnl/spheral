@@ -4,7 +4,11 @@
 //
 // Created by JMO, Sun Feb  6 13:44:49 PST 2000
 //----------------------------------------------------------------------------//
+#include "config.hh"
 #include "DataBase.hh"
+#if defined(SPHERAL_ENABLE_HIP) || defined(SPHERAL_ENABLE_CUDA)
+#include "Neighbor/ConnectivityMap_RAJA.hh"
+#endif
 #include "Geometry/Dimension.hh"
 #include "Geometry/GeometryRegistrar.hh"
 #include "Field/NodeIterators.hh"
@@ -36,6 +40,18 @@ using std::endl;
 
 namespace Spheral {
 
+namespace {
+
+#if defined(SPHERAL_ENABLE_HIP) || defined(SPHERAL_ENABLE_CUDA)
+template<typename Dimension>
+using DefaultConnectivityMap = ConnectivityMap_RAJA<Dimension>;
+#else
+template<typename Dimension>
+using DefaultConnectivityMap = ConnectivityMap<Dimension>;
+#endif
+
+}
+
 //------------------------------------------------------------------------------
 // Constructor
 //------------------------------------------------------------------------------
@@ -49,7 +65,7 @@ DataBase():
   mSolidNodeListAsNodeListPtrs(),
   mDEMNodeListPtrs(),
   mDEMNodeListAsNodeListPtrs(),
-  mConnectivityMapPtr(std::make_shared<ConnectivityMap<Dimension>>()) {
+  mConnectivityMapPtr(std::make_shared<DefaultConnectivityMap<Dimension>>()) {
 }
 
 //------------------------------------------------------------------------------

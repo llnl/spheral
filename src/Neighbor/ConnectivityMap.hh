@@ -36,7 +36,7 @@ public:
 
   // Constructors, destructor.
   ConnectivityMap();
-  ~ConnectivityMap() = default;
+  virtual ~ConnectivityMap() = default;
 
   template<typename NodeListIterator>
   ConnectivityMap(const NodeListIterator& begin,
@@ -176,6 +176,15 @@ public:
   // No copy constructor or assignment.
   ConnectivityMap(const ConnectivityMap&) = delete;
   ConnectivityMap& operator=(const ConnectivityMap&) = delete;
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  // Optional alternative pair-construction backend.  The ordinary
+  // ConnectivityMap owns the established CPU implementation and returns false
+  // here.  Derived implementations return true after filling nodePairs.
+  virtual bool tryBuildNodePairs(const double kernelExtent,
+                                 const bool ghostConnectivity,
+                                 std::vector<NodePairIdxType>& nodePairs);
 
 private:
   //--------------------------- Private Interface ---------------------------//
