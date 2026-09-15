@@ -1,6 +1,7 @@
 include_directories(.)
 set(Neighbor_inst
     ConnectivityMap
+    ConnectivityMap_RAJA
     GridCellIndex
     GridCellPlane
     Neighbor
@@ -17,6 +18,7 @@ instantiate(Neighbor_inst Neighbor_sources)
 set(Neighbor_headers
     ConnectivityMap.hh
     ConnectivityMapInline.hh
+    ConnectivityMap_RAJA.hh
     GridCellIndex.hh
     GridCellIndexBase.hh
     GridCellIndexInline.hh

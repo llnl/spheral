@@ -133,6 +133,20 @@ ConnectivityMap():
 }
 
 //------------------------------------------------------------------------------
+// Default pair-construction extension point.  The base ConnectivityMap keeps
+// the established CPU implementation below; accelerator-specific subclasses
+// override this method without exposing their backend details here.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+bool
+ConnectivityMap<Dimension>::
+tryBuildNodePairs(const double,
+                  const bool,
+                  std::vector<NodePairIdxType>&) {
+  return false;
+}
+
+//------------------------------------------------------------------------------
 // Internal method to build the connectivity for the requested set of NodeLists.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -739,9 +753,6 @@ computeConnectivity() {
     }
   }
 
-  // Create a list of flags to keep track of which nodes have been completed thus far.
-  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(0);
-
   // Get the position and H fields.
   const auto position = dataBase.globalPosition();
   const auto H = dataBase.globalHfield();
@@ -750,6 +761,18 @@ computeConnectivity() {
   if (mNodePairListPtr) {
     nodePairs.reserve(mNodePairListPtr->size());
   }
+  FieldList<Dimension, int> flagNodeDone;
+
+  const bool alternateConnectivity = this->tryBuildNodePairs(kernelExtent,
+                                                              ghostConnectivity,
+                                                              nodePairs);
+
+  if (not alternateConnectivity) {
+    // Create a list of flags to keep track of which nodes have been completed
+    // thus far.  The device path processes each eligible source node exactly
+    // once, so it does not need this host-side state.
+    flagNodeDone = dataBase.newGlobalFieldList(0);
+
   for (auto [iiNodeList, nptr]: enumerate(mNodeLists)) {
     const auto etaMax = nptr->neighbor().kernelExtent();
 
@@ -831,6 +854,8 @@ computeConnectivity() {
       }
     }
   }
+  }
+
   mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
@@ -954,6 +979,7 @@ computeConnectivity() {
   // Post conditions.
   BEGIN_CONTRACT_SCOPE
   // Make sure that the correct number of nodes have been completed.
+  if (not alternateConnectivity) {
   for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
     const auto n = (ghostConnectivity ? 
                     mNodeLists[iNodeList]->numNodes() :
@@ -962,6 +988,7 @@ computeConnectivity() {
       ENSURE2(flagNodeDone(iNodeList, i) == 1,
               "Missed connnectivity for (" << iNodeList << " " << i << ")");
     }
+  }
   }
 
   // Make sure we're ready to be used.
