@@ -650,6 +650,14 @@ if siloSnapShotFile:
         DrhoDtRZ = derivs.scalarFields("delta " + HydroFieldNames.massDensityRZ)
         fieldLists += [massRZ, rhoRZ, DrhoDtRZ]
 
+    # Also write out what the iterateIdealH algorithm would do
+    control.iterateIdealH()
+    H1 = SymTensorFieldList(db.fluidHfield)
+    H1.copyFields()
+    for f in H1:
+        f.name = "H_iterated"
+    fieldLists.append(H1)
+
     # Write the sucker.
     siloPointmeshDump(siloSnapShotFile, 
                       fieldLists = fieldLists,
