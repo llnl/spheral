@@ -1,3 +1,5 @@
+.. _release-label:
+
 *******************************************
 Spheral Release Process
 *******************************************
@@ -124,3 +126,14 @@ the key steps for performing a hotfix release are:
   #. Make a PR to merge the main branch into the develop branch. After it 
      passes all CI checks and is approved, merge the PR. This will ensure that
      changes for the bugfix will be included in future development.
+
+.. _semver-label:
+
+=================
+Version Numbering
+=================
+
+Spheral releases use the version format ``YYYY.MM.pp``. The ``YYYY`` and
+``MM`` components identify the release year and month, and ``pp`` is the patch
+number for that release series. GitHub release tags prepend ``v`` to the same
+version string, such as ``v2025.12.0``.
