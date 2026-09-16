@@ -2,10 +2,6 @@ spack:
   specs:
     - "spheral@develop+mpi~caliper~network%gcc"
   view: false
-  concretizer:
-    unify: false
-    reuse: false
-    compiler_mixing: false
   develop:
     spheral:
       path: ../../../../

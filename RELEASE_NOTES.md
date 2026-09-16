@@ -32,6 +32,12 @@ Notable changes include:
       * Enable CI to run for Debug HIP builds.
     * Changing LC GNU compiler to 13.3.1.
     * Using Hubcast instead of Gitlab mirroring to run CI on LC machines.
+    * Update to Spack 1.2.2 as well as some TPLS:
+      * Boost updated from 1.87 to 1.90.
+      * Caliper updated from 2.11 to 2.14.
+      * Axom updated from 0.12.0 to 0.14.0.
+      * Sundials updated from 7.0.0 to 7.7.0.
+      * Installs are moved from $spack/opts to $spack/../installs.
 
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.

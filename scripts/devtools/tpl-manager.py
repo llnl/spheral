@@ -11,7 +11,7 @@ def get_config_dir(base_dir):
 
 default_install_args = dict(stop_at="initconfig", fail_fast=True)
 default_spack_url = "https://github.com/spack/spack.git"
-spack_commit = "0c2be44e4ece21eb091ad5de4c97716b7c6d4c87"   # Spack version: v1.1.0
+spack_commit = "3e19345b6e12f5ff1b874f4059622fc6a1fd804a" # Spack version: v1.2.2
 
 # Current repo (either LLNLSpheral or Spheral)
 base_dir = os.getcwd()
