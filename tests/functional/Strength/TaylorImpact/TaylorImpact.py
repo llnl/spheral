@@ -650,6 +650,10 @@ if siloSnapShotFile:
         DrhoDtRZ = derivs.scalarFields("delta " + HydroFieldNames.massDensityRZ)
         fieldLists += [massRZ, rhoRZ, DrhoDtRZ]
 
+    # Make copies of reference FieldLists before we change H
+    for fl in fieldLists:
+        fl.copyFields()
+
     # Also write out what the iterateIdealH algorithm would do
     control.iterateIdealH()
     H1 = SymTensorFieldList(db.fluidHfield)
