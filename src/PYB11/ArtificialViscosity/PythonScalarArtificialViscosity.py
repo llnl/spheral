@@ -73,11 +73,6 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
     @PYB11pure_virtual
     @PYB11const
     def computeQPiij(self,
-                     # Outputs (pass by reference - modify in place)
-                     QPiij = "Scalar&",
-                     QPiji = "Scalar&",
-                     Qij   = "Scalar&",
-                     Qji   = "Scalar&",
                      # Particle i state
                      xi    = "const Vector&",
                      vi    = "const Vector&",
@@ -100,12 +95,16 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
 
         Override this method in Python to implement custom viscosity models.
 
-        This is a SIMPLIFIED interface with only 12 arguments (vs 20+ in full QPiij).
+        Should return results a tuple: (QPiij, QPiji, Qij, Qji)
+
+        This is a SIMPLIFIED interface with only 14 arguments (vs 20+ in full QPiij).
         All FieldList lookups and complex data extraction is handled by C++.
 
-        Args:
+        Returns a tuple:
             QPiij, QPiji: Q/rho^2 viscous pressure outputs (modify in place)
             Qij, Qji: Viscous pressure Q outputs (modify in place)
+
+        Args:
             xi, vi, rhoi, csi: Position, velocity, density, sound speed for particle i
             xj, vj, rhoj, csj: Position, velocity, density, sound speed for particle j
             etai, etaj: Pre-computed Hi*(xi-xj) and Hj*(xj-xi)
@@ -117,31 +116,24 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
             vij = vi - vj
             xij = xi - xj
 
-            if vij.dot(xij) < 0.0:  # Only apply in compression
-                # Compute dimensionless velocity parameter mu
-                mui = vij.dot(etai) / (etai.magnitude2() + self.epsilon2())
-                muj = vij.dot(etaj) / (etaj.magnitude2() + self.epsilon2())
+            if vij.dot(xij) < 0.0:  # Compression
+                mui = vij.dot(etai) / (etai.magnitude2() + self.epsilon2)
+                muj = vij.dot(etaj) / (etaj.magnitude2() + self.epsilon2)
 
-                # Compute viscosity terms
                 Clij = 0.5 * (fCli + fClj) * self.Cl
                 Cqij = 0.5 * (fCqi + fCqj) * self.Cq
 
                 ei = -Clij * csi * min(0.0, mui) + Cqij * min(0.0, mui)**2
                 ej = -Clij * csj * min(0.0, muj) + Cqij * min(0.0, muj)**2
 
-                # Set outputs
-                QPiij = ei / rhoi
-                QPiji = ej / rhoj
-                Qij = rhoi * ei
-                Qji = rhoj * ej
+                return (ei / rhoi, 
+                        ej / rhoj,
+                        rhoi * ei,
+                        rhoj * ej)
             else:
-                # Expansion - no viscosity
-                QPiij = 0.0
-                QPiji = 0.0
-                Qij = 0.0
-                Qji = 0.0
+                return (0.0, 0.0, 0.0, 0.0)
         """
-        return "void"
+        return "std::tuple<Scalar, Scalar, Scalar, Scalar>"
 
     @PYB11virtual
     @PYB11protected

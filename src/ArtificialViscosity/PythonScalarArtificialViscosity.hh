@@ -17,6 +17,8 @@
 #include "ArtificialViscosity.hh"
 #include "ArtificialViscosityView.hh"
 
+#include <tuple>
+
 namespace Spheral {
 
 template<typename Dimension>
@@ -43,15 +45,12 @@ public:
 
   //...........................................................................
   // SIMPLIFIED virtual method for Python to override (CPU-only)
-  // This method has only 12 parameters instead of the full 20+ QPiij signature
-  // All FieldListView lookups and complex data are pre-computed by the C++ wrapper
-  virtual void computeQPiij(Scalar& QPiij, Scalar& QPiji,                                             // Outputs: Q/rho^2
-                            Scalar& Qij, Scalar& Qji,                                                 // Outputs: viscous pressure Q
-                            const Vector& xi, const Vector& vi, const Scalar rhoi, const Scalar csi,  // Particle i
-                            const Vector& xj, const Vector& vj, const Scalar rhoj, const Scalar csj,  // Particle j
-                            const Vector& etai, const Vector& etaj,                                   // Pre-computed H*(xi-xj) and H*(xj-xi)
-                            const Scalar fCli, const Scalar fCqi,                                     // Pre-computed multipliers for i
-                            const Scalar fClj, const Scalar fCqj) const = 0;                          // Pre-computed multipliers for j
+  virtual std::tuple<Scalar, Scalar, Scalar, Scalar>                                     // Outputs: (Qij/rho^2, Qji/rho^2, Qij, Qji)
+  computeQPiij(const Vector& xi, const Vector& vi, const Scalar rhoi, const Scalar csi,  // Particle i
+               const Vector& xj, const Vector& vj, const Scalar rhoj, const Scalar csj,  // Particle j
+               const Vector& etai, const Vector& etaj,                                   // Pre-computed H*(xi-xj) and H*(xj-xi)
+               const Scalar fCli, const Scalar fCqi,                                     // Pre-computed multipliers for i
+               const Scalar fClj, const Scalar fCqj) const = 0;                          // Pre-computed multipliers for j
 
   //...........................................................................
   // Standard ArtificialViscosity interface

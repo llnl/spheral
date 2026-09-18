@@ -92,6 +92,8 @@ from SpheralTestUtilities import *
 from GenerateNodeDistribution1d import GenerateNodeDistribution1d
 from SortAndDivideRedistributeNodes import distributeNodes1d
 
+from PyScalarQ import PyScalarQ1d
+
 title("1-D integrated hydro test -- planar Noh problem")
 
 #-------------------------------------------------------------------------------
@@ -126,6 +128,7 @@ commandLine(KernelConstructor = NBSplineKernel,
             evolveTotalEnergy = False,         # Only for SPH variants -- evolve total rather than specific energy
             boolReduceViscosity = False,
             HopkinsConductivity = False,       # For PSPH
+            Q = None,
             nhQ = 5.0,
             nhL = 10.0,
             aMin = 0.1,
@@ -422,6 +425,12 @@ output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
 #-------------------------------------------------------------------------------
+# If requested test out the Python Q implementation
+#-------------------------------------------------------------------------------
+if Q == "PyScalarQ":
+    Q = PyScalarQ1d(Cl, Cq, WT)
+
+#-------------------------------------------------------------------------------
 # Construct the hydro physics object.
 #-------------------------------------------------------------------------------
 if hydroType == "SVPH":
@@ -539,6 +548,7 @@ elif hydroType == "MFV":
 else:
     assert hydroType == "SPH"
     hydro = SPH(dataBase = db,
+                Q = Q,
                 W = WT,
                 cfl = cfl,
                 useVelocityMagnitudeForDt = useVelocityMagnitudeForDt,

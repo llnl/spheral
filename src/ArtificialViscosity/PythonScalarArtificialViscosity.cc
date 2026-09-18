@@ -95,11 +95,10 @@ QPiij(Scalar& QPiij, Scalar& QPiji,
   // Call simplified Python-overridable method with exception handling
   // This catches any Python exceptions and converts them to C++ errors
   try {
-    mParent->computeQPiij(QPiij, QPiji, Qij, Qji,
-                          xi, vi, rhoi, csi,
-                          xj, vj, rhoj, csj,
-                          etai, etaj,
-                          fCli, fCqi, fClj, fCqj);
+    std::tie(QPiij, QPiji, Qij, Qji) = mParent->computeQPiij(xi, vi, rhoi, csi,
+                                                             xj, vj, rhoj, csj,
+                                                             etai, etaj,
+                                                             fCli, fCqi, fClj, fCqj);
   } catch (const std::exception& e) {
     // Python raised an exception - report it clearly
     VERIFY2(false, "Python computeQPiij raised exception: " << e.what());
