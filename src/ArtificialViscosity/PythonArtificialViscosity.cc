@@ -1,7 +1,7 @@
 //---------------------------------Spheral++----------------------------------//
-// PythonScalarArtificialViscosity -- Implementation
+// PythonArtificialViscosity -- Implementation
 //----------------------------------------------------------------------------//
-#include "ArtificialViscosity/PythonScalarArtificialViscosity.hh"
+#include "ArtificialViscosity/PythonArtificialViscosity.hh"
 #include "Utilities/SpheralMessage.hh"
 
 #include <stdexcept>
@@ -11,9 +11,9 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 // Constructor
 //------------------------------------------------------------------------------
-template<typename Dimension>
-PythonScalarArtificialViscosity<Dimension>::
-PythonScalarArtificialViscosity(const Scalar Clinear,
+template<typename Dimension, typename QPiType>
+PythonArtificialViscosity<Dimension, QPiType>::
+PythonArtificialViscosity(const Scalar Clinear,
                                 const Scalar Cquadratic,
                                 const TableKernel<Dimension>& kernel) :
   ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
@@ -23,9 +23,9 @@ PythonScalarArtificialViscosity(const Scalar Clinear,
 //------------------------------------------------------------------------------
 // Destructor
 //------------------------------------------------------------------------------
-template<typename Dimension>
-PythonScalarArtificialViscosity<Dimension>::
-~PythonScalarArtificialViscosity() {
+template<typename Dimension, typename QPiType>
+PythonArtificialViscosity<Dimension, QPiType>::
+~PythonArtificialViscosity() {
   if (mView) {
     mView.free();
   }
@@ -34,23 +34,44 @@ PythonScalarArtificialViscosity<Dimension>::
 //------------------------------------------------------------------------------
 // Get scalar view - create wrapper on demand
 //------------------------------------------------------------------------------
-template<typename Dimension>
-chai::managed_ptr<typename PythonScalarArtificialViscosity<Dimension>::ArtViscViewScalar>
-PythonScalarArtificialViscosity<Dimension>::
+template<typename Dimension, typename QPiType>
+chai::managed_ptr<typename PythonArtificialViscosity<Dimension, QPiType>::ArtViscViewScalar>
+PythonArtificialViscosity<Dimension, QPiType>::
 getScalarView() {
-  if (!mView) {
-    mView = chai::make_managed<PythonAVView>(this);
+  if constexpr (!std::is_same_v<QPiType, Scalar>) {
+    return chai::managed_ptr<ArtViscViewScalar>();
+  } else {
+    if (!mView) {
+      mView = chai::make_managed<PythonAVView>(this);
+    }
+    return chai::dynamic_pointer_cast<ArtViscViewScalar>(mView);
   }
-  return chai::dynamic_pointer_cast<ArtViscViewScalar>(mView);
+}
+
+//------------------------------------------------------------------------------
+// Get tensor view - create wrapper on demand.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename QPiType>
+chai::managed_ptr<typename PythonArtificialViscosity<Dimension, QPiType>::ArtViscViewTensor>
+PythonArtificialViscosity<Dimension, QPiType>::
+getTensorView() {
+  if constexpr (!std::is_same_v<QPiType, Tensor>) {
+    return chai::managed_ptr<ArtViscViewTensor>();
+  } else {
+    if (!mView) {
+      mView = chai::make_managed<PythonAVView>(this);
+    }
+    return chai::dynamic_pointer_cast<ArtViscViewTensor>(mView);
+  }
 }
 
 //------------------------------------------------------------------------------
 // PythonAVView Constructor
 //------------------------------------------------------------------------------
-template<typename Dimension>
-PythonScalarArtificialViscosity<Dimension>::PythonAVView::
-PythonAVView(PythonScalarArtificialViscosity<Dimension>* parent) :
-  ArtificialViscosityView<Dimension, Scalar>(parent->Cl(),
+template<typename Dimension, typename QPiType>
+PythonArtificialViscosity<Dimension, QPiType>::PythonAVView::
+PythonAVView(PythonArtificialViscosity<Dimension, QPiType>* parent) :
+  ArtificialViscosityView<Dimension, QPiType>(parent->Cl(),
                                              parent->Cq(),
                                              parent->balsaraShearCorrection(),
                                              parent->epsilon2(),
@@ -62,10 +83,10 @@ PythonAVView(PythonScalarArtificialViscosity<Dimension>* parent) :
 //------------------------------------------------------------------------------
 // QPiij implementation - extract FieldListView data and call Python method
 //------------------------------------------------------------------------------
-template<typename Dimension>
+template<typename Dimension, typename QPiType>
 void
-PythonScalarArtificialViscosity<Dimension>::PythonAVView::
-QPiij(Scalar& QPiij, Scalar& QPiji,
+PythonArtificialViscosity<Dimension, QPiType>::PythonAVView::
+QPiij(QPiType& QPiij, QPiType& QPiji,
       Scalar& Qij, Scalar& Qji,
       const size_t nodeListi, const size_t i,
       const size_t nodeListj, const size_t j,

@@ -1,13 +1,13 @@
 #-------------------------------------------------------------------------------
-# PythonScalarArtificialViscosity
+# PythonArtificialViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from ArtificialViscosity import *
 
-@PYB11template("Dimension")
+@PYB11template("Dimension", "QPiType")
 @PYB11module("SpheralCompiledModules.SpheralArtificialViscosity")
-class PythonScalarArtificialViscosity(ArtificialViscosity):
-    """Python-overridable artificial viscosity (Scalar version, CPU-only).
+class PythonArtificialViscosity(ArtificialViscosity):
+    """Python-overridable artificial viscosity (Scalar or Tensor, CPU-only).
 
     Allows rapid prototyping of new viscosity models in Python.
 
@@ -18,9 +18,9 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
     Example usage:
         from Spheral1d import *
 
-        class MyViscosity(PythonScalarArtificialViscosity1d):
+        class MyViscosity(PythonArtificialViscosity1d):
             def __init__(self, Cl, Cq, kernel):
-                PythonScalarArtificialViscosity1d.__init__(self, Cl, Cq, kernel)
+                PythonArtificialViscosity1d.__init__(self, Cl, Cq, kernel)
 
             def computeQPiij(self, QPiij, QPiji, Qij, Qji,
                            xi, vi, rhoi, csi,
@@ -66,7 +66,7 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
                Clinear = "const Scalar",
                Cquadratic = "const Scalar",
                kernel = "const TableKernel<%(Dimension)s>&"):
-        "PythonScalarArtificialViscosity constructor"
+        "PythonArtificialViscosity constructor"
 
     #...........................................................................
     # Methods
@@ -101,7 +101,7 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
         All FieldList lookups and complex data extraction is handled by C++.
 
         Returns a tuple:
-            QPiij, QPiji: Q/rho^2 viscous pressure outputs (modify in place)
+            QPiij, QPiji: Q/rho^2 viscous pressure outputs (QPiType: Scalar or Tensor)
             Qij, Qji: Viscous pressure Q outputs (modify in place)
 
         Args:
@@ -133,7 +133,7 @@ class PythonScalarArtificialViscosity(ArtificialViscosity):
             else:
                 return (0.0, 0.0, 0.0, 0.0)
         """
-        return "std::tuple<Scalar, Scalar, Scalar, Scalar>"
+        return "std::tuple<%(QPiType)s, %(QPiType)s, Scalar, Scalar>"
 
     @PYB11virtual
     @PYB11protected

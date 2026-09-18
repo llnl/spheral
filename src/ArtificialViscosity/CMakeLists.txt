@@ -1,7 +1,7 @@
 include_directories(.)
 set(ArtificialViscosity_inst
   ArtificialViscosity
-  PythonScalarArtificialViscosity
+  PythonArtificialViscosity
   CullenDehnenViscosity
   IncrementCullenMultipliers
   MorrisMonaghanReducingViscosity
@@ -23,7 +23,7 @@ instantiate(ArtificialViscosity_inst ArtificialViscosity_sources)
 
 set(ArtificialViscosity_headers
   ArtificialViscosity.hh
-  PythonScalarArtificialViscosity.hh
+  PythonArtificialViscosity.hh
   ArtificialViscosityBase.hh
   ArtificialViscosityBaseInline.hh
   ArtificialViscosityView.hh
@@ -51,4 +51,3 @@ set(ArtificialViscosity_headers
 # LimitedMonaghanGingoldViscosityRZ.hh
 
 spheral_add_obj_library(ArtificialViscosity SPHERAL_OBJ_LIBS)
-
