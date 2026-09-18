@@ -33,6 +33,10 @@
 #ATS:t14 = test(       SELF, "--graphics None --clearDirectories True  --checkError True  --dataDir 'dumps-planar-spio' --restartStep 20 --restartFileConstructor SidreFileIO --SPIOFileCountPerTimeslice 1", np=6, label="Planar Noh problem -- 1-D (parallel) with Sidre (SPIO check)")
 #ATS:t15 = testif(t14, SELF, "--graphics None --clearDirectories False --checkError False --dataDir 'dumps-planar-spio' --restartStep 20 --restartFileConstructor SidreFileIO --SPIOFileCountPerTimeslice 1 --restoreCycle 20 --steps 20 --checkRestart True", np=6, label="Planar Noh problem -- 1-D (parallel) RESTART CHECK with Sidre (SPIO check)")
 #
+# Ordinary SPH with Python artificial viscosity implementation
+#
+#ATS:t16 = test(SELF, "--graphics None --clearDirectories True --checkError True --tol 0.02 --Q PyScalarQ --Cl 1.0 --Cq 2.0 --dataDirBase 'dumps-planar-PyScalarQ'", label="Planar Noh problem with Python Q implementation -- 1-D (serial)")
+#
 # Ordinary solid SPH
 #
 #ATS:t100 = test(        SELF, "--solid True --graphics None --clearDirectories True  --checkError True   --restartStep 20", label="Planar Noh problem with solid SPH -- 1-D (serial)")
