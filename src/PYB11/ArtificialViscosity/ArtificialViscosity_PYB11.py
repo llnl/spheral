@@ -22,6 +22,7 @@ PYB11includes += ['"ArtificialViscosity/ArtificialViscosity.hh"',
                   '"ArtificialViscosity/FiniteVolumeViscosity.hh"',
                   '"ArtificialViscosity/TensorSVPHViscosity.hh"',
                   '"ArtificialViscosity/TensorCRKSPHViscosity.hh"',
+                  '"ArtificialViscosity/PythonScalarArtificialViscosity.hh"',
                   '"DataBase/State.hh"',
                   '"DataBase/StateDerivatives.hh"',
                   '"FileIO/FileIO.hh"']
@@ -44,6 +45,7 @@ from CullenDehnenViscosity import *
 from FiniteVolumeViscosity import *
 from TensorSVPHViscosity import *
 from TensorCRKSPHViscosity import *
+from PythonScalarArtificialViscosity import *
 
 art_visc_names = ["MonaghanGingold", "TensorMonaghanGingold", "LimitedMonaghanGingold", "FiniteVolume"]
 
@@ -57,6 +59,7 @@ MorrisMonaghanReducingViscosity{ndim}d = PYB11TemplateClass(MorrisMonaghanReduci
 CullenDehnenViscosity{ndim}d = PYB11TemplateClass(CullenDehnenViscosity, template_parameters="{Dimension}")
 TensorSVPHViscosity{ndim}d = PYB11TemplateClass(TensorSVPHViscosity, template_parameters="{Dimension}")
 TensorCRKSPHViscosity{ndim}d = PYB11TemplateClass(TensorCRKSPHViscosity, template_parameters="{Dimension}")
+PythonScalarArtificialViscosity{ndim}d = PYB11TemplateClass(PythonScalarArtificialViscosity, template_parameters="{Dimension}")
 ''')
 
     for avn in art_visc_names:
