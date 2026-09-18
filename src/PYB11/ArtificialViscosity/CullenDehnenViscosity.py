@@ -111,5 +111,5 @@ Hopkins arXiv:1409.7395
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(PhysicsAbstractMethods, CullenDehnenViscosity, pure_virtual=False, virtual=True)
+PYB11inject(PhysicsAbstractMethods, CullenDehnenViscosity, virtual=True)
 PYB11inject(RestartMethods, CullenDehnenViscosity)

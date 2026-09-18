@@ -139,5 +139,5 @@ using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, pure_virtual=False)
+PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, virtual=True)
 PYB11inject(RestartMethods, ArtificialViscosity)
