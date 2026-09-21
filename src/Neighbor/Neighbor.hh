@@ -3,12 +3,12 @@
 //
 // Created by J. Michael Owen, Sun Nov 12 10:33:55 2000
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_Neighbor_hh__
-#define __Spheral_Neighbor_hh__
+#ifndef __Spheral_Neighbor__
+#define __Spheral_Neighbor__
 
-#include "Field/Field.hh"
-#include "Geometry/Dimension.hh"
+#include "Neighbor/NeighborBase.hh"
 #include "Geometry/GeomPlane.hh"
+#include "Field/Field.hh"
 
 #include <vector>
 
@@ -17,24 +17,17 @@ namespace Spheral {
 template<typename Dimension> class NodeList;
 template<typename Dimension, typename DataType> class Field;
 
-enum class NeighborSearchType {
-  //None = 0,
-  Gather = 1,
-  Scatter = 2,
-  GatherScatter = 3
-};
-
 template<typename Dimension>
-class Neighbor {
+class Neighbor: public NeighborBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef std::vector<int>::iterator iterator;
-  typedef std::vector<int>::const_iterator const_iterator;
+  using iterator = std::vector<int>::iterator;
+  using const_iterator = std::vector<int>::const_iterator;
 
   // Constructors and destructors
   Neighbor(NodeList<Dimension>& nodeList, 
