@@ -46,24 +46,22 @@ from TensorSVPHViscosity import *
 from TensorCRKSPHViscosity import *
 from PythonArtificialViscosity import *
 
-art_visc_names = ["MonaghanGingold", "TensorMonaghanGingold", "LimitedMonaghanGingold", "FiniteVolume"]
-
 for ndim in dims:
     Dimension = f"Dim<{ndim}>"
-    exec(f'''
-ArtificialViscosity{ndim}d = PYB11TemplateClass(ArtificialViscosity, template_parameters="{Dimension}")
-#ScalarArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
-#TensorArtificialViscosityView{ndim}d = PYB11TemplateClass(ArtificialViscosityView, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
-MorrisMonaghanReducingViscosity{ndim}d = PYB11TemplateClass(MorrisMonaghanReducingViscosity, template_parameters="{Dimension}")
-CullenDehnenViscosity{ndim}d = PYB11TemplateClass(CullenDehnenViscosity, template_parameters="{Dimension}")
-TensorSVPHViscosity{ndim}d = PYB11TemplateClass(TensorSVPHViscosity, template_parameters="{Dimension}")
-TensorCRKSPHViscosity{ndim}d = PYB11TemplateClass(TensorCRKSPHViscosity, template_parameters="{Dimension}")
-PythonScalarArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
-PythonTensorArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
+    for pref in ["Artificial",
+                 "MorrisMonaghanReducing",
+                 "CullenDehnen",
+                 "TensorSVPH",
+                 "TensorCRKSPH",
+                 "MonaghanGingold",
+                 "TensorMonaghanGingold",
+                 "LimitedMonaghanGingold",
+                 "FiniteVolume"]:
+        exec(f'''
+{pref}Viscosity{ndim}d = PYB11TemplateClass({pref}Viscosity, template_parameters="{Dimension}")
 ''')
 
-    for avn in art_visc_names:
-        exec(f'''
-{avn}Viscosity{ndim}d = PYB11TemplateClass({avn}Viscosity, template_parameters="{Dimension}")
-#{avn}ViscosityView{ndim}d = PYB11TemplateClass({avn}ViscosityView, template_parameters="{Dimension}")
+    exec(f'''
+PythonScalarArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
+PythonTensorArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
 ''')

@@ -18,9 +18,9 @@ class PythonArtificialViscosity(ArtificialViscosity):
     Example usage:
         from Spheral1d import *
 
-        class MyViscosity(PythonArtificialViscosity1d):
+        class MyViscosity(PythonScalarArtificialViscosity1d):
             def __init__(self, Cl, Cq, kernel):
-                PythonArtificialViscosity1d.__init__(self, Cl, Cq, kernel)
+                PythonScalarArtificialViscosity1d.__init__(self, Cl, Cq, kernel)
 
             def computeQPiij(self, QPiij, QPiji, Qij, Qji,
                            xi, vi, rhoi, csi,
