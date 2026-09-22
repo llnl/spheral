@@ -71,5 +71,5 @@ References:
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(PhysicsAbstractMethods, MorrisMonaghanReducingViscosity, pure_virtual=False, virtual=True)
+PYB11inject(PhysicsAbstractMethods, MorrisMonaghanReducingViscosity, virtual=True)
 PYB11inject(RestartMethods, MorrisMonaghanReducingViscosity)
