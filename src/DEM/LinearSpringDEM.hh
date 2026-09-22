@@ -17,6 +17,9 @@
 #include "Geometry/Dimension.hh"
 #include "DEM/DEMDimension.hh"
 #include "DEMBase.hh"
+#include "Utilities/DBC.hh"
+#include <algorithm>
+#include <cmath>
 #include <string>
 
 namespace Spheral {
@@ -46,6 +49,28 @@ public:
                   const Scalar staticFrictionCoefficient,
                   const Scalar rollingFrictionCoefficient,
                   const Scalar torsionalFrictionCoefficient,
+                  const Scalar cohesiveTensileStrength,
+                  const Scalar shapeFactor,
+                  const Scalar stepsPerCollision,
+                  const bool enableFastTimeStepping,
+                  const Vector& xmin,
+                  const Vector& xmax);
+
+  LinearSpringDEM(const DataBase<Dimension>& dataBase,
+                  const Scalar normalSpringConstant,
+                  const Scalar normalRestitutionCoefficient,
+                  const Scalar tangentialSpringConstant,
+                  const Scalar tangentialRestitutionCoefficient,
+                  const Scalar dynamicFrictionCoefficient,
+                  const Scalar staticFrictionCoefficient,
+                  const Scalar rollingFrictionCoefficient,
+                  const Scalar torsionalFrictionCoefficient,
+                  const Scalar normalRestitutionCoefficientParticleBoundary,
+                  const Scalar tangentialRestitutionCoefficientParticleBoundary,
+                  const Scalar dynamicFrictionCoefficientParticleBoundary,
+                  const Scalar staticFrictionCoefficientParticleBoundary,
+                  const Scalar rollingFrictionCoefficientParticleBoundary,
+                  const Scalar torsionalFrictionCoefficientParticleBoundary,
                   const Scalar cohesiveTensileStrength,
                   const Scalar shapeFactor,
                   const Scalar stepsPerCollision,
@@ -149,6 +174,24 @@ public:
   Scalar torsionalFrictionCoefficient() const;
   void   torsionalFrictionCoefficient(Scalar x);
 
+  Scalar normalRestitutionCoefficientParticleBoundary() const;
+  void   normalRestitutionCoefficientParticleBoundary(Scalar x);
+
+  Scalar tangentialRestitutionCoefficientParticleBoundary() const;
+  void   tangentialRestitutionCoefficientParticleBoundary(Scalar x);
+
+  Scalar dynamicFrictionCoefficientParticleBoundary() const;
+  void   dynamicFrictionCoefficientParticleBoundary(Scalar x);
+
+  Scalar staticFrictionCoefficientParticleBoundary() const;
+  void   staticFrictionCoefficientParticleBoundary(Scalar x);
+
+  Scalar rollingFrictionCoefficientParticleBoundary() const;
+  void   rollingFrictionCoefficientParticleBoundary(Scalar x);
+
+  Scalar torsionalFrictionCoefficientParticleBoundary() const;
+  void   torsionalFrictionCoefficientParticleBoundary(Scalar x);
+
   Scalar cohesiveTensileStrength() const;
   void   cohesiveTensileStrength(Scalar x);
 
@@ -160,6 +203,12 @@ public:
 
   Scalar tangentialBeta() const;
   void   tangentialBeta(Scalar x);
+
+  Scalar normalBetaParticleBoundary() const;
+  void   normalBetaParticleBoundary(Scalar x);
+
+  Scalar tangentialBetaParticleBoundary() const;
+  void   tangentialBetaParticleBoundary(Scalar x);
 
   Scalar collisionDuration() const;
   void   collisionDuration(Scalar x);
@@ -194,11 +243,19 @@ private:
   Scalar mStaticFrictionCoefficient;        // coefficient of friction - static
   Scalar mRollingFrictionCoefficient;       // coefficient of friction - rolling
   Scalar mTorsionalFrictionCoefficient;     // coefficient of friction - torsional 
+  Scalar mNormalRestitutionCoefficientParticleBoundary;
+  Scalar mTangentialRestitutionCoefficientParticleBoundary;
+  Scalar mDynamicFrictionCoefficientParticleBoundary;
+  Scalar mStaticFrictionCoefficientParticleBoundary;
+  Scalar mRollingFrictionCoefficientParticleBoundary;
+  Scalar mTorsionalFrictionCoefficientParticleBoundary;
   Scalar mCohesiveTensileStrength;
   Scalar mShapeFactor;                      // varies between 0 and 1 to account to non spherical shapes & influences rolling/torsion spring parameters
 
   Scalar mNormalBeta;
   Scalar mTangentialBeta;
+  Scalar mNormalBetaParticleBoundary;
+  Scalar mTangentialBetaParticleBoundary;
   Scalar mCollisionDuration;
 
   // field Lists

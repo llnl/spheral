@@ -48,4 +48,20 @@ velocity(const typename Dimension::Vector& value)  {
   mVelocity=value;
 }
 
+template<typename Dimension>
+inline
+const typename DEMDimension<Dimension>::AngularVector&
+InfinitePlaneSolidBoundary<Dimension>::
+angularVelocity() const {
+  return mAngularVelocity;
+}
+
+template<typename Dimension>
+inline
+void
+InfinitePlaneSolidBoundary<Dimension>::
+angularVelocity(const typename DEMDimension<Dimension>::AngularVector& value)  {
+  mAngularVelocity=value;
+}
+
 }
