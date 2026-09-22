@@ -9,6 +9,8 @@ from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
 
+import SpheralConfigs
+
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
@@ -44,7 +46,9 @@ from CullenDehnenViscosity import *
 from FiniteVolumeViscosity import *
 from TensorSVPHViscosity import *
 from TensorCRKSPHViscosity import *
-from PythonArtificialViscosity import *
+
+if not SpheralConfigs.gpu_enabled():
+    from PythonArtificialViscosity import *
 
 for ndim in dims:
     Dimension = f"Dim<{ndim}>"
@@ -61,7 +65,8 @@ for ndim in dims:
 {pref}Viscosity{ndim}d = PYB11TemplateClass({pref}Viscosity, template_parameters="{Dimension}")
 ''')
 
-    exec(f'''
+    if not SpheralConfigs.gpu_enabled():
+        exec(f'''
 PythonScalarArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Scalar"))
 PythonTensorArtificialViscosity{ndim}d = PYB11TemplateClass(PythonArtificialViscosity, template_parameters=("{Dimension}", "{Dimension}::Tensor"))
 ''')

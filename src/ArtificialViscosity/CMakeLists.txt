@@ -1,7 +1,6 @@
 include_directories(.)
 set(ArtificialViscosity_inst
   ArtificialViscosity
-  PythonArtificialViscosity
   CullenDehnenViscosity
   IncrementCullenMultipliers
   MorrisMonaghanReducingViscosity
@@ -12,6 +11,11 @@ set(ArtificialViscosity_inst
   TensorSVPHViscosity
   TensorCRKSPHViscosity)
 
+if (NOT SPHERAL_GPU_ENABLED)
+  list(APPEND ArtificialViscosity_inst
+      PythonArtificialViscosity
+    )
+endif()
 
 # if(ENABLE_2D)
 #   list(APPEND ArtificialViscosity_sources

@@ -14,8 +14,8 @@ namespace Spheral {
 template<typename Dimension, typename QPiType>
 PythonArtificialViscosity<Dimension, QPiType>::
 PythonArtificialViscosity(const Scalar Clinear,
-                                const Scalar Cquadratic,
-                                const TableKernel<Dimension>& kernel) :
+                          const Scalar Cquadratic,
+                          const TableKernel<Dimension>& kernel) :
   ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
   mView(nullptr) {
 }
