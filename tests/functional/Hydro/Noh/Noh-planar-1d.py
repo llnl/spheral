@@ -35,7 +35,7 @@
 #
 # Ordinary SPH with different artificial viscosity implementations (including Python overrides)
 #
-#ATS:tack(raja_test = False)
+#ATS:tack(raja_test = True)
 #ATS:t16 = test(SELF, "--graphics None --clearDirectories True --checkError True --tol 0.02 --Q PyScalarQ1d --Cl 1.0 --Cq 2.0 --dataDirBase 'dumps-planar-PyScalarQ'", label="Planar Noh problem with Python Scalar Q implementation -- 1-D (serial)")
 #ATS:t17 = test(SELF, "--graphics None --clearDirectories True --checkError True --tol 0.02 --Q PyTensorQ1d --Cl 1.0 --Cq 2.0 --dataDirBase 'dumps-planar-PyTensorQ'", label="Planar Noh problem with Python Tensor Q implementation -- 1-D (serial)")
 #ATS:t18 = test(SELF, "--graphics None --clearDirectories True --checkError True --tol 0.02 --Q TensorMonaghanGingoldViscosity --Cl 1.0 --Cq 2.0 --dataDirBase 'dumps-planar-TensorMGQ'", label="Planar Noh problem with Tensor Monaghan-Gingold Q -- 1-D (serial)")
@@ -100,8 +100,10 @@ from SpheralTestUtilities import *
 from GenerateNodeDistribution1d import GenerateNodeDistribution1d
 from SortAndDivideRedistributeNodes import distributeNodes1d
 
-from PyScalarQ import PyScalarQ1d
-from PyTensorQ import PyTensorQ1d
+import SpheralConfigs
+if not SpheralConfigs.gpu_enabled():
+    from PyScalarQ import PyScalarQ1d
+    from PyTensorQ import PyTensorQ1d
 
 title("1-D integrated hydro test -- planar Noh problem")
 
