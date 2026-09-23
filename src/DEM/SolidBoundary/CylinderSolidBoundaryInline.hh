@@ -16,6 +16,7 @@ point(const typename Dimension::Vector& value) {
   mPoint=value;
 }
 
+
 template<typename Dimension>
 inline
 const typename Dimension::Vector&
@@ -31,6 +32,7 @@ CylinderSolidBoundary<Dimension>::
 axis(const typename Dimension::Vector& value) {
   mAxis=value;
 }
+
 
 template<typename Dimension>
 inline
@@ -48,6 +50,7 @@ length(typename Dimension::Scalar value) {
   mLength=value;
 }
 
+
 template<typename Dimension>
 inline
 typename Dimension::Scalar
@@ -63,6 +66,7 @@ CylinderSolidBoundary<Dimension>::
 radius(typename Dimension::Scalar value) {
   mRadius=value;
 }
+
 
 template<typename Dimension>
 inline
@@ -80,4 +84,20 @@ velocity(const typename Dimension::Vector& value)  {
   mVelocity=value;
 }
 
+
+template<typename Dimension>
+inline
+const typename DEMDimension<Dimension>::AngularVector&
+CylinderSolidBoundary<Dimension>::
+angularVelocity() const {
+  return mAngularVelocity;
+}
+
+template<typename Dimension>
+inline
+void
+CylinderSolidBoundary<Dimension>::
+angularVelocity(const typename DEMDimension<Dimension>::AngularVector& value)  {
+  mAngularVelocity=value;
+}
 }
