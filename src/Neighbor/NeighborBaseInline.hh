@@ -3,17 +3,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Constructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SPHERAL_HOST_DEVICE
-NeighborBase(const NeighborSearchType searchType,
-             const typename Dimension::Scalar kernelExtent):
-  mSearchType(searchType),
-  mKernelExtent(kernelExtent) {
-}
-
-//------------------------------------------------------------------------------
 // Calculate the maximum radial extent of a given smoothing tensor.
 //------------------------------------------------------------------------------
 // Make the general case the SPH approximation: assume the argument is a 
@@ -23,7 +12,7 @@ SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Vector
 NeighborBase<Dimension>::
-HExtent(const typename Dimension::Scalar& H, 
+Hextent(const typename Dimension::Scalar& H, 
         const typename Dimension::Scalar& kernelExtent) {
   REQUIRE(H > 0.0);
   return Vector(kernelExtent/H);
@@ -38,7 +27,7 @@ SPHERAL_HOST_DEVICE
 inline
 Dim<1>::Vector
 NeighborBase< Dim<1> >::
-HExtent(const Dim<1>::SymTensor& H,
+Hextent(const Dim<1>::SymTensor& H,
         const Dim<1>::Scalar& kernelExtent) {
   REQUIRE(H.Determinant() > 0.0);
   return Vector(kernelExtent/H.xx());
@@ -49,7 +38,7 @@ SPHERAL_HOST_DEVICE
 inline
 Dim<2>::Vector
 NeighborBase< Dim<2> >::
-HExtent(const Dim<2>::SymTensor& H,
+Hextent(const Dim<2>::SymTensor& H,
         const Dim<2>::Scalar& kernelExtent) {
   const auto Hdet = H.Determinant();
   const auto M = H.square();
@@ -62,7 +51,7 @@ SPHERAL_HOST_DEVICE
 inline
 Dim<3>::Vector
 NeighborBase< Dim<3> >::
-HExtent(const Dim<3>::SymTensor& H,
+Hextent(const Dim<3>::SymTensor& H,
         const Dim<3>::Scalar& kernelExtent) {
   const auto Hdet = H.Determinant();
   const auto M = H.square();

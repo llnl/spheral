@@ -9,8 +9,10 @@
 #ifndef __Spheral_testBoxIntersection__
 #define __Spheral_testBoxIntersection__
 
-#include <utility>
+#include "config.hh"
 #include "Geometry/Dimension.hh"
+
+#include <utility>
 
 namespace Spheral {
 
@@ -18,6 +20,7 @@ namespace Spheral {
 // These methods specify the boxes by the their min and max coordinates, and
 // assume that the boxes are aligned with the coordinate system.
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testBoxIntersection(const Dim<1>::Vector& xmin1, const Dim<1>::Vector& xmax1,
@@ -28,6 +31,7 @@ testBoxIntersection(const Dim<1>::Vector& xmin1, const Dim<1>::Vector& xmax1,
   return true;
 }
 
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testBoxIntersection(const Dim<2>::Vector& xmin1, const Dim<2>::Vector& xmax1,
@@ -42,6 +46,7 @@ testBoxIntersection(const Dim<2>::Vector& xmin1, const Dim<2>::Vector& xmax1,
   return true;
 }
 
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testBoxIntersection(const Dim<3>::Vector& xmin1, const Dim<3>::Vector& xmax1,
@@ -63,6 +68,7 @@ testBoxIntersection(const Dim<3>::Vector& xmin1, const Dim<3>::Vector& xmax1,
 // Same as above using std::pairs to hold the box min/max's.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testBoxIntersection(const std::pair<typename Dimension::Vector, typename Dimension::Vector>& box1,
@@ -74,6 +80,7 @@ testBoxIntersection(const std::pair<typename Dimension::Vector, typename Dimensi
 //------------------------------------------------------------------------------
 // Test if a point is contained in a box.
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testPointInBox(const Dim<1>::Vector& point,
@@ -84,6 +91,7 @@ testPointInBox(const Dim<1>::Vector& point,
   return true;
 }
 
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testPointInBox(const Dim<2>::Vector& point,
@@ -98,6 +106,7 @@ testPointInBox(const Dim<2>::Vector& point,
   return true;
 }
 
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testPointInBox(const Dim<3>::Vector& point,
@@ -119,6 +128,7 @@ testPointInBox(const Dim<3>::Vector& point,
 // Same as above but specifying the box min/max using a std::pair.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 testPointInBox(const typename Dimension::Vector& point,

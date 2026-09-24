@@ -5,6 +5,6 @@ text = """
 // Explicit instantiation.
 //------------------------------------------------------------------------------
 namespace Spheral {
-  template class Neighbor< Dim< %(ndim)s > >;
+  template class Neighbor<Dim<%(ndim)s>>;
 }
 """
