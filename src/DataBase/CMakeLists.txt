@@ -45,5 +45,5 @@ set(DataBase_headers
     updateStateFields.hh
     )
 
-spheral_add_obj_library(DataBase SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(DataBase)
 

@@ -27,5 +27,5 @@ set(ExternalForce_includes
    )
 
 
-spheral_add_obj_library(ExternalForce SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(ExternalForce)
 

@@ -36,5 +36,5 @@ set(Neighbor_headers
     PairwiseFieldView.hh
     )
 
-spheral_add_obj_library(Neighbor SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Neighbor)
 

@@ -47,7 +47,7 @@ set(CRKSPH_headers
     zerothOrderSurfaceCorrections.hh
     )
 
-spheral_add_obj_library(CRKSPH SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(CRKSPH)
 
 spheral_install_python_files(CRKSPHHydros.py)
 

@@ -96,4 +96,4 @@ if (SPHERAL_ENABLE_PYTHON)
 endif()
 instantiate(Distributed_inst Distributed_sources)
 
-spheral_add_obj_library(Distributed SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Distributed)

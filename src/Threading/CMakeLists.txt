@@ -17,5 +17,5 @@ set(Threading_headers
     ManagedView.hh
   )
 
-spheral_add_obj_library(Threading SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Threading)
 

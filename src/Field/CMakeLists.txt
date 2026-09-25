@@ -48,5 +48,5 @@ set(Field_headers
     uvm_allocator.hh
     )
 
-spheral_add_obj_library(Field SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Field)
 

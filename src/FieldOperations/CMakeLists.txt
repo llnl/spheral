@@ -40,5 +40,5 @@ set(FieldOperations_headers
     sampleMultipleFields2Lattice.hh
     )
 
-spheral_add_obj_library(FieldOperations SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(FieldOperations)
 

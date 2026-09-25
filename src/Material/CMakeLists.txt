@@ -43,5 +43,5 @@ endif()
 
 instantiate(Material_inst Material_sources)
 
-spheral_add_obj_library(Material SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Material)
 

@@ -26,5 +26,5 @@ spheral_install_python_files(
   SlideSurfaces.py
   )
 
-spheral_add_obj_library(FSISPH SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(FSISPH)
 

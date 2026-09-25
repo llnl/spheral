@@ -14,5 +14,5 @@ set(DeviceTestLib_headers
 spheral_install_python_files(
     )
 
-spheral_add_obj_library(DeviceTestLib SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(DeviceTestLib)
 

@@ -23,4 +23,4 @@ set(VoronoiCells_headers
   SubPointPressureHourglassControl.hh
 )
 
-spheral_add_obj_library(VoronoiCells SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(VoronoiCells)

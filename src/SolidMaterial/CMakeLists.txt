@@ -71,7 +71,10 @@ endif()
 instantiate(SolidMaterial_inst SolidMaterial_sources)
 
 # Ignore -W-maybe-uninitialized warnings thrown from bisectSearch for possibly uninitialized iterators from boost multi-array.
-set_source_files_properties(ANEOSInst1d.cc ANEOSInst2d.cc ANEOSInst3d.cc PROPERTIES COMPILE_FLAGS "$<$<COMPILE_LANGUAGE:CXX>:-Wno-uninitialized>")
+set(ANEOS_inst_sources
+  ${CMAKE_CURRENT_BINARY_DIR}/ANEOSInst1d.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/ANEOSInst2d.cc
+  ${CMAKE_CURRENT_BINARY_DIR}/ANEOSInst3d.cc)
+set_source_files_properties(${ANEOS_inst_sources} PROPERTIES COMPILE_FLAGS "$<$<COMPILE_LANGUAGE:CXX>:-Wno-uninitialized>")
 
-spheral_add_obj_library(SolidMaterial SPHERAL_OBJ_LIBS)
-
+spheral_add_obj_library(SolidMaterial)
