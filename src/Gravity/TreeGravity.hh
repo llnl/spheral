@@ -36,6 +36,7 @@ public:
   typedef typename Dimension::SymTensor SymTensor;
 
   typedef typename Physics<Dimension>::TimeStepType TimeStepType;
+  using ConnectivityRequirements = typename Physics<Dimension>::ConnectivityRequirements;
 
   //! Constructor.
   //! \param G -- the gravitational constant.
@@ -92,7 +93,8 @@ public:
                           StateDerivatives<Dimension>& /*derivs*/) override;
                        
   //! This package opts out of building connectivity.
-  virtual bool requireConnectivity() const override { return false; }
+  //! Returns {connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity}
+  virtual ConnectivityRequirements requireConnectivity() const override { return {false, false, false, false}; }
 
   //! Return the total energy contribution due to the gravitational potential.
   virtual Scalar extraEnergy() const override;

@@ -29,6 +29,9 @@ namespace Spheral {
 
 namespace Spheral {
 
+//------------------------------------------------------------------------------
+// Enums for damage algorithms
+//------------------------------------------------------------------------------
 enum class EffectiveFlawAlgorithm {
   FullSpectrumFlaws = 0,
   MinFlaw = 1,
@@ -45,6 +48,26 @@ enum class DamageCouplingAlgorithm {
   TensorPairMaxDamage = 4,
 };
 
+// Enum for selecting the method of defining the tensor strain.
+enum class TensorStrainAlgorithm {
+  BenzAsphaugStrain = 0,
+  StrainHistory = 1,
+  MeloshRyanAsphaugStrain = 2,
+  PlasticStrain = 3,
+  PseudoPlasticStrain = 4,
+};
+
+// Enum for selecting the method of defining the effective tensor damage.
+enum class EffectiveDamageAlgorithm {
+  CopyDamage = 0,
+  MaxDamage = 1,
+  MinMaxDamage = 2,
+  SampledDamage = 3,
+};
+
+//------------------------------------------------------------------------------
+// DamageModel
+//------------------------------------------------------------------------------
 template<typename Dimension>
 class DamageModel: public Physics<Dimension> {
 
@@ -60,6 +83,7 @@ public:
   using NodeCouplingPtr = typename std::shared_ptr<NodeCoupling>;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
+  using ConnectivityRequirements = typename Physics<Dimension>::ConnectivityRequirements;
   using FlawStorageType = Field<Dimension, std::vector<double>>;
 
   // Constructors, destructor.
@@ -92,8 +116,14 @@ public:
                         State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs) override;
 
-  virtual bool requireGhostConnectivity()               const override { return mDamageCouplingAlgorithm == DamageCouplingAlgorithm::ThreePointDamage; }
-  virtual bool requireIntersectionConnectivity()        const override { return mComputeIntersectConnectivity; }
+  // Connectivity requirements for this physics package.
+  // Returns {connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity}
+  virtual ConnectivityRequirements requireConnectivity() const override {
+    return {true,
+            mDamageCouplingAlgorithm == DamageCouplingAlgorithm::ThreePointDamage,
+            false,
+            mComputeIntersectConnectivity};
+  }
 
   // Return the maximum state change we care about for checking for convergence in the implicit integration methods.
   // Damage model for now defaults to just relying on the hydro to handle this, so return no vote.

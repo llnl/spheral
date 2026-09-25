@@ -28,7 +28,7 @@ computeSumVoronoiCellMassDensity(const ConnectivityMap<Dimension>& connectivityM
                                  FieldList<Dimension, typename Dimension::Scalar>& massDensity) {
 
   // Pre-conditions.
-  const size_t numNodeLists = massDensity.size();
+  const auto numNodeLists = massDensity.size();
   REQUIRE(position.size() == numNodeLists);
   REQUIRE(mass.size() == numNodeLists);
   REQUIRE(volume.size() == numNodeLists);
@@ -41,8 +41,8 @@ computeSumVoronoiCellMassDensity(const ConnectivityMap<Dimension>& connectivityM
   // Zero out the result, and prepare a FieldList to hold the effective volume.
   massDensity = 0.0;
   FieldList<Dimension, Scalar> Veff(FieldStorageType::CopyFields);
-  for (size_t nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const NodeList<Dimension>& nodeList = massDensity[nodeListi]->nodeList();
+  for (size_t nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto& nodeList = massDensity[nodeListi]->nodeList();
     Veff.appendNewField("effective volume", nodeList, 0.0);
   }
 
@@ -54,7 +54,7 @@ computeSumVoronoiCellMassDensity(const ConnectivityMap<Dimension>& connectivityM
 #pragma omp parallel
   {
     // Thread private scratch variables
-    int i, j, nodeListi;
+    size_t i, j, k;
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto Veff_thread = Veff.threadCopy(threadStack);
@@ -62,38 +62,39 @@ computeSumVoronoiCellMassDensity(const ConnectivityMap<Dimension>& connectivityM
 
 #pragma omp for
     for (auto kk = 0u; kk < npairs; ++kk) {
-      i = pairs[kk].i_node;
-      j = pairs[kk].j_node;
-      nodeListi = pairs[kk].i_list;
-      //nodeListj = pairs[kk].j_list;
+      if (pairs[kk].i_list == pairs[kk].j_list) {
+        i = pairs[kk].i_node;
+        j = pairs[kk].j_node;
+        k = pairs[kk].i_list;
 
-      // State for node i
-      const auto& ri = position(nodeListi, i);
-      const auto  mi = mass(nodeListi, i);
-      const auto  Vi = volume(nodeListi, i);
-      const auto& Hi = H(nodeListi, i);
-      const auto  Hdeti = Hi.Determinant();
+        // State for node i
+        const auto& ri = position(k, i);
+        const auto  mi = mass(k, i);
+        const auto  Vi = volume(k, i);
+        const auto& Hi = H(k, i);
+        const auto  Hdeti = Hi.Determinant();
 
-      // State for node j
-      const auto& rj = position(nodeListi, j);
-      const auto  mj = mass(nodeListi, j);
-      const auto  Vj = volume(nodeListi, j);
-      const auto& Hj = H(nodeListi, j);
-      const auto  Hdetj = Hj.Determinant();
+        // State for node j
+        const auto& rj = position(k, j);
+        const auto  mj = mass(k, j);
+        const auto  Vj = volume(k, j);
+        const auto& Hj = H(k, j);
+        const auto  Hdetj = Hj.Determinant();
 
-      // Kernel weighting and gradient.
-      const auto rij = ri - rj;
-      const auto etai = (Hi*rij).magnitude();
-      const auto etaj = (Hj*rij).magnitude();
-      const auto Wi = W.kernelValue(etai, Hdeti);
-      const auto Wj = W.kernelValue(etaj, Hdetj);
+        // Kernel weighting and gradient.
+        const auto rij = ri - rj;
+        const auto etai = (Hi*rij).magnitude();
+        const auto etaj = (Hj*rij).magnitude();
+        const auto Wi = W.kernelValue(etai, Hdeti);
+        const auto Wj = W.kernelValue(etaj, Hdetj);
 
-      // Sum the pair-wise contributions.
-      Veff_thread(nodeListi, i) += Vj*Wi;
-      massDensity_thread(nodeListi, i) += mj*Wi;
+        // Sum the pair-wise contributions.
+        Veff_thread(k, i) += Vj*Wi;
+        massDensity_thread(k, i) += mj*Wi;
 
-      Veff_thread(nodeListi, j) += Vi*Wj;
-      massDensity_thread(nodeListi, j) += mi*Wj;
+        Veff_thread(k, j) += Vi*Wj;
+        massDensity_thread(k, j) += mi*Wj;
+      }
     }
 
     // Reduce the thread values to the master.
@@ -103,23 +104,23 @@ computeSumVoronoiCellMassDensity(const ConnectivityMap<Dimension>& connectivityM
 
 
   // Finalize the density for each point.
-  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-    const auto& nodeList = dynamic_cast<const FluidNodeList<Dimension>&>(massDensity[0]->nodeList());
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto& nodeList = dynamic_cast<const FluidNodeList<Dimension>&>(massDensity[k]->nodeList());
     const auto ni = nodeList.numInternalNodes();
     const auto rhoMin = nodeList.rhoMin();
     const auto rhoMax = nodeList.rhoMax();
 
 #pragma omp parallel for
     for (auto i = 0u; i < ni; ++i) {
-      const auto  mi = mass(nodeListi, i);
-      const auto  Vi = volume(nodeListi, i);
-      const auto& Hi = H(nodeListi, i);
+      const auto  mi = mass(k, i);
+      const auto  Vi = volume(k, i);
+      const auto& Hi = H(k, i);
       const auto  Hdeti = Hi.Determinant();
-      massDensity(nodeListi, i) = max(rhoMin, 
-                                      min(rhoMax,
-                                          (massDensity(nodeListi, i) + mi*Hdeti*W0) * 
-                                          safeInv(Veff(nodeListi, i) + Vi*Hdeti*W0)));
-      CHECK(massDensity(nodeListi, i) > 0.0);
+      massDensity(k, i) = max(rhoMin, 
+                              min(rhoMax,
+                                  (massDensity(k, i) + mi*Hdeti*W0) * 
+                                  safeInv(Veff(k, i) + Vi*Hdeti*W0)));
+      CHECK(massDensity(k, i) > 0.0);
     }
   }
 }

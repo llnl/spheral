@@ -108,7 +108,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n");
+  SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n";
 
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -176,7 +176,7 @@ redistributeNodes(DataBase<Dim<1> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
+  SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n";
   MPI_Barrier(Communicator::communicator());
 
 }

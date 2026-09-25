@@ -111,8 +111,15 @@ evaluateDerivatives(const typename Dimension::Scalar time,
   CHECK(mass.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
   CHECK(DvDx.size() == numNodeLists);
-  CHECK((GeometryRegistrar::coords() == CoordinateType::RZ and massRZ.size() == numNodeLists and massDensityRZ.size() == numNodeLists) or
-        (GeometryRegistrar::coords() != CoordinateType::RZ and massRZ.size() == 0u           and massDensityRZ.size() == 0u));
+  CHECK(GeometryRegistrar::coords() == CoordinateType::RZ or (massRZ.size() == 0u and massDensityRZ.size() == 0u));
+
+  // In RZ we prefer the areal mass and density, but those are only registered by the RZ
+  // hydro packages.  They are unavailable if we're running without such a package (for
+  // instance iterateIdealH called with only a smoothing scale package), in which case we
+  // fall back on the ordinary mass and density.
+  const auto useRZmass = (GeometryRegistrar::coords() == CoordinateType::RZ and
+                          massRZ.size() == numNodeLists and
+                          massDensityRZ.size() == numNodeLists);
 
   // Derivative FieldLists.
   auto  DHDt = derivs.fields(IncrementBoundedState<Dimension, SymTensor>::prefix() + HydroFieldNames::H, SymTensor::zero());
@@ -151,7 +158,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       nodeListj = pairs[kk].j_list;
 
       // Get the state
-      if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+      if (useRZmass) {
         mi = massRZ(nodeListi, i);
         rhoi = massDensityRZ(nodeListi, i);
         mj = massRZ(nodeListj, j);
@@ -280,7 +287,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
         auto psieigen = psi.eigenVectors();
         for (auto i = 0u; i < Dimension::nDim; ++i) psieigen.eigenValues(i) = 1.0/sqrt(psieigen.eigenValues(i));
         const auto psimin = (psieigen.eigenValues.maxElement()) * hminratio;
-        psi = constructSymTensorWithMaxDiagonal(psieigen.eigenValues, psimin);
+        psi = SymTensor(psieigen.eigenValues, psimin, std::numeric_limits<Scalar>::max());
         psi.rotationalTransform(psieigen.eigenVectors);
         CHECK(psi.Determinant() > 0.0);
         psi /= Dimension::rootnu(psi.Determinant() + tiny);
@@ -346,7 +353,7 @@ evaluateDerivatives(const typename Dimension::Scalar time,
       // Apply limiting
       const auto hev = Hideali.eigenVectors();
       const auto hminEffInv = min(hminInv, max(hmaxInv, hev.eigenValues.minElement())/hminratio);
-      Hideali = constructSymTensorWithBoundedDiagonal(hev.eigenValues, hmaxInv, hminEffInv);
+      Hideali = SymTensor(hev.eigenValues, hmaxInv, hminEffInv);
       Hideali.rotationalTransform(hev.eigenVectors);
     }
   }

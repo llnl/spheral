@@ -702,18 +702,21 @@ def metaDataVectorField(name, time, cycle, dim):
 # Tensor fields components.
 #-------------------------------------------------------------------------------
 def extractTensorField(name, field, vals, dim):
-    assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (2,3)
+    TensorType = eval(f"Tensor{dim}d")
+    assert len(vals) in (0, TensorType.numElements)
     if dim == 2:
         if vals == []:
             vals = [["%s_xx" % name, []],
                     ["%s_xy" % name, []],
                     ["%s_yx" % name, []],
-                    ["%s_yy" % name, []]]
+                    ["%s_yy" % name, []],
+                    ["%s_zz" % name, []]]
         vals[0][1] += [t.xx for t in field]
         vals[1][1] += [t.xy for t in field]
         vals[2][1] += [t.yx for t in field]
         vals[3][1] += [t.yy for t in field]
+        vals[4][1] += [t.zz for t in field]
             
     else:
         if vals == []:
@@ -726,7 +729,6 @@ def extractTensorField(name, field, vals, dim):
                     ["%s_zx" % name, []],
                     ["%s_zy" % name, []],
                     ["%s_zz" % name, []]]
-
         vals[0][1] += [t.xx for t in field]
         vals[1][1] += [t.xy for t in field]
         vals[2][1] += [t.xz for t in field]
@@ -740,14 +742,16 @@ def extractTensorField(name, field, vals, dim):
     return vals
 
 def dummyTensorField(name, n, vals, dim):
-    assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (2,3)
+    TensorType = eval(f"Tensor{dim}d")
+    assert len(vals) in (0, TensorType.numElements)
     if vals == []:
         if dim == 2:
             vals = [["%s_xx" % name, [0.0]*n],
                     ["%s_xy" % name, [0.0]*n],
                     ["%s_yx" % name, [0.0]*n],
-                    ["%s_yy" % name, [0.0]*n]]
+                    ["%s_yy" % name, [0.0]*n],
+                    ["%s_zz" % name, [0.0]*n]]
         else:
             vals = [["%s_xx" % name, [0.0]*n],
                     ["%s_xy" % name, [0.0]*n],
@@ -759,7 +763,7 @@ def dummyTensorField(name, n, vals, dim):
                     ["%s_zy" % name, [0.0]*n],
                     ["%s_zz" % name, [0.0]*n]]
     else:
-        for i in range(dim*dim):
+        for i in range(TensorType.numElements):
             vals[i][1].extend([0.0]*n)
     return vals
 
@@ -776,7 +780,7 @@ def metaDataTensorField(name, time, cycle, dim):
     assert optlistVar.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_SCALAR) == 0
 
     if dim == 2:
-        return ("{{<CELLS/%s_xx>, <CELLS/%s_xy>}, {<CELLS/%s_yx>, <CELLS/%s_yy>}}" % (name, name, name, name), silo.DB_VARTYPE_TENSOR,
+        return ("{{<CELLS/%s_xx>, <CELLS/%s_xy>, 0.0}, {<CELLS/%s_yx>, <CELLS/%s_yy>, 0.0}, {0.0, 0.0, <CELLS/%s_zz>}}" % (name, name, name, name, name), silo.DB_VARTYPE_TENSOR,
                 optlistDef, optlistMV, optlistVar)
     else:
         return ("{{<CELLS/%s_xx>, <CELLS/%s_xy>, <CELLS/%s_xz>}, {<CELLS/%s_yx>, <CELLS/%s_yy>, <CELLS/%s_yz>}, {<CELLS/%s_zx>, <CELLS/%s_zy>, <CELLS/%s_zz>}}" % (name, name, name,

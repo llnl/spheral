@@ -115,20 +115,19 @@ fragments.  Result returned as an integer Field of fragement IDs."""
 # Instantiate our types
 #-------------------------------------------------------------------------------
 for ndim in dims:
-    exec('''
-DamageModel%(ndim)id = PYB11TemplateClass(DamageModel, template_parameters="%(Dimension)s")
-TensorDamageModel%(ndim)id = PYB11TemplateClass(TensorDamageModel, template_parameters="%(Dimension)s")
-ProbabilisticDamageModel%(ndim)id = PYB11TemplateClass(ProbabilisticDamageModel, template_parameters="%(Dimension)s")
-IvanoviSALEDamageModel%(ndim)id = PYB11TemplateClass(IvanoviSALEDamageModel, template_parameters="%(Dimension)s")
-JohnsonCookDamage%(ndim)id = PYB11TemplateClass(JohnsonCookDamage, template_parameters="%(Dimension)s")
+    Dimension = f"Dim<{ndim}>"
+    exec(f'''
+DamageModel{ndim}d = PYB11TemplateClass(DamageModel, template_parameters="{Dimension}")
+TensorDamageModel{ndim}d = PYB11TemplateClass(TensorDamageModel, template_parameters="{Dimension}")
+ProbabilisticDamageModel{ndim}d = PYB11TemplateClass(ProbabilisticDamageModel, template_parameters="{Dimension}")
+IvanoviSALEDamageModel{ndim}d = PYB11TemplateClass(IvanoviSALEDamageModel, template_parameters="{Dimension}")
+JohnsonCookDamage{ndim}d = PYB11TemplateClass(JohnsonCookDamage, template_parameters="{Dimension}")
 
-PairMaxDamageNodeCoupling%(ndim)id = PYB11TemplateClass(PairMaxDamageNodeCoupling, template_parameters="%(Dimension)s")
-ThreePointDamagedNodeCoupling%(ndim)id = PYB11TemplateClass(ThreePointDamagedNodeCoupling, template_parameters="%(Dimension)s")
-DamageGradientNodeCoupling%(ndim)id = PYB11TemplateClass(DamageGradientNodeCoupling, template_parameters="%(Dimension)s")
+PairMaxDamageNodeCoupling{ndim}d = PYB11TemplateClass(PairMaxDamageNodeCoupling, template_parameters="{Dimension}")
+ThreePointDamagedNodeCoupling{ndim}d = PYB11TemplateClass(ThreePointDamagedNodeCoupling, template_parameters="{Dimension}")
+DamageGradientNodeCoupling{ndim}d = PYB11TemplateClass(DamageGradientNodeCoupling, template_parameters="{Dimension}")
 
-weibullFlawDistributionBenzAsphaug%(ndim)id = PYB11TemplateFunction(weibullFlawDistributionBenzAsphaug, template_parameters="%(Dimension)s")
-weibullFlawDistributionOwen%(ndim)id = PYB11TemplateFunction(weibullFlawDistributionOwen, template_parameters="%(Dimension)s")
-computeFragmentField%(ndim)id = PYB11TemplateFunction(computeFragmentField, template_parameters="%(Dimension)s")
-''' % {"ndim"      : ndim,
-       "Dimension" : "Dim<" + str(ndim) + ">",
-       "Vector"    : "Dim<" + str(ndim) + ">::Vector"})
+weibullFlawDistributionBenzAsphaug{ndim}d = PYB11TemplateFunction(weibullFlawDistributionBenzAsphaug, template_parameters="{Dimension}")
+weibullFlawDistributionOwen{ndim}d = PYB11TemplateFunction(weibullFlawDistributionOwen, template_parameters="{Dimension}")
+computeFragmentField{ndim}d = PYB11TemplateFunction(computeFragmentField, template_parameters="{Dimension}")
+''')

@@ -304,24 +304,35 @@ iterateIdealH(dataBase,
 dataBase.updateConnectivityMap(True)
 
 #-------------------------------------------------------------------------------
+# Create volumes
+#-------------------------------------------------------------------------------
+volUpdate = VolumeUpdate(volumeType, WT,
+                         updateInStep = True,
+                         updateInFinalize = False)
+packages = [volUpdate]
+
+#-------------------------------------------------------------------------------
 # Create RK object
 #-------------------------------------------------------------------------------
 rk = RKCorrections(dataBase = dataBase,
                    W = WT,
-                   volumeType = volumeType,
                    needHessian = needHessian)
-packages = [rk]
+packages.append(rk)
 
 #-------------------------------------------------------------------------------
-# Create a state directly and initialize physics package
+# Create a state directly and initialize physics packages
 #-------------------------------------------------------------------------------
 connectivity = dataBase.connectivityMap()
 state = State(dataBase, packages)
 derivs = StateDerivatives(dataBase, packages)
-rk.initializeProblemStartup(dataBase)
-rk.registerState(dataBase, state)
-rk.registerDerivatives(dataBase, derivs)
-rk.preStepInitialize(dataBase, state, derivs)
+for p in packages:
+    p.initializeProblemStartup(dataBase)
+    p.registerState(dataBase, state)
+    p.registerDerivatives(dataBase, derivs)
+for p in packages:
+    p.initializeProblemStartupDependencies(dataBase, state, derivs)
+for p in packages:
+    p.preStepInitialize(dataBase, state, derivs)
 
 #-------------------------------------------------------------------------------
 # Get data from state

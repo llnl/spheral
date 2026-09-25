@@ -3,7 +3,6 @@
 // formalism.
 //----------------------------------------------------------------------------//
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 
 namespace Spheral {
 
@@ -20,7 +19,7 @@ removeExpansion(Tensor& DvDx) {
   const auto DvDx_s = DvDx.Symmetric();
   const auto DvDx_a = DvDx.SkewSymmetric();
   const auto eigeni = DvDx_s.eigenVectors();
-  DvDx = constructTensorWithMinDiagonal(eigeni.eigenValues, 0.0);
+  DvDx = Tensor(eigeni.eigenValues, std::numeric_limits<double>::lowest(), 0.0);
   DvDx.rotationalTransform(eigeni.eigenVectors);
   DvDx += DvDx_a;
 }

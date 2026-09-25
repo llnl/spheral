@@ -6,6 +6,7 @@
 //----------------------------------------------------------------------------//
 #include "DataBase.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "Field/NodeIterators.hh"
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
@@ -16,6 +17,7 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Utilities/globalBoundingVolumes.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
@@ -955,6 +957,24 @@ DataBase<Dimension>::globalMass() const {
 }
 
 //------------------------------------------------------------------------------
+// Return the global mass (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+FieldList<Dimension, typename Dimension::Scalar>
+DataBase<Dimension>::globalMassRZ() const {
+  REQUIRE(valid());
+  FieldList<Dimension, Scalar> result;
+  if (GeometryRegistrar::coords() != CoordinateType::RZ) {
+    SpheralWarning << "DataBase::globalMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
+  } else {
+    for (auto* nptr: mNodeListPtrs) {
+      result.appendField(nptr->massRZ());
+    }
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Return the global position field.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -1030,6 +1050,24 @@ DataBase<Dimension>::fluidMass() const {
 }
 
 //------------------------------------------------------------------------------
+// Return the fluid mass (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+FieldList<Dimension, typename Dimension::Scalar>
+DataBase<Dimension>::fluidMassRZ() const {
+  REQUIRE(valid());
+  FieldList<Dimension, Scalar> result;
+  if (GeometryRegistrar::coords() != CoordinateType::RZ) {
+    SpheralWarning << "DataBase::fluidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
+  } else {
+    for (auto* nptr: mFluidNodeListPtrs) {
+      result.appendField(nptr->massRZ());
+    }
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Return the fluid position field.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -1070,6 +1108,24 @@ DataBase<Dimension>::fluidMassDensity() const {
   for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
        nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
     result.appendField((*nodeListItr)->massDensity());
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Return the fluid mass density (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+FieldList<Dimension, typename Dimension::Scalar>
+DataBase<Dimension>::fluidMassDensityRZ() const {
+  REQUIRE(valid());
+  FieldList<Dimension, Scalar> result;
+  if (GeometryRegistrar::coords() != CoordinateType::RZ) {
+    SpheralWarning << "DataBase::fludMassDensityRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
+  } else {
+    for (auto* nptr: mFluidNodeListPtrs) {
+      result.appendField(nptr->massDensityRZ());
+    }
   }
   return result;
 }
@@ -1135,6 +1191,24 @@ DataBase<Dimension>::solidMass() const {
 }
 
 //------------------------------------------------------------------------------
+// Return the solid mass (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+FieldList<Dimension, typename Dimension::Scalar>
+DataBase<Dimension>::solidMassRZ() const {
+  REQUIRE(valid());
+  FieldList<Dimension, Scalar> result;
+  if (GeometryRegistrar::coords() != CoordinateType::RZ) {
+    SpheralWarning << "DataBase::solidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
+  } else {
+    for (auto* nptr: mSolidNodeListPtrs) {
+      result.appendField(nptr->massRZ());
+    }
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Return the solid position field.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -1175,6 +1249,24 @@ DataBase<Dimension>::solidMassDensity() const {
   for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
        nodeListItr < solidNodeListEnd(); ++nodeListItr) {
     result.appendField((*nodeListItr)->massDensity());
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Return the solid mass density (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+FieldList<Dimension, typename Dimension::Scalar>
+DataBase<Dimension>::solidMassDensityRZ() const {
+  REQUIRE(valid());
+  FieldList<Dimension, Scalar> result;
+  if (GeometryRegistrar::coords() != CoordinateType::RZ) {
+    SpheralWarning << "DataBase::solidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
+  } else {
+    for (auto* nptr: mSolidNodeListPtrs) {
+      result.appendField(nptr->massDensityRZ());
+    }
   }
   return result;
 }

@@ -6,7 +6,7 @@ scipy >= 1.10.1, <= 1.13.1
 mpi4py == 4.0.3
 cffi == 1.17.1
 pyyaml == 6.0.2
-llnl-thicket == 2024.2.1
+llnl-thicket == 2026.1.0
 ipython >= 8.12.3, <= 8.18.1
 pyside6 >= 6.9.3
 ply >= 3.6

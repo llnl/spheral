@@ -17,10 +17,13 @@ struct SolidFieldNames {
   const inline static std::string plasticStrainRate = "plastic strain rate";
   const inline static std::string scalarDamage = "scalar damage";
   const inline static std::string tensorDamage = "tensor damage";
+  const inline static std::string tensorDamageTT = "tensor damage theta theta";
   const inline static std::string damageCoupling = "damage coupling";
   const inline static std::string strain = "strain";
   const inline static std::string strainTensor = "tensor strain";
+  const inline static std::string strainTensorTT = "tensor strain theta theta";
   const inline static std::string effectiveStrainTensor = "effective tensor strain";
+  const inline static std::string effectiveStrainTensorTT = "effective tensor strain theta theta";
   const inline static std::string bulkModulus = "bulk modulus";
   const inline static std::string shearModulus = "shear modulus";
   const inline static std::string YoungsModulus = "Youngs modulus";

@@ -77,10 +77,11 @@ step(const typename Dimension::Scalar maxTime) {
   mRequireOverlapConnectivity = false;
   mRequireIntersectionConnectivity = false;
   for (auto* physicsPtr: mPhysicsPackages) {
-    mRequireConnectivity = (mRequireConnectivity or physicsPtr->requireConnectivity());
-    mRequireGhostConnectivity = (mRequireGhostConnectivity or physicsPtr->requireGhostConnectivity());
-    mRequireOverlapConnectivity = (mRequireOverlapConnectivity or physicsPtr->requireOverlapConnectivity());
-    mRequireIntersectionConnectivity = (mRequireIntersectionConnectivity or physicsPtr->requireIntersectionConnectivity());
+    const auto [conn, ghost, overlap, intersect] = physicsPtr->requireConnectivity();
+    mRequireConnectivity = (mRequireConnectivity or conn);
+    mRequireGhostConnectivity = (mRequireGhostConnectivity or ghost);
+    mRequireOverlapConnectivity = (mRequireOverlapConnectivity or overlap);
+    mRequireIntersectionConnectivity = (mRequireIntersectionConnectivity or intersect);
   }
 
   // Set the ghost nodes (this updates the ConnectivityMap as well in the DataBase)
@@ -347,6 +348,11 @@ uniqueBoundaryConditions() const {
 
   }
 
+  // Sort by priority (stable to preserve insertion order among equal priorities)
+  std::stable_sort(result.begin(), result.end(),
+                   [](const Boundary<Dimension>* a, const Boundary<Dimension>* b) {
+                     return a->priority() < b->priority(); });
+
   BEGIN_CONTRACT_SCOPE
   // Ensure that all boundary conditions are included in the result
   for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
@@ -360,6 +366,12 @@ uniqueBoundaryConditions() const {
   for (auto* boundaryPtr: result) {
     CONTRACT_VAR(boundaryPtr);
     ENSURE(count(result.begin(), result.end(), boundaryPtr) == 1);
+  }
+
+  // Ensure boundaries are sorted by priority.
+  for (auto i = 1u; i < result.size(); ++i) {
+    ENSURE2(result[i-1]->priority() <= result[i]->priority(),
+            "Boundary priority ordering violated: " << result[i-1]->priority() << " > " << result[i]->priority());
   }
   END_CONTRACT_SCOPE
 

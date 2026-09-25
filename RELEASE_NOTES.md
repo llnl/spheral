@@ -5,16 +5,46 @@ Version vYYYY.MM.p -- Release date YYYY-MM-DD
 Notable changes include:
 
   * New features / API changes:
-    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory
-    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation)
-    * Added view class for NodeList (NodeListView)
+    * Adding ViewManager class to help organize view objects and moving between GPU/CPU memory.
+    * ConnectivityMap::computeConnectivity now only computes the NodePairList connectivity. Per point connectivity is evaluated as needed from the NodePairList (lazy evaluation).
+    * Added view class for NodeList (NodeListView).
+    * Converted SpheralMessage macros to behave like streams rather than functions.
+    * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations).
+    * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation.
+    * Volume upgrade
+      * Separates the volume calculation from RKCorrections and adds controls for when the volume is updated. Previously, the Voronoi was being calculated way too often in VoronoiCells and getting overwritten by the volumes from RKCorrections.
+      * Makes VoronoiCells inherit from VolumeUpdate. It optionally overwrites its own volume calculation with the user's choice of volume.
+      * Lets the user choose the volume for all packages, not just RKCorrections.
+      * Stores both 3D (annulus or spherical shell) volume and patch volume, which are the same in Cartesian coordinates.
+    * Physics package requirements upgrade
+      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity
+        * Returns {conn, ghost, overlap, intersection}
+      * requireVoronoiCells has been replaced by requireVolumes
+        * Returns {explicit, implicit, voronoi}
+      * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels
+        * Returns tuple {explicit, implicit, hessian}
+    * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
+      * Note: Python overrides only work on CPU runs
 
   * Build changes / improvements:
-    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities")
+    * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
+    * Update to Thicket version 2026.1.0.
+    * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
     * Performance testing and CI improvements:
-      * Enable CI to run for Debug HIP builds
+      * Enable CI to run for Debug HIP builds.
+    * Changing LC GNU compiler to 13.3.1.
+    * Using Hubcast instead of Gitlab mirroring to run CI on LC machines.
+    * Update to Spack 1.2.2 as well as some TPLS:
+      * Boost updated from 1.87 to 1.90.
+      * Caliper updated from 2.11 to 2.14.
+      * Axom updated from 0.12.0 to 0.14.0.
+      * Sundials updated from 7.0.0 to 7.7.0.
+      * Installs are moved from $spack/opts to $spack/../installs.
 
   * Bug Fixes / improvements:
+    * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
+    * Consistency fix for differentMatij material coupling in FSISPH.
+    * GenerateRatioSphere accessing the wrong element when SPH = True
     * Bugfix for strain-porosity in power-law compaction regime from Sean Wiggins (apparently the paper by Collins et al. had a typo).
 
 Version v2026.06.0 -- Release date 2026-06-22
@@ -25,8 +55,8 @@ Notable changes include:
 
   * New features / API changes:
     * Now require C++20.
-    * Added view class for PairwiseField (PairwiseFieldView)
-    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields
+    * Added view class for PairwiseField (PairwiseFieldView).
+    * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * ArtificialViscosity has been refactored for use on the GPU.
         * ArtificialViscosity is now ArtificialViscosityView.
         * ArtificialViscosityHandle is now ArtificialViscosity.
@@ -41,7 +71,10 @@ Notable changes include:
     * Refactored use of pair-wise fields in hydro packages to avoid using pointers and allow empty PairwiseFields.
     * Bin files in install (bin/spheral and bin/spheral-ats) now use relative paths instead of being configured for one specific path.
     * Added a page to the docs about GPU development. 
-    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N)
+    * Optimized field lookups in state, reducing per-call cost from O(N) to O(log N).
+    * Volume calculation has been separated from RKCorrections into the VoronoiCells/VolumeUpdate physics packages.
+    * Physics package requirements API consolidated for connectivity, volumes, and reproducing kernels.
+    * Added a priority to Boundary to ensure boundary conditions are ordered consistently.
     * Added the more aptly named SPHERAL_EXTERNAL_INSTALL in places where ENABLE_STATIC_TPLS was being used.
     * Require minimum CMake version 3.24.
     * A new axisymmetric SPH algorithm has been introduced (for SPH and SolidSPH) that improves our axisymmetric results.
@@ -593,7 +626,7 @@ Notable changes include:
   * New features / API changes:
     * Added verbose time step frequency to `SpheralController`, allowing time step information to be printed every N steps instead of every step.
     * Periodic work frequencies in `SpheralController` can now be callables, enabling dynamic frequency changes during a simulation.
-    * Added `gradientPairs` to modernize the gradient calculation using node pairs. 
+    * Added `gradientPairs` to modernize the gradient calculation using node pairs.
     * Silo output now supports subdirectories within silo files.
     * Added support for 1D silo output, readable as curves in VisIt.
     * Added a damping factor to the ideal H iteration in both SPH and ASPH smoothing scales to improve convergence for difficult initial distributions.
@@ -606,4 +639,3 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Moved axis boundary logic out of individual SPH and CRKSPH hydro constructors into `SpheralController`, where it is applied once during initialization. This allows the axis BC to work without hydro.
     * Added `allReduceLoc` utility so the controlling time step is printed once with its owning rank, rather than once per rank when time steps do not vary by processor.
-

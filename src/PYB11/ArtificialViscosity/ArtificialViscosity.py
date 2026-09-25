@@ -17,6 +17,9 @@ class ArtificialViscosity(Physics):
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     #...........................................................................
@@ -136,5 +139,5 @@ class ArtificialViscosity(Physics):
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, pure_virtual=False)
+PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, virtual=True)
 PYB11inject(RestartMethods, ArtificialViscosity)

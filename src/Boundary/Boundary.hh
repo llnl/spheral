@@ -176,6 +176,10 @@ public:
   // Provide a hook to note such cases.
   virtual bool meshGhostNodes() const                                            { return true; };
 
+  // Controls the ordering of boundaries when applied.
+  // Lower priority boundaries are applied first.
+  virtual int priority() const { return 0; };
+
   // Allow read access to the map of NodeList->BoundaryNodes.
   const std::map<NodeList<Dimension>*, BoundaryNodes>& boundaryNodeMap() const;
 

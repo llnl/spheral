@@ -1,12 +1,14 @@
-#include <algorithm>
-#include <string>
-#include <limits>
 #include "GeomVector.hh"
 #include "GeomTensor.hh"
 #include "EigenStruct.hh"
 #include "Utilities/SpheralFunctions.hh"
 #include "Utilities/FastMath.hh"
+#include "Utilities/safeInv.hh"
 #include "Utilities/DBC.hh"
+
+#include <algorithm>
+#include <string>
+#include <limits>
 
 namespace Spheral {
 
@@ -21,9 +23,10 @@ GeomSymmetricTensor<1>::elementIndex(const GeomSymmetricTensor<1>::size_type row
                                      const GeomSymmetricTensor<1>::size_type column) const {
   CONTRACT_VAR(row);
   CONTRACT_VAR(column);
-  REQUIRE(row < 1);
-  REQUIRE(column < 1);
-  return 0;
+  REQUIRE(row < 3u);
+  REQUIRE(column < 3u);
+  REQUIRE(row == column);
+  return row;
 }
 
 template<>
@@ -32,13 +35,11 @@ inline
 GeomSymmetricTensor<2>::size_type
 GeomSymmetricTensor<2>::elementIndex(const GeomSymmetricTensor<2>::size_type row,
                                      const GeomSymmetricTensor<2>::size_type column) const {
-  REQUIRE(row < 2);
-  REQUIRE(column < 2);
-  int i = std::min(row, column);
-  int j = std::max(row, column);
-  int result = (5 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements());
-  return result;
+  REQUIRE((row < 2u and column < 2u) or
+          (row == 2u and column == 2u));
+  return (row == 2u ? 3u :
+          row == 1u ? column + 1u :
+          column);
 }
 
 template<>
@@ -46,52 +47,39 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<3>::size_type
 GeomSymmetricTensor<3>::elementIndex(const GeomSymmetricTensor<3>::size_type row,
-                            const GeomSymmetricTensor<3>::size_type column) const {
-  REQUIRE(row < 3);
-  REQUIRE(column < 3);
-  int i = std::min(row, column);
-  int j = std::max(row, column);
-  int result = (7 - i)*i/2 + j - i;
-  ENSURE(result >= 0 and result < (int)numElements());
+                                     const GeomSymmetricTensor<3>::size_type column) const {
+  REQUIRE(row < 3u);
+  REQUIRE(column < 3u);
+  const auto i = std::min(row, column);
+  const auto j = std::max(row, column);
+  const auto result = (7u - i)*i/2u + j - i;
+  ENSURE(result < numElements());
   return result;
 }
 
 //------------------------------------------------------------------------------
-// Unit tensor
-//------------------------------------------------------------------------------
-// template<>
-// SPHERAL_HOST_DEVICE constexpr
-// GeomSymmetricTensor<1>
-// GeomSymmetricTensor<1>::one() {
-//   return GeomSymmetricTensor<1>(1.0);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE constexpr
-// GeomSymmetricTensor<2>
-// GeomSymmetricTensor<2>::one() {
-//   return GeomSymmetricTensor<2>(1.0, 0.0,
-//                                 0.0, 1.0);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE constexpr
-// GeomSymmetricTensor<3>
-// GeomSymmetricTensor<3>::one() {
-//   return GeomSymmetricTensor<3>(1.0, 0.0, 0.0,
-//                                 0.0, 1.0, 0.0,
-//                                 0.0, 0.0, 1.0);
-// }
-
-//------------------------------------------------------------------------------
-// Construct with the given values for the elements.
+// Construct from a single scalar
 //------------------------------------------------------------------------------
 template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>::
-GeomSymmetricTensor(const double a11):
-  GeomSymmetricTensorBase<nDim>(a11) {
+GeomSymmetricTensor(const double a):
+  GeomSymmetricTensorBase<nDim>() {
+  (*this) = one() * a;
+}
+
+//------------------------------------------------------------------------------
+// Construct with the given values for the elements.
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>::
+GeomSymmetricTensor(const double a11,
+                    const double a22,
+                    const double a33):
+  GeomSymmetricTensorBase<1>(a11, a22, a33) {
 }
 
 template<>
@@ -99,9 +87,11 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>::
 GeomSymmetricTensor(const double a11, const double a12, 
-                    const double a21, const double a22):
+                    const double a21, const double a22,
+                    const double a33):
   GeomSymmetricTensorBase<2>(a11, a12,
-                                  a22) {
+                                  a22,
+                                       a33) {
   CONTRACT_VAR(a21);
   REQUIRE(a12 == a21);
 }
@@ -125,63 +115,55 @@ GeomSymmetricTensor(const double a11, const double a12, const double a13,
 }
 
 //------------------------------------------------------------------------------
-// Override the generic constructors to throw if they're called in the wrong 
-// dimensions.
+// Copy constructor (tensor)
 //------------------------------------------------------------------------------
 template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>::
-GeomSymmetricTensor(const double /*a11*/, const double /*a12*/,
-                    const double /*a21*/, const double /*a22*/):
-  GeomSymmetricTensorBase<nDim>(0.0) {
-  VERIFY2(false, "GeomSymmetricTensor(a11, a12, a21, a22): wrong number of dimensions.");
-}
-
-template<int nDim>
-SPHERAL_HOST_DEVICE
-inline
-GeomSymmetricTensor<nDim>::
-GeomSymmetricTensor(const double /*a11*/, const double /*a12*/, const double /*a13*/,
-                    const double /*a21*/, const double /*a22*/, const double /*a23*/,
-                    const double /*a31*/, const double /*a32*/, const double /*a33*/):
-  GeomSymmetricTensorBase<nDim>(0.0) {
-  VERIFY2(false, "GeomSymmetricTensor(a11, a12, a13, a21, a22, a23, a31, a32, a33): wrong number of dimensions.");
+GeomSymmetricTensor(const GeomTensor<nDim>& rhs) {
+  this->operator=(rhs.Symmetric());
 }
 
 //------------------------------------------------------------------------------
-// Copy constructors.
+// Copy constructor (3D tensors)
 //------------------------------------------------------------------------------
 template<>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>::
-GeomSymmetricTensor(const GeomTensor<1>& ten):
-  GeomSymmetricTensorBase<1>(ten.xx()) {
+GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs):
+  GeomSymmetricTensorBase<1>(rhs.xx(), rhs.yy(), rhs.zz()) {
 }
 
 template<>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>::
-GeomSymmetricTensor(const GeomTensor<2>& ten):
-  GeomSymmetricTensorBase<2>(ten.xx(), 0.5*(ten.xy() + ten.yx()),
-                                       ten.yy()) {
-                             
+GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs):
+  GeomSymmetricTensorBase<2>(rhs.xx(), rhs.xy(),
+                                       rhs.yy(), rhs.zz()) {
 }
 
 template<>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<3>::
-GeomSymmetricTensor(const GeomTensor<3>& ten):
-  GeomSymmetricTensorBase<3>(ten.xx(), 0.5*(ten.xy() + ten.yx()), 0.5*(ten.xz() + ten.zx()),
-                                       ten.yy(),                  0.5*(ten.yz() + ten.zy()),
-                                                                  ten.zz()) {
+GeomSymmetricTensor<1>::
+GeomSymmetricTensor(const GeomTensor<3>& rhs):
+  GeomSymmetricTensorBase<1>(rhs.xx(), rhs.yy(), rhs.zz()) {
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>::
+GeomSymmetricTensor(const GeomTensor<3>& rhs):
+  GeomSymmetricTensorBase<2>(rhs.xx(), 0.5*(rhs.xy() + rhs.yx()),
+                                       rhs.yy(), rhs.zz()) {
 }
 
 //------------------------------------------------------------------------------
-// Construct from an Eigen Tensor.
+// Construct from an Eigen Tensor
 //------------------------------------------------------------------------------
 template<>
 template<typename Derived>
@@ -208,6 +190,56 @@ GeomSymmetricTensor<3>::GeomSymmetricTensor(const Eigen::MatrixBase<Derived>& te
 }
 
 //------------------------------------------------------------------------------
+// Construct from diagonal elements
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const VectorType& diagonal):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = diagonal.x();
+  this->myy = diagonal.y();
+  this->mzz = diagonal.z();
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal) requires (nDim < 3):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = diagonal.x();
+  this->myy = diagonal.y();
+  this->mzz = diagonal.z();
+}
+
+//------------------------------------------------------------------------------
+// Construct from diagonal elements with bounding values
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const VectorType& diagonal,
+                                               const double minvalue,
+                                               const double maxvalue):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal,
+                                               const double minvalue,
+                                               const double maxvalue) requires (nDim < 3):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+}
+
+//------------------------------------------------------------------------------
 // Assignment operators.
 //------------------------------------------------------------------------------
 template<>
@@ -217,6 +249,8 @@ GeomSymmetricTensor<1>&
 GeomSymmetricTensor<1>::
 operator=(const GeomTensor<1>& rhs) {
   this->mxx = rhs.xx();
+  this->myy = rhs.yy();
+  this->mzz = rhs.zz();
   return *this;
 }
 
@@ -228,8 +262,9 @@ GeomSymmetricTensor<2>::
 operator=(const GeomTensor<2>& rhs) {
   REQUIRE(rhs.xy() == rhs.yx());
   this->mxx = rhs.xx();
-  this->mxy = rhs.xy();
+  this->mxy = 0.5*(rhs.xy() + rhs.yx());
   this->myy = rhs.yy();
+  this->mzz = rhs.zz();
   return *this;
 }
 
@@ -240,10 +275,10 @@ GeomSymmetricTensor<3>&
 GeomSymmetricTensor<3>::
 operator=(const GeomTensor<3>& rhs) {
   this->mxx = rhs.xx();
-  this->mxy = rhs.xy();
-  this->mxz = rhs.xz();
+  this->mxy = 0.5*(rhs.xy() + rhs.yx());
+  this->mxz = 0.5*(rhs.xz() + rhs.zx());
   this->myy = rhs.yy();
-  this->myz = rhs.yz();
+  this->myz = 0.5*(rhs.yz() + rhs.zy());
   this->mzz = rhs.zz();
   return *this;
 }
@@ -294,8 +329,8 @@ inline
 double
 GeomSymmetricTensor<nDim>::operator()(const typename GeomSymmetricTensor<nDim>::size_type row,
                                       const typename GeomSymmetricTensor<nDim>::size_type column) const {
-  REQUIRE(row < nDim);
-  REQUIRE(column < nDim);
+  REQUIRE(row < nDim or row == nDim);
+  REQUIRE(column < nDim or row == nDim);
   return *(begin() + elementIndex(row, column));
 }
 
@@ -305,8 +340,8 @@ inline
 double&
 GeomSymmetricTensor<nDim>::operator()(const typename GeomSymmetricTensor<nDim>::size_type row,
                                       const typename GeomSymmetricTensor<nDim>::size_type column) {
-  REQUIRE(row < nDim);
-  REQUIRE(column < nDim);
+  REQUIRE(row < nDim or row == nDim);
+  REQUIRE(column < nDim or row == nDim);
   return *(begin() + elementIndex(row, column));
 }
 
@@ -414,11 +449,9 @@ GeomSymmetricTensor<nDim>::zz() const {
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::xy() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::xz() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::yx() const { return 0.0; }
-template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::yy() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::yz() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::zx() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::zy() const { return 0.0; }
-template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<1>::zz() const { return 0.0; }
 
 //------------------------------------------------------------------------------
 // 2D dummy elements
@@ -426,7 +459,6 @@ template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<2>::xz() const 
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<2>::yz() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<2>::zx() const { return 0.0; }
 template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<2>::zy() const { return 0.0; }
-template<> SPHERAL_HOST_DEVICE inline double GeomSymmetricTensor<2>::zz() const { return 0.0; }
 
 //------------------------------------------------------------------------------
 // Set the individual elements, as above.
@@ -508,11 +540,9 @@ GeomSymmetricTensor<nDim>::zz(double val) {
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::xy(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::xz(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::yx(const double /*val*/) {}
-template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::yy(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::yz(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::zx(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::zy(const double /*val*/) {}
-template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<1>::zz(const double /*val*/) {}
 
 //------------------------------------------------------------------------------
 // 2D dummy elements
@@ -520,7 +550,6 @@ template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<2>::xz(const doub
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<2>::yz(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<2>::zx(const double /*val*/) {}
 template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<2>::zy(const double /*val*/) {}
-template<> SPHERAL_HOST_DEVICE inline void GeomSymmetricTensor<2>::zz(const double /*val*/) {}
 
 //------------------------------------------------------------------------------
 // Access the individual rows of the GeomSymmetricTensor.
@@ -709,7 +738,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<1>::Zero() {
-  *this = GeomSymmetricTensor<1>(0.0);
+  this->mxx = 0.0;
+  this->myy = 0.0;
+  this->mzz = 0.0;
 }
 
 template<>
@@ -717,8 +748,10 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<2>::Zero() {
-  *this = GeomSymmetricTensor<2>(0.0, 0.0,
-                                 0.0, 0.0);
+  this->mxx = 0.0;
+  this->mxy = 0.0;
+  this->myy = 0.0;
+  this->mzz = 0.0;
 }
 
 template<>
@@ -726,11 +759,13 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<3>::Zero() {
-  *this = GeomSymmetricTensor<3>(0.0, 0.0, 0.0,
-                                 0.0, 0.0, 0.0,
-                                 0.0, 0.0, 0.0);
+  this->mxx = 0.0;
+  this->mxy = 0.0;
+  this->mxz = 0.0;
+  this->myy = 0.0;
+  this->myz = 0.0;
+  this->mzz = 0.0;
 }
-
 
 //------------------------------------------------------------------------------
 // Force the tensor to be the identity tensor.
@@ -740,7 +775,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<1>::Identity() {
-  *this = GeomSymmetricTensor<1>(1.0);
+  this->mxx = 1.0;
+  this->myy = 1.0;
+  this->mzz = 1.0;
 }
 
 template<>
@@ -748,8 +785,10 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<2>::Identity() {
-  *this = GeomSymmetricTensor<2>(1.0, 0.0,
-                                 0.0, 1.0);
+  this->mxx = 1.0;
+  this->mxy = 0.0;
+  this->myy = 1.0;
+  this->mzz = 1.0;
 }
 
 template<>
@@ -757,9 +796,12 @@ SPHERAL_HOST_DEVICE
 inline
 void
 GeomSymmetricTensor<3>::Identity() {
-  *this = GeomSymmetricTensor<3>(1.0, 0.0, 0.0,
-                                 0.0, 1.0, 0.0,
-                                 0.0, 0.0, 1.0);
+  this->mxx = 1.0;
+  this->mxy = 0.0;
+  this->mxz = 0.0;
+  this->myy = 1.0;
+  this->myz = 0.0;
+  this->mzz = 1.0;
 }
 
 //------------------------------------------------------------------------------
@@ -770,9 +812,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::operator-() const {
-  GeomSymmetricTensor<1> result;
-  result.mxx = -(this->mxx);
-  return result;
+  return GeomSymmetricTensor<1>(-(this->mxx),
+                                -(this->myy),
+                                -(this->mzz));
 }
 
 template<>
@@ -780,11 +822,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::operator-() const {
-  GeomSymmetricTensor<2> result;
-  result.mxx = -(this->mxx);
-  result.mxy = -(this->mxy);
-  result.myy = -(this->myy);
-  return result;
+  return GeomSymmetricTensor<2>(-(this->mxx), -(this->mxy),
+                                -(this->mxy), -(this->myy),
+                                -(this->mzz));
 }
 
 template<>
@@ -792,14 +832,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<3>
 GeomSymmetricTensor<3>::operator-() const {
-  GeomSymmetricTensor<3> result;
-  result.mxx = -(this->mxx);
-  result.mxy = -(this->mxy);
-  result.mxz = -(this->mxz);
-  result.myy = -(this->myy);
-  result.myz = -(this->myz);
-  result.mzz = -(this->mzz);
-  return result;
+  return GeomSymmetricTensor<3>(-(this->mxx), -(this->mxy), -(this->mxz),
+                                -(this->mxy), -(this->myy), -(this->myz),
+                                -(this->mxz), -(this->myz), -(this->mzz));
 }
 
 //------------------------------------------------------------------------------
@@ -884,82 +919,6 @@ GeomSymmetricTensor<nDim>::operator*(const GeomVector<nDim>& rhs) const {
   return this->dot(rhs);
 }
 
-// //------------------------------------------------------------------------------
-// // Add a scalar to a tensor.
-// //------------------------------------------------------------------------------
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<1>
-// GeomSymmetricTensor<1>::operator+(const double rhs) const {
-//   return GeomSymmetricTensor<1>(this->mxx + rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<2>
-// GeomSymmetricTensor<2>::operator+(const double rhs) const {
-//   GeomSymmetricTensor<2> result(*this);
-//   result.mxx += rhs;
-//   result.mxy += rhs;
-//   result.myy += rhs;
-//   return result;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<3>
-// GeomSymmetricTensor<3>::operator+(const double rhs) const {
-//   GeomSymmetricTensor<3> result(*this);
-//   result.mxx += rhs;
-//   result.mxy += rhs;
-//   result.mxz += rhs;
-//   result.myy += rhs;
-//   result.myz += rhs;
-//   result.mzz += rhs;
-//   return result;
-// }
-
-// //------------------------------------------------------------------------------
-// // Subtract a scalar from a tensor.
-// //------------------------------------------------------------------------------
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<1>
-// GeomSymmetricTensor<1>::operator-(const double rhs) const {
-//   return GeomSymmetricTensor<1>(this->mxx - rhs);
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<2>
-// GeomSymmetricTensor<2>::operator-(const double rhs) const {
-//   GeomSymmetricTensor<2> result(*this);
-//   result.mxx -= rhs;
-//   result.mxy -= rhs;
-//   result.myy -= rhs;
-//   return result;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<3>
-// GeomSymmetricTensor<3>::operator-(const double rhs) const {
-//   GeomSymmetricTensor<3> result(*this);
-//   result.mxx -= rhs;
-//   result.mxy -= rhs;
-//   result.mxz -= rhs;
-//   result.myy -= rhs;
-//   result.myz -= rhs;
-//   result.mzz -= rhs;
-//   return result;
-// }
-
 //------------------------------------------------------------------------------
 // Multiply a tensor by a scalar
 //------------------------------------------------------------------------------
@@ -968,7 +927,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::operator*(const double rhs) const {
-  return GeomSymmetricTensor<1>(this->mxx * rhs);
+  return GeomSymmetricTensor<1>(this->mxx * rhs,
+                                this->myy * rhs,
+                                this->mzz * rhs);
 }
 
 template<>
@@ -980,6 +941,7 @@ GeomSymmetricTensor<2>::operator*(const double rhs) const {
   result.mxx *= rhs;
   result.mxy *= rhs;
   result.myy *= rhs;
+  result.mzz *= rhs;
   return result;
 }
 
@@ -1007,7 +969,10 @@ inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::operator/(const double rhs) const {
   REQUIRE(rhs != 0.0);
-  return GeomSymmetricTensor<1>(this->mxx / rhs);
+  const double rhsInv = safeInvVar(rhs);
+  return GeomSymmetricTensor<1>(this->mxx * rhsInv,
+                                this->myy * rhsInv,
+                                this->mzz * rhsInv);
 }
 
 template<>
@@ -1016,11 +981,12 @@ inline
 GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::operator/(const double rhs) const {
   REQUIRE(rhs != 0.0);
-  const double rhsInv = 1.0/rhs;
+  const double rhsInv = safeInvVar(rhs);
   GeomSymmetricTensor<2> result(*this);
   result.mxx *= rhsInv;
   result.mxy *= rhsInv;
   result.myy *= rhsInv;
+  result.mzz *= rhsInv;
   return result;
 }
 
@@ -1030,7 +996,7 @@ inline
 GeomSymmetricTensor<3>
 GeomSymmetricTensor<3>::operator/(const double rhs) const {
   REQUIRE(rhs != 0.0);
-  const double rhsInv = 1.0/rhs;
+  const double rhsInv = safeInvVar(rhs);
   GeomSymmetricTensor<3> result(*this);
   result.mxx *= rhsInv;
   result.mxy *= rhsInv;
@@ -1050,6 +1016,8 @@ inline
 GeomSymmetricTensor<1>&
 GeomSymmetricTensor<1>::operator+=(const GeomSymmetricTensor<1>& rhs) {
   this->mxx += rhs.mxx;
+  this->myy += rhs.myy;
+  this->mzz += rhs.mzz;
   return *this;
 }
 
@@ -1061,6 +1029,7 @@ GeomSymmetricTensor<2>::operator+=(const GeomSymmetricTensor<2>& rhs) {
   this->mxx += rhs.mxx;
   this->mxy += rhs.mxy;
   this->myy += rhs.myy;
+  this->mzz += rhs.mzz;
   return *this;
 }
 
@@ -1087,6 +1056,8 @@ inline
 GeomSymmetricTensor<1>&
 GeomSymmetricTensor<1>::operator-=(const GeomSymmetricTensor<1>& rhs) {
   this->mxx -= rhs.mxx;
+  this->myy -= rhs.myy;
+  this->mzz -= rhs.mzz;
   return *this;
 }
 
@@ -1098,6 +1069,7 @@ GeomSymmetricTensor<2>::operator-=(const GeomSymmetricTensor<2>& rhs) {
   this->mxx -= rhs.mxx;
   this->mxy -= rhs.mxy;
   this->myy -= rhs.myy;
+  this->mzz -= rhs.mzz;
   return *this;
 }
 
@@ -1197,80 +1169,6 @@ GeomSymmetricTensor<3>::operator-=(const Eigen::MatrixBase<Derived>& rhs) {
   return *this;
 }
 
-// //------------------------------------------------------------------------------
-// // Add a scalar to this tensor in place.
-// //------------------------------------------------------------------------------
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<1>&
-// GeomSymmetricTensor<1>::operator+=(const double rhs) {
-//   this->mxx += rhs;
-//   return *this;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<2>&
-// GeomSymmetricTensor<2>::operator+=(const double rhs) {
-//   this->mxx += rhs;
-//   this->mxy += rhs;
-//   this->myy += rhs;
-//   return *this;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<3>&
-// GeomSymmetricTensor<3>::operator+=(const double rhs) {
-//   this->mxx += rhs;
-//   this->mxy += rhs;
-//   this->mxz += rhs;
-//   this->myy += rhs;
-//   this->myz += rhs;
-//   this->mzz += rhs;
-//   return *this;
-// }
-
-// //------------------------------------------------------------------------------
-// // Subtract a scalar from this tensor in place.
-// //------------------------------------------------------------------------------
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<1>&
-// GeomSymmetricTensor<1>::operator-=(const double rhs) {
-//   this->mxx -= rhs;
-//   return *this;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<2>&
-// GeomSymmetricTensor<2>::operator-=(const double rhs) {
-//   this->mxx -= rhs;
-//   this->mxy -= rhs;
-//   this->myy -= rhs;
-//   return *this;
-// }
-
-// template<>
-// SPHERAL_HOST_DEVICE
-// inline
-// GeomSymmetricTensor<3>&
-// GeomSymmetricTensor<3>::operator-=(const double rhs) {
-//   this->mxx -= rhs;
-//   this->mxy -= rhs;
-//   this->mxz -= rhs;
-//   this->myy -= rhs;
-//   this->myz -= rhs;
-//   this->mzz -= rhs;
-//   return *this;
-// }
-
 //------------------------------------------------------------------------------
 // Multiply this tensor by a scalar in place.
 //------------------------------------------------------------------------------
@@ -1280,6 +1178,8 @@ inline
 GeomSymmetricTensor<1>&
 GeomSymmetricTensor<1>::operator*=(const double rhs) {
   this->mxx *= rhs;
+  this->myy *= rhs;
+  this->mzz *= rhs;
   return *this;
 }
 
@@ -1291,6 +1191,7 @@ GeomSymmetricTensor<2>::operator*=(const double rhs) {
   this->mxx *= rhs;
   this->mxy *= rhs;
   this->myy *= rhs;
+  this->mzz *= rhs;
   return *this;
 }
 
@@ -1317,7 +1218,10 @@ inline
 GeomSymmetricTensor<1>&
 GeomSymmetricTensor<1>::operator/=(const double rhs) {
   REQUIRE(rhs != 0.0);
-  this->mxx /= rhs;
+  const auto rhsInv = safeInvVar(rhs);
+  this->mxx *= rhsInv;
+  this->myy *= rhsInv;
+  this->mzz *= rhsInv;
   return *this;
 }
 
@@ -1327,10 +1231,11 @@ inline
 GeomSymmetricTensor<2>&
 GeomSymmetricTensor<2>::operator/=(const double rhs) {
   REQUIRE(rhs != 0.0);
-  const double rhsInv = 1.0/rhs;
+  const auto rhsInv = safeInvVar(rhs);
   this->mxx *= rhsInv;
   this->mxy *= rhsInv;
   this->myy *= rhsInv;
+  this->mzz *= rhsInv;
   return *this;
 }
 
@@ -1340,7 +1245,7 @@ inline
 GeomSymmetricTensor<3>&
 GeomSymmetricTensor<3>::operator/=(const double rhs) {
   REQUIRE(rhs != 0.0);
-  const double rhsInv = 1.0/rhs;
+  const double rhsInv = safeInvVar(rhs);
   this->mxx *= rhsInv;
   this->mxy *= rhsInv;
   this->mxz *= rhsInv;
@@ -1353,42 +1258,13 @@ GeomSymmetricTensor<3>::operator/=(const double rhs) {
 //------------------------------------------------------------------------------
 // Define the equivalence operator.
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
 bool
-GeomSymmetricTensor<1>::
-operator==(const GeomTensor<1>& rhs) const {
-  return this->mxx == rhs.xx();
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-bool
-GeomSymmetricTensor<2>::
-operator==(const GeomTensor<2>& rhs) const {
-  return (this->mxx == rhs.xx() and
-          this->mxy == rhs.xy() and
-          this->mxy == rhs.yx() and
-          this->myy == rhs.yy());
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-bool
-GeomSymmetricTensor<3>::
-operator==(const GeomTensor<3>& rhs) const {
-  return (this->mxx == rhs.xx() and
-          this->mxy == rhs.xy() and
-          this->mxz == rhs.xz() and
-          this->myy == rhs.yy() and
-          this->myz == rhs.yz() and
-          this->mzz == rhs.zz() and 
-          this->mxy == rhs.yx() and
-          this->mxz == rhs.zx() and
-          this->myz == rhs.zy());
+GeomSymmetricTensor<nDim>::
+operator==(const GeomTensor<nDim>& rhs) const {
+  return *this == rhs.Symmetric();
 }
 
 template<>
@@ -1397,7 +1273,9 @@ inline
 bool
 GeomSymmetricTensor<1>::
 operator==(const GeomSymmetricTensor<1>& rhs) const {
-  return this->mxx == rhs.xx();
+  return (this->mxx == rhs.mxx and
+          this->myy == rhs.myy and
+          this->mzz == rhs.mzz);
 }
 
 template<>
@@ -1406,9 +1284,10 @@ inline
 bool
 GeomSymmetricTensor<2>::
 operator==(const GeomSymmetricTensor<2>& rhs) const {
-  return (this->mxx == rhs.xx() and
-          this->mxy == rhs.xy() and
-          this->myy == rhs.yy());
+  return (this->mxx == rhs.mxx and
+          this->mxy == rhs.mxy and
+          this->myy == rhs.myy and
+          this->mzz == rhs.mzz);
 }
 
 template<>
@@ -1417,12 +1296,12 @@ inline
 bool
 GeomSymmetricTensor<3>::
 operator==(const GeomSymmetricTensor<3>& rhs) const {
-  return (this->mxx == rhs.xx() and
-          this->mxy == rhs.xy() and
-          this->mxz == rhs.xz() and
-          this->myy == rhs.yy() and
-          this->myz == rhs.yz() and
-          this->mzz == rhs.zz());
+  return (this->mxx == rhs.mxx and
+          this->mxy == rhs.mxy and
+          this->mxz == rhs.mxz and
+          this->myy == rhs.myy and
+          this->myz == rhs.myz and
+          this->mzz == rhs.mzz);
 }
 
 template<int nDim>
@@ -1606,7 +1485,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>
 GeomSymmetricTensor<nDim>::SkewSymmetric() const {
-  return GeomTensor<nDim>();
+  return GeomTensor<nDim>::zero();
 }
 
 //------------------------------------------------------------------------------
@@ -1630,7 +1509,9 @@ inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::Inverse() const {
   CHECK(this->mxx != 0.0);
-  return GeomSymmetricTensor<1>(1.0/(this->mxx));
+  return GeomSymmetricTensor<1>(safeInvVar(this->mxx),
+                                safeInvVar(this->myy),
+                                safeInvVar(this->mzz));
 }
 
 template<>
@@ -1640,7 +1521,7 @@ GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::Inverse() const {
   REQUIRE(Determinant() != 0.0);
   return GeomSymmetricTensor<2>( (this->myy), -(this->mxy),
-                                -(this->mxy),  (this->mxx))/this->Determinant();
+                                -(this->mxy),  (this->mxx))*safeInvVar(this->Determinant());
 }
 
 template<>
@@ -1657,7 +1538,7 @@ GeomSymmetricTensor<3>::Inverse() const {
                                 (this->mxy)*(this->mxz) - (this->mxx)*(this->myz),
                                 (this->mxy)*(this->myz) - (this->mxz)*(this->myy),
                                 (this->mxz)*(this->mxy) - (this->mxx)*(this->myz),
-                                (this->mxx)*(this->myy) - (this->mxy)*(this->mxy))/this->Determinant();
+                                (this->mxx)*(this->myy) - (this->mxy)*(this->mxy))*safeInvVar(this->Determinant());
 }
 
 //------------------------------------------------------------------------------
@@ -1785,7 +1666,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomSymmetricTensor<1>::dot(const GeomTensor<1>& rhs) const {
-  return GeomTensor<1>((this->mxx) * (rhs.xx()));
+  return GeomTensor<1>(this->mxx * rhs.xx(),
+                       this->myy * rhs.yy(),
+                       this->mzz + rhs.zz());
 }
 
 template<>
@@ -1793,10 +1676,11 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomSymmetricTensor<2>::dot(const GeomTensor<2>& rhs) const {
-  return GeomTensor<2>((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()),
-                       (this->mxx)*(rhs.xy()) + (this->mxy)*(rhs.yy()),
-                       (this->mxy)*(rhs.xx()) + (this->myy)*(rhs.yx()),
-                       (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()));
+  return GeomTensor<2>(this->mxx * rhs.xx() + this->mxy * rhs.yx(),
+                       this->mxx * rhs.xy() + this->mxy * rhs.yy(),
+                       this->mxy * rhs.xx() + this->myy * rhs.yx(),
+                       this->mxy * rhs.xy() + this->myy * rhs.yy(),
+                       this->mzz * rhs.zz());
 }
 
 template<>
@@ -1804,15 +1688,15 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomSymmetricTensor<3>::dot(const GeomTensor<3>& rhs) const {
-  return GeomTensor<3>((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + (this->mxz)*(rhs.zx()),
-                       (this->mxx)*(rhs.xy()) + (this->mxy)*(rhs.yy()) + (this->mxz)*(rhs.zy()),
-                       (this->mxx)*(rhs.xz()) + (this->mxy)*(rhs.yz()) + (this->mxz)*(rhs.zz()),
-                       (this->mxy)*(rhs.xx()) + (this->myy)*(rhs.yx()) + (this->myz)*(rhs.zx()),
-                       (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()) + (this->myz)*(rhs.zy()),
-                       (this->mxy)*(rhs.xz()) + (this->myy)*(rhs.yz()) + (this->myz)*(rhs.zz()),
-                       (this->mxz)*(rhs.xx()) + (this->myz)*(rhs.yx()) + (this->mzz)*(rhs.zx()),
-                       (this->mxz)*(rhs.xy()) + (this->myz)*(rhs.yy()) + (this->mzz)*(rhs.zy()),
-                       (this->mxz)*(rhs.xz()) + (this->myz)*(rhs.yz()) + (this->mzz)*(rhs.zz()));
+  return GeomTensor<3>(this->mxx * rhs.xx() + this->mxy * rhs.yx() + this->mxz * rhs.zx(),
+                       this->mxx * rhs.xy() + this->mxy * rhs.yy() + this->mxz * rhs.zy(),
+                       this->mxx * rhs.xz() + this->mxy * rhs.yz() + this->mxz * rhs.zz(),
+                       this->mxy * rhs.xx() + this->myy * rhs.yx() + this->myz * rhs.zx(),
+                       this->mxy * rhs.xy() + this->myy * rhs.yy() + this->myz * rhs.zy(),
+                       this->mxy * rhs.xz() + this->myy * rhs.yz() + this->myz * rhs.zz(),
+                       this->mxz * rhs.xx() + this->myz * rhs.yx() + this->mzz * rhs.zx(),
+                       this->mxz * rhs.xy() + this->myz * rhs.yy() + this->mzz * rhs.zy(),
+                       this->mxz * rhs.xz() + this->myz * rhs.yz() + this->mzz * rhs.zz());
 }
 
 template<>
@@ -1820,7 +1704,9 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomSymmetricTensor<1>::dot(const GeomSymmetricTensor<1>& rhs) const {
-  return GeomTensor<1>((this->mxx) * (rhs.xx()));
+  return GeomTensor<1>(this->mxx * rhs.xx(),
+                       this->myy * rhs.yy(),
+                       this->mzz * rhs.zz());
 }
 
 template<>
@@ -1828,10 +1714,11 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<2>
 GeomSymmetricTensor<2>::dot(const GeomSymmetricTensor<2>& rhs) const {
-  return GeomTensor<2>((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()),
-                       (this->mxx)*(rhs.xy()) + (this->mxy)*(rhs.yy()),
-                       (this->mxy)*(rhs.xx()) + (this->myy)*(rhs.yx()),
-                       (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()));
+  return GeomTensor<2>(this->mxx * rhs.xx() + this->mxy * rhs.yx(),
+                       this->mxx * rhs.xy() + this->mxy * rhs.yy(),
+                       this->mxy * rhs.xx() + this->myy * rhs.yx(),
+                       this->mxy * rhs.xy() + this->myy * rhs.yy(),
+                       this->mzz * rhs.zz());
 }
 
 template<>
@@ -1839,15 +1726,15 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<3>
 GeomSymmetricTensor<3>::dot(const GeomSymmetricTensor<3>& rhs) const {
-  return GeomTensor<3>((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + (this->mxz)*(rhs.zx()),
-                       (this->mxx)*(rhs.xy()) + (this->mxy)*(rhs.yy()) + (this->mxz)*(rhs.zy()),
-                       (this->mxx)*(rhs.xz()) + (this->mxy)*(rhs.yz()) + (this->mxz)*(rhs.zz()),
-                       (this->mxy)*(rhs.xx()) + (this->myy)*(rhs.yx()) + (this->myz)*(rhs.zx()),
-                       (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()) + (this->myz)*(rhs.zy()),
-                       (this->mxy)*(rhs.xz()) + (this->myy)*(rhs.yz()) + (this->myz)*(rhs.zz()),
-                       (this->mxz)*(rhs.xx()) + (this->myz)*(rhs.yx()) + (this->mzz)*(rhs.zx()),
-                       (this->mxz)*(rhs.xy()) + (this->myz)*(rhs.yy()) + (this->mzz)*(rhs.zy()),
-                       (this->mxz)*(rhs.xz()) + (this->myz)*(rhs.yz()) + (this->mzz)*(rhs.zz()));
+  return GeomTensor<3>(this->mxx * rhs.xx() + this->mxy * rhs.yx() + this->mxz * rhs.zx(),
+                       this->mxx * rhs.xy() + this->mxy * rhs.yy() + this->mxz * rhs.zy(),
+                       this->mxx * rhs.xz() + this->mxy * rhs.yz() + this->mxz * rhs.zz(),
+                       this->mxy * rhs.xx() + this->myy * rhs.yx() + this->myz * rhs.zx(),
+                       this->mxy * rhs.xy() + this->myy * rhs.yy() + this->myz * rhs.zy(),
+                       this->mxy * rhs.xz() + this->myy * rhs.yz() + this->myz * rhs.zz(),
+                       this->mxz * rhs.xx() + this->myz * rhs.yx() + this->mzz * rhs.zx(),
+                       this->mxz * rhs.xy() + this->myz * rhs.yy() + this->mzz * rhs.zy(),
+                       this->mxz * rhs.xz() + this->myz * rhs.yz() + this->mzz * rhs.zz());
 }
 
 
@@ -1860,7 +1747,7 @@ inline
 double
 GeomSymmetricTensor<1>::
 doubledot(const GeomTensor<1>& rhs) const {
-  return (this->mxx)*(rhs.xx());
+  return this->mxx * rhs.xx();
 }
 
 template<>
@@ -1869,8 +1756,8 @@ inline
 double
 GeomSymmetricTensor<2>::
 doubledot(const GeomTensor<2>& rhs) const {
-  return ((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + 
-          (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()));
+  return (this->mxx * rhs.xx() +this->mxy * rhs.yx() + 
+          this->mxy * rhs.xy() +this->myy * rhs.yy());
 }
 
 template<>
@@ -1879,9 +1766,9 @@ inline
 double
 GeomSymmetricTensor<3>::
 doubledot(const GeomTensor<3>& rhs) const {
-  return ((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + (this->mxz)*(rhs.zx()) +
-          (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()) + (this->myz)*(rhs.zy()) +
-          (this->mxz)*(rhs.xz()) + (this->myz)*(rhs.yz()) + (this->mzz)*(rhs.zz()));
+  return (this->mxx * rhs.xx() + this->mxy * rhs.yx() + this->mxz * rhs.zx() +
+          this->mxy * rhs.xy() + this->myy * rhs.yy() + this->myz * rhs.zy() +
+          this->mxz * rhs.xz() + this->myz * rhs.yz() + this->mzz * rhs.zz());
 }
 
 //------------------------------------------------------------------------------
@@ -1893,7 +1780,7 @@ inline
 double
 GeomSymmetricTensor<1>::
 doubledot(const GeomSymmetricTensor<1>& rhs) const {
-  return (this->mxx)*(rhs.xx());
+  return this->mxx * rhs.xx();
 }
 
 template<>
@@ -1902,8 +1789,8 @@ inline
 double
 GeomSymmetricTensor<2>::
 doubledot(const GeomSymmetricTensor<2>& rhs) const {
-  return ((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + 
-          (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()));
+  return (this->mxx * rhs.xx() + this->mxy * rhs.yx() + 
+          this->mxy * rhs.xy() + this->myy * rhs.yy());
 }
 
 template<>
@@ -1912,9 +1799,9 @@ inline
 double
 GeomSymmetricTensor<3>::
 doubledot(const GeomSymmetricTensor<3>& rhs) const {
-  return ((this->mxx)*(rhs.xx()) + (this->mxy)*(rhs.yx()) + (this->mxz)*(rhs.zx()) +
-          (this->mxy)*(rhs.xy()) + (this->myy)*(rhs.yy()) + (this->myz)*(rhs.zy()) +
-          (this->mxz)*(rhs.xz()) + (this->myz)*(rhs.yz()) + (this->mzz)*(rhs.zz()));
+  return (this->mxx * rhs.xx() + this->mxy * rhs.yx() + this->mxz * rhs.zx() +
+          this->mxy * rhs.xy() + this->myy * rhs.yy() + this->myz * rhs.zy() +
+          this->mxz * rhs.xz() + this->myz * rhs.yz() + this->mzz * rhs.zz());
 }
 
 //------------------------------------------------------------------------------
@@ -1935,8 +1822,8 @@ inline
 double
 GeomSymmetricTensor<2>::
 selfDoubledot() const {
-  return ((this->mxx)*(this->mxx) + (this->mxy)*(this->mxy) + 
-          (this->mxy)*(this->mxy) + (this->myy)*(this->myy));
+  return (this->mxx * this->mxx + this->mxy * this->mxy + 
+          this->mxy * this->mxy + this->myy * this->myy);
 }
 
 template<>
@@ -1945,9 +1832,9 @@ inline
 double
 GeomSymmetricTensor<3>::
 selfDoubledot() const {
-  return ((this->mxx)*(this->mxx) + (this->mxy)*(this->mxy) + (this->mxz)*(this->mxz) +
-          (this->mxy)*(this->mxy) + (this->myy)*(this->myy) + (this->myz)*(this->myz) +
-          (this->mxz)*(this->mxz) + (this->myz)*(this->myz) + (this->mzz)*(this->mzz));
+  return (this->mxx * this->mxx + this->mxy * this->mxy + this->mxz * this->mxz +
+          this->mxy * this->mxy + this->myy * this->myy + this->myz * this->myz +
+          this->mxz * this->mxz + this->myz * this->myz + this->mzz * this->mzz);
 }
 
 //------------------------------------------------------------------------------
@@ -1959,7 +1846,9 @@ inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
 square() const {
-  return GeomSymmetricTensor<1>((this->mxx)*(this->mxx));
+  return GeomSymmetricTensor<1>(this->mxx * this->mxx,
+                                this->myy * this->myy,
+                                this->mzz * this->mzz);
 }
 
 template<>
@@ -1969,9 +1858,10 @@ GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::
 square() const {
   GeomSymmetricTensor<2> result;
-  result.mxx = (this->mxx)*(this->mxx) + (this->mxy)*(this->mxy);
-  result.mxy = (this->mxy)*(this->mxx + this->myy);
-  result.myy = (this->mxy)*(this->mxy) + (this->myy)*(this->myy);
+  result.mxx = this->mxx * this->mxx +  this->mxy * this->mxy;
+  result.mxy = this->mxy * (this->mxx + this->myy);
+  result.myy = this->mxy * this->mxy  +  this->myy * this->myy;
+  result.mzz = this->mzz * this->mzz;
   return result;
 }
 
@@ -1982,25 +1872,27 @@ GeomSymmetricTensor<3>
 GeomSymmetricTensor<3>::
 square() const {
   GeomSymmetricTensor<3> result;
-  result.mxx = (this->mxx)*(this->mxx) + (this->mxy)*(this->mxy) + (this->mxz)*(this->mxz);
-  result.mxy = (this->mxy)*(this->mxx + this->myy) + (this->mxz)*(this->myz);
-  result.mxz = (this->mxz)*(this->mxx + this->mzz) + (this->mxy)*(this->myz);
-  result.myy = (this->mxy)*(this->mxy) + (this->myy)*(this->myy) + (this->myz)*(this->myz);
-  result.myz = (this->myz)*(this->myy + this->mzz) + (this->mxy)*(this->mxz);
-  result.mzz = (this->mxz)*(this->mxz) + (this->myz)*(this->myz) + (this->mzz)*(this->mzz);
+  result.mxx = this->mxx * this->mxx +  this->mxy * this->mxy + this->mxz * this->mxz;
+  result.mxy = this->mxy * (this->mxx + this->myy) + this->mxz * this->myz;
+  result.mxz = this->mxz * (this->mxx + this->mzz) + this->mxy * this->myz;
+  result.myy = this->mxy * this->mxy + this->myy * this->myy + this->myz * this->myz;
+  result.myz = this->myz * (this->myy + this->mzz) + this->mxy * this->mxz;
+  result.mzz = this->mxz * this->mxz + this->myz * this->myz + this->mzz * this->mzz;
   return result;
 }
 
 //------------------------------------------------------------------------------
-// Return the cube of this tensor.
+// Compute the square root of the tensor.
 //------------------------------------------------------------------------------
 template<>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
-cube() const {
-  return GeomSymmetricTensor<1>((this->mxx)*(this->mxx)*(this->mxx));
+sqrt() const {
+  return GeomSymmetricTensor<1>(std::sqrt(std::max(0.0, this->mxx)),
+                                std::sqrt(std::max(0.0, this->myy)),
+                                std::sqrt(std::max(0.0, this->mzz)));
 }
 
 template<>
@@ -2008,11 +1900,12 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::
-cube() const {
-  GeomSymmetricTensor<2> result;
-  result.mxx = (this->mxx)*((this->mxx)*(this->mxx) + (this->mxy)*(this->mxy)) + (this->mxy)*((this->mxx)*(this->mxy) + (this->mxy)*(this->myy));
-  result.mxy = (this->mxy)*((this->mxx)*(this->mxx) + (this->mxy)*(this->mxy)) + (this->myy)*((this->mxx)*(this->mxy) + (this->mxy)*(this->myy));
-  result.myy = (this->mxy)*((this->mxx)*(this->mxy) + (this->mxy)*(this->myy)) + (this->myy)*((this->mxy)*(this->mxy) + (this->myy)*(this->myy));
+sqrt() const {
+  const auto eigen = this->eigenVectors();
+  GeomSymmetricTensor<2> result(std::sqrt(std::max(0.0, eigen.eigenValues(0))), 0.0,
+                                0.0, std::sqrt(std::max(0.0, eigen.eigenValues(1))),
+                                std::sqrt(std::max(0.0, this->mzz)));
+  result.rotationalTransform(eigen.eigenVectors);
   return result;
 }
 
@@ -2021,20 +1914,30 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<3>
 GeomSymmetricTensor<3>::
-cube() const {
-  GeomSymmetricTensor<3> result;
-  result.mxx = (this->mxx)*(this->mxx)*(this->mxx) + 2.0*(this->mxx)*((this->mxy)*(this->mxy) + (this->mxz)*(this->mxz)) +
-    (this->mxy)*(this->mxy)*(this->myy) + 2.0*(this->mxy)*(this->mxz)*(this->myz) + (this->mxz)*(this->mxz)*(this->mzz);
-  result.mxy = (this->mxx)*(this->mxx)*(this->mxy) + (this->mxy)*(this->mxy)*(this->mxy) + (this->mxx)*((this->mxy)*(this->myy) + (this->mxz)*(this->myz)) + 
-    (this->mxy)*((this->mxz)*(this->mxz) + (this->myy)*(this->myy) + (this->myz)*(this->myz)) + (this->mxz)*(this->myz)*((this->myy) + (this->mzz));
-  result.mxz = (this->mxz)*((this->mxx)*(this->mxx) + (this->mxy)*(this->mxy) + (this->mxz)*(this->mxz)) + (this->myz)*((this->mxx)*(this->mxy) + (this->mxy)*(this->myy) + (this->mxz)*(this->myz)) +
-    (this->mzz)*((this->mxx)*(this->mxz) + (this->mxy)*(this->myz) + (this->mxz)*(this->mzz));
-  result.myy = (this->mxx)*(this->mxy)*(this->mxy) + 2.0*(this->mxy)*(this->mxy)*(this->myy) + (this->myy)*(this->myy)*(this->myy) + 
-    2.0*(this->mxy)*(this->mxz)*(this->myz) + 2.0*(this->myy)*(this->myz)*(this->myz) + (this->myz)*(this->myz)*(this->mzz);
-  result.myz = (this->mxx)*(this->mxy)*(this->mxz) + (this->mxy)*(this->mxy)*(this->myz) + (this->mxy)*(this->mxz)*((this->myy) + (this->mzz)) +
-    (this->myz)*((this->mxz)*(this->mxz) + (this->myy)*(this->myy) + (this->myz)*(this->myz) + (this->myy)*(this->mzz) + (this->mzz)*(this->mzz));
-  result.mzz = (this->mxx)*(this->mxz)*(this->mxz) + 2.0*(this->mxy)*(this->mxz)*(this->myz) + (this->myy)*(this->myz)*(this->myz) + 
-    2.0*(this->mxz)*(this->mxz)*(this->mzz) + 2.0*(this->myz)*(this->myz)*(this->mzz) + (this->mzz)*(this->mzz)*(this->mzz);
+sqrt() const {
+  const auto eigen = this->eigenVectors();
+  GeomSymmetricTensor<3> result(std::sqrt(std::max(0.0, eigen.eigenValues(0))), 0.0, 0.0,
+                                0.0, std::sqrt(std::max(0.0, eigen.eigenValues(1))), 0.0,
+                                0.0, 0.0, std::sqrt(std::max(0.0, eigen.eigenValues(2))));
+  result.rotationalTransform(eigen.eigenVectors);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// The general version, raise to an arbitrary power.
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<nDim>
+GeomSymmetricTensor<nDim>::
+pow(const double p) const {
+  const auto eigen = this->eigenVectors3D();
+  GeomSymmetricTensor<nDim> result;
+  for (auto i = 0u; i < 3u; ++i) {
+    result(i,i) = std::pow(std::abs(eigen.eigenValues(i)), p) * sgn(eigen.eigenValues(i));
+  }
+  result.rotationalTransform(eigen.eigenVectors);
   return result;
 }
 
@@ -2043,8 +1946,52 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
+pow(const double p) const {
+  return GeomSymmetricTensor<1>(std::pow(this->mxx, p),
+                                std::pow(this->myy, p),
+                                std::pow(this->mzz, p));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+pow(const double p) const {
+  const auto eigen = this->eigenVectors();
+  GeomSymmetricTensor<2> result(std::pow(eigen.eigenValues(0), p), 0.0,
+                                0.0, std::pow(eigen.eigenValues(1), p),
+                                std::pow(this->mzz, p));
+  result.rotationalTransform(eigen.eigenVectors);
+  return result;
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+pow(const double p) const {
+  const auto eigen = this->eigenVectors();
+  GeomSymmetricTensor<3> result(std::pow(eigen.eigenValues(0), p), 0.0, 0.0,
+                                0.0, std::pow(eigen.eigenValues(1), p), 0.0,
+                                0.0, 0.0, std::pow(eigen.eigenValues(2), p));
+  result.rotationalTransform(eigen.eigenVectors);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Element-wise square
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
 squareElements() const {
-  return GeomSymmetricTensor<1>((this->mxx)*(this->mxx));
+  return GeomSymmetricTensor<1>(this->mxx * this->mxx,
+                                this->myy * this->myy,
+                                this->mzz * this->mzz);
 }
 
 template<>
@@ -2054,9 +2001,10 @@ GeomSymmetricTensor<2>
 GeomSymmetricTensor<2>::
 squareElements() const {
   GeomSymmetricTensor<2> result;
-  result.mxx = (this->mxx)*(this->mxx);
-  result.mxy = (this->mxy)*(this->mxy);
-  result.myy = (this->myy)*(this->myy);
+  result.mxx = this->mxx * this->mxx;
+  result.mxy = this->mxy * this->mxy;
+  result.myy = this->myy * this->myy;
+  result.mzz = this->mzz * this->mzz;
   return result;
 }
 
@@ -2067,128 +2015,13 @@ GeomSymmetricTensor<3>
 GeomSymmetricTensor<3>::
 squareElements() const {
   GeomSymmetricTensor<3> result;
-  result.mxx = (this->mxx)*(this->mxx);
-  result.mxy = (this->mxy)*(this->mxy);
-  result.mxz = (this->mxz)*(this->mxz);
-  result.myy = (this->myy)*(this->myy);
-  result.myz = (this->myz)*(this->myz);
-  result.mzz = (this->mzz)*(this->mzz);
+  result.mxx = this->mxx * this->mxx;
+  result.mxy = this->mxy * this->mxy;
+  result.mxz = this->mxz * this->mxz;
+  result.myy = this->myy * this->myy;
+  result.myz = this->myz * this->myz;
+  result.mzz = this->mzz * this->mzz;
   return result;
-}
-
-//------------------------------------------------------------------------------
-// Apply a rotational transform to this tensor.
-//------------------------------------------------------------------------------
-template<>
-SPHERAL_HOST_DEVICE
-inline
-void
-GeomSymmetricTensor<1>::
-rotationalTransform(const GeomTensor<1>& R) {
-  CONTRACT_VAR(R);
-  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-void
-GeomSymmetricTensor<2>::
-rotationalTransform(const GeomTensor<2>& R) {
-  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
-
-  const double A0 = this->mxx;
-  const double A1 = this->mxy;
-  const double A2 = this->myy;
-
-  const double R0 = R.xx();
-  const double R1 = R.xy();
-  const double R2 = R.yx();
-  const double R3 = R.yy();
-
-  const double T0 = A0*R0 + A1*R1;
-  const double T1 = A1*R0 + A2*R1;
-
-  this->mxx = R0*T0 + R1*T1;
-  this->mxy = R2*T0 + R3*T1;
-  this->myy = R2*(A0*R2 + A1*R3) + R3*(A1*R2 + A2*R3);
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-void
-GeomSymmetricTensor<3>::
-rotationalTransform(const GeomTensor<3>& R) {
-  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
-
-  const double A0 = this->mxx;
-  const double A1 = this->mxy;
-  const double A2 = this->mxz;
-  const double A3 = this->myy;
-  const double A4 = this->myz;
-  const double A5 = this->mzz;
-
-  const double R0 = R.xx();
-  const double R1 = R.xy();
-  const double R2 = R.xz();
-  const double R3 = R.yx();
-  const double R4 = R.yy();
-  const double R5 = R.yz();
-  const double R6 = R.zx();
-  const double R7 = R.zy();
-  const double R8 = R.zz();
-
-  const double T0 = A0*R0 + A1*R1 + A2*R2;
-  const double T1 = A0*R3 + A1*R4 + A2*R5;
-  const double T2 = A1*R0 + A3*R1 + A4*R2;
-  const double T3 = A1*R3 + A3*R4 + A4*R5;
-  const double T4 = A2*R0 + A4*R1 + A5*R2;
-  const double T5 = A2*R3 + A4*R4 + A5*R5;
-
-  this->mxx = R0*T0 + R1*T2 + R2*T4;
-  this->mxy = R3*T0 + R4*T2 + R5*T4;
-  this->mxz = R6*T0 + R7*T2 + R8*T4;
-  this->myy = R3*T1 + R4*T3 + R5*T5;
-  this->myz = R6*T1 + R7*T3 + R8*T5;
-  this->mzz = R6*(A0*R6 + A1*R7 + A2*R8) + R7*(A1*R6 + A3*R7 + A4*R8) + R8*(A2*R6 + A4*R7 + A5*R8);
-}
-
-//------------------------------------------------------------------------------
-// Return the maximum absolute value of the elements.
-//------------------------------------------------------------------------------
-template<>
-SPHERAL_HOST_DEVICE
-inline
-double
-GeomSymmetricTensor<1>::
-maxAbsElement() const {
-  return std::abs(this->mxx);
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-double
-GeomSymmetricTensor<2>::
-maxAbsElement() const {
-  return std::max(std::abs(this->mxx),
-                  std::max(std::abs(this->mxy), 
-                           std::abs(this->myy)));
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-double
-GeomSymmetricTensor<3>::
-maxAbsElement() const {
-  return std::max(std::abs(this->mxx), 
-                  std::max(std::abs(this->mxy), 
-                           std::max(std::abs(this->mxz), 
-                                    std::max(std::abs(this->myy), 
-                                             std::max(std::abs(this->myz), 
-                                                      std::abs(this->mzz))))));
 }
 
 //------------------------------------------------------------------------------
@@ -2199,7 +2032,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomVector<1>
 GeomSymmetricTensor<1>::eigenValues() const {
-  return GeomVector<1>(mxx);
+  return GeomVector<1>(this->mxx);
 }
 
 //----------------------------------------------------------------------
@@ -2211,9 +2044,9 @@ GeomSymmetricTensor<2>::eigenValues() const {
   if (std::abs(xy()) < 1.0e-50) {
     return diagonalElements();
   } else {
-    const double b = Trace();
-    const double c = Determinant();
-    const double q = 0.5*(b + sgn(b)*std::sqrt(std::max(0.0, b*b - 4.0*c)));
+    const auto b = Trace();
+    const auto c = Determinant();
+    const auto q = 0.5*(b + sgn(b)*std::sqrt(std::max(0.0, b*b - 4.0*c)));
     CHECK(q != 0.0);
     return GeomVector<2>(q, c/q); // (q + 1.0e-50*sgn(q)));
   }
@@ -2228,28 +2061,28 @@ SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
 GeomSymmetricTensor<3>::eigenValues() const {
-  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement()); 
+  const auto fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement()); 
   CHECK(fscale > 0.0);
-  const double fscalei = 1.0/fscale;
-  const double a00 = this->xx()*fscalei;
-  const double a01 = this->xy()*fscalei;
-  const double a02 = this->xz()*fscalei;
-  const double a11 = this->yy()*fscalei;
-  const double a12 = this->yz()*fscalei;
-  const double a22 = this->zz()*fscalei;
-  const double c0 = a00*a11*a22 + 2.0*a01*a02*a12 - a00*a12*a12 - a11*a02*a02 - a22*a01*a01;
-  const double c1 = a00*a11 - a01*a01 + a00*a22 - a02*a02 + a11*a22 - a12*a12;
-  const double c2 = a00 + a11 + a22;
-  const double c2Div3 = c2*onethird();
-  const double aDiv3 = std::min(0.0, onethird()*(c1 - c2*c2Div3));
-  const double mbDiv2 = 0.5*(c0 + c2Div3*(2.0*c2Div3*c2Div3 - c1));
-  const double q = std::min(0.0, mbDiv2*mbDiv2 + aDiv3*aDiv3*aDiv3);
+  const auto fscalei = safeInvVar(fscale);
+  const auto a00 = this->mxx*fscalei;
+  const auto a01 = this->mxy*fscalei;
+  const auto a02 = this->mxz*fscalei;
+  const auto a11 = this->myy*fscalei;
+  const auto a12 = this->myz*fscalei;
+  const auto a22 = this->mzz*fscalei;
+  const auto c0 = a00*a11*a22 + 2.0*a01*a02*a12 - a00*a12*a12 - a11*a02*a02 - a22*a01*a01;
+  const auto c1 = a00*a11 - a01*a01 + a00*a22 - a02*a02 + a11*a22 - a12*a12;
+  const auto c2 = a00 + a11 + a22;
+  const auto c2Div3 = c2*onethird();
+  const auto aDiv3 = std::min(0.0, onethird()*(c1 - c2*c2Div3));
+  const auto mbDiv2 = 0.5*(c0 + c2Div3*(2.0*c2Div3*c2Div3 - c1));
+  const auto q = std::min(0.0, mbDiv2*mbDiv2 + aDiv3*aDiv3*aDiv3);
   CHECK(-aDiv3 >= 0.0);
   CHECK(-q >= 0.0);
-  const double mag = std::sqrt(-aDiv3);
-  const double angle = atan2(std::sqrt(-q), mbDiv2)*onethird();
-  const double cs = cos(angle);
-  const double sn = sin(angle);
+  const auto mag = std::sqrt(-aDiv3);
+  const auto angle = atan2(std::sqrt(-q), mbDiv2)*onethird();
+  const auto cs = cos(angle);
+  const auto sn = sin(angle);
   return GeomVector<3>(fscale*(c2Div3 + 2.0*mag*cs),
                        fscale*(c2Div3 - mag*(cs + sqrt3()*sn)),
                        fscale*(c2Div3 - mag*(cs - sqrt3()*sn)));
@@ -2266,7 +2099,7 @@ EigenStruct<1>
 GeomSymmetricTensor<1>::eigenVectors() const {
   EigenStruct<1> result;
   result.eigenValues.x(mxx);
-  result.eigenVectors.xx(1.0);
+  result.eigenVectors = GeomTensor<1>(1.0, 1.0, 1.0);
   return result;
 }
 
@@ -2277,25 +2110,26 @@ SPHERAL_HOST_DEVICE
 inline
 EigenStruct<2>
 GeomSymmetricTensor<2>::eigenVectors() const {
-  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement()); 
+  const auto fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement()); 
   CHECK(fscale > 0.0);
-  const double fscalei = 1.0/fscale;
-  const double axx = mxx*fscalei;
-  const double axy = mxy*fscalei;
-  const double ayy = myy*fscalei;
+  const auto fscalei = safeInvVar(fscale);
+  const auto axx = this->mxx*fscalei;
+  const auto axy = this->mxy*fscalei;
+  const auto ayy = this->myy*fscalei;
   EigenStruct<2> result;
   if (std::abs(axy) < 1.0e-50) {
     result.eigenValues = diagonalElements();
     result.eigenVectors = one();
   } else {
-    const double theta = 0.5*atan2(2.0*axy, ayy - axx);
-    const double xhat = cos(theta);
-    const double yhat = sin(theta);
+    const auto theta = 0.5*atan2(2.0*axy, ayy - axx);
+    const auto xhat = cos(theta);
+    const auto yhat = sin(theta);
     result.eigenValues.x(xhat*(axx*xhat - axy*yhat) - yhat*(axy*xhat - ayy*yhat));
     result.eigenValues.y(yhat*(axx*yhat + axy*xhat) + xhat*(axy*yhat + ayy*xhat));
     result.eigenValues *= fscale;
     result.eigenVectors = GeomTensor<2>( xhat, yhat,
-                                        -yhat, xhat);
+                                        -yhat, xhat,
+                                         1.0);
   }
   return result;
 }
@@ -2309,30 +2143,30 @@ EigenStruct<3>
 GeomSymmetricTensor<3>::eigenVectors() const {
 
   // Some useful typedefs.
-  typedef GeomVector<3> Vector;
-  typedef GeomTensor<3> Tensor;
-  typedef GeomSymmetricTensor<3> SymTensor;
+  using Vector =GeomVector<3>;
+  using Tensor = GeomTensor<3>;
+  using SymTensor = GeomSymmetricTensor<3>;
 
   // Tolerances for fuzzy math.
-  const double degenerate = 1.0e-20;
-  const double tolerance = 5.0e-5;
+  const auto degenerate = 1.0e-20;
+  const auto tolerance = 5.0e-5;
 
   // Prepare the result.
   EigenStruct<3> result;
 
   // Create a scaled version of this tensor, with all elements in the range [-1,1].
-  const double fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
+  const auto fscale = std::max(10.0*std::numeric_limits<double>::epsilon(), this->maxAbsElement());
   CHECK(fscale > 0.0);
-  const double fscalei = 1.0/fscale;
+  const auto fscalei = safeInvVar(fscale);
   SymTensor A = (*this)*fscalei;
 
   // Check for any degenerate elements, and just zero 'em out.
-  A.xx(abs(A.xx()) < degenerate ? 0.0 : A.xx());
-  A.xy(abs(A.xy()) < degenerate ? 0.0 : A.xy());
-  A.xz(abs(A.xz()) < degenerate ? 0.0 : A.xz());
-  A.yy(abs(A.yy()) < degenerate ? 0.0 : A.yy());
-  A.yz(abs(A.yz()) < degenerate ? 0.0 : A.yz());
-  A.zz(abs(A.zz()) < degenerate ? 0.0 : A.zz());
+  A.xx(std::abs(A.xx()) < degenerate ? 0.0 : A.xx());
+  A.xy(std::abs(A.xy()) < degenerate ? 0.0 : A.xy());
+  A.xz(std::abs(A.xz()) < degenerate ? 0.0 : A.xz());
+  A.yy(std::abs(A.yy()) < degenerate ? 0.0 : A.yy());
+  A.yz(std::abs(A.yz()) < degenerate ? 0.0 : A.yz());
+  A.zz(std::abs(A.zz()) < degenerate ? 0.0 : A.zz());
 
 // #ifdef USEJACOBI
 
@@ -2356,9 +2190,9 @@ GeomSymmetricTensor<3>::eigenVectors() const {
     const Eigen::Vector3d& Bvals = eigensolver.eigenvalues();
     const Eigen::Matrix3d& Bvecs = eigensolver.eigenvectors();
     result.eigenValues = Vector(Bvals(0), Bvals(1), Bvals(2)) * fscale;
-    const double x1 = 1.0/std::sqrt(Bvecs(0,0)*Bvecs(0,0) + Bvecs(1,0)*Bvecs(1,0) + Bvecs(2,0)*Bvecs(2,0));
-    const double x2 = 1.0/std::sqrt(Bvecs(0,1)*Bvecs(0,1) + Bvecs(1,1)*Bvecs(1,1) + Bvecs(2,1)*Bvecs(2,1));
-    const double x3 = 1.0/std::sqrt(Bvecs(0,2)*Bvecs(0,2) + Bvecs(1,2)*Bvecs(1,2) + Bvecs(2,2)*Bvecs(2,2));
+    const auto x1 = 1.0/std::sqrt(Bvecs(0,0)*Bvecs(0,0) + Bvecs(1,0)*Bvecs(1,0) + Bvecs(2,0)*Bvecs(2,0));
+    const auto x2 = 1.0/std::sqrt(Bvecs(0,1)*Bvecs(0,1) + Bvecs(1,1)*Bvecs(1,1) + Bvecs(2,1)*Bvecs(2,1));
+    const auto x3 = 1.0/std::sqrt(Bvecs(0,2)*Bvecs(0,2) + Bvecs(1,2)*Bvecs(1,2) + Bvecs(2,2)*Bvecs(2,2));
     result.eigenVectors = Tensor(Bvecs(0,0)*x1, Bvecs(0,1)*x2, Bvecs(0,2)*x3,
                                  Bvecs(1,0)*x1, Bvecs(1,1)*x2, Bvecs(1,2)*x3,
                                  Bvecs(2,0)*x1, Bvecs(2,1)*x2, Bvecs(2,2)*x3);
@@ -2450,9 +2284,9 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 
   BEGIN_CONTRACT_SCOPE
   // Check the result.
-  const double lambda1 = result.eigenValues.x();
-  const double lambda2 = result.eigenValues.y();
-  const double lambda3 = result.eigenValues.z();
+  const auto lambda1 = result.eigenValues.x();
+  const auto lambda2 = result.eigenValues.y();
+  const auto lambda3 = result.eigenValues.z();
   CONTRACT_VAR(lambda1);
   CONTRACT_VAR(lambda2);
   CONTRACT_VAR(lambda3);
@@ -2470,7 +2304,7 @@ GeomSymmetricTensor<3>::eigenVectors() const {
           fuzzyEqual(v2.magnitude2(), 1.0, tolerance) and
           fuzzyEqual(v3.magnitude2(), 1.0, tolerance),
           v1 << " " << v2 << " " << v3);
-  const double tol = tolerance*std::max(1.0, this->maxAbsElement());
+  const auto tol = tolerance*std::max(1.0, this->maxAbsElement());
   CONTRACT_VAR(tol);
   ENSURE2(fuzzyEqual((SymTensor(xx() - lambda1, xy(), xz(),
                                 yx(), yy() - lambda1, yz(),
@@ -2492,55 +2326,121 @@ GeomSymmetricTensor<3>::eigenVectors() const {
 }
 
 //------------------------------------------------------------------------------
-// Compute the square root of the tensor.
+// Apply a rotational transform to this tensor.
 //------------------------------------------------------------------------------
-template <int nDim>
+template<>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<nDim>
+void
+GeomSymmetricTensor<1>::
+rotationalTransform(const GeomTensor<1>& R) {
+  CONTRACT_VAR(R);
+  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomSymmetricTensor<2>::
+rotationalTransform(const GeomTensor<2>& R) {
+  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
+
+  const auto A0 = this->mxx;
+  const auto A1 = this->mxy;
+  const auto A2 = this->myy;
+
+  const auto R0 = R.xx();
+  const auto R1 = R.xy();
+  const auto R2 = R.yx();
+  const auto R3 = R.yy();
+
+  const auto T0 = A0*R0 + A1*R1;
+  const auto T1 = A1*R0 + A2*R1;
+
+  this->mxx = R0*T0 + R1*T1;
+  this->mxy = R2*T0 + R3*T1;
+  this->myy = R2*(A0*R2 + A1*R3) + R3*(A1*R2 + A2*R3);
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+void
+GeomSymmetricTensor<3>::
+rotationalTransform(const GeomTensor<3>& R) {
+  REQUIRE2(fuzzyEqual(std::abs(R.Determinant()), 1.0, 1.0e-5), R);
+
+  const auto A0 = this->mxx;
+  const auto A1 = this->mxy;
+  const auto A2 = this->mxz;
+  const auto A3 = this->myy;
+  const auto A4 = this->myz;
+  const auto A5 = this->mzz;
+
+  const auto R0 = R.xx();
+  const auto R1 = R.xy();
+  const auto R2 = R.xz();
+  const auto R3 = R.yx();
+  const auto R4 = R.yy();
+  const auto R5 = R.yz();
+  const auto R6 = R.zx();
+  const auto R7 = R.zy();
+  const auto R8 = R.zz();
+
+  const auto T0 = A0*R0 + A1*R1 + A2*R2;
+  const auto T1 = A0*R3 + A1*R4 + A2*R5;
+  const auto T2 = A1*R0 + A3*R1 + A4*R2;
+  const auto T3 = A1*R3 + A3*R4 + A4*R5;
+  const auto T4 = A2*R0 + A4*R1 + A5*R2;
+  const auto T5 = A2*R3 + A4*R4 + A5*R5;
+
+  this->mxx = R0*T0 + R1*T2 + R2*T4;
+  this->mxy = R3*T0 + R4*T2 + R5*T4;
+  this->mxz = R6*T0 + R7*T2 + R8*T4;
+  this->myy = R3*T1 + R4*T3 + R5*T5;
+  this->myz = R6*T1 + R7*T3 + R8*T5;
+  this->mzz = R6*(A0*R6 + A1*R7 + A2*R8) + R7*(A1*R6 + A3*R7 + A4*R8) + R8*(A2*R6 + A4*R7 + A5*R8);
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+void
 GeomSymmetricTensor<nDim>::
-sqrt() const {
-  const typename GeomSymmetricTensor<nDim>::EigenStructType eigen = this->eigenVectors();
-  GeomSymmetricTensor<nDim> result;
-  for (int i = 0; i != nDim; ++i) {
-    REQUIRE(eigen.eigenValues(i) >= 0.0);
-    result(i,i) = std::sqrt(std::max(0.0, eigen.eigenValues(i)));
-  }
-  result.rotationalTransform(eigen.eigenVectors);
-  return result;
+rotationalTransform(const GeomTensor<3>& R) requires (nDim != 3) {
+  this->rotationalTransform(TensorType(R));
 }
 
 //------------------------------------------------------------------------------
-// Compute the cube root of the tensor.
+// Return the maximum absolute value of the elements.
 //------------------------------------------------------------------------------
-template <int nDim>
+template<>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<nDim>
-GeomSymmetricTensor<nDim>::
-cuberoot() const {
-  const typename GeomSymmetricTensor<nDim>::EigenStructType eigen = this->eigenVectors();
-  GeomSymmetricTensor<nDim> result;
-  for (int i = 0; i != nDim; ++i) result(i,i) = FastMath::CubeRootHalley2(eigen.eigenValues(i));
-  result.rotationalTransform(eigen.eigenVectors);
-  return result;
+double
+GeomSymmetricTensor<1>::
+maxAbsElement() const {
+  return std::abs(this->mxx);
 }
 
-//------------------------------------------------------------------------------
-// The general version, raise to an arbitrary power.
-//------------------------------------------------------------------------------
-template <int nDim>
+template<>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<nDim>
-GeomSymmetricTensor<nDim>::
-pow(const double p) const {
-  const typename GeomSymmetricTensor<nDim>::EigenStructType eigen = this->eigenVectors();
-  GeomSymmetricTensor<nDim> result;
-  for (int i = 0; i != nDim; ++i)
-    result(i,i) = std::pow(std::abs(eigen.eigenValues(i)), p) * sgn(eigen.eigenValues(i));
-  result.rotationalTransform(eigen.eigenVectors);
-  return result;
+double
+GeomSymmetricTensor<2>::
+maxAbsElement() const {
+  return std::max({std::abs(this->mxx), std::abs(this->mxy), std::abs(this->myy)});
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<3>::
+maxAbsElement() const {
+  return std::max({std::abs(this->mxx), std::abs(this->mxy), std::abs(this->mxz), 
+                   std::abs(this->myy), std::abs(this->myz), std::abs(this->mzz)});
 }
 
 //------------------------------------------------------------------------------
@@ -2552,7 +2452,9 @@ inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
 enforceMinEigenValue(const double& x) const {
-  return GeomSymmetricTensor(std::max(mxx, x));
+  return GeomSymmetricTensor(std::max(this->mxx, x),
+                             std::max(this->myy, x),
+                             std::max(this->mzz, x));
 }
 
 template<>
@@ -2564,9 +2466,14 @@ enforceMinEigenValue(const double& x) const {
   auto ev = this->eigenVectors();
   if (ev.eigenValues.minElement() < x) {
     GeomSymmetricTensor result;
-    result(0,0) = std::max(ev.eigenValues(0), x);
-    result(1,1) = std::max(ev.eigenValues(1), x);
+    result.xx(std::max(ev.eigenValues(0), x));
+    result.yy(std::max(ev.eigenValues(1), x));
+    result.zz(std::max(this->mzz, x));
     result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else if (this->mzz < x) {
+    GeomSymmetricTensor result(*this);
+    result.zz(x);
     return result;
   } else {
     return *this;
@@ -2582,9 +2489,9 @@ enforceMinEigenValue(const double& x) const {
   auto ev = this->eigenVectors();
   if (ev.eigenValues.minElement() < x) {
     GeomSymmetricTensor result;
-    result(0,0) = std::max(ev.eigenValues(0), x);
-    result(1,1) = std::max(ev.eigenValues(1), x);
-    result(2,2) = std::max(ev.eigenValues(2), x);
+    result.xx(std::max(ev.eigenValues(0), x));
+    result.yy(std::max(ev.eigenValues(1), x));
+    result.zz(std::max(ev.eigenValues(2), x));
     result.rotationalTransform(ev.eigenVectors);
     return result;
   } else {
@@ -2601,7 +2508,9 @@ inline
 GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
 enforceMaxEigenValue(const double& x) const {
-  return GeomSymmetricTensor(std::min(mxx, x));
+  return GeomSymmetricTensor(std::min(this->mxx, x),
+                             std::min(this->myy, x),
+                             std::min(this->mzz, x));
 }
 
 template<>
@@ -2613,9 +2522,14 @@ enforceMaxEigenValue(const double& x) const {
   auto ev = this->eigenVectors();
   if (ev.eigenValues.maxElement() > x) {
     GeomSymmetricTensor result;
-    result(0,0) = std::min(ev.eigenValues(0), x);
-    result(1,1) = std::min(ev.eigenValues(1), x);
+    result.xx(std::min(ev.eigenValues(0), x));
+    result.yy(std::min(ev.eigenValues(1), x));
+    result.zz(std::min(this->mzz, x));
     result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else if (this->mzz > x) {
+    GeomSymmetricTensor result(*this);
+    result.zz(x);
     return result;
   } else {
     return *this;
@@ -2631,14 +2545,302 @@ enforceMaxEigenValue(const double& x) const {
   auto ev = this->eigenVectors();
   if (ev.eigenValues.maxElement() > x) {
     GeomSymmetricTensor result;
-    result(0,0) = std::min(ev.eigenValues(0), x);
-    result(1,1) = std::min(ev.eigenValues(1), x);
-    result(2,2) = std::min(ev.eigenValues(2), x);
+    result.xx(std::min(ev.eigenValues(0), x));
+    result.yy(std::min(ev.eigenValues(1), x));
+    result.zz(std::min(ev.eigenValues(2), x));
     result.rotationalTransform(ev.eigenVectors);
     return result;
   } else {
     return *this;
   }
+}
+
+//------------------------------------------------------------------------------
+// Clamp the min/max eigen values
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>
+GeomSymmetricTensor<1>::
+clampEigenValues(const double& minvalue,
+                 const double& maxvalue) const {
+  return GeomSymmetricTensor(std::clamp(this->mxx, minvalue, maxvalue),
+                             std::clamp(this->myy, minvalue, maxvalue),
+                             std::clamp(this->mzz, minvalue, maxvalue));
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>
+GeomSymmetricTensor<2>::
+clampEigenValues(const double& minvalue,
+                 const double& maxvalue) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < minvalue or
+      ev.eigenValues.maxElement() > maxvalue) {
+    GeomSymmetricTensor result;
+    result.xx(std::clamp(ev.eigenValues(0), minvalue, maxvalue));
+    result.yy(std::clamp(ev.eigenValues(1), minvalue, maxvalue));
+    result.zz(std::clamp(this->mzz, minvalue, maxvalue));
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else if (this->mzz < minvalue or
+             this->mzz > maxvalue) {
+    GeomSymmetricTensor result(*this);
+    result.zz(std::clamp(this->mzz, minvalue, maxvalue));
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<3>
+GeomSymmetricTensor<3>::
+clampEigenValues(const double& minvalue,
+                 const double& maxvalue) const {
+  auto ev = this->eigenVectors();
+  if (ev.eigenValues.minElement() < minvalue or
+      ev.eigenValues.maxElement() > maxvalue) {
+    GeomSymmetricTensor result;
+    result.xx(std::clamp(ev.eigenValues(0), minvalue, maxvalue));
+    result.yy(std::clamp(ev.eigenValues(1), minvalue, maxvalue));
+    result.zz(std::clamp(ev.eigenValues(2), minvalue, maxvalue));
+    result.rotationalTransform(ev.eigenVectors);
+    return result;
+  } else {
+    return *this;
+  }
+}
+
+//------------------------------------------------------------------------------
+// diagonal (strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<nDim>::diagonalElements3D() const {
+  return GeomVector<3>(this->mxx, this->myy, this->mzz);
+}
+
+//------------------------------------------------------------------------------
+// trace (strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<nDim>::Trace3D() const {
+  return this->mxx + this->myy + this->mzz;
+}
+
+//------------------------------------------------------------------------------
+// determinant (strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<nDim>::Determinant3D() const {
+  return (xx()*yy()*zz() + xy()*yz()*zx() + xz()*yx()*zy() -
+          xx()*yz()*zy() - xy()*yx()*zz() - xz()*yy()*zx());
+}
+
+//------------------------------------------------------------------------------
+// doubledot product (a_ij * b_ji -- strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<nDim>::
+doubledot3D(const GeomTensor<nDim>& rhs) const {
+  return (xx()*rhs.xx() + xy()*rhs.yx() + xz()*rhs.zx() +
+          yx()*rhs.xy() + yy()*rhs.yy() + yz()*rhs.zy() +
+          zx()*rhs.xz() + zy()*rhs.yz() + zz()*rhs.zz());
+}
+
+//------------------------------------------------------------------------------
+// doubledot product with a symmetric tensor (a_ij * b_ji -- strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<nDim>::
+doubledot3D(const GeomSymmetricTensor<nDim>& rhs) const {
+  return (xx()*rhs.xx() + xy()*rhs.yx() + xz()*rhs.zx() +
+          yx()*rhs.xy() + yy()*rhs.yy() + yz()*rhs.zy() +
+          zx()*rhs.xz() + zy()*rhs.yz() + zz()*rhs.zz());
+}
+
+//------------------------------------------------------------------------------
+// Return the doubledot product with ourself -- strictly 3D
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<nDim>::
+selfDoubledot3D() const {
+  return (xx()*xx() + 2.0*xy()*yx() + 2.0*xz()*zx() +
+          yy()*yy() + 2.0*yz()*zy() + zz()*zz());
+}
+
+//------------------------------------------------------------------------------
+// Return the maximum absolute value of the elements (3D)
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<1>::
+maxAbsElement3D() const {
+  return std::max({std::abs(this->mxx), std::abs(this->myy), std::abs(this->mzz)});
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<2>::
+maxAbsElement3D() const {
+  return std::max({std::abs(this->mxx), std::abs(this->mxy), std::abs(this->myy),
+                   std::abs(this->mzz)});
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+double
+GeomSymmetricTensor<3>::
+maxAbsElement3D() const {
+  return maxAbsElement();
+}
+
+//------------------------------------------------------------------------------
+// Find the eigenvalues (3D)
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<1>::eigenValues3D() const {
+  return diagonalElements3D();
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<2>::eigenValues3D() const {
+  const auto ev2D = eigenValues();
+  return GeomVector<3>(ev2D.x(), ev2D.y(), this->mzz);
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<3>::eigenValues3D() const {
+  return eigenValues();
+}
+
+//------------------------------------------------------------------------------
+// Find the eigenvectors (3D)
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+EigenStruct<3>
+GeomSymmetricTensor<1>::eigenVectors3D() const {
+  EigenStruct<3> result;
+  result.eigenValues = eigenValues3D();
+  result.eigenVectors = GeomTensor<3>::one();
+  return result;
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+EigenStruct<3>
+GeomSymmetricTensor<2>::eigenVectors3D() const {
+  EigenStruct<3> result;
+  const auto ev2D = eigenVectors();
+  result.eigenValues.x(ev2D.eigenValues.x());
+  result.eigenValues.y(ev2D.eigenValues.y());
+  result.eigenValues.z(this->mzz);
+  result.eigenVectors(0,0) = ev2D.eigenVectors(0,0);
+  result.eigenVectors(1,0) = ev2D.eigenVectors(1,0);
+  result.eigenVectors(0,1) = ev2D.eigenVectors(0,1);
+  result.eigenVectors(1,1) = ev2D.eigenVectors(1,1);
+  result.eigenVectors(2,2) = 1.0;
+  return result;
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+EigenStruct<3>
+GeomSymmetricTensor<3>::eigenVectors3D() const {
+  return eigenVectors();
+}
+
+//------------------------------------------------------------------------------
+// Multiply a tensor with a vector (strictly 3D)
+//------------------------------------------------------------------------------
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim != 3) {
+  return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
+                       yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
+                       zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
+}
+
+template<int nDim>
+SPHERAL_HOST_DEVICE
+inline
+GeomVector<3>
+GeomSymmetricTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim != 3) {
+  return dot(rhs);
+}
+
+//------------------------------------------------------------------------------
+// Addition with a 3D tensor
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<1>&
+GeomSymmetricTensor<1>::operator+=(const GeomSymmetricTensor<3>& rhs) {
+  REQUIRE(rhs.xy() == 0.0 and
+          rhs.xz() == 0.0 and
+          rhs.yz() == 0.0);
+  this->mxx += rhs.xx();
+  this->myy += rhs.yy();
+  this->mzz += rhs.zz();
+  return *this;
+}
+
+template<>
+SPHERAL_HOST_DEVICE
+inline
+GeomSymmetricTensor<2>&
+GeomSymmetricTensor<2>::operator+=(const GeomSymmetricTensor<3>& rhs) {
+  REQUIRE(rhs.xz() == 0.0 and
+          rhs.yz() == 0.0);
+  this->mxx += rhs.xx();
+  this->mxy += rhs.xy();
+  this->myy += rhs.yy();
+  this->mzz += rhs.zz();
+  return *this;
 }
 
 //------------------------------------------------------------------------------
@@ -2696,10 +2898,8 @@ std::istream&
 operator>>(std::istream& is, Spheral::GeomSymmetricTensor<nDim>& ten) {
   std::string parenthesis;
   is >> parenthesis;
-  for (typename Spheral::GeomSymmetricTensor<nDim>::iterator elementItr = ten.begin();
-       elementItr < ten.end();
-       ++elementItr) {
-    is >> *elementItr;
+  for (auto itr = ten.begin(); itr < ten.end(); ++itr) {
+    is >> *itr;
   }
   is >> parenthesis;
   return is;
@@ -2713,8 +2913,7 @@ inline
 std::ostream&
 operator<<(std::ostream& os, const Spheral::GeomSymmetricTensor<nDim>& ten) {
   os << "( ";
-  for (typename Spheral::GeomSymmetricTensor<nDim>::const_iterator itr = ten.begin();
-       itr < ten.end(); ++itr) {
+  for (auto itr = ten.begin(); itr < ten.end(); ++itr) {
     os << *itr << " ";
   }
   os << ")";

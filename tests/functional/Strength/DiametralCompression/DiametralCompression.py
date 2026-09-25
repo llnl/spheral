@@ -733,10 +733,10 @@ if mpi.rank==0:
         fig, ax = plt.subplots(figsize=(6, 6), dpi=200)
         FS = 14
         factor = 1e5 # cgus -> MPa
-        ax.plot(Yreduced,[entry*factor for entry in Sxxreduced],'c.',label='$\sigma_{xx}$ -- FSISPH')
-        ax.plot(Yreduced,[entry*factor for entry in Sxxanalytic],'b.',label='$\sigma_{xx}$ -- Analytic')
-        ax.plot(Yreduced,[entry*factor for entry in Syyreduced],'y.',label='$\sigma_{yy}$ -- FSISPH')
-        ax.plot(Yreduced,[entry*factor for entry in Syyanalytic],'k.',label='$\sigma_{yy}$ -- Analytic')
+        ax.plot(Yreduced,[entry*factor for entry in Sxxreduced],'c.',label='$\\sigma_{xx}$ -- FSISPH')
+        ax.plot(Yreduced,[entry*factor for entry in Sxxanalytic],'b.',label='$\\sigma_{xx}$ -- Analytic')
+        ax.plot(Yreduced,[entry*factor for entry in Syyreduced],'y.',label='$\\sigma_{yy}$ -- FSISPH')
+        ax.plot(Yreduced,[entry*factor for entry in Syyanalytic],'k.',label='$\\sigma_{yy}$ -- Analytic')
         ax.legend(fontsize=FS)
         plt.xlabel(r'y-$cm$',fontsize=FS)
         plt.ylabel(r'Stress-$MPa$',fontsize=FS)

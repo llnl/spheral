@@ -48,10 +48,10 @@ public:
                       StateDerivatives<Dimension>& derivs,
                       const double multiplier,
                       const double t,
-                      const double dt);
+                      const double dt) override;
 
   // Equivalence.
-  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
+  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
   static const std::string prefix() { return "delta "; }
 
@@ -64,6 +64,15 @@ private:
   //--------------------------- Private Interface ---------------------------//
   bool mDamageInCompression;
   double mkWeibull, mmWeibull;
+
+  // Worker method to handle the update
+  template<auto EigenValuesMethod, auto EigenVectorsMethod, int effDims>
+  void updateImpl(const KeyType& key,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs,
+                  const double multiplier,
+                  const double t,
+                  const double dt);
 };
 
 }

@@ -960,7 +960,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomTensor<1>
 GeomVector<1>::dyad(const GeomVector<1>& rhs) const {
-  return GeomTensor<1>(this->mx*rhs(0));
+  return GeomTensor<1>(this->mx*rhs(0), 0.0, 0.0);
 }
 
 template<>
@@ -990,7 +990,7 @@ SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<1>
 GeomVector<1>::selfdyad() const {
-  return GeomSymmetricTensor<1>((this->mx)*(this->mx));
+  return GeomSymmetricTensor<1>((this->mx)*(this->mx), 0.0, 0.0);
 }
 
 template<>

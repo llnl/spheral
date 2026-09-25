@@ -65,6 +65,8 @@ update(const KeyType& key,
   const auto& DrhoDt = derivs.field(buildKey(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensity), 0.0);
 
   // Loop over the internal values of the field.
+  // Volume is stored as coordinate-plane (unscaled).
+  // Mass carries the geometric factor (m_phys = 2πr * m_coord).
   const auto n = volume.numInternalElements();
 #pragma omp parallel for
   for (auto i = 0u; i < n; ++i) {
@@ -74,6 +76,16 @@ update(const KeyType& key,
     const auto volMax = Hvolume(H(i));
     const auto dVdt = -mass(i)*safeInvVar(circi*rho(i)*rho(i))*DrhoDt(i);
     volume(i) = std::max(volMin, std::min(volMax, volume(i) + multiplier*dVdt));
+  }
+
+  // Keep volume3d in sync: vol3d = volume * 2πr
+  if (state.registered(buildKey(HydroFieldNames::volume3d))) {
+    auto& vol3d = state.field(buildKey(HydroFieldNames::volume3d), 0.0);
+#pragma omp parallel for
+    for (auto i = 0u; i < n; ++i) {
+      const auto circi = 2.0*M_PI*abs(pos(i).y());
+      vol3d(i) = volume(i) * circi;
+    }
   }
 }
 

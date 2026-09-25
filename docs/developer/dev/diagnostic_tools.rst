@@ -189,7 +189,7 @@ The general procedure to comparing performance regression tests is:
 
   There are 3 possible outcomes for each test:
 
-  - ``FAILED`` if :math:`t_c - \mu > \delta_{\mathrm{thresh}}` for the ``main`` region, where :math:`t_c` is the new performance time. The timing tree of the exclusive average time per rank (``Avg time/rank (exc)``) will be displayed.
+  - ``FAILED`` if :math:`t_c - \mu > \delta_{\mathrm{thresh}}` for the ``advance`` region, where :math:`t_c` is the new performance time. A tree of the relative difference (`(t_c/\mu - 1)*100`) and the new average time per rank (`t_c`) will be displayed.
   - ``SKIPPED`` if test configurations do not match (number of time steps, number of SPH nodes, or hardware/install configurations).
   - ``PASSED`` otherwise. Additionally, if :math:`t_c - \mu < -\delta_{\mathrm{thresh}}`, the performance improved significantly and the timing tree will be displayed.
 

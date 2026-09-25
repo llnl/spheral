@@ -31,23 +31,6 @@ namespace Spheral {
 
 namespace Spheral {
 
-// Enum for selecting the method of defining the tensor strain.
-enum class TensorStrainAlgorithm {
-  BenzAsphaugStrain = 0,
-  StrainHistory = 1,
-  MeloshRyanAsphaugStrain = 2,
-  PlasticStrain = 3,
-  PseudoPlasticStrain = 4,
-};
-
-// Enum for selecting the method of defining the effective tensor damage.
-enum class EffectiveDamageAlgorithm {
-  CopyDamage = 0,
-  MaxDamage = 1,
-  MinMaxDamage = 2,
-  SampledDamage = 3,
-};
-
 template<typename Dimension>
 class TensorDamageModel: 
     public DamageModel<Dimension> {

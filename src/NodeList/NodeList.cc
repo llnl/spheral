@@ -6,8 +6,10 @@
 //
 // Created by JMO, Wed Sep  8 21:54:50 PDT 1999
 //----------------------------------------------------------------------------//
+#include "NodeList/NodeList.hh"
 #include "FileIO/FileIO.hh"
 #include "Geometry/Dimension.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "NodeListRegistrar.hh"
 #include "Field/Field.hh"
 #include "Field/NodeIterators.hh"
@@ -20,7 +22,6 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "DataBase/IncrementState.hh"
 #include "DataBase/ReplaceState.hh"
-#include "NodeList.hh"
 
 #include <algorithm>
 using std::vector;
@@ -56,18 +57,28 @@ NodeList<Dimension>::NodeList(std::string name,
   mPositions(HydroFieldNames::position),
   mVelocity(HydroFieldNames::velocity),
   mH(HydroFieldNames::H),
+  mMassRZptr(),
   mWork(HydroFieldNames::work),
   mFieldBases(),
   mNeighborPtr(nullptr),
   mDummyList(),
   mRestart(registerWithRestart(*this, 10)) {
+
   NodeListRegistrar<Dimension>::instance().registerNodeList(*this);
+
   mMass.setNodeList(*this);
   mPositions.setNodeList(*this);
   mVelocity.setNodeList(*this);
   mH.setNodeList(*this);
   mWork.setNodeList(*this);
   mDummyList.push_back(this);
+
+  // If we're in RZ allocate massRZ
+  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+    mMassRZptr = std::make_unique<Field<Dimension, Scalar>>(HydroFieldNames::massRZ);
+    mMassRZptr->setNodeList(*this);
+  }
+
   // It's never valid to have zero H's.
   mH = SymTensor::one();
   refreshView();
@@ -271,6 +282,19 @@ mass(const Field<Dimension, typename Dimension::Scalar>& m) {
 }
 
 //------------------------------------------------------------------------------
+// Set the massRZ field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::
+massRZ(const Field<Dimension, typename Dimension::Scalar>& m) {
+  VERIFY2(mMassRZptr, "NodeList::massRZ ERROR: not allocated");
+  *mMassRZptr = m;
+  mMassRZptr->name(HydroFieldNames::massRZ);
+  refreshMassRZView();
+}
+
+//------------------------------------------------------------------------------
 // Set the position field.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -362,6 +386,7 @@ template<typename Dimension>
 void
 NodeList<Dimension>::refreshView() {
   refreshMassView();
+  refreshMassRZView();
   refreshPositionsView();
   refreshVelocityView();
   refreshHfieldView();
@@ -380,30 +405,39 @@ NodeList<Dimension>::refreshMassView() {
 
 template<typename Dimension>
 void
+NodeList<Dimension>::refreshMassRZView() {
+  if (mMassRZptr) {
+    this->mMassRZView = mMassRZptr->view();
+    ENSURE(this->mMassView.numElements() == this->mNumNodes);
+  }
+}
+
+template<typename Dimension>
+void
 NodeList<Dimension>::refreshPositionsView() {
   this->mPositionsView = mPositions.view();
-  CHECK(this->mPositionsView.numElements() == this->mNumNodes);
+  ENSURE(this->mPositionsView.numElements() == this->mNumNodes);
 }
 
 template<typename Dimension>
 void
 NodeList<Dimension>::refreshVelocityView() {
   this->mVelocityView = mVelocity.view();
-  CHECK(this->mVelocityView.numElements() == this->mNumNodes);
+  ENSURE(this->mVelocityView.numElements() == this->mNumNodes);
 }
 
 template<typename Dimension>
 void
 NodeList<Dimension>::refreshHfieldView() {
   this->mHfieldView = mH.view();
-  CHECK(this->mHfieldView.numElements() == this->mNumNodes);
+  ENSURE(this->mHfieldView.numElements() == this->mNumNodes);
 }
 
 template<typename Dimension>
 void
 NodeList<Dimension>::refreshWorkView() {
   this->mWorkView = mWork.view();
-  CHECK(this->mWorkView.numElements() == this->mNumNodes);
+  ENSURE(this->mWorkView.numElements() == this->mNumNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -579,6 +613,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mVelocity, pathName + "/velocity");
   file.write(mH, pathName + "/H");
   file.write(mWork, pathName + "/work");
+  if (mMassRZptr) file.write(*mMassRZptr, pathName + "/massRZ");
 }
 
 //------------------------------------------------------------------------------
@@ -603,6 +638,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mVelocity, pathName + "/velocity");
   file.read(mH, pathName + "/H");
   file.read(mWork, pathName + "/work");
+  if (mMassRZptr) file.read(*mMassRZptr, pathName + "/massRZ");
   refreshView();
 
   // The neighbor object doesn't actually write out state, but does need to be
@@ -618,8 +654,8 @@ void
 NodeList<Dimension>::registerField(FieldBase<Dimension>& field) const {
   DEBUG_LOG << "NodeList::registerField : " << mName << " " << this << " : " << field.name() << " " << &field;
   if (haveField(field)) {
-    SpheralMessage("WARNING: Attempt to register field " << &field << " (" << field.name()
-                   << ") with NodeList " << this << " (" << this->name() << ") that already has it.");
+    SpheralWarning << "Attempt to register field " << &field << " (" << field.name()
+                   << ") with NodeList " << this << " (" << this->name() << ") that already has it.\n";
   } else {
     mFieldBases.push_back(std::ref(field));
   }

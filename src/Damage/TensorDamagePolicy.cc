@@ -24,7 +24,6 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>
@@ -318,9 +317,9 @@ update(const KeyType& key,
     if (Dvals.minElement() < 0.0 or
         Dvals.maxElement() > 1.0) {
       const auto Deigen = Di.eigenVectors();
-      Di = constructSymTensorWithBoundedDiagonal(Deigen.eigenValues,
-                                                 1.0e-5,
-                                                 1.0);
+      Di = SymTensor(Deigen.eigenValues,
+                     1.0e-5,
+                     1.0);
       Di.rotationalTransform(Deigen.eigenVectors);
     }
     ENSURE(Di.eigenValues().minElement() >= 0.0 and

@@ -487,7 +487,7 @@ ANEOS(const int materialNumber,
   mEpsInterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                      mTmin, mTmax,
                                                      mNumRhoVals, mNumTvals, Feps);
-  SpheralMessage("ANEOS: Time to build epsInterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build epsInterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   // Now the hard inversion method for looking up T(rho, eps)
   t0 = clock();
@@ -495,7 +495,7 @@ ANEOS(const int materialNumber,
   mTinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                    mEpsMin, mEpsMax,
                                                    mNumRhoVals, mNumTvals, Ftemp);
-  SpheralMessage("ANEOS: Time to build Tinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build Tinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   // And finally the interpolators for most of our derived quantities
   t0 = clock();
@@ -504,49 +504,49 @@ ANEOS(const int materialNumber,
   mPinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                    mEpsMin, mEpsMax,
                                                    mNumRhoVals, mNumTvals, Fpres);
-  SpheralMessage("ANEOS: Time to build Pinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build Pinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto Fcv = cVfunc(mMaterialNumber, mRhoConv, mTconv, mCVconv);
   mCVinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                     mTmin, mTmax,
                                                     mNumRhoVals, mNumTvals, Fcv);
-  SpheralMessage("ANEOS: Time to build CVinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build CVinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto Fcs = csfunc(mMaterialNumber, mRhoConv, mTconv, mVelConv, Textra);
   mCSinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                     mEpsMin, mEpsMax,
                                                     mNumRhoVals, mNumTvals, Fcs);
-  SpheralMessage("ANEOS: Time to build CSinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build CSinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto FK = Kfunc(mMaterialNumber, mRhoConv, mTconv, mPconv, Textra);
   mKinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                    mEpsMin, mEpsMax,
                                                    mNumRhoVals, mNumTvals, FK);
-  SpheralMessage("ANEOS: Time to build Kinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build Kinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto Fs = sfunc(mMaterialNumber, mRhoConv, mTconv, mSconv, Textra);
   mSinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                    mEpsMin, mEpsMax,
                                                    mNumRhoVals, mNumTvals, Fs);
-  SpheralMessage("ANEOS: Time to build Sinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build Sinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto Fdpdeps = dPdeps_func(mMaterialNumber, mRhoConv, mTconv, mPconv, Textra);
   mDPDepsInterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                         mEpsMin, mEpsMax,
                                                         mNumRhoVals, mNumTvals, Fdpdeps);
-  SpheralMessage("ANEOS: Time to build DPDUinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build DPDUinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 
   t0 = clock();
   const auto Fdpdrho = dPdrho_func(mMaterialNumber, mRhoConv, mTconv, mPconv, Textra);
   mDPDRinterp = std::make_shared<BiInterpolatorType>(mRhoMin, mRhoMax,
                                                       mEpsMin, mEpsMax,
                                                       mNumRhoVals, mNumTvals, Fdpdrho);
-  SpheralMessage("ANEOS: Time to build DPDRinterp: " << double(clock() - t0)/CLOCKS_PER_SEC);
+  SpheralMessage << "ANEOS: Time to build DPDRinterp: " << double(clock() - t0)/CLOCKS_PER_SEC << std::endl;
 }
 
 //------------------------------------------------------------------------------

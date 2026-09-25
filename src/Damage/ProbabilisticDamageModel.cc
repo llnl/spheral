@@ -9,12 +9,12 @@
 // Created by JMO, Tue Apr 13 15:58:08 PDT 2021
 //----------------------------------------------------------------------------//
 #include "FileIO/FileIO.hh"
-#include "ProbabilisticDamageModel.hh"
-#include "TensorStrainPolicy.hh"
-#include "ProbabilisticDamagePolicy.hh"
-#include "YoungsModulusPolicy.hh"
-#include "LongitudinalSoundSpeedPolicy.hh"
-#include "DamageGradientPolicy.hh"
+#include "Damage/ProbabilisticDamageModel.hh"
+#include "Damage/TensorStrainPolicy.hh"
+#include "Damage/ProbabilisticDamagePolicy.hh"
+#include "Damage/YoungsModulusPolicy.hh"
+#include "Damage/LongitudinalSoundSpeedPolicy.hh"
+#include "Damage/DamageGradientPolicy.hh"
 #include "Strength/SolidFieldNames.hh"
 #include "NodeList/SolidNodeList.hh"
 #include "Material/EquationOfState.hh"
@@ -31,6 +31,7 @@
 #include "Utilities/mortonOrderIndices.hh"
 #include "Distributed/allReduce.hh"
 #include "Utilities/uniform_random.hh"
+#include "Geometry/GeometryRegistrar.hh"
 
 #include <boost/functional/hash.hpp>  // hash_combine
 
@@ -84,14 +85,6 @@ ProbabilisticDamageModel(SolidNodeList<Dimension>& nodeList,
   mDdamageDt(ProbabilisticDamagePolicy<Dimension>::prefix() + SolidFieldNames::scalarDamage, nodeList),
   mStrain(SolidFieldNames::strainTensor, nodeList),
   mEffectiveStrain(SolidFieldNames::effectiveStrainTensor, nodeList) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ProbabilisticDamageModel<Dimension>::
-~ProbabilisticDamageModel() {
 }
 
 //------------------------------------------------------------------------------
@@ -239,8 +232,8 @@ evaluateDerivatives(const Scalar time,
                     StateDerivatives<Dimension>& derivs) const {
 
   // Set the scalar magnitude of the damage evolution.
-  const auto* nodeListPtr = &(this->nodeList());
-  auto&       DDDt = derivs.field(state.buildFieldKey(ProbabilisticDamagePolicy<Dimension>::prefix() + SolidFieldNames::scalarDamage, nodeListPtr->name()), 0.0);
+  const auto& nodes = this->nodeList();
+  auto&       DDDt = derivs.field(state.buildFieldKey(ProbabilisticDamagePolicy<Dimension>::prefix() + SolidFieldNames::scalarDamage, nodes.name()), 0.0);
   this->computeScalarDDDt(dataBase,
                           state,
                           time,
@@ -289,20 +282,20 @@ registerState(DataBase<Dimension>& dataBase,
 
   // Register Youngs modulus and the longitudinal sound speed.
   auto& nodes = this->nodeList();
-  state.enroll(mYoungsModulus, std::make_shared<YoungsModulusPolicy<Dimension>>(nodes));
-  state.enroll(mLongitudinalSoundSpeed, std::make_shared<LongitudinalSoundSpeedPolicy<Dimension>>(nodes));
+  state.enroll(mYoungsModulus, make_policy<YoungsModulusPolicy<Dimension>>(nodes));
+  state.enroll(mLongitudinalSoundSpeed, make_policy<LongitudinalSoundSpeedPolicy<Dimension>>(nodes));
 
   // Register the strain and effective strain.
   state.enroll(mStrain);
-  state.enroll(mEffectiveStrain, std::make_shared<TensorStrainPolicy<Dimension>>(mStrainAlgorithm));
+  state.enroll(mEffectiveStrain, make_policy<TensorStrainPolicy<Dimension>>(mStrainAlgorithm));
 
   // Register the damage and state it requires.
   // Note we are overriding the default no-op policy for the damage
   // as originally registered by the SolidSPHHydroBase class.
   auto& damage = nodes.damage();
-  state.enroll(damage, std::make_shared<ProbabilisticDamagePolicy<Dimension>>(mDamageInCompression,
-                                                                              mkWeibull,
-                                                                              mmWeibull));
+  state.enroll(damage, make_policy<ProbabilisticDamagePolicy<Dimension>>(mDamageInCompression,
+                                                                         mkWeibull,
+                                                                         mmWeibull));
   state.enroll(mNumFlaws);
   state.enroll(mMinFlaw);
   state.enroll(mMaxFlaw);
@@ -339,17 +332,14 @@ applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& /*derivs*/) {
 
   // Grab this models damage field from the state.
-  typedef typename State<Dimension>::KeyType Key;
-  const Key nodeListName = this->nodeList().name();
-  const Key DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
+  const auto nodeListName = this->nodeList().name();
+  const auto DKey = state.buildFieldKey(SolidFieldNames::tensorDamage, nodeListName);
   CHECK(state.registered(DKey));
   auto& D = state.field(DKey, SymTensor::zero());
 
   // Apply ghost boundaries to the damage.
-  for (auto boundaryItr = this->boundaryBegin();
-       boundaryItr < this->boundaryEnd();
-       ++boundaryItr) {
-    (*boundaryItr)->applyGhostBoundary(D);
+  for (auto* boundaryPtr: this->boundaryConditions()) {
+    boundaryPtr->applyGhostBoundary(D);
   }
 }
 
@@ -370,10 +360,8 @@ enforceBoundaries(State<Dimension>& state,
   auto& D = state.field(DKey, SymTensor::zero());
 
   // Enforce!
-  for (auto boundaryItr = this->boundaryBegin(); 
-       boundaryItr < this->boundaryEnd();
-       ++boundaryItr) {
-    (*boundaryItr)->enforceBoundary(D);
+  for (auto* boundaryPtr: this->boundaryConditions()) {
+    boundaryPtr->enforceBoundary(D);
   }
 }
 

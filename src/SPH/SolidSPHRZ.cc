@@ -138,32 +138,9 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mMassDensityRZ, 0.0, HydroFieldNames::massDensityRZ, false);
   dataBase.resizeFluidFieldList(mDmassDensityDtRZ, 0.0, IncrementBoundedState<Dimension, Scalar>::prefix() + HydroFieldNames::massDensityRZ);
 
-  // When we come in the initial conditions for mass and density are 2D areal
-  // values, so we need to set up our areal and real 3D values appropriately.
-  if (mMassRZ.max() == 0.0) {  // Don't allow more than one time through the following!
-    const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-    auto       mass = state.fields(HydroFieldNames::mass, 0.0);
-    auto       rho = state.fields(HydroFieldNames::massDensity, 0.0);
-
-    const auto nfields = mass.numFields();
-    for (auto k = 0u; k < nfields; ++k) {
-      const auto n = mass[k]->numInternalElements();
-      for (auto i = 0u; i < n; ++i) {
-        CHECK(rho(k,i) > 0.0);
-        const auto ri = abs(pos(k,i).y());
-        // const auto Ai = mass(k,i)/rho(k,i);
-        // const auto Vi = 2.0*M_PI*ri*Ai;
-        // const auto di = std::sqrt(Ai);
-        // const auto Vi = cylindricalToroidalVolume(di, ri);
-        // const auto Ri = std::sqrt(Ai/M_PI);
-        // const auto Vi = circularToroidalVolume(Ri, ri);
-        mMassRZ(k,i) = mass(k,i);
-        mMassDensityRZ(k,i) = rho(k,i);
-        mass(k,i) *= 2.0*M_PI*ri;
-        // mass(k,i) = rho(k,i)*Vi;
-      }
-    }
-  }
+  // Depending on density update (among other things), we might need the boundaries updated
+  this->applyGhostBoundaries(state, derivs);
+  for (auto* bptr: this->boundaryConditions()) bptr->finalizeGhostBoundary();
 
   // Base class
   SolidSPH<Dimension>::initializeProblemStartupDependencies(dataBase, state, derivs);
@@ -177,7 +154,7 @@ SolidSPHRZ::
 registerState(DataBase<Dimension>& dataBase,
               State<Dimension>& state) {
   SolidSPH<Dimension>::registerState(dataBase, state);
-  SPHRZUtilities::registerState(*this, dataBase, state, mMassRZ, mMassDensityRZ);
+  SPHRZUtilities::registerState(*this, dataBase, state);
 }
 
 //------------------------------------------------------------------------------
@@ -655,7 +632,6 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
       const auto  effViscousPressurei = effViscousPressure(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       const auto& Si = S(nodeListi, i);
-      const auto  STTi = -Si.Trace();
       const auto  mui = mu(nodeListi, i);
       const auto  Hdeti = Hi.Determinant();
       const auto  zetai = (Hi*posi).y();            // Can be negative for ghost points!
@@ -690,7 +666,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Finish the acceleration -- self hoop strain.
       const Vector deltaDvDti(Si(1,0)/rhoi*riInv,
-                              (Si(1,1) - STTi)/rhoi*riInv);
+                              (Si(1,1) - Si(2,2))/rhoi*riInv);
       DvDti += deltaDvDti;
       if (compatibleEnergy) selfAccelerations(nodeListi, i) = deltaDvDti;
 
@@ -713,18 +689,21 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
         localDvDxi /= rhoi;
       }
 
+      // Add the theta-theta contribution to velocity gradient
       const auto vr_over_r = std::min(safeInv(dt, tiny) - DvDxi.Trace(), vri*riInv);
+      DvDxi.zz(vr_over_r);
+      localDvDxi.zz(vr_over_r);
 
       // Evaluate the continuity equation.
       XSPHWeightSumi += Hdeti*mRZi/rhoRZi*W0;
       CHECK2(XSPHWeightSumi != 0.0, i << " " << XSPHWeightSumi);
       XSPHDeltaVi /= XSPHWeightSumi;
       DrhoDtRZi = -rhoRZi*DvDxi.Trace();
-      DrhoDti = -rhoi*(DvDxi.Trace() + vr_over_r);
+      DrhoDti = -rhoi*DvDxi.Trace3D();
 
       // Finish the specific thermal energy evolution.
       DepsDti -= (Pi + effViscousPressurei)/rhoi*vr_over_r;
-      DepsDti += (STTi - Pi)/rhoi*vri*riInv;
+      DepsDti += (Si(2,2) - Pi)/rhoi*vri*riInv;
 
       // If needed finish the total energy derivative.
       if (evolveTotalEnergy) DepsDti = mi*(vi.dot(DvDti) + DepsDti);
@@ -738,7 +717,7 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Optionally use damage to ramp down stress on damaged material.
       const auto Di = (damageRelieveRubble ? 
-                       max(0.0, min(1.0, damage(nodeListi, i).Trace() - 1.0)) :
+                       max(0.0, min(1.0, damage(nodeListi, i).Trace3D() - 1.0)) :
                        0.0);
       // Hideali = (1.0 - Di)*Hideali + Di*Hfield0(nodeListi, i);
       // DHDti = (1.0 - Di)*DHDti + Di*(Hfield0(nodeListi, i) - Hi)*0.25/dt;
@@ -748,9 +727,8 @@ evaluateDerivativesImpl(const Dimension::Scalar time,
 
       // Determine the deviatoric stress evolution.
       const auto deformation = localDvDxi.Symmetric();
-      const auto deformationTT = vi.y()*riInv;
       const auto spin = localDvDxi.SkewSymmetric();
-      const auto deviatoricDeformation = deformation - ((deformation.Trace() + deformationTT)/3.0)*SymTensor::one();
+      const auto deviatoricDeformation = deformation - (deformation.Trace3D()/3.0)*SymTensor::one();
       const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
       DSDti = spinCorrection + (2.0*mui)*deviatoricDeformation;
 

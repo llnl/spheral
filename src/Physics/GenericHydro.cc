@@ -132,9 +132,10 @@ dt(const DataBase<Dimension>& dataBase,
   const auto  maxViscousPressure = derivs.fields(HydroFieldNames::maxViscousPressure, 0.0);
   const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
-  const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-                                                         this->requireOverlapConnectivity(),
-                                                         this->requireIntersectionConnectivity());
+  const auto& [conn_, ghost_, overlap_, intersect_] = this->requireConnectivity();
+  const auto& connectivityMap = dataBase.connectivityMap(ghost_,
+                                                         overlap_,
+                                                         intersect_);
   const auto  pairs = connectivityMap.nodePairList();
 
   // Check for deviatoric stress.
@@ -434,9 +435,10 @@ dtImplicit(const DataBase<Dimension>& dataBase,
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
-  const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-                                                         this->requireOverlapConnectivity(),
-                                                         this->requireIntersectionConnectivity());
+  const auto& [conn2_, ghost2_, overlap2_, intersect2_] = this->requireConnectivity();
+  const auto& connectivityMap = dataBase.connectivityMap(ghost2_,
+                                                         overlap2_,
+                                                         intersect2_);
   const auto  pairs = connectivityMap.nodePairList();
 
   // Initialize the return value to some impossibly high value.

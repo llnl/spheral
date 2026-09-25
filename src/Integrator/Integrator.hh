@@ -180,8 +180,8 @@ public:
   ConstPackageIterator physicsPackagesEnd() const                                   { return mPhysicsPackages.end(); }
 
   // Flag to determine whether or not to be rigorous about about boundaries.
-  bool rigorousBoundaries() const                                                   { SpheralDeprecationWarning("Integrator::rigorousBoundaries"); return false; }
-  void rigorousBoundaries(const bool x)                                             { SpheralDeprecationWarning("Integrator::rigorousBoundaries"); }
+  bool rigorousBoundaries() const                                                   { SpheralDeprecationWarning << "Integrator::rigorousBoundaries"; return false; }
+  void rigorousBoundaries(const bool x)                                             { SpheralDeprecationWarning << "Integrator::rigorousBoundaries"; }
 
   // If we're not being rigorous about boundary conditions, how frequently
   // do we update them?
@@ -193,8 +193,8 @@ public:
   void verbose(const bool x)                                                        { mVerbose = x; }
 
   // Select whether the integrator is verbose or not during a cycle.
-  int verboseStep() const                                                              { return mVerboseStep; }
-  void verboseStep(const int x)                                                        { mVerboseStep = x; }
+  int verboseStep() const                                                           { return mVerboseStep; }
+  void verboseStep(const int x)                                                     { mVerboseStep = x; }
   
   // Should the integrator check interim timestep votes and abort steps?
   bool allowDtCheck() const                                                         { return mAllowDtCheck; }

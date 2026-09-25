@@ -90,6 +90,9 @@ public:
   // Apply the boundary condition to the given Field.
   virtual void applyGhostBoundary(FieldBase<Dimension>& field) const override;
 
+  // Distributed boundary should be applied after all local boundaries
+  virtual int priority() const override { return 4; }
+
   //****************************************************************************
   // Require descendent Distributed Neighbors to provide the setGhostNodes method for DataBases.
   virtual void setAllGhostNodes(DataBase<Dimension>& dataBase) override = 0;

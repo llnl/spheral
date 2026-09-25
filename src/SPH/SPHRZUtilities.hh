@@ -137,6 +137,8 @@ preStepInitialize(const HydroPackage& hydro,
     {
       const auto volume = state.fields(HydroFieldNames::volume, 0.0);
       computeSumVoronoiCellMassDensity(connectivityMap, WT, position, massRZ, volume, H, massDensityRZ);
+      for (auto* boundPtr: boundaries) boundPtr->applyFieldListGhostBoundary(massDensityRZ);
+      for (auto* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
     }
     break;
 
@@ -162,21 +164,22 @@ inline
 void
 registerState(const HydroPackage& hydro,
               DataBase<Dim<2>>& dataBase,
-              State<Dim<2>>& state,
-              FieldList<Dim<2>, Dim<2>::Scalar>& massRZ,
-              FieldList<Dim<2>, Dim<2>::Scalar>& massDensityRZ) {
+              State<Dim<2>>& state) {
 
   using Dimension = Dim<2>;
   using Scalar = Dimension::Scalar;
+
+  auto massRZ = dataBase.fluidMassRZ();
+  auto rhoRZ = dataBase.fluidMassDensityRZ();
+  auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
 
   // RZ mass
   state.enroll(massRZ);
 
   // Set the mass density policies
-  auto rho = state.fields(HydroFieldNames::massDensity, 0.0);
   for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
-    state.enroll(*massDensityRZ[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
-                                                                                                  fluidNodeListPtr->rhoMax()));
+    state.enroll(*rhoRZ[nodeListi], make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
+                                                                                          fluidNodeListPtr->rhoMax()));
     state.enroll(*rho[nodeListi], make_policy<AxisymmetricMassDensityPolicy>(fluidNodeListPtr->rhoMin(),
                                                                              fluidNodeListPtr->rhoMax()));
   }

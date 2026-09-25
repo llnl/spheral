@@ -11,8 +11,11 @@ set(ArtificialViscosity_inst
   TensorSVPHViscosity
   TensorCRKSPHViscosity)
 
-
-set(ArtificialViscosity_sources)
+if (NOT SPHERAL_GPU_ENABLED)
+  list(APPEND ArtificialViscosity_inst
+      PythonArtificialViscosity
+    )
+endif()
 
 # if(ENABLE_2D)
 #   list(APPEND ArtificialViscosity_sources
@@ -24,6 +27,7 @@ instantiate(ArtificialViscosity_inst ArtificialViscosity_sources)
 
 set(ArtificialViscosity_headers
   ArtificialViscosity.hh
+  PythonArtificialViscosity.hh
   ArtificialViscosityBase.hh
   ArtificialViscosityBaseInline.hh
   ArtificialViscosityView.hh
@@ -51,4 +55,3 @@ set(ArtificialViscosity_headers
 # LimitedMonaghanGingoldViscosityRZ.hh
 
 spheral_add_obj_library(ArtificialViscosity SPHERAL_OBJ_LIBS)
-

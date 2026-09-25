@@ -57,6 +57,8 @@ struct HydroFieldNames {
   static inline const std::string cellFaceFlags = "cell face flags";
   static inline const std::string M_SPHCorrection = "M SPH gradient correction";
   static inline const std::string volume = "node volume";
+  static inline const std::string volume3d = "volume in 3d";
+  static inline const std::string hydroVolume = "hydro-specific volume";
   static inline const std::string linearMomentum = "linear momentum";
   static inline const std::string totalEnergy = "total energy";
   static inline const std::string mesh = "mesh";

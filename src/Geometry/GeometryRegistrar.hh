@@ -9,6 +9,8 @@
 #ifndef __Spheral_GeometryRegistrar__
 #define __Spheral_GeometryRegistrar__
 
+#include <iostream>
+
 namespace Spheral {
 
 // Enum to capture cartesian vs. curvilinear coordinates
@@ -33,11 +35,25 @@ private:
   static CoordinateType mCoords;
 
   // No public constructors, destructor, or assignment.
-  GeometryRegistrar();
-  GeometryRegistrar(const GeometryRegistrar&);
-  GeometryRegistrar& operator=(const GeometryRegistrar&);
-  ~GeometryRegistrar();
+  GeometryRegistrar() = default;
+  GeometryRegistrar(const GeometryRegistrar&) = delete;
+  GeometryRegistrar& operator=(const GeometryRegistrar&) = delete;
+  ~GeometryRegistrar() = default;
 };
+
+//------------------------------------------------------------------------------
+// ostream operator for CoordinateType
+//------------------------------------------------------------------------------
+inline
+std::ostream& operator<<(std::ostream& os, const CoordinateType& x) {
+  switch(x) {
+  case CoordinateType::Cartesian: os << "Cartesian"; break;
+  case CoordinateType::Spherical: os << "Spherical"; break;
+  case CoordinateType::RZ:        os << "RZ"; break;
+  default:                        os << "Unknown CoordinateType";
+  }
+  return os;
+}
 
 }
 

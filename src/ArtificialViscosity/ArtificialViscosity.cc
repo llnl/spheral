@@ -16,7 +16,6 @@
 #include "Neighbor/ConnectivityMap.hh"
 #include "Kernel/TableKernel.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 
 #include "ArtificialViscosity.hh"
 

@@ -17,6 +17,7 @@
 #include <list>
 #include <vector>
 #include <functional>
+#include <memory>
 
 namespace Spheral {
 
@@ -94,16 +95,19 @@ public:
 
   // The NodeList state Fields.
   Field<Dimension, Scalar>& mass()                          { return mMass; }
+  Field<Dimension, Scalar>& massRZ()                        { VERIFY2(mMassRZptr, "NodeList::massRZ ERROR: not allocated"); return *mMassRZptr; }
   Field<Dimension, Vector>& positions()                     { return mPositions; }
   Field<Dimension, Vector>& velocity()                      { return mVelocity; } 
   Field<Dimension, SymTensor>& Hfield()                     { return mH; }
 
   const Field<Dimension, Scalar>& mass()              const { return mMass; }
+  const Field<Dimension, Scalar>& massRZ()            const { VERIFY2(mMassRZptr, "NodeList::massRZ ERROR: not allocated"); return *mMassRZptr; }
   const Field<Dimension, Vector>& positions()         const { return mPositions; }
   const Field<Dimension, Vector>& velocity()          const { return mVelocity; } 
   const Field<Dimension, SymTensor>& Hfield()         const { return mH; }
 
   void mass(const Field<Dimension, Scalar>& m);
+  void massRZ(const Field<Dimension, Scalar>& m);
   void positions(const Field<Dimension, Vector>& r);
   void velocity(const Field<Dimension, Vector>& v);
   void Hfield(const Field<Dimension, SymTensor>& H);
@@ -176,6 +180,7 @@ protected:
   void unregisterField(FieldBase<Dimension>& field) const;
   void refreshView();
   void refreshMassView();
+  void refreshMassRZView();
   void refreshPositionsView();
   void refreshVelocityView();
   void refreshHfieldView();
@@ -192,6 +197,9 @@ private:
   Field<Dimension, Vector> mPositions;
   Field<Dimension, Vector> mVelocity;
   Field<Dimension, SymTensor> mH;
+
+  // Optional fields.
+  std::unique_ptr<Field<Dimension, Scalar>> mMassRZptr;
 
   // The work field is mutable.
   mutable Field<Dimension, Scalar> mWork;
