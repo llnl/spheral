@@ -45,6 +45,8 @@ Notable changes include:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.
     * GenerateRatioSphere accessing the wrong element when SPH = True
+    * Bugfix for strain-porosity in power-law compaction regime from Sean Wiggins (apparently the paper by Collins et al. had a typo).
+    * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
