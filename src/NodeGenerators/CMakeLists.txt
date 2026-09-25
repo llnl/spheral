@@ -69,5 +69,5 @@ spheral_install_python_files(
   GenerateSphericalNodeDistribution1d.py
   )
 
-spheral_add_obj_library(NodeGenerators SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(NodeGenerators)
 

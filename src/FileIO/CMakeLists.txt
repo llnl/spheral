@@ -26,5 +26,5 @@ spheral_install_python_files(
   GzipFileIO.py
   PlyFileIO.py)
 
-spheral_add_obj_library(FileIO SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(FileIO)
 

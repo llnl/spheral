@@ -78,5 +78,5 @@ set(Boundary_headers
     mapPositionThroughPlanes.hh
     )
 
-spheral_add_obj_library(Boundary SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Boundary)
 

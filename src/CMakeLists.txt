@@ -10,6 +10,11 @@ include_directories(${PROJECT_BINARY_DIR}/src)
 
 set(SPHERAL_PYTHON_INSTALL ${PROJECT_BINARY_DIR}/lib)
 
+# Set the name of the current package we are creating
+set(SPHERAL_CURRENT_LIB_TARGET Spheral_CXX)
+# Create the target for this overarching package
+spheral_initialize_cxx_target("spheralCXX.cc")
+
 # These are internal Spheral packages
 list(APPEND _packages
   ArtificialViscosity
@@ -93,16 +98,7 @@ foreach(_package ${_packages})
   add_subdirectory(${_package})
 endforeach()
 
-# For dev builds, we must call LLNLSpheralInstallObjs.cmake
-# to ensure LLNLSpheral libraries are added to the Spheral_CXX
-# target
-if(NOT ENABLE_DEV_BUILD)
-  set(CXX_sources spheralCXX.cc)
-endif()
-# Retrieve the global list populated in spheral_obj_add_library
-get_property(SPHERAL_OBJ_LIBS GLOBAL PROPERTY SPHERAL_OBJ_LIBS)
-# Must use quotes when passing lists as inputs for functions
-spheral_add_cxx_library(CXX "${SPHERAL_OBJ_LIBS}")
+spheral_install_cxx_library("CXX")
 
 # This calls LLNLSpheralInstallObjs.cmake
 if(EXISTS ${EXTERNAL_SPHERAL_OBJ_CMAKE})

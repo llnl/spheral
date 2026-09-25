@@ -213,6 +213,20 @@ if (SPHERAL_ENABLE_SUNDIALS)
 endif()
 
 message("-----------------------------------------------------------------------------")
+# Singularity EOS
+if (SPHERAL_ENABLE_SINGULARITY)
+  find_package(singularity-eos REQUIRED NO_DEFAULT_PATH
+    PATHS ${singularity_eos_DIR})
+  list(APPEND SPHERAL_BLT_DEPENDS
+    singularity-eos::singularity-eos_Interface
+    singularity-eos::singularity-eos_Common
+  )
+  list(APPEND SPHERAL_FP_TPLS singularity-eos)
+  list(APPEND SPHERAL_FP_DIRS ${singularity_eos_DIR})
+  message("Found Singularity EOS External Package.")
+endif()
+
+message("-----------------------------------------------------------------------------")
 if(NOT SPHERAL_EXTERNAL_INSTALL)
   find_package(Boost REQUIRED NO_DEFAULT_PATH COMPONENTS filesystem PATHS ${boost_DIR})
   if(Boost_FOUND)

@@ -33,5 +33,5 @@ set(Integrator_headers
   CrankNicolson.hh
   ImplicitIntegrationVectorOperator.hh)
 
-spheral_add_obj_library(Integrator SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Integrator)
 

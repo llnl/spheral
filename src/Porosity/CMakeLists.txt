@@ -27,4 +27,4 @@ spheral_install_python_files(
     PorousStrengthModel.py
     )
 
-spheral_add_obj_library(Porosity SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Porosity)

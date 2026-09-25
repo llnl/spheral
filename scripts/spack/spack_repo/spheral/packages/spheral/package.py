@@ -24,7 +24,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # VERSIONS
     # -------------------------------------------------------------------------
     version('develop', branch='develop', submodules=True)
-    version('2025.06.0', tag='v2025.06.0', commit='3e30d38bb5b04444e6e17c8e775147d542bd4e3a', submodules=True)
+    version('2026.06.0', tag='v2026.06.0', commit='3e30d38bb5b04444e6e17c8e775147d542bd4e3a', submodules=True)
     version('2025.12.0', tag='v2025.12.0', commit='aec4a0502312b14e253dc1221c23aa2514e319ab', submodules=True)
     version('2025.06.1', tag='v2025.06.1', commit='c1bd7cb249b14d06bb84de45b00a215e65332c52', submodules=True)
     version('2025.01.0', tag='v2025.01.0', commit='aa816b15e1e2dcaead655fcb1706055192564414', submodules=True)
@@ -51,6 +51,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
     variant('sundials', default=True, when="@2025.06.1:+mpi", description='Enable use of SUNDIALS solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
+    variant('singularity', default=False, description='Build with Singularity EOS support.')
 
     # -------------------------------------------------------------------------
     # Depends
@@ -99,6 +100,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('axom@0.12.0:', type='build', when='@2025.12.0:')
     depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
     depends_on('axom@0.7.0', type='build', when='@:2024.06.1')
+    depends_on('singularity-eos@1.10.0: +spiner +hdf5 ~fortran +eospac +shared', type='build', when='+singularity')
 
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
@@ -133,7 +135,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
     # Forward MPI Variants
-    mpi_tpl_list = ["caliper", "hdf5", "conduit", "axom", "adiak", "chai", "umpire"]
+    mpi_tpl_list = ["caliper", "hdf5", "conduit", "axom", "adiak", "chai", "umpire", "singularity-eos"]
     for ctpl in mpi_tpl_list:
         for mpiv in ["+mpi", "~mpi"]:
             depends_on(f"{ctpl} {mpiv}", type='build', when=f"{mpiv} ^{ctpl}")
@@ -344,9 +346,23 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         if spec.satisfies("+sundials"):
             entries.append(cmake_cache_path('sundials_DIR', spec['sundials'].prefix))
 
+        # LEOS
         if spec.satisfies("+leos"):
             entries.append(cmake_cache_path('leos_DIR', spec['leos'].prefix))
             entries.append(cmake_cache_option('SPHERAL_ENABLE_LEOS', True))
+
+        # Singularity
+        if spec.satisfies("+singularity"):
+            entries.append(cmake_cache_path('singularity_eos_DIR', spec['singularity-eos'].prefix))
+            # # Singularity's garbage CMake export system makes this necessary.
+            # # I should not have to do any of this
+            # tpl_dep_dict = {"ports-of-call": "ports_of_call", "spiner": "spiner", "eospac": "EOSPAC"}
+            # if spec.satisfies("^singularity-eos+kokkos+kokkos-kernels"):
+            #     tpl_dep_dict.update({"kokkos": "Kokkos", "kokkos-kernels": "KokkosKernels"})
+            # sing_spec = spec["singularity-eos"]
+            # for spec_name, dir_name in tpl_dep_dict.items():
+            #     entries.append(cmake_cache_path(f"{dir_name}_DIR", sing_spec[spec_name].prefix))
+            entries.append(cmake_cache_option('SPHERAL_ENABLE_SINGULARITY', True))
 
         return entries
 

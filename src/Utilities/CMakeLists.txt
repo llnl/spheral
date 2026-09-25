@@ -145,5 +145,5 @@ set(Utilities_headers
 
 spheral_install_python_files(fitspline.py)
 
-spheral_add_obj_library(Utilities SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Utilities)
 

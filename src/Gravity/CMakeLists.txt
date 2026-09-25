@@ -22,5 +22,5 @@ set(Gravity_headers
   PolyGravity.hh
   )
 
-spheral_add_obj_library(Gravity SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(Gravity)
 

@@ -39,4 +39,4 @@ set(KernelIntegrator_headers
   SymmetricTriangularValues.hh
   )
 
-spheral_add_obj_library(KernelIntegrator SPHERAL_OBJ_LIBS)
+spheral_add_obj_library(KernelIntegrator)
