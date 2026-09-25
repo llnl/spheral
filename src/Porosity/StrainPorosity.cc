@@ -146,7 +146,8 @@ evaluateDerivatives(const Scalar /*time*/,
       }
       const auto epsi = strain(i);
       const auto DuDti = DuDt(i);
-      const auto strainRate = min(0.0, DstrainDt(i) - mGammaS0*safeInv(mcS0*mcS0)*DuDti);
+      DstrainDt(i) -= mGammaS0*safeInv(mcS0*mcS0)*DuDti;     // Total volume strain minus the thermal volume strain to get mechanical strain as in Collins 2011
+      const auto strainRate = min(0.0, DstrainDt(i));
       const auto alpha0i = mAlpha0(i);
       const auto c0i = mc0(i);
       const auto csi = mcS0 + (alphai - 1.0)*safeInv(alpha0i - 1.0)*(c0i - mcS0);
