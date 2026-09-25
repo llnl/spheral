@@ -48,32 +48,3 @@ using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
     @PYB11const
     def label(self):
         return "std::string"
-
-# from ArtificialViscosityView import *
-# from ArtificialViscosityAbstractMethods import *
-# @PYB11template("Dimension")
-# @PYB11template_dict({"QPiType": "typename %(Dimension)s::Scalar"})
-# class FiniteVolumeViscosityView(ArtificialViscosityView):
-
-#     PYB11typedefs = """
-#     using Scalar = typename %(Dimension)s::Scalar;
-#     using Vector = typename %(Dimension)s::Vector;
-#     using Tensor = typename %(Dimension)s::Tensor;
-#     using SymTensor = typename %(Dimension)s::SymTensor;
-#     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
-#     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
-#     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
-#     using ReturnType = %(QPiType)s;
-# """
-
-#     #...........................................................................
-#     # Constructors
-#     def pyinit(self,
-#                Clinear = "const Scalar",
-#                Cquadratic = "const Scalar"):
-#         "FiniteVolumeViscosityView constructor"
-
-# #-------------------------------------------------------------------------------
-# # Inject abstract interface
-# #-------------------------------------------------------------------------------
-# PYB11inject(ArtificialViscosityAbstractMethods, FiniteVolumeViscosityView, virtual=True, pure_virtual=False)

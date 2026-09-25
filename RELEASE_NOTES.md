@@ -23,6 +23,8 @@ Notable changes include:
         * Returns {explicit, implicit, voronoi}
       * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels
         * Returns tuple {explicit, implicit, hessian}
+    * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
+      * Note: Python overrides only work on CPU runs
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
