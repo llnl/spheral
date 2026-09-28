@@ -1,8 +1,17 @@
+# These functions encompass the general methods for creating the C++ and python packages.
 #----------------------------------------------------------------------------------------
 #                                   spheral_initialize_cxx_target
 #----------------------------------------------------------------------------------------
 # Create the monolithic CXX target
-# Priot to calling this, set SPHERAL_CURRENT_LIB_TARGET to either Spheral_CXX or Spheral_LLNLCXX
+# Prior to calling this, set SPHERAL_CURRENT_LIB_TARGET to the target name (
+# either Spheral_CXX or Spheral_LLNLCXX)
+# For dev builds, this creates the interface library
+# Otherwise, this creates a shared or static library
+#----------------------------------------------------------------------------------------
+# Example usage:
+# set(SPHERAL_CURRENT_LIB_TARGET Spheral_CXX) # or Spheral_LLNLCXX
+# spheral_initialize_cxx_target("spheral_source.cc")
+#----------------------------------------------------------------------------------------
 function(spheral_initialize_cxx_target source_files)
   set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})
   if(ENABLE_DEV_BUILD)
@@ -21,6 +30,13 @@ function(spheral_initialize_cxx_target source_files)
   endif()
 endfunction()
 
+#----------------------------------------------------------------------------------------
+#                                   spheral_add_package
+#----------------------------------------------------------------------------------------
+# This function creates an individual C++ package. For dev builds, each package is a
+# shared library that links to the monolithic interface library. Otherwise, each package
+# adds it's source to the monolithic shared or static library.
+# Finally, this function installs any headers and updates any necessary export target.
 # -------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
 # -------------------------------------------
@@ -41,7 +57,13 @@ endfunction()
 # -----------------------
 # Spheral_<package_name> : Target for a given spheral package
 #----------------------------------------------------------------------------------------
-function(spheral_add_obj_library package_name)
+# Example usage:
+# set(SPHERAL_CURRENT_LIB_TARGET Spheral_CXX)
+# set(PackageName_source sourceFile1.cc sourceFile2.cc)
+# set(PackageName_headers headerFile1.hh headerFile2.hh)
+# spheral_add_package(PackageName)
+#----------------------------------------------------------------------------------------
+function(spheral_add_package package_name)
   # Main package target, either Spheral_CXX or Spheral_LLNLCXX
   set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})
   if(ENABLE_DEV_BUILD)
@@ -54,6 +76,15 @@ function(spheral_add_obj_library package_name)
     target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
     target_link_libraries(${_main_target} INTERFACE Spheral_${package_name})
     target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    # Export target name is either spheral_cxx-targets or spheral_llnlcxx-targets
+    if (${_main_target} MATCHES "LLNL")
+      set(export_target_name spheral_llnlcxx-targets)
+    else()
+      set(export_target_name spheral_cxx-targets)
+    endif()
+    install(TARGETS Spheral_${package_name}
+      EXPORT ${export_target_name}
+      DESTINATION lib)
   else()
     target_include_directories(${_main_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     set(package_sources)
@@ -66,6 +97,7 @@ function(spheral_add_obj_library package_name)
     blt_split_source_list_by_language(
       SOURCES  ${package_sources}
       CXX_LIST package_cxx_sources)
+    # Set the necessary languages for the sources
     if(ENABLE_HIP)
       set_property(SOURCE ${package_cxx_sources}
         TARGET_DIRECTORY ${_main_target}
@@ -80,21 +112,12 @@ function(spheral_add_obj_library package_name)
   # Install the headers
   install(FILES ${${package_name}_headers}
     DESTINATION include/${package_name})
-  if(ENABLE_DEV_BUILD)
-    # Export target name is either spheral_cxx-targets or spheral_llnlcxx-targets
-    if (${_main_target} MATCHES "LLNL")
-      set(export_target_name spheral_llnlcxx-targets)
-    else()
-      set(export_target_name spheral_cxx-targets)
-    endif()
-    install(TARGETS Spheral_${package_name}
-      EXPORT ${export_target_name}
-      DESTINATION lib)
-  endif()
 endfunction()
 
 #----------------------------------------------------------------------------------------
 #                                   spheral_install_cxx_library
+#----------------------------------------------------------------------------------------
+# Installs and exports the monolithic C++ library.
 #----------------------------------------------------------------------------------------
 function(spheral_install_cxx_library package_name)
   set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})

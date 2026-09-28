@@ -1,4 +1,3 @@
-include_directories(.)
 set(Porosity_inst
     PorosityModel
     StrainPorosity
@@ -27,4 +26,4 @@ spheral_install_python_files(
     PorousStrengthModel.py
     )
 
-spheral_add_obj_library(Porosity)
+spheral_add_package(Porosity)

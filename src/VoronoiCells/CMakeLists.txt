@@ -1,4 +1,3 @@
-include_directories(.)
 set(VoronoiCells_inst
   VolumeUpdate
   VoronoiCells
@@ -23,4 +22,4 @@ set(VoronoiCells_headers
   SubPointPressureHourglassControl.hh
 )
 
-spheral_add_obj_library(VoronoiCells)
+spheral_add_package(VoronoiCells)

@@ -1,4 +1,3 @@
-include_directories(.)
 set(DataBase_inst
     DataBase
     ReplaceWithRatioPolicy
@@ -45,5 +44,5 @@ set(DataBase_headers
     updateStateFields.hh
     )
 
-spheral_add_obj_library(DataBase)
+spheral_add_package(DataBase)
 

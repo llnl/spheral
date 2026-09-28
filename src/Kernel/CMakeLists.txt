@@ -1,4 +1,3 @@
-include_directories(.)
 set(Kernel_inst
     BSplineKernel
     W4SplineKernel
@@ -70,5 +69,5 @@ set(Kernel_headers
     WendlandC6KernelInline.hh
     )
 
-spheral_add_obj_library(Kernel)
+spheral_add_package(Kernel)
 

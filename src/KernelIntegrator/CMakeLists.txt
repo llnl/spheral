@@ -1,4 +1,3 @@
-include_directories(.)
 set(KernelIntegrator_inst
   BilinearIndex
   FlatConnectivity
@@ -39,4 +38,4 @@ set(KernelIntegrator_headers
   SymmetricTriangularValues.hh
   )
 
-spheral_add_obj_library(KernelIntegrator)
+spheral_add_package(KernelIntegrator)

@@ -1,4 +1,3 @@
-include_directories(.)
 set(SolidMaterial_inst
     LinearPolynomialEquationOfState
     GruneisenEquationOfState
@@ -77,4 +76,4 @@ set(ANEOS_inst_sources
   ${CMAKE_CURRENT_BINARY_DIR}/ANEOSInst3d.cc)
 set_source_files_properties(${ANEOS_inst_sources} PROPERTIES COMPILE_FLAGS "$<$<COMPILE_LANGUAGE:CXX>:-Wno-uninitialized>")
 
-spheral_add_obj_library(SolidMaterial)
+spheral_add_package(SolidMaterial)

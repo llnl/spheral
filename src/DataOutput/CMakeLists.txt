@@ -1,4 +1,3 @@
-include_directories(.)
 set(DataOutput_sources
     RestartRegistrar.cc
     #RestartableObject.cc
@@ -14,5 +13,5 @@ set(DataOutput_headers
     registerWithRestart.hh
     )
 
-spheral_add_obj_library(DataOutput)
+spheral_add_package(DataOutput)
 

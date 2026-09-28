@@ -1,4 +1,3 @@
-include_directories(.)
 
 set(DEM_inst 
     DEMBase
@@ -45,5 +44,5 @@ add_subdirectory(SolidBoundary)
 
 spheral_install_python_files(DEM.py)
 
-spheral_add_obj_library(DEM)
+spheral_add_package(DEM)
 

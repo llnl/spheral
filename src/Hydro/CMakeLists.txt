@@ -1,4 +1,3 @@
-include_directories(.)
 set(Hydro_inst
     EntropyPolicy
     CompatibleDifferenceSpecificThermalEnergyPolicy
@@ -45,5 +44,5 @@ set(Hydro_headers
     entropyWeightingFunction.hh
     )
 
-spheral_add_obj_library(Hydro)
+spheral_add_package(Hydro)
 

@@ -1,4 +1,3 @@
-include_directories(.)
 set(NodeGenerators_inst
     relaxNodeDistribution
     centroidalRelaxNodesImpl
@@ -69,5 +68,5 @@ spheral_install_python_files(
   GenerateSphericalNodeDistribution1d.py
   )
 
-spheral_add_obj_library(NodeGenerators)
+spheral_add_package(NodeGenerators)
 

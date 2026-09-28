@@ -1,4 +1,3 @@
-include_directories(.)
 set(ExternalForce_inst
     ConstantAcceleration
     LinearAcceleration
@@ -20,12 +19,5 @@ set(ExternalForce_headers
     PointPotentialInline.hh
     )
 
-set(ExternalForce_includes
-   ${SPHERAL_SOURCE_DIR}
-   ${SPHERAL_SOURCE_DIR}/ExternalForce
-   ${EIGEN_LIB_LOCATION}
-   )
-
-
-spheral_add_obj_library(ExternalForce)
+spheral_add_package(ExternalForce)
 

@@ -1,4 +1,3 @@
-include_directories(.)
 set(Boundary_inst
     Boundary
     CRKSPHVoidBoundary
@@ -78,5 +77,5 @@ set(Boundary_headers
     mapPositionThroughPlanes.hh
     )
 
-spheral_add_obj_library(Boundary)
+spheral_add_package(Boundary)
 

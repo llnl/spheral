@@ -1,4 +1,3 @@
-include_directories(.)
 set(FieldOperations_inst
     smoothFields
     gradient
@@ -40,5 +39,5 @@ set(FieldOperations_headers
     sampleMultipleFields2Lattice.hh
     )
 
-spheral_add_obj_library(FieldOperations)
+spheral_add_package(FieldOperations)
 

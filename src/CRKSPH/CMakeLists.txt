@@ -1,4 +1,3 @@
-include_directories(.)
 set(CRKSPH_inst
     computeCRKSPHSumMassDensity
     computeSolidCRKSPHSumMassDensity
@@ -47,7 +46,7 @@ set(CRKSPH_headers
     zerothOrderSurfaceCorrections.hh
     )
 
-spheral_add_obj_library(CRKSPH)
+spheral_add_package(CRKSPH)
 
 spheral_install_python_files(CRKSPHHydros.py)
 

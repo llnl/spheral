@@ -1,4 +1,3 @@
-include_directories(.)
 
 set(FSISPH_inst
     SolidFSISPH
@@ -26,5 +25,5 @@ spheral_install_python_files(
   SlideSurfaces.py
   )
 
-spheral_add_obj_library(FSISPH)
+spheral_add_package(FSISPH)
 

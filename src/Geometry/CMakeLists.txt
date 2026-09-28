@@ -1,4 +1,3 @@
-include_directories(.)
 set(Geometry_inst
     invertRankNTensor
    )
@@ -85,5 +84,5 @@ set(Geometry_headers
     RZGeometryOps.hh
     )
 
-spheral_add_obj_library(Geometry)
+spheral_add_package(Geometry)
 

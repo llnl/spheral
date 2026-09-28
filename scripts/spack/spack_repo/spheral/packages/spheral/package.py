@@ -354,14 +354,6 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         # Singularity
         if spec.satisfies("+singularity"):
             entries.append(cmake_cache_path('singularity_eos_DIR', spec['singularity-eos'].prefix))
-            # # Singularity's garbage CMake export system makes this necessary.
-            # # I should not have to do any of this
-            # tpl_dep_dict = {"ports-of-call": "ports_of_call", "spiner": "spiner", "eospac": "EOSPAC"}
-            # if spec.satisfies("^singularity-eos+kokkos+kokkos-kernels"):
-            #     tpl_dep_dict.update({"kokkos": "Kokkos", "kokkos-kernels": "KokkosKernels"})
-            # sing_spec = spec["singularity-eos"]
-            # for spec_name, dir_name in tpl_dep_dict.items():
-            #     entries.append(cmake_cache_path(f"{dir_name}_DIR", sing_spec[spec_name].prefix))
             entries.append(cmake_cache_option('SPHERAL_ENABLE_SINGULARITY', True))
 
         return entries
