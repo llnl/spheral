@@ -19,9 +19,6 @@
 import sphinx_rtd_theme
 from datetime import datetime
 
-# TEMPORARY: Deliberately fail the RTD build to verify GitHub status reporting.
-1 / 0
-
 
 # -- Project information -----------------------------------------------------
 
