@@ -11,8 +11,6 @@
 #include "Geometry/Dimension.hh"
 #include "Utilities/DBC.hh"
 
-#include <span>
-
 namespace Spheral {
 
 template<typename Dimension> class NodeList;

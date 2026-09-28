@@ -1,7 +1,8 @@
 include_directories(.)
 set(Neighbor_inst
     Neighbor
-    NeighborView
+    PythonNeighbor
+    PythonNeighborView
     TreeNeighbor
     ConnectivityMap
    )
@@ -23,6 +24,7 @@ set(Neighbor_headers
     NodePairList.hh
     NodePairListView.hh
     TreeNeighbor.hh
+    PythonNeighbor.hh
     PairwiseField.hh
     PairwiseFieldElementAccessor.hh
     PairwiseFieldInline.hh

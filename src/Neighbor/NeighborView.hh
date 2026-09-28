@@ -10,7 +10,6 @@
 #include "Geometry/GeomPlane.hh"
 #include "Field/Field.hh"
 
-#include <span>
 #include <tuple>
 #include <cstdint>
 
@@ -19,7 +18,7 @@ namespace Spheral {
 template<typename Dimension> class NodeListView;
 template<typename Dimension, typename DataType> class FieldView;
 
-template<typename Dimension>
+template<typename Dimension, typename Descendant>
 class NeighborView: public NeighborBase<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -27,6 +26,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using DescendantType = Descendant;
   using size_type = int64_t;
 
   using NeighborBase<Dimension>::Hextent;
@@ -35,7 +35,7 @@ public:
   SPHERAL_HOST_DEVICE NeighborView(NodeListView<Dimension>& nodeList, 
                                    FieldView<Dimension, Vector>& nodeExtents,
                                    const NeighborSearchType searchType,
-                                   const double kernelExtent);
+                                   const Scalar kernelExtent);
   SPHERAL_HOST_DEVICE virtual ~NeighborView() = default;
 
   // Allow access to the field of node extents.
@@ -46,7 +46,8 @@ public:
 
   // Force the node extent field to be computed.
   SPHERAL_HOST_DEVICE void setNodeExtents();
-  SPHERAL_HOST_DEVICE void setNodeExtents(const std::span<int>& nodeIDs);
+  template<typename Container>
+  SPHERAL_HOST_DEVICE void setNodeExtents(const Container& nodeIDs);
   SPHERAL_HOST_DEVICE void setInternalNodeExtents();
   SPHERAL_HOST_DEVICE void setGhostNodeExtents();
 
@@ -55,78 +56,106 @@ public:
   // size_type results.
   // If the std::spans are not allocated with sufficient space, then the required size is returned as the
   // ones complement (~size), which will be negative.
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setMasterList(const int nodeID,
-                                                                             std::span<int>& masterList,
-                                                                             std::span<int>& coarseNeighbors,
-                                                                             const bool ghostConnectivity = false) const;
-  SPHERAL_HOST_DEVICE virtual size_type setRefineNeighborList(const int nodeID,
-                                                              const std::span<int>& coarseNeighbors,
-                                                              std::span<int>& refineNeighbors) const;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setMasterList(const int nodeID,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE size_type setRefineNeighborList(const int nodeID,
+                                                      const Container& coarseNeighbors,
+                                                      Container& refineNeighbors) const;
 
-  // ********** Descendent NeighborView types must provide these methods. **********
+  // ********** Descendant NeighborView types must provide these methods. **********
   // Set or refine the neighbor lists for the given position and smoothing scale.
   // These methods return the sizes of the resulting arrays in tuples
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setMasterList(const Vector& position,
-                                                                             const Scalar& H,
-                                                                             std::span<int>& masterList,
-                                                                             std::span<int>& coarseNeighbors,
-                                                                             const bool ghostConnectivity = false) const = 0;
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setMasterList(const Vector& position,
-                                                                             const SymTensor& H,
-                                                                             std::span<int>& masterList,
-                                                                             std::span<int>& coarseNeighbors,
-                                                                             const bool ghostConnectivity = false) const = 0;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setMasterList(const Vector& position,
+                                                                     const Scalar& H,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return static_cast<Descendant*>(this)->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  }
 
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
-                                                                                     const Scalar& H,
-                                                                                     const std::span<int>& coarseNeighbors,
-                                                                                     std::span<int>& refineNeighbors) const = 0;
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
-                                                                                     const SymTensor& H,
-                                                                                     const std::span<int>& coarseNeighbors,
-                                                                                     std::span<int>& refineNeighbors) const = 0;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setMasterList(const Vector& position,
+                                                                     const SymTensor& H,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return static_cast<Descendant*>(this)->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
+                                                                             const Scalar& H,
+                                                                             const Container& coarseNeighbors,
+                                                                             Container& refineNeighbors) const {
+    return static_cast<Descendant*>(this)->setRefineNeighborList(position, H, coarseNeighbors, refineNeighbors);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
+                                                                             const SymTensor& H,
+                                                                             const Container& coarseNeighbors,
+                                                                             Container& refineNeighbors) const {
+    return static_cast<Descendant*>(this)->setRefineNeighborList(position, H, coarseNeighbors, refineNeighbors);
+  }
 
   // Set Neighbors for the given position.
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setMasterList(const Vector& position,
-                                                                             std::span<int>& masterList,
-                                                                             std::span<int>& coarseNeighbors,
-                                                                             const bool ghostConnectivity = false) const = 0;
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
-                                                                                     const std::span<int>& coarseNeighbors,
-                                                                                     std::span<int>& refineNeighbors) const = 0;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setMasterList(const Vector& position,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return static_cast<Descendant*>(this)->setMasterList(position, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setRefineNeighborList(const Vector& position,
+                                                                             const Container& coarseNeighbors,
+                                                                             Container& refineNeighbors) const {
+    return static_cast<Descendant*>(this)->setRefineNeighborList(position, coarseNeighbors, refineNeighbors);
+  }
 
   // Set the neighbor lists based on proximity to planes.
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> setMasterList(const GeomPlane<Dimension>& enterPlane,
-                                                                             const GeomPlane<Dimension>& exitPlane,
-                                                                             std::span<int>& masterList,
-                                                                             std::span<int>& coarseNeighbors) const = 0;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> setMasterList(const GeomPlane<Dimension>& enterPlane,
+                                                                     const GeomPlane<Dimension>& exitPlane,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors) const {
+    return static_cast<Descendant*>(this)->setMasterList(enterPlane, exitPlane, masterList, coarseNeighbors);
+  }
 
   // Force the update of internal data for the NodeList.
   SPHERAL_HOST_DEVICE virtual void updateNodes() = 0;
-  SPHERAL_HOST_DEVICE virtual std::tuple<size_type, size_type> updateNodes(const std::span<int>& nodeIDs) = 0;
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_type, size_type> updateNodes(const Container& nodeIDs) { return static_cast<Descendant*>(this)->updateNodes(nodeIDs); }
   //****************************************************************************
 
   // Helper method to cull lists of neighbors based on min/max positions and min/max extents.
   // Note: this method modifies the passed set in-place, and returns the size
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_type precullList(const Vector& minMasterPosition, const Vector& maxMasterPostion,
                                             const Vector& minMasterExtent, const Vector& maxMasterExtent,
                                             const size_type numCoarse,
-                                            std::span<int>& coarseList) const;
+                                            Container& coarseList) const;
 
   // A static method for set master/coarse neighbor sets on multiple NodeLists
   // with culling of the coarse set.  This method is static because it is 
   // intended to deal with multiple Neighbor objects (not just this particular
   // one), and must access private data of the Neighbors.
-  template<typename NodeListIteratorType>
+  template<typename NodeListIterator, typename ContainerOfContainers, typename Container>
   SPHERAL_HOST_DEVICE static size_type setMasterNeighborGroup(const Vector& position,
                                                               const SymTensor& H,
-                                                              const NodeListIteratorType& nodeListBegin,
-                                                              const NodeListIteratorType& nodeListEnd,
+                                                              const NodeListIterator& nodeListBegin,
+                                                              const NodeListIterator& nodeListEnd,
                                                               const Scalar kernelExtent,
-                                                              std::span<std::span<int>>& masterLists,
-                                                              std::span<std::span<int>>& coarseNeighbors,
-                                                              std::span<size_type>& numMasters,
-                                                              std::span<size_type>& numCoarseNeighbors,
+                                                              ContainerOfContainers& masterLists,
+                                                              ContainerOfContainers& coarseNeighbors,
+                                                              Container& numMasters,
+                                                              Container& numCoarseNeighbors,
                                                               const bool ghostConnectivity = false);
 
 private:

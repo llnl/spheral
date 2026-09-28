@@ -8,15 +8,18 @@
 #define __Spheral_Neighbor__
 
 #include "Neighbor/NeighborBase.hh"
+#include "Neighbor/PythonNeighborView.hh"
 #include "Geometry/GeomPlane.hh"
 #include "Field/Field.hh"
-#include "chai/managed_ptr.hpp"
+
+#include <variant>
 
 namespace Spheral {
 
 template<typename Dimension> class NodeList;
-template<typename Dimension> class NeighborView;
 template<typename Dimension, typename DataType> class Field;
+// template<typename Dimension> class TreeNeighborView;
+// template<typename Dimension> class PythonNeighborView;
 
 template<typename Dimension>
 class Neighbor: public NeighborBase<Dimension> {
@@ -27,7 +30,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using ViewType = NeighborView<Dimension>;
+  using ViewType = std::variant<PythonNeighborView<Dimension>>;//, TreeNeighborView<Dimension>>;
 
   // Constructors and destructors
   Neighbor(NodeList<Dimension>& nodeList, 
@@ -36,17 +39,13 @@ public:
   virtual ~Neighbor();
 
   // Access to the field of node extents.
-  const Field<Dimension, Vector>& nodeExtentField() const      { return mNodeExtent; }
+  const Field<Dimension, Vector>& nodeExtentField()      const { return mNodeExtent; }
 
   // Manage the node list.
-  const NodeList<Dimension>& nodeList() const                  { CHECK(mNodeListPtr); return *mNodeListPtr; }
-  const NodeList<Dimension>* nodeListPtr() const               { return mNodeListPtr; }
+  const NodeList<Dimension>& nodeList()                  const { CHECK(mNodeListPtr); return *mNodeListPtr; }
+  const NodeList<Dimension>* nodeListPtr()               const { return mNodeListPtr; }
   void nodeList(NodeList<Dimension>& nodeList);
   void unregisterNodeList();
-
-  // Force the update of internal data for the NodeList.
-  virtual void updateNodes() = 0;
-  virtual void updateNodes(const std::vector<int>& nodeIDs) = 0;
 
   //...........................................................................
   // Optional hooks to reinitialize based on the desired target h and box dimensions.
@@ -56,20 +55,20 @@ public:
                             const Scalar& htarget) {};
 
   //...........................................................................
-  // Methods for accessing the view (required for descendant)
-  virtual chai::managed_ptr<ViewType> getView()  = 0;
+  // Required methods
+  virtual void updateNodes() = 0;
+  virtual void updateNodes(const std::vector<int>& nodeIDs) = 0;
+  virtual ViewType view() const = 0;
 
 protected:
   //-------------------------- Protected Interface --------------------------//
-  // Provide read/write access to the node index vectors for descendent classes.
-  Field<Dimension, Vector>& accessNodeExtentField()            { return mNodeExtent; }
+  NodeList<Dimension>* mNodeListPtr;
+  Field<Dimension, Vector> mNodeExtent;
 
 private:
   //--------------------------- Private Interface ---------------------------//
   using NeighborBase<Dimension>::mSearchType;
   using NeighborBase<Dimension>::mKernelExtent;
-  NodeList<Dimension>* mNodeListPtr;
-  Field<Dimension, Vector> mNodeExtent;
 };
 
 }
