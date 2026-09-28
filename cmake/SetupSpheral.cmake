@@ -1,3 +1,14 @@
+#-------------------------------------------------------------------------------
+# Main method for setting up Spheral
+#-------------------------------------------------------------------------------
+# A list of variables that are used throughout the project and a description
+# SPHERAL_ENV_LINES : Lines that are prepended to the bin/spheral executable
+# SPHERAL_CXX_DEPENDS : System/compiler dependencies, (python, mpi, openmp, etc)
+# SPHERAL_BLT_DEPENDS : TPL dependencies
+# SPHERAL_COMPILE_DEFS : List of compiler definitions
+# SPHERAL_CXX_FLAGS : List of C++/HIP/CUDA compiler options
+# SPHERAL_LINK_FLAGS : List of link options
+# SPHERAL_INCL_DIRS : List of directories that packages must depend on
 include(ExternalProject)
 
 #-------------------------------------------------------------------------------
@@ -13,10 +24,14 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #-------------------------------------------------------------------------------
-# Lines to add to the Spheral executable
+# Package must include certain source and build directories
 #-------------------------------------------------------------------------------
-set(SPHERAL_ENV_LINES "")
+# The top and bottom differ for LLNLSpheral
+list(APPEND SPHERAL_INCL_DIRS
+  ${SPHERAL_ROOT_DIR}/src ${SPHERAL_BINARY_DIR}/src
+  ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
 #-------------------------------------------------------------------------------
 # Add Spheral CMake Macros for tests and executables
@@ -154,7 +169,6 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 #-------------------------------------------------------------------------------
 configure_file(${SPHERAL_ROOT_DIR}/src/config.hh.in
   ${PROJECT_BINARY_DIR}/src/config.hh)
-include_directories(${PROJECT_BINARY_DIR}/src)
 
 add_subdirectory(${SPHERAL_ROOT_DIR}/src)
 

@@ -1,11 +1,12 @@
 # These functions encompass the general methods for creating the C++ and python packages.
+# See top of SetupSpheral.cmake for info on variables listed here.
 #----------------------------------------------------------------------------------------
 #                                   spheral_initialize_cxx_target
 #----------------------------------------------------------------------------------------
 # Create the monolithic CXX target
-# Prior to calling this, set SPHERAL_CURRENT_LIB_TARGET to the target name (
-# either Spheral_CXX or Spheral_LLNLCXX)
-# For dev builds, this creates the interface library
+# Prior to calling this, set SPHERAL_CURRENT_LIB_TARGET to the target name
+# (either Spheral_CXX or Spheral_LLNLCXX)
+# For dev builds, this creates an interface library
 # Otherwise, this creates a shared or static library
 #----------------------------------------------------------------------------------------
 # Example usage:
@@ -24,6 +25,7 @@ function(spheral_initialize_cxx_target source_files)
       SHARED ${SPHERAL_ENABLE_SHARED})
     target_compile_options(${_main_target} PRIVATE ${SPHERAL_CXX_FLAGS})
     target_link_options(${_main_target} PRIVATE ${SPHERAL_LINK_FLAGS})
+    target_include_directories(${_main_target} PRIVATE ${SPHERAL_INCL_DIRS})
   endif()
   if(ENABLE_CUDA AND SPHERAL_ENABLE_RDC)
     set_target_properties(${_main_target} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
@@ -37,14 +39,9 @@ endfunction()
 # shared library that links to the monolithic interface library. Otherwise, each package
 # adds it's source to the monolithic shared or static library.
 # Finally, this function installs any headers and updates any necessary export target.
-# -------------------------------------------
+# --------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
-# -------------------------------------------
-# SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
-# SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
-# SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
-# SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
-# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
+# --------------------------------------------
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
 # SPHERAL_CURRENT_LIB_TARGET : REQUIRED : Package target, either Spheral_CXX or Spheral_LLNLCXX
@@ -76,6 +73,7 @@ function(spheral_add_package package_name)
     target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
     target_link_libraries(${_main_target} INTERFACE Spheral_${package_name})
     target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_include_directories(Spheral_${package_name} PRIVATE ${SPHERAL_INCL_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
     # Export target name is either spheral_cxx-targets or spheral_llnlcxx-targets
     if (${_main_target} MATCHES "LLNL")
       set(export_target_name spheral_llnlcxx-targets)
@@ -241,7 +239,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
     SOURCE          ${package_name}_PYB11.py
     DEPENDS         ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
     DEFINES         ${SPHERAL_COMPILE_DEFS}
-    INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
+    INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include ${SPHERAL_INCL_DIRS}
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
