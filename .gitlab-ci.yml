@@ -1,3 +1,17 @@
+# TEMPORARY: remove after validating the RTD integration.
+docs-ci-development:
+  extends: [.toss_shell1]
+  stage: init
+  variables:
+    GIT_STRATEGY: none
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "mcfadden8/docs-ci"'
+      when: on_success
+    - when: never
+  script:
+    - echo "Full GitLab CI disabled while testing Read the Docs integration"
+
 workflow:
   auto_cancel:
     on_new_commit: interruptible
@@ -47,12 +61,16 @@ include:
   - local: .gitlab/performance.yml
   - local: .gitlab/jobs-mpi.yml
     rules:
+      - if: '$CI_COMMIT_REF_NAME == "mcfadden8/docs-ci"'
+        when: never
       - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
         when: never
       - if: '$CI_PIPELINE_SOURCE == "push"'
         when: always
   - local: .gitlab/jobs-seq.yml
     rules:
+      - if: '$CI_COMMIT_REF_NAME == "mcfadden8/docs-ci"'
+        when: never
       - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
         when: never
       - if: '$CI_PIPELINE_SOURCE == "push"'
