@@ -36,14 +36,10 @@ endfunction()
 # INPUT-OUTPUT VARIABLES
 # ----------------------
 # package_name  : REQUIRED : Desired package name
-# obj_list_name : REQUIRED : The NAME of the global variable that is the list of
-#                            internal target libraries in a development build
 # -----------------------
 # OUTPUT VARIABLES TO USE - Made available implicitly after function call
 # -----------------------
 # Spheral_<package_name> : Target for a given spheral package
-# <obj_list_name> : List of internal Spheral targets, appended with target name in a
-#                   development build
 #----------------------------------------------------------------------------------------
 function(spheral_add_obj_library package_name)
   # Main package target, either Spheral_CXX or Spheral_LLNLCXX
@@ -214,7 +210,6 @@ function(spheral_add_pybind11_library package_name module_list_name)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Get the TPL dependencies
-  get_property(SPHERAL_PYB11_TARGET_FLAGS GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS)
   list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
 
   set(MODULE_NAME Spheral${package_name})
@@ -250,7 +245,6 @@ function(spheral_add_pybind11_library package_name module_list_name)
           DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
-  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
 
 endfunction()

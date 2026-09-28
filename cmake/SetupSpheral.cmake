@@ -16,7 +16,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #-------------------------------------------------------------------------------
 # Lines to add to the Spheral executable
 #-------------------------------------------------------------------------------
-set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "")
+set(SPHERAL_ENV_LINES "")
 
 #-------------------------------------------------------------------------------
 # Add Spheral CMake Macros for tests and executables
@@ -148,14 +148,6 @@ list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-#-------------------------------------------------------------------------------
-# Set global variables used for dependencies
-#-------------------------------------------------------------------------------
-# List of external dependencies
-set_property(GLOBAL PROPERTY SPHERAL_BLT_DEPENDS "${SPHERAL_BLT_DEPENDS}")
-# List of compiler dependencies
-set_property(GLOBAL PROPERTY SPHERAL_CXX_DEPENDS "${SPHERAL_CXX_DEPENDS}")
 
 #-------------------------------------------------------------------------------
 # Prepare to build the src

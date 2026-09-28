@@ -55,9 +55,6 @@ if (SPHERAL_ENABLE_PYTHON)
   )
 endif()
 
-# This is currently unfilled in spheral
-set_property(GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES "${SPHERAL_SUBMOD_INCLUDES}")
-
 # PolyClipper
 if (NOT polyclipper_DIR)
   # If no PolyClipper is specified, build it as an internal target
@@ -238,9 +235,6 @@ else()
   list(APPEND SPHERAL_EXTERN_LIBS boost)
 endif()
 
-set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
-set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
-
 message("-----------------------------------------------------------------------------")
 # In case we start using find_package on Silo, we should save the silo_DIR path
 set(CONFIG_SILO_DIR "${silo_DIR}" CACHE PATH "Configuration Silo directory")
@@ -259,7 +253,6 @@ foreach(lib ${SPHERAL_EXTERN_LIBS})
   list(APPEND SPHERAL_BLT_DEPENDS ${lib})
 endforeach()
 blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
-# Note: SPHERAL_BLT_DEPENDS is made global after this in SetupSpheral.cmake
 
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})
