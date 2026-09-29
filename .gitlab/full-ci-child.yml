@@ -1,0 +1,4 @@
+# Reuse the root configuration. Its dispatcher jobs are push-only, so GitLab
+# omits them when evaluating this child with CI_PIPELINE_SOURCE=parent_pipeline.
+include:
+  - local: .gitlab-ci.yml

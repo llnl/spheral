@@ -1,0 +1,10 @@
+include:
+  - local: .gitlab/os.yml
+  - local: .gitlab/machines.yml
+
+docs-only-ci:
+  extends: [.toss_shell1]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Full CI is not required for a docs-only branch"
