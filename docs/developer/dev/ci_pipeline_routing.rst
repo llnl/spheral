@@ -17,11 +17,11 @@ that contains any other kind of change continues to run Full CI.
 The documentation-only class currently contains:
 
 * All paths under ``docs/``.
-* The repository-root ``.readthedocs.yaml`` file.
+* The repository-root ``.readthedocs.yaml``, ``LICENSE``, ``NEWS``, ``NOTICE``,
+  ``README.md``, and ``RELEASE_NOTES.md`` files.
 
 This class can be extended when another file does not require source
-validation. For example, ``RELEASE_NOTES.md`` could be added in the future.
-Adding a path requires updating the classifier and this page.
+validation. Adding a path requires updating the classifier and this page.
 
 Deliberate simplifications
 ==========================
@@ -220,9 +220,8 @@ Expand the docs-only path class
 -------------------------------
 
 The lightweight path class could include documentation maintained outside
-``docs/``. For example, ``RELEASE_NOTES.md`` could qualify if changing it does
-not require source validation. Each addition should be made explicitly in the
-classifier and documented in the list under `Motivation`_.
+``docs/``. Each addition should be made explicitly in the classifier and
+documented in the list under `Motivation`_.
 
 Reuse the last successful Full CI result
 ----------------------------------------

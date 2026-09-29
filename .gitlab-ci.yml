@@ -12,8 +12,8 @@ classify-ci:
     - when: never
   script:
     - |
-      # Use full CI unless every commit unique to this feature branch
-      # changes only docs/** or .readthedocs.yaml.
+      # Use full CI unless every commit unique to this feature branch changes
+      # only paths in the docs-only class below.
       child_config=.gitlab/full-ci-child.yml
       if test "$CI_COMMIT_REF_NAME" != "$CI_DEFAULT_BRANCH" &&
          git fetch --no-tags origin "$CI_DEFAULT_BRANCH" &&
@@ -21,7 +21,11 @@ classify-ci:
          git log --format= --name-only --no-renames \
            "${branch_point}..${CI_COMMIT_SHA}" -- > branch-files.txt; then
         if awk '
-          NF && $0 !~ /^docs\// && $0 != ".readthedocs.yaml" { full_ci = 1 }
+          NF &&
+          $0 !~ /^docs\// &&
+          $0 !~ /^(\.readthedocs\.yaml|LICENSE|NEWS|NOTICE|README\.md|RELEASE_NOTES\.md)$/ {
+            full_ci = 1
+          }
           END { exit full_ci }
         ' branch-files.txt; then
           echo "Branch contains docs-only changes"
