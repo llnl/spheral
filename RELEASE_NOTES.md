@@ -16,11 +16,11 @@ Notable changes include:
       * Makes VoronoiCells inherit from VolumeUpdate. It optionally overwrites its own volume calculation with the user's choice of volume.
       * Lets the user choose the volume for all packages, not just RKCorrections.
       * Stores both 3D (annulus or spherical shell) volume and patch volume, which are the same in Cartesian coordinates.
-    * Physics package requirements upgrade
-      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity
-        * Returns {conn, ghost, overlap, intersection}
-      * requireVoronoiCells has been replaced by requireVolumes
-        * Returns {explicit, implicit, voronoi}
+    * Physics package requirements upgrade.
+      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity.
+        * Returns {conn, ghost, overlap, intersection}.
+      * requireVoronoiCells has been replaced by requireVolumes.
+        * Returns {explicit, implicit, voronoi}.
       * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels
         * Returns tuple {explicit, implicit, hessian}
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
@@ -36,6 +36,7 @@ Notable changes include:
       * `spheral_add_obj_library` no longer takes the name of the list being modified as an argument. Instead, the `SPHERAL_CURRENT_LIB_TARGET` variable is set in the parent scope to denote which CXX target is being created.
       * `spheral_add_obj_library` is renamed to `spheral_add_package`.
       * Removed unnecessary `include_directories(.)` calls.
+      * The PYB11 targets no longer depend on the TPLs. Instead, they depend on the Spheral_CXX target, which depends on the TPLs. This fixes a major issue involving destruction of static variables at exit from the python.
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
     * Update to Thicket version 2026.1.0.
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
