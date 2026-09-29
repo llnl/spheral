@@ -1,5 +1,50 @@
-Continuous Integration (CI)
-###########################
+CI Pipeline Routing
+###################
+
+Motivation
+==========
+
+Documentation-only changes do not need to compile or test the Spheral source
+code. Requiring the full build and test pipeline for these changes consumes
+limited CI resources and can make a documentation review-and-update cycle take
+days. That delay is a barrier to keeping the documentation current.
+
+The goal of this routing is to recognize a class of documentation-only
+changes, validate them with Read the Docs (RTD), and quickly return a
+successful GitLab status without running the expensive Spheral build. A branch
+that contains any other kind of change continues to run Full CI.
+
+The documentation-only class currently contains:
+
+* All paths under ``docs/``.
+* The repository-root ``.readthedocs.yaml`` file.
+
+This class can be extended when another file does not require source
+validation. For example, ``RELEASE_NOTES.md`` could be added in the future.
+Adding a path requires updating the classifier and this page.
+
+Deliberate simplifications
+==========================
+
+This initial design intentionally does not attempt to:
+
+* Avoid RTD builds when a pull request does not change documentation. RTD is
+  comparatively inexpensive, and allowing it to build every pull request
+  removes another classification and state-tracking problem.
+* Discover and compare against an arbitrary GitHub pull-request target. The
+  classifier compares the branch with GitLab's ``CI_DEFAULT_BRANCH``.
+* Record the inputs or commit associated with the last successful Full CI or
+  RTD build. Classification is stateless and is repeated for each branch
+  update.
+* Change Hubcast or make GitHub Actions responsible for launching GitLab. The
+  existing Hubcast synchronization and status reporting remain in place.
+* Select individual source test suites from the paths changed. A branch is
+  either docs-only or it receives Full CI.
+
+These choices keep the implementation contained within the GitLab
+configuration. They can be revisited if broader path classes, conditional RTD
+builds, arbitrary pull-request targets, or more granular source testing become
+important.
 
 Overview
 ========
@@ -167,3 +212,78 @@ This routing depends on the following assumptions:
 The file names and job names are project choices. The terms *parent pipeline*
 and *child pipeline*, the predefined ``CI_PIPELINE_SOURCE`` variable, and its
 ``parent_pipeline`` value are GitLab terminology.
+
+Future enhancements
+===================
+
+Expand the docs-only path class
+-------------------------------
+
+The lightweight path class could include documentation maintained outside
+``docs/``. For example, ``RELEASE_NOTES.md`` could qualify if changing it does
+not require source validation. Each addition should be made explicitly in the
+classifier and documented in the list under `Motivation`_.
+
+Reuse the last successful Full CI result
+----------------------------------------
+
+The current classifier considers every commit unique to a feature branch.
+Consequently, once a branch contains a source change, every later update to
+that branch selects Full CI, including an update that changes only
+documentation.
+
+A future implementation could record the commit associated with the last
+successful Full CI run for each branch. If that commit remains an ancestor of
+the current branch, the classifier could inspect only the changes made after
+it. This would produce the following behavior::
+
+  Source change
+  `-- Full CI succeeds and records commit A
+
+  Docs-only changes after A
+  `-- Docs-only CI runs
+
+  Source change after A
+  `-- Full CI runs again
+      +-- success: advance the recorded commit
+      `-- failure or cancellation: retain commit A
+
+If no successful commit were recorded, or if a rebase made the recorded
+commit no longer an ancestor, classification would fall back to the merge
+base with ``CI_DEFAULT_BRANCH``. This feature would require reliable
+per-branch state, rules for concurrent pipelines and branch deletion, and a
+guarantee that failed or cancelled Full CI runs cannot advance the recorded
+commit.
+
+Strengthen RTD validation
+-------------------------
+
+RTD currently reports fatal Sphinx build errors to GitHub, but the repository
+does not explicitly configure RTD to fail a build for every Sphinx warning. A
+future change could enable ``sphinx.fail_on_warning`` in
+``.readthedocs.yaml`` after resolving or intentionally suppressing existing
+warnings.
+
+Additional documentation checks could include Sphinx's nitpicky mode for
+unresolved references and a link-check build for broken links. External-link
+checks can fail for temporary network or service problems, so they may be
+better suited to a scheduled job or a non-blocking check. Any stricter check
+should first be tested against the existing documentation and should produce
+a clear failure status on the GitHub pull request.
+
+Refine the GitHub Docker workflows
+----------------------------------
+
+``docker-image.yml`` currently builds and publishes container images for every
+push to its configured branches, including a push that changes only the
+docs-only path class. A future change could add a GitHub path filter so a
+docs-only push does not rebuild the images. A mixed push must continue to run
+the workflow.
+
+The image-building steps in ``docker-image.yml`` and ``test-tpls.yml`` are
+also similar. They could be moved into a reusable workflow or composite action
+to prevent the pull-request validation and image-publication implementations
+from drifting apart. The refactoring must preserve their different triggers
+and permissions: pull-request validation must not publish an image, while the
+trusted branch workflow requires permission to publish to the GitHub
+container registry.
