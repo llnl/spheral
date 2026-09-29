@@ -72,17 +72,6 @@ computeContactDuration(double m,
   return M_PI*std::sqrt(0.5*m/k * (1.0 + 1.0/(B*B)));
 }
 
-// our lumped damping term were going to force the restitution coefficient to be less than
-// 1 and more than zero with a small buffer to prevent singular behavior w/out resorting
-// to if statements.
-double
-computeBeta(double restitutionCoefficient){
-  CHECK(restitutionCoefficient >= 0);
-  CHECK(restitutionCoefficient <= 1);
-  const double tiny = 1.0e-8;
-  return M_PI/std::log(std::min(std::max(restitutionCoefficient,tiny),1.0-tiny));
-}
-
 }
 
 
@@ -107,6 +96,51 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
                 const bool   enableFastTimeStepping,
                 const Vector& xmin,
                 const Vector& xmax):
+  LinearSpringDEM(dataBase,
+                  normalSpringConstant,
+                  normalRestitutionCoefficient,
+                  tangentialSpringConstant,
+                  tangentialRestitutionCoefficient,
+                  dynamicFrictionCoefficient,
+                  staticFrictionCoefficient,
+                  rollingFrictionCoefficient,
+                  torsionalFrictionCoefficient,
+                  normalRestitutionCoefficient,
+                  tangentialRestitutionCoefficient,
+                  dynamicFrictionCoefficient,
+                  staticFrictionCoefficient,
+                  rollingFrictionCoefficient,
+                  torsionalFrictionCoefficient,
+                  cohesiveTensileStrength,
+                  shapeFactor,
+                  stepsPerCollision,
+                  enableFastTimeStepping,
+                  xmin,
+                  xmax) {}
+
+template<typename Dimension>
+LinearSpringDEM<Dimension>::
+LinearSpringDEM(const DataBase<Dimension>& dataBase,
+                const Scalar normalSpringConstant,
+                const Scalar normalRestitutionCoefficient,
+                const Scalar tangentialSpringConstant,
+                const Scalar tangentialRestitutionCoefficient,
+                const Scalar dynamicFrictionCoefficient,
+                const Scalar staticFrictionCoefficient,
+                const Scalar rollingFrictionCoefficient,
+                const Scalar torsionalFrictionCoefficient,
+                const Scalar normalRestitutionCoefficientParticleBoundary,
+                const Scalar tangentialRestitutionCoefficientParticleBoundary,
+                const Scalar dynamicFrictionCoefficientParticleBoundary,
+                const Scalar staticFrictionCoefficientParticleBoundary,
+                const Scalar rollingFrictionCoefficientParticleBoundary,
+                const Scalar torsionalFrictionCoefficientParticleBoundary,
+                const Scalar cohesiveTensileStrength,
+                const Scalar shapeFactor,
+                const Scalar stepsPerCollision,
+                const bool   enableFastTimeStepping,
+                const Vector& xmin,
+                const Vector& xmax):
   DEMBase<Dimension>(dataBase,stepsPerCollision,xmin,xmax),
   mEnableFastTimeStepping(enableFastTimeStepping),
   mNormalSpringConstant(normalSpringConstant),
@@ -117,10 +151,18 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
   mStaticFrictionCoefficient(staticFrictionCoefficient),
   mRollingFrictionCoefficient(rollingFrictionCoefficient),
   mTorsionalFrictionCoefficient(torsionalFrictionCoefficient),
+  mNormalRestitutionCoefficientParticleBoundary(normalRestitutionCoefficientParticleBoundary),
+  mTangentialRestitutionCoefficientParticleBoundary(tangentialRestitutionCoefficientParticleBoundary),
+  mDynamicFrictionCoefficientParticleBoundary(dynamicFrictionCoefficientParticleBoundary),
+  mStaticFrictionCoefficientParticleBoundary(staticFrictionCoefficientParticleBoundary),
+  mRollingFrictionCoefficientParticleBoundary(rollingFrictionCoefficientParticleBoundary),
+  mTorsionalFrictionCoefficientParticleBoundary(torsionalFrictionCoefficientParticleBoundary),
   mCohesiveTensileStrength(cohesiveTensileStrength),
   mShapeFactor(shapeFactor),
-  mNormalBeta(computeBeta(normalRestitutionCoefficient)),
-  mTangentialBeta(computeBeta(tangentialRestitutionCoefficient)),
+  mNormalBeta(LinearSpringDEMDetail::computeBeta(normalRestitutionCoefficient)),
+  mTangentialBeta(LinearSpringDEMDetail::computeBeta(tangentialRestitutionCoefficient)),
+  mNormalBetaParticleBoundary(LinearSpringDEMDetail::computeBeta(normalRestitutionCoefficientParticleBoundary)),
+  mTangentialBetaParticleBoundary(LinearSpringDEMDetail::computeBeta(tangentialRestitutionCoefficientParticleBoundary)),
   mCollisionDuration(0.0),
   mMomentOfInertia(FieldStorageType::CopyFields),
   mMaximumOverlap(FieldStorageType::CopyFields),
@@ -130,9 +172,7 @@ LinearSpringDEM(const DataBase<Dimension>& dataBase,
     mMaximumOverlap = dataBase.newDEMFieldList(0.0, DEMFieldNames::maximumOverlap);
     mNewMaximumOverlap = dataBase.newDEMFieldList(0.0,MaxReplaceState<Dimension, Scalar>::prefix() + DEMFieldNames::maximumOverlap);
 
-    const auto mass = dataBase.DEMMass();
-    const auto minMass = mass.min();
-    mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+    this->recomputeContactDuration();
 
 }
 
@@ -189,7 +229,8 @@ recomputeContactDuration()  {
   const auto& db = this->dataBase();
   const auto mass = db.DEMMass();
   const auto minMass = mass.min();
-  mCollisionDuration = computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta);
+  mCollisionDuration = std::min(computeContactDuration(minMass,mNormalSpringConstant,mNormalBeta),
+                                computeContactDuration(minMass,mNormalSpringConstant,mNormalBetaParticleBoundary));
 }
 
 template<typename Dimension>
@@ -219,6 +260,7 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
   // Compute the spring timestep constraint (except for the mass)
   const auto nsteps = this->stepsPerCollision();
   const auto dtSpring0 = computeContactDuration(1.0,mNormalSpringConstant,mNormalBeta)/nsteps;
+  const auto dtSpringParticleBoundary0 = computeContactDuration(1.0,mNormalSpringConstant,mNormalBetaParticleBoundary)/nsteps;
 
   CHECK(nsteps > 0);
 
@@ -306,7 +348,7 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
     
     if (closing_speed > 0.0 or overlap > 0.0) {
 
-      const auto dtSpringkk = dtSpring0*std::sqrt(mi);
+      const auto dtSpringkk = dtSpringParticleBoundary0*std::sqrt(mi);
       // Spring constant timestep for this pair
       const auto dtji = (overlap > 0.0 ?
                          dtSpringkk:
@@ -447,6 +489,10 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const auto muS = this->staticFrictionCoefficient();
   const auto muT = this->torsionalFrictionCoefficient() * shapeFactor * muS;
   const auto muR = this->rollingFrictionCoefficient() * shapeFactor;
+  const auto muDParticleBoundary = this->dynamicFrictionCoefficientParticleBoundary();
+  const auto muSParticleBoundary = this->staticFrictionCoefficientParticleBoundary();
+  const auto muTParticleBoundary = this->torsionalFrictionCoefficientParticleBoundary() * shapeFactor * muSParticleBoundary;
+  const auto muRParticleBoundary = this->rollingFrictionCoefficientParticleBoundary() * shapeFactor;
 
   const auto Cc = this->cohesiveTensileStrength();
 
@@ -462,6 +508,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   
   const auto normalDampingTerms = 4.0*kn/(1.0+mNormalBeta*mNormalBeta);
   const auto tangentialDampingTerms = 4.0*ks/(1.0+mTangentialBeta*mTangentialBeta);
+  const auto normalDampingTermsParticleBoundary = 4.0*kn/(1.0+mNormalBetaParticleBoundary*mNormalBetaParticleBoundary);
+  const auto tangentialDampingTermsParticleBoundary = 4.0*ks/(1.0+mTangentialBetaParticleBoundary*mTangentialBetaParticleBoundary);
  
   // The connectivity.
   const auto& nodeLists = dataBase.DEMNodeListPtrs();
@@ -775,8 +823,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         const auto lib = li;
 
         // damping coefficients
-        const auto Cn = std::sqrt(mib*normalDampingTerms);
-        const auto Cs = std::sqrt(mib*tangentialDampingTerms);
+        const auto Cn = std::sqrt(mib*normalDampingTermsParticleBoundary);
+        const auto Cs = std::sqrt(mib*tangentialDampingTermsParticleBoundary);
         const auto Ct = 2.0 * Cs * shapeFactor2;
         const auto Cr = Cn * shapeFactor2;
 
@@ -799,19 +847,19 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
         // sliding
         //------------------------------------------------------------
         Vector newDeltaSlidib, ft;
-        this->slidingSpringDamper(ks,Cs,muS,muD,deltaSlidib,vs,fnMag,invKs,rhatib,true,
+        this->slidingSpringDamper(ks,Cs,muSParticleBoundary,muDParticleBoundary,deltaSlidib,vs,fnMag,invKs,rhatib,true,
                                   newDeltaSlidib,ft);  // outputs
 
         // torsion
         //------------------------------------------------------------
         Scalar newDeltaTorsib, MtorsionMag;
-        this->slidingSpringDamper(kt,Ct,muT,muT,deltaTorsib,vt,fnMag,invKt,true,
+        this->slidingSpringDamper(kt,Ct,muTParticleBoundary,muTParticleBoundary,deltaTorsib,vt,fnMag,invKt,true,
                                   newDeltaTorsib, MtorsionMag); // output
 
         // rolling
         //------------------------------------------------------------
         Vector newDeltaRollib, fr;
-        this->slidingSpringDamper(kr,Cr,muR,muR,deltaRollib,vr,fnMag,invKr,rhatib,true,
+        this->slidingSpringDamper(kr,Cr,muRParticleBoundary,muRParticleBoundary,deltaRollib,vr,fnMag,invKr,rhatib,true,
                                   newDeltaRollib, fr); // outputs
         // accelerations
         //------------------------------------------------------------
@@ -950,4 +998,3 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mNewMaximumOverlap, pathName + "/newMaximumOverlap");
 }
 } // namespace
-

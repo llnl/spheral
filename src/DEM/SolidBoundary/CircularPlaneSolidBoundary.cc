@@ -20,12 +20,16 @@ namespace Spheral {
 
 template<typename Dimension>
 CircularPlaneSolidBoundary<Dimension>::
-CircularPlaneSolidBoundary(const Vector& point, const Vector& normal, const Scalar& extent):
+CircularPlaneSolidBoundary(const Vector& point, 
+                           const Vector& normal, 
+                           const Scalar& extent,
+                          const RotationType& angularVelocity):
   SolidBoundaryBase<Dimension>(),
   mPoint(point),
   mNormal(normal),
   mExtent(extent),
-  mVelocity(Vector::zero()){
+  mVelocity(Vector::zero()),
+  mAngularVelocity(angularVelocity){
 }
 
 template<typename Dimension>
@@ -42,7 +46,9 @@ distance(const Vector& position) const {
   const auto p = position - mPoint;
   const Vector pn = p.dot(mNormal)*mNormal;
   const Vector pr0 = p-pn;
-  const Vector pr = max(pr0.magnitude()-mExtent,0.0) * pr0.unitVector();
+  // const Vector pr = max(pr0.magnitude()-mExtent,0.0) * pr0.unitVector();
+  // Check if the projection is within the extent of the plane
+  const Vector pr = (pr0.magnitude() > mExtent) ? (pr0.unitVector() * (pr0.magnitude() - mExtent)) : Vector::zero();
   return pn+pr;
 
 }
@@ -51,7 +57,15 @@ template<typename Dimension>
 typename Dimension::Vector
 CircularPlaneSolidBoundary<Dimension>::
 localVelocity(const Vector& position) const { 
-  return mVelocity;
+  // Linear velocity component
+  Vector linearVelocityComponent = mVelocity;
+  
+  // Angular velocity component: v = w × r
+  Vector r = position - mPoint; // Position vector from the point of rotation
+  Vector angularVelocityComponent = DEMDimension<Dimension>::cross(mAngularVelocity,r);
+  
+  // Total velocity is the sum of linear and angular components
+  return linearVelocityComponent + angularVelocityComponent;
 }
 
 template<typename Dimension>
@@ -63,9 +77,11 @@ registerState(DataBase<Dimension>& dataBase,
   const auto pointKey = boundaryKey +"_point";
   const auto velocityKey = boundaryKey +"_velocity";
   const auto normalKey = boundaryKey +"_normal";
+  const auto angularVelocityKey = boundaryKey + "_angularVelocity";
   state.enroll(pointKey,mPoint);
-  state.enroll(pointKey,mVelocity);
-  state.enroll(pointKey,mNormal);
+  state.enroll(velocityKey,mVelocity);
+  state.enroll(normalKey,mNormal);
+  state.enroll(angularVelocityKey, mAngularVelocity);
 }
 
 template<typename Dimension>
@@ -73,6 +89,10 @@ void
 CircularPlaneSolidBoundary<Dimension>::
 update(const double multiplier, const double t, const double dt) {
   mPoint += multiplier*mVelocity;
+  // Update the orientation of the boundary based on angular velocity
+  // Assuming a simple Euler for rotation
+  mNormal += multiplier * DEMDimension<Dimension>::cross(mAngularVelocity,mNormal) * dt;
+  mNormal = mNormal.unitVector(); // Normalize to maintain unit length
 }
 
 
@@ -87,6 +107,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mNormal, pathName + "/normal");
   file.write(mExtent, pathName + "/extent");
   file.write(mVelocity, pathName + "/velocity");
+  file.write(mAngularVelocity, pathName + "/omega")
 }
 
 
@@ -98,6 +119,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mNormal, pathName + "/normal");
   file.read(mExtent, pathName + "/extent");
   file.read(mVelocity, pathName + "/velocity");
+  file.read(mAngularVelocity, pathName + "/omega");
 }
 
 }
