@@ -7,22 +7,24 @@
 #ifndef __Spheral_Neighbor__
 #define __Spheral_Neighbor__
 
-#include "Neighbor/NeighborBase.hh"
-#include "Neighbor/PythonNeighborView.hh"
 #include "Geometry/GeomPlane.hh"
-#include "Field/Field.hh"
+#include "Utilities/DBC.hh"
 
-#include <variant>
+#include <span>
 
 namespace Spheral {
 
-template<typename Dimension> class NodeList;
-template<typename Dimension, typename DataType> class Field;
-// template<typename Dimension> class TreeNeighborView;
-// template<typename Dimension> class PythonNeighborView;
+template<typename Dimension> class NodeListView;
+template<typename Dimension, typename DataType> class FieldView;
 
-template<typename Dimension>
-class Neighbor: public NeighborBase<Dimension> {
+enum class NeighborSearchType {
+  Gather = 1,
+  Scatter = 2,
+  GatherScatter = 3
+};
+
+template<typename Dimension, typename Descendant>
+class Neighbor {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -30,47 +32,164 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using ViewType = std::variant<PythonNeighborView<Dimension>>;//, TreeNeighborView<Dimension>>;
-
   // Constructors and destructors
-  Neighbor(NodeList<Dimension>& nodeList, 
-           const NeighborSearchType searchType,
-           const Scalar kernelExtent);
-  virtual ~Neighbor();
+  SPHERAL_HOST_DEVICE Neighbor(NodeListView<Dimension>& nodeListView, 
+                               FieldView<Dimension, Vector>& nodeExtentView,
+                               const NeighborSearchType searchType,
+                               const Scalar kernelExtent);
+  SPHERAL_HOST_DEVICE virtual ~Neighbor() = default;
 
-  // Access to the field of node extents.
-  const Field<Dimension, Vector>& nodeExtentField()      const { return mNodeExtent; }
+  // Access our data
+  SPHERAL_HOST_DEVICE const NodeListView<Dimension>& nodeListView()          const { return mNodeListView; }
+  SPHERAL_HOST_DEVICE const FieldView<Dimension, Vector>& nodeExtentView()   const { return mNodeExtentView; }
+  SPHERAL_HOST_DEVICE NeighborSearchType neighborSearchType()                const { return mSearchType; }
+  SPHERAL_HOST_DEVICE Scalar kernelExtent()                                  const { return mKernelExtent; }
 
-  // Manage the node list.
-  const NodeList<Dimension>& nodeList()                  const { CHECK(mNodeListPtr); return *mNodeListPtr; }
-  const NodeList<Dimension>* nodeListPtr()               const { return mNodeListPtr; }
-  void nodeList(NodeList<Dimension>& nodeList);
-  void unregisterNodeList();
+  // Set internal data
+  void neighborSearchType(const NeighborSearchType& x)                             { mSearchType = x; }
+  void kernelExtent(const Scalar x)                                                { VERIFY(x > 0.0); mKernelExtent = x; }
 
-  //...........................................................................
-  // Optional hooks to reinitialize based on the desired target h and box dimensions.
-  virtual void reinitialize() {};
-  virtual void reinitialize(const Vector& xmin,
-                            const Vector& xmax,
-                            const Scalar& htarget) {};
+  // Force the node extent field to be computed.
+  SPHERAL_HOST_DEVICE void setNodeExtents();
+  template<typename Container>
+  SPHERAL_HOST_DEVICE void setNodeExtents(const Container& nodeIDs);
+  SPHERAL_HOST_DEVICE void setInternalNodeExtents();
+  SPHERAL_HOST_DEVICE void setGhostNodeExtents();
 
-  //...........................................................................
-  // Required methods
-  virtual void updateNodes() = 0;
-  virtual void updateNodes(const std::vector<int>& nodeIDs) = 0;
-  virtual ViewType view() const = 0;
+  // Helper method to cull lists of neighbors based on min/max positions and min/max extents.
+  // Note: this method modifies the passed coarseList in-place, and returns the resulting size
+  template<typename Container>
+  SPHERAL_HOST_DEVICE size_t precullList(const Vector& minMasterPosition, const Vector& maxMasterPostion,
+                                         const Vector& minMasterExtent, const Vector& maxMasterExtent,
+                                         const size_t numCoarse,
+                                         Container& coarseList) const;
+
+  // A static method for set master/coarse neighbor sets on multiple NodeLists
+  // with culling of the coarse set.  This method is static because it is 
+  // intended to deal with multiple Neighbor objects (not just this particular
+  // one), and must access private data of the Neighbors.
+  // Returns a bool indicating success if there was a enough space in the return arrays
+  // The numMasters/numCoarseNeighbors indicate the actual sizes of masters and neighbors required
+  template<typename NodeListIterator, typename ContainerOfContainers, typename Container>
+  SPHERAL_HOST_DEVICE static bool setMasterNeighborGroup(const Vector& position,
+                                                         const SymTensor& H,
+                                                         const NodeListIterator& nodeListBegin,
+                                                         const NodeListIterator& nodeListEnd,
+                                                         const Scalar kernelExtent,
+                                                         ContainerOfContainers& masterLists,
+                                                         ContainerOfContainers& coarseNeighbors,
+                                                         Container& numMasters,
+                                                         Container& numCoarseNeighbors,
+                                                         const bool ghostConnectivity = false);
+
+  // Determine the maximum extent of a given H smoothing scale along the
+  // Cartesian axes.
+  SPHERAL_HOST_DEVICE static Vector Hextent(const Scalar& H, const Scalar& kernelExtent);
+  SPHERAL_HOST_DEVICE static Vector Hextent(const SymTensor& H, const Scalar& kernelExtent);
+
+  // Cast to the descendant type
+  SPHERAL_HOST_DEVICE Descendant* asDescendant()                                   { return static_cast<Descendant*>(this); }
+
+  //.............................................................................
+  // Set or refine the neighbor lists for a given node ID.
+  // The Containers should be sized with enough space before calling, and the final sizes are returned as the
+  // size_type results.
+  // If the std::spans are not allocated with sufficient space, then the required size is returned as the
+  // result, and the status (first bool) is false.
+  // In the refine nodes nodes we assume the refineNeighbors is at least as large as coarseNeighbors, so there
+  // should always be enough room and the bool status flag is not needed.
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const size_t nodeID,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const;
+    
+  template<typename Container>
+  SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const size_t nodeID,
+                                                   const Container& coarseNeighbors,
+                                                   Container& refineNeighbors) const;
+
+  //.............................................................................
+  // The required interface for Neighbor objects
+  // Set neighbors given (position, H) or (posiion, h)
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
+                                                                     const Scalar& H,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return asDescendant()->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
+                                                                     const SymTensor& H,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return asDescendant()->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_t, size_t> setRefineNeighborList(const Vector& position,
+                                                                       const Scalar& H,
+                                                                       const Container& coarseNeighbors,
+                                                                       Container& refineNeighbors) const {
+    return asDescendant()->setRefineNeighborList(position, H, coarseNeighbors, refineNeighbors);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_t, size_t> setRefineNeighborList(const Vector& position,
+                                                                       const SymTensor& H,
+                                                                       const Container& coarseNeighbors,
+                                                                       Container& refineNeighbors) const {
+    return asDescendant()->setRefineNeighborList(position, H, coarseNeighbors, refineNeighbors);
+  }
+
+  // Set Neighbors for the given position
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
+                                                                     const bool ghostConnectivity = false) const {
+    return asDescendant()->setMasterList(position, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<size_t, size_t> setRefineNeighborList(const Vector& position,
+                                                                       const Container& coarseNeighbors,
+                                                                       Container& refineNeighbors) const {
+    return asDescendant()->setRefineNeighborList(position, coarseNeighbors, refineNeighbors);
+  }
+
+  // Set the neighbor lists based on proximity to planes.
+  template<typename Container>
+  SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const GeomPlane<Dimension>& enterPlane,
+                                                                     const GeomPlane<Dimension>& exitPlane,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors) const;
+
+  // Force the update of internal data for the NodeList.
+  SPHERAL_HOST_DEVICE void updateNodes()                                           { asDescendant()->updateNodes(); }
+  SPHERAL_HOST_DEVICE void updateNodes(const std::span<int>& nodeIDs)              { asDescendant()->updateNodes(nodeIDs); }
+
+  // Reinitialize based on the desired target h and box dimensions.
+  SPHERAL_HOST_DEVICE void reinitialize()                                          { asDescendant()->reinitialiaze(); }
+  SPHERAL_HOST_DEVICE void reinitialize(const Vector& xmin,
+                                        const Vector& xmax,
+                                        const Scalar htarget)                      { asDescendant()->reinitialiaze(xmin, xmax, htarget); }
+
 
 protected:
   //-------------------------- Protected Interface --------------------------//
-  NodeList<Dimension>* mNodeListPtr;
-  Field<Dimension, Vector> mNodeExtent;
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  using NeighborBase<Dimension>::mSearchType;
-  using NeighborBase<Dimension>::mKernelExtent;
+  NodeListView<Dimension>& mNodeListView;
+  FieldView<Dimension, Vector>& mNodeExtentView;
+  NeighborSearchType mSearchType;
+  Scalar mKernelExtent;
 };
 
 }
+
+#include "Neighbor/NeighborInline.hh"
 
 #endif

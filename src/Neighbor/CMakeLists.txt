@@ -1,7 +1,5 @@
 include_directories(.)
 set(Neighbor_inst
-    Neighbor
-    PythonNeighbor
     PythonNeighborView
     TreeNeighbor
     ConnectivityMap
@@ -15,20 +13,17 @@ instantiate(Neighbor_inst Neighbor_sources)
 set(Neighbor_headers
     ConnectivityMap.hh
     ConnectivityMapInline.hh
-    NeighborBase.hh
-    NeighborBaseInline.hh
-    Neighbor.hh
-    NeighborView.hh
-    NeighborViewInline.hh
     NodePairIdxType.hh
     NodePairList.hh
     NodePairListView.hh
-    TreeNeighbor.hh
-    PythonNeighbor.hh
     PairwiseField.hh
     PairwiseFieldElementAccessor.hh
     PairwiseFieldInline.hh
     PairwiseFieldView.hh
+    Neighbor.hh
+    NeighborInline.hh
+    PythonNeighborView.hh
+    TreeNeighbor.hh
     )
 
 spheral_add_obj_library(Neighbor SPHERAL_OBJ_LIBS)
