@@ -1,23 +1,23 @@
 //---------------------------------Spheral++----------------------------------//
-// PythonNeighborView
+// PythonNeighbor
 //
-// PythonNeighborView just provides the virtual function hooks to support the
+// PythonNeighbor just provides the virtual function hooks to support the
 // NeighborView interface.
 //
 // NOTE: PythonNeighbor and its descendants are CPU-only (no GPU capability).
 //
 // Created by J. Michael Owen, Thu Sep 24 15:41:42 PDT 2026
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_PythonNeighborView__
-#define __Spheral_PythonNeighborView__
+#ifndef __Spheral_PythonNeighbor__
+#define __Spheral_PythonNeighbor__
 
 #include "Neighbor/Neighbor.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class PythonNeighborView:
-    public Neighbor<Dimension, PythonNeighborView<Dimension>> {
+class PythonNeighbor:
+    public Neighbor<Dimension, PythonNeighbor<Dimension>> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -28,11 +28,11 @@ public:
   using Container = std::vector<int>;
   using ContainerOfContainers = std::vector<std::vector<size_t>>;
 
-  PythonNeighborView(NodeListView<Dimension>& nodeListView,
+  PythonNeighbor(NodeListView<Dimension>& nodeListView,
                      FieldView<Dimension, Vector>& nodeExtentView,
                      const NeighborSearchType searchType,
                      const Scalar kernelExtent);
-  virtual ~PythonNeighborView() = default;
+  virtual ~PythonNeighbor() = default;
 
   //.............................................................................
   // The required interface for Neighbor objects

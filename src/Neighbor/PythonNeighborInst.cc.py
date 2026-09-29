@@ -1,10 +1,10 @@
 text = """
-#include "Neighbor/PythonNeighborView.cc"
+#include "Neighbor/PythonNeighbor.cc"
 
 //------------------------------------------------------------------------------
 // Explicit instantiation.
 //------------------------------------------------------------------------------
 namespace Spheral {
-  template class PythonNeighborView<Dim<%(ndim)s>>;
+  template class PythonNeighbor<Dim<%(ndim)s>>;
 }
 """
