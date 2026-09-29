@@ -182,22 +182,13 @@ updateImpl(const KeyType& key,
       }
     }
 
-    //------------------------------------------------------------------------------------
-    // NOTE: this is a temporary fix to address the difference between Spheral's damaged
-    //       pressure and the standard EOS pressure originally used by Benz and Asphaug.
-    //       (1-D) is squared to counter-act the 1-D rolled into the pressure. Original 
-    //        code is commented out below. (This will enhance the deviatoric portion)
-    //       -JMPearl 11/14/2023
-
     //const auto fDs = 1.0 - D(i).eigenValues().maxElement();
     //stateField(i) *= safeInvVar(max(0.0, fDs*fDs), tiny);
 
     // Damage enhancement of the effective strain.
     const auto Davgi = std::invoke(TraceMethod, D(i))/effDims;
     effStraini *= safeInvVar(std::max(0.0, 1.0 - Davgi), tiny);
-    //------------------------------------------------------------------------------------
-
-
+  
     // Apply limiting to the effective strain.
     const auto effStrainAvgi = std::invoke(TraceMethod, effStraini)/effDims;
     effStraini = max(effStraini, 1.0e-7*max(1.0, std::abs(effStrainAvgi)));
