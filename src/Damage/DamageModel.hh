@@ -55,6 +55,7 @@ enum class TensorStrainAlgorithm {
   MeloshRyanAsphaugStrain = 2,
   PlasticStrain = 3,
   PseudoPlasticStrain = 4,
+  PlasticBenzAsphaugStrain = 5,
 };
 
 // Enum for selecting the method of defining the effective tensor damage.
@@ -181,4 +182,3 @@ private:
 }
 
 #endif
-

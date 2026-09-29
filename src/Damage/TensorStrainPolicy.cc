@@ -167,7 +167,14 @@ updateImpl(const KeyType& key,
       case(TensorStrainAlgorithm::PlasticStrain):
         effStraini = plasticStrain(i)*SymTensor::one();
         break;
-
+      
+      case(TensorStrainAlgorithm::PlasticBenzAsphaugStrain):{
+        const auto benzStrainTensor = (S(i) - P(i)*SymTensor::one())/(E(i) + tiny);
+        const auto benzTension = std::max(benzStrainTensor.eigenValues().maxElement(), 0.0);
+        stateField(i) = std::max(plasticStrain(i),benzTension)*SymTensor::one();
+        break;
+      }
+      
       default:
         VERIFY2(false, "TensorStrainPolicy ERROR:  no update for case " << static_cast<int>(mStrainType) << "!");
         break;
@@ -210,4 +217,3 @@ operator==(const UpdatePolicyBase<Dimension>& rhs) const {
 }
 
 }
-
