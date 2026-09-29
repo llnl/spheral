@@ -1,3 +1,53 @@
+# The Full CI child includes this file again with CI_PIPELINE_SOURCE set to
+# parent_pipeline. Keep both dispatcher jobs push-only so the child cannot
+# recursively create another child pipeline.
+classify-ci:
+  extends: [.toss_shell1]
+  stage: init
+  variables:
+    GIT_DEPTH: 0
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_TAG == null'
+    - when: never
+  script:
+    - |
+      # Use full CI unless every commit unique to this feature branch changes
+      # only paths in the docs-only class below.
+      child_config=.gitlab/full-ci-child.yml
+      if test "$CI_COMMIT_REF_NAME" != "$CI_DEFAULT_BRANCH" &&
+         git fetch --no-tags origin "$CI_DEFAULT_BRANCH" &&
+         branch_point=$(git merge-base "$CI_COMMIT_SHA" FETCH_HEAD) &&
+         git log --format= --name-only --no-renames \
+           "${branch_point}..${CI_COMMIT_SHA}" -- > branch-files.txt; then
+        if awk '
+          NF &&
+          $0 !~ /^docs\// &&
+          $0 !~ /^(\.readthedocs\.yaml|LICENSE|NEWS|NOTICE|README\.md|RELEASE_NOTES\.md)$/ {
+            full_ci = 1
+          }
+          END { exit full_ci }
+        ' branch-files.txt; then
+          echo "Branch contains docs-only changes"
+          child_config=.gitlab/docs-only-ci-child.yml
+        fi
+      fi
+      cp "$child_config" child-pipeline.yml
+  artifacts:
+    paths: [child-pipeline.yml]
+
+run-ci:
+  stage: dispatch
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_TAG == null'
+    - when: never
+  needs: [classify-ci]
+  trigger:
+    include:
+      - artifact: child-pipeline.yml
+        job: classify-ci
+    strategy: depend
+
 workflow:
   auto_cancel:
     on_new_commit: interruptible
@@ -25,6 +75,7 @@ variables:
 
 stages:
   - init
+  - dispatch
   - update_tpls
   - generate_buildcache
   - install_production
@@ -45,22 +96,32 @@ include:
   - local: .gitlab/scripts.yml
   - local: .gitlab/specs.yml
   - local: .gitlab/performance.yml
+    rules:
+      - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
+        when: never
+      - when: always
   - local: .gitlab/jobs-mpi.yml
     rules:
+      - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
+        when: always
       - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
         when: never
-      - if: '$CI_PIPELINE_SOURCE == "push"'
-        when: always
   - local: .gitlab/jobs-seq.yml
     rules:
+      - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
+        when: always
       - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
         when: never
-      - if: '$CI_PIPELINE_SOURCE == "push"'
-        when: always
   - local: .gitlab/jobs-prod.yml
     rules:
+      - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
+        when: always
       - if: '$CI_PIPELINE_SOURCE == "scheduled"'
         when: never
-      - if: '$CI_PIPELINE_SOURCE == "push" || $CI_COMMIT_TAG'
+      - if: '$CI_COMMIT_TAG'
         when: always
   - local: .gitlab/pages.yml
+    rules:
+      - if: '$CI_PIPELINE_SOURCE == "parent_pipeline"'
+        when: never
+      - when: always
