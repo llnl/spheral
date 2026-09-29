@@ -95,9 +95,9 @@ foreach(_package ${_packages})
   add_subdirectory(${_package})
 endforeach()
 
-spheral_install_cxx_library()
-
 # This calls LLNLSpheralInstallObjs.cmake
 if(EXISTS ${EXTERNAL_SPHERAL_OBJ_CMAKE})
   include(${EXTERNAL_SPHERAL_OBJ_CMAKE})
 endif()
+
+spheral_install_cxx_library()

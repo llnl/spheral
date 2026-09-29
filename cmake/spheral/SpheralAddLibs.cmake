@@ -249,7 +249,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Get the TPL dependencies
-  list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
+  list(APPEND SPHERAL_DEPENDS ${SPHERAL_CURRENT_LIB_TARGET})
 
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}
