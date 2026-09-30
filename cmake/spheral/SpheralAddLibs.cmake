@@ -251,8 +251,10 @@ function(spheral_add_pybind11_library package_name module_list_name)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
   # Make sure SPHERAL_ACTIVE_CXX_TARGET is properly set
-  if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR SPHERAL_ACTIVE_CXX_TARGET "")
-    message(FATAL ERROR "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
+  if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR
+      "${SPHERAL_ACTIVE_CXX_TARGET}" STREQUAL "")
+    message(FATAL_ERROR
+      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
   endif()
 
   # Get the TPL dependencies

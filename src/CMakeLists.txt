@@ -46,7 +46,7 @@ list(APPEND _packages
   Strength
   Utilities
   SmoothingScale
-  )
+)
 
 if (SPHERAL_ENABLE_ARTIFICIAL_CONDUCTION)
   list(APPEND _packages ArtificialConduction)
