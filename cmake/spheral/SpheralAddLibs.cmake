@@ -26,17 +26,17 @@ endfunction()
 #                                   spheral_initialize_cxx_target
 #----------------------------------------------------------------------------------------
 # Create the monolithic CXX target
-# Prior to calling this, set SPHERAL_CURRENT_LIB_TARGET to the target name
+# Prior to calling this, set SPHERAL_ACTIVE_CXX_TARGET to the target name
 # (either Spheral_CXX or Spheral_LLNLCXX)
 # For dev builds, this creates an interface library
 # Otherwise, this creates a shared or static library
 #----------------------------------------------------------------------------------------
 # Example usage:
-# set(SPHERAL_CURRENT_LIB_TARGET Spheral_CXX) # or Spheral_LLNLCXX
+# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX) # or Spheral_LLNLCXX
 # spheral_initialize_cxx_target("spheral_source.cc")
 #----------------------------------------------------------------------------------------
 function(spheral_initialize_cxx_target source_files)
-  set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
   # Get TPL dependency list
   spheral_target_settings(${_main_target} _tpl_depends _export_target)
   if(ENABLE_DEV_BUILD)
@@ -68,7 +68,7 @@ endfunction()
 # --------------------------------------------
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
-# SPHERAL_CURRENT_LIB_TARGET : REQUIRED : Package target, either Spheral_CXX or Spheral_LLNLCXX
+# SPHERAL_ACTIVE_CXX_TARGET : REQUIRED : Package target, either Spheral_CXX or Spheral_LLNLCXX
 # ----------------------
 # INPUT-OUTPUT VARIABLES
 # ----------------------
@@ -79,14 +79,14 @@ endfunction()
 # Spheral_<package_name> : Target for a given spheral package
 #----------------------------------------------------------------------------------------
 # Example usage:
-# set(SPHERAL_CURRENT_LIB_TARGET Spheral_CXX)
+# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
 # set(PackageName_source sourceFile1.cc sourceFile2.cc)
 # set(PackageName_headers headerFile1.hh headerFile2.hh)
 # spheral_add_package(PackageName)
 #----------------------------------------------------------------------------------------
 function(spheral_add_package package_name)
   # Main package target, either Spheral_CXX or Spheral_LLNLCXX
-  set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
   # Get TPL dependency list
   spheral_target_settings(${_main_target} _tpl_depends _export_target)
   if(ENABLE_DEV_BUILD)
@@ -138,7 +138,7 @@ endfunction()
 # Installs and exports the monolithic C++ library.
 #----------------------------------------------------------------------------------------
 function(spheral_install_cxx_library)
-  set(_main_target ${SPHERAL_CURRENT_LIB_TARGET})
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
   spheral_target_settings(${_main_target} _tpl_depends _export_target)
   install(TARGETS ${_main_target}
     DESTINATION   lib
@@ -151,6 +151,8 @@ endfunction()
 #----------------------------------------------------------------------------------------
 #                                   spheral_add_pybind11_library_package
 #----------------------------------------------------------------------------------------
+# Prior to calling this, set SPHERAL_ACTIVE_CXX_TARGET to the target name
+# (either Spheral_CXX or Spheral_LLNLCXX)
 # -------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
 # -------------------------------------------
@@ -241,15 +243,20 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${SPHERAL_ROOT_DIR}/src/PYB11/KernelIntegrator"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Solvers"
       "${CMAKE_BINARY_DIR}/src/SimulationControl"
-      )
+    )
 
   # Format python environment lists into a one line shell friendly format
   list(APPEND PYTHON_ENV ${PYTHON_ENV} ${SPACK_PYTHONPATH})
   blt_list_remove_duplicates(TO PYTHON_ENV)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
+  # Make sure SPHERAL_ACTIVE_CXX_TARGET is properly set
+  if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR SPHERAL_ACTIVE_CXX_TARGET "")
+    message(FATAL ERROR "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
+  endif()
+
   # Get the TPL dependencies
-  list(APPEND SPHERAL_DEPENDS ${SPHERAL_CURRENT_LIB_TARGET})
+  list(APPEND SPHERAL_DEPENDS ${SPHERAL_ACTIVE_CXX_TARGET})
 
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}

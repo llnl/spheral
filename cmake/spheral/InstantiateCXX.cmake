@@ -8,10 +8,14 @@
 #               If instantiation is disabled, ${_inst_var}.cc will be added
 #               to the source files, if it exists.
 # _source_var : *name* of list variable to append source files to.
-# Uses SPHERAL_CURRENT_LIB_TARGET to determine which monolithic CXX target is being created.
+# Uses SPHERAL_ACTIVE_CXX_TARGET to determine which monolithic CXX target is being created.
 #-----------------------------------------------------------------------------------
 
 function(instantiate _inst_var _source_var)
+  # Make sure SPHERAL_ACTIVE_CXX_TARGET is properly set
+  if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR SPHERAL_ACTIVE_CXX_TARGET "")
+    message(FATAL ERROR "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
+  endif()
   set(_tmp_source)
 
   # Create our list of dimension to instantiate
@@ -73,10 +77,10 @@ function(instantiate _inst_var _source_var)
     # Extract package name from input variables
     string(REGEX REPLACE "_.*" "" package_name "${_inst_var}")
     set(target_name Spheral_${package_name}_generated_sources)
-    add_custom_target(${target_name}
-      DEPENDS ${_tmp_source})
+    # Create a target associated with the custom command
+    add_custom_target(${target_name} DEPENDS ${_tmp_source})
     # Make monolithic CXX target depend on it
-    add_dependencies(${SPHERAL_CURRENT_LIB_TARGET} ${target_name})
+    add_dependencies(${SPHERAL_ACTIVE_CXX_TARGET} ${target_name})
   endif()
 
   set(${_source_var} ${${_source_var}} ${_tmp_source} PARENT_SCOPE)

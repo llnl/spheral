@@ -29,14 +29,13 @@ Notable changes include:
   * Build changes / improvements:
     * Major overhaul to CMake system, particularly for non-dev builds:
       * CXX library is now a monolithic static or shared library.
-      * Use of global CMake variables was determined to be unnecessary is significantly reduced.
-      * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before.
+      * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before. Results in significantly fewer global CMake variables.
       * One downside is that the cpp only tests now must depend on the entire `Spheral_CXX` target instead of individual packages.
       * Removed unused SPHERAL_SUBMOD_DEPENDS variable.
-      * `spheral_add_obj_library` no longer takes the name of the list being modified as an argument. Instead, the `SPHERAL_CURRENT_LIB_TARGET` variable is set in the parent scope to denote which CXX target is being created.
+      * `spheral_add_obj_library` no longer takes the name of the list being modified as an argument. Instead, the `SPHERAL_ACTIVE_CXX_TARGET` variable is set in the parent scope to denote which CXX target is being created.
       * `spheral_add_obj_library` is renamed to `spheral_add_package`.
       * Removed unnecessary `include_directories(.)` calls.
-      * The PYB11 targets no longer depend on the TPLs. Instead, they depend on the Spheral_CXX target, which depends on the TPLs. This fixes a major issue involving destruction of static variables at exit from the python.
+      * The PYB11 targets no longer depend on TPLs directly. Instead, they depend on the Spheral_CXX target, which depends on the TPLs. This fixes a major issue involving destruction of static variables at exit from the python.
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
     * Update to Thicket version 2026.1.0.
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
