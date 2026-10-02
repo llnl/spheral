@@ -1,4 +1,3 @@
-include_directories(.)
 set(Damage_inst
     DamageModel
     TensorDamageModel
@@ -69,5 +68,5 @@ spheral_install_python_files(
   ShadowIvanoviSALEDamageModel.py
   )
 
-spheral_add_obj_library(Damage SPHERAL_OBJ_LIBS)
+spheral_add_package(Damage)
 

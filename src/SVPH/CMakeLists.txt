@@ -1,4 +1,3 @@
-include_directories(.)
 set(SVPH_inst
     computeSVPHCorrections
     computeSVPHCorrectionsOnFaces
@@ -35,5 +34,5 @@ set(SVPH_headers
 
 spheral_install_python_files(SVPHHydros.py)
 
-spheral_add_obj_library(SVPH SPHERAL_OBJ_LIBS)
+spheral_add_package(SVPH)
 

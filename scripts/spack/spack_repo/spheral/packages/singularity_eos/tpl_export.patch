@@ -1,0 +1,131 @@
+diff --git a/config/singularity-eosConfig.cmake.in b/config/singularity-eosConfig.cmake.in
+index 05dfb5b7..cab2244d 100644
+--- a/config/singularity-eosConfig.cmake.in
++++ b/config/singularity-eosConfig.cmake.in
+@@ -28,6 +28,15 @@ if(NOT SINGULARITY_EOS_CMAKE)
+   set(SINGULARITY_EOS_CMAKE TRUE)
+ endif()
+ 
++set(ports_of_call_DIR @ports_of_call_DIR@)
++set(ports-of-call_DIR @ports_of_call_DIR@)
++set(spiner_DIR @spiner_DIR@)
++set(Eigen3_DIR @Eigen3_DIR@)
++set(EOSPAC_DIR @EOSPAC_DIR@)
++set(HDF5_DIR @HDF5_DIR@)
++set(Kokkos_DIR @Kokkos_DIR@)
++set(KokkosKernels_DIR @KokkosKernels_DIR@)
++
+ # ------------------------------------------------------------------------------#
+ # check for selected components
+ # ------------------------------------------------------------------------------#
+@@ -60,44 +69,100 @@ endforeach()
+ 
+ include(CMakeFindDependencyMacro)
+ 
+-# header-only dependencies
+-if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
+-  find_dependency(ports-of-call)
++# Search the package-config directories recorded while building this install.
++# Keep these hints local to singularity-eos dependency resolution so importing
++# singularity-eos does not alter the consumer's package search policy.
++set(_singularity_saved_prefix_path "${CMAKE_PREFIX_PATH}")
++if(DEFINED CMAKE_FIND_PACKAGE_PREFER_CONFIG)
++  set(_singularity_had_prefer_config TRUE)
++  set(_singularity_saved_prefer_config "${CMAKE_FIND_PACKAGE_PREFER_CONFIG}")
+ endif()
++set(_singularity_dependency_config_dirs
++    "${ports_of_call_DIR}/lib64/cmake/ports-of-call"
++    "${spiner_DIR}"
++    "${Eigen3_DIR}"
++    "${HDF5_DIR}"
++    "${Kokkos_DIR}"
++    "${KokkosKernels_DIR}")
++foreach(_singularity_dependency_config_dir
++        IN LISTS _singularity_dependency_config_dirs)
++  if(_singularity_dependency_config_dir)
++    set(CMAKE_PREFIX_PATH
++        "${_singularity_dependency_config_dir};${CMAKE_PREFIX_PATH}")
++  endif()
++endforeach()
++set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+ 
+-if(@SINGULARITY_USE_SPINER@)
+-  find_dependency(spiner)
++# header-only dependencies
++if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
++  find_dependency(ports-of-call CONFIG REQUIRED)
+ endif()
+ 
+ if(@SINGULARITY_USE_SPINER_WITH_HDF5@)
+-  find_dependency(HDF5 COMPONENTS C HL)
++  find_dependency(HDF5 CONFIG REQUIRED COMPONENTS C HL)
++  # HDF5 1.14 exports un-namespaced targets, while spiner was exported
++  # against the FindHDF5 compatibility targets.
++  if(NOT TARGET hdf5::hdf5)
++    if(TARGET hdf5-shared)
++      add_library(hdf5::hdf5 ALIAS hdf5-shared)
++    elseif(TARGET hdf5-static)
++      add_library(hdf5::hdf5 ALIAS hdf5-static)
++    endif()
++  endif()
++  if(NOT TARGET hdf5::hdf5_hl)
++    if(TARGET hdf5_hl-shared)
++      add_library(hdf5::hdf5_hl ALIAS hdf5_hl-shared)
++    elseif(TARGET hdf5_hl-static)
++      add_library(hdf5::hdf5_hl ALIAS hdf5_hl-static)
++    endif()
++  endif()
+   set(SPINER_USE_HDF ON)
+ endif()
+ 
++if(@SINGULARITY_USE_SPINER@)
++  find_dependency(spiner CONFIG REQUIRED)
++endif()
++
+ if(@SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5@)
+   # do i need enable_language here?
+   find_dependency(MPI COMPONENTS C CXX)
+ endif()
+ 
+ if(@SINGULARITY_USE_KOKKOS@)
+-  find_dependency(Kokkos)
++  find_dependency(Kokkos CONFIG REQUIRED)
+ endif()
+ 
+ if(@SINGULARITY_USE_KOKKOSKERNELS@)
+-  find_dependency(KokkosKernels)
++  find_dependency(KokkosKernels CONFIG REQUIRED)
+ endif()
+ 
+ if(@SINGULARITY_USE_EIGEN@)
+-  find_dependency(Eigen3)
++  find_dependency(Eigen3 CONFIG REQUIRED)
+ endif()
+ 
+ if(@SINGULARITY_USE_EOSPAC@)
+   # needed for EOSPAC
+   if(NOT TARGET EOSPAC::eospac)
+-    find_dependency(EOSPAC)
++    # EOSPAC does not install a package config; seed the bundled finder.
++    set(EOSPAC_INCLUDE_DIR "${EOSPAC_DIR}/include")
++    set(EOSPAC_LIBRARY "${EOSPAC_DIR}/lib/libeospac6.a")
++    find_dependency(EOSPAC MODULE)
+   endif()
+ endif()
+ 
++set(CMAKE_PREFIX_PATH "${_singularity_saved_prefix_path}")
++if(_singularity_had_prefer_config)
++  set(CMAKE_FIND_PACKAGE_PREFER_CONFIG
++      "${_singularity_saved_prefer_config}")
++else()
++  unset(CMAKE_FIND_PACKAGE_PREFER_CONFIG)
++endif()
++unset(_singularity_dependency_config_dir)
++unset(_singularity_dependency_config_dirs)
++unset(_singularity_had_prefer_config)
++unset(_singularity_saved_prefer_config)
++unset(_singularity_saved_prefix_path)
++
+ include(${CMAKE_CURRENT_LIST_DIR}/singularity-eos_Common.cmake)
+ 
+ foreach(comp IN LISTS ${CMAKE_FIND_PACKAGE_NAME}_comps)
