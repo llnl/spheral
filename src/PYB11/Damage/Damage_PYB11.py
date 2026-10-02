@@ -50,7 +50,9 @@ TensorStrainAlgorithm = PYB11enum(("BenzAsphaugStrain",
                                    "StrainHistory", 
                                    "MeloshRyanAsphaugStrain", 
                                    "PlasticStrain",
-                                   "PseudoPlasticStrain"), export_values=True)
+                                   "PseudoPlasticStrain",
+                                   "PlasticBenzAsphaugStrain"), export_values=True)
+                                   
 DamageCouplingAlgorithm = PYB11enum(("DirectDamage",
                                      "PairMaxDamage",
                                      "DamageGradient",

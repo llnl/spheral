@@ -146,7 +146,13 @@ update(const KeyType& key,
       case(TensorStrainAlgorithm::PlasticStrain):
         stateField(i) = plasticStrain(i)*SymTensor::one();
         break;
-
+      
+      case(TensorStrainAlgorithm::PlasticBenzAsphaugStrain):{
+        const auto benzStrainTensor = (S(i) - P(i)*SymTensor::one())/(E(i) + tiny);
+        const auto benzTension = std::max(benzStrainTensor.eigenValues().maxElement(), 0.0);
+        stateField(i) = std::max(plasticStrain(i),benzTension)*SymTensor::one();
+        break;
+      }
       default:
         VERIFY2(false, "TensorStrainPolicy ERROR:  no update for case " << static_cast<int>(mStrainType) << "!");
         break;
@@ -165,7 +171,8 @@ update(const KeyType& key,
     //stateField(i) *= safeInvVar(max(0.0, fDs*fDs), tiny);
 
     // Damage enhancement of the effective strain.
-    stateField(i) *= safeInvVar(max(0.0, 1.0 - D(i).Trace()/Dimension::nDim), tiny);
+    //stateField(i) *= safeInvVar(max(0.0, 1.0 - D(i).Trace()/Dimension::nDim), tiny);
+    stateField(i) *= safeInvVar(max(0.0, 1.0 - D(i).eigenValues().maxElement()), tiny);
     //------------------------------------------------------------------------------------
 
 
