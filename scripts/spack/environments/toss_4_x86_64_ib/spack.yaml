@@ -4,10 +4,6 @@ spack:
   - spheral~mpi%gcc
   - spheral+mpi%clang
   view: false
-  concretizer:
-    unify: false
-    reuse: false
-    compiler_mixing: false
   develop:
     spheral:
       path: ../../../../

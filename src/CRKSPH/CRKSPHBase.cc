@@ -63,13 +63,14 @@ CRKSPHBase(DataBase<Dimension>& dataBase,
            const RKOrder order,
            const double cfl,
            const bool useVelocityMagnitudeForDt,
+           const bool useNewAccelerationMagnitudeForDt,
            const bool compatibleEnergyEvolution,
            const bool evolveTotalEnergy,
            const bool XSPH,
            const MassDensityType densityUpdate,
            const double epsTensile,
            const double nTensile):
-  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt),
+  GenericHydro<Dimension>(Q, cfl, useVelocityMagnitudeForDt, useNewAccelerationMagnitudeForDt),
   mOrder(order),
   mDensityUpdate(densityUpdate),
   mCompatibleEnergyEvolution(compatibleEnergyEvolution),
@@ -348,10 +349,10 @@ enforceBoundaries(State<Dimension>& state,
 // Return the RK orders we want to use
 //------------------------------------------------------------------------------
 template<typename Dimension>
-std::set<RKOrder>
+typename CRKSPHBase<Dimension>::RKRequirements
 CRKSPHBase<Dimension>::
 requireReproducingKernels() const {
-  return std::set<RKOrder>({RKOrder::ZerothOrder, mOrder});
+  return {{RKOrder::ZerothOrder, mOrder}, {}, false};
 }
 
 //------------------------------------------------------------------------------
@@ -397,4 +398,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

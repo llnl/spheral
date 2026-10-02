@@ -44,7 +44,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto position = state.fields(HydroFieldNames::position, Vector::zero());
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  const auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
@@ -390,7 +390,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
   // Get the state and derivative FieldLists. 
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  const auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto position = state.fields(HydroFieldNames::position, Vector::zero());

@@ -423,8 +423,8 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
   const auto& connectivity = dataBase.connectivityMap();
   const auto cells = state.fields(HydroFieldNames::cells, FacetedVolume());
   const auto cellFaceFlags = state.fields(HydroFieldNames::cellFaceFlags, std::vector<CellFaceFlag>());
-  VERIFY(cells.size() == numNodeListsDB
-         &&cellFaceFlags.size() == numNodeListsDB);
+  VERIFY2(cells.size() == numNodeListsDB and cellFaceFlags.size() == numNodeListsDB,
+          "Bad cell info: " << numNodeListsDB << " != " << cells.size() << " " << cellFaceFlags.size());
 #if REPLACEOVERLAP
   const auto H = dataBase.fluidHfield();
   const auto position = dataBase.fluidPosition();

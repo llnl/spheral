@@ -39,13 +39,16 @@ def dumpPhysicsState(stateThingy,
         state = eval("State%id(dataBase, integrator.physicsPackages())" % dataBase.nDim)
         for p in integrator.physicsPackages():
             p.registerAdditionalVisualizationState(dataBase, state)
-        derivs = eval("StateDerivatives%id(dataBase, integrator.physicsPackages())" % dataBase.nDim)
+        if dumpDerivatives or dumpGhosts:
+            derivs = eval("StateDerivatives%id(dataBase, integrator.physicsPackages())" % dataBase.nDim)
         if dumpGhosts:
             integrator.setGhostNodes()
             integrator.applyGhostBoundaries(state, derivs)
             integrator.finalizeGhostBoundaries()
         currentTime = integrator.currentTime
         currentCycle = integrator.currentCycle
+        if not dumpDerivatives:
+            derivs = None
     elif isinstance(stateThingy, eval("State%s" % dim)):
         integrator = None
         state = stateThingy

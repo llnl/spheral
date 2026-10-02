@@ -26,8 +26,8 @@ copyreg.pickle(Tensor3d, lambda x: (Tensor3d, (tuple(x))))
 #-------------------------------------------------------------------------------
 # SymTensor
 #-------------------------------------------------------------------------------
-def construct_SymTensor2d(xx, xy, yy):
-    return SymTensor2d(xx, xy, xy, yy)
+def construct_SymTensor2d(xx, xy, yy, zz):
+    return SymTensor2d(xx, xy, xy, yy, zz)
 
 def construct_SymTensor3d(xx, xy, xz, yy, yz, zz):
     return SymTensor3d(xx, xy, xz,

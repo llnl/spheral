@@ -31,6 +31,8 @@
 #include "Neighbor/Neighbor.hh"
 #include "Material/EquationOfState.hh"
 #include "SolidMaterial/StrengthModel.hh"
+#include "Geometry/GeometryRegistrar.hh"
+#include "Utilities/SpheralMessage.hh"
 
 #include <string>
 #include <vector>
@@ -65,6 +67,9 @@ TensorDamageModel(SolidNodeList<Dimension>& nodeList,
   mStrainAlgorithm(strainAlgorithm),
   mCriticalDamageThreshold(criticalDamageThreshold),
   mDamageInCompression(damageInCompression) {
+  if (GeometryRegistrar::coords() != CoordinateType::Cartesian) {
+    SpheralWarning << "TensorDamageModel does not support curvilinear coordinates" << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------

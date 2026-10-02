@@ -16,6 +16,9 @@ class Physics:
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     #...........................................................................
@@ -133,50 +136,20 @@ Returns a bool indicating if boundary conditions should be applied."""
     @PYB11virtual
     @PYB11const
     def requireConnectivity(self):
-        "Some physics does not require the connectivity be constructed."
-        return "bool"
+        "Connectivity requirements. Returns (connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity)."
+        return "ConnectivityRequirements"
 
     @PYB11virtual
     @PYB11const
-    def requireGhostConnectivity(self):
-        "Some physics algorithms require ghost connectivity to be constructed."
-        return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def requireOverlapConnectivity(self):
-        "Some physics algorithms require overlap connectivity to be constructed."
-        return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def requireIntersectionConnectivity(self):
-        "Some physics algorithms require intersection connectivity to be constructed."
-        return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def requireVoronoiCells(self):
-        "Some physics algorithms require the Voronoi cells per point be computed."
-        return "bool"
+    def requireVolumes(self):
+        "Some physics algorithms require volumes per point. Returns (explicit, implicit, needVoronoi)."
+        return "VolumeRequirements"
 
     @PYB11virtual
     @PYB11const
     def requireReproducingKernels(self):
-        "Some physics algorithms require reproducing kernels."
-        return "std::set<RKOrder>"
-
-    @PYB11virtual
-    @PYB11const
-    def requireReproducingKernelHessian(self):
-        "Some physics algorithms require reproducing kernel spatial second derivatives."
-        return "bool"
-
-    @PYB11virtual
-    @PYB11const
-    def updateReproducingKernelsInFinalize(self):
-        "Does this package need an update of reproducing kernels during finalize?"
-        return "bool"
+        "Some physics algorithms require reproducing kernels. Returns (explicit_orders, implicit_orders, needHessian)."
+        return "RKRequirements"
     
     @PYB11virtual
     @PYB11const

@@ -14,8 +14,7 @@
 #include "Utilities/DataTypeTraits.hh"
 #include "Utilities/StrideIterator.hh"
 #include "Utilities/DBC.hh"
-
-#include "Utilities/GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 namespace Spheral {
 

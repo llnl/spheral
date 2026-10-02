@@ -1,6 +1,7 @@
 #ATS:test(SELF, "--nx1 10 --testDim 1d", label="computeVoronoiVolume test -- 1D (serial)")
 #ATS:test(SELF, "--nx1 10 --testDim 2d", label="computeVoronoiVolume test -- 2D (serial)")
 #ATS:test(SELF, "--nx1 10 --testDim 3d", label="computeVoronoiVolume test -- 3D (serial)")
+
 #-------------------------------------------------------------------------------
 # Unit test of the CRKSPH sum density algorithm.
 #-------------------------------------------------------------------------------

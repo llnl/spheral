@@ -77,10 +77,11 @@ step(const typename Dimension::Scalar maxTime) {
   mRequireOverlapConnectivity = false;
   mRequireIntersectionConnectivity = false;
   for (auto* physicsPtr: mPhysicsPackages) {
-    mRequireConnectivity = (mRequireConnectivity or physicsPtr->requireConnectivity());
-    mRequireGhostConnectivity = (mRequireGhostConnectivity or physicsPtr->requireGhostConnectivity());
-    mRequireOverlapConnectivity = (mRequireOverlapConnectivity or physicsPtr->requireOverlapConnectivity());
-    mRequireIntersectionConnectivity = (mRequireIntersectionConnectivity or physicsPtr->requireIntersectionConnectivity());
+    const auto [conn, ghost, overlap, intersect] = physicsPtr->requireConnectivity();
+    mRequireConnectivity = (mRequireConnectivity or conn);
+    mRequireGhostConnectivity = (mRequireGhostConnectivity or ghost);
+    mRequireOverlapConnectivity = (mRequireOverlapConnectivity or overlap);
+    mRequireIntersectionConnectivity = (mRequireIntersectionConnectivity or intersect);
   }
 
   // Set the ghost nodes (this updates the ConnectivityMap as well in the DataBase)
@@ -347,6 +348,11 @@ uniqueBoundaryConditions() const {
 
   }
 
+  // Sort by priority (stable to preserve insertion order among equal priorities)
+  std::stable_sort(result.begin(), result.end(),
+                   [](const Boundary<Dimension>* a, const Boundary<Dimension>* b) {
+                     return a->priority() < b->priority(); });
+
   BEGIN_CONTRACT_SCOPE
   // Ensure that all boundary conditions are included in the result
   for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
@@ -360,6 +366,12 @@ uniqueBoundaryConditions() const {
   for (auto* boundaryPtr: result) {
     CONTRACT_VAR(boundaryPtr);
     ENSURE(count(result.begin(), result.end(), boundaryPtr) == 1);
+  }
+
+  // Ensure boundaries are sorted by priority.
+  for (auto i = 1u; i < result.size(); ++i) {
+    ENSURE2(result[i-1]->priority() <= result[i]->priority(),
+            "Boundary priority ordering violated: " << result[i-1]->priority() << " > " << result[i]->priority());
   }
   END_CONTRACT_SCOPE
 
@@ -452,19 +464,18 @@ Integrator<Dimension>::setGhostNodes() const {
         (not mRequireOverlapConnectivity)) {
       const auto numNodeLists = db.numNodeLists();
       const auto& cm = db.connectivityMap();
+      const auto& pairs = cm.nodePairList();
 
       // First build the set of flags indicating which nodes are used.
       FieldList<Dimension, size_t> flags = db.newGlobalFieldList(size_t(0u), "active nodes");
+      for (auto p: pairs) {
+        flags(p.i_list, p.i_node) = 1;
+        flags(p.j_list, p.j_node) = 1;
+      }
+      
+      // Look for points needed for boundary conditions
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto& nodeList = *nodeListPtr;
-        for (auto i = 0u; i < nodeList.numInternalNodes(); ++i) {
-          flags(nodeListi, i) = 1;
-          const vector<vector<int> >& fullConnectivity = cm.connectivityForNode(&nodeList, i);
-          for (auto nodeListj = 0u; nodeListj < fullConnectivity.size(); ++nodeListj) {
-            const vector<int>& connectivity = fullConnectivity[nodeListj];
-            for (auto j: connectivity) flags(nodeListj, j) = 1;
-          }
-        }
 
         // Ghost nodes that are control nodes for other ghost nodes we're keeping must
         // be kept as well.

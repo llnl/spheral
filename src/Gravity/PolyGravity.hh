@@ -35,6 +35,7 @@ public:
   using Polytope = typename Dimension::FacetedVolume;
 
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
+  using ConnectivityRequirements = typename Physics<Dimension>::ConnectivityRequirements;
 
   //! Constructor.
   //! \param poly -- polytope we're going to solve on.
@@ -84,7 +85,8 @@ public:
                                                     StateDerivatives<Dimension>& derivs) override;
 
   //! This package opts out of building connectivity.
-  virtual bool requireConnectivity() const override { return false; }
+  //! Returns {connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity}
+  virtual ConnectivityRequirements requireConnectivity() const override { return {false, false, false, false}; }
 
   //! Return the total energy contribution due to the gravitational potential.
   virtual Scalar extraEnergy() const override;

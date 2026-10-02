@@ -4,6 +4,13 @@
 //
 // DBC.hh -- Design by Contract tools.
 //
+// Use cases for DBC macros:
+//  REQUIRE: preconditions at start of a method.
+//  ENSURE: postconditions to check at the end of a method.
+//  CHECK/ASSERT: intermediate correctness checks sprinkled throughout a method.
+//  VERIFY: precondition checks that are always on. This is intended to check stuff users directly input.
+// VERIFY is always enabled. REQUIRE, ENSURE, and CHECK/ASSERT are enabled with built in Debug mode or when certain SPHERAL_DBC_MODE configure inputs are given.
+//
 //---------------------------------------------------------------------------
 #include <iostream>
 #include <sstream>

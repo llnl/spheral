@@ -25,7 +25,7 @@ Some useful features are
 Release and License:
 ####################
 
-Copyright (c) 2025, Lawrence Livermore National Security, LLC.
+Copyright (c) 2026, Lawrence Livermore National Security, LLC.
 Produced at the Lawrence Livermore National Laboratory
 Written by J. Michael Owen mikeowen@llnl.gov
 LLNL-CODE-561852

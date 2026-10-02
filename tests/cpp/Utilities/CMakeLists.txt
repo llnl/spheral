@@ -21,6 +21,6 @@ spheral_add_test(
 spheral_add_test(
   NAME managedptr_tests
   SOURCES managedptr_tests.cc
-  DEPENDS_ON Spheral_Utilities Spheral_Geometry
+  DEPENDS_ON Spheral_Utilities Spheral_Geometry Spheral_Threading
   #DEBUG_LINKER
 )

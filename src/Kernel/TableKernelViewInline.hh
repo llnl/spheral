@@ -179,4 +179,14 @@ TableKernelView<Dimension>::move(chai::ExecutionSpace space) {
   mNperhLookup.move(space);
   mWsumLookup.move(space);
 }
+
+template<typename Dimension>
+SPHERAL_HOST void
+TableKernelView<Dimension>::touch(chai::ExecutionSpace space) {
+  mInterp.touch(space);
+  mGradInterp.touch(space);
+  mGrad2Interp.touch(space);
+  mNperhLookup.touch(space);
+  mWsumLookup.touch(space);
+}
 }

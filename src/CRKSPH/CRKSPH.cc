@@ -63,6 +63,7 @@ CRKSPH(DataBase<Dimension>& dataBase,
        const RKOrder order,
        const double cfl,
        const bool useVelocityMagnitudeForDt,
+       const bool useNewAccelerationMagnitudeForDt,
        const bool compatibleEnergyEvolution,
        const bool evolveTotalEnergy,
        const bool XSPH,
@@ -74,6 +75,7 @@ CRKSPH(DataBase<Dimension>& dataBase,
                         order,
                         cfl,
                         useVelocityMagnitudeForDt,
+                        useNewAccelerationMagnitudeForDt,
                         compatibleEnergyEvolution,
                         evolveTotalEnergy,
                         XSPH,
@@ -209,7 +211,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
-  const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0, true);
   auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
   auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
   auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
@@ -225,7 +227,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(pressure.size() == numNodeLists);
   CHECK(soundSpeed.size() == numNodeLists);
   CHECK(corrections.size() == numNodeLists);
-  CHECK(surfacePoint.size() == numNodeLists);
+  CHECK(surfacePoint.size() == 0 or surfacePoint.size() == numNodeLists);
   CHECK(fClQ.size() == 0 or fClQ.size() == numNodeLists);
   CHECK(fCqQ.size() == 0 or fCqQ.size() == numNodeLists);
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
@@ -439,4 +441,3 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 }
 
 }
-

@@ -41,10 +41,10 @@ public:
                       StateDerivatives<Dimension>& derivs,
                       const double multiplier,
                       const double t,
-                      const double dt);
+                      const double dt) override;
 
   // Equivalence.
-  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const;
+  virtual bool operator==(const UpdatePolicyBase<Dimension>& rhs) const override;
 
   // Forbidden methods
   TensorStrainPolicy() = delete;
@@ -54,6 +54,15 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   TensorStrainAlgorithm mStrainType;
+
+  // Worker method to handle the update
+  template<auto EigenVectorsMethod, auto TraceMethod, int effDims>
+  void updateImpl(const KeyType& key,
+                  State<Dimension>& state,
+                  StateDerivatives<Dimension>& derivs,
+                  const double multiplier,
+                  const double t,
+                  const double dt);
 };
 
 }

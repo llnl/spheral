@@ -4,6 +4,7 @@
 //
 // Created by JMO, Sat Sep 18 10:50:42 PDT 1999
 //----------------------------------------------------------------------------//
+#include "NodeList/FluidNodeList.hh"
 #include "FileIO/FileIO.hh"
 #include "Material/EquationOfState.hh"
 #include "Hydro/HydroFieldNames.hh"
@@ -16,7 +17,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/safeInv.hh"
-#include "FluidNodeList.hh"
+#include "Geometry/GeometryRegistrar.hh"
 
 using std::vector;
 using std::list;
@@ -48,7 +49,14 @@ FluidNodeList(string name,
   mRhoMax(rhoMax),
   mMassDensity(HydroFieldNames::massDensity, *this),
   mSpecificThermalEnergy(HydroFieldNames::specificThermalEnergy, *this),
+  mMassDensityRZptr(),
   mEosPtr(&eos) {
+
+  // If we're in RZ allocate massRZ
+  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+    mMassDensityRZptr = std::make_unique<Field<Dimension, Scalar>>(HydroFieldNames::massDensityRZ, *this);
+  }
+
 }
 
 //------------------------------------------------------------------------------
@@ -60,6 +68,18 @@ FluidNodeList<Dimension>::
 massDensity(const Field<Dimension, typename Dimension::Scalar>& rho) {
   mMassDensity = rho;
   mMassDensity.name(HydroFieldNames::massDensity);
+}
+
+//------------------------------------------------------------------------------
+// Set the mass density (RZ) field.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+massDensityRZ(const Field<Dimension, typename Dimension::Scalar>& rho) {
+  VERIFY2(mMassDensityRZptr, "FluidNodeList::massDensityRZ ERROR: not allocated");
+  *mMassDensityRZptr = rho;
+  mMassDensityRZptr->name(HydroFieldNames::massDensityRZ);
 }
 
 //------------------------------------------------------------------------------
@@ -167,6 +187,7 @@ dumpState(FileIO& file, const string& pathName) const {
   // Dump each of the internal fields of the FluidNodeList.
   file.write(mMassDensity, pathName + "/massDensity");
   file.write(mSpecificThermalEnergy, pathName + "/specificThermalEnergy");
+  if (mMassDensityRZptr) file.write(*mMassDensityRZptr, pathName + "/massDensityRZ");
 }
 
 //------------------------------------------------------------------------------
@@ -183,6 +204,7 @@ restoreState(const FileIO& file, const string& pathName) {
   // Restore each of the internal fields of the FluidNodeList.
   file.read(mMassDensity, pathName + "/massDensity");
   file.read(mSpecificThermalEnergy, pathName + "/specificThermalEnergy");
+  if (mMassDensityRZptr) file.read(*mMassDensityRZptr, pathName + "/massDensityRZ");
 }  
 
 }

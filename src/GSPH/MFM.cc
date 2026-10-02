@@ -78,7 +78,7 @@ MFM(DataBase<Dimension>& dataBase,
                                  xmin,
                                  xmax),
   mDvolumeDt(FieldStorageType::CopyFields){
-  mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
+  mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::hydroVolume);
 }
 
 //------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ registerState(DataBase<Dimension>& dataBase,
 
   GenericRiemannHydro<Dimension>::registerState(dataBase,state);
   
-  auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   auto nodeListi = 0u;
   for (auto itr = dataBase.fluidNodeListBegin();
        itr < dataBase.fluidNodeListEnd();
@@ -117,9 +117,9 @@ registerState(DataBase<Dimension>& dataBase,
   }
 
   auto massDensity = dataBase.fluidMassDensity();
-  state.enroll(massDensity, make_policy<ReplaceWithRatioPolicy<Dimension,Scalar>>({HydroFieldNames::volume},
+  state.enroll(massDensity, make_policy<ReplaceWithRatioPolicy<Dimension,Scalar>>({HydroFieldNames::hydroVolume},
                                                                                   HydroFieldNames::mass,
-                                                                                  HydroFieldNames::volume));
+                                                                                  HydroFieldNames::hydroVolume));
 }
 
 //------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
                     StateDerivatives<Dimension>& derivs) {
   GenericRiemannHydro<Dimension>::registerDerivatives(dataBase,derivs);
 
-  dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, false);
+  dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::hydroVolume, false);
   derivs.enroll(mDvolumeDt);
 }
 
@@ -153,7 +153,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-          auto  volume = state.fields(HydroFieldNames::volume, 0.0);
+          auto  volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
 
     computeSumVolume(dataBase.connectivityMap(),this->kernel(),position,H,volume);
     computeMFMDensity(mass,volume,massDensity);

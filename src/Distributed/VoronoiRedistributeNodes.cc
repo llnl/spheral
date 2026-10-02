@@ -377,7 +377,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Print the beginning statistics.
   std::string stats0 = this->gatherDomainDistributionStatistics(workField);
-  SpheralMessage("VoronoiRedistributeNodes: INITIAL node distribution statistics:\n" << stats0);
+  SpheralMessage << "VoronoiRedistributeNodes: INITIAL node distribution statistics:\n" << stats0 << "\n";
 
   // Now we can get the node distribution description.
   vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, workField);
@@ -399,8 +399,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Define the the length scale we use to determine when the generator positions have converged.
   const double tol = (xmax - xmin).minElement() * mTolerance;
-  SpheralMessage(     "VoronoiRedistributeNodes: Found bounding box of " << xmin << " " << xmax
-                 << "\n                          yielding generator convergence tolerance of " << tol);
+  SpheralMessage <<      "VoronoiRedistributeNodes: Found bounding box of " << xmin << " " << xmax
+                 << "\n                          yielding generator convergence tolerance of " << tol << "\n";
 
   // Determine the average work per generator.
   const Scalar totWork = workField.sumElements();
@@ -526,9 +526,9 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       CHECK(newGeneratorsInParents.size() == newParentCells.size());
       generatorsInParents = newGeneratorsInParents;
       parentCells = newParentCells;
-      SpheralMessage("   Generation " << level << " : "
+      SpheralMessage << "   Generation " << level << " : "
                      << numRemainingGenerators << " generators remaining in " 
-                     << generatorsInParents.size() << " cells.");
+                     << generatorsInParents.size() << " cells.\n";
     }
     VERIFY(numRemainingGenerators == 0);
 
@@ -642,17 +642,17 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     workRatio = maxWork*safeInv(minWork);
 
     // Report this iterations statistics.
-    SpheralMessage(   "  VoronoiRedistributeNodes: Lloyds iteration " << iteration
+    SpheralMessage << "  VoronoiRedistributeNodes: Lloyds iteration " << iteration
                    << "\n                          max change:  " << maxDeltaGenerator
                    << "\n                          work ratio change:  " << workRatio << " " << oldWorkRatio << " " << abs(workRatio*safeInv(oldWorkRatio) - 1.0)
                    << "\n                          [min, max, avg] work      [" << minWork << ", " << maxWork << ", " << avgWork << "]"
-                   << "\n                          [min, max, avg] num nodes [" << minNodes << ", " << maxNodes << ", " << avgNumNodes << "]");
+                   << "\n                          [min, max, avg] num nodes [" << minNodes << ", " << maxNodes << ", " << avgNumNodes << "]\n";
     if (minWork == 0.0) {
       if (procID == 0) {
-        SpheralError("ERROR:  zero work associated with the following generators:");
+        SpheralError<< "ERROR:  zero work associated with the following generators:\n";
         for (size_t k = 0; (int)k != numProcs; ++k) {
           if (generatorWork[k] == 0.0) {
-            SpheralError("    ----->  " << generators[k]);
+            SpheralError << "    ----->  " << generators[k] << "\n";
             generators[k] = startingGenerators[k];
           }
         }
@@ -678,7 +678,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Print the final statistics.
   std::string stats1 = this->gatherDomainDistributionStatistics(workField);
-  SpheralMessage("VoronoiRedistributeNodes: FINAL node distribution statistics:\n" << stats1);
+  SpheralMessage << "VoronoiRedistributeNodes: FINAL node distribution statistics:\n" << stats1 << "\n";
 }
 
 //------------------------------------------------------------------------------

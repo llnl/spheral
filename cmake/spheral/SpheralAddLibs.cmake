@@ -205,6 +205,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${SPHERAL_ROOT_DIR}/src/PYB11/${PYB11_MODULE_NAME}"
       "${SPHERAL_ROOT_DIR}/src/PYB11/polytope"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Distributed"
+      "${SPHERAL_ROOT_DIR}/src/PYB11/Threading"
       "${SPHERAL_ROOT_DIR}/src/PYB11/OpenMP"
       "${SPHERAL_ROOT_DIR}/src/PYB11/CXXTypes"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Geometry"

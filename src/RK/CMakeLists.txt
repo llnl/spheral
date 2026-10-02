@@ -7,7 +7,6 @@ set(RK_inst
     computeHVolumes
     HVolumePolicy
     ContinuityVolumePolicy
-    computeRKVolumes
     RKCorrections
     RKUtilities012
     RKUtilities3
@@ -48,7 +47,6 @@ set(RK_headers
     computeHullVolumes.hh
     computeOccupancyVolume.hh
     computeRKSumVolume.hh
-    computeRKVolumes.hh
     gradientRK.hh
     hessianRK.hh
     interpolateRK.hh

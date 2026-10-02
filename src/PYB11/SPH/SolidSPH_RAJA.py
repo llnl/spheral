@@ -17,6 +17,9 @@ class SolidSPH_RAJA(SolidSPH):
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
@@ -26,6 +29,7 @@ class SolidSPH_RAJA(SolidSPH):
                WGrad = "const TableKernel<%(Dimension)s>&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                gradhCorrection = "const bool",

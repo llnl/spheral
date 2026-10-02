@@ -23,6 +23,9 @@ class SolidCRKSPHRZ(SolidCRKSPH):
     using TimeStepType = Physics<%(Dimension)s>::TimeStepType;
     using PairAccelerationsType = typename SolidCRKSPHRZ::PairAccelerationsType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     def pyinit(self,
@@ -31,6 +34,7 @@ class SolidCRKSPHRZ(SolidCRKSPH):
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
@@ -110,4 +114,3 @@ mass density, velocity, and specific thermal energy."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, SolidCRKSPHRZ)
-

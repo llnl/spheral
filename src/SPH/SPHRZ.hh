@@ -45,6 +45,7 @@ public:
         const TableKernel<Dimension>& WPi,
         const double cfl,
         const bool useVelocityMagnitudeForDt,
+        const bool useNewAccelerationMagnitudeForDt,
         const bool compatibleEnergyEvolution,
         const bool evolveTotalEnergy,
         const bool gradhCorrection,
@@ -136,8 +137,6 @@ public:
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
   const PairWorkType& pairWork()                          const { VERIFY2(mPairWorkPtr, "SPH ERROR: pairWork not initialized on access"); return *mPairWorkPtr; }
-  const FieldList<Dimension, Scalar>& massRZ()            const { return mMassRZ; }
-  const FieldList<Dimension, Scalar>& massDensityRZ()     const { return mMassDensityRZ; }
   const FieldList<Dimension, Scalar>& DmassDensityDtRZ()  const { return mDmassDensityDtRZ; }
 
   //****************************************************************************
@@ -160,8 +159,6 @@ private:
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
   std::unique_ptr<PairWorkType> mPairWorkPtr;
 
-  FieldList<Dimension, Scalar> mMassRZ;
-  FieldList<Dimension, Scalar> mMassDensityRZ;
   FieldList<Dimension, Scalar> mDmassDensityDtRZ;
 };
 

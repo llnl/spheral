@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <numeric>
 #include <memory>
+#include <any>
 
 namespace silo {
 
@@ -279,7 +280,7 @@ struct SiloTraits<long long> {
 //------------------------------------------------------------------------------
 struct DBoptlist_wrapper {
   DBoptlist* mOptlistPtr;
-  std::vector<std::shared_ptr<void> > mCache;
+  std::vector<std::any> mCache;
 
   // Constructors.
   DBoptlist_wrapper(const int maxopts=10):
@@ -424,16 +425,18 @@ DBoptlist_wrapper::AddOptionFunctor<std::string> {
               const int option_size,
               const std::vector<std::string>& value0) {
     VERIFY(optlist_wrapper.addOption<int>(option_size, value0.size()) == 0);
-    std::shared_ptr<void> voidValue(new std::vector<std::string>(value0));
-    auto value = static_cast<std::vector<std::string>*>(voidValue.get());
-    std::shared_ptr<void> voidChar(new char*[value->size()]);
-    char** charArray = (char**) voidChar.get();
-    for (auto k = 0; k < (int)value->size(); ++k) {
-      charArray[k] = new char[(*value)[k].size() + 1];
-      strcpy(charArray[k], (*value)[k].c_str());
+    optlist_wrapper.mCache.push_back(std::vector<char*>(value0.size()));
+    auto& args = std::any_cast<std::vector<char*>&>(optlist_wrapper.mCache.back());
+    CHECK(args.size() == value0.size());
+    optlist_wrapper.mCache.push_back(std::vector<std::shared_ptr<char[]>>(value0.size()));
+    auto& storage = std::any_cast<std::vector<std::shared_ptr<char[]>>&>(optlist_wrapper.mCache.back());
+    CHECK(storage.size() == value0.size());
+    for (auto k = 0u; k < storage.size(); ++k) {
+      storage[k] = std::make_shared<char[]>(value0[k].size() + 1u);
+      args[k] = storage[k].get();
+      strcpy(args[k], value0[k].data());
     }
-    optlist_wrapper.mCache.push_back(voidChar);
-    return DBAddOption(optlist_wrapper.mOptlistPtr, option, charArray);
+    return DBAddOption(optlist_wrapper.mOptlistPtr, option, args.data());
   }
 };
 

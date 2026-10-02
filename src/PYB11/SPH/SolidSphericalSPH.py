@@ -18,6 +18,9 @@ class SolidSphericalSPH(SolidSPH):
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename SolidSphericalSPH::PairAccelerationsType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
@@ -27,6 +30,7 @@ class SolidSphericalSPH(SolidSPH):
                WGrad = "const SphericalKernel&",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                gradhCorrection = "const bool",

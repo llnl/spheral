@@ -32,6 +32,7 @@ public:
   using BoundaryIterator = typename std::vector<Boundary<Dimension>*>::iterator;
   using ConstBoundaryIterator = typename std::vector<Boundary<Dimension>*>::const_iterator;
   using TimeStepType = typename std::pair<double, std::string>;
+  using VolumeRequirements = typename Physics<Dimension>::VolumeRequirements;
 
   // Constructor
   SubPointPressureHourglassControl(const Scalar fHG,
@@ -69,7 +70,7 @@ public:
   virtual std::string label() const override { return "SubPointPressureHourglassControl"; }
 
   // Does this package require Voronoi-like cells per point?
-  virtual bool requireVoronoiCells() const override { return true; }
+  virtual VolumeRequirements requireVolumes() const override { return {true, false, true}; }
 
   // Access parameters
   Scalar fHG() const                                   { return mfHG; }

@@ -15,6 +15,9 @@ class ASPHSmoothingScale(SmoothingScaleBase):
     using ThirdRankTensor = typename %(Dimension)s::ThirdRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
 """
 
     #...........................................................................
@@ -81,9 +84,9 @@ call Physics::registerState for instance to create full populated State objects.
 
     @PYB11virtual
     @PYB11const
-    def requireVoronoiCells(self):
-        "Some physics algorithms require the Voronoi cells per point be computed."
-        return "bool"
+    def requireVolumes(self):
+        "Returns volume requirements: (explicit, implicit, needVoronoi)."
+        return "VolumeRequirements"
 
     @PYB11virtual
     @PYB11const

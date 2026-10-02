@@ -21,6 +21,7 @@ list(APPEND _packages
   DataBase
   DataOutput
   Distributed
+  Threading
   Field
   FieldOperations
   FileIO

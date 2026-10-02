@@ -1,6 +1,8 @@
 import Spheral
 import mpi
 
+from math import *
+
 #-------------------------------------------------------------------------------
 # Domain decompose using some specified domain partitioner (generic method).
 #-------------------------------------------------------------------------------
@@ -59,16 +61,17 @@ def distributeNodesGeneric(listOfNodeTuples,
         # We start with the initial crappy distribution used in the generator.
         assert mpi.allreduce(nodes.numInternalNodes, mpi.SUM) == nglobal
         print("  distributeNodesGeneric: performing initial crappy distribution.")
-        r = nodes.positions()
+        pos = nodes.positions()
         m = nodes.mass()
         vel = nodes.velocity()
         H = nodes.Hfield()
         for i in range(nlocal):
-            r[i] = generator.localPosition(i)
+            pos[i] = generator.localPosition(i)
             m[i] = generator.localMass(i)
             vel[i] = generator.localVelocity(i)
             H[i] = generator.localHtensor(i)
 
+        #------------------------------------------------------
         # Set fields for fluids and solids, if applicable
         #------------------------------------------------------
         try:
@@ -85,6 +88,25 @@ def distributeNodesGeneric(listOfNodeTuples,
         except:
             pass
 
+        #------------------------------------------------------
+        # If we're working in cylindrical coordinates, fill in
+        # the RZ properties
+        #------------------------------------------------------
+        if Spheral.GeometryRegistrar.coords() == Spheral.CoordinateType.RZ:
+            mRZ = nodes.massRZ()
+            for i in range(nlocal):
+                ri = abs(pos[i].y)
+                mRZ[i] = m[i]
+                m[i] *= 2.0*pi*ri
+
+            try:
+                rhoRZ = nodes.massDensityRZ()
+                for i in range(nlocal):
+                    rhoRZ[i] = rho[i]
+            except:
+                pass
+
+        #------------------------------------------------------
         # DEM mod -- we'll want to clean this up at some point...
         #------------------------------------------------------
         try:

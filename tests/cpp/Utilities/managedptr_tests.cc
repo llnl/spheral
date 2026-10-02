@@ -56,6 +56,10 @@ protected:
 };
 
 class ManagedPointerTest : public ::testing::Test {
+public:
+  ManagedPointerTest() {
+    Spheral::GPUUtils::initGPUs();
+  }
 };
 
 // Setting up G Test for managed ptr

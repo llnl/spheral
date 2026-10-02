@@ -233,23 +233,28 @@ public:
   // defined over all NodeLists.  These methods all build up FieldLists
   // referencing internally cached data in NodeLists, and so are fast.
   FieldList<Dimension, Scalar> globalMass() const;
+  FieldList<Dimension, Scalar> globalMassRZ() const;
   FieldList<Dimension, Vector> globalPosition() const;
   FieldList<Dimension, Vector> globalVelocity() const;
   FieldList<Dimension, SymTensor> globalHfield() const;
   FieldList<Dimension, Scalar> globalWork() const;
 
   FieldList<Dimension, Scalar> fluidMass() const;
+  FieldList<Dimension, Scalar> fluidMassRZ() const;
   FieldList<Dimension, Vector> fluidPosition() const;
   FieldList<Dimension, Vector> fluidVelocity() const;
   FieldList<Dimension, Scalar> fluidMassDensity() const;
+  FieldList<Dimension, Scalar> fluidMassDensityRZ() const;
   FieldList<Dimension, Scalar> fluidSpecificThermalEnergy() const;
   FieldList<Dimension, SymTensor> fluidHfield() const;
   FieldList<Dimension, Scalar> fluidWork() const;
 
   FieldList<Dimension, Scalar> solidMass() const;
+  FieldList<Dimension, Scalar> solidMassRZ() const;
   FieldList<Dimension, Vector> solidPosition() const;
   FieldList<Dimension, Vector> solidVelocity() const;
   FieldList<Dimension, Scalar> solidMassDensity() const;
+  FieldList<Dimension, Scalar> solidMassDensityRZ() const;
   FieldList<Dimension, Scalar> solidSpecificThermalEnergy() const;
   FieldList<Dimension, SymTensor> solidHfield() const;
   FieldList<Dimension, Scalar> solidWork() const;

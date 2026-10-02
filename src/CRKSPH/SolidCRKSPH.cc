@@ -99,6 +99,7 @@ SolidCRKSPH(DataBase<Dimension>& dataBase,
             const RKOrder order,
             const double cfl,
             const bool useVelocityMagnitudeForDt,
+            const bool useNewAccelerationMagnitudeForDt,
             const bool compatibleEnergyEvolution,
             const bool evolveTotalEnergy,
             const bool XSPH,
@@ -111,6 +112,7 @@ SolidCRKSPH(DataBase<Dimension>& dataBase,
                     order,
                     cfl,
                     useVelocityMagnitudeForDt,
+                    useNewAccelerationMagnitudeForDt,
                     compatibleEnergyEvolution,
                     evolveTotalEnergy,
                     XSPH,
@@ -307,7 +309,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   const auto fragIDs = state.fields(SolidFieldNames::fragmentIDs, int(1));
   const auto pTypes = state.fields(SolidFieldNames::particleTypes, int(0));
   const auto corrections = state.fields(RKFieldNames::rkCorrections(order), RKCoefficients<Dimension>());
-  const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
+  const auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0, true);
   auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0, true);
   auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0, true);
   auto DvDxQ = state.fields(HydroFieldNames::ArtificialViscosityVelocityGradient, Tensor::zero(), true);
@@ -328,7 +330,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(fragIDs.size() == numNodeLists);
   CHECK(pTypes.size() == numNodeLists);
   CHECK(corrections.size() == numNodeLists);
-  CHECK(surfacePoint.size() == numNodeLists);
+  CHECK(surfacePoint.size() == 0 or surfacePoint.size() == numNodeLists);
   CHECK(fClQ.size() == 0 or fClQ.size() == numNodeLists);
   CHECK(fCqQ.size() == 0 or fCqQ.size() == numNodeLists);
   CHECK(DvDxQ.size() == 0 or DvDxQ.size() == numNodeLists);
@@ -576,7 +578,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one();
-      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
+      const auto spinCorrection = (spin*Si - Si*spin).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
       // In the presence of damage, add a term to reduce the stress on this point.
@@ -687,4 +689,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

@@ -20,6 +20,9 @@ class SolidFSISPH(GenericHydro):
   using PairAccelerationsType = typename SolidFSISPH<%(Dimension)s>::PairAccelerationsType;
   using PairWorkType = typename SolidFSISPH<%(Dimension)s>::PairWorkType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
@@ -35,6 +38,7 @@ class SolidFSISPH(GenericHydro):
                kernelAveragingMethod = "const KernelAveragingMethod",
                sumDensityNodeLists = "std::vector<int>",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                linearCorrectGradients = "const bool",

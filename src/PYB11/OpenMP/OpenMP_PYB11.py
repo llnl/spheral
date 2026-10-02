@@ -6,7 +6,7 @@ This module provide thin front-end wrappers for the OpenMP methods.
 
 from PYB11Generator import *
 
-PYB11includes = ['"Utilities/OpenMP_wrapper.hh"']
+PYB11includes = ['"Threading/OpenMP_wrapper.hh"']
 
 PYB11preamble = """
 //------------------------------------------------------------------------------

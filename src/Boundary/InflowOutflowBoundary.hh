@@ -75,6 +75,9 @@ public:
   // We need to not cull ghost nodes, since they might need to cross the boundary
   // and become new inflow nodes.
   virtual bool allowGhostCulling() const override { return false; }
+  
+  // InflowOutflow ghosts must precede distributed ghosts
+  virtual int priority() const override { return -2; }
   //**********************************************************************
 
   //**********************************************************************

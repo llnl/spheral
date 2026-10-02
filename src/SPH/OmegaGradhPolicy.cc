@@ -15,7 +15,6 @@
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "Boundary/Boundary.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 #include "Kernel/TableKernel.hh"
 

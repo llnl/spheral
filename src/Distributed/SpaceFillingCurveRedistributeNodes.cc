@@ -128,7 +128,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // Print the beginning statistics.
     std::string stats0 = this->gatherDomainDistributionStatistics(workField);
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: INITIAL node distribution statistics:\n" << stats0);
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: INITIAL node distribution statistics:\n" << stats0 << "\n";
 
     // Now we can get the node distribution description.
     vector<DomainNode<Dimension> > nodeDistribution = this->currentDomainDecomposition(dataBase, globalIDs, workField);
@@ -140,27 +140,27 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // Compute the target work per domain.
     const Scalar targetWork = workField.sumElements()/numProcs;
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: Target work per process " << targetWork);
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: Target work per process " << targetWork << "\n";
 
     // Compute the Key indices for each point on this processor.
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: Hashing indices");
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: Hashing indices" << "\n";
     FieldList<Dimension, Key> indices = computeHashedIndices(dataBase);
 
     // Find the range of hashed indices.
     const Key indexMin = indices.min();
     const Key indexMax = indices.max();
     CHECK(indexMax < indexMax + indexMax);
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: Index min/max : " << indexMin << " " << indexMax);
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: Index min/max : " << indexMin << " " << indexMax << "\n";
 
     // Build the array of (hashed index, DomainNode) pairs.
     // Note this comes back locally sorted.
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: sorting indices");
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: sorting indices\n";
     vector<pair<Key, DomainNode<Dimension> > > sortedIndices = buildIndex2IDPairs(indices,
                                                                                   nodeDistribution);
     const int numLocalNodes = nodeDistribution.size();
 
     // Build our set of unique indices and their count.
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: Counting uniques and such");
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: Counting uniques and such\n";
     vector<Key> uniqueIndices;
     vector<int> count;
     vector<Scalar> work;
@@ -192,7 +192,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       CHECK(work.size() == uniqueIndices.size());
     }
     maxCount = allReduce(maxCount, SPHERAL_OP_MAX);
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: max redundancy is " << maxCount);
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: max redundancy is " << maxCount << "\n";
 
     //   // DEBUG
     //   {
@@ -275,7 +275,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
     // Print the final statistics.
     std::string stats1 = this->gatherDomainDistributionStatistics(workField);
-    SpheralMessage("SpaceFillingCurveRedistributeNodes: FINAL node distribution statistics:\n" << stats1);
+    SpheralMessage << "SpaceFillingCurveRedistributeNodes: FINAL node distribution statistics:\n" << stats1 << "\n";
 
     // Post-conditions.
     // Make sure the nodes are now sorted by the index keys.

@@ -21,6 +21,9 @@ class SolidCRKSPH(CRKSPH):
     using FifthRankTensor = typename %(Dimension)s::FifthRankTensor;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
     using PairAccelerationsType = typename SolidCRKSPH<%(Dimension)s>::PairAccelerationsType;
 """
 
@@ -30,6 +33,7 @@ class SolidCRKSPH(CRKSPH):
                order = "const RKOrder",
                cfl = "const double",
                useVelocityMagnitudeForDt = "const bool",
+               useNewAccelerationMagnitudeForDt = "const bool",
                compatibleEnergyEvolution = "const bool",
                evolveTotalEnergy = "const bool",
                XSPH = "const bool",
@@ -106,4 +110,3 @@ mass density, velocity, and specific thermal energy."""
 # Inject methods
 #-------------------------------------------------------------------------------
 PYB11inject(RestartMethods, SolidCRKSPH)
-
