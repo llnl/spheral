@@ -2,6 +2,8 @@
 # Main method for setting up Spheral
 #-------------------------------------------------------------------------------
 # A list of variables that are used throughout the project and a description
+# SPHERAL_ACTIVE_CXX_TARGET : Name of the active CXX target, Spheral_CXX
+# SPHERAL_EXPORT_TARGET_NAME : Name of the CXX export target, spheral_cxx-targets
 # SPHERAL_ENV_LINES : Lines that are prepended to the bin/spheral executable
 # SPHERAL_CXX_DEPENDS : System/compiler dependencies, (python, mpi, openmp, etc)
 # SPHERAL_BLT_DEPENDS : TPL dependencies
@@ -24,6 +26,12 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+#-------------------------------------------------------------------------------
+# Top level definitions
+#-------------------------------------------------------------------------------
+set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
+set(SPHERAL_EXPORT_TARGET_NAME spheral_cxx-targets)
 
 #-------------------------------------------------------------------------------
 # Package must include certain source and build directories

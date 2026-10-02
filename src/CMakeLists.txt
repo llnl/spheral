@@ -7,8 +7,6 @@ include(${SPHERAL_CMAKE_MODULE_PATH}/spheral/SpheralInstallPythonFiles.cmake)
 
 set(SPHERAL_PYTHON_INSTALL ${PROJECT_BINARY_DIR}/lib)
 
-# Set the name of the current package we are creating
-set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
 # Create the target for this overarching package
 spheral_initialize_cxx_target("spheralCXX.cc")
 

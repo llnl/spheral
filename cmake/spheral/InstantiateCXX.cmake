@@ -8,7 +8,7 @@
 #               If instantiation is disabled, ${_inst_var}.cc will be added
 #               to the source files, if it exists.
 # _source_var : *name* of list variable to append source files to.
-# Uses SPHERAL_ACTIVE_CXX_TARGET to determine which monolithic CXX target is being created.
+# Uses SPHERAL_ACTIVE_CXX_TARGET as the name of the monolithic CXX target being created.
 #-----------------------------------------------------------------------------------
 
 function(instantiate _inst_var _source_var)
@@ -16,7 +16,7 @@ function(instantiate _inst_var _source_var)
   if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR
       "${SPHERAL_ACTIVE_CXX_TARGET}" STREQUAL "")
     message(FATAL_ERROR
-      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
+      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX")
   endif()
   set(_tmp_source)
 

@@ -2,43 +2,21 @@
 # These functions encompass the general methods for creating the C++ and python packages.
 # See top of SetupSpheral.cmake for info on variables listed here.
 #----------------------------------------------------------------------------------------
-#                                   spheral_target_settings
-#----------------------------------------------------------------------------------------
-# Retrieves the proper export name and TPL list depending on the current target.
-# Spheral uses SPHERAL_BLT_DEPENDS for it's TPL list
-# LLNLSpheral uses LLNLSPHERAL_BLT_DEPENDS for it's TPL list
-#----------------------------------------------------------------------------------------
-function(spheral_target_settings main_target out_tpl_depends out_export)
-  if(main_target STREQUAL "Spheral_CXX")
-    set(_tpl_depends "${SPHERAL_BLT_DEPENDS}")
-    set(_export "spheral_cxx-targets")
-  elseif(main_target STREQUAL "Spheral_LLNLCXX")
-    set(_tpl_depends "${LLNLSPHERAL_BLT_DEPENDS}")
-    set(_export "spheral_llnlcxx-targets")
-  else()
-    message(FATAL_ERROR "Unknown Spheral C++ target: ${main_target}")
-  endif()
 
-  set(${out_tpl_depends} "${_tpl_depends}" PARENT_SCOPE)
-  set(${out_export} "${_export}" PARENT_SCOPE)
-endfunction()
 #----------------------------------------------------------------------------------------
 #                                   spheral_initialize_cxx_target
 #----------------------------------------------------------------------------------------
-# Create the monolithic CXX target
-# Prior to calling this, set SPHERAL_ACTIVE_CXX_TARGET to the target name
-# (either Spheral_CXX or Spheral_LLNLCXX)
-# For dev builds, this creates an interface library
-# Otherwise, this creates a shared or static library
+# Create the monolithic CXX target, which is a shared or static library
+# except for dev builds, which makes interface libraries
 #----------------------------------------------------------------------------------------
 # Example usage:
-# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX) # or Spheral_LLNLCXX
+# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
 # spheral_initialize_cxx_target("spheral_source.cc")
 #----------------------------------------------------------------------------------------
 function(spheral_initialize_cxx_target source_files)
   set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
-  # Get TPL dependency list
-  spheral_target_settings(${_main_target} _tpl_depends _export_target)
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
   if(ENABLE_DEV_BUILD)
     add_library(${_main_target} INTERFACE)
   else()
@@ -68,7 +46,6 @@ endfunction()
 # --------------------------------------------
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
-# SPHERAL_ACTIVE_CXX_TARGET : REQUIRED : Package target, either Spheral_CXX or Spheral_LLNLCXX
 # ----------------------
 # INPUT-OUTPUT VARIABLES
 # ----------------------
@@ -85,10 +62,10 @@ endfunction()
 # spheral_add_package(PackageName)
 #----------------------------------------------------------------------------------------
 function(spheral_add_package package_name)
-  # Main package target, either Spheral_CXX or Spheral_LLNLCXX
+  # Main package target, either Spheral_CXX
   set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
-  # Get TPL dependency list
-  spheral_target_settings(${_main_target} _tpl_depends _export_target)
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
   if(ENABLE_DEV_BUILD)
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
@@ -139,7 +116,8 @@ endfunction()
 #----------------------------------------------------------------------------------------
 function(spheral_install_cxx_library)
   set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
-  spheral_target_settings(${_main_target} _tpl_depends _export_target)
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
   install(TARGETS ${_main_target}
     DESTINATION   lib
     EXPORT        ${_export_target})
@@ -254,7 +232,7 @@ function(spheral_add_pybind11_library package_name module_list_name)
   if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR
       "${SPHERAL_ACTIVE_CXX_TARGET}" STREQUAL "")
     message(FATAL_ERROR
-      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX or Spheral_LLNLCXX")
+      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX")
   endif()
 
   # Get the TPL dependencies
