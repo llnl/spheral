@@ -193,15 +193,22 @@ dem = DEM(db,
 packages = [dem]
 
 if planeType == "infinite":
-    solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), Vector(  0.0, 0.0, 1.0))
+    solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                           Vector(0.0, 0.0, 1.0),
+                                           Vector(0.0, 0.0, 0.0))
 elif planeType == "circular":
-    solidWall = CircularPlaneSolidBoundary(Vector(0.0, 0.0, 0.0), Vector(  0.0, 0.0, 1.0),0.25)
+    solidWall = CircularPlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                           Vector(0.0, 0.0, 1.0),
+                                           0.25,
+                                           Vector(0.0, 0.0, 0.0))
 elif planeType == "rectangular":
     basis = Tensor(0.0,0.0,1.0,
                    1.0,0.0,0.0,
                    0.0,1.0,0.0,)
     extent = Vector(0.0,0.25,0.25)
-    solidWall = RectangularPlaneSolidBoundary(Vector(0.0, 0.0, 0.0), extent, basis)
+    solidWall = RectangularPlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                              extent, basis,
+                                              Vector(0.0, 0.0, 0.0))
 
 dem.appendSolidBoundary(solidWall)
 
