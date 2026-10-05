@@ -100,7 +100,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('axom@0.12.0:', type='build', when='@2025.12.0:')
     depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
     depends_on('axom@0.7.0', type='build', when='@:2024.06.1')
-    depends_on('singularity-eos@1.10.0: +spiner +hdf5 ~fortran +eospac +shared', type='build', when='+singularity')
+    depends_on('singularity-eos@1.10.0: +spiner +hdf5 ~fortran +eospac +shared', when='+singularity')
 
     with when('+rocm') or when('+cuda'):
         depends_on('axom ~shared', type='build')
