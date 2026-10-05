@@ -12,7 +12,6 @@ if (SPHERAL_ENABLE_PYTHON)
   # ***********
 
   # Configure the build time scripts to run a build dir spheral environment.
-  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
   string(REPLACE ";" "\n" SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/spheral-env.in"

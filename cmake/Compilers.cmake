@@ -100,7 +100,8 @@ endif()
 if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_LINK_FLAGS -fsanitize=address)
   message("------------------------Configuring ASAN------------------------------------")
-  message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
+  # TODO: For ASAN to work with ROCM, LD_PRELOAD must be called with certain hip paths
+  # add this to SPHERAL_ENV_LINES
   # Modify the hip arch if necessary
   if (ENABLE_HIP)
     list(APPEND SPHERAL_ENV_LINES "export HSA_XNACK=1")
