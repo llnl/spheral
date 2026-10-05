@@ -35,7 +35,7 @@ class RejecterBase:
         n0test = mpi.allreduce(n0, mpi.MIN) == n0
         n0test = mpi.allreduce(n0test, mpi.MIN)
         if n0test:
-            if twoD:
+            if threeD:
                 pos0 = Vector3d(x0[0], y0[0], z0[0])
             else:
                 pos0 = Vector2d(x0[0], y0[0])
