@@ -51,7 +51,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     variant('network', default=True, description='Disable to build Spheral from a local buildcache.')
     variant('sundials', default=True, when="@2025.06.1:+mpi", description='Enable use of SUNDIALS solvers.')
     variant('leos', default=LEOSpresent, when="+mpi", description='Build LEOS package.')
-    variant('singularity', default=False, description='Build with Singularity EOS support.')
+    variant('singularity', default=False, when="@develop", description='Build with Singularity EOS support.')
 
     # -------------------------------------------------------------------------
     # Depends
