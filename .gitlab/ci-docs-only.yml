@@ -1,0 +1,10 @@
+variables:
+  SPHERAL_CI_MODE: docs-only
+
+docs-only-ci:
+  extends: [.toss_shell1]
+  stage: init
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo "Full CI is not required for a docs-only branch"

@@ -1,66 +1,23 @@
-workflow:
-  auto_cancel:
-    on_new_commit: interruptible
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: never
-    - when: always
-
-variables:
-  GIT_SUBMODULE_STRATEGY: recursive
-  ALLOC_NAME: ${CI_PROJECT_NAME}_ci_${CI_PIPELINE_ID}
-  BUILD_ROOT: ${CI_PROJECT_DIR}
-
-  SCRIPT_DIR: "scripts"
-  ATS_FILE: "tests/integration.ats"
-  PERF_ATS_FILE: "tests/run_perf.py"
-  SPHERAL_MODULE: "Spheral"
-  SPACK_PKG_NAME: spheral
-  DEV_PKG_SPEC: "spheral@develop+mpi~caliper~network%gcc"
-
-.spheral_rev_str:
-  before_script:
-    - SPHERAL_REV=$(git rev-list --count HEAD)
-    - SPHERAL_REV_STR="$SPHERAL_REV"
-
-stages:
-  - init
-  - update_tpls
-  - generate_buildcache
-  - install_production
-  - update_permissions
-  - tpls
-  - build_and_install
-  - perf_install
-  - run_ats
-  - run_perf
-  - cleanup
-  - deploy
-
+# This file is intentionally a small CI entry point. Shared configuration and
+# branch routing formerly defined here now live in ci-common.yml and
+# ci-dispatch.yml. For ordinary branch pushes, the dispatcher selects either
+# ci-full.yml or ci-docs-only.yml; specialized top-level pipelines remain
+# included here so their existing behavior is unchanged. Future specialized
+# workflows can follow this pattern with their own ci-*.yml files and entry
+# rules.
 include:
+  - local: .gitlab/ci-common.yml
+  - local: .gitlab/ci-dispatch.yml
+  # Specialized top-level pipelines remain independent of branch CI routing.
   - project: lc-templates/id_tokens
     file: id_tokens.yml
-  - local: .gitlab/os.yml
-  - local: .gitlab/machines.yml
   - local: .gitlab/scripts.yml
   - local: .gitlab/specs.yml
   - local: .gitlab/performance.yml
-  - local: .gitlab/jobs-mpi.yml
-    rules:
-      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
-        when: never
-      - if: '$CI_PIPELINE_SOURCE == "push"'
-        when: always
-  - local: .gitlab/jobs-seq.yml
-    rules:
-      - if: '$CI_PIPELINE_SOURCE == "scheduled" || $CI_COMMIT_TAG'
-        when: never
-      - if: '$CI_PIPELINE_SOURCE == "push"'
-        when: always
   - local: .gitlab/jobs-prod.yml
     rules:
       - if: '$CI_PIPELINE_SOURCE == "scheduled"'
         when: never
-      - if: '$CI_PIPELINE_SOURCE == "push" || $CI_COMMIT_TAG'
+      - if: '$CI_COMMIT_TAG'
         when: always
   - local: .gitlab/pages.yml
