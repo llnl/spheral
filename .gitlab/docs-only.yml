@@ -1,6 +1,3 @@
-variables:
-  SPHERAL_CI_MODE: docs-only
-
 docs-only-ci:
   extends: [.toss_shell1]
   stage: init
