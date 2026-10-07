@@ -25,7 +25,7 @@ Notable changes include:
         * Returns tuple {explicit, implicit, hessian}.
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
       * Note: Python overrides only work on CPU runs.
-    * Singularity can now be brought in as a TPL. Required a massive patch to their CMake export system applied through Spack.
+    * Singularity can now be brought in as a TPL.
 
   * Build changes / improvements:
     * Major overhaul to CMake system:
