@@ -35,7 +35,7 @@ class RejecterBase:
         n0test = mpi.allreduce(n0, mpi.MIN) == n0
         n0test = mpi.allreduce(n0test, mpi.MIN)
         if n0test:
-            if twoD:
+            if threeD:
                 pos0 = Vector3d(x0[0], y0[0], z0[0])
             else:
                 pos0 = Vector2d(x0[0], y0[0])
@@ -49,7 +49,7 @@ class RejecterBase:
         # up the containment testing.  The following algorithm is borrowed 
         # from NodeGeneratorBase to divvy up the ID range.
         if serial:
-            ndomain0 = n0/mpi.procs
+            ndomain0 = n0//mpi.procs
             remainder = n0 % mpi.procs
             assert remainder < mpi.procs
             ndomain = ndomain0
