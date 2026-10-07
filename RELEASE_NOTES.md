@@ -42,6 +42,7 @@ Notable changes include:
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
     * Performance testing and CI improvements:
       * Enable CI to run for Debug HIP builds.
+      * Documentation-only branches now use lightweight CI instead of the full build and test pipeline.
     * Changing LC GNU compiler to 13.3.1.
     * Using Hubcast instead of Gitlab mirroring to run CI on LC machines.
     * Update to Spack 1.2.2 as well as some TPLS:
