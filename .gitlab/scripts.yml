@@ -230,6 +230,16 @@
 
     - ln -sfn $INSTALL_DIR /usr/gapps/Spheral/$SYS_TYPE/$ALIAS
 
+docs-only:
+  stage: init
+  variables:
+    GIT_STRATEGY: none
+  extends: [.toss_shell1]
+  rules:
+    - !reference [.run_docs_rule, rules]
+  script:
+    - echo "Full CI is not required for a docs-only branch"
+
 # ------------------------------------------------------------------------------
 # Scheduled Cleanup
 # ------------------------------------------------------------------------------
@@ -242,7 +252,7 @@ clean_old_dirs:
     GIT_STRATEGY: none
   extends: [.toss_perf_resource]
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+    - !reference [.cleanup_rule, rules]
   # Prevent this job from getting artifacts
   dependencies: []
   script:
@@ -259,7 +269,7 @@ clean_old_perfs:
     GIT_SUBMODULE_STRATEGY: recursive
   extends: [.toss_perf_resource]
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+    - !reference [.cleanup_rule, rules]
   # Prevent this job from getting artifacts
   dependencies: []
   script:
@@ -270,6 +280,22 @@ clean_old_perfs:
 # ------------------------------------------------------------------------------
 # Script Utilities
 # ------------------------------------------------------------------------------
+
+.cleanup_rule:
+  rules:
+    - !reference [.skip_docs_rule, rules]
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PIPELINE_SCHEDULE_DESCRIPTION == "Cleanup"'
+      when: always
+
+.run_docs_rule:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^docs\//'
+      when: always
+
+.skip_docs_rule:
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^docs\//'
+      when: never
 
 .merge_pr_rule:
   rules:
