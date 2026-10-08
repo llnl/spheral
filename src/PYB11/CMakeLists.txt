@@ -36,6 +36,7 @@ set (_python_packages
   KernelIntegrator
   SmoothingScale
   polytope
+  Threading
   OpenMP)
 
 if(ENABLE_MPI)

@@ -18,6 +18,9 @@ class SubPointPressureHourglassControl(Physics):
     using FacetedVolume = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(self,
@@ -33,9 +36,9 @@ class SubPointPressureHourglassControl(Physics):
 
     @PYB11virtual
     @PYB11const
-    def requireVoronoiCells(self):
-        "Some physics algorithms require the Voronoi cells per point be computed."
-        return "bool"
+    def requireVolumes(self):
+        "Returns volume requirements: (explicit, implicit, needVoronoi)."
+        return "VolumeRequirements"
 
     #...........................................................................
     # Properties

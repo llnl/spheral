@@ -28,13 +28,6 @@ class ConnectivityMap:
         "Patch the connectivity information"
         return "void"
 
-    def removeConnectivity(self,
-                           neighborsToCut = "const FieldList<%(Dimension)s, std::vector<std::vector<int>>>&"):
-        """Remove connectivity between neighbors.
-Note this method assumes neighbor info is symmetric, and removes the pair connectivity for each
-member of a pair (maintaining symmetry)."""
-        return "void"
-
     @PYB11returnpolicy("reference_internal")
     @PYB11const
     def connectivityForNode(self,

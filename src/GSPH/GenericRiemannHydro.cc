@@ -128,7 +128,7 @@ GenericRiemannHydro(DataBase<Dimension>& dataBase,
 
   // Create storage for our internal state.
   mTimeStepMask = dataBase.newFluidFieldList(int(0), HydroFieldNames::timeStepMask);
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::hydroVolume);
   mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
   mSoundSpeed = dataBase.newFluidFieldList(0.0, HydroFieldNames::soundSpeed);
   mNormalization = dataBase.newFluidFieldList(0.0, HydroFieldNames::normalization);
@@ -325,9 +325,10 @@ dt(const DataBase<Dimension>& dataBase,
   const auto  cs = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto  DvDx = derivs.fields(HydroFieldNames::velocityGradient, Tensor::zero());
   const auto  DvDt = derivs.fields(HydroFieldNames::hydroAcceleration, Vector::zero());
-  const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-                                                         this->requireOverlapConnectivity(),
-                                                         this->requireIntersectionConnectivity());
+  const auto& [conn_, ghost_, overlap_, intersect_] = this->requireConnectivity();
+  const auto& connectivityMap = dataBase.connectivityMap(ghost_,
+                                                         overlap_,
+                                                         intersect_);
   const auto  numNodeLists = connectivityMap.nodeLists().size();
 
   // Initialize the return value to some impossibly high value.
@@ -516,7 +517,7 @@ GenericRiemannHydro<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
   
-  auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
@@ -551,7 +552,7 @@ GenericRiemannHydro<Dimension>::
 enforceBoundaries(State<Dimension>& state,
                   StateDerivatives<Dimension>& derivs) {
 
-  auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
@@ -586,7 +587,7 @@ GenericRiemannHydro<Dimension>::
 dumpState(FileIO& file, const string& pathName) const {
 
   file.write(mTimeStepMask, pathName + "/timeStepMask");
-  file.write(mVolume, pathName + "/volume");
+  file.write(mVolume, pathName + "/hydroVolume");
   file.write(mPressure, pathName + "/pressure");
   file.write(mSoundSpeed, pathName + "/soundSpeed");
 
@@ -619,7 +620,7 @@ GenericRiemannHydro<Dimension>::
 restoreState(const FileIO& file, const string& pathName) {
 
   file.read(mTimeStepMask, pathName + "/timeStepMask");
-  file.read(mVolume, pathName + "/volume");
+  file.read(mVolume, pathName + "/hydroVolume");
   file.read(mPressure, pathName + "/pressure");
   file.read(mSoundSpeed, pathName + "/soundSpeed");
 

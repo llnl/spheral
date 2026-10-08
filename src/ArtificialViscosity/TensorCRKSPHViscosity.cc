@@ -14,7 +14,6 @@
 #include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "RK/RKFieldNames.hh"
 #include "RK/gradientRK.hh"
 #include "Utilities/Timer.hh"

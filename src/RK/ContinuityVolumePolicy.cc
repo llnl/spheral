@@ -78,6 +78,16 @@ update(const KeyType& key,
     const auto dVdt = -mass(i)*safeInvVar(rho(i)*rho(i))*DrhoDt(i);
     volume(i) = std::max(volMin, std::min(volMax, volume(i) + multiplier*dVdt));
   }
+
+  // Keep volume3d in sync (same as volume in Cartesian,
+  // scaled by geometric factor in non-Cartesian — handled by caller)
+  if (state.registered(buildKey(HydroFieldNames::volume3d))) {
+    auto& vol3d = state.field(buildKey(HydroFieldNames::volume3d), 0.0);
+#pragma omp parallel for
+    for (auto i = 0u; i < n; ++i) {
+      vol3d(i) = volume(i);
+    }
+  }
 }
 
 //------------------------------------------------------------------------------

@@ -5,14 +5,14 @@
 #define __Spheral_GPUUtils__
 
 #include "config.hh"
-#include "DBC.hh"
+#include "Utilities/DBC.hh"
 
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
 #include "chai/managed_ptr.hpp"
 #include "chai/config.hpp"
 #ifdef SPHERAL_UNIFIED_MEMORY
-#include "span.hh"
+#include "Utilities/span.hh"
 #endif
 #include "RAJA/RAJA.hpp"
 
@@ -47,7 +47,7 @@ namespace GPUUtils {
 
 int deviceCount();
 
-void initGPUs(const int stack_mult);
+void initGPUs(const int stack_mult = 8);
 
 void deviceSync();
 

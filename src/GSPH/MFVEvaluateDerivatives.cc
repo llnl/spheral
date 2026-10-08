@@ -54,7 +54,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   //const auto nodalVelocity = state.fields(GSPHFieldNames::nodalVelocity, Vector::zero());
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  const auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   const auto H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
@@ -80,7 +80,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
   const auto  DrhoDx = derivs.fields(GSPHFieldNames::densityGradient, Vector::zero());
   auto  normalization = derivs.fields(HydroFieldNames::normalization, 0.0);
   auto  DxDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + HydroFieldNames::position, Vector::zero());
-  auto  DvolDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, 0.0);
+  auto  DvolDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::hydroVolume, 0.0);
   auto  DmDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, 0.0);
   auto  DEDt = derivs.fields(IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, 0.0);
   auto  DpDt = derivs.fields(IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, Vector::zero());
@@ -438,7 +438,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
   // Get the state and derivative FieldLists. 
   const auto soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
   const auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-  const auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  const auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   const auto pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const auto position = state.fields(HydroFieldNames::position, Vector::zero());

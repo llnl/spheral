@@ -20,6 +20,9 @@ class SPHRZ(SPHBase):
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using PairAccelerationsType = typename SPHRZ::PairAccelerationsType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
     
     def pyinit(dataBase = "DataBase<%(Dimension)s>&",
@@ -132,8 +135,6 @@ mass density, velocity, and specific thermal energy."""
     #...........................................................................
     # Properties
     pairAccelerations = PYB11property("const PairAccelerationsType&", "pairAccelerations", returnpolicy="reference_internal")
-    massRZ = PYB11property("const ScalarFieldList&", "massRZ", returnpolicy="reference_internal")
-    massDensityRZ = PYB11property("const ScalarFieldList&", "massDensityRZ", returnpolicy="reference_internal")
     DmassDensityDtRZ = PYB11property("const ScalarFieldList&", "DmassDensityDtRZ", returnpolicy="reference_internal")
 
 #-------------------------------------------------------------------------------

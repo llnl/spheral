@@ -189,7 +189,7 @@ def main():
                 launch_cmd = "flux batch "
             else:
                 launch_cmd = "flux alloc "
-            launch_cmd += f"-xN {numNodes} -t {timeLimit} "
+            launch_cmd += f"-x -N {numNodes} -t {timeLimit} "
             if (options.cpx):
                 if (not options.gpu or hostname != "rzadams"):
                     raise Exception("CPX mode only works with --gpu and on rzadams")

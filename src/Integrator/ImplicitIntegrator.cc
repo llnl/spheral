@@ -13,9 +13,6 @@
 
 namespace Spheral {
 
-using std::cout;
-using std::endl;
-
 //------------------------------------------------------------------------------
 // Construct with the given DataBase and Physics packages.
 //------------------------------------------------------------------------------
@@ -47,7 +44,7 @@ step(const typename Dimension::Scalar maxTime) {
   auto count = 0u;
   auto maxIterations = 10u;
   while (not success and count++ < maxIterations) {
-    SpheralMessage("=============> Current dtMultiplier = " << mDtMultiplier << " " << mMaxGoodDtMultiplier << " " << mMaxAllowedDtMultiplier);
+    SpheralMessage << "=============> Current dtMultiplier = " << mDtMultiplier << " " << mMaxGoodDtMultiplier << " " << mMaxAllowedDtMultiplier << std::endl;
     
     // Try to advance using the current timestep multiplier
     success = this->step(maxTime, state, derivs);
@@ -60,8 +57,8 @@ step(const typename Dimension::Scalar maxTime) {
     mDtMultiplier = min(mMaxAllowedDtMultiplier, mDtMultiplier);
 
     if (not success and this->verbose()) {
-      SpheralMessage("ImplicitIntegrator::step did not converge with tolerance on iteration " << count << "/" << maxIterations << endl
-                     << "                         reducing timestep multiplier to " << mDtMultiplier);
+      SpheralMessage << "ImplicitIntegrator::step did not converge with tolerance on iteration " << count << "/" << maxIterations << std::endl
+                     << "                         reducing timestep multiplier to " << mDtMultiplier << std::endl;
     }
   }
   return success;
@@ -137,16 +134,16 @@ selectDt(const typename Dimension::Scalar dtMin,
   // Are we verbose?
   if (rank == dtRank and
       (this->verbose() or globalDt < this->dtMin())) {
-    cout << "----------------------------------------" << endl
-         << "Overall timestep chosen " << dt.first << endl
-         << dt.second << endl;
+    std::cout << "----------------------------------------" << std::endl
+              << "Overall timestep chosen " << dt.first << std::endl
+              << dt.second << std::endl;
   }
   if (rank == dtRankImp and
       (this->verbose() or globalDt < this->dtMin())) {
-    cout << "Implicit limiting timestep " << dtImp.first << endl
-         << dtImp.second << endl;
+    std::cout << "Implicit limiting timestep " << dtImp.first << std::endl
+              << dtImp.second << std::endl;
   }
-  cout.flush();
+  std::cout.flush();
 
   Barrier(Communicator::communicator());
 
@@ -176,11 +173,11 @@ computeResiduals(const State<Dimension>& state1,
   // Reduce for the global result, and optionally print out some verbose info
   const auto globalMax = allReduce(result.first, SPHERAL_OP_MAX);
   if (result.first == globalMax and (forceVerbose or this->verbose())) {
-    cout << "Global residual of "
-         << result.first << endl
-         << result.second << endl;
+    std::cout << "Global residual of "
+              << result.first << std::endl
+              << result.second << std::endl;
   }
-  cout.flush();
+  std::cout.flush();
   return globalMax;
 }
 
@@ -208,11 +205,11 @@ restoreState(const FileIO& file, const std::string& pathName) {
   // When restarting from a non-implicit integrator these values may not be available.
   // This is not a fatal condition, so we make restarting these variables optional
   if (file.readIfAvailable(mMaxGoodDtMultiplier, pathName + "/maxGoodDtMultiplier") != 0)
-    SpheralMessage("ImplicitIntegrator WARNING: unable to load old maxGoodDtMultiplier");
+    SpheralWarning << "ImplicitIntegrator: unable to load old maxGoodDtMultiplier" << std::endl;
   if (file.readIfAvailable(mNumExplicitSteps, pathName + "/numExplicitSteps") != 0)
-    SpheralMessage("ImplicitIntegrator WARNING: unable to load old numExplicitSteps");
+    SpheralWarning << "ImplicitIntegrator: unable to load old numExplicitSteps" << std::endl;
   if (file.readIfAvailable(mNumImplicitSteps, pathName + "/numExplicitSteps") != 0)
-    SpheralMessage("ImplicitIntegrator WARNING: unable to load old numImplicitSteps");
+    SpheralWarning << "ImplicitIntegrator: unable to load old numImplicitSteps" << std::endl;
 }
 
 //------------------------------------------------------------------------------

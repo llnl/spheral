@@ -216,7 +216,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     maxDeltaH = allReduce(maxDeltaH, SPHERAL_OP_MAX);
 
     // Output the statitics.
-    if (maxIterations > 1) SpheralMessage("iterateIdealH: (iteration, deltaH) = (" << itr << ", " << maxDeltaH << ")");
+    if (maxIterations > 1) SpheralMessage << "iterateIdealH: (iteration, deltaH) = (" << itr << ", " << maxDeltaH << ")\n";
   }
 
   // If we have rescaled the nodes per h, now we have to iterate the H determinant
@@ -268,7 +268,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 
   // Report the final timing.
   const auto t1 = clock();
-  if (maxIterations > 1) SpheralMessage("iterateIdealH: required a total of " << ((t1 - t0)/CLOCKS_PER_SEC) << " seconds.");
+  if (maxIterations > 1) SpheralMessage << "iterateIdealH: required a total of " << ((t1 - t0)/CLOCKS_PER_SEC) << " seconds.\n";
 }
 
 }

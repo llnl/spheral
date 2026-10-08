@@ -5,13 +5,16 @@
 config:
   install_tree:
     padded_length: 128
+    root: $spack/../installs
   misc_cache: $spack/../misc_cache
   test_stage: $spack/../test_stage
   source_cache: $spack/../source_cache
-  build_stage:
-    - $spack/../build_stage
+  build_stage: $spack/../build_stage
+concretizer:
+  unify: false
+  reuse: false
+  compiler_mixing: false
 repos:
   builtin:
-    destination: $spack/../packages
+    destination: $spack/../packages-1.2.2
     git: "https://github.com/spack/spack-packages.git"
-    commit: a251c075e32d54b77c283538b45e9327e88f02d2

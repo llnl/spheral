@@ -5,6 +5,7 @@
 // Created by JMO, Thu Aug 26 14:28:07 2004
 //----------------------------------------------------------------------------//
 #include "DeviatoricStressPolicy.hh"
+#include "Geometry/GeometryRegistrar.hh"
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "DataBase/IncrementState.hh"
@@ -23,20 +24,33 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Function to enforce zeroing the trace of the deviatoric stress in 3D only
+// Function to enforce zeroing the trace of the deviatoric stress, which depends
+// on dimensionality.
 //------------------------------------------------------------------------------
 namespace {  // anonymous
 
-template<typename Dimension>
 inline
 void
-zeroTrace(typename Dimension::SymTensor& Si) {
+zeroTrace(Dim<1>::SymTensor& Si) {
+  if (GeometryRegistrar::coords() == CoordinateType::Spherical) {
+    const auto dS = -0.5*Si.xx();
+    Si.yy(dS);
+    Si.zz(dS);
+  }
 }
 
-template<>
 inline
 void
-zeroTrace<Dim<3>>(Dim<3>::SymTensor& Si) {
+zeroTrace(Dim<2>::SymTensor& Si) {
+  if (GeometryRegistrar::coords() == CoordinateType::RZ) {
+    const auto dS = -(Si.xx() + Si.yy());
+    Si.zz(dS);
+  }
+}
+
+inline
+void
+zeroTrace(Dim<3>::SymTensor& Si) {
   const auto dS = Si.Trace()/3.0;
   Si[0] -= dS;
   Si[3] -= dS;
@@ -111,7 +125,7 @@ update(const KeyType& key,
 
     // We only want to enforce zeroing the trace in 3D Cartesian coordinates.  In lower
     // dimensions we assume the missing components on the diagonal sum to -Trace(S).
-    zeroTrace<Dimension>(S(i));
+    zeroTrace(S(i));
   }
 
 //     // Finally apply the pressure limits to the allowed deviatoric stress.

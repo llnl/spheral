@@ -7,7 +7,7 @@
     - flux
   variables:
     JACAMAR_SCHEDULER_ACTION: default
-    SCHEDULER_PARAMETERS: "--exclusive -N 1 -t 60"
+    SCHEDULER_PARAMETERS: "--exclusive -N 1 -t 60 -q pci"
     NPROC: 64
     HOSTNAME: 'tioga'
   timeout: 24 hours

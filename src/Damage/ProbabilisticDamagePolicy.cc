@@ -24,14 +24,12 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Material/EquationOfState.hh"
 #include "Kernel/TableKernel.hh"
-#include "Geometry/GeometricUtilities.hh"
+#include "Geometry/GeometryRegistrar.hh"
+#include "Geometry/RZGeometryOps.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>
-using std::vector;
-using std::string;
-using std::pair;
-using std::make_pair;
+#include <functional>
 
 namespace Spheral {
 
@@ -83,10 +81,10 @@ sortEigen(Dim<2>::SymTensor::EigenStructType& eigeni) {
 inline
 void
 sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
-  int i = 0;
-  int j = 1;
-  int k = 2;
-  bool flipped = true;
+  auto i = 0u;
+  auto j = 1u;
+  auto k = 2u;
+  auto flipped = true;
   while (flipped) {
     flipped = false;
     if (eigeni.eigenValues(i) < eigeni.eigenValues(j)) {
@@ -104,43 +102,8 @@ sortEigen(Dim<3>::SymTensor::EigenStructType& eigeni) {
   eigeni.eigenVectors = Dim<3>::Tensor(eigeni.eigenVectors(0,i), eigeni.eigenVectors(0,j), eigeni.eigenVectors(0,k),
                                        eigeni.eigenVectors(1,i), eigeni.eigenVectors(1,j), eigeni.eigenVectors(1,k),
                                        eigeni.eigenVectors(2,i), eigeni.eigenVectors(2,j), eigeni.eigenVectors(2,k));
-  ENSURE((eigeni.eigenValues(0) >= eigeni.eigenValues(1)) &&
+  ENSURE((eigeni.eigenValues(0) >= eigeni.eigenValues(1)) and
          (eigeni.eigenValues(1) >= eigeni.eigenValues(2)));
-}
-
-//------------------------------------------------------------------------------
-// Determine the effective rotational transformation from the given velocity
-// gradient.
-//------------------------------------------------------------------------------
-inline
-Dim<1>::Tensor
-effectiveRotation(const Dim<1>::Tensor&) {
-  return Dim<1>::Tensor::one();
-}
-
-inline
-Dim<2>::Tensor
-effectiveRotation(const Dim<2>::Tensor& DvDx) {
-  const double theta = DvDx.xy() - DvDx.yx();
-  return Dim<2>::Tensor(cos(theta), sin(theta),
-                        -sin(theta), cos(theta));
-}
-
-inline
-Dim<3>::Tensor
-effectiveRotation(const Dim<3>::Tensor& DvDx) {
-  const Dim<3>::Vector theta(DvDx.yz() - DvDx.zy(),
-                             DvDx.zx() - DvDx.xz(),
-                             DvDx.xy() - DvDx.yx());
-  return (Dim<3>::Tensor(cos(theta.x()), sin(theta.x()), 0.0,
-                         -sin(theta.x()), cos(theta.x()), 0.0,
-                         0.0, 0.0, 1.0)*
-          Dim<3>::Tensor(cos(theta.y()), sin(theta.y()), 0.0,
-                         0.0, 1.0, 0.0,
-                         -sin(theta.y()), 0.0, cos(theta.y()))*
-          Dim<3>::Tensor(1.0, 0.0, 0.0,
-                         0.0, cos(theta.z()), sin(theta.z()),
-                         0.0, -sin(theta.z()), cos(theta.z())));
 }
 
 }
@@ -160,7 +123,7 @@ ProbabilisticDamagePolicy(const bool damageInCompression,  // allow damage in co
 }
 
 //------------------------------------------------------------------------------
-// Update the field.
+// Update the field (dispatch)
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
@@ -169,13 +132,33 @@ update(const KeyType& key,
        State<Dimension>& state,
        StateDerivatives<Dimension>& derivs,
        const double multiplier,
-       const double /*t*/,
-       const double /*dt*/) {
+       const double t,
+       const double dt) {
+  if (GeometryRegistrar::coords() == CoordinateType::Cartesian) {
+    updateImpl<&SymTensor::eigenValues, &SymTensor::eigenVectors, Dimension::nDim>(key, state, derivs, multiplier, t, dt);
+  } else {
+    updateImpl<&SymTensor::eigenValues3D, &SymTensor::eigenVectors3D, 3>(key, state, derivs, multiplier, t, dt);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Update the field
+//------------------------------------------------------------------------------
+template<typename Dimension>
+template<auto EigenValuesMethod, auto EigenVectorsMethod, int effDims>
+void
+ProbabilisticDamagePolicy<Dimension>::
+updateImpl(const KeyType& key,
+           State<Dimension>& state,
+           StateDerivatives<Dimension>& derivs,
+           const double multiplier,
+           const double t,
+           const double dt) {
   KeyType fieldKey, nodeListKey;
   StateBase<Dimension>::splitFieldKey(key, fieldKey, nodeListKey);
   REQUIRE(fieldKey == SolidFieldNames::tensorDamage);
-  auto& stateField = state.field(key, SymTensor::zero());
-
+  auto& D = state.field(key, SymTensor::zero());
+  
   const auto Dtiny = 0.01;
   const auto Dtiny1 = 1.0/(FastMath::CubeRootHalley2(1.0 - Dtiny) - FastMath::CubeRootHalley2(Dtiny));
 
@@ -203,27 +186,24 @@ update(const KeyType& key,
   }
 
   // Iterate over the internal nodes.
-  const auto ni = stateField.numInternalElements();
+  const auto ni = D.numInternalElements();
 #pragma omp parallel for
   for (auto i = 0u; i < ni; ++i) {
-    auto& Di = stateField(i);
-    CHECK(Di.eigenValues().minElement() >= 0.0 and
-          fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    const auto& straini = strain(i);
+    auto& Di = D(i);
+    CHECK(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+          fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
 
     // First apply the rotational term to the current damage.
     const auto spin = localDvDx(i).SkewSymmetric();
     const auto spinCorrection = (spin*Di - Di*spin).Symmetric();
     Di += multiplier*spinCorrection;
-    Di = max(1.0e-5, min(1.0 - 2.0e-5, Di));
-    {
-      const auto maxValue = Di.eigenValues().maxElement();
-      if (maxValue > 1.0) Di /= maxValue;
-    }
-    CHECK(Di.eigenValues().minElement() >= 0.0 and
-          fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    Di = Di.clampEigenValues(1.0e-5, 1.0);
+    CHECK(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+          fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
 
     // The tensor strain on this node.
-    auto eigeni = strain(i).eigenVectors();
+    auto eigeni = std::invoke(EigenVectorsMethod, straini);
 
     // If we're allowing damage in compression, force all strains to be abs value.
     if (mDamageInCompression) abs_in_place(eigeni.eigenValues);
@@ -232,12 +212,12 @@ update(const KeyType& key,
     sortEigen(eigeni);
 
     // Iterate over the eigen values/vectors of the strain.
-    for (auto j = 0; j < Dimension::nDim; ++j) {
+    for (auto j = 0u; j < effDims; ++j) {
 
       // The direction of the strain, and projected current (starting) damage.
       const auto strainDirection = eigeni.eigenVectors.getColumn(j);
       CHECK(fuzzyEqual(strainDirection.magnitude2(), 1.0, 1.0e-10));
-      const auto D0 = max(0.0, min(1.0, (Di * strainDirection).magnitude()));
+      const auto D0 = max(0.0, min(1.0, (Di*strainDirection).magnitude()));
       CHECK(D0 >= 0.0 && D0 <= 1.0);
       const auto strainj = std::max(0.0, eigeni.eigenValues(j)*safeInvVar(1.0 - D0)); //   + plasticStrain(i))/(fDi*fDi + 1.0e-20);
 
@@ -288,17 +268,9 @@ update(const KeyType& key,
     }
 
     // Enforce bounds on the damage.
-    const auto Dvals = Di.eigenValues();
-    if (Dvals.minElement() < 0.0 or
-        Dvals.maxElement() > 1.0) {
-      const auto Deigen = Di.eigenVectors();
-      Di = constructSymTensorWithBoundedDiagonal(Deigen.eigenValues,
-                                                 1.0e-5,
-                                                 1.0);
-      Di.rotationalTransform(Deigen.eigenVectors);
-    }
-    ENSURE(Di.eigenValues().minElement() >= 0.0 and
-           fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
+    Di = Di.clampEigenValues(1.0e-5, 1.0);
+    ENSURE(std::invoke(EigenValuesMethod, Di).minElement() >= 0.0 and
+           fuzzyLessThanOrEqual(std::invoke(EigenValuesMethod, Di).maxElement(), 1.0, 1.0e-5));
     //     ENSURE(fuzzyGreaterThanOrEqual(Di.eigenValues().minElement(), 0.0, 1.0e-5) &&
     //            fuzzyLessThanOrEqual(Di.eigenValues().maxElement(), 1.0, 1.0e-5));
     //     ENSURE(fuzzyGreaterThanOrEqual(Di.eigenValues().minElement(), 0.0) &&

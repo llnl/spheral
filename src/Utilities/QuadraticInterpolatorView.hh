@@ -7,7 +7,7 @@
 #ifndef __Spheral_QuadraticInterpolatorView__
 #define __Spheral_QuadraticInterpolatorView__
 
-#include "GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 namespace Spheral {
 

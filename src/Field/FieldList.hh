@@ -13,8 +13,8 @@
 #include "Field/FieldListBase.hh"
 #include "Field/FieldListView.hh"
 #include "Utilities/span.hh"
-#include "Utilities/OpenMP_wrapper.hh"
 #include "Utilities/Logger.hh"
+#include "Threading/OpenMP_wrapper.hh"
 
 #include "chai/ExecutionSpaces.hpp"
 #include "chai/Types.hpp"

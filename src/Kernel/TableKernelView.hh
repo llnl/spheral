@@ -70,6 +70,7 @@ public:
   SPHERAL_HOST_DEVICE Scalar minNperhLookup() const { return mMinNperh; }
   SPHERAL_HOST_DEVICE Scalar maxNperhLookup() const { return mMaxNperh; }
   SPHERAL_HOST void move(chai::ExecutionSpace space);
+  SPHERAL_HOST void touch(chai::ExecutionSpace space);
 protected:
   //--------------------------- Private Interface ---------------------------//
   // Data for the kernel tabulation.

@@ -23,6 +23,10 @@ using LimMonGArtVisc = Spheral::LimitedMonaghanGingoldViscosity<Spheral::Dim<3>>
 using LimMonGArtView = Spheral::LimitedMonaghanGingoldViscosityView<Spheral::Dim<3>>;
 
 class ArtViscTest : public ::testing::Test {
+public:
+  ArtViscTest() {
+    Spheral::GPUUtils::initGPUs();
+  }
 };
 
 // Setting up G Test for ArtificialViscosity

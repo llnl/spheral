@@ -24,6 +24,10 @@ using TensorArtVisc = Spheral::TensorMonaghanGingoldViscosity<Spheral::Dim<3>>;
 using TensorArtView = Spheral::TensorMonaghanGingoldViscosityView<Spheral::Dim<3>>;
 
 class TensorAVTest : public ::testing::Test {
+public:
+  TensorAVTest() {
+    Spheral::GPUUtils::initGPUs();
+  }
 };
 
 // Setting up G Test for ArtificialViscosity

@@ -3,7 +3,6 @@ set(CRKSPH_inst
     computeCRKSPHSumMassDensity
     computeSolidCRKSPHSumMassDensity
     detectSurface
-    editMultimaterialSurfaceTopology
     zerothOrderSurfaceCorrections
     CRKSPHBase
     CRKSPH
@@ -44,7 +43,6 @@ set(CRKSPH_headers
     computeSolidCRKSPHSumMassDensity.hh
     computeVoronoiCentroids.hh
     detectSurface.hh
-    editMultimaterialSurfaceTopology.hh
     volumeSpacing.hh
     zerothOrderSurfaceCorrections.hh
     )

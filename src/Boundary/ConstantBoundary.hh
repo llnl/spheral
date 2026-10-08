@@ -67,6 +67,9 @@ public:
 
   // Apply the boundary condition to the violation node values in the given Field.
   virtual void enforceBoundary(FieldBase<Dimension>& fieldBase) const override;
+  
+  // ConstantBoundary ghosts must precede distributed ghosts
+  virtual int priority() const override { return -4; }
   //**********************************************************************
 
   // After physics have been initialized we take a snapshot of the node state.

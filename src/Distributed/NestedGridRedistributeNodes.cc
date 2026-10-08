@@ -111,7 +111,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("NestedGridRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n");
+  SpheralMessage << "NestedGridRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n\n";
 
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -240,7 +240,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("NestedGridRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
+  SpheralMessage << "NestedGridRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n";
   MPI_Barrier(Communicator::communicator());
 
 }

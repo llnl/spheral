@@ -74,7 +74,7 @@ threadReduceFieldLists(typename SpheralThreads<Dimension>::FieldListStack& stack
 #pragma omp critical
     {
       if (omp_get_num_threads() > 1) {
-        const auto& nodeListPtrs = std::visit([](const auto* threadValue) -> const std::vector<NodeList<Dimension>*>& { return threadValue->nodeListPtrs(); }, stack[0]);
+        const auto& nodeListPtrs = std::visit([](const auto* threadValue) { return threadValue->nodeListPtrs(); }, stack[0]);
         const auto  numNodeLists = nodeListPtrs.size();
         for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
           const auto ni = nodeListPtrs[nodeListi]->numInternalNodes();

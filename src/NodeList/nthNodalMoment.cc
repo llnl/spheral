@@ -49,53 +49,54 @@ nthNodalMoment(const NodeListIterator nodeListBegin,
                const TableKernel<Dimension>& W,
                const bool renormalize) {
 
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename MomentTraits<Dimension, moment>::Moment Moment;
-
-  // The total number of NodeLists we're working on.
-  const size_t numNodeLists = distance(nodeListBegin, nodeListEnd);
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
+  using Moment = typename MomentTraits<Dimension, moment>::Moment;
 
   // Build a connectivity map for walking nodes.  This relies on the NodeLists 
   // Neighbor objects being up to date.
   const ConnectivityMap<Dimension> cm(nodeListBegin, nodeListEnd, false, false, false);
+  const auto& pairs = cm.nodePairList();
 
   // Build up the FieldLists of positions, H's, and the first moment that we're going
   // to build.
   FieldList<Dimension, Vector> pos(FieldStorageType::ReferenceFields);
   FieldList<Dimension, SymTensor> H(FieldStorageType::ReferenceFields);
+  FieldList<Dimension, Scalar> wsum(FieldStorageType::CopyFields);
   FieldList<Dimension, Moment> result(FieldStorageType::CopyFields);
   for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr) {
     const NodeList<Dimension>& nodes = **itr;
     pos.appendField(nodes.positions());
     H.appendField(nodes.Hfield());
+    wsum.appendNewField("wsum", nodes, W(0.0, 1.0));
     result.appendNewField("moment", nodes, DataTypeTraits<Moment>::zero());
   }
 
   // Find the moment of the node distribution in eta coordinates.
-  const double W0 = W(0.0, 1.0);
-  unsigned nodeListi = 0;
-  for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr, ++nodeListi) {
-    const NodeList<Dimension>& nodes = **itr;
-    for (unsigned i = 0; i != nodes.numInternalNodes(); ++i) {
-      const vector<vector<int> >& allNeighbors = cm.connectivityForNode(nodeListi, i);
-      CHECK(allNeighbors.size() == numNodeLists);
-      const Vector ri = pos(nodeListi, i);
-      const SymTensor Hi = H(nodeListi, i);
-      double wsum = W0;
-      for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& neighbors = allNeighbors[nodeListj];
-        for (unsigned k = 0; k != neighbors.size(); ++k) {
-          const unsigned j = neighbors[k];
-          const Vector etai = Hi*(pos(nodeListj, j) - ri);
-          const double Wi = W(etai.magnitude(), 1.0);
-          wsum += Wi;
-          result(nodeListi, i) += Wi * nthMomentKernel<Dimension, moment>()(etai);
-        }
-      }
-      if (renormalize) result(nodeListi, i) *= safeInv(wsum);
-    }
+  for (const auto& p: pairs) {
+    const auto ki = p.i_list;
+    const auto kj = p.j_list;
+    const auto i = p.i_node;
+    const auto j = p.j_node;
+
+    const auto& ri = pos(ki, i);
+    const auto& Hi = H(ki, i);
+    const auto& rj = pos(kj, j);
+    const auto& Hj = H(kj, j);
+
+    const auto etai = Hi*(rj - ri);
+    const auto Wi = W(etai.magnitude(), 1.0);
+    wsum(ki, i) += Wi;
+    result(ki, i) += Wi * nthMomentKernel<Dimension, moment>()(etai);
+
+    const auto etaj = Hj*(ri - rj);
+    const auto Wj = W(etaj.magnitude(), 1.0);
+    wsum(kj, j) += Wj;
+    result(kj, j) += Wj * nthMomentKernel<Dimension, moment>()(etaj);
   }
+
+  if (renormalize) result /= wsum;
 
   // That's it.
   return result;
@@ -126,6 +127,7 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
   // Build a connectivity map for walking nodes.  This relies on the NodeLists 
   // Neighbor objects being up to date.
   const ConnectivityMap<Dimension> cm(nodeListBegin, nodeListEnd, false, false, false);
+  const auto& pairs = cm.nodePairList();
 
   // Value of the kernel at the center.
   const double W0 = 0.0; // useGradientAsKernel ?  abs(W.gradValue(0.0, 1.0)) : W.kernelValue(0.0, 1.0);
@@ -143,27 +145,33 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
   }
 
   // Find the moment of the node distribution in eta coordinates.
-  unsigned nodeListi = 0;
-  for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr, ++nodeListi) {
-    const NodeList<Dimension>& nodes = **itr;
-    for (unsigned i = 0; i != nodes.numInternalNodes(); ++i) {
-      const vector<vector<int> >& allNeighbors = cm.connectivityForNode(nodeListi, i);
-      CHECK(allNeighbors.size() == numNodeLists);
-      const Vector ri = pos(nodeListi, i);
-      const SymTensor Hi = H(nodeListi, i);
-      for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& neighbors = allNeighbors[nodeListj];
-        for (unsigned k = 0; k != neighbors.size(); ++k) {
-          const unsigned j = neighbors[k];
-          const Vector rj = pos(nodeListj, j);
-          const Vector etai = Hi*(rj - ri);
-          const double Wi = useGradientAsKernel ? abs(W.gradValue(etai.magnitude(), 1.0)) : W.kernelValue(etai.magnitude(), 1.0);
-          zerothMoment(nodeListi, i) += Wi;
-          firstMoment(nodeListi, i) += Wi * etai;
-        }
-      }
-      firstMoment(nodeListi, i) *= safeInv(zerothMoment(nodeListi, i));
-      zerothMoment(nodeListi, i) = Dimension::rootnu(zerothMoment(nodeListi, i));
+  for (const auto& p: pairs) {
+    const auto ki = p.i_list;
+    const auto kj = p.j_list;
+    const auto i = p.i_node;
+    const auto j = p.j_node;
+
+    const auto& ri = pos(ki, i);
+    const auto& Hi = H(ki, i);
+    const auto& rj = pos(kj, j);
+    const auto& Hj = H(kj, j);
+
+    const auto etai = Hi*(rj - ri);
+    const auto Wi = W(etai.magnitude(), 1.0);
+    zerothMoment(ki, i) += Wi;
+    firstMoment(ki, i) += Wi * etai;
+
+    const auto etaj = Hj*(ri - rj);
+    const auto Wj = W(etaj.magnitude(), 1.0);
+    zerothMoment(kj, j) += Wj;
+    firstMoment(kj, j) += Wj * etaj;
+  }
+
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto n = zerothMoment[k]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
+      firstMoment(k, i) *= safeInv(zerothMoment(k, i));
+      zerothMoment(k, i) = Dimension::rootnu(zerothMoment(k, i));
     }
   }
 }

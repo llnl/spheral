@@ -1,0 +1,34 @@
+Repo:
+  # Required: organization or user that owns the repo on CZ GitLab
+  dest_org: spheral
+
+  # Required: name of the destination repository on CZ GitLab
+  dest_name: spheral
+
+  # Optional: name of the CI check as reported back to GitHub (default: gitlab-ci)
+  check_name: gitlab-ci
+
+  # Optional: granularity of CI statuses reported to GitHub (default: [pipeline])
+  # Available types: pipeline, child-pipelines, jobs
+  # You can mix and match any combination of these types
+  # Examples:
+  #   [pipeline] - overall pipeline status only (default behavior)
+  #   [child-pipelines] - child pipeline statuses only
+  #   [jobs] - individual job statuses only
+  #   [pipeline, child-pipelines] - pipeline and child pipeline statuses
+  #   [pipeline, jobs] - pipeline and job statuses
+  #   [pipeline, child-pipelines, jobs] - all status types
+  check_types: [pipeline]
+
+  # Optional: delete branches from destination when source PR is closed (default: true)
+  delete_closed: true
+
+  # Optional: sync draft PRs/MRs (default: true)
+  sync_drafts: true
+
+  # Optional: post message when draft sync is disabled (default: true)
+  sync_drafts_msg: true
+
+  # Optional: create GitLab MRs from GitHub PRs
+  # allows developers to create synthetic merge commits using GitLab's merged results pipelines feature
+  create_mr: false

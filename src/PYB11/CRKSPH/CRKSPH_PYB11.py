@@ -25,7 +25,6 @@ PYB11includes += ['"CRKSPH/CRKSPHBase.hh"',
                   '"CRKSPH/computeSolidCRKSPHSumMassDensity.hh"',
                   '"CRKSPH/detectSurface.hh"',
                   '"CRKSPH/centerOfMass.hh"',
-                  '"CRKSPH/editMultimaterialSurfaceTopology.hh"',
                   '"CRKSPH/zerothOrderSurfaceCorrections.hh"',
                   '"Utilities/NodeCoupling.hh"',
                   '"DataBase/State.hh"',
@@ -84,17 +83,6 @@ def detectSurface(connectivityMap = "const ConnectivityMap<%(Dimension)s>&",
 
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
-def editMultimaterialSurfaceTopology(surfacePoint = "FieldList<%(Dimension)s, int>&",
-                                     connectivityMap = "ConnectivityMap<%(Dimension)s>&"):
-    """Look for any points that touch a surface (multi-material or void).
-For such points:
-  - Remove any non-surface multi-material overlap.
-  - If not a surface point, flag this point as touching a surface point with
-    surfacePoint=-1."""
-    return "void"
-
-#-------------------------------------------------------------------------------
-@PYB11template("Dimension")
 def zerothOrderSurfaceCorrections(A = "FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>&",
                                   B = "FieldList<%(Dimension)s, typename %(Dimension)s::Vector>&",
                                   C = "FieldList<%(Dimension)s, typename %(Dimension)s::Tensor>&",
@@ -128,7 +116,6 @@ def centerOfMass{ndim}d(polyvol = "const {Dimension}::FacetedVolume&",
 computeCRKSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeCRKSPHSumMassDensity, template_parameters="{Dimension}")
 computeSolidCRKSPHSumMassDensity{ndim}d = PYB11TemplateFunction(computeSolidCRKSPHSumMassDensity, template_parameters="{Dimension}")
 detectSurface{ndim}d = PYB11TemplateFunction(detectSurface, template_parameters="{Dimension}")
-editMultimaterialSurfaceTopology{ndim}d = PYB11TemplateFunction(editMultimaterialSurfaceTopology, template_parameters="{Dimension}")
 zerothOrderSurfaceCorrections{ndim}d = PYB11TemplateFunction(zerothOrderSurfaceCorrections, template_parameters="{Dimension}")
 ''')
 

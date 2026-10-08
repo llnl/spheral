@@ -1,6 +1,6 @@
 //---------------------------------Spheral++----------------------------------//
 // SPHBase -- Base class for SPH/ASPH hydrodynamic packages for Spheral++.
-// 
+//
 // This class contains most of the boilerplate storage for SPH specliazations
 // to inherit and use, with the exception of pair-wise accelerations for
 // the compatible energy discretization.
@@ -36,6 +36,7 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   using ConstBoundaryIterator = typename Physics<Dimension>::ConstBoundaryIterator;
+  using VolumeRequirements = typename Physics<Dimension>::VolumeRequirements;
 
   // Constructors.
   SPHBase(DataBase<Dimension>& dataBase,
@@ -83,7 +84,7 @@ public:
                                             StateDerivatives<Dimension>& derivs) override;
 
   // Register the state
-  virtual 
+  virtual
   void registerState(DataBase<Dimension>& dataBase,
                      State<Dimension>& state) override;
 
@@ -93,7 +94,7 @@ public:
                            StateDerivatives<Dimension>& derivs) override;
 
   // This method is called once at the beginning of a timestep, after all state registration.
-  virtual void preStepInitialize(const DataBase<Dimension>& dataBase, 
+  virtual void preStepInitialize(const DataBase<Dimension>& dataBase,
                                  State<Dimension>& state,
                                  StateDerivatives<Dimension>& derivs) override;
 
@@ -106,10 +107,10 @@ public:
                            StateDerivatives<Dimension>& derivs) const override;
 
   // Stuff to do post-state updates
-  virtual 
-  bool postStateUpdate(const Scalar time, 
+  virtual
+  bool postStateUpdate(const Scalar time,
                        const Scalar dt,
-                       const DataBase<Dimension>& dataBase, 
+                       const DataBase<Dimension>& dataBase,
                        State<Dimension>& state,
                        StateDerivatives<Dimension>& derivatives) override;
 
@@ -123,8 +124,10 @@ public:
   void enforceBoundaries(State<Dimension>& state,
                          StateDerivatives<Dimension>& derivs) override;
 
-  virtual bool requireVoronoiCells() const override { return (this->densityUpdate() == MassDensityType::VoronoiCellDensity or
-                                                              this->densityUpdate() == MassDensityType::SumVoronoiCellDensity); }
+  virtual VolumeRequirements requireVolumes() const override {
+    return {(this->densityUpdate() == MassDensityType::VoronoiCellDensity or
+             this->densityUpdate() == MassDensityType::SumVoronoiCellDensity),
+            false, true}; }
 
   // Flag to choose whether we want to sum for density, or integrate the continuity equation.
   MassDensityType densityUpdate()                                               const { return mDensityUpdate; }

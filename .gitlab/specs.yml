@@ -58,6 +58,7 @@
     SPEC: '+mpi+rocm%rocmcc'
     EXTRA_CMAKE_ARGS: '-DENABLE_WARNINGS_AS_ERRORS=On'
 
-.hip_rocm_~mpi:
+.hip_rocm_~mpi_Debug:
   variables:
     SPEC: '~mpi+rocm%rocmcc'
+    EXTRA_CMAKE_ARGS: '-DCMAKE_BUILD_TYPE=Debug -DENABLE_WARNINGS_AS_ERRORS=On'
