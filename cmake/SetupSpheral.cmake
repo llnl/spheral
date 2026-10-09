@@ -1,3 +1,16 @@
+#-------------------------------------------------------------------------------
+# Main method for setting up Spheral
+#-------------------------------------------------------------------------------
+# A list of variables that are used throughout the project and a description
+# SPHERAL_ACTIVE_CXX_TARGET : Name of the active CXX target, Spheral_CXX
+# SPHERAL_EXPORT_TARGET_NAME : Name of the CXX export target, spheral_cxx-targets
+# SPHERAL_ENV_LINES : Lines that are prepended to the bin/spheral executable
+# SPHERAL_CXX_DEPENDS : System/compiler dependencies, (python, mpi, openmp, etc)
+# SPHERAL_BLT_DEPENDS : TPL dependencies
+# SPHERAL_COMPILE_DEFS : List of compiler definitions
+# SPHERAL_CXX_FLAGS : List of C++/HIP/CUDA compiler options
+# SPHERAL_LINK_FLAGS : List of link options
+# SPHERAL_INCL_DIRS : List of directories that packages must depend on
 include(ExternalProject)
 
 #-------------------------------------------------------------------------------
@@ -13,10 +26,20 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${SPHERAL_CMAKE_MODULE_PATH}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #-------------------------------------------------------------------------------
-# Lines to add to the Spheral executable
+# Top level definitions
 #-------------------------------------------------------------------------------
-set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "")
+set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
+set(SPHERAL_EXPORT_TARGET_NAME spheral_cxx-targets)
+
+#-------------------------------------------------------------------------------
+# Package must include certain source and build directories
+#-------------------------------------------------------------------------------
+# The top and bottom differ for LLNLSpheral
+list(APPEND SPHERAL_INCL_DIRS
+  ${SPHERAL_ROOT_DIR}/src ${SPHERAL_BINARY_DIR}/src
+  ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
 #-------------------------------------------------------------------------------
 # Add Spheral CMake Macros for tests and executables
@@ -150,19 +173,10 @@ list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #-------------------------------------------------------------------------------
-# Set global variables used for dependencies
-#-------------------------------------------------------------------------------
-# List of external dependencies
-set_property(GLOBAL PROPERTY SPHERAL_BLT_DEPENDS "${SPHERAL_BLT_DEPENDS}")
-# List of compiler dependencies
-set_property(GLOBAL PROPERTY SPHERAL_CXX_DEPENDS "${SPHERAL_CXX_DEPENDS}")
-
-#-------------------------------------------------------------------------------
 # Prepare to build the src
 #-------------------------------------------------------------------------------
 configure_file(${SPHERAL_ROOT_DIR}/src/config.hh.in
   ${PROJECT_BINARY_DIR}/src/config.hh)
-include_directories(${PROJECT_BINARY_DIR}/src)
 
 add_subdirectory(${SPHERAL_ROOT_DIR}/src)
 

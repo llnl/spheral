@@ -1,4 +1,3 @@
-include_directories(.)
 set(ArtificialConduction_inst
     ArtificialConduction
     ArtificialConductionPolicy
@@ -12,5 +11,5 @@ set(ArtificialConduction_headers
     ArtificialConductionPolicy.hh
     ) 
 
-spheral_add_obj_library(ArtificialConduction SPHERAL_OBJ_LIBS)
+spheral_add_package(ArtificialConduction)
 

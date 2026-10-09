@@ -1,4 +1,3 @@
-include_directories(.)
 set(NodeList_inst
     FluidNodeList
     NodeList
@@ -36,4 +35,4 @@ spheral_install_python_files(
   DEMNodeLists.py
   )
 
-spheral_add_obj_library(NodeList SPHERAL_OBJ_LIBS)
+spheral_add_package(NodeList)
