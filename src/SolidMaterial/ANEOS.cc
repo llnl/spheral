@@ -559,7 +559,9 @@ setPressure(Field<Dimension, Scalar>& pressure,
             const Field<Dimension, Scalar>& massDensity,
             const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+  // Without interpolation every call goes to the Fortran ANEOS, which is not
+  // thread safe, so these loops only thread when interpolating.
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     pressure(i) = this->pressure(massDensity(i), specificThermalEnergy(i));
   }
@@ -577,7 +579,7 @@ setPressureAndDerivs(Field<Dimension, Scalar>& pressure,
                      const Field<Dimension, Scalar>& massDensity,
                      const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     pressure(i) = this->pressure(massDensity(i), specificThermalEnergy(i));
     dPdu(i) = (*mDPDepsInterp)(massDensity(i), specificThermalEnergy(i));      // We don't bother with the non-interpolation option for the derivs
@@ -595,7 +597,7 @@ setTemperature(Field<Dimension, Scalar>& temperature,
                const Field<Dimension, Scalar>& massDensity,
                const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     temperature(i) = this->temperature(massDensity(i), specificThermalEnergy(i));
   }
@@ -611,7 +613,7 @@ setSpecificThermalEnergy(Field<Dimension, Scalar>& specificThermalEnergy,
                          const Field<Dimension, Scalar>& massDensity,
                          const Field<Dimension, Scalar>& temperature) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     specificThermalEnergy(i) = this->specificThermalEnergy(massDensity(i), temperature(i));
   }
@@ -627,7 +629,7 @@ setSpecificHeat(Field<Dimension, Scalar>& specificHeat,
                 const Field<Dimension, Scalar>& massDensity,
                 const Field<Dimension, Scalar>& temperature) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     specificHeat(i) = this->specificHeat(massDensity(i), temperature(i));
   }
@@ -643,7 +645,7 @@ setSoundSpeed(Field<Dimension, Scalar>& soundSpeed,
               const Field<Dimension, Scalar>& massDensity,
               const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     soundSpeed(i) = this->soundSpeed(massDensity(i), specificThermalEnergy(i));
   }
@@ -659,7 +661,7 @@ setGammaField(Field<Dimension, Scalar>& gamma,
 	      const Field<Dimension, Scalar>& massDensity,
 	      const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     gamma(i) = this->gamma(massDensity(i), specificThermalEnergy(i));
   }
@@ -687,7 +689,7 @@ setBulkModulus(Field<Dimension, Scalar>& bulkModulus,
                const Field<Dimension, Scalar>& massDensity,
                const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     bulkModulus(i)=this->bulkModulus(massDensity(i), specificThermalEnergy(i));
   }
@@ -703,7 +705,7 @@ setEntropy(Field<Dimension, Scalar>& entropy,
            const Field<Dimension, Scalar>& massDensity,
            const Field<Dimension, Scalar>& specificThermalEnergy) const {
   const auto n = massDensity.size();
-#pragma omp parallel for
+#pragma omp parallel for if(mUseInterpolation)
   for (auto i = 0u; i < n; ++i) {
     entropy(i)=this->entropy(massDensity(i), specificThermalEnergy(i));
   }

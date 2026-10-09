@@ -25,6 +25,7 @@ ConnectivityMap(const NodeListIterator& begin,
   mBuildIntersectionConnectivity(buildIntersectionConnectivity),
   mOffsets(),
   mConnectivity(),
+  mConnectivityBuilt(false),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
   mCouplingPtr(std::make_shared<NodeCoupling>()) {
@@ -135,7 +136,7 @@ const std::vector< std::vector<int> >&
 ConnectivityMap<Dimension>::
 connectivityForNode(const NodeList<Dimension>* nodeListPtr,
                     const int nodeID) const {
-  if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
+  ensurePerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
@@ -158,7 +159,7 @@ const std::vector< std::vector<int> >&
 ConnectivityMap<Dimension>::
 connectivityForNode(const int nodeListID,
                     const int nodeID) const {
-  if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
+  ensurePerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
@@ -368,6 +369,26 @@ intersectionConnectivity(const NodePairIdxType& pair) const {
   const auto itr = mIntersectionConnectivity.find(pair);
   if (itr == mIntersectionConnectivity.end()) VERIFY2(false, "ERROR: attempt to lookup missing intersection connectivity for node pair " << pair);
   return itr->second;
+}
+
+//------------------------------------------------------------------------------
+// Build the per point connectivity if it's not current.  This may be called
+// from inside threaded loops (via connectivityForNode), so only one thread
+// builds while the others wait.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+void
+ConnectivityMap<Dimension>::
+ensurePerPointConnectivity() const {
+  if (not mConnectivityBuilt.load(std::memory_order_acquire)) {
+#pragma omp critical (ConnectivityMap_buildPerPointConnectivity)
+    {
+      if (not mConnectivityBuilt.load(std::memory_order_relaxed)) {
+        const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
+      }
+    }
+  }
 }
 
 }

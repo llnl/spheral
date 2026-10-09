@@ -197,9 +197,12 @@ interpolateRK(const vector<variant<FieldList<Dimension, typename Dimension::Scal
 #pragma omp parallel
   {
 
-    // Thread private result
+    // Thread private result.  Named critical and no reallocation: destroying
+    // Field copies calls NodeList::unregisterField, which takes the unnamed
+    // critical (nesting that would deadlock).
     FieldListArray localResult;
-    #pragma omp critical
+    localResult.reserve(numFieldLists);
+    #pragma omp critical (interpolateRK_localResult)
     for (const auto& fieldList: fieldLists) {
       localResult.push_back(fieldList);
       std::visit(CopyFields(), localResult.back());

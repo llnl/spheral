@@ -61,6 +61,10 @@ public:
                              std::vector<int>& masterList,
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const override;
+  virtual void setMasterListOnly(const Vector& position,
+                                 const SymTensor& H,
+                                 std::vector<int>& masterList,
+                                 const bool ghostConnectivity = false) const override;
 
   virtual void setRefineNeighborList(const Vector& position,
                                      const Scalar& H,

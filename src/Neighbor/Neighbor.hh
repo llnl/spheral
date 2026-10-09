@@ -101,6 +101,18 @@ public:
                              std::vector<int>& coarseNeighbors,
                              const bool ghostConnectivity = false) const = 0;
 
+  // Just the master list (no coarse neighbors) for the given position and
+  // smoothing scale -- what setMasterList would return as masterList.  Used to
+  // find the master groups cheaply; descendants may override with something
+  // that skips the coarse neighbor search.
+  virtual void setMasterListOnly(const Vector& position,
+                                 const SymTensor& H,
+                                 std::vector<int>& masterList,
+                                 const bool ghostConnectivity = false) const {
+    std::vector<int> coarseNeighbors;
+    this->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  }
+
   virtual void setRefineNeighborList(const Vector& position,
                                      const Scalar& H,
                                      const std::vector<int>& coarseNeighbors,

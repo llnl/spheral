@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
+#include <atomic>
 
 namespace Spheral {
 
@@ -192,6 +193,10 @@ private:
   std::vector<size_t> mOffsets;
   ConnectivityStorageType mConnectivity;
 
+  // Is mConnectivity current?  Atomic since the per point connectivity is built
+  // lazily on first use, which may be from inside a threaded loop.
+  std::atomic<bool> mConnectivityBuilt;
+
   // List of Node connection pairs.
   std::shared_ptr<NodePairList> mNodePairListPtr;
 
@@ -219,6 +224,7 @@ private:
   // is determined.
   void computeConnectivity();
   void buildPerPointConnectivity();
+  void ensurePerPointConnectivity() const;
 };
 
 }

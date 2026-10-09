@@ -71,9 +71,9 @@ initializeGradients(const ConnectivityMap<Dimension>& connectivityMap,
       CHECK(voli > 0.0);
       CHECK(Hdeti > 0.0);
 
-      auto& DpDxi = DpDx(nodeListi, i);
-      auto& DvDxi = DvDx(nodeListi, i);
-      auto& Mi = M(nodeListi, i);
+      auto& DpDxi = DpDx_thread(nodeListi, i);
+      auto& DvDxi = DvDx_thread(nodeListi, i);
+      auto& Mi = M_thread(nodeListi, i);
 
       // Get the state for node j
       const auto& vj = velocity(nodeListj, j);
@@ -86,9 +86,9 @@ initializeGradients(const ConnectivityMap<Dimension>& connectivityMap,
       CHECK(volj > 0.0);
       CHECK(Hdetj > 0.0);
 
-      auto& DpDxj = DpDx(nodeListj, j);
-      auto& DvDxj = DvDx(nodeListj, j);
-      auto& Mj = M(nodeListj, j);
+      auto& DpDxj = DpDx_thread(nodeListj, j);
+      auto& DvDxj = DvDx_thread(nodeListj, j);
+      auto& Mj = M_thread(nodeListj, j);
 
       const auto rij = ri - rj;
       const auto vij = vi - vj;

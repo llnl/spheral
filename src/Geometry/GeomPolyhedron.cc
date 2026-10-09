@@ -31,7 +31,7 @@ using std::pair;
 using std::make_pair;
 
 extern "C" {
-#include "libqhull/qhull_a.h"
+#include "libqhull_r/qhull_ra.h"
 }
 
 #include "Utilities/Timer.hh"
@@ -78,6 +78,7 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
   mSurfaceMeshQueryPtr(),
   mSignedDistancePtr() {
   ADV_TIME_BEGIN("Polyhedron_construct1");
+#pragma omp critical (GeomPolyhedron_devnull)
   if (mDevnull == NULL) mDevnull = fopen("/dev/null", "w");
 
   if (points.size() > 0) {
@@ -100,7 +101,9 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
     }
     CHECK(points_qhull.size() == 3*points.size());
 
-    // Call Qhull to generate the hull (C interface).
+    // Call Qhull to generate the hull (C interface).  We use reentrant qhull
+    // with a local qhT, since this constructor is called from threaded loops
+    // (e.g. computeHullVolumes).
     boolT ismalloc = False;   /* True if qhull should free points in qh_freeqhull() or reallocation */
     char flags[250];          /* option flags for qhull, see qh_opt.htm */
 //     FILE *outfile= NULL;      /* output from qh_produce_output()
@@ -110,8 +113,11 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
     //int exitcode;             /* 0 if no error from qhull */
     facetT *facet;            /* set by FORALLfacets */
     int curlong, totlong;     /* memory remaining after qh_memfreeshort */
+    qhT qh_qh;                /* Qhull's data structure */
+    qhT *qh = &qh_qh;
+    qh_zero(qh, mDevnull);
     sprintf(flags, "qhull s"); // Tcv");
-    const int exitcode_qhull = qh_new_qhull(3, points.size(), &points_qhull.front(), ismalloc, flags, mDevnull, mDevnull);
+    const int exitcode_qhull = qh_new_qhull(qh, 3, points.size(), &points_qhull.front(), ismalloc, flags, mDevnull, mDevnull);
 
 //     if (exitcode_qhull != 0) {
 //       // Something didn't work, so spit out the points for diagnostics.
@@ -203,8 +209,8 @@ GeomPolyhedron(const vector<GeomPolyhedron::Vector>& points):
     }
 
     // Free Qhull's resources.
-    qh_freeqhull(!qh_ALL);
-    qh_memfreeshort(&curlong, &totlong);
+    qh_freeqhull(qh, !qh_ALL);
+    qh_memfreeshort(qh, &curlong, &totlong);
 
     // Fill in our bounding box.
     setBoundingBox();

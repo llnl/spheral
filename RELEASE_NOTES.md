@@ -50,6 +50,9 @@ Notable changes include:
     * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
     * added new strain model PlasticBenzAsphaugStrain to DamageModel physics package
     * Fixed bugs affecting 2D rejecters in RejecterBase helper
+    * OpenMP threading fixes and optimizations:
+      * ConnectivityMap::computeConnectivity threads over the master neighbor groups rather than within each group, and sorts the NodePairList with a parallel sort where available.
+      * Fixes threading bugs in connectivity, gradients, Voronoi, damage, etc.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

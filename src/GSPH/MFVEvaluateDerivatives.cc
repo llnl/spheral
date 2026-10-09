@@ -504,7 +504,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
       auto& DxDti = DxDt_thread(nodeListi,i);
       //auto& HStretchTensori = HStretchTensor_thread(nodeListi,i);
-      auto& normi = normalization(nodeListi,i);
+      auto& normi = normalization_thread(nodeListi,i);
       auto& DrhoDxi = DrhoDx_thread(nodeListi, i);
       auto& newRiemannDpDxi = newRiemannDpDx_thread(nodeListi, i);
       auto& newRiemannDvDxi = newRiemannDvDx_thread(nodeListi, i); 
@@ -524,7 +524,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
 
       auto& DxDtj = DxDt_thread(nodeListj,j);
       //auto& HStretchTensorj = HStretchTensor_thread(nodeListj,j);
-      auto& normj = normalization(nodeListj,j);
+      auto& normj = normalization_thread(nodeListj,j);
       auto& DrhoDxj = DrhoDx_thread(nodeListj, j);
       auto& newRiemannDpDxj = newRiemannDpDx_thread(nodeListj, j);
       auto& newRiemannDvDxj = newRiemannDvDx_thread(nodeListj, j);

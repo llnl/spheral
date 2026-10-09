@@ -296,7 +296,11 @@ gradientPairs(FieldList<Dimension, typename MathTraits<Dimension, DataType>::Gra
   const auto& pairs = conn.nodePairList();
   const auto  npairs = pairs.size();
 
-  for (auto k = 0u; k < npairs; ++k) {
+#pragma omp parallel
+  {
+    auto result_thread = result.threadCopy();
+#pragma omp for
+    for (auto k = 0u; k < npairs; ++k) {
       const auto ni = pairs[k].i_list;
       const auto nj = pairs[k].j_list;
       const auto i = pairs[k].i_node;
@@ -327,8 +331,11 @@ gradientPairs(FieldList<Dimension, typename MathTraits<Dimension, DataType>::Gra
       const auto dwj = hetaUnitj * kernel.gradValue(etaMagj, hdetj);
       const auto dwij = 0.5 * (dwi + dwj);
 
-      result(ni, i) += vj * (fj - fi) * dwij;
-      result(nj, j) -= vi * (fi - fj) * dwij;
+      result_thread(ni, i) += vj * (fj - fi) * dwij;
+      result_thread(nj, j) -= vi * (fi - fj) * dwij;
+    }
+#pragma omp critical
+    result_thread.threadReduce();
   }
 }
 

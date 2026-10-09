@@ -18,8 +18,12 @@
 #include "Utilities/PairComparisons.hh"
 #include "Utilities/pointDistances.hh"
 #include "Utilities/Timer.hh"
+#include "Threading/OpenMP_wrapper.hh"
 
 #include <algorithm>
+#if defined(_OPENMP) && defined(__GLIBCXX__)
+#include <parallel/algorithm>
+#endif
 #include <ctime>
 using std::vector;
 using std::map;
@@ -29,6 +33,21 @@ using std::pair;
 namespace Spheral {
 
 namespace {
+
+//------------------------------------------------------------------------------
+// Sort, using libstdc++'s OpenMP parallel sort where available (the node pair
+// lists are large).
+//------------------------------------------------------------------------------
+template<typename Iterator, typename... Compare>
+inline
+void
+sortThreaded(Iterator begin, Iterator end, Compare... comp) {
+#if defined(_OPENMP) && defined(__GLIBCXX__)
+  __gnu_parallel::sort(begin, end, comp...);
+#else
+  std::sort(begin, end, comp...);
+#endif
+}
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1
 //------------------------------------------------------------------------------
@@ -104,11 +123,11 @@ sortPairs(NodePairList& pairs,
   }
 
   // Now sort the list as a whole.
-  std::sort(pairs.begin(), pairs.end(),
-            [&](const NodePairIdxType& a, const NodePairIdxType& b) {
-              return hashKeys(keys(a.i_list, a.i_node), keys(a.j_list, a.j_node)) <
-                hashKeys(keys(b.i_list, b.i_node), keys(b.j_list, b.j_node));
-            });
+  sortThreaded(pairs.begin(), pairs.end(),
+               [&](const NodePairIdxType& a, const NodePairIdxType& b) {
+                 return hashKeys(keys(a.i_list, a.i_node), keys(a.j_list, a.j_node)) <
+                   hashKeys(keys(b.i_list, b.i_node), keys(b.j_list, b.j_node));
+               });
 }
 
 }
@@ -125,6 +144,7 @@ ConnectivityMap():
   mBuildOverlapConnectivity(false),
   mBuildIntersectionConnectivity(false),
   mConnectivity(),
+  mConnectivityBuilt(false),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
   mNumNeighbors(FieldStorageType::CopyFields),
@@ -180,8 +200,10 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
       }
 
 #pragma omp critical
-      appendSTLvectors(iNodesToKill, iNodesToKill_thread);
-      appendSTLvectors(keys, keys_thread);
+      {
+        appendSTLvectors(iNodesToKill, iNodesToKill_thread);
+        appendSTLvectors(keys, keys_thread);
+      }
     }
     removeElements(mNodeTraversalIndices[iNodeList], iNodesToKill);
 
@@ -214,7 +236,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   {
     std::vector<NodePairIdxType> culledPairs_thread;
     const auto npairs = currentPairs.size();
-    culledPairs_thread.reserve(npairs);
+    culledPairs_thread.reserve(npairs/omp_get_num_threads() + 1);
 #pragma omp for
     for (auto k = 0u; k < npairs; ++k) {
       const auto iNodeList = currentPairs[k].i_list;
@@ -238,7 +260,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   if (domainDecompIndependent) {
     sortPairs(pairs, mKeys);
   } else {
-    std::sort(pairs.begin(), pairs.end());
+    sortThreaded(pairs.begin(), pairs.end());
   }
 
   // Rebuild the number of neighbors per point
@@ -249,7 +271,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
   }
 
   // If needed, rebuild the per-point connectivity
-  if (not mConnectivity.empty()) buildPerPointConnectivity();
+  if (mConnectivityBuilt) buildPerPointConnectivity();
 
   // Patch the intersection lists if we're maintaining them
   if (mBuildIntersectionConnectivity) {
@@ -710,6 +732,7 @@ computeConnectivity() {
   const size_t numNodeLists = dataBase.numNodeLists();
   mOffsets.clear();
   mConnectivity.clear();
+  mConnectivityBuilt = false;
   mNodeTraversalIndices = vector<vector<int>>(numNodeLists);
   mIntersectionConnectivity.clear();
   mNumNeighbors = dataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
@@ -750,94 +773,107 @@ computeConnectivity() {
   if (mNodePairListPtr) {
     nodePairs.reserve(mNodePairListPtr->size());
   }
-  for (auto [iiNodeList, nptr]: enumerate(mNodeLists)) {
-    const auto etaMax = nptr->neighbor().kernelExtent();
-
-    // Iterate over the nodes in this NodeList, and look for any that are not done yet.
-    const auto nii = (ghostConnectivity ?
-                      nptr->numNodes() :
-                      nptr->numInternalNodes());
-    for (auto ii = 0u; ii < nii; ++ii) {
-      if (flagNodeDone(iiNodeList, ii) == 0) {
-
-        // Set the master nodes.
-        vector<vector<int>> masterLists, coarseNeighbors;
-        Neighbor<Dimension>::setMasterNeighborGroup(position(iiNodeList, ii),
-                                                    H(iiNodeList, ii),
-                                                    mNodeLists.begin(),
-                                                    mNodeLists.end(),
-                                                    etaMax,
-                                                    masterLists,
-                                                    coarseNeighbors,
-                                                    ghostConnectivity);
-
-        // Iterate over the full of NodeLists again to work on the master nodes.
-        for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-          const auto nmaster = masterLists[iNodeList].size();
-#pragma omp parallel 
-          {
-            std::vector<NodePairIdxType> nodePairs_private;
-#pragma omp for schedule(dynamic)
-            for (auto k = 0u; k < nmaster; ++k) {
-              const auto i = masterLists[iNodeList][k];
+  // Find the master groups up front -- cheap, since it only needs tree cell
+  // membership -- so the neighbor work below can be threaded over the groups
+  // rather than within each one.
+  vector<pair<int, int>> masterGroups;
+  {
+    vector<int> masters;
+    for (auto [iiNodeList, nptr]: enumerate(mNodeLists)) {
+      const auto nii = (ghostConnectivity ?
+                        nptr->numNodes() :
+                        nptr->numInternalNodes());
+      for (auto ii = 0u; ii < nii; ++ii) {
+        if (flagNodeDone(iiNodeList, ii) == 0) {
+          masterGroups.push_back(std::make_pair(int(iiNodeList), int(ii)));
+          for (auto [iNodeList, nptri]: enumerate(mNodeLists)) {
+            nptri->neighbor().setMasterListOnly(position(iiNodeList, ii), H(iiNodeList, ii), masters, ghostConnectivity);
+            for (const auto i: masters) {
               CHECK2(flagNodeDone(iNodeList, i) == 0, "(" << iNodeList << " " << i << ")");
-
-              // Get the state for this node.
-              const auto& ri = position(iNodeList, i);
-              const auto& Hi = H(iNodeList, i);
-              auto&       worki = mNodeLists[iNodeList]->work();
-              const auto start = Timing::currentTime();
-
-              // We keep track of the Morton indices.
-              vector<vector<pair<int, Key>>> keys(numNodeLists);
-
-              // Iterate over the neighbor NodeLists.
-              for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
-                const auto firstGhostNodej = mNodeLists[jNodeList]->firstGhostNode();
-
-                // Iterate over the coarse neighbors in this NodeList.
-                for (const auto j:  coarseNeighbors[jNodeList]) {
-                  const auto& rj = position(jNodeList, j);
-                  const auto& Hj = H(jNodeList, j);
-
-                  // Compute the normalized distance between this pair.
-                  const auto rij = ri - rj;
-                  const auto eta2i = (Hi*rij).magnitude2();
-                  const auto eta2j = (Hj*rij).magnitude2();
-
-                  // If this pair is significant, add it to the list.
-                  if (eta2i <= kernelExtent2 or eta2j <= kernelExtent2) {
-
-                    // We don't include self-interactions.
-                    if ((iNodeList != jNodeList) or (i != j)) {
-                      if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
-                      if (domainDecompIndependent) keys[jNodeList].push_back(std::make_pair(j, mKeys(jNodeList, j)));
-                    }
-                  }
-                }
-              }
-              CHECK(keys.size() == numNodeLists);
-        
-              // Flag this master node as done.
               flagNodeDone(iNodeList, i) = 1;
-              worki(i) += Timing::difference(start, Timing::currentTime());
             }
-            
-            // Merge the NodePairList
-#pragma omp critical
-            nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
-          } // end OMP parallel
+          }
         }
       }
     }
   }
+
+#pragma omp parallel
+  {
+    std::vector<NodePairIdxType> nodePairs_private;
+#pragma omp for schedule(dynamic)
+    for (auto ig = 0u; ig < masterGroups.size(); ++ig) {
+      const auto [iiNodeList, ii] = masterGroups[ig];
+      const auto etaMax = mNodeLists[iiNodeList]->neighbor().kernelExtent();
+
+      // Set the master nodes.
+      vector<vector<int>> masterLists, coarseNeighbors;
+      Neighbor<Dimension>::setMasterNeighborGroup(position(iiNodeList, ii),
+                                                  H(iiNodeList, ii),
+                                                  mNodeLists.begin(),
+                                                  mNodeLists.end(),
+                                                  etaMax,
+                                                  masterLists,
+                                                  coarseNeighbors,
+                                                  ghostConnectivity);
+
+      // Iterate over the full of NodeLists again to work on the master nodes.
+      for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+        const auto nmaster = masterLists[iNodeList].size();
+        for (auto k = 0u; k < nmaster; ++k) {
+          const auto i = masterLists[iNodeList][k];
+
+          // Get the state for this node.
+          const auto& ri = position(iNodeList, i);
+          const auto& Hi = H(iNodeList, i);
+          auto&       worki = mNodeLists[iNodeList]->work();
+          const auto start = Timing::currentTime();
+
+          // We keep track of the Morton indices.
+          vector<vector<pair<int, Key>>> keys(numNodeLists);
+
+          // Iterate over the neighbor NodeLists.
+          for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
+            const auto firstGhostNodej = mNodeLists[jNodeList]->firstGhostNode();
+
+            // Iterate over the coarse neighbors in this NodeList.
+            for (const auto j:  coarseNeighbors[jNodeList]) {
+              const auto& rj = position(jNodeList, j);
+              const auto& Hj = H(jNodeList, j);
+
+              // Compute the normalized distance between this pair.
+              const auto rij = ri - rj;
+              const auto eta2i = (Hi*rij).magnitude2();
+              const auto eta2j = (Hj*rij).magnitude2();
+
+              // If this pair is significant, add it to the list.
+              if (eta2i <= kernelExtent2 or eta2j <= kernelExtent2) {
+
+                // We don't include self-interactions.
+                if ((iNodeList != jNodeList) or (i != j)) {
+                  if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
+                  if (domainDecompIndependent) keys[jNodeList].push_back(std::make_pair(j, mKeys(jNodeList, j)));
+                }
+              }
+            }
+          }
+          CHECK(keys.size() == numNodeLists);
+          worki(i) += Timing::difference(start, Timing::currentTime());
+        }
+      }
+    }
+
+    // Merge the NodePairList
+#pragma omp critical
+    nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
+  } // end OMP parallel
   mNodePairListPtr = std::make_shared<NodePairList>(std::move(nodePairs));
 
   // Sort the NodePairList in order to enforce domain decomposition independence.
   if (domainDecompIndependent) {
     sortPairs(*mNodePairListPtr, mKeys);
   } else {
-    std::sort(mNodePairListPtr->begin(), mNodePairListPtr->end());
+    sortThreaded(mNodePairListPtr->begin(), mNodePairListPtr->end());
   }
 
   // Build the number of neighbors per point
@@ -986,6 +1022,7 @@ buildPerPointConnectivity() {
   // cerr << "ConnectivityMap::buildPerPointConnectivity" << endl;
 
   // Double check we're starting fresh
+  mConnectivityBuilt = false;
   mOffsets.clear();
   mConnectivity.clear();
 
@@ -1031,6 +1068,7 @@ buildPerPointConnectivity() {
       neighborsj[ki].push_back(i);
     }
   }
+  mConnectivityBuilt.store(true, std::memory_order_release);
 
   TIME_END("ConnectivityMap_buildPerPointConnectivity");
 }
