@@ -25,6 +25,7 @@ Notable changes include:
         * Returns tuple {explicit, implicit, hessian}
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
       * Note: Python overrides only work on CPU runs
+    * Added rolling restarts to SpheralController (rollingRestartStep, rollingRestartWallTime, rollingRestartMax): restart files written on a cycle and/or wall clock cadence, keeping only the most recent few.
 
   * Build changes / improvements:
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
