@@ -451,8 +451,8 @@ computeVoronoiVolume(const FieldList<Dimension, typename Dimension::Vector>& pos
                 }
                 boundPlanes.push_back(Plane(rji, nhat, ~ifacet));
               }
-              ilocaloff -= nfacets;
             }
+            ilocaloff -= nfacets;
 
             // Same thing with holes.
             for (const auto& hole: holes[nodeListi]) {

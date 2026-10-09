@@ -88,12 +88,14 @@ public:
     GPUUtils::initMAView(mData, mNodePairList);
   }
 
+#ifndef CHAI_DISABLE_RM
   template<typename F> inline
   void setUserCallback(F&& extension) {
 #if !defined(SPHERAL_UNIFIED_MEMORY) && !defined(CHAI_DISABLE_RM)
     mData.setUserCallback(getNPLCallback(std::forward<F>(extension)));
 #endif
   }
+#endif
 
 protected:
   template<typename F>

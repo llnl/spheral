@@ -40,6 +40,7 @@ public:
   using FacetedVolume = Dimension::FacetedVolume;
 
   using PairAccelerationsType = PairwiseField<Dimension, Vector, 2u>;
+  using PairWorkType = PairwiseField<Dimension, Scalar, 2u>;
   using ConstBoundaryIterator = Physics<Dimension>::ConstBoundaryIterator;
 
   // Constructors.
@@ -115,6 +116,7 @@ public:
 
   // Access our state.
   const PairAccelerationsType& pairAccelerations()        const { VERIFY2(mPairAccelerationsPtr, "SPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
+  const PairWorkType& pairWork()                          const { VERIFY2(mPairWorkPtr, "CRKSPHRZ ERROR: pairWork not initialized"); return *mPairWorkPtr; }
 
   //****************************************************************************
   // Methods required for restarting.
@@ -124,6 +126,7 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   std::unique_ptr<PairAccelerationsType> mPairAccelerationsPtr;
+  std::unique_ptr<PairWorkType> mPairWorkPtr;
 };
 
 }

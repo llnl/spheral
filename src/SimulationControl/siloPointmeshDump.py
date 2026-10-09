@@ -511,9 +511,9 @@ def metaDataVectorField(name, time, cycle, dim):
 # Tensor fields components.
 #-------------------------------------------------------------------------------
 def extractTensorField(name, field, vals, dim):
-    assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (1,2,3)
     TensorType = eval(f"Tensor{dim}d")
+    assert len(vals) == TensorType.numElements or len(vals) == 0
     if dim == 1:
         if vals == []:
             vals = [["%s_xx" % name, vector_of_double()],
@@ -556,9 +556,9 @@ def extractTensorField(name, field, vals, dim):
     return vals
 
 def dummyTensorField(name, n, vals, dim):
-    assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (1,2,3)
     TensorType = eval(f"Tensor{dim}d")
+    assert len(vals) == TensorType.numElements or len(vals) == 0
     if vals == []:
         if dim == 1:
             vals = [["%s_xx" % name, vector_of_double([0.0]*n)],

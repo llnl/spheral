@@ -99,6 +99,17 @@ computeVolume(const DataBase<Dimension>& dataBase,
     // Voronoi volume is coordinate-plane; scale into volume3d
     scaleForGeometry(pos, vol, vol3d);
   }
+
+  // Exchange the Voronoi ghost values here, where they change, rather than in
+  // applyGhostBoundaries.  applyGhostBoundaries can be called a data-dependent
+  // number of times relative to computeVolume, which deadlocks under MPI when
+  // these exchanges are interleaved with others.
+  for (auto* bcPtr: boundaries) {
+    bcPtr->applyFieldListGhostBoundary(surfacePoint);
+    bcPtr->applyFieldListGhostBoundary(etaVoidPoints);
+    bcPtr->applyFieldListGhostBoundary(cells);
+  }
+  for (auto* bcPtr: boundaries) bcPtr->finalizeGhostBoundary();
 }
 
 //------------------------------------------------------------------------------
@@ -172,15 +183,9 @@ void
 VoronoiCells<Dimension>::
 applyGhostBoundaries(State<Dimension>& state,
                      StateDerivatives<Dimension>& derivs) {
+  // The Voronoi fields (cells, etaVoidPoints, surfacePoint) are exchanged in
+  // computeVolume, where they change.  See the note there.
   VolumeUpdate<Dimension>::applyGhostBoundaries(state, derivs);
-  auto cells = state.template fields<FacetedVolume>(HydroFieldNames::cells);
-  auto surfacePoint = state.fields(HydroFieldNames::surfacePoint, 0);
-  auto etaVoidPoints = state.fields(HydroFieldNames::etaVoidPoints, std::vector<Vector>());
-  for (auto* bcPtr: this->boundaryConditions()) {
-    bcPtr->applyFieldListGhostBoundary(etaVoidPoints);
-    bcPtr->applyFieldListGhostBoundary(cells);
-    bcPtr->applyFieldListGhostBoundary(surfacePoint);
-  }
 }
 
 //------------------------------------------------------------------------------
@@ -210,16 +215,17 @@ void
 VoronoiCells<Dimension>::
 addFacetedBoundary(const FacetedVolume& bound,
                    const std::vector<FacetedVolume>& holes) {
-  if (std::ranges::find(mFacetedBoundaries, bound) == mFacetedBoundaries.end()) {
-    mFacetedBoundaries.push_back(bound);
-  } else {
-    SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
+  // Bounds and holes are stored in parallel, so only skip an exact (bound, holes) repeat.
+  // Different bounds may legitimately share the same (often empty) holes.
+  const auto numExisting = mFacetedBoundaries.size();
+  for (auto i = 0u; i < numExisting; ++i) {
+    if (bound == mFacetedBoundaries[i] and holes == mFacetedHoles[i]) {
+      SpheralWarning << "tried to add same faceted boundary twice" << std::endl;
+      return;
+    }
   }
-  if (std::ranges::find(mFacetedHoles, holes) == mFacetedHoles.end()) {
-    mFacetedHoles.push_back(holes);
-  } else {
-    SpheralWarning << "tried to add same faceted holes twice" << std::endl;
-  }
+  mFacetedBoundaries.push_back(bound);
+  mFacetedHoles.push_back(holes);
   ENSURE(mFacetedBoundaries.size() == mFacetedHoles.size());
 }
 

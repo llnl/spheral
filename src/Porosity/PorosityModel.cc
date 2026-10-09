@@ -143,9 +143,8 @@ registerState(DataBase<Dimension>& dataBase,
   state.enroll(mSolidMassDensity, make_policy<PorositySolidMassDensityPolicy<Dimension>>());
 
   // Register the distension
+  // Dependence on damage was removed to avoid a circular dependency
   state.enroll(mAlpha, make_policy<IncrementBoundedState<Dimension, Scalar, Scalar>>({SolidFieldNames::deviatoricStress,
-                                                                                      SolidFieldNames::scalarDamage,
-                                                                                      SolidFieldNames::tensorDamage,
                                                                                       SolidFieldNames::strain,
                                                                                       SolidFieldNames::strainTensor,
                                                                                       SolidFieldNames::fDSjutzi}, 1.0));

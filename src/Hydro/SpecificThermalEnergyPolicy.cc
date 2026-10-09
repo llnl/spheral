@@ -82,26 +82,29 @@ update(const KeyType& key,
   const auto hdt = 0.5*multiplier;
   auto DepsDt = mDataBasePtr->newFluidFieldList(0.0, "delta E");
 
-  // Check that the partial accelerations sum to the total hydro acceleration, or this isn't going to conserve
+  // Check that the partial accelerations sum to the total hydro acceleration, or this isn't going to conserve.
+  // Skipped when there are self-accelerations (RZ hoop stress), since those are not part of the pairwise sum.
   BEGIN_CONTRACT_SCOPE {
-    auto DvDt_check = mDataBasePtr->newFluidFieldList(Vector::zero(), "hydro acceleration check");
-    for (auto kk = 0u; kk < npairs; ++kk) {
-      const auto i = pairs[kk].i_node;
-      const auto j = pairs[kk].j_node;
-      const auto nodeListi = pairs[kk].i_list;
-      const auto nodeListj = pairs[kk].j_list;
-      const auto& paccij = pairAccelerations[kk];
-      const auto  mi = mass(nodeListi, i);
-      const auto  mj = mass(nodeListj, j);
-      DvDt_check(nodeListi, i) += paccij;
-      DvDt_check(nodeListj, j) -= paccij * mi/mj;
-    }
-    const auto numNodeLists = mDataBasePtr->numFluidNodeLists();
-    for (auto k = 0u; k < numNodeLists; ++k) {
-      const auto n = DvDt_check[k]->numInternalElements();
-      for (auto i = 0u; i < n; ++i) {
-        CHECK2(fuzzyEqual(DvDt_check(k, i).dot(DvDt(k, i)), DvDt(k, i).magnitude2(), 1.0e-8),
-               DvDt_check(k, i) << " != " << DvDt(k, i) << " for (NodeList,i) = " << k << " " << i);
+    if (not selfInteraction) {
+      auto DvDt_check = mDataBasePtr->newFluidFieldList(Vector::zero(), "hydro acceleration check");
+      for (auto kk = 0u; kk < npairs; ++kk) {
+        const auto i = pairs[kk].i_node;
+        const auto j = pairs[kk].j_node;
+        const auto nodeListi = pairs[kk].i_list;
+        const auto nodeListj = pairs[kk].j_list;
+        const auto& paccij = pairAccelerations[kk];
+        const auto  mi = mass(nodeListi, i);
+        const auto  mj = mass(nodeListj, j);
+        DvDt_check(nodeListi, i) += paccij;
+        DvDt_check(nodeListj, j) -= paccij * mi/mj;
+      }
+      const auto numNodeLists = mDataBasePtr->numFluidNodeLists();
+      for (auto k = 0u; k < numNodeLists; ++k) {
+        const auto n = DvDt_check[k]->numInternalElements();
+        for (auto i = 0u; i < n; ++i) {
+          CHECK2(fuzzyEqual(DvDt_check(k, i).dot(DvDt(k, i)), DvDt(k, i).magnitude2(), 1.0e-8),
+                 DvDt_check(k, i) << " != " << DvDt(k, i) << " for (NodeList,i) = " << k << " " << i);
+        }
       }
     }
   }

@@ -21,7 +21,7 @@ class PolygonalSurfaceRejecter(RejecterBase):
 #-------------------------------------------------------------------------------
 # Reject in a polyhedral surface
 #-------------------------------------------------------------------------------
-class PolyhedralSurfaceRejecter:
+class PolyhedralSurfaceRejecter(RejecterBase):
 
     def __init__(self, surface,
                  interior = True):

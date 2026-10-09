@@ -7,14 +7,14 @@ from PYB11Generator import *
 @PYB11singleton
 class NodeListRegistrar:
 
-    # The instance attribute.  We expose this as a property of the class.
+    # The instance, as a static method (NodeListRegistrar.instance()), the same
+    # way RestartRegistrar exposes it.  (The former static property raised a
+    # TypeError when accessed.)
     @PYB11static
-    @PYB11cppname("instance")
-    @PYB11ignore
     @PYB11returnpolicy("reference")
-    def getinstance(self):
+    def instance(self):
+        "The static NodeListRegistrar<%(Dimension)s> instance."
         return "NodeListRegistrar<%(Dimension)s>&"
-    instance = property(getinstance, doc="The static NodeListRegistrar<%(Dimension)s> instance.")
 
 
     # Attributes

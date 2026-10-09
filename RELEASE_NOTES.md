@@ -50,6 +50,9 @@ Notable changes include:
     * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
     * added new strain model PlasticBenzAsphaugStrain to DamageModel physics package
     * Fixed bugs affecting 2D rejecters in RejecterBase helper
+    * Misc. bugfixes in damage, porosity, CRKSPHRZ, VoronoiCells, DistributedBoundary, node generators, and Python bindings.
+      * allReduce of Vector/Tensor/SymTensor returned zero, breaking the global Field sumElements, min, and max for those types.
+      * ASPHSmoothingScale now requests volumes updated in finalize, which changes ASPH answers slightly (Noh-RZ ASPH reference norms updated).
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

@@ -5,7 +5,6 @@ from NodeGeneratorBase import *
 from Spheral import Vector2d
 from Spheral import Tensor2d
 from Spheral import SymTensor2d
-from Spheral import pair_double_double
 
 from Spheral import vector_of_int, vector_of_double, vector_of_SymTensor2d, vector_of_vector_of_double
 from SpheralTestUtilities import *
@@ -36,7 +35,7 @@ class GenerateStretchedLattice2d(NodeGeneratorBase):
         def __call__(self,x):
             fst = (self.rho(x) - self.rho(x-self.dr))/self.dr * (x-self.rp)*x*x
             scd = self.rho(x) * (x*x + (x-self.rp)*(2)*x*x)
-            return pair_double_double(((x-self.rp)*x**(2)*self.rho(x)-self.const),fst + scd)
+            return (((x-self.rp)*x**(2)*self.rho(x)-self.const),fst + scd)
 
     #---------------------------------------------------------------------------
     # Constructor

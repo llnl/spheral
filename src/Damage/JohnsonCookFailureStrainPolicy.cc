@@ -114,7 +114,7 @@ update(const KeyType& key,
       auto efailTcrit = (mD1(i) + mD2(i)*exp(min(35.0, mD3*mTcrit)))*
                         (1.0 + mD5*eps(i)*safeInv(epsMelt(i)));
       if (psr(i) > mepsilondot0) {
-        efail(i) *= 1.0 + mD4*log(psr(i)*safeInv(mepsilondot0));
+        efailTcrit *= 1.0 + mD4*log(psr(i)*safeInv(mepsilondot0));
       }
       const auto psi = max(0.0, min(1.0, (-Pi + mTcrit*sigmaVM)*safeInvVar(-msigmamax + mTcrit*sigmaVM)));
       CHECK(psi >= 0.0 and psi <= 1.0);

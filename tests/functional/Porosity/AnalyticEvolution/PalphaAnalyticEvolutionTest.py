@@ -197,7 +197,7 @@ class FakeHydro(Physics):
 
     def dt(self, db, state, derivs, t):
         rho = state.scalarFields(HydroFieldNames.massDensity)
-        return pair_double_string(1.0, "Fake timestep")
+        return (1.0, "Fake timestep")
 
     def registerState(self, db, state):
         rho = db.fluidMassDensity

@@ -75,10 +75,11 @@ public:
   virtual void applyGhostBoundaries(State<Dimension>& state,
                                     StateDerivatives<Dimension>& derivs) override;
 
-  // We require the Voronoi-like cells per point
+  // We require the Voronoi-like cells per point, updated for finalize (where we use them)
   virtual VolumeRequirements requireVolumes() const override {
-    return {(this->HEvolution() == HEvolutionType::IdealH and not (mFixShape or mRadialOnly)),
-            false, true}; }
+    return {false,
+            (this->HEvolution() == HEvolutionType::IdealH and not (mFixShape or mRadialOnly)),
+            true}; }
 
   // Access our internal data
   const TableKernel<Dimension>&                          WT()            const    { return mWT; }

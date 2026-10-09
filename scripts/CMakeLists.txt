@@ -52,10 +52,14 @@ if (SPHERAL_ENABLE_PYTHON)
   )
 
   # Configure scripts for the install stage.
+  # COMMAND_ERROR_IS_FATAL is required here: without it a failure is silently
+  # discarded and `make install` still succeeds, producing an install whose
+  # .venv contains no runtime packages at all.
   install( CODE "
   message(\"-- Setting up spheral python virtual environment.\")
 
-  execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target python_runtime_env)
+  execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target python_runtime_env
+                  COMMAND_ERROR_IS_FATAL ANY)
   ")
 
   # byte compile all of the venv site-packages.

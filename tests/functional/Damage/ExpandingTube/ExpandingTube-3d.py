@@ -36,7 +36,7 @@ class VelocityDiffuser(Physics):
         return
 
     def dt(self, dataBase, state, derivs, time):
-        return pair_double_string(1e30, "No vote")
+        return (1e30, "No vote")
 
     def registerState(self, dataBase, state):
         return
