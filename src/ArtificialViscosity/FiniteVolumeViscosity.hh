@@ -7,7 +7,8 @@
 #ifndef __Spheral_FiniteVolumeViscosity__
 #define __Spheral_FiniteVolumeViscosity__
 
-#include "FiniteVolumeViscosityView.hh"
+#include "ArtificialViscosity.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
@@ -37,15 +38,15 @@ public:
   FiniteVolumeViscosity& operator=(const FiniteVolumeViscosity&) const = delete;
 
   // We are going to use a velocity gradient
-  virtual bool requireVelocityGradient()             const override { return true; }
+  virtual bool requireVelocityGradient() const override { return true; }
+
+  // Restart methods.
+  virtual std::string label()            const override { return "FiniteVolumeViscosity"; }
 
   // Override the method of computing the velocity gradient
   virtual void updateVelocityGradient(const DataBase<Dimension>& db,
                                       const State<Dimension>& state,
                                       const StateDerivatives<Dimension>& derivs) override;
-
-  // Restart methods.
-  virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
 
   // Forward ArtificialViscosity's virtual parameter interface to ViewType.
   virtual Scalar Cl() const override { return ViewType::Cl(); }
@@ -71,6 +72,9 @@ public:
   // Return a device-safe snapshot of the inherited view state.
   ViewType view() const {
     return static_cast<const ViewType&>(*this);
+  }
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    return this->view();
   }
 };
 

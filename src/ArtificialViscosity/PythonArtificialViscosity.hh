@@ -15,7 +15,7 @@
 #define __Spheral_PythonArtificialViscosity__
 
 #include "ArtificialViscosity.hh"
-#include "ArtificialViscosityView.hh"
+#include "ArtificialViscosityVariant.hh"
 #include "Field/FieldList.hh"
 
 #include <tuple>
@@ -122,6 +122,9 @@ public:
 
   // Return a CPU-only adapter that refers to this Python object.
   ViewType view() const { return ViewType(this); }
+  ArtificialViscosityVariant<Dimension> variantType() const override {
+    return this->view();
+  }
 
   // Label for restart.
   virtual std::string label() const override { return "PythonArtificialViscosity"; }

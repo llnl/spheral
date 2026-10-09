@@ -8,13 +8,13 @@
 #define __Spheral_TensorMonaghanGingoldViscosity__
 
 #include "ArtificialViscosity.hh"
-#include "TensorMonaghanGingoldViscosityView.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorMonaghanGingoldViscosity : public ArtificialViscosity<Dimension>,
-                                       public TensorMonaghanGingoldViscosityView<Dimension> {
+class TensorMonaghanGingoldViscosity: public ArtificialViscosity<Dimension>,
+                                      public TensorMonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -67,6 +67,9 @@ public:
   // Return a device-safe snapshot of the inherited view state.
   ViewType view() const {
     return static_cast<const ViewType&>(*this);
+  }
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    return this->view();
   }
 };
 

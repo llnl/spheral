@@ -9,13 +9,13 @@
 #define __Spheral_LimitedMonaghanGingoldViscosity__
 
 #include "ArtificialViscosity.hh"
-#include "LimitedMonaghanGingoldViscosityView.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class LimitedMonaghanGingoldViscosity : public ArtificialViscosity<Dimension>,
-                                        public LimitedMonaghanGingoldViscosityView<Dimension> {
+class LimitedMonaghanGingoldViscosity: public ArtificialViscosity<Dimension>,
+                                       public LimitedMonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -79,6 +79,9 @@ public:
   // Return a device-safe snapshot of the inherited view state.
   ViewType view() const {
     return static_cast<const ViewType&>(*this);
+  }
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    return this->view();
   }
 };
 

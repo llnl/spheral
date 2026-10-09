@@ -23,6 +23,7 @@ namespace Spheral {
 
 template<typename Dimension>
 using DeviceArtificialViscosityVariant = std::variant<
+  std::monostate,
   MonaghanGingoldViscosityView<Dimension>,
   LimitedMonaghanGingoldViscosityView<Dimension>,
   FiniteVolumeViscosityView<Dimension>,
@@ -31,6 +32,7 @@ using DeviceArtificialViscosityVariant = std::variant<
 #if !defined(SPHERAL_ENABLE_HIP) && !defined(SPHERAL_ENABLE_CUDA)
 template<typename Dimension>
 using ArtificialViscosityVariant = std::variant<
+  std::monostate,
   MonaghanGingoldViscosityView<Dimension>,
   LimitedMonaghanGingoldViscosityView<Dimension>,
   FiniteVolumeViscosityView<Dimension>,

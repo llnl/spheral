@@ -10,7 +10,7 @@
 #define __Spheral_MonaghanGingoldViscosity__
 
 #include "ArtificialViscosity.hh"
-#include "MonaghanGingoldViscosityView.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
@@ -91,9 +91,12 @@ public:
     ViewType::quadraticInExpansion(x);
   }
 
-  // View method
+  // Return a device-safe snapshot of the inherited view state.
   ViewType view() const {
     return static_cast<const ViewType&>(*this);
+  }
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    return this->view();
   }
 };
 

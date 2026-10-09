@@ -25,6 +25,7 @@ template<typename Dimension> class DataBase;
 template<typename Dimension, typename DataType> class FieldList;
 template<typename Dimension> class ConnectivityMap;
 template<typename Dimension> class Boundary;
+template<typename Dimension> class ArtificialViscosityVariant;
 class FileIO;
 
 template<typename Dimension>
@@ -124,12 +125,15 @@ public:
   virtual void negligibleSoundSpeed(Scalar x)          = 0;
 
   // Access stored host state.
-  bool   rigorousVelocityGradient()                        const { return mRigorousVelocityGradient; }
+  bool  rigorousVelocityGradient()                         const { return mRigorousVelocityGradient; }
   const FieldList<Dimension, Scalar>& maxViscousPressure() const { return mMaxViscousPressure; }
   const FieldList<Dimension, Scalar>& effViscousPressure() const { return mEffViscousPressure; }
   const FieldList<Dimension, Tensor>& DvDx()               const { return mDvDx; }
   const TableKernel<Dimension>&       kernel()             const { return mWT; }
-  void rigorousVelocityGradient(bool x)                          { mRigorousVelocityGradient = x; }
+  void  rigorousVelocityGradient(bool x)                         { mRigorousVelocityGradient = x; }
+
+  // Return the proper view class needed by the SPH classes
+  virtual ArtificialViscosityVariant<Dimension> variantView() const = 0;
 
   // Deprecated options
   bool limiter()               const { SpheralDeprecationWarning << "ArtificialViscosity::limiter" << std::endl; return false; }
