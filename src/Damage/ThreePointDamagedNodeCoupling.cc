@@ -107,7 +107,7 @@ ThreePointDamagedNodeCoupling(const State<Dimension>& state,
   }
   // Parallel note: at this point workToBeDone is rank dependent, so some ranks will enter the following
   // block and some not.
-  TIME_END("ThreePointCoupling_intial");
+  TIME_END("ThreePointCoupling_initial");
 
   // Now apply damage to pair interactions.
   if (workToBeDone) {

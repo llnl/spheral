@@ -5,7 +5,6 @@ from NodeGeneratorBase import *
 from Spheral import Vector3d
 from Spheral import Tensor3d
 from Spheral import SymTensor3d
-from Spheral import pair_double_double
 
 from Spheral import vector_of_int, vector_of_double, vector_of_SymTensor3d, vector_of_vector_of_double
 from SpheralTestUtilities import *

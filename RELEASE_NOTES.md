@@ -50,6 +50,24 @@ Notable changes include:
     * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
     * added new strain model PlasticBenzAsphaugStrain to DamageModel physics package
     * Fixed bugs affecting 2D rejecters in RejecterBase helper
+    * PolyhedralSurfaceRejecter now inherits from RejecterBase (it was missing the RejecterBase __call__ interface).
+    * Johnson-Cook failure strain: the strain-rate factor in the Tcrit interpolation branch was applied to the stale efail value rather than efailTcrit.
+    * TensorDamageModel::cullToWeakestFlaws was building a vector of length maxVal rather than a single flaw of strength maxVal.
+    * Fixed a mismatched timer name in ThreePointDamagedNodeCoupling.
+    * CRKSPHRZ now enrolls and fills the pairWork needed by the RZ compatible energy policy.
+    * SpecificThermalEnergyPolicy skips the pairwise acceleration contract check when self-accelerations (RZ hoop terms) are present.
+    * Removed the dependence of the porosity distension on damage, which created a circular state dependency (alpha -> damage -> strain -> pressure -> alpha).
+    * VoronoiCells::addFacetedBoundary deduplicates (bound, holes) pairs together, so different boundaries sharing the same holes no longer misalign the boundary and hole lists.
+    * VoronoiCells exchanges the cell geometry ghost values in computeVolume rather than applyGhostBoundaries, which could deadlock under MPI.
+    * computeVoronoiVolume applied the faceted boundary index offset once per facet rather than once per boundary.
+    * ASPHSmoothingScale uses the Voronoi cells in finalize, so it now requests volumes updated in finalize (implicit) rather than during the step.  This changes ASPH answers slightly (the Noh-RZ ASPH reference norms are updated).
+    * allReduce of geometric types (Vector, Tensor, SymTensor, ...) returned zero, since the predefined MPI reduction ops reject our derived MPI datatypes. This broke the global Field/FieldList sumElements, min, and max for those types. Sums are now done elementwise, and min/max via an allgather.
+    * DistributedBoundary grows its MPI request buffers as needed rather than failing a VERIFY at 100000 in-flight requests.
+    * NodeListRegistrar.instance is now a static method (the former static property raised a TypeError).
+    * Silo tensor output uses the tensor element count rather than dim*dim (needed now that tensors carry zz components).
+    * Removed remaining uses of the pair_double_double and pair_double_string types, which are now plain Python tuples.
+    * Python virtual environment setup failures now fail the install rather than being silently ignored.
+    * Misc: fakempi.allgather signature, FlatConnectivity CHECK flag, NodePairList CHAI guard, removed a debug VTK write in GeomPolyhedron.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

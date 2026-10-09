@@ -5,7 +5,7 @@
 # Based on rtsafe from Numerical recipes.
 # This is a direct port of our C++ version (src/src/Utilities/newtonRaphson.hh).
 #
-# Assume the passed functor returns a pair_double_double (value, derivative)
+# Assume the passed functor returns a tuple (value, derivative)
 #
 # Created by JMO, Thu Sep 23 22:57:33 PDT 2004
 #-----------------------------------------------------------------------------#-

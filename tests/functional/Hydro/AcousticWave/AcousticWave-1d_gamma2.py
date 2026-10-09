@@ -196,8 +196,8 @@ class MassFunctor(PairScalarFunctor):
         self.Mcumulative = Mcumulative
         return
     def __call__(self, x):
-        return pair_double_double(self.Mcumulative - rho1*(x + A/(twopi*kfreq)*(1.0 - cos(twopi*kfreq*x))),
-                                  -rho1*(1.0 + A*sin(twopi*kfreq*x)))
+        return (self.Mcumulative - rho1*(x + A/(twopi*kfreq)*(1.0 - cos(twopi*kfreq*x))),
+                -rho1*(1.0 + A*sin(twopi*kfreq*x)))
 
 # Set the node positions, velocities, and densities.
 from newtonRaphson import *

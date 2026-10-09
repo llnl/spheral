@@ -27,7 +27,7 @@ class RadiativeLosses(Physics):
     def evaluateDerivatives(self,t,dt,db,state,derivs):
         return
     def dt(self,db,state,derivs,t):
-        return pair_double_string(self.dtRL, "flux limit")
+        return (self.dtRL, "flux limit")
     def registerState(self, dt, state):
         return
     def registerDerivatives(self, db, derivs):

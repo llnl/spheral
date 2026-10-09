@@ -13,3 +13,6 @@ source("testPeanoHilbertOrderDistribute.py")
 source("testDistributed1d.py")
 source("testDistributed2d.py")
 source("testDistributed3d.py")
+
+# Global Field reductions (allReduce) of geometric types.
+source("testFieldReductions.py")

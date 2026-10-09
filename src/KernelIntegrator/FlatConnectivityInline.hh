@@ -327,7 +327,7 @@ inline
 int
 FlatConnectivity<Dimension>::
 flatOverlapToLocal(const int locali,  const int flatj) const {
-  CHECK(mIndexingInitialized);
+  CHECK(mOverlapIndexingInitialized);
   CHECK(locali < mNumConnectivityNodes);
   CHECK(flatj < mNumOverlapNeighbors[locali]);
   CHECK(size_t(locali) < mFlatOverlapToLocalIndex.size());

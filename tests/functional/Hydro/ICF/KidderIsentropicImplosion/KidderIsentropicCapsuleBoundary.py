@@ -337,7 +337,7 @@ class KidderIsentropicCapsuleEnforcementBoundary1d(Physics1d):
     # Physics::dt
     #---------------------------------------------------------------------------
     def dt(self, dataBase, state, derivs, currentTime):
-        return pair_double_string(1.0e50, "No vote.")
+        return (1.0e50, "No vote.")
 
     #---------------------------------------------------------------------------
     # Physics::registerState

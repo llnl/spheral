@@ -15,6 +15,10 @@
 #include <mpi.h>
 #endif
 
+#include <algorithm>
+#include <type_traits>
+#include <vector>
+
 namespace Spheral {
 #ifdef SPHERAL_ENABLE_MPI
 //------------------------------------------------------------------------------
@@ -30,11 +34,48 @@ namespace Spheral {
 #define SPHERAL_OP_MINLOC MPI_MINLOC
 #define SPHERAL_OP_MAXLOC MPI_MAXLOC
 
+namespace AllReduceDetail {
+// Is Value a non-arithmetic type built from doubles (Vector, Tensor, ...)?
+template<typename Value, typename = void>
+struct hasDoubleElements: std::false_type {};
+
+template<typename Value>
+struct hasDoubleElements<Value, std::void_t<typename DataTypeTraits<Value>::ElementType>>:
+    std::bool_constant<not std::is_arithmetic<Value>::value and
+                       std::is_same<typename DataTypeTraits<Value>::ElementType, double>::value> {};
+}
+
 template<typename Value>
 Value
 allReduce(const Value& value, const MPI_Op op,
           const MPI_Comm comm = Communicator::communicator()) {
   CHECK(!(op == SPHERAL_OP_MINLOC || op == SPHERAL_OP_MAXLOC));
+
+  // The predefined MPI reduction operations are only defined for the basic
+  // MPI datatypes, not the derived types we register for our geometric types
+  // (Vector, Tensor, etc.).  MPI rejects those reductions (silently, under
+  // MPI_ERRORS_RETURN), so we handle them here: sums are done elementwise,
+  // and min/max use the type's own comparison, consistent with the local
+  // Field::localMin/localMax.
+  if constexpr (AllReduceDetail::hasDoubleElements<Value>::value) {
+    const int n = DataTypeTraits<Value>::numElements(value);
+    CHECK(sizeof(Value) == n*sizeof(double));
+    if (op == SPHERAL_OP_SUM) {
+      Value result(value);
+      MPI_Allreduce(MPI_IN_PLACE, &result, n, MPI_DOUBLE, op, comm);
+      return result;
+    } else if (op == SPHERAL_OP_MIN or op == SPHERAL_OP_MAX) {
+      int nprocs;
+      MPI_Comm_size(comm, &nprocs);
+      std::vector<Value> values(nprocs);
+      Value tmp = value;
+      MPI_Allgather(&tmp, n, MPI_DOUBLE, &values.front(), n, MPI_DOUBLE, comm);
+      return (op == SPHERAL_OP_MIN ?
+              *std::min_element(values.begin(), values.end()) :
+              *std::max_element(values.begin(), values.end()));
+    }
+  }
+
   Value tmp = value;
   Value result;
   MPI_Allreduce(&tmp, &result, 1,

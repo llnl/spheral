@@ -26,6 +26,33 @@ using std::string;
 using std::pair;
 using std::make_pair;
 
+namespace {
+// Hard ceiling on the number of in-flight MPI requests we will buffer for a
+// single ghost exchange (send or receive).  The request vectors start small and
+// grow geometrically up to this ceiling *as needed*, rather than pre-reserving
+// the whole thing.  The count for one exchange scales as (# applied Fields) x
+// (# neighbor domains) ~ (# materials) x (fields/material) x (neighbor domains),
+// which at high domain counts with many NodeLists can be large.
+//
+// Growing (reallocating) the request vector mid-exchange is safe: MPI_Request is
+// an opaque value handle, and MPI_Irecv/MPI_Isend keep no pointer into the vector
+// storage -- on realloc the handle values are copied to the new buffer and remain
+// valid for the later MPI_Waitall.  (The send/recv *buffers*, which MPI does hold
+// pointers to, must not move -- and they don't: they live in separate std::lists.)
+constexpr size_t maxMPIRequests = 10'000'000;
+
+inline void
+reserveOneRequest(std::vector<MPI_Request>& requests, const char* which) {
+  if (requests.size() + 1 >= requests.capacity()) {
+    VERIFY2(requests.size() + 1 < maxMPIRequests,
+            "DistributedBoundary: exceeded the max of " << maxMPIRequests
+            << " in-flight MPI " << which << " requests for a single exchange");
+    requests.reserve(std::min(maxMPIRequests,
+                              std::max(size_t(2) * requests.capacity(), size_t(1024))));
+  }
+}
+}
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
@@ -51,9 +78,10 @@ DistributedBoundary<Dimension>::DistributedBoundary():
   mDomainID = Process::getRank();
   CHECK(mDomainID >= 0 && mDomainID < numDomains());
 
-  // Reserve space in the request buffers.
-  mSendRequests.reserve(100000);
-  mRecvRequests.reserve(100000);
+  // Reserve an initial chunk of the request buffers; reserveOneRequest() grows
+  // them geometrically up to maxMPIRequests as an exchange needs more.
+  mSendRequests.reserve(10000);
+  mRecvRequests.reserve(10000);
 }
 
 //------------------------------------------------------------------------------
@@ -680,7 +708,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
         const int neighborDomainID = domainItr->first;
         const int bufSize = field.computeCommBufferSize(boundNodes.receiveNodes, neighborDomainID, procID);
         packedRecvValues.push_back(vector<char>(bufSize));
-        VERIFY(mRecvRequests.size() < mRecvRequests.capacity() - 1);
+        reserveOneRequest(mRecvRequests, "receive");
         mRecvRequests.push_back(MPI_Request());
         vector<char>& recvValues = packedRecvValues.back();
         // cerr << " --> Recieve buffer for " << field.name() << " from " << neighborDomainID << " : " << mField2RecvBuffer[&field] << endl;
@@ -720,7 +748,7 @@ beginExchangeFieldFixedSize(FieldBase<Dimension>& field) const {
 
         // Do a non-blocking send for this domain.
         const int neighborDomainID = domainItr->first;
-        VERIFY(mSendRequests.size() < mSendRequests.capacity() - 1);
+        reserveOneRequest(mSendRequests, "send");
         mSendRequests.push_back(MPI_Request());
         packedSendValues.push_back(field.packValues(boundNodes.sendNodes));
         vector<char>& sendValues = packedSendValues.back();
@@ -868,7 +896,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
 
         // Do a non-blocking send for this domain.
         const int neighborDomainID = domainItr->first;
-        VERIFY(mSendRequests.size() < mSendRequests.capacity() - 1);
+        reserveOneRequest(mSendRequests, "send");
         mSendRequests.push_back(MPI_Request());
         packedSendValues.push_back(field.packValues(boundNodes.sendNodes));
         vector<char>& sendValues = packedSendValues.back();
@@ -924,7 +952,7 @@ beginExchangeFieldVariableSize(FieldBase<Dimension>& field) const {
 
         // Post a non-blocking receive for this domain.
         packedRecvValues.push_back(vector<char>(bufSize));
-        VERIFY(mRecvRequests.size() < mRecvRequests.capacity() - 1);
+        reserveOneRequest(mRecvRequests, "receive");
         mRecvRequests.push_back(MPI_Request());
         vector<char>& recvValues = packedRecvValues.back();
         MPI_Irecv(&(*recvValues.begin()), bufSize, MPI_CHAR,
@@ -1333,8 +1361,9 @@ DistributedBoundary<Dimension>::finalizeExchanges() {
   mSendProcIDs = vector<int>();
   mRecvProcIDs = vector<int>();
 #endif
-  mSendRequests.reserve(100000);
-  mRecvRequests.reserve(100000);
+  // Mirror the constructor: start small, reserveOneRequest() grows as needed.
+  mSendRequests.reserve(10000);
+  mRecvRequests.reserve(10000);
   mSendBuffers = CommBufferSet();
   mRecvBuffers = CommBufferSet();
   mField2SendBuffer = Field2BufferType();

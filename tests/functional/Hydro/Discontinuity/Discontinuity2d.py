@@ -285,7 +285,7 @@ if zerovpkg:
             return
         
         def dt(self, db, state, derivs, t):
-            return pair_double_string(1e100, "No vote")
+            return (1e100, "No vote")
         
         def registerState(self, dt, state):
             return

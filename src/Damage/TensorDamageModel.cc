@@ -280,7 +280,7 @@ cullToWeakestFlaws() {
     auto& flaws = mFlaws[i];
     if (flaws.size() > 0) {
       const auto maxVal = *max_element(flaws.begin(), flaws.end());
-      flaws = vector<double>(maxVal);
+      flaws = vector<double>(1, maxVal);
     }
   }
 }

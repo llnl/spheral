@@ -81,7 +81,8 @@ CRKSPHRZ(DataBase<Dimension>& dataBase,
                      densityUpdate,
                      epsTensile,
                      nTensile),
-  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()) {
+  mPairAccelerationsPtr(std::make_unique<PairAccelerationsType>()),
+  mPairWorkPtr(std::make_unique<PairWorkType>()) {
 }
 
 //------------------------------------------------------------------------------
@@ -152,8 +153,12 @@ registerDerivatives(DataBase<Dim<2>>& dataBase,
   if (compatibleEnergy) {
     const auto& connectivityMap = dataBase.connectivityMap();
     mPairAccelerationsPtr = std::make_unique<PairAccelerationsType>(connectivityMap);
+    mPairWorkPtr = std::make_unique<PairWorkType>(connectivityMap);
   }
   derivs.enroll(HydroFieldNames::pairAccelerations, *mPairAccelerationsPtr);
+  // RZNonSymmetricSpecificThermalEnergyPolicy (registered above for compatible energy)
+  // reads the per-pair work, so it has to be enrolled and filled here as SPHRZ does.
+  derivs.enroll(HydroFieldNames::pairWork, *mPairWorkPtr);
 }
 
 //------------------------------------------------------------------------------
@@ -271,6 +276,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
   auto  effViscousPressure = derivs.fields(HydroFieldNames::effectiveViscousPressure, 0.0);
   auto  XSPHDeltaV = derivs.fields(HydroFieldNames::XSPHDeltaV, Vector::zero());
   auto& pairAccelerations = derivs.template get<PairAccelerationsType>(HydroFieldNames::pairAccelerations);
+  auto& pairWork = derivs.template get<PairWorkType>(HydroFieldNames::pairWork);
   CHECK(DxDt.size() == numNodeLists);
   CHECK(DrhoDt.size() == numNodeLists);
   CHECK(DvDt.size() == numNodeLists);
@@ -281,6 +287,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
   CHECK(effViscousPressure.size() == numNodeLists);
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
+  CHECK((compatibleEnergy and pairWork.size() == npairs) or not compatibleEnergy);
 
   // Walk all the interacting pairs.
 #pragma omp parallel
@@ -409,8 +416,14 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
         pairAccelerations[kk][1] =  forceij/mRZj;
       }
 
-      DepsDti += 0.5*weighti*weightj*(Pj*vij.dot(deltagrad) + workQi)/mRZi;    // CRK Q
-      DepsDtj += 0.5*weighti*weightj*(Pi*vij.dot(deltagrad) + workQj)/mRZj;    // CRK Q
+      const auto worki = 0.5*weighti*weightj*(Pj*vij.dot(deltagrad) + workQi)/mRZi;    // CRK Q
+      const auto workj = 0.5*weighti*weightj*(Pi*vij.dot(deltagrad) + workQj)/mRZj;    // CRK Q
+      DepsDti += worki;
+      DepsDtj += workj;
+      if (compatibleEnergy) {
+        pairWork[kk][0] = worki;
+        pairWork[kk][1] = workj;
+      }
 
       // Estimate of delta v (for XSPH).
       if ((XSPH and (nodeListi == nodeListj)) or min(zetai, zetaj) < 1.0) {
