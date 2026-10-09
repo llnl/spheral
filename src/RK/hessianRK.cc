@@ -87,7 +87,7 @@ hessianRK(const FieldList<Dimension, DataType>& fieldList,
         const auto& Hj = H(nodeListj, j);
         const auto& correctionsj = corrections(nodeListj, j);
         const auto& Fj = fieldList(nodeListj, j);
-        auto&       gradFj = result(nodeListj, j);
+        auto&       gradFj = result_thread(nodeListj, j);
 
         // Pair contributions
         const auto xij = xi - xj;

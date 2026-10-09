@@ -101,6 +101,7 @@ update(const KeyType& key,
 
     typename SpheralThreads<Dimension>::FieldListStack threadStack;
     auto volEff_thread = volEff.threadCopy(threadStack);
+    auto massDensity_thread = massDensity.threadCopy(threadStack);
 
 #pragma omp for
     for (auto k = 0u; k < npairs; ++k) {
@@ -114,15 +115,15 @@ update(const KeyType& key,
       const auto& xi = pos(nodeListi, i);
       const auto& Hi = H(nodeListi, i);
       Hdeti = Hi.Determinant();
-      auto& rhoi = massDensity(nodeListi, i);
+      auto& rhoi = massDensity_thread(nodeListi, i);
       auto& Veffi = volEff_thread(nodeListi, i);
 
-      const auto& Vj = volume(nodeListi, j);
-      const auto& mj = mass(nodeListi, j);
-      const auto& xj = pos(nodeListi, j);
-      const auto& Hj = H(nodeListi, j);
+      const auto& Vj = volume(nodeListj, j);
+      const auto& mj = mass(nodeListj, j);
+      const auto& xj = pos(nodeListj, j);
+      const auto& Hj = H(nodeListj, j);
       Hdetj = Hj.Determinant();
-      auto& rhoj = massDensity(nodeListi, j);
+      auto& rhoj = massDensity_thread(nodeListj, j);
       auto& Veffj = volEff_thread(nodeListj, j);
 
       xij = xi - xj;

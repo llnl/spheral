@@ -88,7 +88,7 @@ gradientRK(const FieldList<Dimension, DataType>& fieldList,
         const auto& Hj = H(nodeListj, j);
         const auto& correctionsj = corrections(nodeListj, j);
         const auto& Fj = fieldList(nodeListj, j);
-        auto&       gradFj = result(nodeListj, j);
+        auto&       gradFj = result_thread(nodeListj, j);
 
         // Pair contributions
         const auto xij = xi - xj;
@@ -165,8 +165,9 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
 #pragma omp parallel
   {
 
-    // Thread private stuff
-    auto result_thread = result.threadCopy();
+    // Thread private stuff.  Copy the (zeroed, sized) result so each thread
+    // has vectors of the right length -- the default zero is an empty vector.
+    auto result_thread = result.threadCopy(ThreadReduction::SUM, true);
     int i, j, nodeListi, nodeListj;
     Vector gradWi, gradWj;
 
@@ -202,7 +203,7 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
         const auto& Hj = H(nodeListj, j);
         const auto& correctionsj = corrections(nodeListj, j);
         const auto& Fj = fieldList(nodeListj, j);
-        auto&       gradFj = result(nodeListj, j);
+        auto&       gradFj = result_thread(nodeListj, j);
         CHECK(Fj.size() == vectorSize &&
               gradFj.size() == vectorSize);
 
@@ -222,9 +223,17 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
       }
     }
 
+    // Sum elementwise (threadReduce's += on std::vector appends).
 #pragma omp critical
-    {
-      result_thread.threadReduce();
+    if (omp_get_num_threads() > 1) {
+      for (auto k = 0u; k < numNodeLists; ++k) {
+        const auto n = result[k]->numInternalElements();
+        for (auto i = 0u; i < n; ++i) {
+          auto&       gradF = result(k, i);
+          const auto& gradF_thread = result_thread(k, i);
+          for (auto m = 0u; m < vectorSize; ++m) gradF[m] += gradF_thread[m];
+        }
+      }
     }
   }
 

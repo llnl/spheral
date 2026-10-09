@@ -899,6 +899,34 @@ setTreeMasterList(const typename TreeNeighbor<Dimension>::LevelKey levelID,
 }
 
 //------------------------------------------------------------------------------
+// The master list alone: the same cell lookup as setTreeMasterList (via
+// setMasterList with a SymTensor H), without the coarse neighbor search.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+setMasterListOnly(const Vector& position,
+                  const SymTensor& H,
+                  std::vector<int>& masterList,
+                  const bool ghostConnectivity) const {
+  REQUIRE(H.Determinant() > 0.0);
+  const Scalar h = 1.0/H.eigenValues().minElement();
+  CellKey masterKey, ix_master, iy_master, iz_master;
+  const LevelKey masterLevel = this->gridLevel(h);
+  buildCellKey(masterLevel, position, masterKey, ix_master, iy_master, iz_master);
+  masterList.clear();
+  if (mTree.size() > masterLevel) {
+    auto masterItr = mTree[masterLevel].find(masterKey);
+    if (masterItr != mTree[masterLevel].end()) masterList = masterItr->second.members;
+  }
+  sort(masterList.begin(), masterList.end());
+  if (not ghostConnectivity) {
+    const auto firstGhostNode = this->nodeList().firstGhostNode();
+    masterList.erase(lower_bound(masterList.begin(), masterList.end(), firstGhostNode), masterList.end());
+  }
+}
+
+//------------------------------------------------------------------------------
 // Build a cell key from coordinate indices.
 //------------------------------------------------------------------------------
 template<typename Dimension>

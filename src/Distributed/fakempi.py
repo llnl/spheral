@@ -22,7 +22,7 @@ def allreduce(var, op):
 def gather(obj, root=0):
     return [obj,]
 
-def allgather(obj, op):
+def allgather(obj, op=None):
     return [obj,]
 
 def bcast(obj, root=0):

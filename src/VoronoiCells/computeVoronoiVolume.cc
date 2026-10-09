@@ -692,7 +692,9 @@ computeVoronoiVolume(const FieldList<Dimension, typename Dimension::Vector>& pos
       // surface detection.
       for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
         const auto n = vol[nodeListi]->numInternalElements();
-#pragma omp parallel for
+        // Work-share within the enclosing parallel region (a nested
+        // "parallel for" here made every thread run the whole loop).
+#pragma omp for
         for (auto i = 0u; i < n; ++i) {
           const auto& ri = position(nodeListi, i);
           const auto& Hi = H(nodeListi, i);

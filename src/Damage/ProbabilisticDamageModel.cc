@@ -128,13 +128,14 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
                      state.field(buildKey(HydroFieldNames::massDensity), 0.0));
   const auto  nlocal = nodes.numInternalNodes();
   vector<uniform_random> randomGenerators(nlocal);
-#pragma omp parallel for
+  auto Vmin = mVmin, Vmax = mVmax;
+#pragma omp parallel for reduction(min:Vmin) reduction(max:Vmax)
   for (auto i = 0u; i < nlocal; ++i) {
     if (mMask(i) == 1) {
       CHECK(mass(i) > 0.0 and rho(i) > 0.0);
       mInitialVolume(i) = mass(i)/rho(i) * mVolumeMultiplier;
-      mVmin = std::min(mVmin, mInitialVolume(i));
-      mVmax = std::max(mVmax, mInitialVolume(i));
+      Vmin = std::min(Vmin, mInitialVolume(i));
+      Vmax = std::max(Vmax, mInitialVolume(i));
 #ifdef __APPLE__
       std::size_t seedi = mSeed;
 #else
@@ -145,8 +146,8 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
       randomGenerators[i]();                // Recommended to discard first value in sequence
     }
   }
-  mVmin = allReduce(mVmin, SPHERAL_OP_MIN);
-  mVmax = allReduce(mVmax, SPHERAL_OP_MAX);
+  mVmin = allReduce(Vmin, SPHERAL_OP_MIN);
+  mVmax = allReduce(Vmax, SPHERAL_OP_MAX);
 
   // Generate min/max ranges of flaws for each point.
   const auto mInv = 1.0/mmWeibull;

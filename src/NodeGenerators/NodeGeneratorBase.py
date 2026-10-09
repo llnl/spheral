@@ -25,11 +25,11 @@ class NodeGeneratorBase:
             self._cullVars(minGlobalID, maxGlobalID, *vars)
 
         else:
-            ntot = 0
-            for proc in range(mpi.procs):
-                if mpi.rank == proc:
-                    self.globalIDs = list(range(ntot, ntot + len(vars[0])))
-                ntot += mpi.bcast(len(vars[0]), proc)
+            # One allgather of the local counts (rather than a bcast per rank)
+            # gives each rank the offset of its global IDs.
+            counts = mpi.allgather(len(vars[0]))
+            offset = sum(counts[:mpi.rank])
+            self.globalIDs = list(range(offset, offset + len(vars[0])))
 
         return
 

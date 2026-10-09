@@ -81,8 +81,8 @@ numberDensity(const DataBase<Dimension>& dataBase,
       const auto Wi = W.kernelValue(etai, Hdeti);
       const auto Wj = W.kernelValue(etaj, Hdetj);
 
-      result(nodeListi, i) += Wi;
-      result(nodeListj, j) += Wj;
+      result_thread(nodeListi, i) += Wi;
+      result_thread(nodeListj, j) += Wj;
     }
 
 #pragma omp critical

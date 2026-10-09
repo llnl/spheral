@@ -66,7 +66,6 @@ weibullFlawDistributionBenzAsphaug(double volume,
   // Prepare a table to faciliate looking local IDs from global.
   unordered_map<size_t, size_t> global2local;
   const auto nlocal = nodeList.numInternalNodes();
-#pragma omp parallel for
   for (auto i = 0u; i < nlocal; i++) global2local[globalIDs(i)] = i;
   CHECK(global2local.size() == nodeList.numInternalNodes());
 
@@ -88,7 +87,7 @@ weibullFlawDistributionBenzAsphaug(double volume,
       const auto& rho = (state.registered(buildKey(SolidFieldNames::porositySolidDensity)) ?
                          state.field(buildKey(SolidFieldNames::porositySolidDensity), 0.0) :
                          state.field(buildKey(HydroFieldNames::massDensity), 0.0));
-#pragma omp parallel for
+#pragma omp parallel for reduction(+:volume)
       for (auto i = 0u; i < nlocal; i++) {
         CHECK(rho(i) > 0.0);
         volume += mass(i)/rho(i);

@@ -19,6 +19,7 @@
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
 #include "Utilities/DBC.hh"
+#include "Utilities/Timer.hh"
 #include "Integrator.hh"
 
 #include <limits.h>
@@ -178,6 +179,7 @@ template<typename Dimension>
 void
 Integrator<Dimension>::preStepInitialize(State<Dimension>& state,
                                          StateDerivatives<Dimension>& derivs) const {
+  TIME_FUNCTION;
   auto& db = mDataBase.get();
   for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
     physicsPtr->preStepInitialize(db, state, derivs);
@@ -194,6 +196,7 @@ Integrator<Dimension>::initializeDerivatives(const double t,
                                              const double dt,
                                              State<Dimension>& state,
                                              StateDerivatives<Dimension>& derivs) const {
+  TIME_FUNCTION;
 
   // Initialize the work fields.
   auto& db = mDataBase.get();
@@ -281,6 +284,7 @@ Integrator<Dimension>::postStepFinalize(const double t,
                                         const double dt,
                                         State<Dimension>& state,
                                         StateDerivatives<Dimension>& derivs) const {
+  TIME_FUNCTION;
 
   // Loop over the physics packages and perform any necessary finalizations.
   auto& db = mDataBase.get();
@@ -385,6 +389,7 @@ uniqueBoundaryConditions() const {
 template<typename Dimension>
 void
 Integrator<Dimension>::setGhostNodes() const {
+  TIME_FUNCTION;
 
   // Get that DataBase.
   auto& db = mDataBase.get();
@@ -556,6 +561,7 @@ template<typename Dimension>
 void
 Integrator<Dimension>::applyGhostBoundaries(State<Dimension>& state,
                                             StateDerivatives<Dimension>& derivs) const {
+  TIME_FUNCTION;
 
 //   // Start our work timer.
 //   typedef Timing::Time Time;
@@ -608,6 +614,7 @@ Integrator<Dimension>::applyGhostBoundaries(State<Dimension>& state,
 template<typename Dimension>
 void
 Integrator<Dimension>::finalizeGhostBoundaries() const {
+  TIME_FUNCTION;
 
 //   // Start our work timer.
 //   typedef Timing::Time Time;
@@ -639,6 +646,7 @@ Integrator<Dimension>::finalizeGhostBoundaries() const {
 template<typename Dimension>
 void
 Integrator<Dimension>::setViolationNodes() const {
+  TIME_FUNCTION;
 
   // Get that DataBase.
   auto& db = mDataBase.get();
@@ -667,6 +675,7 @@ template<typename Dimension>
 void
 Integrator<Dimension>::enforceBoundaries(State<Dimension>& state,
                                          StateDerivatives<Dimension>& derivs) const {
+  TIME_FUNCTION;
 
   // Have each boundary identify the set of nodes in violation.  This also resets
   // the positions and H's of the nodes to be in compliance.
@@ -686,6 +695,7 @@ template<typename Dimension>
 void
 Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
                                       State<Dimension>& state1) const {
+  TIME_FUNCTION;
   const FieldList<Dimension, Vector> x0 = state0.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
   FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
