@@ -16,66 +16,17 @@ PythonArtificialViscosity<Dimension, QPiType>::
 PythonArtificialViscosity(const Scalar Clinear,
                           const Scalar Cquadratic,
                           const TableKernel<Dimension>& kernel) :
-  ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
-  mView(nullptr) {
+  ArtificialViscosity<Dimension>(kernel),
+  ArtificialViscosityView<Dimension>(Clinear, Cquadratic) {
 }
 
 //------------------------------------------------------------------------------
-// Destructor
+// PythonArtificialViscosityCallView constructor
 //------------------------------------------------------------------------------
 template<typename Dimension, typename QPiType>
-PythonArtificialViscosity<Dimension, QPiType>::
-~PythonArtificialViscosity() {
-  if (mView) {
-    mView.free();
-  }
-}
-
-//------------------------------------------------------------------------------
-// Get scalar view - create wrapper on demand
-//------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-chai::managed_ptr<typename PythonArtificialViscosity<Dimension, QPiType>::ArtViscViewScalar>
-PythonArtificialViscosity<Dimension, QPiType>::
-getScalarView() {
-  if constexpr (!std::is_same_v<QPiType, Scalar>) {
-    return chai::managed_ptr<ArtViscViewScalar>();
-  } else {
-    if (!mView) {
-      mView = chai::make_managed<PythonAVView>(this);
-    }
-    return chai::dynamic_pointer_cast<ArtViscViewScalar>(mView);
-  }
-}
-
-//------------------------------------------------------------------------------
-// Get tensor view - create wrapper on demand.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-chai::managed_ptr<typename PythonArtificialViscosity<Dimension, QPiType>::ArtViscViewTensor>
-PythonArtificialViscosity<Dimension, QPiType>::
-getTensorView() {
-  if constexpr (!std::is_same_v<QPiType, Tensor>) {
-    return chai::managed_ptr<ArtViscViewTensor>();
-  } else {
-    if (!mView) {
-      mView = chai::make_managed<PythonAVView>(this);
-    }
-    return chai::dynamic_pointer_cast<ArtViscViewTensor>(mView);
-  }
-}
-
-//------------------------------------------------------------------------------
-// PythonAVView Constructor
-//------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-PythonArtificialViscosity<Dimension, QPiType>::PythonAVView::
-PythonAVView(PythonArtificialViscosity<Dimension, QPiType>* parent) :
-  ArtificialViscosityView<Dimension, QPiType>(parent->Cl(),
-                                             parent->Cq(),
-                                             parent->balsaraShearCorrection(),
-                                             parent->epsilon2(),
-                                             parent->negligibleSoundSpeed()),
+PythonArtificialViscosityCallView<Dimension, QPiType>::
+PythonArtificialViscosityCallView(
+  const PythonArtificialViscosity<Dimension, QPiType>* parent):
   mParent(parent) {
   REQUIRE(parent != nullptr);
 }
@@ -85,7 +36,7 @@ PythonAVView(PythonArtificialViscosity<Dimension, QPiType>* parent) :
 //------------------------------------------------------------------------------
 template<typename Dimension, typename QPiType>
 void
-PythonArtificialViscosity<Dimension, QPiType>::PythonAVView::
+PythonArtificialViscosityCallView<Dimension, QPiType>::
 QPiij(QPiType& QPiij, QPiType& QPiji,
       Scalar& Qij, Scalar& Qji,
       const size_t nodeListi, const size_t i,

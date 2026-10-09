@@ -27,10 +27,10 @@ instantiate(ArtificialViscosity_inst ArtificialViscosity_sources)
 
 set(ArtificialViscosity_headers
   ArtificialViscosity.hh
+  ArtificialViscosityVariant.hh
   PythonArtificialViscosity.hh
-  ArtificialViscosityBase.hh
-  ArtificialViscosityBaseInline.hh
   ArtificialViscosityView.hh
+  ArtificialViscosityViewInline.hh
   LimitedMonaghanGingoldViscosity.hh
   LimitedMonaghanGingoldViscosityView.hh
   LimitedMonaghanGingoldViscosityViewInline.hh

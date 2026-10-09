@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// ArtificialViscosity -- A base class for ArtificialViscosity that strips
+// ArtificialViscosity -- A base value class for ArtificialViscosity that strips
 // off the QPiType template parameter.  This makes a convenient way to break
 // that template parameter from spreading into classes that need to consume an
 // ArtificialViscosity.
@@ -13,11 +13,8 @@
 #include "Field/FieldList.hh"
 #include "DataOutput/registerWithRestart.hh"
 #include "Utilities/SpheralMessage.hh"
-#include "ArtificialViscosityView.hh"
-#include "chai/managed_ptr.hpp"
 
 #include <utility>
-#include <typeindex>
 
 namespace Spheral {
 
@@ -31,8 +28,7 @@ template<typename Dimension> class Boundary;
 class FileIO;
 
 template<typename Dimension>
-class ArtificialViscosity: public Physics<Dimension>,
-                           public ArtificialViscosityBase<Dimension> {
+class ArtificialViscosity: public Physics<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -41,24 +37,15 @@ public:
   using SymTensor = typename Dimension::SymTensor;
   using TimeStepType = typename Physics<Dimension>::TimeStepType;
   using ResidualType = typename Physics<Dimension>::ResidualType;
-  using ArtViscViewScalar = ArtificialViscosityView<Dimension, Scalar>;
-  using ArtViscViewTensor = ArtificialViscosityView<Dimension, Tensor>;
 
   // Constructors, destructor
-  ArtificialViscosity(const Scalar Clinear,
-                      const Scalar Cquadratic,
-                      const TableKernel<Dimension>& kernel);
+  ArtificialViscosity(const TableKernel<Dimension>& kernel);
   virtual ~ArtificialViscosity() = default;
 
   // No default constructor, copying, or assignment
   ArtificialViscosity() = delete;
   ArtificialViscosity(const ArtificialViscosity&) = delete;
   ArtificialViscosity& operator=(const ArtificialViscosity&) = delete;
-
-  //...........................................................................
-  // Virtual methods we expect ArtificialViscosities to provide
-  // Require ArtificialViscosities to specify the type_index of the view QPiType
-  virtual std::type_index QPiTypeIndex() const = 0;
 
   // Some AVs need the velocity gradient computed, so they should override this to true
   virtual bool requireVelocityGradient()                                  const { return false; }
@@ -123,25 +110,26 @@ public:
                                    const State<Dimension>& state0,
                                    const Scalar tol) const override { return std::make_pair<double, std::string>(0.0, this->label() + " no vote"); }
 
-  // Access stored state
-  Scalar Cl()                                              const { return mClinear; }
-  Scalar Cq()                                              const { return mCquadratic; }
-  bool   balsaraShearCorrection()                          const { return mBalsaraShearCorrection; }
-  Scalar epsilon2()                                        const { return mEpsilon2; }
-  Scalar negligibleSoundSpeed()                            const { return mNegligibleSoundSpeed; }
+  // Access the viscosity parameters, which are owned by the concrete view.
+  virtual Scalar Cl()                            const = 0;
+  virtual Scalar Cq()                            const = 0;
+  virtual bool   balsaraShearCorrection()        const = 0;
+  virtual Scalar epsilon2()                      const = 0;
+  virtual Scalar negligibleSoundSpeed()          const = 0;
+
+  virtual void Cl(Scalar x)                            = 0;
+  virtual void Cq(Scalar x)                            = 0;
+  virtual void balsaraShearCorrection(bool x)          = 0;
+  virtual void epsilon2(Scalar x)                      = 0;
+  virtual void negligibleSoundSpeed(Scalar x)          = 0;
+
+  // Access stored host state.
   bool   rigorousVelocityGradient()                        const { return mRigorousVelocityGradient; }
   const FieldList<Dimension, Scalar>& maxViscousPressure() const { return mMaxViscousPressure; }
   const FieldList<Dimension, Scalar>& effViscousPressure() const { return mEffViscousPressure; }
   const FieldList<Dimension, Tensor>& DvDx()               const { return mDvDx; }
   const TableKernel<Dimension>&       kernel()             const { return mWT; }
   void rigorousVelocityGradient(bool x)                          { mRigorousVelocityGradient = x; }
-
-  // Assign member data from Base class
-  void Cl(Scalar x)                   { mClinear = x; updateManagedPtr(); }
-  void Cq(Scalar x)                   { mCquadratic = x; updateManagedPtr(); }
-  void balsaraShearCorrection(bool x) { mBalsaraShearCorrection = x; updateManagedPtr(); }
-  void epsilon2(Scalar x)             { mEpsilon2 = x; updateManagedPtr(); }
-  void negligibleSoundSpeed(Scalar x) { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; updateManagedPtr(); }
 
   // Deprecated options
   bool limiter()               const { SpheralDeprecationWarning << "ArtificialViscosity::limiter" << std::endl; return false; }
@@ -153,26 +141,8 @@ public:
   virtual void dumpState(FileIO& file, const std::string& pathName) const;
   virtual void restoreState(const FileIO& file, const std::string& pathName);
 
-  //...........................................................................
-  // Methods for accessing the view.
-  virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() {
-    return chai::managed_ptr<ArtViscViewScalar>();
-  }
-  virtual chai::managed_ptr<ArtViscViewTensor> getTensorView() {
-    return chai::managed_ptr<ArtViscViewTensor>();
-  }
-
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // Function to update view pointer if it exists when member data is changed
-  virtual void updateManagedPtr() = 0;
-
-  using ArtificialViscosityBase<Dimension>::mClinear;
-  using ArtificialViscosityBase<Dimension>::mCquadratic;
-  using ArtificialViscosityBase<Dimension>::mEpsilon2;
-  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
-  using ArtificialViscosityBase<Dimension>::mNegligibleSoundSpeed;
-
   // Maintain the last max viscous pressure for timestep control
   FieldList<Dimension, Scalar> mMaxViscousPressure;
   FieldList<Dimension, Scalar> mEffViscousPressure;

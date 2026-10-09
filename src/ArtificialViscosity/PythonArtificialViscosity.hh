@@ -16,30 +16,71 @@
 
 #include "ArtificialViscosity.hh"
 #include "ArtificialViscosityView.hh"
+#include "Field/FieldList.hh"
 
 #include <tuple>
-#include <type_traits>
 
 namespace Spheral {
 
+template<typename Dimension, typename QPiType> class PythonArtificialViscosity;
+
+//------------------------------------------------------------------------------
+// CPU-only adapter that invokes the Python-overridable viscosity method.
+// It intentionally owns no viscosity parameters: those belong to its parent.
+//------------------------------------------------------------------------------
 template<typename Dimension, typename QPiType>
-class PythonArtificialViscosity: public ArtificialViscosity<Dimension> {
+class PythonArtificialViscosityCallView {
+public:
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ReturnType = QPiType;
+
+  PythonArtificialViscosityCallView(
+    const PythonArtificialViscosity<Dimension, QPiType>* parent);
+
+  void QPiij(QPiType& QPiij, QPiType& QPiji,
+             Scalar& Qij, Scalar& Qji,
+             const size_t nodeListi, const size_t i,
+             const size_t nodeListj, const size_t j,
+             const Vector& xi,
+             const SymTensor& Hi,
+             const Vector& etai,
+             const Vector& vi,
+             const Scalar rhoi,
+             const Scalar csi,
+             const Vector& xj,
+             const SymTensor& Hj,
+             const Vector& etaj,
+             const Vector& vj,
+             const Scalar rhoj,
+             const Scalar csj,
+             const FieldListView<Dimension, Scalar>& fCl,
+             const FieldListView<Dimension, Scalar>& fCq,
+             const FieldListView<Dimension, Tensor>& DvDx) const;
+
+private:
+  const PythonArtificialViscosity<Dimension, QPiType>* mParent;
+};
+
+template<typename Dimension, typename QPiType>
+class PythonArtificialViscosity: public ArtificialViscosity<Dimension>,
+                                 public ArtificialViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using ArtViscViewScalar = ArtificialViscosityView<Dimension, Scalar>;
-  using ArtViscViewTensor = ArtificialViscosityView<Dimension, Tensor>;
-  using ArtViscView = ArtificialViscosityView<Dimension, QPiType>;
+  using ViewType = PythonArtificialViscosityCallView<Dimension, QPiType>;
 
   // Constructor
   PythonArtificialViscosity(const Scalar Clinear,
                             const Scalar Cquadratic,
                             const TableKernel<Dimension>& kernel);
 
-  virtual ~PythonArtificialViscosity();
+  virtual ~PythonArtificialViscosity() = default;
 
   // No default constructor, copying, or assignment
   PythonArtificialViscosity() = delete;
@@ -58,77 +99,32 @@ public:
   //...........................................................................
   // Standard ArtificialViscosity interface
 
-  // Return the appropriately typed CPU-only View wrapper.
-  virtual chai::managed_ptr<ArtViscViewScalar> getScalarView() override;
-  virtual chai::managed_ptr<ArtViscViewTensor> getTensorView() override;
-
-  // Return the QPi output type.
-  virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(QPiType));
+  // Forward ArtificialViscosity's virtual parameter interface to the view.
+  virtual Scalar Cl() const override { return ArtificialViscosityView<Dimension>::Cl(); }
+  virtual Scalar Cq() const override { return ArtificialViscosityView<Dimension>::Cq(); }
+  virtual bool balsaraShearCorrection() const override {
+    return ArtificialViscosityView<Dimension>::balsaraShearCorrection();
+  }
+  virtual Scalar epsilon2() const override { return ArtificialViscosityView<Dimension>::epsilon2(); }
+  virtual Scalar negligibleSoundSpeed() const override {
+    return ArtificialViscosityView<Dimension>::negligibleSoundSpeed();
   }
 
-  // Label for restart
+  virtual void Cl(const Scalar x) override { ArtificialViscosityView<Dimension>::Cl(x); }
+  virtual void Cq(const Scalar x) override { ArtificialViscosityView<Dimension>::Cq(x); }
+  virtual void balsaraShearCorrection(const bool x) override {
+    ArtificialViscosityView<Dimension>::balsaraShearCorrection(x);
+  }
+  virtual void epsilon2(const Scalar x) override { ArtificialViscosityView<Dimension>::epsilon2(x); }
+  virtual void negligibleSoundSpeed(const Scalar x) override {
+    ArtificialViscosityView<Dimension>::negligibleSoundSpeed(x);
+  }
+
+  // Return a CPU-only adapter that refers to this Python object.
+  ViewType view() const { return ViewType(this); }
+
+  // Label for restart.
   virtual std::string label() const override { return "PythonArtificialViscosity"; }
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  // No managed ptr to update (View wrapper is different pattern)
-  virtual void updateManagedPtr() override {}
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  // Forward declare the private View class
-  class PythonAVView;
-
-  // Managed pointer to View wrapper (created on-demand)
-  chai::managed_ptr<PythonAVView> mView;
-};
-
-//------------------------------------------------------------------------------
-// Private View implementation that wraps Python AV
-// This class implements the full QPiij signature and calls back to the
-// simplified computeQPiij method on the Python class
-//------------------------------------------------------------------------------
-template<typename Dimension, typename QPiType>
-class PythonArtificialViscosity<Dimension, QPiType>::PythonAVView
-    : public ArtificialViscosityView<Dimension, QPiType> {
-public:
-  using Scalar = typename Dimension::Scalar;
-  using Vector = typename Dimension::Vector;
-  using Tensor = typename Dimension::Tensor;
-  using SymTensor = typename Dimension::SymTensor;
-
-  // Constructor - store pointer to parent Python AV
-  PythonAVView(PythonArtificialViscosity<Dimension, QPiType>* parent);
-
-  virtual ~PythonAVView() = default;
-
-  //...........................................................................
-  // Implement full QPiij signature by extracting from FieldListView
-  // and calling simplified computeQPiij
-  virtual void QPiij(QPiType& QPiij, QPiType& QPiji,
-                     Scalar& Qij, Scalar& Qji,
-                     const size_t nodeListi, const size_t i,
-                     const size_t nodeListj, const size_t j,
-                     const Vector& xi,
-                     const SymTensor& Hi,
-                     const Vector& etai,
-                     const Vector& vi,
-                     const Scalar rhoi,
-                     const Scalar csi,
-                     const Vector& xj,
-                     const SymTensor& Hj,
-                     const Vector& etaj,
-                     const Vector& vj,
-                     const Scalar rhoj,
-                     const Scalar csj,
-                     const FieldListView<Dimension, Scalar>& fCl,
-                     const FieldListView<Dimension, Scalar>& fCq,
-                     const FieldListView<Dimension, Tensor>& DvDx) const override;
-
-private:
-  // Pointer back to parent Python AV class
-  PythonArtificialViscosity<Dimension, QPiType>* mParent;
 };
 
 }

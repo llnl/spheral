@@ -15,14 +15,14 @@
 namespace Spheral {
 
 template<typename Dimension>
-class MonaghanGingoldViscosity: public ArtificialViscosity<Dimension> {
+class MonaghanGingoldViscosity: public ArtificialViscosity<Dimension>,
+                                public MonaghanGingoldViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
   using ViewType = MonaghanGingoldViscosityView<Dimension>;
 
   // Constructors.
@@ -31,11 +31,14 @@ public:
                            const TableKernel<Dimension>& kernel,
                            const bool linearInExpansion,
                            const bool quadraticInExpansion) :
-    ArtificialViscosity<Dimension>(Clinear, Cquadratic, kernel),
-    mLinearInExpansion(linearInExpansion),
-    mQuadraticInExpansion(quadraticInExpansion) { }
+    ArtificialViscosity<Dimension>(kernel),
+    ViewType(Clinear,
+             Cquadratic,
+             linearInExpansion,
+             quadraticInExpansion) {
+  }
 
-  virtual ~MonaghanGingoldViscosity() { m_viewPtr.free(); }
+  virtual ~MonaghanGingoldViscosity() { }
 
   // No default construction, copying, or assignment
   MonaghanGingoldViscosity() = delete;
@@ -45,55 +48,53 @@ public:
   // Restart methods.
   virtual std::string label()    const override { return "MonaghanGingoldViscosity"; }
 
-  // Access data members
-  bool linearInExpansion()                const { return mLinearInExpansion; }
-  bool quadraticInExpansion()             const { return mQuadraticInExpansion; }
-  void linearInExpansion(const bool x)          { mLinearInExpansion = x; updateManagedPtr(); }
-  void quadraticInExpansion(const bool x)       { mQuadraticInExpansion = x; updateManagedPtr(); }
+  // Forward ArtificialViscosity's virtual parameter interface to ViewType
+  // Each top level ArtificialViscosity value class must set these
+  virtual Scalar Cl() const override { return ViewType::Cl(); }
+  virtual Scalar Cq() const override { return ViewType::Cq(); }
 
-  // View methods
-  virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(Scalar));
+  virtual void Cl(const Scalar x) override { ViewType::Cl(x); }
+  virtual void Cq(const Scalar x) override { ViewType::Cq(x); }
+
+  virtual bool balsaraShearCorrection() const override {
+    return ViewType::balsaraShearCorrection();
+  }
+  virtual void balsaraShearCorrection(const bool x) override {
+    ViewType::balsaraShearCorrection(x);
   }
 
-  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
-    initView();
-    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  virtual Scalar epsilon2() const override {
+    return ViewType::epsilon2();
+  }
+  virtual void epsilon2(const Scalar x) override {
+    ViewType::epsilon2(x);
   }
 
-  // Useful for testing
-  chai::managed_ptr<ViewType> getView() {
-    initView();
-    return m_viewPtr;
+  virtual Scalar negligibleSoundSpeed() const override {
+    return ViewType::negligibleSoundSpeed();
   }
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  // Initialize the managed pointer if it doesn't exist
-  void initView() {
-    if (!m_viewPtr) {
-      m_viewPtr = chai::make_managed<ViewType>(mClinear,
-                                               mCquadratic,
-                                               mLinearInExpansion,
-                                               mQuadraticInExpansion);
-    }
+  virtual void negligibleSoundSpeed(const Scalar x) override {
+    ViewType::negligibleSoundSpeed(x);
   }
 
-  // Reinitialize the managed pointer if it exists so member variables are up to date
-  virtual void updateManagedPtr() override {
-    if (m_viewPtr) {
-      m_viewPtr.free();
-      initView();
-    }
+  bool linearInExpansion() const {
+    return ViewType::linearInExpansion();
+  }
+  bool quadraticInExpansion() const {
+    return ViewType::quadraticInExpansion();
   }
 
-  // Not ideal but there is repeated member data between the value and view
-  using ArtificialViscosity<Dimension>::mClinear;
-  using ArtificialViscosity<Dimension>::mCquadratic;
-  bool mLinearInExpansion = false;
-  bool mQuadraticInExpansion = false;
-private:
-  std::type_index m_viewType = typeid(ViewType);
-  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
+  void linearInExpansion(const bool x) {
+    ViewType::linearInExpansion(x);
+  }
+  void quadraticInExpansion(const bool x) {
+    ViewType::quadraticInExpansion(x);
+  }
+
+  // View method
+  ViewType view() const {
+    return static_cast<const ViewType&>(*this);
+  }
 };
 
 }

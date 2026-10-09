@@ -1,30 +1,19 @@
 //---------------------------------Spheral++----------------------------------//
-// ArtificialViscosityView -- The view class for all ArtificialViscosities in
+// ArtificialViscosityView -- The base class for the ArtificialViscosity view class
 // Spheral++.
 //
-// This class contains the pure virtual function QPiij
-// and specifies the QPi = Q/rho^2 return type,
-// generally either a Scalar or a Tensor.
-//
-// Created by JMO, Sun May 21 21:16:43 PDT 2000
+// Created by LDO, Wed Oct 15 14:16:43 PDT 2025
 //----------------------------------------------------------------------------//
 #ifndef __Spheral_ArtificialViscosityView__
 #define __Spheral_ArtificialViscosityView__
-
-#include "config.hh"
-#include "chai/managed_ptr.hpp"
-#include "Field/FieldList.hh"
-#include "ArtificialViscosityBase.hh"
 
 #include <utility>
 #include <typeindex>
 
 namespace Spheral {
 
-template<typename Dimension> class ArtificialViscosity;
-
-template<typename Dimension, typename QPiType>
-class ArtificialViscosityView : public ArtificialViscosityBase<Dimension> {
+template<typename Dimension>
+class ArtificialViscosityView {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -32,64 +21,61 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using ReturnType = QPiType;
-
   // Constructors, destructor
+  SPHERAL_HOST_DEVICE
+  ArtificialViscosityView() = default;
   SPHERAL_HOST_DEVICE
   ArtificialViscosityView(const Scalar Clinear,
                           const Scalar Cquadratic,
                           const bool   BalsaraShearCorrection = false,
                           const Scalar Epsilon2 = 1.0E-2,
                           const Scalar NegligibleSoundSpeed = 1.0E-10) :
-    ArtificialViscosityBase<Dimension>(Clinear,
-                                       Cquadratic,
-                                       BalsaraShearCorrection,
-                                       Epsilon2,
-                                       NegligibleSoundSpeed) {}
+    mClinear(Clinear),
+    mCquadratic(Cquadratic),
+    mBalsaraShearCorrection(BalsaraShearCorrection),
+    mEpsilon2(Epsilon2),
+    mNegligibleSoundSpeed(NegligibleSoundSpeed) {}
 
+  // Apparently virtual destructors keep a vptr/vtable in the
+  // device view even after QPiij is not virtual
   SPHERAL_HOST_DEVICE
-  virtual ~ArtificialViscosityView() = default;
-
-  std::type_index QPiTypeIndex() const { return std::type_index(typeid(QPiType)); }
+  ~ArtificialViscosityView() = default;
 
   //...........................................................................
-  // Virtual methods we expect ArtificialViscosities to provide
-
-  // All ArtificialViscosities must provide the pairwise QPi term (pressure/rho^2)
-  // Returns the pair values QPiij and QPiji by reference as the first two arguments.
-  // Note the final FieldLists (fCl, fCQ, DvDx) should be the special versions registered
-  // by the ArtficialViscosity (particularly DvDx).
+  // Methods
+  // Calculate the curl of the velocity given the stress tensor.
   SPHERAL_HOST_DEVICE
-  virtual void QPiij(QPiType& QPiij, QPiType& QPiji,    // result for QPi (Q/rho^2)
-                     Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-                     const size_t nodeListi, const size_t i,
-                     const size_t nodeListj, const size_t j,
-                     const Vector& xi,
-                     const SymTensor& Hi,
-                     const Vector& etai,
-                     const Vector& vi,
-                     const Scalar rhoi,
-                     const Scalar csi,
-                     const Vector& xj,
-                     const SymTensor& Hj,
-                     const Vector& etaj,
-                     const Vector& vj,
-                     const Scalar rhoj,
-                     const Scalar csj,
-                     const FieldListView<Dimension, Scalar>& fCl,
-                     const FieldListView<Dimension, Scalar>& fCq,
-                     const FieldListView<Dimension, Tensor>& DvDx) const = 0;
+  Scalar curlVelocityMagnitude(const Tensor& DvDx) const;
 
-  //friend class ArtificialViscosity<Dimension>;
+  // Find the Balsara shear correction multiplier
+  SPHERAL_HOST_DEVICE
+  Scalar calcBalsaraShearCorrection(const Tensor& DvDx,
+                                    const SymTensor& H,
+                                    const Scalar& cs) const;
+
+  SPHERAL_HOST_DEVICE Scalar Cl()                     const { return mClinear; }
+  SPHERAL_HOST_DEVICE Scalar Cq()                     const { return mCquadratic; }
+  SPHERAL_HOST_DEVICE Scalar epsilon2()               const { return mEpsilon2; }
+  SPHERAL_HOST_DEVICE bool   balsaraShearCorrection() const { return mBalsaraShearCorrection; }
+  SPHERAL_HOST_DEVICE Scalar negligibleSoundSpeed()   const { return mNegligibleSoundSpeed; }
+  SPHERAL_HOST_DEVICE void Cl(Scalar x)                     { mClinear = x; }
+  SPHERAL_HOST_DEVICE void Cq(Scalar x)                     { mCquadratic = x; }
+  SPHERAL_HOST_DEVICE void epsilon2(Scalar x)               { mEpsilon2 = x; }
+  SPHERAL_HOST_DEVICE void balsaraShearCorrection(bool x)   { mBalsaraShearCorrection = x; }
+  SPHERAL_HOST_DEVICE void negligibleSoundSpeed(Scalar x)   { REQUIRE(x > 0.0); mNegligibleSoundSpeed = x; }
+
 protected:
-  //--------------------------- Protected Interface ---------------------------//
-  using ArtificialViscosityBase<Dimension>::mClinear;
-  using ArtificialViscosityBase<Dimension>::mCquadratic;
-  using ArtificialViscosityBase<Dimension>::mEpsilon2;
-  using ArtificialViscosityBase<Dimension>::mBalsaraShearCorrection;
-  using ArtificialViscosityBase<Dimension>::mNegligibleSoundSpeed;
+  Scalar mClinear = 0.0;
+  Scalar mCquadratic = 0.0;
+  // Switch for the Balsara shear correction.
+  bool mBalsaraShearCorrection = false;
+  // Parameters for the Q limiter.
+  Scalar mEpsilon2 = 1.0E-2;
+  Scalar mNegligibleSoundSpeed = 1.0E-10;
 };
 
 }
+
+#include "ArtificialViscosityViewInline.hh"
 
 #endif
