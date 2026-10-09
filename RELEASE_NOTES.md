@@ -52,15 +52,7 @@ Notable changes include:
     * Fixed bugs affecting 2D rejecters in RejecterBase helper
     * OpenMP threading fixes and optimizations:
       * ConnectivityMap::computeConnectivity threads over the master neighbor groups rather than within each group, and sorts the NodePairList with a parallel sort where available.
-      * The lazy per point connectivity build (ConnectivityMap::connectivityForNode) is now safe to trigger from inside threaded loops.
-      * GeomPolyhedron uses reentrant qhull, so polyhedra can be constructed from threaded loops.
-      * Fixed data races in gradientRK, hessianRK, numberDensity, SumVoronoiMassDensityPolicy, the MFV gradients, GSPH initializeGradients, ProbabilisticDamageModel, and weibullFlawDistributionBenzAsphaug.
-      * Fixed gradientRK for std::vector fields, where the thread reduction appended rather than summed.
-      * Fixed a possible deadlock in interpolateRK (nested unnamed critical sections).
-      * Fixed a nested parallel region in computeVoronoiVolume that made every thread run the full surface detection loop.
-      * SumVoronoiMassDensityPolicy used the wrong NodeList index for the neighbor's state.
-      * ANEOS only threads when interpolating, since the underlying Fortran library is not thread safe.
-      * gradientPairs is now threaded.
+      * Fixes threading bugs in connectivity, gradients, Voronoi, damage, etc.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================
