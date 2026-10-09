@@ -234,17 +234,11 @@ evaluateDerivatives(const Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -258,7 +252,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -459,7 +453,7 @@ evaluateDerivativesImpl(const Dimension::Scalar /*time*/,
       CHECK(fDij >= 0.0 and fDij <= 1.0);
 
       // Compute the artificial viscous pressure (Pi = P/rho^2 actually).
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
                posi, Hi, etai, vi, rhoi, ci,  
                posj, Hj, etaj, vj, rhoj, cj,

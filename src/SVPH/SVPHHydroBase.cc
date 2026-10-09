@@ -303,17 +303,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -328,7 +322,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivatives,
-                        const QType& Q) const {
+                        QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 

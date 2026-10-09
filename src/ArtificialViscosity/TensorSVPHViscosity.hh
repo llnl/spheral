@@ -74,7 +74,7 @@ public:
   // Dummy function to fulfill the variantView override
   ArtificialViscosityVariant<Dimension> variantView() const override {
     VERIFY2(false, "Cannot call variantView with TensorSVPHViscosity");
-    return std::monostate;
+    return std::monostate{};
   }
 
 private:

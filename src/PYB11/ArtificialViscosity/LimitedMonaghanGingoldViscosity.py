@@ -2,10 +2,10 @@
 # LimitedMonaghanGingoldViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from MonaghanGingoldViscosity import *
+from ArtificialViscosity import *
 
 @PYB11template("Dimension")
-class LimitedMonaghanGingoldViscosity(MonaghanGingoldViscosity):
+class LimitedMonaghanGingoldViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
     using Scalar = typename %(Dimension)s::Scalar;

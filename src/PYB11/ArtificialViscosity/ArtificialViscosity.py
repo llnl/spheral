@@ -23,21 +23,7 @@ class ArtificialViscosity(Physics):
 """
 
     #...........................................................................
-    # Constructors
-    def pyinit(self,
-               Clinear = "const Scalar",
-               Cquadratic = "const Scalar",
-               kernel = "const TableKernel<%(Dimension)s>&"):
-        "ArtificialViscosity constructor"
-
-    #...........................................................................
     # Methods
-    @PYB11pure_virtual
-    @PYB11const
-    def QPiTypeIndex(self):
-        "Require ArtificialViscosities to specify the type_index of the descendant QPiType"
-        return "std::type_index"
-
     @PYB11virtual
     @PYB11const
     def requireVelocityGradient(self):
@@ -92,25 +78,6 @@ class ArtificialViscosity(Physics):
                         derivs = "StateDerivatives<%(Dimension)s>&"):
         "Post-state update is our chance to update the velocity gradient if needed"
         return "bool"
-
-    @PYB11const
-    def curlVelocityMagnitude(self, DvDx="const Tensor&"):
-        "Calculate the curl of the velocity given the stress tensor."
-        return "Scalar"
-
-    @PYB11const
-    def calcBalsaraShearCorrection(self,
-                                   DvDx = "const Tensor&",
-                                   H = "const SymTensor&",
-                                   cs = "const Scalar&"):
-        "Find the Balsara shear correction multiplier"
-        return "Scalar"
-
-    @PYB11pure_virtual
-    @PYB11protected
-    def updateManagedPtr(self):
-        "Update member data for managed pointer."
-        return "void"
 
     #...........................................................................
     # Properties

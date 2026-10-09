@@ -13,6 +13,7 @@
 #include "Field/FieldList.hh"
 #include "DataOutput/registerWithRestart.hh"
 #include "Utilities/SpheralMessage.hh"
+#include "ArtificialViscosityVariant.hh"
 
 #include <utility>
 
@@ -25,7 +26,6 @@ template<typename Dimension> class DataBase;
 template<typename Dimension, typename DataType> class FieldList;
 template<typename Dimension> class ConnectivityMap;
 template<typename Dimension> class Boundary;
-template<typename Dimension> class ArtificialViscosityVariant;
 class FileIO;
 
 template<typename Dimension>

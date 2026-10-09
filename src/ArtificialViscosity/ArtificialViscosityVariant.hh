@@ -12,11 +12,14 @@
 #include "LimitedMonaghanGingoldViscosityView.hh"
 #include "FiniteVolumeViscosityView.hh"
 #include "TensorMonaghanGingoldViscosityView.hh"
+#include "Utilities/DBC.hh"
 
+#include <type_traits>
+#include <utility>
 #include <variant>
 
 #if !defined(SPHERAL_ENABLE_HIP) && !defined(SPHERAL_ENABLE_CUDA)
-#include "PythonArtificialViscosity.hh"
+#include "PythonArtificialViscosityCallView.hh"
 #endif
 
 namespace Spheral {
@@ -43,6 +46,25 @@ using ArtificialViscosityVariant = std::variant<
 template<typename Dimension>
 using ArtificialViscosityVariant = DeviceArtificialViscosityVariant<Dimension>;
 #endif
+
+template<typename Variant, typename Visitor>
+decltype(auto)
+visitArtificialViscosity(Variant&& Qvariant,
+                         Visitor&& visitor) {
+  return std::visit(
+    [&](const auto& Qview) -> decltype(auto) {
+      using ViewType = std::decay_t<decltype(Qview)>;
+
+      if constexpr (std::is_same_v<ViewType, std::monostate>) {
+        VERIFY2(false,
+                "A TensorSVPHViscosity cannot be used as a pairwise "
+                "artificial viscosity.");
+      } else {
+        return std::forward<Visitor>(visitor)(Qview);
+      }
+    },
+    std::forward<Variant>(Qvariant));
+}
 
 }
 

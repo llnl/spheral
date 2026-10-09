@@ -92,7 +92,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               chai::managed_ptr<QType> Q) const;
+                               QType Q) const;
 
   // Apply boundary conditions to the physics specific fields.
   virtual

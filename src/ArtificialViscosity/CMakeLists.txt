@@ -29,6 +29,7 @@ set(ArtificialViscosity_headers
   ArtificialViscosity.hh
   ArtificialViscosityVariant.hh
   PythonArtificialViscosity.hh
+  PythonArtificialViscosityCallView.hh
   ArtificialViscosityView.hh
   ArtificialViscosityViewInline.hh
   LimitedMonaghanGingoldViscosity.hh

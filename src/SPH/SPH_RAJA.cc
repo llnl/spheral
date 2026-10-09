@@ -93,20 +93,13 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const DataBase<Dimension>& dataBase,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
-
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
-  
+
 //------------------------------------------------------------------------------
 // evaluateDerivatives
 //------------------------------------------------------------------------------
@@ -119,7 +112,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType>& Q) const {
+                        QType Q) const {
   TIME_BEGIN("SPHevalDerivs_RAJA");
   TIME_BEGIN("SPHevalDerivs_initial_RAJA");
 
@@ -328,11 +321,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       QPiType QPiji(0.0);
       Scalar Qi = 0.0;
       Scalar Qj = 0.0;
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
-               nodeListi, i, nodeListj, j,
-               ri, Hi, etai, vi, rhoi, ci,  
-               rj, Hj, etaj, vj, rhoj, cj,
-               fClQ, fCqQ, DvDxQ);
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
+              nodeListi, i, nodeListj, j,
+              ri, Hi, etai, vi, rhoi, ci,
+              rj, Hj, etaj, vj, rhoj, cj,
+              fClQ, fCqQ, DvDxQ);
 
       // Contribution to the sum density.
       if (nodeListi == nodeListj) {

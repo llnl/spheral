@@ -1,4 +1,3 @@
-#include <variant>
 
 namespace Spheral {
 
@@ -16,17 +15,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
 
   this->firstDerivativesLoop(time,dt,dataBase,state,derivatives);
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->secondDerivativesLoop(time,dt,dataBase,state,derivatives,Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->secondDerivativesLoop(time, dt, dataBase, state,
+                                                         derivatives, Qview);
+                           });
 
   //this->setH(time,dt,dataBase,state,derivatves)
 }
@@ -43,7 +36,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
                       const DataBase<Dimension>& dataBase,
                       const State<Dimension>& state,
                       StateDerivatives<Dimension>& derivs,
-                      chai::managed_ptr<QType> Q) const { 
+                      QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -480,7 +473,7 @@ secondDerivativesLoop(const typename Dimension::Scalar time,
         const auto cij = 0.5*(ci+cj); 
 
         // raw AV
-        Q->QPiij(QPiij, QPiji, Qi, Qj,
+        Q.QPiij(QPiij, QPiji, Qi, Qj,
                  nodeListi, i, nodeListj, j,
                  ri, Hij, etaij, vi, rhoij, cij,  
                  rj, Hij, etaij, vj, rhoij, cij,

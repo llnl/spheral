@@ -15,8 +15,8 @@
 #include "Material/GammaLawGas.hh"
 #include "Kernel/TableKernel.hh"
 #include "Kernel/BSplineKernel.hh"
+#include "ArtificialViscosity/MonaghanGingoldViscosity.hh"
 #include "ArtificialViscosity/LimitedMonaghanGingoldViscosity.hh"
-#include "chai/managed_ptr.hpp"
 
 #include "Field/FieldList.hh"
 #include "Field/FieldView.hh"
@@ -47,9 +47,7 @@ using LimMonGVisc = Spheral::LimitedMonaghanGingoldViscosity<DIM3>;
 using LimMonGView = Spheral::LimitedMonaghanGingoldViscosityView<DIM3>;
 using MonGVisc = Spheral::MonaghanGingoldViscosity<DIM3>;
 using MonGView = Spheral::MonaghanGingoldViscosityView<DIM3>;
-using ArtVisc3D = Spheral::ArtificialViscosity<DIM3>;
-using ArtViscView = Spheral::ArtificialViscosityView<DIM3, Scalar>;
-using QPiType = LimMonGView::ReturnType;
+using ArtViscVariant = Spheral::ArtificialViscosityVariant<DIM3>;
 using NPIT = Spheral::NodePairIdxType;
 using NPLVec = std::vector<Spheral::NodePairIdxType>;
 using NPL = Spheral::NodePairList;
@@ -88,7 +86,9 @@ public:
                     rhoMin, rhoMax),
     tree_neighbor(fluid_node_list,
                   Spheral::NeighborSearchType::GatherScatter,
-                  kernelExtents, xmin, xmax) {
+                  kernelExtents, xmin, xmax),
+    limMonG(1.0, 1.0, WT, false, false, 1.0, 0.2),
+    monG(1.0, 1.0, WT, false, false) {
     Spheral::GPUUtils::initGPUs();
     fluid_node_list.registerNeighbor(tree_neighbor);
   }
@@ -116,11 +116,6 @@ public:
     pos.move(chai::CPU);
     H.move(chai::CPU);
     fluid_node_list.neighbor().updateNodes();
-    if (a_visc == MonG) {
-      monG = chai::make_managed<MonGView>(1.0, 1.0, false, false);
-    } else if (a_visc == LimMonG) {
-      limMonG = chai::make_managed<LimMonGView>(1.0, 1.0, false, false, 1.0, 0.2);
-    }
   }
 
   NPL findNeighbors(double r2) {
@@ -139,23 +134,23 @@ public:
     return NPL(std::move(nplvec));
   }
 
-  chai::managed_ptr<ArtViscView> getArtVisc() {
+  ArtViscVariant getArtVisc() {
     if (av_type == MonG) {
-      return chai::dynamic_pointer_cast<ArtViscView, MonGView>(monG);
+      return monG.variantView();
     } else {
-      return chai::dynamic_pointer_cast<ArtViscView, LimMonGView>(limMonG);
+      return limMonG.variantView();
     }
   }
-      
-  ~LoopTest() { monG.free(); limMonG.free(); }
+
+  ~LoopTest() = default;
 
   TableKernel_t WT;
   GammaLawGas_t eos;
   FluidNodeList_t fluid_node_list;
   TreeNeighbor_t tree_neighbor;
   ArtViscType av_type;
-  chai::managed_ptr<LimMonGView> limMonG;
-  chai::managed_ptr<MonGView> monG;
+  LimMonGVisc limMonG;
+  MonGVisc monG;
 };
 
 // Setting up G Test for Loops
@@ -200,8 +195,10 @@ GPU_TYPED_TEST_P(LoopTypedTest, SPHTest) {
   const double r2 = 3.*std::pow(1.01*dx, 2);
   auto pairs = gpu_this->findNeighbors(r2);
   auto pairs_v = pairs.view();
-  auto Q = gpu_this->getArtVisc();
   size_t npairs = pairs.size();
+  visitArtificialViscosity(gpu_this->getArtVisc(),
+                           [&](const auto& Qview) {
+  using QPiType = typename std::decay_t<decltype(Qview)>::ReturnType;
   RAJA::forall<TypeParam>(TRS_UINT(0u, npairs),
      [=] SPHERAL_HOST_DEVICE (size_t kk) {
        auto i = pairs_v[kk].i_node;
@@ -224,11 +221,11 @@ GPU_TYPED_TEST_P(LoopTypedTest, SPHTest) {
        QPiType QPiji(0.0);
        Scalar Qi = 0.0;
        Scalar Qj = 0.0;
-       Q->QPiij(QPiij, QPiji, Qi, Qj,
-                nodeListi, i, nodeListj, j,
-                xi, Hi, etai, vi, rhoi, ci,
-                xj, Hj, etaj, vj, rhoj, cj,
-                fcl, fcq, dvdxq);
+       Qview.QPiij(QPiij, QPiji, Qi, Qj,
+                   nodeListi, i, nodeListj, j,
+                   xi, Hi, etai, vi, rhoi, ci,
+                   xj, Hj, etaj, vj, rhoj, cj,
+                   fcl, fcq, dvdxq);
        Tensor localQi(Qi);
        Tensor localQj(Qj);
        Scalar testval = 1.2;
@@ -237,6 +234,7 @@ GPU_TYPED_TEST_P(LoopTypedTest, SPHTest) {
        outi.atomicSub(testval*localQi);
        outj.atomicSub(testval*localQj);
      });
+  });
 }
 
 REGISTER_TYPED_TEST_SUITE_P(LoopTypedTest, Start, SPHTest);

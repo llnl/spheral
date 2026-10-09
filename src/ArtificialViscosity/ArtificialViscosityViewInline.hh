@@ -41,7 +41,7 @@ template<typename Dimension>
 SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
-ArtificialViscosityBase<Dimension>::
+ArtificialViscosityView<Dimension>::
 curlVelocityMagnitude(const Tensor& DvDx) const {
   return ArtificialViscosityDetail::curlVelocityMagnitude(DvDx);
 }
@@ -53,7 +53,7 @@ template<typename Dimension>
 SPHERAL_HOST_DEVICE
 inline
 typename Dimension::Scalar
-ArtificialViscosityBase<Dimension>::
+ArtificialViscosityView<Dimension>::
 calcBalsaraShearCorrection(const Tensor& DvDx,
                            const SymTensor& H,
                            const Scalar& cs) const {

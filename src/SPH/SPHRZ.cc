@@ -172,17 +172,11 @@ evaluateDerivatives(const Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -196,7 +190,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        chai::managed_ptr<QType>& Q) const {
+                        QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -416,7 +410,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar time,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
                posi, Hi, etai, vi, rhoRZi, ci,  
                posj, Hj, etaj, vj, rhoRZj, cj,

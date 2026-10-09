@@ -15,8 +15,6 @@
 
 using Scalar= Spheral::Dim<3>::Scalar;
 using Tensor = Spheral::Dim<3>::Tensor;
-using ArtVisc3D = Spheral::ArtificialViscosity<Spheral::Dim<3>>;
-using ArtViscTensorView3D = Spheral::ArtificialViscosityView<Spheral::Dim<3>, Tensor>;
 using TableKernel3D = Spheral::TableKernel<Spheral::Dim<3>>;
 using WC4Kernel3D = Spheral::WendlandC4Kernel<Spheral::Dim<3>>;
 using NodeList_t = Spheral::NodeList<Spheral::Dim<3>>;
@@ -45,15 +43,14 @@ GPU_TYPED_TEST_P(TensorAVTypedTest, InitTests) {
   TensorArtVisc Q(Cl, Cq, t_kernel);
   {
     // NOTE: Views cannot persist when value class is modified
-    // This grabs the dynamically casted view, used in the code
-    chai::managed_ptr<ArtViscTensorView3D> Qview = Q.getTensorView();
+    auto Qview = Q.view();
     // Test if initialized variables are set properly
     SPHERAL_ASSERT_FLOAT_EQ(Q.Cl(), Cl);
-    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
-    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cq(), Cq);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview.Cl(), Cl);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview.Cq(), Cq);
     EXEC_IN_SPACE_BEGIN(TypeParam)
-      SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
-      SPHERAL_ASSERT_FLOAT_EQ(Qview->Cq(), Cq);
+      SPHERAL_ASSERT_FLOAT_EQ(Qview.Cl(), Cl);
+      SPHERAL_ASSERT_FLOAT_EQ(Qview.Cq(), Cq);
     EXEC_IN_SPACE_END()
   }
   // Modify variables in the value class
@@ -63,11 +60,11 @@ GPU_TYPED_TEST_P(TensorAVTypedTest, InitTests) {
 
   {
     // Get new view since value class was modified
-    chai::managed_ptr<ArtViscTensorView3D> Qview = Q.getTensorView();    
+    auto Qview = Q.view();
     // Test that the value and view classes are properly updated
-    SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+    SPHERAL_ASSERT_FLOAT_EQ(Qview.Cl(), Cl);
     EXEC_IN_SPACE_BEGIN(TypeParam)
-      SPHERAL_ASSERT_FLOAT_EQ(Qview->Cl(), Cl);
+      SPHERAL_ASSERT_FLOAT_EQ(Qview.Cl(), Cl);
     EXEC_IN_SPACE_END()
   }
 }

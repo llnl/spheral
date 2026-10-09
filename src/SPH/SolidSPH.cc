@@ -286,17 +286,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -311,7 +305,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType>& Q) const {
+                        QType Q) const {
 
   TIME_BEGIN("SolidSPHevalDerivs");
   TIME_BEGIN("SolidSPHevalDerivs_initial");
@@ -589,7 +583,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
 
       // Compute the pair-wise artificial viscosity.
       const auto vij = vi - vj;
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
                nodeListi, i, nodeListj, j,
                ri, Hi, etai, vi, rhoi, ci,  
                rj, Hj, etaj, vj, rhoj, cj,

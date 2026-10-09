@@ -90,7 +90,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               chai::managed_ptr<QType> Q) const;
+                               QType Q) const;
     
   // The state field lists we're maintaining.
   const PairAccelerationsType& pairAccelerations() const { VERIFY2(mPairAccelerationsPtr, "CRKSPH ERROR: pairAccelerations not initialized on access"); return *mPairAccelerationsPtr; }
