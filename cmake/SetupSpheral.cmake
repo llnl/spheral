@@ -127,9 +127,9 @@ if(ENABLE_HIP)
 endif()
 
 if(ENABLE_HIP OR ENABLE_CUDA)
-  set(SPHERAL_GPU_ENABLED ON CACHE BOOL "Whether CUDA or HIP is enabled")
+  set(SPHERAL_ENABLE_GPU ON CACHE BOOL "Whether CUDA or HIP is enabled")
 else()
-  set(SPHERAL_GPU_ENABLED OFF CACHE BOOL "Whether CUDA or HIP is enabled")
+  set(SPHERAL_ENABLE_GPU OFF CACHE BOOL "Whether CUDA or HIP is enabled")
 endif()
 
 #-------------------------------------------------------------------------------#

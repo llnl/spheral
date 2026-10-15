@@ -2,10 +2,10 @@
 # LimitedMonaghanGingoldViscosity
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from MonaghanGingoldViscosity import *
+from ArtificialViscosity import *
 
 @PYB11template("Dimension")
-class LimitedMonaghanGingoldViscosity(MonaghanGingoldViscosity):
+class LimitedMonaghanGingoldViscosity(ArtificialViscosity):
 
     PYB11typedefs = """
     using Scalar = typename %(Dimension)s::Scalar;
@@ -47,6 +47,10 @@ class LimitedMonaghanGingoldViscosity(MonaghanGingoldViscosity):
 
     #...........................................................................
     # Properties
+    linearInExpansion = PYB11property("bool", "linearInExpansion", "linearInExpansion",
+                                      doc="Toggle if the linearviscosity is active for expansion flows")
+    quadraticInExpansion = PYB11property("bool", "quadraticInExpansion", "quadraticInExpansion",
+                                         doc="Toggle if the quadratic viscosity is active for expansion flows")
     etaCritFrac = PYB11property("double", "etaCritFrac", "etaCritFrac",
                                 doc="Critical eta, below which viscosity becomes active regardless of limiter")
     etaFoldFrac = PYB11property("double", "etaFoldFrac", "etaFoldFrac",

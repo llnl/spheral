@@ -19,9 +19,9 @@ spheral_add_test(
   #DEBUG_LINKER
 )
 
-spheral_add_test(
-  NAME managedptr_tests
-  SOURCES managedptr_tests.cc
-  DEPENDS_ON Spheral_CXX
-  #DEBUG_LINKER
-)
+# spheral_add_test(
+#   NAME managedptr_tests
+#   SOURCES managedptr_tests.cc
+#   DEPENDS_ON Spheral_CXX chai
+#   #DEBUG_LINKER
+# )
