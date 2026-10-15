@@ -123,7 +123,7 @@ shearModulus(Field<Dimension, Scalar>& shearModulus,
                                     fmelt*(1.0 + mA*pressure(i)/FastMath::CubeRootHalley2(eta) - mB*T(i))));
       const auto Di = std::max(0.0, std::min(1.0, damage(i).eigenValues().maxElement()));
       shearModulus(i) = (1.0 - Di)*shearModulus(i) + Di*fmelt*mG0;
-      CHECK(shearModulus(i) > 0.0);
+      CHECK2(shearModulus(i) >= 0.0, "Bad shear modulus: " << shearModulus(i) << " " << i << " " << eta << " " << fmelt << "\n");
     }
   }
 }

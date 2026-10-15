@@ -54,8 +54,9 @@ public:
   bool convexIntersect(const Box1d& rhs) const;
   bool intersect(const std::pair<Vector, Vector>& rhs) const;  // Another way of representing a box.
 
-  // Test if we intersect a line segment (interior counts as intersection).
-  bool intersect(const Vector& s0, const Vector& s1) const;
+  // Test if we intersect a line segment
+  bool intersect(const Vector& s0, const Vector& s1,
+                 const bool countInterior = true) const;
 
   // Access the attributes.
   Vector& center();

@@ -24,8 +24,9 @@ Notable changes include:
       * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels.
         * Returns tuple {explicit, implicit, hessian}.
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
-      * Note: Python overrides only work on CPU runs.
+      * Note: Python overrides only work on CPU runs
     * Singularity can now be brought in as a TPL.
+    * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
 
   * Build changes / improvements:
     * Major overhaul to CMake system:
@@ -57,9 +58,11 @@ Notable changes include:
     * Consistency fix for differentMatij material coupling in FSISPH.
     * GenerateRatioSphere accessing the wrong element when SPH = True.
     * Bugfix for strain-porosity in power-law compaction regime from Sean Wiggins (apparently the paper by Collins et al. had a typo).
-    * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534).
+    * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
     * Added new strain model PlasticBenzAsphaugStrain to DamageModel physics package.
-    * Fixed bugs affecting 2D rejecters in RejecterBase helper.
+    * Fixed bugs affecting 2D rejecters in RejecterBase helper
+    * Fixed bugs for matplotlib plotting of polygons
+    * The default damage coupling (PairMaxDamageNodeCoupling) was decoupling nodes in different NodeLists when damage is on, but this changed the behaviour of nodes without damage. We have removed the NodeList check from the decoupling criterion to avoid this side-effect.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

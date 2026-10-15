@@ -62,8 +62,9 @@ public:
   bool convexIntersect(const GeomPolyhedron& rhs) const;
   bool intersect(const std::pair<Vector, Vector>& rhs) const;  // Another way of representing a box.
 
-  // Test if we intersect a line segment (interior counts as intersection).
-  bool intersect(const Vector& s0, const Vector& s1) const;
+  // Test if we intersect a line segment
+  bool intersect(const Vector& s0, const Vector& s1,
+                 const bool countInterior = true) const;
 
   // Find intersections of this polyhedron with a line segment (s0, s1).  Returns
   // both the intersection points and facet IDs.

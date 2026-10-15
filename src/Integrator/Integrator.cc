@@ -476,10 +476,13 @@ Integrator<Dimension>::setGhostNodes() const {
       // Look for points needed for boundary conditions
       for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
         const auto& nodeList = *nodeListPtr;
+        const auto firstGhostNode = nodeList.firstGhostNode();
+
+        // All iternal nodes are keepers
+        for (auto i = 0u; i < firstGhostNode; ++i) flags(nodeListi, i) = 1;
 
         // Ghost nodes that are control nodes for other ghost nodes we're keeping must
         // be kept as well.
-        const auto firstGhostNode = nodeList.firstGhostNode();
         for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
           const auto& boundary = *boundaryPtr;
           const auto& controlNodes = boundary.controlNodes(nodeList);
@@ -525,16 +528,7 @@ Integrator<Dimension>::setGhostNodes() const {
       }
 
       // All nodes should now be labeled as keepers.
-      BEGIN_CONTRACT_SCOPE
-      {
-        for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
-          ENSURE(flags[nodeListi]->numElements() == 0 or
-                 *std::min_element(flags[nodeListi]->begin(), flags[nodeListi]->end()) == 1);
-        }
-      }
-      END_CONTRACT_SCOPE
-
-      // The ConnectivityMap should be valid too.
+      ENSURE(flags == 1);
       ENSURE(db.connectivityMap().valid());
     }
 

@@ -1104,12 +1104,17 @@ def plotPolygon(polygon,
                 plot = None,
                 persist = False,
                 plotLabels = True):
-    mppoly = patches.Polygon(np.array([[v.x, v.y] for v in polygon.vertices]), False)
+    mppoly = patches.Polygon(np.array([[v.x, v.y] for v in polygon.vertices]),
+                             closed = True,
+                             facecolor = "skyblue",
+                             edgecolor = "red",
+                             linewidth = 2)
 
     if plot is None:
         plot = newFigure()
     plot.add_patch(mppoly)
-    return
+    plot.set_aspect("equal")
+    return plot
 
     # px = []
     # py = []

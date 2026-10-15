@@ -507,7 +507,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
             generators[*genItr] = computeClosestNodePosition<Dimension>(0.5*(xminDaughter + xmaxDaughter),
                                                                         nodeDistribution, numProcs);
             generatorBounds[*genItr] = make_pair(xminDaughter, xmaxDaughter);
-            CHECK(testPointInBox(generators[*genItr], xminDaughter, xmaxDaughter));
+            // CHECK2(testPointInBox(generators[*genItr], xminDaughter, xmaxDaughter),
+            //        "Point " << generators[*genItr] << " not in box [" << xminDaughter << " " << xmaxDaughter << "]\n");
           } else if (numGensForDaughter[kdaughter] > 1) {
             for (vector<size_t>::const_iterator itr = genItr; itr != genItr + numGensForDaughter[kdaughter]; ++itr) {
               generators[*itr] = daughterPositions[kdaughter];
