@@ -47,8 +47,8 @@ StrainPorosity(const SolidNodeList<Dimension>& nodeList,
           "ERROR : epsE required to be epsE <= 0.0.");
   VERIFY2(mEpsX <= mEpsE,
           "StrainPorosity ERROR : epsX required to be epsX <= epsE.");
-  VERIFY2(kappa >= 0.0 and kappa <= 1.0,
-          "ERROR : kappa required to be in range kappa = [0.0, 1.0]");
+  VERIFY2(kappa > 0.0 and kappa <= 1.0,
+          "ERROR : kappa required to be in range kappa = (0.0, 1.0]");
 }
 
 //------------------------------------------------------------------------------
@@ -77,8 +77,8 @@ StrainPorosity(const SolidNodeList<Dimension>& nodeList,
           "ERROR : epsE required to be epsE <= 0.0.");
   VERIFY2(mEpsX <= mEpsE,
           "StrainPorosity ERROR : epsX required to be epsX <= epsE.");
-  VERIFY2(kappa >= 0.0 and kappa <= 1.0,
-          "ERROR : kappa required to be in range kappa = [0.0, 1.0]");
+  VERIFY2(kappa > 0.0 and kappa <= 1.0,
+          "ERROR : kappa required to be in range kappa = (0.0, 1.0]");
 }
 
 //------------------------------------------------------------------------------
@@ -146,7 +146,8 @@ evaluateDerivatives(const Scalar /*time*/,
       }
       const auto epsi = strain(i);
       const auto DuDti = DuDt(i);
-      const auto strainRate = min(0.0, DstrainDt(i) - mGammaS0*safeInv(mcS0*mcS0)*DuDti);
+      DstrainDt(i) -= mGammaS0*safeInv(mcS0*mcS0)*DuDti;     // Total volume strain minus the thermal volume strain to get mechanical strain as in Collins 2011
+      const auto strainRate = min(0.0, DstrainDt(i));
       const auto alpha0i = mAlpha0(i);
       const auto c0i = mc0(i);
       const auto csi = mcS0 + (alphai - 1.0)*safeInv(alpha0i - 1.0)*(c0i - mcS0);
@@ -168,7 +169,7 @@ evaluateDerivatives(const Scalar /*time*/,
           // Power-law -- irreversible compaction.
           const auto epsCi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/(mKappa*alpha0i*exp(mKappa*(mEpsX - mEpsE))) + mEpsX;
           const auto PLcoefi = 2.0*(1.0 - alpha0i*exp(mKappa*(mEpsX - mEpsE)))/FastMath::square(epsCi - mEpsX);
-          DalphaDepsi = PLcoefi*(mEpsE - epsi);
+          DalphaDepsi = PLcoefi*(epsCi - epsi);
           DalphaDt(i) = min(0.0, DalphaDepsi*strainRate);
         }
       }

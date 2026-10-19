@@ -244,17 +244,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -269,7 +263,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        QType Q) const {
   TIME_BEGIN("SolidCRKevaluateDerivatives");
 
   using QPiType = typename QType::ReturnType;
@@ -459,11 +453,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       CHECK(fDij >= 0.0 and fDij <= 1.0);
 
       // Compute the artificial viscous pressure (Pi = P/rho^2 actually).
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
-               nodeListi, i, nodeListj, j,
-               ri, Hi, etai, vi, rhoi, ci,  
-               rj, Hj, etaj, vj, rhoj, cj,
-               fClQView, fCqQView, DvDxQView);
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
+              nodeListi, i, nodeListj, j,
+              ri, Hi, etai, vi, rhoi, ci,  
+              rj, Hj, etaj, vj, rhoj, cj,
+              fClQView, fCqQView, DvDxQView);
       const auto Qaccij = (rhoi*rhoi*QPiij + rhoj*rhoj*QPiji)*deltagrad;
       // const auto workQij = 0.5*(vij.dot(Qaccij));
       const auto workQi = (rhoj*rhoj*QPiji*vij).dot(deltagrad);                // CRK
@@ -578,7 +572,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       const auto deformation = localDvDxi.Symmetric();
       const auto spin = localDvDxi.SkewSymmetric();
       const auto deviatoricDeformation = deformation - deformation.Trace()/3.0*SymTensor::one();
-      const auto spinCorrection = (Si*spin - spin*Si).Symmetric();
+      const auto spinCorrection = (spin*Si - Si*spin).Symmetric();
       DSDti = spinCorrection + 2.0*mui*deviatoricDeformation;
 
       // In the presence of damage, add a term to reduce the stress on this point.

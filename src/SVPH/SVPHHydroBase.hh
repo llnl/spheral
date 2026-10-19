@@ -93,7 +93,8 @@ public:
                                const Scalar dt,
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
-                               StateDerivatives<Dimension>& derivatives) const;
+                               StateDerivatives<Dimension>& derivatives,
+                               QType Q) const;
 
   // Finalize the derivatives.
   virtual

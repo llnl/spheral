@@ -1,4 +1,3 @@
-include_directories(.)
 set(LEOS_inst
   LEOS
 )
@@ -14,4 +13,4 @@ set(LEOS_headers
   LEOS_bundle.hh
 )
 
-spheral_add_obj_library(LEOS SPHERAL_OBJ_LIBS)
+spheral_add_package(LEOS)

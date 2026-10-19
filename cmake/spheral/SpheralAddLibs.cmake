@@ -1,165 +1,142 @@
 #----------------------------------------------------------------------------------------
-#                                   spheral_add_obj_library
+# These functions encompass the general methods for creating the C++ and python packages.
+# See top of SetupSpheral.cmake for info on variables listed here.
 #----------------------------------------------------------------------------------------
-# -------------------------------------------
+
+#----------------------------------------------------------------------------------------
+#                                   spheral_initialize_cxx_target
+#----------------------------------------------------------------------------------------
+# Create the monolithic CXX target, which is a shared or static library
+# except for dev builds, which makes interface libraries
+#----------------------------------------------------------------------------------------
+# Example usage:
+# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
+# spheral_initialize_cxx_target("spheral_source.cc")
+#----------------------------------------------------------------------------------------
+function(spheral_initialize_cxx_target source_files)
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
+  if(ENABLE_DEV_BUILD)
+    add_library(${_main_target} INTERFACE)
+  else()
+    blt_add_library(NAME ${_main_target}
+      SOURCES ${source_files}
+      DEFINES ${SPHERAL_COMPILE_DEFS}
+      DEPENDS_ON ${SPHERAL_CXX_DEPENDS} ${_tpl_depends}
+      SHARED ${SPHERAL_ENABLE_SHARED})
+    target_compile_options(${_main_target} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_link_options(${_main_target} PRIVATE ${SPHERAL_LINK_FLAGS})
+    target_include_directories(${_main_target} PRIVATE ${SPHERAL_INCL_DIRS})
+  endif()
+  if(ENABLE_CUDA AND SPHERAL_ENABLE_RDC)
+    set_target_properties(${_main_target} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+  endif()
+endfunction()
+
+#----------------------------------------------------------------------------------------
+#                                   spheral_add_package
+#----------------------------------------------------------------------------------------
+# This function creates an individual C++ package. For dev builds, each package is a
+# shared library that links to the monolithic interface library. Otherwise, each package
+# adds it's source to the monolithic shared or static library.
+# Finally, this function installs any headers and updates any necessary export target.
+# --------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
-# -------------------------------------------
-# SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
-# SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
-# SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
-# SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
-# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
+# --------------------------------------------
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
-# SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
 # ----------------------
 # INPUT-OUTPUT VARIABLES
 # ----------------------
 # package_name  : REQUIRED : Desired package name
-# obj_list_name : REQUIRED : The NAME of the global variable that is the list of
-#                            internal target libraries (not the list itself)
 # -----------------------
 # OUTPUT VARIABLES TO USE - Made available implicitly after function call
 # -----------------------
 # Spheral_<package_name> : Target for a given spheral package
-# <obj_list_name> : List of internal Spheral target objects, appended with target name
 #----------------------------------------------------------------------------------------
-function(spheral_add_obj_library package_name obj_list_name)
-  # Assumes global variable SPHERAL_BLT_DEPENDS exists and is filled with external dependencies
-  get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
-  # Assumes global variable SPHERAL_CXX_DEPENDS exists and is filled with compiler dependencies
-  get_property(SPHERAL_CXX_DEPENDS GLOBAL PROPERTY SPHERAL_CXX_DEPENDS)
-  # Assumes global variable SPHERAL_COMPILE_DEFS exists and is filled with compiler definititions
-  get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-  # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
-  get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
-  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
-  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
-  # For including files in submodules, currently unused
-  get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
-
+# Example usage:
+# set(SPHERAL_ACTIVE_CXX_TARGET Spheral_CXX)
+# set(PackageName_source sourceFile1.cc sourceFile2.cc)
+# set(PackageName_headers headerFile1.hh headerFile2.hh)
+# spheral_add_package(PackageName)
+#----------------------------------------------------------------------------------------
+function(spheral_add_package package_name)
+  # Main package target, either Spheral_CXX
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
   if(ENABLE_DEV_BUILD)
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
       SOURCES     ${${package_name}_sources}
       DEFINES     ${SPHERAL_COMPILE_DEFS}
-      DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} 
+      DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${_tpl_depends}
       SHARED      TRUE)
     target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
+    target_link_libraries(${_main_target} INTERFACE Spheral_${package_name})
+    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+    target_include_directories(Spheral_${package_name} PRIVATE ${SPHERAL_INCL_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
+    install(TARGETS Spheral_${package_name}
+      EXPORT ${_export_target}
+      DESTINATION lib)
   else()
-    blt_add_library(NAME Spheral_${package_name}
-      HEADERS     ${${package_name}_headers}
-      SOURCES     ${${package_name}_sources}
-      DEFINES     ${SPHERAL_COMPILE_DEFS}
-      DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
-      OBJECT      TRUE)
+    target_include_directories(${_main_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(package_sources)
+    foreach(source IN LISTS ${package_name}_sources)
+      get_filename_component(source_path "${source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+      list(APPEND package_sources "${source_path}")
+    endforeach()
+    target_sources(${_main_target} PRIVATE ${package_sources})
+    # Grab the CXX files
+    blt_split_source_list_by_language(
+      SOURCES  ${package_sources}
+      CXX_LIST package_cxx_sources)
+    # Set the necessary languages for the sources
+    if(ENABLE_HIP)
+      set_property(SOURCE ${package_cxx_sources}
+        TARGET_DIRECTORY ${_main_target}
+        PROPERTY LANGUAGE HIP)
+    endif()
+    if(ENABLE_CUDA)
+      set_property(SOURCE ${package_cxx_sources}
+        TARGET_DIRECTORY ${_main_target}
+        PROPERTY LANGUAGE CUDA)
+    endif()
   endif()
-  target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
-  target_include_directories(Spheral_${package_name} SYSTEM PUBLIC ${SPHERAL_SUBMOD_INCLUDES})
   # Install the headers
   install(FILES ${${package_name}_headers}
     DESTINATION include/${package_name})
-  if(ENABLE_DEV_BUILD)
-    # Export target name is either spheral_cxx-targets or spheral_llnlcxx-targets
-    if (${obj_list_name} MATCHES "LLNL")
-      set(export_target_name spheral_llnlcxx-targets)
-    else()
-      set(export_target_name spheral_cxx-targets)
-    endif()
-    install(TARGETS Spheral_${package_name}
-      EXPORT ${export_target_name}
-      DESTINATION lib)
-  endif()
-  # Append Spheral_${package_name} to the global object list
-  # For example, SPHERAL_OBJ_LIBS or LLNLSPHERAL_OBJ_LIBS
-  set_property(GLOBAL APPEND PROPERTY ${obj_list_name} Spheral_${package_name})
-
 endfunction()
 
 #----------------------------------------------------------------------------------------
-#                                   spheral_add_cxx_library
+#                                   spheral_install_cxx_library
 #----------------------------------------------------------------------------------------
-# -------------------------------------------
-# VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
-# -------------------------------------------
-# SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
-# SPHERAL_CXX_DEPENDS    : REQUIRED : List of compiler dependencies
-# SPHERAL_COMPILE_DEFS   : REQUIRED : List of compiler definitions
-# SPHERAL_CXX_FLAGS      : REQUIRED : List of C++ compiler options
-# SPHERAL_LINK_FLAGS     : REQUIRED : List of link options
-# <package_name>_headers : OPTIONAL : List of necessary headers to include
-# <package_name>_sources : OPTIONAL : List of necessary source files to include
-# SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
-# ----------------------
-# INPUT-OUTPUT VARIABLES
-# ----------------------
-# package_name   : REQUIRED : Desired package name (either CXX or LLNLCXX)
-# _cxx_obj_list  : REQUIRED : List of internal targets to include
-# -----------------------
-# OUTPUT VARIABLES TO USE - Made available implicitly after function call
-# -----------------------
-# Spheral_<package_name> : Exportable target for interal package name library
+# Installs and exports the monolithic C++ library.
 #----------------------------------------------------------------------------------------
-function(spheral_add_cxx_library package_name _cxx_obj_list)
-  # Assumes global variable SPHERAL_BLT_DEPENDS exists and is filled with external dependencies
-  get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
-  # Assumes global variable spheral_cxx_depends exists and is filled with compiler dependencies
-  get_property(SPHERAL_CXX_DEPENDS GLOBAL PROPERTY SPHERAL_CXX_DEPENDS)
-  # Assumes global variable spheral_compile_defs exists and is filled with compiler definitions
-  get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-  # Assumes global variable SPHERAL_CXX_FLAGS exists and is filled with C++ compiler options
-  get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
-  # Assumes global variable SPHERAL_LINK_FLAGS exists and is filled with linker options
-  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
-  # For including files in submodules, currently unused
-  get_property(SPHERAL_SUBMOD_INCLUDES GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES)
-  # Convert package name to lower-case for export target name
-  string(TOLOWER ${package_name} lower_case_package)
-  set(export_target_name spheral_${lower_case_package}-targets)
-
-  if(ENABLE_DEV_BUILD)
-    add_library(Spheral_${package_name} INTERFACE)
-    target_link_libraries(Spheral_${package_name} INTERFACE ${_cxx_obj_list})
-  else()
-    # Build static or shared spheral C++ library
-    blt_add_library(NAME Spheral_${package_name}
-      HEADERS     ${${package_name}_headers}
-      SOURCES     ${${package_name}_sources}
-      DEFINES     ${SPHERAL_COMPILE_DEFS}
-      DEPENDS_ON  ${_cxx_obj_list} ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS}
-      SHARED      ${SPHERAL_ENABLE_SHARED})
-
-    # Add compile options
-    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
-    target_link_options(Spheral_${package_name} PRIVATE ${SPHERAL_LINK_FLAGS})
-  endif()
-
-  target_include_directories(Spheral_${package_name} SYSTEM PRIVATE ${SPHERAL_SUBMOD_INCLUDES})
-
-  if(ENABLE_CUDA AND SPHERAL_ENABLE_RDC)
-    set_target_properties(Spheral_${package_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-  endif()
-
-  # Install Spheral C++ target and set it as an exportable CMake target
-  install(TARGETS Spheral_${package_name}
+function(spheral_install_cxx_library)
+  set(_main_target ${SPHERAL_ACTIVE_CXX_TARGET})
+  set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
+  set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
+  install(TARGETS ${_main_target}
     DESTINATION   lib
-    EXPORT        ${export_target_name})
+    EXPORT        ${_export_target})
 
-  # Export Spheral target
-  install(EXPORT ${export_target_name} DESTINATION lib/cmake)
+  # Export Spheral CXX target
+  install(EXPORT ${_export_target} DESTINATION lib/cmake)
 endfunction()
 
 #----------------------------------------------------------------------------------------
 #                                   spheral_add_pybind11_library_package
 #----------------------------------------------------------------------------------------
+# Prior to calling this, set SPHERAL_ACTIVE_CXX_TARGET to the target name
+# (either Spheral_CXX or Spheral_LLNLCXX)
 # -------------------------------------------
 # VARIABLES THAT NEED TO BE PREVIOUSLY DEFINED
 # -------------------------------------------
-# SPHERAL_BLT_DEPENDS    : REQUIRED : List of external dependencies
 # EXTRA_PYB11_SPHERAL_ENV_VARS : OPTIONAL : Additional directories containing python filed, used by LLNLSpheral
 # <package_name>_headers : OPTIONAL : List of necessary headers to include
 # <package_name>_sources : OPTIONAL : List of necessary source files to include
-# SPHERAL_SUBMOD_DEPENDS : REQUIRED : List of submodule dependencies
 # ----------------------
 # INPUT-OUTPUT VARIABLES
 # ----------------------
@@ -244,27 +221,30 @@ function(spheral_add_pybind11_library package_name module_list_name)
       "${SPHERAL_ROOT_DIR}/src/PYB11/KernelIntegrator"
       "${SPHERAL_ROOT_DIR}/src/PYB11/Solvers"
       "${CMAKE_BINARY_DIR}/src/SimulationControl"
-      )
+    )
 
   # Format python environment lists into a one line shell friendly format
   list(APPEND PYTHON_ENV ${PYTHON_ENV} ${SPACK_PYTHONPATH})
   blt_list_remove_duplicates(TO PYTHON_ENV)
   list(JOIN PYTHON_ENV ":" PYTHON_ENV_STR)
 
-  # Get the TPL dependencies
-  get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
-  get_property(SPHERAL_PYB11_TARGET_FLAGS GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS)
-  list(APPEND SPHERAL_DEPENDS Spheral_CXX ${${package_name}_DEPENDS})
+  # Make sure SPHERAL_ACTIVE_CXX_TARGET is properly set
+  if(NOT DEFINED SPHERAL_ACTIVE_CXX_TARGET OR
+      "${SPHERAL_ACTIVE_CXX_TARGET}" STREQUAL "")
+    message(FATAL_ERROR
+      "Must set SPHERAL_ACTIVE_CXX_TARGET to Spheral_CXX")
+  endif()
 
-  get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
+  # Get the TPL dependencies
+  list(APPEND SPHERAL_DEPENDS ${SPHERAL_ACTIVE_CXX_TARGET})
 
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}
     MODULE          ${MODULE_NAME}
     SOURCE          ${package_name}_PYB11.py
-    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${SPHERAL_BLT_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
+    DEPENDS         ${SPHERAL_CXX_DEPENDS} ${EXTRA_BLT_DEPENDS} ${SPHERAL_DEPENDS}
     DEFINES         ${SPHERAL_COMPILE_DEFS}
-    INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include
+    INCLUDES        ${CMAKE_CURRENT_SOURCE_DIR} ${${package_name}_INCLUDES} ${PYBIND11_ROOT_DIR}/include ${SPHERAL_INCL_DIRS}
     COMPILE_OPTIONS ${SPHERAL_PYB11_TARGET_FLAGS}
     USE_BLT         ON
     EXTRA_SOURCE    ${${package_name}_SOURCES}
@@ -291,7 +271,6 @@ function(spheral_add_pybind11_library package_name module_list_name)
           DESTINATION ${SPHERAL_SITE_PACKAGES_PATH}/Spheral)
 
   set_property(GLOBAL APPEND PROPERTY ${module_list_name} ${package_name})
-  get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
   target_link_options(Spheral${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
 
 endfunction()

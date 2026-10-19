@@ -1,4 +1,3 @@
-include_directories(.)
 
 set(GSPH_inst
     computeSumVolume
@@ -68,5 +67,5 @@ instantiate(GSPH_inst GSPH_sources)
 
 spheral_install_python_files(GSPHHydros.py)
 
-spheral_add_obj_library(GSPH SPHERAL_OBJ_LIBS)
+spheral_add_package(GSPH)
 

@@ -10,6 +10,9 @@
 #ATS:t21 = testif(t20, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu'", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RUN")
 #ATS:t22 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-1proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=1, label="Tensile rod (probabilistic damage) domain independence test SERIAL RESTART RUN")
 #ATS:t23 = testif(t21, SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories False --domainIndependent True --outputFile 'TensileRod-1d-4proc-restart.gnu' --comparisonFile 'TensileRod-1d-1proc.gnu' --restoreCycle 500", np=4, label="Tensile rod (probabilistic damage) domain independence test 4 DOMAIN RESTART RUN")
+#
+# Strain Type Smoke Tests
+#ATS:t30 = test(SELF, "--DamageModelConstructor ProbabilisticDamageModel --graphics False --clearDirectories True --domainIndependent True  --strainType PlasticBenzAsphaugStrain --goalTime 0.1", np=1, label="Tensile rod, probabilistic damage, plastic Benz-Aphaug strain model, domain independence test SERIAL RUN")
 
 #-------------------------------------------------------------------------------
 # A rod of stainless steel undergoing tensile strain.  This is intended as a
@@ -178,6 +181,10 @@ commandLine(length = 3.0,
             comparisonFile = None,
             )
 
+# process if commandLine reads as str
+if isinstance(strainType,str):
+    strainType = eval(strainType)
+
 # On the IBM BlueOS machines we have some tolerance issues...
 if "SYS_TYPE" in os.environ and os.environ["SYS_TYPE"] == "blueos_3_ppc64le_ib_p9":
     testtol *= 20.0
@@ -202,11 +209,13 @@ mWeibull = 2.63   * mWeibullFactor
 dataDir = os.path.join(dataDirBase,
                        hydroType,
                        damageName,
+                       str(strainType),
                        "nx=%i" % nx,
                        "k=%4.2f_m=%4.2f" % (kWeibull, mWeibull))
 refDir = os.path.join("Reference",
                        hydroType,
                        damageName,
+
                        "nx=%i" % nx,
                        "k=%4.2f_m=%4.2f" % (kWeibull, mWeibull))
 

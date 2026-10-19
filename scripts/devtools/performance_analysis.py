@@ -5,11 +5,17 @@ Do a performance regression test on LC systems with the following steps:
 
   1. Run the performance test in Spheral
 
-     $> ./spheral-ats --numNodes 2 --logs test_dir_name tests/run_perf.py
+     $> ./bin/spheral-ats --numNodes 2 --logs test_dir_name tests/run_perf.py
+
+     Be sure to run the GPU tests as well, when applicable:
+
+     $> ./bin/spheral-ats --numNodes 2 --logs gpu_test_dir_name --gpu tests/run_perf.py
 
   2. Run this script and point to the directory created by ATS in step 1
 
-     $> ./spheral performance_analysis.py --perfdata test_dir_name
+     $> ./bin/spheral scripts/performance_analysis.py --perfdata1 test_dir_name
+
+     This compares the local run with the upstream benchmark data.
 """
 
 import os, sys, shutil, glob

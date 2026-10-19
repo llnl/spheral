@@ -37,6 +37,7 @@ source("unit/Boundary/testPeriodicBoundary-2d.py")
 
 # SPH unit tests
 source("unit/SPH/testLinearVelocityGradient.py")
+source("unit/SPH/testJaumannRate.py")
 
 # SVPH unit tests
 source("unit/SVPH/testSVPHInterpolation-1d.py")
