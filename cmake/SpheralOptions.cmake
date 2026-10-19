@@ -32,7 +32,7 @@ option(SPHERAL_NETWORK_CONNECTED "Enable use of network. Disable if using a buil
 option(SPHERAL_ENABLE_LOGGER "Enable debug log printing" OFF)
 option(SPHERAL_ENABLE_ASAN "Enable ASAN" OFF)
 option(ENABLE_DEV_BUILD "Build separate internal C++ libraries for faster code development" OFF)
-cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified memory on GPU machines" OFF SPHERAL_GPU_ENABLED OFF)
+cmake_dependent_option(SPHERAL_UNIFIED_MEMORY "Configure Spheral to use unified memory on GPU machines" OFF SPHERAL_ENABLE_GPU OFF)
 
 # Default is to build shared when python is enabled and build static if python is disabled
 set(DEFAULT_STATIC ON)

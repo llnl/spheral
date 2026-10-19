@@ -155,17 +155,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -180,7 +174,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivs,
-                        chai::managed_ptr<QType>& Q) const {
+                        QType Q) const {
 
   TIME_BEGIN("SolidSPHevalDerivs_RAJA");
   TIME_BEGIN("SolidSPHevalDerivs_initial_RAJA");
@@ -292,10 +286,6 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(XSPHDeltaV.size() == numNodeLists);
   CHECK((compatibleEnergy and pairAccelerations.size() == npairs) or not compatibleEnergy);
 
-#ifdef SPHERAL_ENABLE_HIP
-  stateMgr.move(chai::GPU);
-  derivsMgr.move(chai::GPU);
-#endif
   // The scale for the tensile correction.
   const auto  nPerh = nodeLists[0]->nodesPerSmoothingScale();
   const auto  WnPerh = W(1.0/nPerh, 1.0);
@@ -440,11 +430,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       QPiType QPiji(0.0);
       Scalar Qi = 0.0;
       Scalar Qj = 0.0;
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
-               nodeListi, i, nodeListj, j,
-               ri, Hi, etai, vi, rhoi, ci,  
-               rj, Hj, etaj, vj, rhoj, cj,
-               fClQ, fCqQ, DvDxQ);
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
+              nodeListi, i, nodeListj, j,
+              ri, Hi, etai, vi, rhoi, ci,  
+              rj, Hj, etaj, vj, rhoj, cj,
+              fClQ, fCqQ, DvDxQ);
       // Contribution to the sum density (only if the same material).
       if (nodeListi == nodeListj) {
         GPUUtils::AtomicAddOp::apply(&rhoSumi, mj*Wi);

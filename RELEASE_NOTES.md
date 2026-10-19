@@ -26,6 +26,11 @@ Notable changes include:
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
       * Note: Python overrides only work on CPU runs.
     * Singularity can now be brought in as a TPL.
+    * ArtificialViscosity value/view design is completely refactored. Initial tests show ~10% speedups for CPU tests and 5-15% speedup for GPU tests.
+      * Removes the use of CHAI managed pointers.
+      * Eliminates on-device dynamic polymorphism for the virtual function QPiij using an std::variant design.
+      * Allows the value class to inherit from the view class, mirroring our other value/view implementations.
+      * The dynamic stack limit on-device is no longer increased by default.
 
   * Build changes / improvements:
     * Major overhaul to CMake system:
@@ -37,6 +42,7 @@ Notable changes include:
       * `spheral_add_obj_library` is renamed to `spheral_add_package`.
       * Removed unnecessary `include_directories(.)` calls.
       * The PYB11 targets no longer depend on TPLs directly. Instead, they depend on the Spheral_CXX target, which depends on the TPLs. This fixes a major issue involving destruction of static variables at exit from the python.
+    * Build definition SPHERAL_GPU_ENABLED renamed to SPHERAL_ENABLE_GPU to be consistent with other CMake/compiler/preprocessor definitions.
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
     * Update to Thicket version 2026.1.0.
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
