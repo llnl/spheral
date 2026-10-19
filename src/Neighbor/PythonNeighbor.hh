@@ -25,7 +25,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using Container = std::vector<int>;
+  using Container = std::vector<size_t>;
   using ContainerOfContainers = std::vector<std::vector<size_t>>;
 
   PythonNeighbor(NodeListView<Dimension>& nodeListView,
@@ -37,21 +37,10 @@ public:
   //.............................................................................
   // The required interface for Neighbor objects
   virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
-                                                         const Scalar& H,
-                                                         Container& masterList,
-                                                         Container& coarseNeighbors,
-                                                         const bool ghostConnectivity = false) const = 0;
-
-  virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                          const SymTensor& H,
                                                          Container& masterList,
                                                          Container& coarseNeighbors,
                                                          const bool ghostConnectivity = false) const = 0;
-
-  virtual std::tuple<bool, size_t, size_t> setRefineNeighborList(const Vector& position,
-                                                                 const Scalar& H,
-                                                                 const Container& coarseNeighbors,
-                                                                 Container& refineNeighbors) const = 0;
 
   virtual std::tuple<bool, size_t, size_t> setRefineNeighborList(const Vector& position,
                                                                  const SymTensor& H,
@@ -76,7 +65,7 @@ public:
 
   // Force the update of internal data for the NodeList.
   virtual void updateNodes() = 0;
-  virtual void updateNodes(const std::vector<int>& nodeIDs) = 0;
+  virtual void updateNodes(const std::vector<size_t>& nodeIDs) = 0;
 
   // Reinitialize based on the desired target h and box dimensions.
   virtual void reinitialize() = 0;

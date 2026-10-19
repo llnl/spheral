@@ -79,12 +79,12 @@ setNodeExtents() {
 }
 
 template<typename Dimension, typename Descendant>
-template<typename Container>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 void
 Neighbor<Dimension, Descendant>::
-setNodeExtents(const Container& nodeIDs) {
+setNodeExtents(const Container<size_t>& nodeIDs) {
   const auto& H = mNodeListView.Hfield();
   for (auto i: nodeIDs) {
     mNodeExtentView(i) = Hextent(H(i), mKernelExtent);
@@ -123,14 +123,14 @@ setGhostNodeExtents() {
 // extents.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-template<typename Container>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 Neighbor<Dimension, Descendant>::
 precullList(const Vector& minMasterPosition, const Vector& maxMasterPosition,
             const Vector& minMasterExtent, const Vector& maxMasterExtent,
             const size_t numCoarse,
-            Container& coarseList) const {
+            Container<size_t>& coarseList) const {
   REQUIRE(numCoarse <= coarseList.size());
 
   // Grab data we need
@@ -319,13 +319,13 @@ Hextent(const SymTensor& H,
 // Set the master list of nodes based on a particular node index.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-template<typename Container>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 std::tuple<bool, size_t, size_t>
 Neighbor<Dimension, Descendant>::
 setMasterList(const size_t nodeID,
-              Container& masterList,
-              Container& coarseNeighbors,
+              Container<size_t>& masterList,
+              Container<size_t>& coarseNeighbors,
               const bool ghostConnectivity) const {
   REQUIRE(nodeID < mNodeListView.numInternalNodes());
   const auto& positions = mNodeListView.positions();
@@ -337,17 +337,18 @@ setMasterList(const size_t nodeID,
 // Set the refined list of potential neighbors based on a particular node index.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-template<typename Container>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 Neighbor<Dimension, Descendant>::
 setRefineNeighborList(const size_t nodeID,
-                      const Container& coarseNeighbors,
-                      Container& refineNeighbors) const {
+                      const size_t numCoarse,
+                      const Container<size_t>& coarseNeighbors,
+                      Container<size_t>& refineNeighbors) const {
   REQUIRE(nodeID < mNodeListView.numInternalNodes());
   const auto& positions = mNodeListView.positions();
   const auto& Hfield = mNodeListView.Hfield();
-  return this->setRefineNeighborList(positions(nodeID), Hfield(nodeID), coarseNeighbors, refineNeighbors);
+  return this->setRefineNeighborList(positions(nodeID), Hfield(nodeID), numCoarse, coarseNeighbors, refineNeighbors);
 }
 
 }
