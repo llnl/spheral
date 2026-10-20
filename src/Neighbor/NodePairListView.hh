@@ -18,7 +18,7 @@ class NodePairListView : public chai::CHAICopyable {
 
 public:
   SPHERAL_HOST_DEVICE NodePairListView() = default;
-  SPHERAL_HOST_DEVICE virtual ~NodePairListView() = default;
+  SPHERAL_HOST_DEVICE ~NodePairListView() = default;
   SPHERAL_HOST NodePairListView(SpanType const &d) : mData(d) {}
 
   SPHERAL_HOST_DEVICE

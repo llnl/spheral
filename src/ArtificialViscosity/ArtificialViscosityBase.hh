@@ -37,7 +37,7 @@ public:
     mNegligibleSoundSpeed(NegligibleSoundSpeed) {}
 
   SPHERAL_HOST_DEVICE
-  virtual ~ArtificialViscosityBase() = default;
+  ~ArtificialViscosityBase() = default;
 
   //...........................................................................
   // Methods
