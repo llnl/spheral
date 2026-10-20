@@ -82,6 +82,10 @@ if(ENABLE_OPENMP)
 endif()
 
 if(ENABLE_CUDA)
+  # NVCC cannot parse the newer Clang AVX intrinsic builtins included by
+  # Boost.Multiprecision's optional Intel-intrinsics implementation.
+  add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:BOOST_MP_INTEL_INTRINSICS_HPP>)
+
   # TODO: Determine if --expt-relaxed-constexpr is needed
 
   # Can be --expt-extended-lambda or --extended-lambda (newer CUDA versions only)
