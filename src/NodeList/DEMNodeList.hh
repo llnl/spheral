@@ -6,6 +6,7 @@
 #define __Spheral_DEMNodeList__
 
 #include "NodeList.hh"
+#include "DEMNodeListView.hh"
 #include "Geometry/Dimension.hh"
 
 #include <float.h>
@@ -19,13 +20,15 @@ template<typename Dimension, typename DataType> class FieldList;
 class FileIO;
 
 template<typename Dimension>
-class DEMNodeList: public NodeList<Dimension> {
+class DEMNodeList: public NodeList<Dimension>,
+                   public DEMNodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
   typedef typename Dimension::Scalar Scalar;
   typedef typename Dimension::Vector Vector;
   typedef typename Dimension::SymTensor SymTensor;
+  using ViewType = DEMNodeListView<Dimension>;
   // Constructors.
   DEMNodeList(std::string name,
               const size_t numInternal,
@@ -55,20 +58,30 @@ public:
   Scalar neighborSearchBuffer() const;
   void   neighborSearchBuffer(Scalar x);
 
-  void setHfieldFromParticleRadius(const size_t startUniqueIndex);
+  ViewType view();
+
+  void setHfieldFromParticleRadius(const size_t startUniqueIndex,
+                                   const Scalar kernelExtent);
 
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label() const { return "DEMNodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label() const override { return "DEMNodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // No default constructor or copying.
   DEMNodeList() = delete;
   DEMNodeList(const DEMNodeList& nodes) = delete;
   DEMNodeList& operator=(const DEMNodeList& rhs) = delete;
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void refreshView() override;
+  void refreshParticleRadiusView();
+  void refreshCompositeParticleIndexView();
+  void refreshUniqueIndexView();
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -83,4 +96,3 @@ private:
 #include "DEMNodeListInline.hh"
 
 #endif
-

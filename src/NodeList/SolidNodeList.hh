@@ -8,19 +8,22 @@
 #define __Spheral_SolidNodeList_hh__
 
 #include "NodeList/FluidNodeList.hh"
+#include "NodeList/SolidNodeListView.hh"
 
 namespace Spheral {
 
 template<typename Dimension> class StrengthModel;
 
 template<typename Dimension>
-class SolidNodeList: public FluidNodeList<Dimension> {
+class SolidNodeList: public FluidNodeList<Dimension>,
+                     public SolidNodeListView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using ViewType = SolidNodeListView<Dimension>;
 
   // Constructors.
   SolidNodeList(std::string name,
@@ -40,7 +43,7 @@ public:
   virtual ~SolidNodeList() = default;
 
   // Override the base method for calculating the sound speed.
-  virtual void soundSpeed(Field<Dimension, Scalar>& field) const;
+  virtual void soundSpeed(Field<Dimension, Scalar>& field) const override;
 
   // Convenience methods to compute derived moduli and such.
   virtual void bulkModulus(Field<Dimension, Scalar>& field) const;
@@ -78,17 +81,30 @@ public:
   // The strength model this solid is using.
   const StrengthModel<Dimension>& strengthModel() const;
 
+  // Get the view of SolidNodeList-owned data.
+  ViewType view();
+
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label() const { return "SolidNodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label() const override { return "SolidNodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // No default constructor or copying.
   SolidNodeList() = delete;
   SolidNodeList(const SolidNodeList& solidNodeList) = delete;
+
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void refreshView() override;
+  void refreshDeviatoricStressView();
+  void refreshPlasticStrainView();
+  void refreshPlasticStrainRateView();
+  void refreshDamageView();
+  void refreshFragmentIDsView();
+  void refreshParticleTypesView();
 
 private:
   //--------------------------- Private Interface ---------------------------//

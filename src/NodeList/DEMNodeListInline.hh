@@ -11,7 +11,7 @@ inline
 typename Dimension::Scalar
 DEMNodeList<Dimension>::
 neighborSearchBuffer() const {
-  return mNeighborSearchBuffer;
+  return ViewType::neighborSearchBuffer();
 }
 
 template<typename Dimension>
@@ -19,7 +19,7 @@ inline
 void
 DEMNodeList<Dimension>::
 neighborSearchBuffer(typename Dimension::Scalar x) {
-  mNeighborSearchBuffer = x;
+  ViewType::neighborSearchBuffer(x);
 }
 
 //------------------------------------------------------------------------------

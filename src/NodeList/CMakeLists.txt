@@ -14,6 +14,8 @@ instantiate(NodeList_inst NodeList_sources)
 
 set(NodeList_headers
     FluidNodeList.hh
+    FluidNodeListView.hh
+    FluidNodeListViewInline.hh
     FluidNodeTraits.hh
     NodeList.hh
     NodeListView.hh
@@ -26,6 +28,10 @@ set(NodeList_headers
     nthNodalMoment.hh
     DEMNodeList.hh
     DEMNodeListInline.hh
+    DEMNodeListView.hh
+    DEMNodeListViewInline.hh
+    SolidNodeListView.hh
+    SolidNodeListViewInline.hh
     )
 
 spheral_install_python_files(

@@ -11,7 +11,6 @@
 
 #include "DataOutput/registerWithRestart.hh"
 #include "NodeList/NodeListView.hh"
-#include "Neighbor/NeighborVariants.hh"
 #include "Utilities/span.hh"
 
 #include <string>
@@ -36,7 +35,7 @@ template<typename Dimension, typename Value> class Field;
 class FileIO;
 
 template<typename Dimension>
-class NodeList: public NodeListView<Dimension> {
+class NodeList: public virtual NodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -73,25 +72,6 @@ public:
   // Set the number of Nodes.
   void numInternalNodes(size_t size);
   void numGhostNodes(size_t size);
-
-  // Provide the standard NodeIterators over the nodes of this NodeList.
-  AllNodeIterator<Dimension> nodeBegin() const;
-  AllNodeIterator<Dimension> nodeEnd() const;
-          
-  InternalNodeIterator<Dimension> internalNodeBegin() const;
-  InternalNodeIterator<Dimension> internalNodeEnd() const;
-          
-  GhostNodeIterator<Dimension> ghostNodeBegin() const;
-  GhostNodeIterator<Dimension> ghostNodeEnd() const;
-          
-  MasterNodeIterator<Dimension> masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const;
-  MasterNodeIterator<Dimension> masterNodeEnd() const;
-          
-  CoarseNodeIterator<Dimension> coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const;
-  CoarseNodeIterator<Dimension> coarseNodeEnd() const;
-
-  RefineNodeIterator<Dimension> refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const;
-  RefineNodeIterator<Dimension> refineNodeEnd() const;
 
   // The NodeList state Fields.
   Field<Dimension, Scalar>& mass()                          { return mMass; }
@@ -133,9 +113,6 @@ public:
   size_t numFields() const { return mFieldBases.size(); }
   bool haveField(const FieldBase<Dimension>& field) const;
 
-  // // Access the neighbor object.
-  // NeighborViewVariant<Dimension>& neighborView()          const { CHECK(mNeighborViewPtr != nullptr); return *mNeighborViewPtr; }
-
   //****************************************************************************
   // Methods for adding/removing individual nodes to/from the NodeList
   // (including all Field information.  These methods are primarily useful
@@ -164,10 +141,6 @@ public:
   // Get the view of NodeList-owned data.
   ViewType view();
 
-  // // Neighbor object registration
-  // void registerNeighbor(Neighbor<Dimension>& neighbor);
-  // void unregisterNeighbor();
-
   // No default constructor, copying, or assignment.
   NodeList() = delete;
   NodeList(const NodeList& nodes) = delete;
@@ -175,10 +148,10 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // Methods to handle registering Fields and Neighbors
+  // Methods to handle registering Fields
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
-  void refreshView();
+  virtual void refreshView();
   void refreshMassView();
   void refreshMassRZView();
   void refreshPositionsView();
@@ -206,10 +179,6 @@ private:
 
   // List of Fields that are defined over this NodeList.
   mutable std::vector<std::reference_wrapper<FieldBase<Dimension>>> mFieldBases;
-  // Neighbor<Dimension>* mNeighborPtr;
-
-  // Provide a dummy vector to buid NodeIterators against.
-  std::vector<NodeList<Dimension>*> mDummyList;
 
   // The restart registration.
   RestartRegistrationType mRestart;

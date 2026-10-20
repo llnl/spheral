@@ -8,6 +8,7 @@
 #define __Spheral_FluidNodeList__
 
 #include "NodeList/NodeList.hh"
+#include "NodeList/FluidNodeListView.hh"
 
 namespace Spheral {
 
@@ -20,7 +21,6 @@ template<typename Dimension> class CoarseNodeIterator;
 template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class Neighbor;
 template<typename Dimension> class ConnectivityMap;
 template<typename Dimension, typename DataType> class Field;
 template<typename Dimension, typename DataType> class FieldList;
@@ -30,7 +30,8 @@ template<typename Dimension> class DataBase;
 class FileIO;
 
 template<typename Dimension>
-class FluidNodeList: public NodeList<Dimension> {
+class FluidNodeList: public NodeList<Dimension>,
+                     public virtual FluidNodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -38,6 +39,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using ViewType = FluidNodeListView<Dimension>;
   
   // Constructors.
   FluidNodeList(std::string name,
@@ -82,18 +84,21 @@ public:
 
   // Optional bounding mass densities for use when time integrating
   // the density.
-  Scalar rhoMin() const { return mRhoMin; }
-  Scalar rhoMax() const { return mRhoMax; }
+  Scalar rhoMin() const { return ViewType::rhoMin(); }
+  Scalar rhoMax() const { return ViewType::rhoMax(); }
 
-  void rhoMin(Scalar x) { mRhoMin = x; }
-  void rhoMax(Scalar x) { mRhoMax = x; }
+  void rhoMin(Scalar x) { ViewType::rhoMin(x); }
+  void rhoMax(Scalar x) { ViewType::rhoMax(x); }
+
+  // Get the view of FluidNodeList-owned data.
+  ViewType view();
 
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label() const { return "FluidNodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label() const override { return "FluidNodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // No default constructor or copying.
@@ -101,10 +106,15 @@ public:
   FluidNodeList(const FluidNodeList& nodes) = delete;
   FluidNodeList& operator=(const FluidNodeList& rhs) = delete;
 
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void refreshView() override;
+  void refreshMassDensityView();
+  void refreshMassDensityRZView();
+  void refreshSpecificThermalEnergyView();
+
 private:
   //--------------------------- Private Interface ---------------------------//
-  // Min/max mass densities.
-  Scalar mRhoMin, mRhoMax;
 
   // Fields that define the fluid's current state.
   Field<Dimension, Scalar> mMassDensity;
@@ -118,4 +128,3 @@ private:
 }
 
 #endif
-

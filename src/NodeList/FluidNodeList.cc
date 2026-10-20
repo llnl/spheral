@@ -9,13 +9,7 @@
 #include "Material/EquationOfState.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "DataBase/DataBase.hh"
-#include "DataBase/IncrementState.hh"
-#include "DataBase/ReplaceState.hh"
-#include "Kernel/TableKernel.hh"
 #include "Field/FieldList.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/safeInv.hh"
 #include "Geometry/GeometryRegistrar.hh"
 
@@ -44,19 +38,39 @@ FluidNodeList(string name,
               const size_t maxNumNeighbors,
               const Scalar rhoMin,
               const Scalar rhoMax):
+  NodeListView<Dimension>(numInternal + numGhost,
+                          numInternal,
+                          hmin,
+                          hmax,
+                          hminratio,
+                          nPerh,
+                          maxNumNeighbors),
+  ViewType(numInternal + numGhost,
+           numInternal,
+           hmin,
+           hmax,
+           hminratio,
+           nPerh,
+           maxNumNeighbors,
+           rhoMin,
+           rhoMax),
   NodeList<Dimension>(name, numInternal, numGhost, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
-  mRhoMin(rhoMin),
-  mRhoMax(rhoMax),
   mMassDensity(HydroFieldNames::massDensity, *this),
   mSpecificThermalEnergy(HydroFieldNames::specificThermalEnergy, *this),
   mMassDensityRZptr(),
   mEosPtr(&eos) {
 
+  // FluidNodeListView is a virtual base shared with specialized fluid views.
+  // Set the fluid scalars here as well as in the initializer list so this also
+  // works when FluidNodeList is an indirect base of SolidNodeList.
+  this->mRhoMin = rhoMin;
+  this->mRhoMax = rhoMax;
+
   // If we're in RZ allocate massRZ
   if (GeometryRegistrar::coords() == CoordinateType::RZ) {
     mMassDensityRZptr = std::make_unique<Field<Dimension, Scalar>>(HydroFieldNames::massDensityRZ, *this);
   }
-
+  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -68,6 +82,7 @@ FluidNodeList<Dimension>::
 massDensity(const Field<Dimension, typename Dimension::Scalar>& rho) {
   mMassDensity = rho;
   mMassDensity.name(HydroFieldNames::massDensity);
+  refreshMassDensityView();
 }
 
 //------------------------------------------------------------------------------
@@ -80,6 +95,7 @@ massDensityRZ(const Field<Dimension, typename Dimension::Scalar>& rho) {
   VERIFY2(mMassDensityRZptr, "FluidNodeList::massDensityRZ ERROR: not allocated");
   *mMassDensityRZptr = rho;
   mMassDensityRZptr->name(HydroFieldNames::massDensityRZ);
+  refreshMassDensityRZView();
 }
 
 //------------------------------------------------------------------------------
@@ -91,6 +107,56 @@ FluidNodeList<Dimension>::
 specificThermalEnergy(const Field<Dimension, typename Dimension::Scalar>& eps) {
   mSpecificThermalEnergy = eps;
   mSpecificThermalEnergy.name(HydroFieldNames::specificThermalEnergy);
+  refreshSpecificThermalEnergyView();
+}
+
+//------------------------------------------------------------------------------
+// Get the view of FluidNodeList-owned data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename FluidNodeList<Dimension>::ViewType
+FluidNodeList<Dimension>::
+view() {
+  return static_cast<ViewType>(*this);
+}
+
+//------------------------------------------------------------------------------
+// Refresh the inherited view state from the owned Fields.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+refreshView() {
+  NodeList<Dimension>::refreshView();
+  refreshMassDensityView();
+  refreshMassDensityRZView();
+  refreshSpecificThermalEnergyView();
+}
+
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+refreshMassDensityView() {
+  this->mMassDensityView = mMassDensity.view();
+  ENSURE(this->mMassDensityView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+refreshMassDensityRZView() {
+  if (mMassDensityRZptr) {
+    this->mMassDensityRZView = mMassDensityRZptr->view();
+    ENSURE(this->mMassDensityRZView.numElements() == this->mNumNodes);
+  }
+}
+
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+refreshSpecificThermalEnergyView() {
+  this->mSpecificThermalEnergyView = mSpecificThermalEnergy.view();
+  ENSURE(this->mSpecificThermalEnergyView.numElements() == this->mNumNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -205,6 +271,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mMassDensity, pathName + "/massDensity");
   file.read(mSpecificThermalEnergy, pathName + "/specificThermalEnergy");
   if (mMassDensityRZptr) file.read(*mMassDensityRZptr, pathName + "/massDensityRZ");
+  refreshView();
 }  
 
 }
