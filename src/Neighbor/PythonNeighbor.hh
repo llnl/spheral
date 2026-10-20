@@ -29,9 +29,9 @@ public:
   using ContainerOfContainers = std::vector<std::vector<size_t>>;
 
   PythonNeighbor(NodeListView<Dimension>& nodeListView,
-                     FieldView<Dimension, Vector>& nodeExtentView,
-                     const NeighborSearchType searchType,
-                     const Scalar kernelExtent);
+                 FieldView<Dimension, Vector>& nodeExtentView,
+                 const NeighborSearchType searchType,
+                 const Scalar kernelExtent);
   virtual ~PythonNeighbor() = default;
 
   //.............................................................................

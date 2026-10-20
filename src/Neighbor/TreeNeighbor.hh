@@ -24,17 +24,14 @@ template<typename Dimension>
 class TreeNeighbor: public Neighbor<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-
-  typedef std::vector<int>::iterator iterator;
-  typedef std::vector<int>::const_iterator const_iterator;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Data types we use to build the internal tree structure.
-  typedef uint32_t LevelKey;
-  typedef uint64_t CellKey;
+  using LevelKey = uint32_t;
+  using CellKey = uint64_t;
 
   // Constructors and destructors
   TreeNeighbor(NodeList<Dimension>& nodeList, 

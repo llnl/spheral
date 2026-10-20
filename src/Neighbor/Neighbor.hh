@@ -35,6 +35,8 @@ public:
                                FieldView<Dimension, Vector>& nodeExtentView,
                                const NeighborSearchType searchType,
                                const Scalar kernelExtent);
+  SPHERAL_HOST_DEVICE Neighbor(const Neighbor& rhs) = default;
+  SPHERAL_HOST_DEVICE Neighbor(Neighbor&& rhs) = default;
   SPHERAL_HOST_DEVICE virtual ~Neighbor() = default;
 
   // Access our data

@@ -1,5 +1,6 @@
 set(Neighbor_inst
   PythonNeighbor
+  TreeNeighborView
   TreeNeighbor
   ConnectivityMap
 )
@@ -24,6 +25,7 @@ set(Neighbor_headers
   Neighbor.hh
   NeighborInline.hh
   PythonNeighbor.hh
+  TreeNeighborView.hh
   TreeNeighbor.hh
 )
 

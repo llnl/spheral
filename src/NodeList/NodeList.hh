@@ -11,6 +11,7 @@
 
 #include "DataOutput/registerWithRestart.hh"
 #include "NodeList/NodeListView.hh"
+#include "Neighbor/NeighborVariants.hh"
 #include "Utilities/span.hh"
 
 #include <string>
@@ -28,7 +29,6 @@ template<typename Dimension> class MasterNodeIterator;
 template<typename Dimension> class CoarseNodeIterator;
 template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class State;
-template<typename Dimension> class Neighbor;
 template<typename Dimension> class DataBase;
 template<typename Dimension> class TableKernel;
 template<typename Dimension> class FieldBase;
@@ -133,8 +133,8 @@ public:
   size_t numFields() const { return mFieldBases.size(); }
   bool haveField(const FieldBase<Dimension>& field) const;
 
-  // Access the neighbor object.
-  Neighbor<Dimension>& neighbor()                          const { CHECK(mNeighborPtr != nullptr); return *mNeighborPtr; }
+  // // Access the neighbor object.
+  // NeighborViewVariant<Dimension>& neighborView()          const { CHECK(mNeighborViewPtr != nullptr); return *mNeighborViewPtr; }
 
   //****************************************************************************
   // Methods for adding/removing individual nodes to/from the NodeList
@@ -164,9 +164,9 @@ public:
   // Get the view of NodeList-owned data.
   ViewType view();
 
-  // Neighbor object registration
-  void registerNeighbor(Neighbor<Dimension>& neighbor);
-  void unregisterNeighbor();
+  // // Neighbor object registration
+  // void registerNeighbor(Neighbor<Dimension>& neighbor);
+  // void unregisterNeighbor();
 
   // No default constructor, copying, or assignment.
   NodeList() = delete;
@@ -206,7 +206,7 @@ private:
 
   // List of Fields that are defined over this NodeList.
   mutable std::vector<std::reference_wrapper<FieldBase<Dimension>>> mFieldBases;
-  Neighbor<Dimension>* mNeighborPtr;
+  // Neighbor<Dimension>* mNeighborPtr;
 
   // Provide a dummy vector to buid NodeIterators against.
   std::vector<NodeList<Dimension>*> mDummyList;
