@@ -87,3 +87,4 @@ protected:
 #include "TableKernelViewInline.hh"
 
 #endif
+
