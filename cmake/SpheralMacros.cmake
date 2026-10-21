@@ -56,10 +56,6 @@ macro(spheral_add_test)
   if (ENABLE_DEV_BUILD)
     message("Skipping ${original_test_name} : NOT compatible with ENABLE_DEV_BUILD.")
   else()
-    get_property(SPHERAL_BLT_DEPENDS GLOBAL PROPERTY SPHERAL_BLT_DEPENDS)
-    get_property(SPHERAL_COMPILE_DEFS GLOBAL PROPERTY SPHERAL_COMPILE_DEFS)
-    get_property(SPHERAL_CXX_FLAGS GLOBAL PROPERTY SPHERAL_CXX_FLAGS)
-    get_property(SPHERAL_LINK_FLAGS GLOBAL PROPERTY SPHERAL_LINK_FLAGS)
 
     blt_add_library(
       NAME ${original_test_name}_lib

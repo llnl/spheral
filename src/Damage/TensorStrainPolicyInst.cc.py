@@ -6,6 +6,6 @@ text = """
 #include "Damage/TensorStrainPolicy.cc"
 
 namespace Spheral {
-  template class Spheral::TensorStrainPolicy<Dim< %(ndim)s > >;
+  template class TensorStrainPolicy<Dim<%(ndim)s>>;
 }
 """

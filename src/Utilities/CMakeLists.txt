@@ -1,4 +1,3 @@
-include_directories(.)
 set(Utilities_inst
     iterateIdealH
     mortonOrderIndices
@@ -35,7 +34,6 @@ set(Utilities_sources
     clipFacetedVolume.cc
     uniform_random.cc
     initializeAxom.cc
-    GPUUtils.cc
     )
 
 instantiate(Utilities_inst Utilities_sources)
@@ -46,7 +44,6 @@ set(Utilities_headers
     BuildData.hh
     CounterClockwiseComparator.hh
     DBC.hh
-    GPUUtils.hh
     LinearInterpolator.hh
     LinearInterpolatorInline.hh
     QuadraticInterpolator.hh
@@ -76,7 +73,6 @@ set(Utilities_headers
     Logger.hh
     NodeCoupling.hh
     NodeListHashMap.hh
-    OpenMP_wrapper.hh
     PairComparisons.hh
     PeanoHilbertTransform.hh
     RedistributionNotification.hh
@@ -148,5 +144,5 @@ set(Utilities_headers
 
 spheral_install_python_files(fitspline.py)
 
-spheral_add_obj_library(Utilities SPHERAL_OBJ_LIBS)
+spheral_add_package(Utilities)
 

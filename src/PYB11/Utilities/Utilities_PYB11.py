@@ -18,7 +18,6 @@ dims = spheralDimensions()
 PYB11includes += ['"Utilities/setGlobalFlags.hh"',
                   '"Utilities/packElement.hh"',
                   '"boost/math/special_functions/legendre.hpp"',
-                  '"Utilities/GPUUtils.hh"',
                   '"Utilities/BuildData.hh"',
                   '"Utilities/Functors.hh"',
                   '"Utilities/erff.hh"',
@@ -867,19 +866,4 @@ def initializeAxom():
     return "void"
 
 def finalizeAxom():
-    return "void"
-
-#...............................................................................
-# init GPUs
-# stack_mult is the number of bytes to increase the device stack limit to
-@PYB11cppname("GPUUtils::deviceCount")
-def deviceCount():
-    return "int"
-
-@PYB11cppname("GPUUtils::initGPUs")
-def initGPUs(stack_mult = ("int", "8")):
-    return "void"
-
-@PYB11cppname("GPUUtils::deviceSync")
-def deviceSync():
     return "void"

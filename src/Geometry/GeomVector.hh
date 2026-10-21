@@ -20,7 +20,7 @@
 #include "Geometry/GeomTensor_fwd.hh"
 #include "Geometry/GeomSymmetricTensor_fwd.hh"
 #include "GeomVectorBase.hh"
-#include "Utilities/GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 #include <iostream>
 #include "Eigen/Dense"

@@ -119,11 +119,11 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
   if (Process::getRank() == 0) {
-    SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << 
-                   initialLoadStats << "\n" <<
-                   "    Domain distribution shape tensor: " << shapeTensor.eigenValues << "\n" <<
-                                                 "    Number of domains per work chunk: ");
-    for (auto& x: domainsPerStep) SpheralMessage("                                      " << x);
+    SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" 
+                   << initialLoadStats << "\n" 
+                   << "    Domain distribution shape tensor: " << shapeTensor.eigenValues << "\n" 
+                   << "    Number of domains per work chunk: " << "\n";
+    for (auto& x: domainsPerStep) SpheralMessage << "                                      " << x << "\n";
   }
     
   // Compute the total work, and the target work per processor.
@@ -223,7 +223,7 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
+  SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n";
   MPI_Barrier(Communicator::communicator());
 }
 

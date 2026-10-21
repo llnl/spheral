@@ -78,6 +78,10 @@ def siloPointmeshDump(baseName,
         det = eval("ScalarField%id('%s_determinant', n)" % (ndim, f.name))
         mineigen = eval("ScalarField%id('%s_eigen_min', n)" % (ndim, f.name))
         maxeigen = eval("ScalarField%id('%s_eigen_max', n)" % (ndim, f.name))
+        tr3D = eval("ScalarField%id('%s_trace3D', n)" % (ndim, f.name))
+        det3D = eval("ScalarField%id('%s_determinant3D', n)" % (ndim, f.name))
+        mineigen3D = eval("ScalarField%id('%s_eigen_min3D', n)" % (ndim, f.name))
+        maxeigen3D = eval("ScalarField%id('%s_eigen_max3D', n)" % (ndim, f.name))
         if dumpGhosts:
             nvals = n.numNodes
         else:
@@ -88,7 +92,13 @@ def siloPointmeshDump(baseName,
             det[i] = f[i].Determinant()
             mineigen[i] = eigen.minElement()
             maxeigen[i] = eigen.maxElement()
-        scalarFields += [tr, det, mineigen, maxeigen]
+            eigen3D = f[i].eigenValues3D()
+            tr3D[i] = f[i].Trace3D()
+            det3D[i] = f[i].Determinant3D()
+            mineigen3D[i] = eigen3D.minElement()
+            maxeigen3D[i] = eigen3D.maxElement()
+        scalarFields += [tr, det, mineigen, maxeigen,
+                         tr3D, det3D, mineigen3D, maxeigen3D]
 
     # Extract all the fields we're going to write.
     fieldwad = extractFieldComponents(nodeLists, time, cycle, dumpGhosts,
@@ -503,21 +513,28 @@ def metaDataVectorField(name, time, cycle, dim):
 def extractTensorField(name, field, vals, dim):
     assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (1,2,3)
+    TensorType = eval(f"Tensor{dim}d")
     if dim == 1:
         if vals == []:
-            vals = [["%s_xx" % name, vector_of_double()]]
+            vals = [["%s_xx" % name, vector_of_double()],
+                    ["%s_yy" % name, vector_of_double()],
+                    ["%s_zz" % name, vector_of_double()]]
         for t in field:
             vals[0][1].append(t.xx)
+            vals[1][1].append(t.yy)
+            vals[2][1].append(t.zz)
 
     elif dim == 2:
         if vals == []:
             vals = [["%s_xx" % name, vector_of_double()],
                     ["%s_xy" % name, vector_of_double()],
                     ["%s_yx" % name, vector_of_double()],
-                    ["%s_yy" % name, vector_of_double()]]
+                    ["%s_yy" % name, vector_of_double()],
+                    ["%s_zz" % name, vector_of_double()]]
         for t in field:
             vals[0][1].append(t.xx); vals[1][1].append(t.xy)
             vals[2][1].append(t.yx); vals[3][1].append(t.yy)
+            vals[4][1].append(t.zz)
 
     else:
         if vals == []:
@@ -535,19 +552,24 @@ def extractTensorField(name, field, vals, dim):
             vals[3][1].append(t.yx); vals[4][1].append(t.yy); vals[5][1].append(t.yz)
             vals[6][1].append(t.zx); vals[7][1].append(t.zy); vals[8][1].append(t.zz)
 
+    assert len(vals) == TensorType.numElements
     return vals
 
 def dummyTensorField(name, n, vals, dim):
     assert len(vals) == dim*dim or len(vals) == 0
     assert dim in (1,2,3)
+    TensorType = eval(f"Tensor{dim}d")
     if vals == []:
         if dim == 1:
-            vals = [["%s_xx" % name, vector_of_double([0.0]*n)]]
+            vals = [["%s_xx" % name, vector_of_double([0.0]*n)],
+                    ["%s_yy" % name, vector_of_double([0.0]*n)],
+                    ["%s_zz" % name, vector_of_double([0.0]*n)]]
         elif dim == 2:
             vals = [["%s_xx" % name, vector_of_double([0.0]*n)],
                     ["%s_xy" % name, vector_of_double([0.0]*n)],
                     ["%s_yx" % name, vector_of_double([0.0]*n)],
-                    ["%s_yy" % name, vector_of_double([0.0]*n)]]
+                    ["%s_yy" % name, vector_of_double([0.0]*n)],
+                    ["%s_zz" % name, vector_of_double([0.0]*n)]]
         else:
             vals = [["%s_xx" % name, vector_of_double([0.0]*n)],
                     ["%s_xy" % name, vector_of_double([0.0]*n)],
@@ -559,8 +581,9 @@ def dummyTensorField(name, n, vals, dim):
                     ["%s_zy" % name, vector_of_double([0.0]*n)],
                     ["%s_zz" % name, vector_of_double([0.0]*n)]]
     else:
-        for i in range(dim*dim):
+        for i in range(TensorType.numElements):
             vals[i][1].extend(vector_of_double([0.0]*n))
+    assert len(vals) == TensorType.numElements
     return vals
 
 def metaDataTensorField(name, time, cycle, dim):
@@ -578,15 +601,13 @@ def metaDataTensorField(name, time, cycle, dim):
     assert optlistVar.addOption(silo.DBOPT_TENSOR_RANK, silo.DB_VARTYPE_SCALAR) == 0
 
     if dim == 1:
-        return ("{%s_xx}" % name, silo.DB_VARTYPE_TENSOR,
-                optlistDef, optlistMV, optlistVar)
+        return (f"{{ {{ {name}_xx, 0.0, 0.0 }}, {{ 0.0, {name}_yy, 0.0 }}, {{ 0.0, 0.0, {name}_zz }} }}",
+                silo.DB_VARTYPE_TENSOR, optlistDef, optlistMV, optlistVar)
     elif dim == 2:
-        return ("{{%s_xx, %s_xy}, {%s_yx, %s_yy}}" % (name, name, name, name), silo.DB_VARTYPE_TENSOR,
-                optlistDef, optlistMV, optlistVar)
+        return (f"{{ {{ {name}_xx, {name}_xy, 0.0 }}, {{ {name}_yx, {name}_yy, 0.0 }}, {{ 0.0, 0.0, {name}_zz }} }}",
+                silo.DB_VARTYPE_TENSOR, optlistDef, optlistMV, optlistVar)
     else:
-        return ("{{%s_xx, %s_xy, %s_xz}, {%s_yx, %s_yy, %s_yz}, {%s_zx, %s_zy, %s_zz}}" % (name, name, name,
-                                                                                           name, name, name,
-                                                                                           name, name, name),
+        return (f"{{ {{ {name}_xx, {name}_xy, {name}_xz }}, {{ {name}_yx, {name}_yy, {name}_yz }}, {{ {name}_zx, {name}_zy, {name}_zz }} }}",
                 silo.DB_VARTYPE_TENSOR, optlistDef, optlistMV, optlistVar)
 
 #-------------------------------------------------------------------------------

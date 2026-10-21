@@ -25,7 +25,6 @@ PYB11includes += ['"RK/RKCoefficients.hh"',
                   '"RK/RKFieldNames.hh"',
                   '"RK/ReproducingKernelMethods.hh"',
                   '"RK/ReproducingKernel.hh"',
-                  '"RK/computeRKVolumes.hh"',
                   '"RK/computeOccupancyVolume.hh"',
                   '"RK/computeRKSumVolume.hh"',
                   '"RK/computeHullVolume.hh"',
@@ -82,34 +81,9 @@ struct AppendFieldLists {
 RKOrder = PYB11enum(("ZerothOrder", "LinearOrder", "QuadraticOrder", "CubicOrder", "QuarticOrder", "QuinticOrder", "SexticOrder", "SepticOrder"),
                     export_values = True,
                     doc = "Selection of RK correction orders")
-RKVolumeType = PYB11enum(("RKMassOverDensity", "RKSumVolume", "RKVoronoiVolume", "RKHullVolume", "HVolume"),
-                         export_values = True,
-                         doc = "Options for RK volume algorithms")
 
 #-------------------------------------------------------------------------------
 # Methods
-#-------------------------------------------------------------------------------
-@PYB11template("Dimension")
-def computeRKVolumes(connectivityMap = "const ConnectivityMap<%(Dimension)s>&",
-                     W = "const TableKernel<%(Dimension)s>&",
-                     position = "const FieldList<%(Dimension)s, typename %(Dimension)s::Vector>&",
-                     mass = "const FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>&",
-                     massDensity = "const FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>&",
-                     H = "const FieldList<%(Dimension)s, typename %(Dimension)s::SymTensor>&",
-                     damage = "const FieldList<%(Dimension)s, typename %(Dimension)s::SymTensor>&",
-                     facetedBoundaries = "const std::vector<typename %(Dimension)s::FacetedVolume>&",
-                     facetedHoles = "const std::vector<std::vector<typename %(Dimension)s::FacetedVolume>>&",
-                     boundaryConditions = "const std::vector<Boundary<%(Dimension)s>*>&",
-                     volumeType = "const RKVolumeType",
-                     surfacePoint = "FieldList<%(Dimension)s, int>&",
-                     deltaCentroid = "FieldList<%(Dimension)s, typename %(Dimension)s::Vector>&",
-                     etaVoidPoints = "FieldList<%(Dimension)s, std::vector<typename %(Dimension)s::Vector>>&",
-                     cells = "FieldList<%(Dimension)s, typename %(Dimension)s::FacetedVolume>&",
-                     cellFaceFlags = "FieldList<%(Dimension)s, std::vector<CellFaceFlag>>&",
-                     volume = "FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>&"):
-    "Compute RK volumes"
-    return "void"
-
 #-------------------------------------------------------------------------------
 @PYB11template("Dimension")
 def computeRKSumVolume(connectivityMap = "const ConnectivityMap<%(Dimension)s>&",
@@ -319,7 +293,6 @@ ReproducingKernel%(ndim)id = PYB11TemplateClass(ReproducingKernel, template_para
 RKCoefficients%(ndim)id = PYB11TemplateClass(RKCoefficients, template_parameters="%(Dimension)s")
 
 interpolateRK%(ndim)id = PYB11TemplateFunction(interpolateRK, template_parameters="Dim<%(ndim)i>", pyname="interpolateRK")
-computeRKVolumes%(ndim)id = PYB11TemplateFunction(computeRKVolumes, template_parameters="%(Dimension)s")
 computeRKSumVolume%(ndim)id = PYB11TemplateFunction(computeRKSumVolume, template_parameters="%(Dimension)s")
 computeOccupancyVolume%(ndim)id = PYB11TemplateFunction(computeOccupancyVolume, template_parameters="%(Dimension)s")
 computeHullVolume%(ndim)id = PYB11TemplateFunction(computeHullVolume, template_parameters="%(Dimension)s")

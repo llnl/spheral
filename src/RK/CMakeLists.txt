@@ -1,4 +1,3 @@
-include_directories(.)
 set(RK_inst
     computeRKSumVolume
     computeOccupancyVolume
@@ -7,7 +6,6 @@ set(RK_inst
     computeHVolumes
     HVolumePolicy
     ContinuityVolumePolicy
-    computeRKVolumes
     RKCorrections
     RKUtilities012
     RKUtilities3
@@ -48,11 +46,10 @@ set(RK_headers
     computeHullVolumes.hh
     computeOccupancyVolume.hh
     computeRKSumVolume.hh
-    computeRKVolumes.hh
     gradientRK.hh
     hessianRK.hh
     interpolateRK.hh
     )
 
-spheral_add_obj_library(RK SPHERAL_OBJ_LIBS)
+spheral_add_package(RK)
 

@@ -486,7 +486,7 @@ class GenerateRatioSphere3d(NodeGeneratorBase):
                                     0.0,    0.0,    1.0/hz)
             if SPH:
                 h0 = self.H[i].Determinant()**(1.0/3.0)
-                self.H[-1] = SymTensor3d(h0, 0.0, 0.0,
+                self.H[i] = SymTensor3d(h0, 0.0, 0.0,
                                          0.0, h0, 0.0,
                                          0.0, 0.0, h0)
 

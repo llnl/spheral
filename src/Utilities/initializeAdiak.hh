@@ -6,7 +6,7 @@
 
 #include "config.hh"
 #include "Distributed/Communicator.hh"
-#include "GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 #include "adiak.hpp"
 
 namespace Spheral {

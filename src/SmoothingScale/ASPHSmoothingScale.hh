@@ -28,6 +28,7 @@ public:
   using FacetedVolume = typename Dimension::FacetedVolume;
   using HidealFilterType = typename SmoothingScaleBase<Dimension>::HidealFilterType;
   using RadialFunctorType = typename SmoothingScaleBase<Dimension>::RadialFunctorType;
+  using VolumeRequirements = typename Physics<Dimension>::VolumeRequirements;
 
   // Constructors, destructor.
   ASPHSmoothingScale(const HEvolutionType HUpdate,
@@ -75,8 +76,9 @@ public:
                                     StateDerivatives<Dimension>& derivs) override;
 
   // We require the Voronoi-like cells per point
-  virtual bool requireVoronoiCells() const override                               { return (this->HEvolution() == HEvolutionType::IdealH and
-                                                                                            not (mFixShape or mRadialOnly)); }
+  virtual VolumeRequirements requireVolumes() const override {
+    return {(this->HEvolution() == HEvolutionType::IdealH and not (mFixShape or mRadialOnly)),
+            false, true}; }
 
   // Access our internal data
   const TableKernel<Dimension>&                          WT()            const    { return mWT; }

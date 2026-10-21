@@ -62,6 +62,13 @@ class TestParams:
     def set_gen_inputs(self):
         pass
 
+    def write_califile(self):
+        return True
+
+    def first_tests(self):
+        "Signifies if these tests must run before all others"
+        return False
+
     def create_test_inputs(self, test_path, test_runs, threads):
         """
         Create the inputs for each run of each test variation.
@@ -78,11 +85,15 @@ class TestParams:
             finps = f"--adiakData 'test_name: {full_test_name}, test_base: {self.test_name}, test_var: {tname}' {tt.test_inps} {self.gen_inp}"
             for i in range(test_runs):
                 cali_ext = f"{int(time.time())}.cali"
-                if (test_runs > 1):
-                    cali_name = f"{full_test_name}_{i}_{cali_ext}"
+                if (not self.write_califile()):
+                    cali_name = None
+                    timer_cmds = ""
                 else:
-                    cali_name = f"{full_test_name}_{cali_ext}"
-                timer_cmds = f"--caliperFilename {cali_name}"
+                    if (test_runs > 1):
+                        cali_name = f"{full_test_name}_{i}_{cali_ext}"
+                    else:
+                        cali_name = f"{full_test_name}_{cali_ext}"
+                    timer_cmds = f"--caliperFilename {cali_name}"
                 # Create test input string
                 ffinps = finps + " " + timer_cmds
                 ats_args = ats_args_0.copy()
@@ -95,10 +106,40 @@ class TestParams:
         return test_inps
 
 #---------------------------------------------------------------------------
+# Dummy test
+# This should run first to absorb a slowdown for first job in an allocation
+# the Cray/AMD machines.
+#---------------------------------------------------------------------------
+class DummyTest(TestParams):
+    def __init__(self, ncores, nnodes):
+        ats_dict = dict(np=1, nn=1)
+        gpu_ats_dict = dict(raja_test=True, np=1, nn=1, ngpu=1)
+        inp_string = "--caliperConfig 'none'"
+        init_dict = {}
+        # Add 1 CPU and GPU test per node
+        for i in range(nnodes):
+            init_dict.update({f"CPU{i}": PerfTest(test_inps=inp_string, ats_inps=ats_dict)})
+        for i in range(nnodes):
+            init_dict.update({f"GPU{i}": PerfTest(test_inps=f"{inp_string} --raja True", ats_inps=gpu_ats_dict)})
+        super().__init__("DUMMYTEST",
+                         "unit/SPH/evalDerivsRun.py",
+                         init_dict)
+        self.ncores = ncores
+
+    def first_tests(self):
+        return True
+
+    def write_califile(self):
+        return False
+
+    def set_gen_inputs(self):
+        self.gen_inp = f"--testDim 3d --steps 1 --iterateH False --nPerh 2.01 --solid True --nx 10"
+
+#---------------------------------------------------------------------------
 # Taylor impact test
 #---------------------------------------------------------------------------
 class TaylorImpact(TestParams):
-    def __init__(self, ncores):
+    def __init__(self, ncores, nnodes):
         super().__init__("3DTAYLOR",
                          "functional/Strength/TaylorImpact/TaylorImpact.py",
                          {"CRK": PerfTest(test_inps="--hydroType CRKSPH --densityUpdate SumVoronoiCellDensity"),
@@ -126,7 +167,7 @@ class TaylorImpact(TestParams):
 # 3D convection test
 #---------------------------------------------------------------------------
 class Conv3D(TestParams):
-    def __init__(self, ncores):
+    def __init__(self, ncores, nnodes):
         super().__init__("3DCONV",
                          "unit/Boundary/testPeriodicBoundary-3d.py",
                          {"": PerfTest()})
@@ -143,7 +184,7 @@ class Conv3D(TestParams):
 # 2D NOH tests
 #---------------------------------------------------------------------------
 class NOH2D(TestParams):
-    def __init__(self, ncores):
+    def __init__(self, ncores, nnodes):
         super().__init__("NC2D",
                          "functional/Hydro/Noh/Noh-cylindrical-2d.py",
                          {"SPH": PerfTest(test_inps="--crksph False --solid True"),
@@ -175,8 +216,8 @@ class NOH2D(TestParams):
 # 3D NOH tests
 #---------------------------------------------------------------------------
 class NOH3D(NOH2D):
-    def __init__(self, ncores):
-        super().__init__(ncores)
+    def __init__(self, ncores, nnodes):
+        super().__init__(ncores, nnodes)
         # Only use half the number of cores
         self.ncores = int(ncores/2)
         self.test_name = "NS3D"
@@ -192,7 +233,7 @@ class NOH3D(NOH2D):
 # Evaluate derivatives test
 #---------------------------------------------------------------------------
 class EvalDerivs(TestParams):
-    def __init__(self, ncores):
+    def __init__(self, ncores, nnodes):
         # Overwrite certain ats options for GPU tests
         gpu_dict = dict(raja_test=True, np=1, nt=1, ngpu=1, nn=1)
         raja_cpu_dict = dict(raja_test=True, np=int(ncores/8), nt=2)
@@ -215,14 +256,14 @@ class EvalDerivs(TestParams):
 #---------------------------------------------------------------------------
 
 # Use arbitrary number of cores if just need test names
-def get_all_tests(ncores = 0):
+def get_all_tests(ncores = 0, nnodes = 0):
     # Recursively retrieve all subclasses of TestParams
     seen = set()
     work = [TestParams]
     while work:
         parent = work.pop()
         for child in parent.__subclasses__():
-            seen.add(child(ncores))
+            seen.add(child(ncores, nnodes))
             work.append(child)
     return list(seen)
 

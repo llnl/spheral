@@ -239,6 +239,59 @@ output("mpi.reduce(nodes1.numInternalNodes, mpi.MAX)")
 output("mpi.reduce(nodes1.numInternalNodes, mpi.SUM)")
 
 #-------------------------------------------------------------------------------
+# Set the point source of energy.
+# We have to wait until after physics initialization to have the proper 3D mass
+# per point in this calculation.
+#-------------------------------------------------------------------------------
+if problem == "planar":
+    Eexpect = 0.5*pi*(r1*r1 - r0*r0)*Espike
+    if z0 != 0.0:
+        Eexpect *= 2.0
+elif problem == "cylindrical":
+    Eexpect = Espike*(z1 - z0)
+else:
+    Eexpect = Espike * theta/pi
+
+pos = nodes1.positions()
+vel = nodes1.velocity()
+mass = nodes1.mass()
+eps = nodes1.specificThermalEnergy()
+H = nodes1.Hfield()
+Esum = 0.0
+dr = (r1 - r0)/nr
+dz = (z1 - z0)/nz
+msum = 0.0
+
+# Define a function to give the distance from the source
+if problem == "planar":
+    feta = lambda etai: abs(etai.x)
+elif problem == "cylindrical":
+    feta = lambda etai: abs(etai.y)
+else:
+    feta = lambda etai: etai.magnitude()
+
+Wsum = 0.0
+for i in range(nodes1.numInternalNodes):
+    Hi = H[i]
+    etaij = feta(Hi*pos[i])
+    #Wi = (1.0 if etaij < WT.kernelExtent else 0.0) * mass[i]
+    #Wi = max(0.0, 1.0 - etaij/WT.kernelExtent) * mass[i]
+    Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * mass[i]
+    Ei = Wi*Eexpect
+    eps[i] = Ei
+    Wsum += Wi
+Wsum = mpi.allreduce(Wsum, mpi.SUM)
+assert Wsum > 0.0
+for i in range(nodes1.numInternalNodes):
+    eps[i] = eps[i]/(Wsum*mass[i])
+    Esum += eps[i]*mass[i]
+    eps[i] += eps0
+
+Eglobal = mpi.allreduce(Esum, mpi.SUM)
+print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
+assert fuzzyEqual(Eglobal, Eexpect)
+
+#-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
 db = DataBase()
@@ -381,65 +434,6 @@ control = SpheralController(integrator, WT,
                             vizDerivs = vizDerivs,
                             SPH = not asph)
 output("control")
-
-#-------------------------------------------------------------------------------
-# Set the point source of energy.
-# We have to wait until after physics initialization to have the proper 3D mass
-# per point in this calculation.
-#-------------------------------------------------------------------------------
-if problem == "planar":
-    Eexpect = 0.5*pi*(r1*r1 - r0*r0)*Espike
-    if z0 != 0.0:
-        Eexpect *= 2.0
-elif problem == "cylindrical":
-    Eexpect = Espike*(z1 - z0)
-else:
-    Eexpect = Espike * theta/pi
-if control.time() == 0.0:
-    pos = nodes1.positions()
-    vel = nodes1.velocity()
-    mass = nodes1.mass()
-    eps = nodes1.specificThermalEnergy()
-    H = nodes1.Hfield()
-    Esum = 0.0
-    dr = (r1 - r0)/nr
-    dz = (z1 - z0)/nz
-    msum = 0.0
-
-    # Define a function to give the distance from the source
-    if problem == "planar":
-        feta = lambda etai: abs(etai.x)
-    elif problem == "cylindrical":
-        feta = lambda etai: abs(etai.y)
-    else:
-        feta = lambda etai: etai.magnitude()
-
-    Wsum = 0.0
-    for i in range(nodes1.numInternalNodes):
-        Hi = H[i]
-        etaij = feta(Hi*pos[i])
-        #Wi = (1.0 if etaij < WT.kernelExtent else 0.0) * mass[i]
-        #Wi = max(0.0, 1.0 - etaij/WT.kernelExtent) * mass[i]
-        Wi = WT.kernelValue(etaij/smoothSpikeScale, 1.0) * mass[i]
-        Ei = Wi*Eexpect
-        eps[i] = Ei
-        Wsum += Wi
-    Wsum = mpi.allreduce(Wsum, mpi.SUM)
-    assert Wsum > 0.0
-    for i in range(nodes1.numInternalNodes):
-        eps[i] = eps[i]/(Wsum*mass[i])
-        Esum += eps[i]*mass[i]
-        eps[i] += eps0
-
-    Eglobal = mpi.allreduce(Esum, mpi.SUM)
-    print("Initialized a total energy of", Eglobal, Eexpect, Eglobal/Eexpect)
-    assert fuzzyEqual(Eglobal, Eexpect)
-
-    state = State(db, integrator.physicsPackages())
-    derivs = StateDerivatives(db, integrator.physicsPackages())
-    hydro.initializeProblemStartupDependencies(db, state, derivs)
-
-    control.dropViz()
 
 #-------------------------------------------------------------------------------
 # Advance to the end time.

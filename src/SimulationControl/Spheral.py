@@ -30,7 +30,7 @@ import scipy.spatial
 from SpheralCompiledPackages import *
 
 # ------------------------------------------------------------------------------
-# Run initGPUs() to increase the device stack size.
+# Run initGPUs(). Does nothing by default
 # ------------------------------------------------------------------------------
 initGPUs()
 
@@ -38,6 +38,9 @@ initGPUs()
 FacetedVolume1d = Box1d
 FacetedVolume2d = Polygon
 FacetedVolume3d = Polyhedron
+
+# Backward compatibility: RKVolumeType → VolumeType
+RKVolumeType = VolumeType
 
 # ------------------------------------------------------------------------------
 # Import the Material python extensions.
@@ -127,8 +130,14 @@ for shadowedthing in ("TillotsonEquationOfState",
                       "StrainPorosity",
                       "PalphaPorosity",
                       "ANEOS"):
+    modname = f"Shadow{shadowedthing}"
+    exec(f"import {modname}")
+    stuff = eval(f"dir({modname})")
     for dim in dims:
-        exec(f"from Shadow{shadowedthing} import {shadowedthing}{dim}d")
+        if f"{shadowedthing}{dim}d" in stuff:
+            exec(f"{shadowedthing}{dim}d = {modname}.{shadowedthing}{dim}d")
+    if f"{shadowedthing}RZ" in stuff:
+        exec(f"{shadowedthing}RZ = {modname}.{shadowedthing}RZ")
 
 #-------------------------------------------------------------------------------
 # Set up Axom

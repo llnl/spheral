@@ -8,7 +8,7 @@
 #ifndef __Spheral_CubicHermiteInterpolatorView__
 #define __Spheral_CubicHermiteInterpolatorView__
 
-#include "GPUUtils.hh"
+#include "Threading/GPUUtils.hh"
 
 namespace Spheral {
 class CubicHermiteInterpolatorView {

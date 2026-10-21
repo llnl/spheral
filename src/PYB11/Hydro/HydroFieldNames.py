@@ -48,6 +48,7 @@ class HydroFieldNames:
     cellFaceFlags = PYB11readonly(static=True, returnpolicy="copy")
     M_SPHCorrection = PYB11readonly(static=True, returnpolicy="copy")
     volume = PYB11readonly(static=True, returnpolicy="copy")
+    volume3d = PYB11readonly(static=True, returnpolicy="copy")
     linearMomentum = PYB11readonly(static=True, returnpolicy="copy")
     totalEnergy = PYB11readonly(static=True, returnpolicy="copy")
     mesh = PYB11readonly(static=True, returnpolicy="copy")

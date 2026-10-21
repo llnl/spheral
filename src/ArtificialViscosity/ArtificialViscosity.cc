@@ -16,7 +16,6 @@
 #include "Neighbor/ConnectivityMap.hh"
 #include "Kernel/TableKernel.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 
 #include "ArtificialViscosity.hh"
 
@@ -31,15 +30,12 @@ namespace Spheral {
 using std::vector;
 
 //------------------------------------------------------------------------------
-// Construct with the given value for the linear and quadratic coefficients.
+// Construct the host-side artificial-viscosity state.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 ArtificialViscosity<Dimension>::
-ArtificialViscosity(const Scalar Clinear,
-                    const Scalar Cquadratic,
-                    const TableKernel<Dimension>& kernel):
+ArtificialViscosity(const TableKernel<Dimension>& kernel):
   Physics<Dimension>(),
-  ArtificialViscosityBase<Dimension>(Clinear, Cquadratic),
   mMaxViscousPressure(FieldStorageType::CopyFields),
   mEffViscousPressure(FieldStorageType::CopyFields),
   mRigorousVelocityGradient(false),

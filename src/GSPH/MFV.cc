@@ -120,7 +120,7 @@ MFV(DataBase<Dimension>& dataBase,
     mDmassDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass);
     mDthermalEnergyDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy);
     mDmomentumDt = dataBase.newFluidFieldList(Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum);
-    mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume);
+    mDvolumeDt = dataBase.newFluidFieldList(0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::hydroVolume);
     //mHStretchTensor = dataBase.newFluidFieldList(SymTensor::zero(), "HStretchTensor");
 }
 
@@ -150,7 +150,7 @@ registerState(DataBase<Dimension>& dataBase,
   auto massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
   auto position = state.fields(HydroFieldNames::position,Vector::zero());
   auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
-  auto volume = state.fields(HydroFieldNames::volume, 0.0);
+  auto volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   auto specificThermalEnergy = state.fields(HydroFieldNames::specificThermalEnergy, 0.0);
 
@@ -176,9 +176,9 @@ registerState(DataBase<Dimension>& dataBase,
 
   
   state.enroll(massDensity, make_policy<ReplaceWithRatioPolicy<Dimension,Scalar>>({HydroFieldNames::mass,
-                                                                                   HydroFieldNames::volume},
+                                                                                   HydroFieldNames::hydroVolume},
                                                                                   HydroFieldNames::mass,
-                                                                                  HydroFieldNames::volume));
+                                                                                  HydroFieldNames::hydroVolume));
 
   state.enroll(mass,  make_policy<MassFluxPolicy<Dimension>>({HydroFieldNames::velocity, 
                                                               HydroFieldNames::specificThermalEnergy}));
@@ -211,7 +211,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mDmassDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::mass, false);
   dataBase.resizeFluidFieldList(mDthermalEnergyDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + GSPHFieldNames::thermalEnergy, false);
   dataBase.resizeFluidFieldList(mDmomentumDt, Vector::zero(), IncrementState<Dimension, Vector>::prefix() + GSPHFieldNames::momentum, false);
-  dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::volume, false);
+  dataBase.resizeFluidFieldList(mDvolumeDt, 0.0, IncrementState<Dimension, Scalar>::prefix() + HydroFieldNames::hydroVolume, false);
   //dataBase.resizeFluidFieldList(mHStretchTensor,SymTensor::zero(), "HStretchTensor", false);
   derivs.enroll(mDmassDt);
   derivs.enroll(mDthermalEnergyDt);
@@ -240,7 +240,7 @@ preStepInitialize(const DataBase<Dimension>& dataBase,
     const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
     const auto  mass = state.fields(HydroFieldNames::mass, 0.0);
           auto  massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
-          auto  volume = state.fields(HydroFieldNames::volume, 0.0);
+          auto  volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
 
     computeSumVolume(dataBase.connectivityMap(),this->kernel(),position,H,volume);
     computeMFMDensity(mass,volume,massDensity);

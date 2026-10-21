@@ -113,7 +113,7 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
   // Create storage for the pressure and sound speed.
   mPressure = dataBase.newFluidFieldList(0.0, HydroFieldNames::pressure);
   mSoundSpeed = dataBase.newFluidFieldList(0.0, HydroFieldNames::soundSpeed);
-  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::volume);
+  mVolume = dataBase.newFluidFieldList(0.0, HydroFieldNames::hydroVolume);
 
 //------------------------------------------------------------------------------
 // Second stage of problem start up: initialize values
@@ -303,17 +303,11 @@ evaluateDerivatives(const typename Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-      const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Scalar>&>(Qhandle);
-      this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    const auto& Q = dynamic_cast<const ArtificialViscosityView<Dimension, Tensor>&>(Qhandle);
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -328,7 +322,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
                         const DataBase<Dimension>& dataBase,
                         const State<Dimension>& state,
                         StateDerivatives<Dimension>& derivatives,
-                        const QType& Q) const {
+                        QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -354,7 +348,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
   const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   const FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   const FieldList<Dimension, Scalar> A = state.fields(SVPHFieldNames::A_SVPH, 0.0);
   const auto fClQ = state.fields(HydroFieldNames::ArtificialViscousClMultiplier, 0.0);
   const auto fCqQ = state.fields(HydroFieldNames::ArtificialViscousCqMultiplier, 0.0);
@@ -730,7 +724,7 @@ finalize(const typename Dimension::Scalar time,
     const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap();
     const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
     const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
     const FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
     FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
     computeSumVoronoiCellMassDensity(connectivityMap, this->kernel(), position, mass, volume, H, massDensity);
@@ -741,7 +735,7 @@ finalize(const typename Dimension::Scalar time,
     massDensity.assignFields(massDensitySum);
   } else if (densityUpdate() == VoronoiCellDensity) {
     const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+    const FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
     FieldList<Dimension, Scalar> massDensity = state.fields(HydroFieldNames::massDensity, 0.0);
     massDensity = mass / volume;
   }
@@ -763,7 +757,7 @@ applyGhostBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   FieldList<Dimension, Scalar> A = state.fields(SVPHFieldNames::A_SVPH, 0.0);
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
@@ -796,7 +790,7 @@ enforceBoundaries(State<Dimension>& state,
   FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   FieldList<Dimension, Scalar> pressure = state.fields(HydroFieldNames::pressure, 0.0);
   FieldList<Dimension, Scalar> soundSpeed = state.fields(HydroFieldNames::soundSpeed, 0.0);
-  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::volume, 0.0);
+  FieldList<Dimension, Scalar> volume = state.fields(HydroFieldNames::hydroVolume, 0.0);
   FieldList<Dimension, Scalar> A = state.fields(SVPHFieldNames::A_SVPH, 0.0);
 
   for (ConstBoundaryIterator boundaryItr = this->boundaryBegin(); 
@@ -823,7 +817,7 @@ dumpState(FileIO& file, const string& pathName) const {
   file.write(mTimeStepMask, pathName + "/timeStepMask");
   file.write(mPressure, pathName + "/pressure");
   file.write(mSoundSpeed, pathName + "/soundSpeed");
-  file.write(mVolume, pathName + "/volume");
+  file.write(mVolume, pathName + "/hydroVolume");
   file.write(mMassDensitySum, pathName + "/massDensitySum");
   file.write(mXSVPHDeltaV, pathName + "/XSVPHDeltaV");
 
@@ -847,7 +841,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mTimeStepMask, pathName + "/timeStepMask");
   file.read(mPressure, pathName + "/pressure");
   file.read(mSoundSpeed, pathName + "/soundSpeed");
-  file.read(mVolume, pathName + "/volume");
+  file.read(mVolume, pathName + "/hydroVolume");
   file.read(mMassDensitySum, pathName + "/massDensitySum");
   file.read(mXSVPHDeltaV, pathName + "/XSVPHDeltaV");
 

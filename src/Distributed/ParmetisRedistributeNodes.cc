@@ -670,9 +670,9 @@ printConnectivityStatistics(const map<int, vector<pair<int, double> > >& neighbo
 
     CHECK(navgNeighbor > 0);
     avgNeighbor /= navgNeighbor;
-    SpheralMessage("ParmetisRedistributeNodes:: min connections = " << minNeighbor << "\n" <<
-                   "                            max connections = " << maxNeighbor << "\n" <<
-                   "                            avg connections = "<< avgNeighbor);
+    SpheralMessage << "ParmetisRedistributeNodes:: min connections = " << minNeighbor << "\n"
+                   << "                            max connections = " << maxNeighbor << "\n"
+                   << "                            avg connections = "<< avgNeighbor << "\n";
    
   } else {
     MPI_Send(&minNeighbor, 1, MPI_INT, 0, 10, Communicator::communicator());

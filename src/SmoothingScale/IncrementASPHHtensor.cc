@@ -12,7 +12,6 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/rotationMatrix.hh"
-#include "Geometry/GeometricUtilities.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
@@ -97,7 +96,7 @@ update(const KeyType& key,
       // Apply limiting
       const auto hev = H(k,i).eigenVectors();
       const auto hminEffInv = min(hminInv, max(hmaxInv, hev.eigenValues.minElement())/hminratio);
-      H(k,i) = constructSymTensorWithBoundedDiagonal(hev.eigenValues, hmaxInv, hminEffInv);
+      H(k,i) = SymTensor(hev.eigenValues, hmaxInv, hminEffInv);
       H(k,i).rotationalTransform(hev.eigenVectors);
     }
   }

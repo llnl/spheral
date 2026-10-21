@@ -17,6 +17,9 @@ class PolyGravity(GenericBodyForce):
     using Polytope = typename %(Dimension)s::FacetedVolume;
     using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     #...........................................................................
@@ -82,8 +85,8 @@ temperature or pressure."""
     @PYB11virtual
     @PYB11const
     def requireConnectivity(self):
-        "Some physics does not require the connectivity be constructed."
-        return "bool"
+        "Connectivity requirements. Returns (connectivity, ghostConnectivity, overlapConnectivity, intersectionConnectivity)."
+        return "ConnectivityRequirements"
 
     @PYB11virtual
     @PYB11const

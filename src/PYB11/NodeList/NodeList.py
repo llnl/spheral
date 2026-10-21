@@ -41,6 +41,12 @@ class NodeList:
 
     @PYB11const
     @PYB11returnpolicy("reference_internal")
+    def massRZ(self):
+        "The mass (RZ) field"
+        return "const ScalarField&"
+
+    @PYB11const
+    @PYB11returnpolicy("reference_internal")
     def positions(self):
         "The position field"
         return "const VectorField&"
@@ -66,6 +72,11 @@ class NodeList:
     @PYB11pycppname("mass")
     def setmass(self, newValue="const ScalarField&"):
         "Set the mass field"
+        return "void"
+
+    @PYB11pycppname("massRZ")
+    def setmassRZ(self, newValue="const ScalarField&"):
+        "Set the mass (RZ) field"
         return "void"
 
     @PYB11pycppname("positions")

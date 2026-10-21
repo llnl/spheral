@@ -36,6 +36,9 @@ if (ENABLE_WARNINGS)
         set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-missing-include-dirs")
       endif()
     endif()
+  elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+    # Some of the warnings on the more recent GNU compilers are annoying and/or spurious
+    list(APPEND CXX_COMPILE_FLAGS -Wno-maybe-uninitialized -Wno-nonnull)
   endif()
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
@@ -78,13 +81,11 @@ if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_COMPILE_FLAGS -fsanitize=address)
 endif()
 
-set_property(GLOBAL PROPERTY SPHERAL_CXX_FLAGS "${SPHERAL_CXX_FLAGS}"
-  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_COMPILE_FLAGS}>")
+set(SPHERAL_CXX_FLAGS "${SPHERAL_CXX_FLAGS}" "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${CXX_COMPILE_FLAGS}>")
 message("-- Using CXX compile flags ${CXX_COMPILE_FLAGS}")
 
 # Currently unused
-set_property(GLOBAL PROPERTY SPHERAL_CUDA_FLAGS
-  "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
+set(SPHERAL_CUDA_FLAGS "$<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNING_FLAGS}>")
 
 #-------------------------------------------------------------------------------
 # Set link options
@@ -98,9 +99,9 @@ endif()
 
 if (SPHERAL_ENABLE_ASAN)
   list(APPEND CXX_LINK_FLAGS -fsanitize=address)
-  get_property(SPHERAL_ENV_LINES GLOBAL PROPERTY SPHERAL_ENV_LINES)
   message("------------------------Configuring ASAN------------------------------------")
-  message("-- Found ASAN libraries at ${ASAN_LIBRARIES}")
+  # TODO: For ASAN to work with ROCM, LD_PRELOAD must be called with certain hip paths
+  # add this to SPHERAL_ENV_LINES
   # Modify the hip arch if necessary
   if (ENABLE_HIP)
     list(APPEND SPHERAL_ENV_LINES "export HSA_XNACK=1")
@@ -110,7 +111,6 @@ if (SPHERAL_ENABLE_ASAN)
       message("-- Adding xnack+ to CMAKE_HIP_ARCHITECTURES, new value ${CMAKE_HIP_ARCHITECTURES}")
     endif()
   endif()
-  set_property(GLOBAL PROPERTY SPHERAL_ENV_LINES "${SPHERAL_ENV_LINES}")
   message("----------------------------------------------------------------------------")
 endif()
 
@@ -119,8 +119,16 @@ if("ompstub" IN_LIST CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES)
   list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES "ompstub")
 endif()
 
-set_property(GLOBAL PROPERTY SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")
+set(SPHERAL_LINK_FLAGS "${CXX_LINK_FLAGS}")
 message("-- Using link flags ${CXX_LINK_FLAGS}")
+
+#-------------------------------------------------------------------------------
+# Compiler specific flags
+#-------------------------------------------------------------------------------
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+  set(CMAKE_CXX_FLAGS -wd11074,11076,654)
+  set(SPHERAL_PYB11_TARGET_FLAGS )
+endif()
 
 #-------------------------------------------------------------------------------
 # PYB11 Target Flags
@@ -142,13 +150,5 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     -fno-var-tracking-assignments)
 endif()
 
-set_property(GLOBAL PROPERTY SPHERAL_PYB11_TARGET_FLAGS
-  "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${SPHERAL_PYB11_FLAGS}>")
+set(SPHERAL_PYB11_TARGET_FLAGS "$<$<COMPILE_LANGUAGE:${LANG_STR}>:${SPHERAL_PYB11_FLAGS}>")
 
-#-------------------------------------------------------------------------------
-# Compiler specific flags
-#-------------------------------------------------------------------------------
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-  set(CMAKE_CXX_FLAGS -wd11074,11076,654)
-  set(SPHERAL_PYB11_TARGET_FLAGS )
-endif()

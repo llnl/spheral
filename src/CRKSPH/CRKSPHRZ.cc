@@ -28,6 +28,7 @@
 #include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
+#include "VoronoiCells/GeometryScaling.hh"
 #include "Neighbor/PairwiseField.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/range.hh"
@@ -92,28 +93,11 @@ initializeProblemStartupDependencies(DataBase<Dim<2>>& dataBase,
                                      State<Dim<2>>& state,
                                      StateDerivatives<Dim<2>>& derivs) {
   
-  // Correct the mass to mass/r.
   auto mass = dataBase.fluidMass();
   const auto pos = dataBase.fluidPosition();
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Do general initializations.
-  CRKSPHBase<Dim<2>>::initializeProblemStartupDependencies(dataBase, state, derivs);
-
-  // Convert back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) *= circi;
-    }
+  {
+    auto guard = unscaledRegion(pos, mass);
+    CRKSPHBase<Dim<2>>::initializeProblemStartupDependencies(dataBase, state, derivs);
   }
 }
 
@@ -181,29 +165,11 @@ preStepInitialize(const DataBase<Dim<2>>& dataBase,
                   State<Dim<2>>& state,
                   StateDerivatives<Dim<2>>& derivs) {
 
-  // Convert the mass to mass per unit length first.
   auto mass = state.fields(HydroFieldNames::mass, 0.0);
   const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Base class does most of the work.
-  CRKSPHBase<Dimension>::preStepInitialize(dataBase, state, derivs);
-
-  // Now convert back to true masses.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const auto& xi = pos(nodeListi, i);
-      const auto circi = 2.0*M_PI*abs(xi.y());
-      mass(nodeListi, i) *= circi;
-    }
+  {
+    auto guard = unscaledRegion(pos, mass);
+    CRKSPHBase<Dimension>::preStepInitialize(dataBase, state, derivs);
   }
 }
 
@@ -218,17 +184,11 @@ evaluateDerivatives(const Dimension::Scalar time,
                     const State<Dimension>& state,
                     StateDerivatives<Dimension>& derivatives) const {
 
-  // Depending on the type of the ArtificialViscosityView, dispatch the call to
-  // the secondDerivativesLoop
-  auto& Qhandle = this->artificialViscosity();
-  if (Qhandle.QPiTypeIndex() == std::type_index(typeid(Scalar))) {
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Scalar>> Q = Qhandle.getScalarView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  } else {
-    CHECK(Qhandle.QPiTypeIndex() == std::type_index(typeid(Tensor)));
-    chai::managed_ptr<ArtificialViscosityView<Dimension, Tensor>> Q = Qhandle.getTensorView();
-    this->evaluateDerivativesImpl(time, dt, dataBase, state, derivatives, Q);
-  }
+  visitArtificialViscosity(this->artificialViscosity().variantView(),
+                           [&](const auto& Qview) {
+                             this->evaluateDerivativesImpl(time, dt, dataBase, state,
+                                                           derivatives, Qview);
+                           });
 }
   
 //------------------------------------------------------------------------------
@@ -242,7 +202,7 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
                         const DataBase<Dim<2>>& dataBase,
                         const State<Dim<2>>& state,
                         StateDerivatives<Dim<2>>& derivs,
-                        chai::managed_ptr<QType> Q) const {
+                        QType Q) const {
 
   using QPiType = typename QType::ReturnType;
 
@@ -411,11 +371,11 @@ evaluateDerivativesImpl(const Dim<2>::Scalar /*time*/,
       deltagrad = gradWj - gradWi;
 
       // Compute the artificial viscous pressure (Pi = P/rho^2 actually).
-      Q->QPiij(QPiij, QPiji, Qi, Qj,
-               nodeListi, i, nodeListj, j,
-               posi, Hi, etai, vi, rhoi, ci,  
-               posj, Hj, etaj, vj, rhoj, cj,
-               fClQView, fCqQView, DvDxQView);
+      Q.QPiij(QPiij, QPiji, Qi, Qj,
+              nodeListi, i, nodeListj, j,
+              posi, Hi, etai, vi, rhoi, ci,  
+              posj, Hj, etaj, vj, rhoj, cj,
+              fClQView, fCqQView, DvDxQView);
       const auto Qaccij = (rhoi*rhoi*QPiij + rhoj*rhoj*QPiji)*deltagrad;
       const auto workQi = (rhoj*rhoj*QPiji*vij).dot(deltagrad);                // CRK
       const auto workQj = (rhoi*rhoi*QPiij*vij).dot(deltagrad);                // CRK
@@ -516,31 +476,12 @@ CRKSPHRZ::
 applyGhostBoundaries(State<Dim<2>>& state,
                      StateDerivatives<Dim<2>>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Apply ordinary CRKSPH BCs.
-  CRKSPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
-  for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
-
-  // Scale back to mass.
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) *= circi;
-    }
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  {
+    auto guard = unscaledRegion(pos, mass);
+    CRKSPHBase<Dim<2>>::applyGhostBoundaries(state, derivs);
+    for (auto boundaryPtr: range(this->boundaryBegin(), this->boundaryEnd())) boundaryPtr->finalizeGhostBoundary();
   }
 }
 
@@ -552,33 +493,11 @@ CRKSPHRZ::
 enforceBoundaries(State<Dim<2>>& state,
                   StateDerivatives<Dim<2>>& derivs) {
 
-  // Convert the mass to mass/length before BCs are applied.
-  FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
-  FieldList<Dimension, Vector> pos = state.fields(HydroFieldNames::position, Vector::zero());
-  const unsigned numNodeLists = mass.numFields();
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
-      const Scalar circi = 2.0*M_PI*abs(pos(nodeListi, i).y());
-      CHECK(circi > 0.0);
-      mass(nodeListi, i) /= circi;
-    }
-  }
-
-  // Apply ordinary CRKSPH BCs.
-  CRKSPHBase<Dim<2>>::enforceBoundaries(state, derivs);
-
-  // Scale back to mass.
-  // We also ensure no point approaches the z-axis too closely.
-  FieldList<Dimension, SymTensor> H = state.fields(HydroFieldNames::H, SymTensor::zero());
-  for (unsigned nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const unsigned n = mass[nodeListi]->numInternalElements();
-    //const Scalar nPerh = mass[nodeListi]->nodeList().nodesPerSmoothingScale();
-    for (unsigned i = 0; i != n; ++i) {
-      Vector& posi = pos(nodeListi, i);
-      const Scalar circi = 2.0*M_PI*abs(posi.y());
-      mass(nodeListi, i) *= circi;
-    }
+  auto mass = state.fields(HydroFieldNames::mass, 0.0);
+  const auto pos = state.fields(HydroFieldNames::position, Vector::zero());
+  {
+    auto guard = unscaledInternalRegion(pos, mass);
+    CRKSPHBase<Dim<2>>::enforceBoundaries(state, derivs);
   }
 }
 

@@ -18,10 +18,10 @@ int deviceCount() {
   return device_count;
 }
 
-void initGPUs(const int stack_mult = 8) {
+void initGPUs(const int stack_mult /* = -1 */) {
 #ifdef SPHERAL_ENABLE_HIP
   int device_count = deviceCount();
-  if (device_count > 0) {
+  if (device_count > 0 && stack_mult > 0) {
     size_t limitSize;
     GPU_CHECK(hipDeviceGetLimit(&limitSize, hipLimitStackSize));
     size_t bytes = stack_mult*1024;

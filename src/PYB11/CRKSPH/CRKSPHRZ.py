@@ -22,6 +22,9 @@ class CRKSPHRZ(CRKSPHBase):
     using TimeStepType = Physics<%(Dimension)s>::TimeStepType;
     using PairAccelerationsType = typename CRKSPHRZ::PairAccelerationsType;
     using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+    using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+    using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+    using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     def pyinit(self,

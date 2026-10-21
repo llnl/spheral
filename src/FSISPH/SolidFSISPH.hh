@@ -134,7 +134,7 @@ public:
                              const DataBase<Dimension>& dataBase,
                              const State<Dimension>& state,
                                    StateDerivatives<Dimension>& derivatives,
-                             chai::managed_ptr<QType> Q) const;
+                             QType Q) const;
 
   virtual 
   void finalizeDerivatives(const Scalar time, 
@@ -185,8 +185,8 @@ public:
   bool applySelectSumDensity() const;
   void applySelectSumDensity(bool x);
 
-  bool planeStrain()                                const { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); return false; }
-  void planeStrain(bool val)                              { SpheralDeprecationWarning("FSISPH WARNING: planeStrain is deprecated"); }
+  bool planeStrain()                                const { SpheralDeprecationWarning << "FSISPH WARNING: planeStrain is deprecated"; return false; }
+  void planeStrain(bool val)                              { SpheralDeprecationWarning << "FSISPH WARNING: planeStrain is deprecated"; }
   
   bool decoupleDamagedMaterial() const;
   void decoupleDamagedMaterial(bool val);

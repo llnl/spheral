@@ -116,8 +116,8 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
   // Output the initial load distribution statistics.
   const string initialLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n" <<
-                 "    Domain distribution shape tensor: " << shapeTensor.eigenValues);
+  SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes initial load balancing:\n" << initialLoadStats << "\n"
+                 << "    Domain distribution shape tensor: " << shapeTensor.eigenValues << "\n";
     
   // Compute the total work, and the target work per processor.
   double localWork = 0.0;
@@ -193,7 +193,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
       // Iterator over the number of z domains we'll be assigning.
       for (int iz = 0; iz != numZChunks; ++iz) {
 
-        SpheralMessage("Assigning domain " << assignDomainID << " of " << numProcs << "...");
+        SpheralMessage << "Assigning domain " << assignDomainID << " of " << numProcs << "...\n";
 
         // Peel off nodes from the front of the unassigned nodes, until the desired work
         // load for this domain is reached.  Note that in this step we use the z index as
@@ -218,7 +218,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
         // Increment the domain we're assigning to.
         ++assignDomainID;
-        SpheralMessage("   Done.");
+        SpheralMessage << "   Done." << "\n";
       }
 
 //       // Assign any remaining nodes from this chunks work to the last domain we were working
@@ -258,7 +258,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
 
   // Output the final load distribution statistics.
   const string finalLoadStats = this->gatherDomainDistributionStatistics(work);
-  SpheralMessage("SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n");
+  SpheralMessage << "SortAndDivideRedistributeNodes::redistributeNodes final load balancing:\n" << finalLoadStats << "\n\n";
   MPI_Barrier(Communicator::communicator());
 }
 

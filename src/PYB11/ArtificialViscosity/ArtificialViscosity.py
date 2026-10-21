@@ -17,24 +17,13 @@ class ArtificialViscosity(Physics):
   using SymTensor = typename %(Dimension)s::SymTensor;
   using TimeStepType = typename Physics<%(Dimension)s>::TimeStepType;
   using ResidualType = typename Physics<%(Dimension)s>::ResidualType;
+  using VolumeRequirements = typename Physics<%(Dimension)s>::VolumeRequirements;
+  using RKRequirements = typename Physics<%(Dimension)s>::RKRequirements;
+  using ConnectivityRequirements = typename Physics<%(Dimension)s>::ConnectivityRequirements;
 """
 
     #...........................................................................
-    # Constructors
-    def pyinit(self,
-               Clinear = "const Scalar",
-               Cquadratic = "const Scalar",
-               kernel = "const TableKernel<%(Dimension)s>&"):
-        "ArtificialViscosity constructor"
-
-    #...........................................................................
     # Methods
-    @PYB11pure_virtual
-    @PYB11const
-    def QPiTypeIndex(self):
-        "Require ArtificialViscosities to specify the type_index of the descendant QPiType"
-        return "std::type_index"
-
     @PYB11virtual
     @PYB11const
     def requireVelocityGradient(self):
@@ -90,25 +79,6 @@ class ArtificialViscosity(Physics):
         "Post-state update is our chance to update the velocity gradient if needed"
         return "bool"
 
-    @PYB11const
-    def curlVelocityMagnitude(self, DvDx="const Tensor&"):
-        "Calculate the curl of the velocity given the stress tensor."
-        return "Scalar"
-
-    @PYB11const
-    def calcBalsaraShearCorrection(self,
-                                   DvDx = "const Tensor&",
-                                   H = "const SymTensor&",
-                                   cs = "const Scalar&"):
-        "Find the Balsara shear correction multiplier"
-        return "Scalar"
-
-    @PYB11pure_virtual
-    @PYB11protected
-    def updateManagedPtr(self):
-        "Update member data for managed pointer."
-        return "void"
-
     #...........................................................................
     # Properties
     Cl = PYB11property("Scalar", "Cl", "Cl",
@@ -136,5 +106,5 @@ class ArtificialViscosity(Physics):
 #-------------------------------------------------------------------------------
 # Inject abstract interface
 #-------------------------------------------------------------------------------
-PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, pure_virtual=False)
+PYB11inject(PhysicsAbstractMethods, ArtificialViscosity, virtual=True)
 PYB11inject(RestartMethods, ArtificialViscosity)
