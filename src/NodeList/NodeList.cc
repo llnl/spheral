@@ -88,7 +88,9 @@ NodeList<Dimension>::NodeList(std::string name,
 // Destructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE
 NodeList<Dimension>::~NodeList() {
+#ifndef SPHERAL_GPU_ACTIVE
   DEBUG_LOG << "NodeList::~NodeList " << mName << " " << this;
   auto startingFields = mFieldBases;
   for (auto x: startingFields) x.get().unregisterNodeList();
@@ -99,6 +101,7 @@ NodeList<Dimension>::~NodeList() {
   // After we're done, all the field should have unregistered themselves
   // from the Node List.
   ENSURE(numFields() == 0u);
+#endif
 }
 
 //------------------------------------------------------------------------------

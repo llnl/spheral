@@ -65,7 +65,7 @@ public:
                     const size_t maxNumNeighbors = 500);
 
   // Destructor
-  virtual ~NodeList();
+  SPHERAL_HOST_DEVICE virtual ~NodeList();
 
   // Access the name of the NodeList.
   std::string name()                                  const { return mName; }
