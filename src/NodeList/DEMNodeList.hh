@@ -38,7 +38,7 @@ public:
               const size_t maxNumNeighbors);
 
   // Destructor
-  SPHERAL_HOST_DEVICE virtual ~DEMNodeList() = default;
+  virtual ~DEMNodeList() = default;
 
   Field<Dimension, Scalar>& particleRadius();
   const Field<Dimension, Scalar>& particleRadius() const;

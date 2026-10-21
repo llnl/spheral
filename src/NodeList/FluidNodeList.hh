@@ -53,7 +53,7 @@ public:
                 const Scalar rhoMax);
 
   // Destructor
-  SPHERAL_HOST_DEVICE virtual ~FluidNodeList() = default;
+  virtual ~FluidNodeList() = default;
 
   // Access the fluid state variables.
   Field<Dimension, Scalar>& massDensity()           { return mMassDensity; }

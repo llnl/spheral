@@ -37,7 +37,7 @@ public:
                 const Scalar rhoMax);
 
   // Destructor.
-  SPHERAL_HOST_DEVICE virtual ~SolidNodeList() = default;
+  virtual ~SolidNodeList() = default;
 
   // Override the base method for calculating the sound speed.
   virtual void soundSpeed(Field<Dimension, Scalar>& field) const;
