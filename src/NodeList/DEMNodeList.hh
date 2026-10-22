@@ -60,9 +60,6 @@ public:
 
   ViewType view();
 
-  void setHfieldFromParticleRadius(const size_t startUniqueIndex,
-                                   const Scalar kernelExtent);
-
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.

@@ -17,6 +17,7 @@ public:
   using NodeListViewType = NodeListView<Dimension>;
   using ScalarView = FieldView<Dimension, Scalar>;
 
+  // Constructors, destructor.
   SPHERAL_HOST_DEVICE FluidNodeListView() = default;
   SPHERAL_HOST_DEVICE FluidNodeListView(const size_t numNodes,
                                         const size_t firstGhostNode,
@@ -37,11 +38,14 @@ public:
   SPHERAL_HOST_DEVICE FluidNodeListView(FluidNodeListView&&) = default;
   SPHERAL_HOST_DEVICE virtual ~FluidNodeListView() = default;
 
+  // Assignment.
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&) = default;
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&&) = default;
 
+  // Comparison
   SPHERAL_HOST_DEVICE bool operator==(const FluidNodeListView&) const = default;
 
+  // Field views.
   SPHERAL_HOST_DEVICE ScalarView& massDensity()                              { return mMassDensityView; }
   SPHERAL_HOST_DEVICE const ScalarView& massDensity()                  const { return mMassDensityView; }
   SPHERAL_HOST_DEVICE ScalarView& massDensityRZ()                            { return mMassDensityRZView; }
@@ -49,15 +53,18 @@ public:
   SPHERAL_HOST_DEVICE ScalarView& specificThermalEnergy()                    { return mSpecificThermalEnergyView; }
   SPHERAL_HOST_DEVICE const ScalarView& specificThermalEnergy()        const { return mSpecificThermalEnergyView; }
 
+  // Index for values
   SPHERAL_HOST_DEVICE Scalar& massDensity(const size_t nodeID) const;
   SPHERAL_HOST_DEVICE Scalar& massDensityRZ(const size_t nodeID) const;
   SPHERAL_HOST_DEVICE Scalar& specificThermalEnergy(const size_t nodeID) const;
 
+  // Properties
   SPHERAL_HOST_DEVICE Scalar rhoMin()                              const { return mRhoMin; }
   SPHERAL_HOST_DEVICE Scalar rhoMax()                              const { return mRhoMax; }
   SPHERAL_HOST_DEVICE void rhoMin(const Scalar x)                        { mRhoMin = x; }
   SPHERAL_HOST_DEVICE void rhoMax(const Scalar x)                        { mRhoMax = x; }
 
+  // CHAI/ManagedArray specific operations for the contained FieldViews.
   SPHERAL_HOST void move(chai::ExecutionSpace space);
   SPHERAL_HOST void touch(chai::ExecutionSpace space);
 

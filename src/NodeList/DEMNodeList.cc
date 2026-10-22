@@ -171,34 +171,6 @@ DEMNodeList<Dimension>::refreshUniqueIndexView() {
 //   field.name(HydroFieldNames::totalEnergy);
 // }
 
-
-//------------------------------------------------------------------------------
-// when problem starts set our equilibrium overlap
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::
-setHfieldFromParticleRadius(const size_t startUniqueIndex,
-                            const Scalar kernelExtent){
-  
-  const auto& radius = this->particleRadius();
-  const auto& uniqId = this->uniqueIndex();
-  auto& Hfield = this->Hfield();
-  const auto ni = this->numInternalNodes();
-
-#pragma omp parallel for
-  for (auto i = 0u; i < ni; ++i) {
-    const auto ui = uniqId[i];
-    if(ui >= startUniqueIndex) {
-      const auto Ri = radius[i];
-      auto& Hi = Hfield[i];
-      const auto hInv = safeInv(2.0 * Ri * (1.0+mNeighborSearchBuffer)/kernelExtent);
-      Hi = SymTensor::one() * hInv;
-    }
-  }
-}
-
-
 //------------------------------------------------------------------------------
 // Dump the current state of the NodeList to the given file.
 //------------------------------------------------------------------------------

@@ -6,6 +6,7 @@ set(NodeList_inst
     generateVoidNodes
     nthNodalMoment
     DEMNodeList
+    DEMNodeListView
    )
 
 set(NodeList_sources )

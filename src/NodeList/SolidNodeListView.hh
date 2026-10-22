@@ -18,6 +18,7 @@ public:
   using SymTensorView = FieldView<Dimension, SymTensor>;
   using IntView = FieldView<Dimension, int>;
 
+  // Constructors, destructor.
   SPHERAL_HOST_DEVICE SolidNodeListView() = default;
   SPHERAL_HOST_DEVICE SolidNodeListView(const size_t numNodes,
                                         const size_t firstGhostNode,
@@ -40,11 +41,14 @@ public:
   SPHERAL_HOST_DEVICE SolidNodeListView(SolidNodeListView&&) = default;
   SPHERAL_HOST_DEVICE virtual ~SolidNodeListView() = default;
 
+  // Assignment.
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&) = default;
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&&) = default;
 
+  // Comparison
   SPHERAL_HOST_DEVICE bool operator==(const SolidNodeListView&) const = default;
 
+  // Field views.
   SPHERAL_HOST_DEVICE SymTensorView& deviatoricStress()                      { return mDeviatoricStressView; }
   SPHERAL_HOST_DEVICE const SymTensorView& deviatoricStress()          const { return mDeviatoricStressView; }
   SPHERAL_HOST_DEVICE ScalarView& plasticStrain()                            { return mPlasticStrainView; }
@@ -58,6 +62,7 @@ public:
   SPHERAL_HOST_DEVICE IntView& particleTypes()                               { return mParticleTypesView; }
   SPHERAL_HOST_DEVICE const IntView& particleTypes()                   const { return mParticleTypesView; }
 
+  // Index for values
   SPHERAL_HOST_DEVICE SymTensor& deviatoricStress(size_t nodeID) const;
   SPHERAL_HOST_DEVICE Scalar& plasticStrain(size_t nodeID) const;
   SPHERAL_HOST_DEVICE Scalar& plasticStrainRate(size_t nodeID) const;
@@ -65,6 +70,7 @@ public:
   SPHERAL_HOST_DEVICE int& fragmentID(size_t nodeID) const;
   SPHERAL_HOST_DEVICE int& particleType(size_t nodeID) const;
 
+  // CHAI/ManagedArray specific operations for the contained FieldViews.
   SPHERAL_HOST void move(chai::ExecutionSpace space);
   SPHERAL_HOST void touch(chai::ExecutionSpace space);
 
