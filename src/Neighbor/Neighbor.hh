@@ -31,16 +31,13 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   // Constructors and destructors
-  SPHERAL_HOST_DEVICE Neighbor(NodeListView<Dimension>& nodeListView, 
-                               FieldView<Dimension, Vector>& nodeExtentView,
-                               const NeighborSearchType searchType,
+  SPHERAL_HOST_DEVICE Neighbor(const NeighborSearchType searchType,
                                const Scalar kernelExtent);
   SPHERAL_HOST_DEVICE Neighbor(const Neighbor& rhs) = default;
   SPHERAL_HOST_DEVICE Neighbor(Neighbor&& rhs) = default;
   SPHERAL_HOST_DEVICE virtual ~Neighbor() = default;
 
   // Access our data
-  SPHERAL_HOST_DEVICE const NodeListView<Dimension>& nodeListView()          const { return mNodeListView; }
   SPHERAL_HOST_DEVICE const FieldView<Dimension, Vector>& nodeExtentView()   const { return mNodeExtentView; }
   SPHERAL_HOST_DEVICE NeighborSearchType neighborSearchType()                const { return mSearchType; }
   SPHERAL_HOST_DEVICE Scalar kernelExtent()                                  const { return mKernelExtent; }
@@ -173,7 +170,6 @@ public:
 
 protected:
   //-------------------------- Protected Interface --------------------------//
-  NodeListView<Dimension>& mNodeListView;
   FieldView<Dimension, Vector>& mNodeExtentView;
   NeighborSearchType mSearchType;
   Scalar mKernelExtent;
