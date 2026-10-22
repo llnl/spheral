@@ -16,9 +16,6 @@ public:
   using ScalarView = FieldView<Dimension, Scalar>;
   using IntView = FieldView<Dimension, int>;
   using IndexView = FieldView<Dimension, size_t>;
-  using ParticleRadiusView = ScalarView;
-  using CompositeParticleIndexView = IntView;
-  using UniqueIndexView = IndexView;
 
   SPHERAL_HOST_DEVICE DEMNodeListView() = default;
   SPHERAL_HOST_DEVICE DEMNodeListView(const size_t numNodes,
@@ -41,6 +38,8 @@ public:
 
   SPHERAL_HOST_DEVICE DEMNodeListView& operator=(DEMNodeListView&) = default;
   SPHERAL_HOST_DEVICE DEMNodeListView& operator=(DEMNodeListView&&) = default;
+
+  SPHERAL_HOST_DEVICE bool operator==(const DEMNodeListView&) const = default;
 
   SPHERAL_HOST_DEVICE ScalarView& particleRadius()                           { return mParticleRadiusView; }
   SPHERAL_HOST_DEVICE const ScalarView& particleRadius()               const { return mParticleRadiusView; }

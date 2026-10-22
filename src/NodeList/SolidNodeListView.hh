@@ -17,11 +17,6 @@ public:
   using ScalarView = FieldView<Dimension, Scalar>;
   using SymTensorView = FieldView<Dimension, SymTensor>;
   using IntView = FieldView<Dimension, int>;
-  using DeviatoricStressView = SymTensorView;
-  using PlasticStrainView = ScalarView;
-  using DamageView = SymTensorView;
-  using FragmentIDsView = IntView;
-  using ParticleTypesView = IntView;
 
   SPHERAL_HOST_DEVICE SolidNodeListView() = default;
   SPHERAL_HOST_DEVICE SolidNodeListView(const size_t numNodes,
@@ -48,8 +43,10 @@ public:
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&) = default;
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&&) = default;
 
-  SPHERAL_HOST_DEVICE SymTensorView& deviatoricStress()                       { return mDeviatoricStressView; }
-  SPHERAL_HOST_DEVICE const SymTensorView& deviatoricStress()           const { return mDeviatoricStressView; }
+  SPHERAL_HOST_DEVICE bool operator==(const SolidNodeListView&) const = default;
+
+  SPHERAL_HOST_DEVICE SymTensorView& deviatoricStress()                      { return mDeviatoricStressView; }
+  SPHERAL_HOST_DEVICE const SymTensorView& deviatoricStress()          const { return mDeviatoricStressView; }
   SPHERAL_HOST_DEVICE ScalarView& plasticStrain()                            { return mPlasticStrainView; }
   SPHERAL_HOST_DEVICE const ScalarView& plasticStrain()                const { return mPlasticStrainView; }
   SPHERAL_HOST_DEVICE ScalarView& plasticStrainRate()                        { return mPlasticStrainRateView; }

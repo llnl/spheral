@@ -21,15 +21,6 @@
 
 namespace Spheral {
 
-template<typename Dimension> class AllNodeIterator;
-template<typename Dimension> class InternalNodeIterator;
-template<typename Dimension> class GhostNodeIterator;
-template<typename Dimension> class MasterNodeIterator;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
-template<typename Dimension> class State;
-template<typename Dimension> class DataBase;
-template<typename Dimension> class TableKernel;
 template<typename Dimension> class FieldBase;
 template<typename Dimension, typename Value> class Field;
 class FileIO;

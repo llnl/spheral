@@ -16,8 +16,6 @@ public:
   using Scalar = typename Dimension::Scalar;
   using NodeListViewType = NodeListView<Dimension>;
   using ScalarView = FieldView<Dimension, Scalar>;
-  using MassDensityView = ScalarView;
-  using SpecificThermalEnergyView = ScalarView;
 
   SPHERAL_HOST_DEVICE FluidNodeListView() = default;
   SPHERAL_HOST_DEVICE FluidNodeListView(const size_t numNodes,
@@ -41,6 +39,8 @@ public:
 
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&) = default;
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&&) = default;
+
+  SPHERAL_HOST_DEVICE bool operator==(const FluidNodeListView&) const = default;
 
   SPHERAL_HOST_DEVICE ScalarView& massDensity()                              { return mMassDensityView; }
   SPHERAL_HOST_DEVICE const ScalarView& massDensity()                  const { return mMassDensityView; }

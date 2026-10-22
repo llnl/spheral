@@ -38,8 +38,8 @@ inline
 NodeListView<Dimension>::
 NodeListView(const size_t numNodes,
              const size_t firstGhostNode,
-             const PositionView& positions,
-             const HfieldView& Hfield,
+             const VectorView& positions,
+             const SymTensorView& Hfield,
              const Scalar hmin,
              const Scalar hmax,
              const Scalar hminratio,
