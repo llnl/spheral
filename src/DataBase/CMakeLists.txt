@@ -1,5 +1,6 @@
 set(DataBase_inst
     DataBase
+    DataBaseView
     ReplaceWithRatioPolicy
     State
     StateBase
@@ -14,6 +15,7 @@ instantiate(DataBase_inst DataBase_sources)
 set(DataBase_headers
     DataBase.hh
     DataBaseInline.hh
+    DataBaseView.hh
     UpdatePolicyBase.hh
     UpdatePolicyBaseInline.hh
     FieldUpdatePolicy.hh

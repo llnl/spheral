@@ -4,10 +4,9 @@
 //
 // Created by JMO, Sun Feb  6 13:44:49 PST 2000
 //----------------------------------------------------------------------------//
-#include "DataBase.hh"
+#include "DataBase/DataBase.hh"
 #include "Geometry/Dimension.hh"
 #include "Geometry/GeometryRegistrar.hh"
-#include "Field/NodeIterators.hh"
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
 #include "Kernel/TableKernel.hh"
@@ -23,16 +22,11 @@
 #include "Utilities/DBC.hh"
 
 #ifdef SPHERAL_ENABLE_MPI
-extern "C" {
 #include <mpi.h>
-}
 #endif
 
 #include <algorithm>
 #include <memory>
-using std::vector;
-using std::cerr;
-using std::endl;
 
 namespace Spheral {
 
@@ -42,6 +36,7 @@ namespace Spheral {
 template<typename Dimension>
 DataBase<Dimension>::
 DataBase():
+  DataBaseView<Dimension>(),
   mNodeListPtrs(),
   mFluidNodeListPtrs(),
   mFluidNodeListAsNodeListPtrs(),
@@ -49,61 +44,11 @@ DataBase():
   mSolidNodeListAsNodeListPtrs(),
   mDEMNodeListPtrs(),
   mDEMNodeListAsNodeListPtrs(),
-  mConnectivityMapPtr(std::make_shared<ConnectivityMap<Dimension>>()) {
-}
-
-//------------------------------------------------------------------------------
-// Numbers of nodes in the DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numInternalNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mNodeListPtrs) result += xptr->numInternalNodes();
-  return result;
-}
-
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numGhostNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mNodeListPtrs) result += xptr->numGhostNodes();
-  return result;
-}
-
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mNodeListPtrs) result += xptr->numNodes();
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Numbers of fluid nodes in the DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numFluidInternalNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numInternalNodes();
-  return result;
-}
-
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numFluidGhostNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numGhostNodes();
-  return result;
-}
-
-template<typename Dimension>
-size_t
-DataBase<Dimension>::numFluidNodes() const {
-  size_t result = 0u;
-  for (const auto* xptr: mFluidNodeListPtrs) result += xptr->numNodes();
-  return result;
+  mConnectivityMapPtr(nullptr),
+  mNodeListViewStorage(),
+  mFluidNodeListViewStorage(),
+  mSolidNodeListViewStorage(),
+  mDEMNodeListViewStorage() {
 }
 
 //------------------------------------------------------------------------------
@@ -112,19 +57,19 @@ DataBase<Dimension>::numFluidNodes() const {
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumInternalNodes() const {
-  return allReduce(numInternalNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumGhostNodes() const {
-  return allReduce(numGhostNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumNodes() const {
-  return allReduce(numNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
@@ -133,369 +78,61 @@ DataBase<Dimension>::globalNumNodes() const {
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumFluidInternalNodes() const {
-  return allReduce(numFluidInternalNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numFluidInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumFluidGhostNodes() const {
-  return allReduce(numFluidGhostNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numFluidGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
 size_t
 DataBase<Dimension>::globalNumFluidNodes() const {
-  return allReduce(numFluidNodes(), SPHERAL_OP_SUM);
+  return allReduce(this->numFluidNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
-// Node iterators for all node IDs.
+// Global numbers of solid nodes in the DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-AllNodeIterator<Dimension>
-DataBase<Dimension>::nodeBegin() const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  while (nodeListItr < nodeListEnd() &&
-	 (*nodeListItr)->numNodes() < 1) ++nodeListItr;
-  CHECK(nodeListItr >= nodeListBegin() && nodeListItr <= nodeListEnd());
-  return AllNodeIterator<Dimension>(nodeListItr,
-                                    nodeListBegin(),
-                                    nodeListEnd());
+size_t
+DataBase<Dimension>::globalNumSolidInternalNodes() const {
+  return allReduce(this->numSolidInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-AllNodeIterator<Dimension>
-DataBase<Dimension>::nodeEnd() const {
-  return AllNodeIterator<Dimension>(nodeListEnd(),
-                                    nodeListBegin(),
-                                    nodeListEnd());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for internal nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-InternalNodeIterator<Dimension>
-DataBase<Dimension>::internalNodeBegin() const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  while (nodeListItr < nodeListEnd() &&
-	 (*nodeListItr)->numInternalNodes() < 1) ++nodeListItr;
-  CHECK(nodeListItr >= nodeListBegin() && nodeListItr <= nodeListEnd());
-  return InternalNodeIterator<Dimension>(nodeListItr,
-                                         nodeListBegin(),
-                                         nodeListEnd());
+size_t
+DataBase<Dimension>::globalNumSolidGhostNodes() const {
+  return allReduce(this->numSolidGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-InternalNodeIterator<Dimension>
-DataBase<Dimension>::internalNodeEnd() const {
-  return InternalNodeIterator<Dimension>(nodeListEnd(),
-                                         nodeListBegin(),
-                                         nodeListEnd());
+size_t
+DataBase<Dimension>::globalNumSolidNodes() const {
+  return allReduce(this->numSolidNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
-// Node iterators for ghost nodes.
+// Global numbers of DEM nodes in the DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-GhostNodeIterator<Dimension>
-DataBase<Dimension>::ghostNodeBegin() const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  while (nodeListItr < nodeListEnd() &&
-	 (*nodeListItr)->numGhostNodes() < 1) ++nodeListItr;
-  if (nodeListItr < nodeListEnd()) {
-    return GhostNodeIterator<Dimension>(nodeListItr,
-                                        nodeListBegin(),
-                                        nodeListEnd(),
-                                        (*nodeListItr)->firstGhostNode());
-  } else {
-    return this->ghostNodeEnd();
-  }
+size_t
+DataBase<Dimension>::globalNumDEMInternalNodes() const {
+  return allReduce(this->numDEMInternalNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-GhostNodeIterator<Dimension>
-DataBase<Dimension>::ghostNodeEnd() const {
-  return GhostNodeIterator<Dimension>(nodeListEnd(),
-                                      nodeListBegin(),
-                                      nodeListEnd());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for master neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MasterNodeIterator<Dimension>
-DataBase<Dimension>::masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < nodeListEnd() &&
-         masterLists[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < nodeListEnd()) {
-    return MasterNodeIterator<Dimension>(nodeListItr,
-                                         nodeListBegin(),
-                                         nodeListEnd(),
-                                         masterLists[iNodeList].begin(),
-                                         masterLists);
-  } else {
-    return this->masterNodeEnd();
-  }
+size_t
+DataBase<Dimension>::globalNumDEMGhostNodes() const {
+  return allReduce(this->numDEMGhostNodes(), SPHERAL_OP_SUM);
 }
 
 template<typename Dimension>
-MasterNodeIterator<Dimension>
-DataBase<Dimension>::masterNodeEnd() const {
-  return MasterNodeIterator<Dimension>(nodeListEnd(),
-                                       nodeListBegin(),
-                                       nodeListEnd(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for coarse neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-DataBase<Dimension>::coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < nodeListEnd() &&
-         coarseNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < nodeListEnd()) {
-    return CoarseNodeIterator<Dimension>(nodeListItr,
-                                         nodeListBegin(),
-                                         nodeListEnd(),
-                                         coarseNeighbors[iNodeList].begin(),
-                                         coarseNeighbors);
-  } else {
-    return this->coarseNodeEnd();
-  }
-}
-
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-DataBase<Dimension>::coarseNodeEnd() const {
-  return CoarseNodeIterator<Dimension>(nodeListEnd(),
-                                       nodeListBegin(),
-                                       nodeListEnd(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for refine neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-DataBase<Dimension>::refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
-  ConstNodeListIterator nodeListItr = nodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < nodeListEnd() &&
-         refineNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < nodeListEnd()) {
-    return RefineNodeIterator<Dimension>(nodeListItr,
-                                         nodeListBegin(),
-                                         nodeListEnd(),
-                                         refineNeighbors[iNodeList].begin(),
-                                         refineNeighbors);
-  } else {
-    return this->refineNodeEnd();
-  }
-}
-
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-DataBase<Dimension>::refineNodeEnd() const {
-  return RefineNodeIterator<Dimension>(nodeListEnd(),
-                                       nodeListBegin(),
-                                       nodeListEnd(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for all fluid node IDs.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-AllNodeIterator<Dimension>
-DataBase<Dimension>::fluidNodeBegin() const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-	 (*nodeListItr)->numNodes() < 1) ++nodeListItr;
-  return AllNodeIterator<Dimension>(nodeListItr,
-                                    fluidNodeListAsNodeListBegin(),
-                                    fluidNodeListAsNodeListEnd());
-}
-
-template<typename Dimension>
-AllNodeIterator<Dimension>
-DataBase<Dimension>::fluidNodeEnd() const {
-  return AllNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                    fluidNodeListAsNodeListBegin(),
-                                    fluidNodeListAsNodeListEnd());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for fluid internal nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-InternalNodeIterator<Dimension>
-DataBase<Dimension>::fluidInternalNodeBegin() const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-	 (*nodeListItr)->numInternalNodes() < 1) ++nodeListItr;
-  return InternalNodeIterator<Dimension>(nodeListItr,
-                                         fluidNodeListAsNodeListBegin(),
-                                         fluidNodeListAsNodeListEnd());
-}
-
-template<typename Dimension>
-InternalNodeIterator<Dimension>
-DataBase<Dimension>::fluidInternalNodeEnd() const {
-  return InternalNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                         fluidNodeListAsNodeListBegin(),
-                                         fluidNodeListAsNodeListEnd());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for fluid ghost nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-GhostNodeIterator<Dimension>
-DataBase<Dimension>::fluidGhostNodeBegin() const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-	 (*nodeListItr)->numGhostNodes() < 1) ++nodeListItr;
-  CHECK(nodeListItr >= fluidNodeListAsNodeListBegin() && 
-	nodeListItr <= fluidNodeListAsNodeListEnd());
-  if (nodeListItr < fluidNodeListAsNodeListEnd()) {
-    return GhostNodeIterator<Dimension>(nodeListItr,
-                                        fluidNodeListAsNodeListBegin(),
-                                        fluidNodeListAsNodeListEnd(),
-                                        (*nodeListItr)->firstGhostNode());
-  } else {
-    return this->fluidGhostNodeEnd();
-  }
-}
-
-template<typename Dimension>
-GhostNodeIterator<Dimension>
-DataBase<Dimension>::fluidGhostNodeEnd() const {
-  return GhostNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                      fluidNodeListAsNodeListBegin(),
-                                      fluidNodeListAsNodeListEnd());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for fluid master neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MasterNodeIterator<Dimension>
-DataBase<Dimension>::fluidMasterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-         masterLists[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  CHECK(nodeListItr >= fluidNodeListAsNodeListBegin() && 
-	nodeListItr <= fluidNodeListAsNodeListEnd());
-  if (nodeListItr < fluidNodeListAsNodeListEnd()) {
-    return MasterNodeIterator<Dimension>(nodeListItr,
-                                         fluidNodeListAsNodeListBegin(),
-                                         fluidNodeListAsNodeListEnd(),
-                                         masterLists[iNodeList].begin(),
-                                         masterLists);
-  } else {
-    return this->fluidMasterNodeEnd();
-  }
-}
-
-template<typename Dimension>
-MasterNodeIterator<Dimension>
-DataBase<Dimension>::fluidMasterNodeEnd() const {
-  return MasterNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                       fluidNodeListAsNodeListBegin(),
-                                       fluidNodeListAsNodeListEnd(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for fluid coarse neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-DataBase<Dimension>::fluidCoarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-         coarseNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  CHECK(nodeListItr >= fluidNodeListAsNodeListBegin() && 
-	nodeListItr <= fluidNodeListAsNodeListEnd());
-  if (nodeListItr < fluidNodeListAsNodeListEnd()) {
-    return CoarseNodeIterator<Dimension>(nodeListItr,
-                                         fluidNodeListAsNodeListBegin(),
-                                         fluidNodeListAsNodeListEnd(),
-                                         coarseNeighbors[iNodeList].begin(),
-                                         coarseNeighbors);
-  } else {
-    return this->fluidCoarseNodeEnd();
-  }
-}
-
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-DataBase<Dimension>::fluidCoarseNodeEnd() const {
-  return CoarseNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                       fluidNodeListAsNodeListBegin(),
-                                       fluidNodeListAsNodeListEnd(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for fluid refine neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-DataBase<Dimension>::fluidRefineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
-  ConstNodeListIterator nodeListItr = fluidNodeListAsNodeListBegin();
-  unsigned iNodeList = 0;
-  while (nodeListItr < fluidNodeListAsNodeListEnd() &&
-         refineNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  CHECK(nodeListItr >= fluidNodeListAsNodeListBegin() && 
-	nodeListItr <= fluidNodeListAsNodeListEnd());
-  if (nodeListItr < fluidNodeListAsNodeListEnd()) {
-    return RefineNodeIterator<Dimension>(nodeListItr,
-                                         fluidNodeListAsNodeListBegin(),
-                                         fluidNodeListAsNodeListEnd(),
-                                         refineNeighbors[iNodeList].begin(),
-                                         refineNeighbors);
-  } else {
-    return this->fluidRefineNodeEnd();
-  }
-}
-
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-DataBase<Dimension>::fluidRefineNodeEnd() const {
-  return RefineNodeIterator<Dimension>(fluidNodeListAsNodeListEnd(),
-                                       fluidNodeListAsNodeListBegin(),
-                                       fluidNodeListAsNodeListEnd(),
-                                       std::vector<std::vector<int>>());
+size_t
+DataBase<Dimension>::globalNumDEMNodes() const {
+  return allReduce(this->numDEMNodes(), SPHERAL_OP_SUM);
 }
 
 //------------------------------------------------------------------------------
@@ -506,54 +143,55 @@ void
 DataBase<Dimension>::
 reinitializeNeighbors() const {
 
-  // Find the current bounding box and average node extent in one loop.
-  // Compute the average node extent.
-  auto xmin = Vector(0.1*std::numeric_limits<Scalar>::max()), xmax = 0.1*Vector(std::numeric_limits<Scalar>::lowest());
-  unsigned ntot = 0;
-  Scalar havg = 0.0, hmax = 0.0, maxExtent = 0.0;
-  for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
-    const auto positions = (*itr)->positions();
-    const auto  n = (*itr)->numInternalNodes();
-    const auto& neighbor = (*itr)->neighbor();
-    const auto  etaMax = neighbor.kernelExtent();
-    maxExtent = std::max(maxExtent, etaMax);
-    ntot += n;
-    for (auto i = 0u; i < n; ++i) {
-      const auto& xi = positions(i);
-      xmin = elementWiseMin(xmin, xi);
-      xmax = elementWiseMax(xmax, xi);
-      const auto hi = neighbor.nodeExtent(i).maxElement()/etaMax;
-      havg += hi;
-      hmax = std::max(hmax, hi);
-    }
-  }
+  // // Find the current bounding box and average node extent in one loop.
+  // // Compute the average node extent.
+  // auto xmin = Vector(0.1*std::numeric_limits<Scalar>::max()), xmax = 0.1*Vector(std::numeric_limits<Scalar>::lowest());
+  // unsigned ntot = 0;
+  // Scalar havg = 0.0, hmax = 0.0, maxExtent = 0.0;
+  // for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
+  //   const auto positions = (*itr)->positions();
+  //   const auto  n = (*itr)->numInternalNodes();
+  //   const auto& neighbor = (*itr)->neighbor();
+  //   const auto  etaMax = neighbor.kernelExtent();
+  //   maxExtent = std::max(maxExtent, etaMax);
+  //   ntot += n;
+  //   for (auto i = 0u; i < n; ++i) {
+  //     const auto& xi = positions(i);
+  //     xmin = elementWiseMin(xmin, xi);
+  //     xmax = elementWiseMax(xmax, xi);
+  //     const auto hi = neighbor.nodeExtent(i).maxElement()/etaMax;
+  //     havg += hi;
+  //     hmax = std::max(hmax, hi);
+  //   }
+  // }
 
-  // Find the global result across all processors.
-  auto box = 0.0;
-  for (auto i = 0; i != Dimension::nDim; ++i) {
-    xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
-    xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
-    box = std::max(box, xmax(i) - xmin(i));
-  }
-  havg = allReduce(havg, SPHERAL_OP_SUM);
-  ntot = allReduce(ntot, SPHERAL_OP_SUM);
-  hmax = allReduce(hmax, SPHERAL_OP_MAX);
-  if (ntot > 0) {
-    havg /= ntot;
+  // // Find the global result across all processors.
+  // auto box = 0.0;
+  // for (auto i = 0; i != Dimension::nDim; ++i) {
+  //   xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
+  //   xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
+  //   box = std::max(box, xmax(i) - xmin(i));
+  // }
+  // havg = allReduce(havg, SPHERAL_OP_SUM);
+  // ntot = allReduce(ntot, SPHERAL_OP_SUM);
+  // hmax = allReduce(hmax, SPHERAL_OP_MAX);
+  // if (ntot > 0) {
+  //   havg /= ntot;
 
-    box = std::max(box, maxExtent*hmax);
-    for (auto i = 0; i < Dimension::nDim; ++i) {
-      xmin(i) -= box;
-      xmax(i) += box;
-    }
+  //   box = std::max(box, maxExtent*hmax);
+  //   for (auto i = 0; i < Dimension::nDim; ++i) {
+  //     xmin(i) -= box;
+  //     xmax(i) += box;
+  //   }
 
-    // Now initialize the neighbors.
-    for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
-      auto& neighbor = (*itr)->neighbor();
-      neighbor.reinitialize(xmin, xmax, havg);
-      neighbor.updateNodes();
-    }
-  }
+  //   // Now initialize the neighbors.
+  //   for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
+  //     auto& neighbor = (*itr)->neighbor();
+  //     neighbor.reinitialize(xmin, xmax, havg);
+  //     neighbor.updateNodes();
+  //   }
+  // }
+  VERIFY(false);
 }
 
 //------------------------------------------------------------------------------
@@ -591,10 +229,10 @@ void
 DataBase<Dimension>::
 appendNodeList(DEMNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (haveNodeList(nodeList)) {
-    cerr << "DataBase::appendNodeList() Warning: attempt to add DEMNodeList "
-         << &nodeList << " to DataBase " << this
-         << ", which already has it." << endl;
+  if (this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::appendNodeList() Warning: attempt to add DEMNodeList "
+                   << &nodeList << " to DataBase " << this
+                   << ", which already has it." << endl;
   } else {
     const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
     NodeListIterator orderItr = nlr.findInsertionPoint((NodeList<Dimension>*) &nodeList,
@@ -610,6 +248,7 @@ appendNodeList(DEMNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -619,10 +258,10 @@ void
 DataBase<Dimension>::
 appendNodeList(SolidNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (haveNodeList(nodeList)) {
-    cerr << "DataBase::appendNodeList() Warning: attempt to add SolidNodeList "
-         << &nodeList << " to DataBase " << this
-         << ", which already has it." << endl;
+  if (this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::appendNodeList() Warning: attempt to add SolidNodeList "
+                   << &nodeList << " to DataBase " << this
+                   << ", which already has it." << endl;
   } else {
     const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
     NodeListIterator orderItr = nlr.findInsertionPoint((NodeList<Dimension>*) &nodeList,
@@ -647,6 +286,7 @@ appendNodeList(SolidNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -656,10 +296,10 @@ void
 DataBase<Dimension>::
 appendNodeList(FluidNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (haveNodeList(nodeList)) {
-    cerr << "DataBase::appendNodeList() Warning: attempt to add FluidNodeList "
-         << &nodeList << " to DataBase " << this
-         << ", which already has it." << endl;
+  if (this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::appendNodeList() Warning: attempt to add FluidNodeList "
+                   << &nodeList << " to DataBase " << this
+                   << ", which already has it." << endl;
   } else {
     const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
     NodeListIterator orderItr = nlr.findInsertionPoint((NodeList<Dimension>*) &nodeList,
@@ -675,6 +315,7 @@ appendNodeList(FluidNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -685,10 +326,10 @@ void
 DataBase<Dimension>::
 appendNodeList(NodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (haveNodeList(nodeList)) {
-    cerr << "DataBase::appendNodeList() Warning: attempt to add NodeList "
-         << &nodeList << " to DataBase " << this
-         << ", which already has it." << endl;
+  if (this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::appendNodeList() Warning: attempt to add NodeList "
+                   << &nodeList << " to DataBase " << this
+                   << ", which already has it." << endl;
   } else {
     const NodeListRegistrar<Dimension>& nlr = NodeListRegistrar<Dimension>::instance();
     NodeListIterator orderItr = nlr.findInsertionPoint(&nodeList,
@@ -696,6 +337,7 @@ appendNodeList(NodeList<Dimension>& nodeList) {
                                                        nodeListEnd());
     mNodeListPtrs.insert(orderItr, &nodeList);
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -708,10 +350,10 @@ void
 DataBase<Dimension>::
 deleteNodeList(DEMNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (!haveNodeList(nodeList)) {
-    cerr << "DataBase::deleteNodeList() Warning: attempt to remove DEMNodeList "
-         << &nodeList << " from DataBase " << this
-         << ", which does not have it." << endl;
+  if (!this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::deleteNodeList() Warning: attempt to remove DEMNodeList "
+                   << &nodeList << " from DataBase " << this
+                   << ", which does not have it." << endl;
   } else {
     // Erase from the NodeList vector.
     NodeListIterator nodeListItr = find(nodeListBegin(), nodeListEnd(),
@@ -731,6 +373,7 @@ deleteNodeList(DEMNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != DEMNodeListAsNodeListEnd());
     mDEMNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -740,10 +383,10 @@ void
 DataBase<Dimension>::
 deleteNodeList(SolidNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (!haveNodeList(nodeList)) {
-    cerr << "DataBase::deleteNodeList() Warning: attempt to remove SolidNodeList "
-         << &nodeList << " from DataBase " << this
-         << ", which does not have it." << endl;
+  if (!this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::deleteNodeList() Warning: attempt to remove SolidNodeList "
+                   << &nodeList << " from DataBase " << this
+                   << ", which does not have it." << endl;
   } else {
     // Erase from the NodeList vector.
     NodeListIterator nodeListItr = find(nodeListBegin(), nodeListEnd(),
@@ -775,6 +418,7 @@ deleteNodeList(SolidNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != fluidNodeListAsNodeListEnd());
     mFluidNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -784,10 +428,10 @@ void
 DataBase<Dimension>::
 deleteNodeList(FluidNodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (!haveNodeList(nodeList)) {
-    cerr << "DataBase::deleteNodeList() Warning: attempt to remove FluidNodeList "
-         << &nodeList << " from DataBase " << this
-         << ", which does not have it." << endl;
+  if (!this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::deleteNodeList() Warning: attempt to remove FluidNodeList "
+                   << &nodeList << " from DataBase " << this
+                   << ", which does not have it." << endl;
   } else {
     // Erase from the NodeList vector.
     NodeListIterator nodeListItr = find(nodeListBegin(), nodeListEnd(),
@@ -807,6 +451,7 @@ deleteNodeList(FluidNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != fluidNodeListAsNodeListEnd());
     mFluidNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  updateView();
   ENSURE(valid());
 }
 
@@ -816,10 +461,10 @@ void
 DataBase<Dimension>::
 deleteNodeList(NodeList<Dimension>& nodeList) {
   REQUIRE(valid());
-  if (!haveNodeList(nodeList)) {
-    cerr << "DataBase::deleteNodeList() Warning: attempt to remove NodeList "
-         << &nodeList << " from DataBase " << this
-         << ", which does not have it." << endl;
+  if (!this->haveNodeList(nodeList)) {
+    SpheralWarning << "DataBase::deleteNodeList() Warning: attempt to remove NodeList "
+                   << &nodeList << " from DataBase " << this
+                   << ", which does not have it." << endl;
   } else {
     // Erase from the NodeList vector.
     NodeListIterator nodeListItr = find(nodeListBegin(), nodeListEnd(),
@@ -827,118 +472,8 @@ deleteNodeList(NodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != nodeListEnd());
     mNodeListPtrs.erase(nodeListItr);
   }
+  updateView();
   ENSURE(valid());
-}
-
-//------------------------------------------------------------------------------
-// Test if the given NodeList is registered with this DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-DataBase<Dimension>::
-haveNodeList(const NodeList<Dimension>& nodeList) const {
-  ConstNodeListIterator itr = find(nodeListBegin(),
-                                   nodeListEnd(),
-                                   &nodeList);
-  return itr != nodeListEnd();
-}
-
-//------------------------------------------------------------------------------
-// Get the NodeList index for the given NodeList
-//------------------------------------------------------------------------------
-template<typename Dimension>
-size_t
-DataBase<Dimension>::
-nodeListIndex(const NodeList<Dimension>& nodeList) const {
-  ConstNodeListIterator itr = find(nodeListBegin(),
-                                   nodeListEnd(),
-                                   &nodeList);
-  VERIFY(itr != nodeListEnd());
-  return std::distance(nodeListBegin(), itr);
-}
-
-//------------------------------------------------------------------------------
-// Set the master neighbor information for the NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::
-setMasterNodeLists(const typename Dimension::Vector& position,
-                   const typename Dimension::SymTensor& H,
-                   std::vector<std::vector<int>>& masterLists,
-                   std::vector<std::vector<int>>& coarseNeighbors,
-                   const bool computeGhostConnectivity) const {
-  Neighbor<Dimension>::setMasterNeighborGroup(position, H,
-                                              nodeListBegin(),
-                                              nodeListEnd(),
-                                              maxKernelExtent(),
-                                              masterLists,
-                                              coarseNeighbors,
-                                              computeGhostConnectivity);
-}
-
-//------------------------------------------------------------------------------
-// Set the master neighbor information for the FluidNodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::
-setMasterFluidNodeLists(const typename Dimension::Vector& position,
-                        const typename Dimension::SymTensor& H,
-                        std::vector<std::vector<int>>& masterLists,
-                        std::vector<std::vector<int>>& coarseNeighbors,
-                        const bool computeGhostConnectivity) const {
-  Neighbor<Dimension>::setMasterNeighborGroup(position, H,
-                                              fluidNodeListBegin(),
-                                              fluidNodeListEnd(),
-                                              maxKernelExtent(),
-                                              masterLists,
-                                              coarseNeighbors,
-                                              computeGhostConnectivity);
-}
-
-//------------------------------------------------------------------------------
-// Set the refine neighbor information for the NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::
-setRefineNodeLists(const typename Dimension::Vector& position,
-                   const typename Dimension::SymTensor& H,
-                   const std::vector<std::vector<int>>& coarseNeighbors,
-                   std::vector<std::vector<int>>& refineNeighbors) const {
-  REQUIRE(coarseNeighbors.size() == this->numNodeLists());
-  refineNeighbors = std::vector<std::vector<int>>(this->numNodeLists());
-  size_t iNodeList = 0;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd();
-       ++nodeListItr, ++iNodeList) {
-    (*nodeListItr)->neighbor().setRefineNeighborList(position, H, 
-                                                     coarseNeighbors[iNodeList],
-                                                     refineNeighbors[iNodeList]);
-  }
-}
-
-//------------------------------------------------------------------------------
-// Set the refine neighbor information for the FluidNodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::
-setRefineFluidNodeLists(const typename Dimension::Vector& position,
-                        const typename Dimension::SymTensor& H,
-                        const std::vector<std::vector<int>>& coarseNeighbors,
-                        std::vector<std::vector<int>>& refineNeighbors) const {
-  REQUIRE(coarseNeighbors.size() == this->numFluidNodeLists());
-  refineNeighbors = std::vector<std::vector<int>>(this->numFluidNodeLists());
-  size_t iNodeList = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd();
-       ++nodeListItr, ++iNodeList) {
-    (*nodeListItr)->neighbor().setRefineNeighborList(position, H,
-                                                     coarseNeighbors[iNodeList],
-                                                     refineNeighbors[iNodeList]);
-  }
 }
 
 //------------------------------------------------------------------------------
@@ -949,10 +484,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::globalMass() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->mass());
-  }
+  for (auto* nptr: mNodeListPtrs) result.appendField(nptr->mass());
   return result;
 }
 
@@ -967,9 +499,7 @@ DataBase<Dimension>::globalMassRZ() const {
   if (GeometryRegistrar::coords() != CoordinateType::RZ) {
     SpheralWarning << "DataBase::globalMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
   } else {
-    for (auto* nptr: mNodeListPtrs) {
-      result.appendField(nptr->massRZ());
-    }
+    for (auto* nptr: mNodeListPtrs) result.appendField(nptr->massRZ());
   }
   return result;
 }
@@ -982,10 +512,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::globalPosition() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->positions());
-  }
+  for (auto* nptr: mNodeListPtrs) result.appendField(nptr->positions());
   return result;
 }
 
@@ -997,10 +524,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::globalVelocity() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->velocity());
-  }
+  for (auto* nptr: mNodeListPtrs) result.appendField(nptr->velocity());
   return result;
 }
 
@@ -1012,10 +536,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::globalHfield() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->Hfield());
-  }
+  for (auto* nptr: mNodeListPtrs) result.appendField(nptr->Hfield());
   return result;
 }
 
@@ -1027,10 +548,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::globalWork() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->work());
-  }
+  for (auto* nptr: mNodeListPtrs) result.appendField(nptr->work());
   return result;
 }
 
@@ -1042,10 +560,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::fluidMass() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->mass());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->mass());
   return result;
 }
 
@@ -1060,9 +575,7 @@ DataBase<Dimension>::fluidMassRZ() const {
   if (GeometryRegistrar::coords() != CoordinateType::RZ) {
     SpheralWarning << "DataBase::fluidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
   } else {
-    for (auto* nptr: mFluidNodeListPtrs) {
-      result.appendField(nptr->massRZ());
-    }
+    for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->massRZ());
   }
   return result;
 }
@@ -1075,10 +588,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::fluidPosition() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->positions());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->positions());
   return result;
 }
 
@@ -1090,10 +600,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::fluidVelocity() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->velocity());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->velocity());
   return result;
 }
 
@@ -1105,10 +612,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::fluidMassDensity() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->massDensity());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->massDensity());
   return result;
 }
 
@@ -1123,9 +627,7 @@ DataBase<Dimension>::fluidMassDensityRZ() const {
   if (GeometryRegistrar::coords() != CoordinateType::RZ) {
     SpheralWarning << "DataBase::fludMassDensityRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
   } else {
-    for (auto* nptr: mFluidNodeListPtrs) {
-      result.appendField(nptr->massDensityRZ());
-    }
+    for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->massDensityRZ());
   }
   return result;
 }
@@ -1138,10 +640,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::fluidSpecificThermalEnergy() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->specificThermalEnergy());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->specificThermalEnergy());
   return result;
 }
 
@@ -1153,10 +652,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::fluidHfield() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->Hfield());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->Hfield());
   return result;
 }
 
@@ -1168,10 +664,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::fluidWork() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->work());
-  }
+  for (auto* nptr: mFluidNodeListPtrs) result.appendField(nptr->work());
   return result;
 }
 
@@ -1183,10 +676,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidMass() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->mass());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->mass());
   return result;
 }
 
@@ -1201,9 +691,7 @@ DataBase<Dimension>::solidMassRZ() const {
   if (GeometryRegistrar::coords() != CoordinateType::RZ) {
     SpheralWarning << "DataBase::solidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
   } else {
-    for (auto* nptr: mSolidNodeListPtrs) {
-      result.appendField(nptr->massRZ());
-    }
+    for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->massRZ());
   }
   return result;
 }
@@ -1216,10 +704,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::solidPosition() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->positions());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->positions());
   return result;
 }
 
@@ -1231,10 +716,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::solidVelocity() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->velocity());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->velocity());
   return result;
 }
 
@@ -1246,10 +728,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidMassDensity() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->massDensity());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->massDensity());
   return result;
 }
 
@@ -1264,9 +743,7 @@ DataBase<Dimension>::solidMassDensityRZ() const {
   if (GeometryRegistrar::coords() != CoordinateType::RZ) {
     SpheralWarning << "DataBase::solidMassRZ not valid in coordinate system " << GeometryRegistrar::coords() << std::endl;
   } else {
-    for (auto* nptr: mSolidNodeListPtrs) {
-      result.appendField(nptr->massDensityRZ());
-    }
+    for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->massDensityRZ());
   }
   return result;
 }
@@ -1279,10 +756,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidSpecificThermalEnergy() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->specificThermalEnergy());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->specificThermalEnergy());
   return result;
 }
 
@@ -1294,10 +768,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::solidHfield() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->Hfield());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->Hfield());
   return result;
 }
 
@@ -1309,10 +780,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidWork() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->work());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->work());
   return result;
 }
 
@@ -1324,10 +792,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::solidDeviatoricStress() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->deviatoricStress());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->deviatoricStress());
   return result;
 }
 
@@ -1339,10 +804,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidPlasticStrain() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->plasticStrain());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->plasticStrain());
   return result;
 }
 
@@ -1354,10 +816,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::solidPlasticStrainRate() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->plasticStrainRate());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->plasticStrainRate());
   return result;
 }
 
@@ -1369,10 +828,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::solidDamage() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->damage());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->damage());
   return result;
 }
 
@@ -1384,10 +840,7 @@ FieldList<Dimension, int>
 DataBase<Dimension>::solidFragmentIDs() const {
   REQUIRE(valid());
   FieldList<Dimension, int> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->fragmentIDs());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->fragmentIDs());
   return result;
 }
 
@@ -1399,10 +852,7 @@ FieldList<Dimension, int>
 DataBase<Dimension>::solidParticleTypes() const {
   REQUIRE(valid());
   FieldList<Dimension, int> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->particleTypes());
-  }
+  for (auto* nptr: mSolidNodeListPtrs) result.appendField(nptr->particleTypes());
   return result;
 }
 
@@ -1414,10 +864,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::DEMMass() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->mass());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->mass());
   return result;
 }
 
@@ -1429,10 +876,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::DEMPosition() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->positions());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->positions());
   return result;
 }
 
@@ -1444,10 +888,7 @@ FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::DEMVelocity() const {
   REQUIRE(valid());
   FieldList<Dimension, Vector> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->velocity());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->velocity());
   return result;
 }
 
@@ -1460,10 +901,7 @@ FieldList<Dimension, typename Dimension::SymTensor>
 DataBase<Dimension>::DEMHfield() const {
   REQUIRE(valid());
   FieldList<Dimension, SymTensor> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->Hfield());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->Hfield());
   return result;
 }
 
@@ -1476,10 +914,7 @@ FieldList<Dimension, typename Dimension::Scalar>
 DataBase<Dimension>::DEMParticleRadius() const {
   REQUIRE(valid());
   FieldList<Dimension, Scalar> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->particleRadius());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->particleRadius());
   return result;
 }
 
@@ -1492,7 +927,7 @@ FieldList<Dimension, size_t>
 DataBase<Dimension>::DEMUniqueIndex() const {
   REQUIRE(valid());
   FieldList<Dimension, size_t> result;
-  for (auto* nodeListPtr: mDEMNodeListPtrs) result.appendField(nodeListPtr->uniqueIndex());
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->uniqueIndex());
   return result;
 }
 
@@ -1505,24 +940,8 @@ FieldList<Dimension, int>
 DataBase<Dimension>::DEMCompositeParticleIndex() const {
   REQUIRE(valid());
   FieldList<Dimension, int> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->compositeParticleIndex());
-  }
+  for (auto* nptr: mDEMNodeListPtrs) result.appendField(nptr->compositeParticleIndex());
   return result;
-}
-
-//------------------------------------------------------------------------------
-// calculated appropriates H from a given radius for each nodelist
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::setDEMHfieldFromParticleRadius(const int startUniqueIndex) {
-  REQUIRE(valid());
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    (*nodeListItr)->setHfieldFromParticleRadius(startUniqueIndex);
-  }
 }
 
 //------------------------------------------------------------------------------
@@ -1543,13 +962,14 @@ DataBase<Dimension>::setDEMUniqueIndices() {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::globalNodeExtent() const {
-  REQUIRE(valid());
-  FieldList<Dimension, Vector> result;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr < nodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  }
-  return result;
+  VERIFY(false);
+  // REQUIRE(valid());
+  // FieldList<Dimension, Vector> result;
+  // for (ConstNodeListIterator nodeListItr = nodeListBegin();
+  //      nodeListItr < nodeListEnd(); ++nodeListItr) {
+  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
+  // }
+  // return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1558,13 +978,14 @@ DataBase<Dimension>::globalNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::fluidNodeExtent() const {
-  REQUIRE(valid());
-  FieldList<Dimension, Vector> result;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  }
-  return result;
+  VERIFY(false);
+  // REQUIRE(valid());
+  // FieldList<Dimension, Vector> result;
+  // for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
+  //      nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
+  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
+  // }
+  // return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1573,13 +994,14 @@ DataBase<Dimension>::fluidNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::solidNodeExtent() const {
-  REQUIRE(valid());
-  FieldList<Dimension, Vector> result;
-  for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-       nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  }
-  return result;
+  VERIFY(false);
+  // REQUIRE(valid());
+  // FieldList<Dimension, Vector> result;
+  // for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
+  //      nodeListItr < solidNodeListEnd(); ++nodeListItr) {
+  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
+  // }
+  // return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1588,13 +1010,14 @@ DataBase<Dimension>::solidNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::DEMNodeExtent() const {
-  REQUIRE(valid());
-  FieldList<Dimension, Vector> result;
-  for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-       nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-    result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  }
-  return result;
+  VERIFY(false);
+  // REQUIRE(valid());
+  // FieldList<Dimension, Vector> result;
+  // for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
+  //      nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
+  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
+  // }
+  // return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1606,12 +1029,7 @@ DataBase<Dimension>::
 globalHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
   this->resizeGlobalFieldList(result, SymTensor::zero());
-  size_t nodeListi = 0;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr != nodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->Hinverse(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mNodeListPtrs)) nptr->Hinverse(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1623,12 +1041,7 @@ DataBase<Dimension>::
 fluidHinverse(FieldList<Dimension, typename Dimension::SymTensor>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, SymTensor::zero());
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->Hinverse(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->Hinverse(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1640,12 +1053,7 @@ DataBase<Dimension>::
 fluidPressure(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::pressure);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->pressure(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->pressure(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1657,12 +1065,7 @@ DataBase<Dimension>::
 fluidTemperature(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::temperature);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd(); 
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->temperature(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->temperature(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1674,12 +1077,7 @@ DataBase<Dimension>::
 fluidSoundSpeed(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::soundSpeed);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->soundSpeed(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->soundSpeed(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1691,12 +1089,7 @@ DataBase<Dimension>::
 fluidVolume(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::volume, false);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->volume(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->volume(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1708,15 +1101,11 @@ DataBase<Dimension>::
 fluidGamma(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::gamma, false);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    const EquationOfState<Dimension>& eos = (*nodeListItr)->equationOfState();
-    const Field<Dimension, Scalar>& rho = (*nodeListItr)->massDensity();
-    const Field<Dimension, Scalar>& eps = (*nodeListItr)->specificThermalEnergy();
-    Field<Dimension, Scalar>& gam = **result.fieldForNodeList(**nodeListItr);
-    eos.setGammaField(gam, rho, eps);
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) {
+    const auto& eos = nptr->equationOfState();
+    const auto& rho = nptr->massDensity();
+    const auto& eps = nptr->specificThermalEnergy();
+    eos.setGammaField(*result[k], rho, eps);
   }
 }
 
@@ -1729,15 +1118,11 @@ DataBase<Dimension>::
 fluidEntropy(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::entropy, false);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    const EquationOfState<Dimension>& eos = (*nodeListItr)->equationOfState();
-    const Field<Dimension, Scalar>& rho = (*nodeListItr)->massDensity();
-    const Field<Dimension, Scalar>& eps = (*nodeListItr)->specificThermalEnergy();
-    Field<Dimension, Scalar>& entropy = **result.fieldForNodeList(**nodeListItr);
-    eos.setEntropy(entropy, rho, eps);
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) {
+    const auto& eos = nptr->equationOfState();
+    const auto& rho = nptr->massDensity();
+    const auto& eps = nptr->specificThermalEnergy();
+    eos.setEntropy(*result[k], rho, eps);
   }
 }
 
@@ -1750,12 +1135,7 @@ DataBase<Dimension>::
 fluidLinearMomentum(FieldList<Dimension, typename Dimension::Vector>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, Vector::zero(), HydroFieldNames::linearMomentum);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->linearMomentum(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->linearMomentum(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1767,12 +1147,7 @@ DataBase<Dimension>::
 fluidTotalEnergy(FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::totalEnergy, false);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    (*nodeListItr)->totalEnergy(*result[nodeListi]);
-  }
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) nptr->totalEnergy(*result[k]);
 }
 
 //------------------------------------------------------------------------------
@@ -1785,15 +1160,11 @@ fluidSpecificHeat(const FieldList<Dimension, typename Dimension::Scalar>& temper
                   FieldList<Dimension, typename Dimension::Scalar>& result) const {
   REQUIRE(valid());
   this->resizeFluidFieldList(result, 0.0, HydroFieldNames::specificHeat);
-  size_t nodeListi = 0;
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd(); 
-       ++nodeListItr, ++nodeListi) {
-    const EquationOfState<Dimension>& eos = (*nodeListItr)->equationOfState();
-    const Field<Dimension, Scalar>& rho = (*nodeListItr)->massDensity();
-    const Field<Dimension, Scalar>& temp = **temperature.fieldForNodeList(**nodeListItr);
-    Field<Dimension, Scalar>& specificHeat = **result.fieldForNodeList(**nodeListItr);
-    eos.setSpecificHeat(specificHeat, rho, temp);
+  for (auto [k, nptr]: enumerate(mFluidNodeListPtrs)) {
+    const auto& eos = nptr->equationOfState();
+    const auto& rho = nptr->massDensity();
+    const auto& temp = *temperature[k];
+    eos.setSpecificHeat(*result[k], rho, temp);
   }
 }
 
@@ -1802,25 +1173,15 @@ fluidSpecificHeat(const FieldList<Dimension, typename Dimension::Scalar>& temper
 // the connectivity map.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-FieldList<Dimension, int>
+FieldList<Dimension, size_t>
 DataBase<Dimension>::numNeighbors() const {
   REQUIRE(valid());
   VERIFY(mConnectivityMapPtr);
-  FieldList<Dimension, int> result = newFluidFieldList(int(), "number of neighbors");
-  for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-       nodeListItr != fluidNodeListEnd(); 
-       ++nodeListItr) {
-    const FluidNodeList<Dimension>& nodes = **nodeListItr;
-    Field<Dimension, int>& count = **(result.fieldForNodeList(nodes));
-    for (auto i = 0u; i != nodes.numInternalNodes(); ++i) {
-      count(i) = 0;
-      const vector< vector<int> >& connectivity = mConnectivityMapPtr->connectivityForNode(&nodes, i);
-      for (typename vector< vector<int> >::const_iterator itr = connectivity.begin();
-           itr != connectivity.end();
-           ++itr) {
-        count(i) += itr->size();
-      }
-    }
+  FieldList<Dimension, size_t> result = newFluidFieldList(size_t(0u), "number of neighbors");
+  const auto& pairs = mConnectivityMapPtr->nodePairList();
+  for (const auto& p: pairs) {
+    ++result(p.i_list, p.i_node);
+    ++result(p.j_list, p.j_node);
   }
   return result;
 }
@@ -1865,42 +1226,13 @@ DataBase<Dimension>::numInternalNodesPerDEMNodeList() const {
 }
 
 //------------------------------------------------------------------------------
-// The maximum kernel extent being used.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-DataBase<Dimension>::
-maxKernelExtent() const {
-  Scalar result = 0.0;
-  for (ConstNodeListIterator nodeListItr = nodeListBegin();
-       nodeListItr != nodeListEnd();
-       ++nodeListItr) result = std::max(result, (**nodeListItr).neighbor().kernelExtent());
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// The maximum kernel extent being used.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-typename Dimension::Scalar
-DataBase<Dimension>::
-maxNeighborSearchBuffer() const {
-  Scalar result = 0.0;
-  for (ConstDEMNodeListIterator DEMNodeListItr = DEMNodeListBegin();
-       DEMNodeListItr != DEMNodeListEnd();
-       ++DEMNodeListItr) result = std::max(result, (**DEMNodeListItr).neighborSearchBuffer());
-  return result;
-}
-
-//------------------------------------------------------------------------------
 // Compute coordinates bounding all nodes in the DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-DataBase<Dimension>::
-boundingBox(typename Dimension::Vector& xmin,
-            typename Dimension::Vector& xmax,
-            const bool ghost) const {
+DataBase<Dimension>::boundingBox(Vector& xmin,
+                                 Vector& xmax,
+                                 const bool ghost) const {
 
   // This method is now exported to an external stand-alone.  Maintained here
   // for backwards compatibility.
@@ -1914,21 +1246,20 @@ boundingBox(typename Dimension::Vector& xmin,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-DataBase<Dimension>::
-boundingBox(typename Dimension::Vector& xmin,
-            typename Dimension::Vector& xmax,
-            const FieldList<Dimension, int>& mask,
-            const bool ghost) const {
+DataBase<Dimension>::boundingBox(Vector& xmin,
+                                 Vector& xmax,
+                                 const FieldList<Dimension, int>& mask,
+                                 const bool ghost) const {
 
   // Find our local bounds.
   xmin = DBL_MAX;
   xmax = -DBL_MAX;
   const FieldList<Dimension, Vector> positions = this->globalPosition();
-  for (unsigned nodeList = 0; nodeList != positions.numFields(); ++nodeList) {
-    const unsigned n = ghost ? positions[nodeList]->numElements() : positions[nodeList]->numInternalElements();
-    for (unsigned i = 0; i != n; ++i) {
+  for (auto nodeList = 0u; nodeList < positions.numFields(); ++nodeList) {
+    const auto n = ghost ? positions[nodeList]->numElements() : positions[nodeList]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
       if (mask(nodeList, i) != 0) {
-        const Vector& xi = positions(nodeList, i);
+        const auto& xi = positions(nodeList, i);
         xmin = elementWiseMin(xmin, xi);
         xmax = elementWiseMax(xmax, xi);
       }
@@ -1936,7 +1267,7 @@ boundingBox(typename Dimension::Vector& xmin,
   }
 
   // Now find the global bounds across all processors.
-  for (int i = 0; i != Dimension::nDim; ++i) {
+  for (auto i = 0; i < Dimension::nDim; ++i) {
     xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
     xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
   }
@@ -1947,17 +1278,16 @@ boundingBox(typename Dimension::Vector& xmin,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-DataBase<Dimension>::
-localSamplingBoundingVolume(typename Dimension::Vector& centroid,
-			    double& radiusNodes,
-                            double& radiusSample,
-			    typename Dimension::Vector& xminNodes,
-                            typename Dimension::Vector& xmaxNodes,
-			    typename Dimension::Vector& xminSample,
-                            typename Dimension::Vector& xmaxSample) const {
+DataBase<Dimension>::localSamplingBoundingVolume(Vector& centroid,
+                                                 double& radiusNodes,
+                                                 double& radiusSample,
+                                                 Vector& xminNodes,
+                                                 Vector& xmaxNodes,
+                                                 Vector& xminSample,
+                                                 Vector& xmaxSample) const {
 
   // Find our local bounds.
-  centroid = Vector();
+  centroid.Zero();
   xminNodes = FLT_MAX;
   xmaxNodes = -FLT_MAX;
   xminSample = FLT_MAX;
@@ -2016,18 +1346,18 @@ localSamplingBoundingVolume(typename Dimension::Vector& centroid,
 template<typename Dimension>
 void
 DataBase<Dimension>::
-globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
-			     double& radiusNodes,
-			     double& radiusSample,
-			     typename Dimension::Vector& xminNodes,
-                             typename Dimension::Vector& xmaxNodes,
-			     typename Dimension::Vector& xminSample,
-                             typename Dimension::Vector& xmaxSample) const {
+globalSamplingBoundingVolume(Vector& centroid,
+                             double& radiusNodes,
+                             double& radiusSample,
+                             Vector& xminNodes,
+                             Vector& xmaxNodes,
+                             Vector& xminSample,
+                             Vector& xmaxSample) const {
 
   // Find our local bounds.
   this->localSamplingBoundingVolume(centroid, radiusNodes, radiusSample, 
-				    xminNodes, xmaxNodes,
-				    xminSample, xmaxSample);
+                                    xminNodes, xmaxNodes,
+                                    xminSample, xmaxSample);
 
 #ifdef SPHERAL_ENABLE_MPI
   // Now find the global bounds across all processors.
@@ -2053,15 +1383,15 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
       FieldList<Dimension, SymTensor> Hinv = this->newGlobalFieldList(SymTensor::zero(), "H inverse");
       this->globalHinverse(Hinv);
       for (auto nodeList = 0u; nodeList != positions.numFields(); ++nodeList) {
-	for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {
-	  const Vector& xi = positions(nodeList, i);
-	  const Vector dr = xi - centroid;
-	  const Vector drUnit = dr.unitVector();
-	  const double drMag = dr.magnitude();
-	  const double hi = (Hinv(nodeList, i)*drUnit).magnitude();
-	  radiusNodes = std::max(radiusNodes, drMag);
-	  radiusSample = std::max(radiusSample, drMag + 2.0*hi);
-	}
+        for (auto i = 0u; i != mNodeListPtrs[nodeList]->numInternalNodes(); ++i) {
+          const Vector& xi = positions(nodeList, i);
+          const Vector dr = xi - centroid;
+          const Vector drUnit = dr.unitVector();
+          const double drMag = dr.magnitude();
+          const double hi = (Hinv(nodeList, i)*drUnit).magnitude();
+          radiusNodes = std::max(radiusNodes, drMag);
+          radiusSample = std::max(radiusSample, drMag + 2.0*hi);
+        }
       }
       radiusNodes = allReduce(radiusNodes, SPHERAL_OP_MAX);
       radiusSample = allReduce(radiusSample, SPHERAL_OP_MAX);
@@ -2080,9 +1410,8 @@ globalSamplingBoundingVolume(typename Dimension::Vector& centroid,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
-DataBase<Dimension>::
-localSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
-                           vector<typename Dimension::Vector>& xmaxima) const {
+DataBase<Dimension>::localSamplingBoundingBoxes(vector<Vector>& xminima,
+                                                vector<Vector>& xmaxima) const {
 
   // Initialize the result.
   xminima = vector<Vector>();
@@ -2171,8 +1500,8 @@ localSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
 template<typename Dimension>
 void
 DataBase<Dimension>::
-globalSamplingBoundingBoxes(vector<typename Dimension::Vector>& xminima,
-                            vector<typename Dimension::Vector>& xmaxima) const {
+globalSamplingBoundingBoxes(vector<Vector>& xminima,
+                            vector<Vector>& xmaxima) const {
 
   // First get each domains local values.
   localSamplingBoundingBoxes(xminima, xmaxima);
@@ -2230,12 +1559,12 @@ template<typename Dimension>
 bool
 DataBase<Dimension>::valid() const {
 
-  bool ok = (numNodeLists() >= numFluidNodeLists());
+  bool ok = (this->numNodeLists() >= this->numFluidNodeLists());
 
   // Verify that all FluidNodeLists are listed in the NodeList array.
   ConstFluidNodeListIterator fluidNodeItr = fluidNodeListBegin();
   while (ok && fluidNodeItr < fluidNodeListEnd()) {
-    ok = haveNodeList(dynamic_cast<const NodeList<Dimension>&>(**fluidNodeItr));
+    ok = this->haveNodeList(dynamic_cast<const NodeList<Dimension>&>(**fluidNodeItr));
     ++fluidNodeItr;
   }
 
@@ -2252,7 +1581,7 @@ DataBase<Dimension>::valid() const {
   // Verify that all SolidNodeLists are listed in the NodeList array.
   ConstSolidNodeListIterator solidNodeItr = solidNodeListBegin();
   while (ok && solidNodeItr < solidNodeListEnd()) {
-    ok = haveNodeList(dynamic_cast<const NodeList<Dimension>&>(**solidNodeItr));
+    ok = this->haveNodeList(dynamic_cast<const NodeList<Dimension>&>(**solidNodeItr));
     ++solidNodeItr;
   }
 
@@ -2327,7 +1656,70 @@ DataBase<Dimension>::valid() const {
     ok = (itr == solidNodeListAsNodeListEnd());
   }
 
+  // Check that the View containers are correct
+  if (ok) {
+    ok &= mNodeListViewStorage.size() == mNodeListPtrs.size();
+    ok &= mFluidNodeListViewStorage.size() == mFluidNodeListPtrs.size();
+    ok &= mSolidNodeListViewStorage.size() == mSolidNodeListPtrs.size();
+    ok &= mDEMNodeListViewStorage.size() == mDEMNodeListPtrs.size();
+    if (ok) {
+      for (auto k = 0u; k < mNodeListViewStorage.size(); ++k)      ok &= mNodeListViewStorage[k] == static_cast<NodeListView<Dimension>&>(*mNodeListPtrs[k]);
+      for (auto k = 0u; k < mFluidNodeListViewStorage.size(); ++k) ok &= mFluidNodeListViewStorage[k] == static_cast<FluidNodeListView<Dimension>&>(*mFluidNodeListPtrs[k]);
+      for (auto k = 0u; k < mSolidNodeListViewStorage.size(); ++k) ok &= mSolidNodeListViewStorage[k] == static_cast<SolidNodeListView<Dimension>&>(*mSolidNodeListPtrs[k]);
+      for (auto k = 0u; k < mDEMNodeListViewStorage.size(); ++k)   ok &= mDEMNodeListViewStorage[k] == static_cast<DEMNodeListView<Dimension>&>(*mDEMNodeListPtrs[k]);
+    }
+  }
+
   return ok;
+}
+
+//------------------------------------------------------------------------------
+// Set the view containers
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DataBase<Dimension>::updateView() {
+
+  // Clear out view storage
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mNodeListViewStorage.resize(mNodeListPtrs.size());
+  mFluidNodeListViewStorage.resize(mFluidNodeListPtrs.size());
+  mSolidNodeListViewStorage.resize()mSolidNodeListPtrs.size();
+  mDEMNodeListViewStorage.resize(mDEMNodeListPtrs.size());
+#else
+  auto allocateManagedArray = []<typename T>(ViewSpan<T>& array, const size_t n) {
+    if (array.size() == 0u and !array.data(chai::CPU, false)) {
+      array.allocate(n, chai::CPU);
+    } else {
+      array.reallocate(n);
+    }
+  };
+  allocateManagedArray(mNodeListViewStorage,      mNodeListPtrs.size());
+  allocateManagedArray(mFluidNodeListViewStorage, mFluidNodeListPtrs.size());
+  allocateManagedArray(mSolidNodeListViewStorage, mSolidNodeListPtrs.size());
+  allocateManagedArray(mDEMNodeListViewStorage,   mDEMNodeListPtrs.size());
+#endif
+
+  // Set storage arrays for View
+  for (auto [i, nptr]: enumerate(mNodeListPtrs))      mNodeListViewStorage[i] = nptr->view();
+  for (auto [i, nptr]: enumerate(mFluidNodeListPtrs)) mFluidNodeListViewStorage[i] = nptr->view();
+  for (auto [i, nptr]: enumerate(mSolidNodeListPtrs)) mSolidNodeListViewStorage[i] = nptr->view();
+  for (auto [i, nptr]: enumerate(mDEMNodeListPtrs))   mDEMNodeListViewStorage[i] = nptr->view();
+
+  // Assign View spans
+#ifdef SPHERAL_UNIFIED_MEMORY
+  DataBaseView<Dimension>::mNodeListViews      = mNodeListViewStorage;
+  DataBaseView<Dimension>::mFluidNodeListViews = mFluidNodeListViewStorage;
+  DataBaseView<Dimension>::mSolidNodeListViews = mSolidNodeListViewStorage;
+  DataBaseView<Dimension>::mDEMNodeListViews   = mDEMNodeListViewStorage;
+#else
+  for (auto i = 0u; i < mNodeListViewStorage.size(); ++i)      DataBaseView<Dimension>::mNodeListViews[i]      = mNodeListViewStorage[i];
+  for (auto i = 0u; i < mFluidNodeListViewStorage.size(); ++i) DataBaseView<Dimension>::mFluidNodeListViews[i] = mFluidNodeListViewStorage[i];
+  for (auto i = 0u; i < mSolidNodeListViewStorage.size(); ++i) DataBaseView<Dimension>::mSolidNodeListViews[i] = mSolidNodeListViewStorage[i];
+  for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   DataBaseView<Dimension>::mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
+#endif
+
+  ENSURE(valid());
 }
 
 }

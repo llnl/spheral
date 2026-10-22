@@ -6,6 +6,6 @@ text = """
 #include "DataBase/DataBase.cc"
 
 namespace Spheral {
-  template class DataBase< Dim< %(ndim)s > >;
+  template class DataBase<Dim<%(ndim)s>>;
 }
 """

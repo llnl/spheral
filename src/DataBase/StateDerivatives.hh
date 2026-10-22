@@ -9,7 +9,6 @@
 
 #include "StateBase.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIteratorBase.hh"
 
 #include <vector>
 #include <map>
