@@ -2,7 +2,8 @@
 // PythonNeighbor
 //
 // PythonNeighbor just provides the virtual function hooks to support the
-// NeighborView interface.
+// NeighborView interface.  The virutal Neighbor interface is passed along
+// for descendants to provide.
 //
 // NOTE: PythonNeighbor and its descendants are CPU-only (no GPU capability).
 //
@@ -12,12 +13,14 @@
 #define __Spheral_PythonNeighbor__
 
 #include "Neighbor/Neighbor.hh"
+#include "Neighbor/NeighborView.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
 class PythonNeighbor:
-    public Neighbor<Dimension, PythonNeighbor<Dimension>> {
+    public Neighbor<Dimension>,
+    public NeighborView<Dimension, PythonNeighbor<Dimension>> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -25,17 +28,17 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using Container = std::vector<size_t>;
-  using ContainerOfContainers = std::vector<std::vector<size_t>>;
 
-  PythonNeighbor(NodeListView<Dimension>& nodeListView,
-                 FieldView<Dimension, Vector>& nodeExtentView,
+  using NodeID = typename Neighbor<Dimension>::NodeID;
+  using Container = std::vector<NodeID>;
+
+  PythonNeighbor(DataBase<Dimension>& dataBase,
                  const NeighborSearchType searchType,
                  const Scalar kernelExtent);
   virtual ~PythonNeighbor() = default;
 
   //.............................................................................
-  // The required interface for Neighbor objects
+  // The required interface for NeighborView objects
   virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                          const SymTensor& H,
                                                          Container& masterList,
@@ -63,13 +66,12 @@ public:
                                                          Container& masterList,
                                                          Container& coarseNeighbors) const = 0;
 
-  // Force the update of internal data for the NodeList.
-  virtual void updateNodes() = 0;
-  virtual void updateNodes(const std::vector<size_t>& nodeIDs) = 0;
-
-  // Reinitialize based on the desired target h and box dimensions.
-  virtual void reinitialize() = 0;
-  virtual void reinitialize(const Vector& xmin, const Vector& xmax, const Scalar htarget) = 0;
+private:
+  //-------------------------- Private Interface --------------------------//
+  using Neighbor<Dimension>::mDataBase;
+  using Neighbor<Dimension>::mNodeExtent;
+  using Neighbor<Dimension>::mSearchType;
+  using Neighbor<Dimension>::mKernelExtent;
 };
 
 }

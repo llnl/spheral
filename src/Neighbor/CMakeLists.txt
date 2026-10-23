@@ -1,4 +1,5 @@
 set(Neighbor_inst
+  Neighbor
   PythonNeighbor
   TreeNeighborView
   TreeNeighbor
@@ -13,6 +14,7 @@ instantiate(Neighbor_inst Neighbor_sources)
 
 set(Neighbor_headers
   NeighborVariants.hh
+  NeighborSearchType.hh
   ConnectivityMap.hh
   ConnectivityMapInline.hh
   NodePairIdxType.hh
@@ -23,7 +25,8 @@ set(Neighbor_headers
   PairwiseFieldInline.hh
   PairwiseFieldView.hh
   Neighbor.hh
-  NeighborInline.hh
+  NeighborView.hh
+  NeighborViewInline.hh
   PythonNeighbor.hh
   TreeNeighborView.hh
   TreeNeighbor.hh
