@@ -222,9 +222,9 @@ GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const VectorType& diagonal,
                                                const double minvalue,
                                                const double maxvalue):
   GeomSymmetricTensorBase<nDim>() {
-  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
-  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
-  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+  this->mxx = Spheral::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = Spheral::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = Spheral::clamp(diagonal.z(), minvalue, maxvalue);
 }
 
 template<int nDim>
@@ -234,9 +234,9 @@ GeomSymmetricTensor<nDim>::GeomSymmetricTensor(const GeomVector<3>& diagonal,
                                                const double minvalue,
                                                const double maxvalue) requires (nDim < 3):
   GeomSymmetricTensorBase<nDim>() {
-  this->mxx = std::clamp(diagonal.x(), minvalue, maxvalue);
-  this->myy = std::clamp(diagonal.y(), minvalue, maxvalue);
-  this->mzz = std::clamp(diagonal.z(), minvalue, maxvalue);
+  this->mxx = Spheral::clamp(diagonal.x(), minvalue, maxvalue);
+  this->myy = Spheral::clamp(diagonal.y(), minvalue, maxvalue);
+  this->mzz = Spheral::clamp(diagonal.z(), minvalue, maxvalue);
 }
 
 //------------------------------------------------------------------------------
@@ -2565,9 +2565,9 @@ GeomSymmetricTensor<1>
 GeomSymmetricTensor<1>::
 clampEigenValues(const double& minvalue,
                  const double& maxvalue) const {
-  return GeomSymmetricTensor(std::clamp(this->mxx, minvalue, maxvalue),
-                             std::clamp(this->myy, minvalue, maxvalue),
-                             std::clamp(this->mzz, minvalue, maxvalue));
+  return GeomSymmetricTensor(Spheral::clamp(this->mxx, minvalue, maxvalue),
+                             Spheral::clamp(this->myy, minvalue, maxvalue),
+                             Spheral::clamp(this->mzz, minvalue, maxvalue));
 }
 
 template<>
@@ -2581,15 +2581,15 @@ clampEigenValues(const double& minvalue,
   if (ev.eigenValues.minElement() < minvalue or
       ev.eigenValues.maxElement() > maxvalue) {
     GeomSymmetricTensor result;
-    result.xx(std::clamp(ev.eigenValues(0), minvalue, maxvalue));
-    result.yy(std::clamp(ev.eigenValues(1), minvalue, maxvalue));
-    result.zz(std::clamp(this->mzz, minvalue, maxvalue));
+    result.xx(Spheral::clamp(ev.eigenValues(0), minvalue, maxvalue));
+    result.yy(Spheral::clamp(ev.eigenValues(1), minvalue, maxvalue));
+    result.zz(Spheral::clamp(this->mzz, minvalue, maxvalue));
     result.rotationalTransform(ev.eigenVectors);
     return result;
   } else if (this->mzz < minvalue or
              this->mzz > maxvalue) {
     GeomSymmetricTensor result(*this);
-    result.zz(std::clamp(this->mzz, minvalue, maxvalue));
+    result.zz(Spheral::clamp(this->mzz, minvalue, maxvalue));
     return result;
   } else {
     return *this;
@@ -2607,9 +2607,9 @@ clampEigenValues(const double& minvalue,
   if (ev.eigenValues.minElement() < minvalue or
       ev.eigenValues.maxElement() > maxvalue) {
     GeomSymmetricTensor result;
-    result.xx(std::clamp(ev.eigenValues(0), minvalue, maxvalue));
-    result.yy(std::clamp(ev.eigenValues(1), minvalue, maxvalue));
-    result.zz(std::clamp(ev.eigenValues(2), minvalue, maxvalue));
+    result.xx(Spheral::clamp(ev.eigenValues(0), minvalue, maxvalue));
+    result.yy(Spheral::clamp(ev.eigenValues(1), minvalue, maxvalue));
+    result.zz(Spheral::clamp(ev.eigenValues(2), minvalue, maxvalue));
     result.rotationalTransform(ev.eigenVectors);
     return result;
   } else {
