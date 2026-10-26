@@ -31,62 +31,6 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Compute the vertex coordinates for a cell.
-//------------------------------------------------------------------------------
-// 1D
-inline
-std::array<Dim<1>::Vector, 2>
-findCellVertices(const Dim<1>::Vector& xmin,
-                 const double& boxLength,
-                 const uint32_t& ilevel,
-                 const uint64_t& ix,
-                 const uint64_t& /*iy*/,
-                 const uint64_t& /*iz*/) {
-  using Vector = Dim<1>::Vector;
-  const auto cellSize = boxLength/(1U << ilevel);
-  return std::array<Vector, 2> result({xmin + Vector(ix       *cellSize),
-                                       xmin + Vector((ix + 1U)*cellSize)});
-}
-
-// 2D
-inline
-std::array<Dim<2>::Vector, 4>
-findCellVertices(const Dim<2>::Vector& xmin,
-                 const double& boxLength,
-                 const uint32_t& ilevel,
-                 const uint64_t& ix,
-                 const uint64_t& iy,
-                 const uint64_t& /*iz*/) {
-  using Vector = Dim<2>::Vector;
-  const auto cellSize = boxLength/(1U << ilevel);
-  return std::array<Vector, 4>({xmin + Vector(ix       *cellSize, iy       *cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, iy       *cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, (iy + 1U)*cellSize),
-                                xmin + Vector(ix       *cellSize, (iy + 1U)*cellSize)});
-}
-
-// 3D
-inline
-std::array<Dim<3>::Vector, 8>
-findCellVertices(const Dim<3>::Vector& xmin,
-                 const double& boxLength,
-                 const uint32_t& ilevel,
-                 const uint64_t& ix,
-                 const uint64_t& iy,
-                 const uint64_t& iz) {
-  using Vector = Dim<3>::Vector;
-  const auto cellSize = boxLength/(1U << ilevel);
-  return std::array<Vector, 8>({xmin + Vector(ix       *cellSize, iy       *cellSize, iz       *cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, iy       *cellSize, iz       *cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, (iy + 1U)*cellSize, iz       *cellSize),
-                                xmin + Vector(ix       *cellSize, (iy + 1U)*cellSize, iz       *cellSize),
-                                xmin + Vector(ix       *cellSize, iy       *cellSize, (iz + 1U)*cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, iy       *cellSize, (iz + 1U)*cellSize),
-                                xmin + Vector((ix + 1U)*cellSize, (iy + 1U)*cellSize, (iz + 1U)*cellSize),
-                                xmin + Vector(ix       *cellSize, (iy + 1U)*cellSize, (iz + 1U)*cellSize)});
-}
-
-//------------------------------------------------------------------------------
 // Constructor.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -96,11 +40,9 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
              const double kernelExtent,
              const Vector& xmin,
              const Vector& xmax):
-  Neighbor<Dimension>(dataBase, searchType, kernelExtent),
+  Neighbor<Dimension>(dataBase, searchType, kernelExtent, xmin, xmax),
   mBoxLength((xmax - xmin).maxElement()),
   mGridLevelConst0(0.0),
-  mXmin(xmin),
-  mXmax(xmax),
   mTree() {
   this->reinitialize(xmin, xmax, (xmax - xmin).maxElement()/4.0);
 }
@@ -468,36 +410,6 @@ occupiedCells() const {
 }
 
 //------------------------------------------------------------------------------
-// Do any existing points occupy cells overlapping the given position and
-// extent?
-//------------------------------------------------------------------------------
-template<typename Dimension>
-bool
-TreeNeighbor<Dimension>::
-occupied(const Vector& xi,
-         const SymTensor& Hi) const {
-  if (mTree.size() == 0) return false;
-  const auto gridLeveli = std::min(gridLevel(Hi), unsigned(mTree.size()) - 1u);
-  CellKey keyi, ix, iy, iz;
-  for (auto ilevel = 0u; ilevel < gridLeveli; ++ilevel) {
-    buildCellKey(ilevel, xi, keyi, ix, iy, iz);
-    const auto keyCellItr = mTree[ilevel].find(keyi);
-    if (keyCellItr != mTree[ilevel].end() and
-        (not keyCellItr->second.members.empty())) return true;
-  }
-  buildCellKey(gridLeveli, xi, keyi, ix, iy, iz);
-  return mTree[gridLeveli].find(keyi) != mTree[gridLeveli].end();
-}
-
-template<typename Dimension>
-bool
-TreeNeighbor<Dimension>::
-occupied(const Vector& xi,
-         const double hi) const {
-  return this->occupied(xi, SymTensor::one() * 1.0/hi);
-}
-
-//------------------------------------------------------------------------------
 // Add a daughter to a cell if not present.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -572,7 +484,7 @@ flattenTreeAndUpdateView() {
   mFlatTree.clear();
   mFlatTreeDaughters.clear();
   mFlatTreeMembers.clear();
-  mFlatTreeLevalOffsets.clear();
+  mFlatTreeLevelOffsets.clear();
 
   // Walk the tree
   for (const auto& level: mTree) {
@@ -591,21 +503,23 @@ flattenTreeAndUpdateView() {
       std::ranges::copy(cell.members, std::back_inserter(mFlatTreeMembers));
     }
   }
-  mFlatTreeLevelOffsets.push_back(mFlatTreeLevelOffsets.size());
-  CHECK(mFlatTreeLevelOffsets.size() == mTree.size() + 1u);
+  CHECK(mFlatTreeLevelOffsets.size() == mTree.size());
 
   // Update the TreeNeighborView data to reference the new FlatTree
 #ifdef SPHERAL_UNIFIED_MEMORY
   ViewType::mFlatTreeView = mFlatTree;
   ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughtersIndices;
   ViewType::mFlatTreeMembersView = mFlatTreeMembers;
+  ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
 #else
   GPUUtils::initMAView(ViewType::mFlatTreeView, mFlatTree);
   GPUUtils::initMAView(ViewType::mFlatTreeDaughtersIndicesView, mFlatTreeDaughtersIndices);
   GPUUtils::initMAView(ViewType::mFlatTreeMembersView, mFlatTreeMembers);
+  GPUUtils::initMAView(ViewType::mFlatTreeLevelOffsetsView, mFlatTreeLevelOffsets);
   ViewType::mFlatTreeView.registerTouch(chai::CPU);
   ViewType::mFlatTreeDaughtersIndicesView.registerTouch(chai::CPU);
   ViewType::mFlatTreeMembersView.registerTouch(chai::CPU);
+  ViewType::mFlatTreeLevelOffsetsView.registerTouch(chai::CPU);
 #endif
 }
 

@@ -97,9 +97,6 @@ public:
   // Cell size on the given level
   SPHERAL_HOST_DEVICE Scalar cellSize(const LevelKey levelID) const { mBoxLength/(1u << levelID); }
 
-  // Return the set of occupied cells on each level.
-  SPHERAL_HOST_DEVICE std::span<std::span<CellKey>> occupiedCells() const;
-
   // Find the nearest cell center on the given grid level.
   SPHERAL_HOST_DEVICE Vector nearestCellCenter(const Vector& xi, const Scalar& hi) const;
   SPHERAL_HOST_DEVICE Vector nearestCellCenter(const Vector& xi, const SymTensor& Hi) const;
@@ -162,11 +159,6 @@ protected:
     SPHERAL_HOST_DEVICE bool operator<(const FlatCell& rhs) const { return key < rhs.key; }
   };
 
-  // Define the types we use to build the tree.
-  using FlatTreeView = Container<FlatCell>;
-  using FlatTreeDaughtersIndicesView = Container<size_t>;
-  using FlatTreeMembersView = Container<NodeID>;
-
   // Build a cell key based on a level and position.
   SPHERAL_HOST_DEVICE void buildCellKey(const LevelKey ilevel,
                                         const Vector& xi,
@@ -218,6 +210,11 @@ protected:
   Vector mXmin, mXmax;
   FlatTreeView mFlatTreeView;
   
+  // The FlatTreeView data
+  Container<FlatCell> mFlatTreeView;
+  Container<size_t> mFlatTreeDaughtersIndicesView;
+  Container<NodeID> mFlatTreeMembersView;
+  Container<size_t> mFlatTreeLevelOffsetsView;
 };
 
 }

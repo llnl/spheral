@@ -102,13 +102,12 @@ findCellVertices(const Dim<3>::Vector& xmin,
 template<typename Dimension>
 SPHERAL_HOST_DEVICE 
 TreeNeighborView<Dimension>::
-TreeNeighborView(NodeListView<Dimension>& nodeList,
-                 FieldView<Dimension, Vector>& nodeExtentView,
+TreeNeighborView(DataBaseView<Dimension>& dataBase,
                  const NeighborSearchType searchType,
                  const double kernelExtent,
                  const Vector& xmin,
                  const Vector& xmax):
-  Neighbor<Dimension, TreeNeighborView<Dimension>>(nodeList, nodeExtentView, searchType, kernelExtent),
+  NeighborView<Dimension, TreeNeighborView<Dimension>>(nodeList, nodeExtentView, searchType, kernelExtent),
   mBoxLength((xmax - xmin).maxElement()),
   mGridLevelConst0(0.0),
   mXmin(xmin),

@@ -34,6 +34,8 @@ public:
 
   using NodeID = typename Neighbor<Dimension>::NodeID;
 
+  using Viewtype = TreeNeighborView<Dimension>;
+
   // Data types we use to build the internal tree structure.
   using LevelKey = uint32_t;
   using CellKey = uint64_t;
@@ -82,12 +84,6 @@ public:
 
   // Return the set of occupied cells on each level.
   std::vector<std::vector<CellKey>> occupiedCells() const;
-
-  // Test if the given position and extent is occupied, in the sense that
-  // any tree cell is occupied at any coarser level down to it's native
-  // level.
-  bool occupied(const Vector& xi, const double hi) const;
-  bool occupied(const Vector& xi, const SymTensor& Hi) const;
 
 private:
   //--------------------------- Private Interface ---------------------------//
