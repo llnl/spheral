@@ -89,12 +89,12 @@ public:
   }
 
   template<template<typename ...> typename Container>
-  SPHERAL_HOST_DEVICE size_t setRefineNeighborViewList(const Vector& position,
-                                                       const SymTensor& H,
-                                                       const size_t numCoarse,
-                                                       const Container<NodeID>& coarseNeighbors,
-                                                       Container<NodeID>& refineNeighbors) const {
-    return asDescendant()->setRefineNeighborViewList(position, H, numCoarse, coarseNeighbors, refineNeighbors);
+  SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
+                                                   const SymTensor& H,
+                                                   const size_t numCoarse,
+                                                   const Container<NodeID>& coarseNeighbors,
+                                                   Container<NodeID>& refineNeighbors) const {
+    return asDescendant()->setRefineNeighborList(position, H, numCoarse, coarseNeighbors, refineNeighbors);
   }
 
   // Set Neighbors for the given position
@@ -107,11 +107,11 @@ public:
   }
 
   template<template<typename ...> typename Container>
-  SPHERAL_HOST_DEVICE size_t setRefineNeighborViewList(const Vector& position,
+  SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const size_t numCoarse,
                                                    const Container<NodeID>& coarseNeighbors,
                                                    Container<NodeID>& refineNeighbors) const {
-    return asDescendant()->setRefineNeighborViewList(position, numCoarse, coarseNeighbors, refineNeighbors);
+    return asDescendant()->setRefineNeighborList(position, numCoarse, coarseNeighbors, refineNeighbors);
   }
 
   // Set the neighbor lists based on proximity to planes.
