@@ -72,38 +72,38 @@ GeomSymmetricTensor(const double a):
 //------------------------------------------------------------------------------
 // Construct with the given values for the elements.
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<1>::
+GeomSymmetricTensor<nDim>::
 GeomSymmetricTensor(const double a11,
                     const double a22,
-                    const double a33):
-  GeomSymmetricTensorBase<1>(a11, a22, a33) {
+                    const double a33) requires (nDim == 1u):
+  GeomSymmetricTensorBase<nDim>(a11, a22, a33) {
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<2>::
+GeomSymmetricTensor<nDim>::
 GeomSymmetricTensor(const double a11, const double a12, 
                     const double a21, const double a22,
-                    const double a33):
-  GeomSymmetricTensorBase<2>(a11, a12,
+                    const double a33) requires (nDim == 2u):
+  GeomSymmetricTensorBase<nDim>(a11, a12,
                                   a22,
                                        a33) {
   CONTRACT_VAR(a21);
   REQUIRE(a12 == a21);
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<3>::
+GeomSymmetricTensor<nDim>::
 GeomSymmetricTensor(const double a11, const double a12, const double a13,
                     const double a21, const double a22, const double a23,
-                    const double a31, const double a32, const double a33):
-  GeomSymmetricTensorBase<3>(a11, a12, a13,
+                    const double a31, const double a32, const double a33) requires (nDim == 3):
+  GeomSymmetricTensorBase<nDim>(a11, a12, a13,
                                   a22, a23,
                                        a33) {
   CONTRACT_VAR(a21);
@@ -128,38 +128,32 @@ GeomSymmetricTensor(const GeomTensor<nDim>& rhs) {
 //------------------------------------------------------------------------------
 // Copy constructor (3D tensors)
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<1>::
-GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs):
-  GeomSymmetricTensorBase<1>(rhs.xx(), rhs.yy(), rhs.zz()) {
+GeomSymmetricTensor<nDim>::
+GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs) requires (nDim < 3):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = rhs.xx();
+  this->myy = rhs.yy();
+  this->mzz = rhs.zz();
+  if constexpr (nDim == 2) {
+    this->mxy = rhs.xy();
+  }
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<2>::
-GeomSymmetricTensor(const GeomSymmetricTensor<3>& rhs):
-  GeomSymmetricTensorBase<2>(rhs.xx(), rhs.xy(),
-                                       rhs.yy(), rhs.zz()) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomSymmetricTensor<1>::
-GeomSymmetricTensor(const GeomTensor<3>& rhs):
-  GeomSymmetricTensorBase<1>(rhs.xx(), rhs.yy(), rhs.zz()) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomSymmetricTensor<2>::
-GeomSymmetricTensor(const GeomTensor<3>& rhs):
-  GeomSymmetricTensorBase<2>(rhs.xx(), 0.5*(rhs.xy() + rhs.yx()),
-                                       rhs.yy(), rhs.zz()) {
+GeomSymmetricTensor<nDim>::
+GeomSymmetricTensor(const GeomTensor<3>& rhs) requires (nDim < 3):
+  GeomSymmetricTensorBase<nDim>() {
+  this->mxx = rhs.xx();
+  this->myy = rhs.yy();
+  this->mzz = rhs.zz();
+  if constexpr (nDim == 2) {
+    this->mxy = 0.5*(rhs.xy() + rhs.yx());
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -2815,29 +2809,18 @@ GeomSymmetricTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (n
 //------------------------------------------------------------------------------
 // Addition with a 3D tensor
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomSymmetricTensor<1>&
-GeomSymmetricTensor<1>::operator+=(const GeomSymmetricTensor<3>& rhs) {
-  REQUIRE(rhs.xy() == 0.0 and
-          rhs.xz() == 0.0 and
-          rhs.yz() == 0.0);
+GeomSymmetricTensor<nDim>&
+GeomSymmetricTensor<nDim>::operator+=(const GeomSymmetricTensor<3>& rhs) requires (nDim != 3) {
+  REQUIRE(rhs.xz() == 0.0 and rhs.yz() == 0.0);
+  if constexpr (nDim == 1) {
+    REQUIRE(rhs.xy() == 0.0);
+  } else {
+    this->mxy += rhs.xy();
+  }
   this->mxx += rhs.xx();
-  this->myy += rhs.yy();
-  this->mzz += rhs.zz();
-  return *this;
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomSymmetricTensor<2>&
-GeomSymmetricTensor<2>::operator+=(const GeomSymmetricTensor<3>& rhs) {
-  REQUIRE(rhs.xz() == 0.0 and
-          rhs.yz() == 0.0);
-  this->mxx += rhs.xx();
-  this->mxy += rhs.xy();
   this->myy += rhs.yy();
   this->mzz += rhs.zz();
   return *this;

@@ -241,20 +241,6 @@ private:
 };
 
 // Declare specializations.
-template<> SPHERAL_HOST_DEVICE GeomTensor<1>::GeomTensor(const double, const double, const double);
-template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const double, const double,
-                                                         const double, const double,
-                                                         const double);
-template<> SPHERAL_HOST_DEVICE GeomTensor<3>::GeomTensor(const double, const double, const double,
-                                                         const double, const double, const double,
-                                                         const double, const double, const double);
-
-template<> SPHERAL_HOST_DEVICE GeomTensor<1>::GeomTensor(const GeomSymmetricTensor<3>&);
-template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const GeomSymmetricTensor<3>&);
-
-template<> SPHERAL_HOST_DEVICE GeomTensor<1>::GeomTensor(const GeomTensor<3>&);
-template<> SPHERAL_HOST_DEVICE GeomTensor<2>::GeomTensor(const GeomTensor<3>&);
-
 template<> SPHERAL_HOST_DEVICE GeomTensor<1>& GeomTensor<1>::operator=(const GeomSymmetricTensor<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomTensor<2>& GeomTensor<2>::operator=(const GeomSymmetricTensor<2>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomTensor<3>& GeomTensor<3>::operator=(const GeomSymmetricTensor<3>& rhs);

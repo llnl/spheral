@@ -64,36 +64,36 @@ GeomTensor(const double a):
 //------------------------------------------------------------------------------
 // Construct with the given values for the elements.
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<1>::
+GeomTensor<nDim>::
 GeomTensor(const double a11,
            const double a22,
-           const double a33):
-  GeomTensorBase<1>(a11, a22, a33) {
+           const double a33) requires (nDim == 1):
+  GeomTensorBase<nDim>(a11, a22, a33) {
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<2>::
+GeomTensor<nDim>::
 GeomTensor(const double a11, const double a12, 
-	   const double a21, const double a22,
-           const double a33):
-  GeomTensorBase<2>(a11, a12,
+           const double a21, const double a22,
+           const double a33) requires (nDim == 2):
+  GeomTensorBase<nDim>(a11, a12,
                     a21, a22,
                     a33) {
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<3>::
+GeomTensor<nDim>::
 GeomTensor(const double a11, const double a12, const double a13,
-	   const double a21, const double a22, const double a23,
-	   const double a31, const double a32, const double a33):
-  GeomTensorBase<3>(a11, a12, a13,
+           const double a21, const double a22, const double a23,
+           const double a31, const double a32, const double a33) requires (nDim == 3):
+  GeomTensorBase<nDim>(a11, a12, a13,
                     a21, a22, a23,
                     a31, a32, a33) {
 }
@@ -112,40 +112,34 @@ GeomTensor(const GeomSymmetricTensor<nDim>& rhs) {
 //------------------------------------------------------------------------------
 // Copy constructor (3D tensors)
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<1>::
-GeomTensor(const GeomSymmetricTensor<3>& rhs):
-  GeomTensor(rhs.xx(), rhs.yy(), rhs.zz()) {
+GeomTensor<nDim>::
+GeomTensor(const GeomSymmetricTensor<3>& rhs) requires (nDim < 3):
+  GeomTensorBase<nDim>() {
+  this->mxx = rhs.xx();
+  this->myy = rhs.yy();
+  this->mzz = rhs.zz();
+  if constexpr (nDim == 2) {
+    this->mxy = rhs.xy();
+    this->myx = rhs.yx();
+  }
 }
 
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<2>::
-GeomTensor(const GeomSymmetricTensor<3>& rhs):
-  GeomTensor(rhs.xx(), rhs.xy(),
-             rhs.yx(), rhs.yy(),
-             rhs.zz()) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomTensor<1>::
-GeomTensor(const GeomTensor<3>& rhs):
-  GeomTensor(rhs.xx(), rhs.yy(), rhs.zz()) {
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomTensor<2>::
-GeomTensor(const GeomTensor<3>& rhs):
-  GeomTensor(rhs.xx(), rhs.xy(),
-             rhs.yx(), rhs.yy(),
-             rhs.zz()) {
+GeomTensor<nDim>::
+GeomTensor(const GeomTensor<3>& rhs) requires (nDim < 3):
+  GeomTensorBase<nDim>() {
+  this->mxx = rhs.xx();
+  this->myy = rhs.yy();
+  this->mzz = rhs.zz();
+  if constexpr (nDim == 2) {
+    this->mxy = rhs.xy();
+    this->myx = rhs.yx();
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -2270,35 +2264,22 @@ GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3) 
 //------------------------------------------------------------------------------
 // Addition with a 3D tensor
 //------------------------------------------------------------------------------
-template<>
+template<int nDim>
 SPHERAL_HOST_DEVICE
 inline
-GeomTensor<1>&
-GeomTensor<1>::operator+=(const GeomTensor<3>& rhs) {
-  REQUIRE(rhs.xy() == 0.0 and
-          rhs.xz() == 0.0 and
-          rhs.yx() == 0.0 and 
-          rhs.yz() == 0.0 and
-          rhs.zx() == 0.0 and
-          rhs.zy() == 0.0);
-  this->mxx += rhs.xx();
-  this->myy += rhs.yy();
-  this->mzz += rhs.zz();
-  return *this;
-}
-
-template<>
-SPHERAL_HOST_DEVICE
-inline
-GeomTensor<2>&
-GeomTensor<2>::operator+=(const GeomTensor<3>& rhs) {
+GeomTensor<nDim>&
+GeomTensor<nDim>::operator+=(const GeomTensor<3>& rhs) requires (nDim < 3) {
   REQUIRE(rhs.xz() == 0.0 and
           rhs.yz() == 0.0 and
           rhs.zx() == 0.0 and
           rhs.zy() == 0.0);
+  if constexpr (nDim == 1) {
+    REQUIRE(rhs.xy() == 0.0 and rhs.yx() == 0.0);
+  } else {
+    this->mxy += rhs.xy();
+    this->myx += rhs.yx();
+  }
   this->mxx += rhs.xx();
-  this->mxy += rhs.xy();
-  this->myx += rhs.yx();
   this->myy += rhs.yy();
   this->mzz += rhs.zz();
   return *this;
