@@ -238,6 +238,29 @@ function(spheral_add_pybind11_library package_name module_list_name)
   # Get the TPL dependencies
   list(APPEND SPHERAL_DEPENDS ${SPHERAL_ACTIVE_CXX_TARGET})
 
+  # Remove dependency-supplied LTO flags from Python binding compilation.
+  # Wrap dependency targets' INTERFACE_COMPILE_OPTIONS in the conditional filter
+  # only on the first call to this function.
+  get_property(_spheral_lto_filter_initialized DIRECTORY "${PROJECT_SOURCE_DIR}"
+    PROPERTY SPHERAL_PYB11_LTO_FILTER_INITIALIZED)
+  if(NOT _spheral_lto_filter_initialized)
+    get_property(_spheral_tpl_targets DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+    list(APPEND _spheral_tpl_targets mpi) # BLT's MPI target can be non-imported.
+    list(REMOVE_DUPLICATES _spheral_tpl_targets)
+    foreach(_spheral_tpl_target IN LISTS _spheral_tpl_targets)
+      if(TARGET ${_spheral_tpl_target})
+        get_target_property(_spheral_tpl_options ${_spheral_tpl_target} INTERFACE_COMPILE_OPTIONS)
+        if(_spheral_tpl_options)
+          # Evaluate for each consumer: filter binding options, preserve native options.
+          # Filter after generator expressions expand (including CUDA -Xcompiler).
+          set_property(TARGET ${_spheral_tpl_target} PROPERTY INTERFACE_COMPILE_OPTIONS
+            "$<IF:$<BOOL:$<TARGET_PROPERTY:SPHERAL_PYTHON_BINDING>>,$<FILTER:${_spheral_tpl_options},EXCLUDE,^(-Xcompiler=)?-f(lto(=.*)?|no-lto|(no-)?fat-lto-objects)$>,${_spheral_tpl_options}>")
+        endif()
+      endif()
+    endforeach()
+    set_property(DIRECTORY "${PROJECT_SOURCE_DIR}" PROPERTY SPHERAL_PYB11_LTO_FILTER_INITIALIZED TRUE)
+  endif()
+
   set(MODULE_NAME Spheral${package_name})
   PYB11Generator_add_module(${package_name}
     MODULE          ${MODULE_NAME}
@@ -254,6 +277,9 @@ function(spheral_add_pybind11_library package_name module_list_name)
     PYTHONPATH      ${PYTHON_ENV_STR}
     IS_SUBMODULE    ${${package_name}_IS_SUBMODULE}
     SUBMODULES      ${${package_name}_SUBMODULES})
+
+  # Identify this target for the filter above; PYB11Generator already disables IPO.
+  set_property(TARGET ${MODULE_NAME} PROPERTY SPHERAL_PYTHON_BINDING TRUE)
 
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 

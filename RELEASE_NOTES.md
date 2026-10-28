@@ -57,6 +57,7 @@ Notable changes include:
       * Axom updated from 0.12.0 to 0.14.0.
       * Sundials updated from 7.0.0 to 7.7.0.
       * Installs are moved from $spack/opts to $spack/../installs.
+    * Add support for Ubuntu 26.04 with MPICH in Docker CI builds.
 
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
