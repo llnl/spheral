@@ -10,10 +10,6 @@
 #include "chai/ExecutionSpaces.hpp"
 
 #include "Geometry/Dimension.hh"
-// #include "NodeList/NodeListView.hh"
-// #include "NodeList/FluidNodeListView.hh"
-// #include "NodeList/SolidNodeListView.hh"
-// #include "NodeList/DEMNodeListView.hh"
 #include "Utilities/span.hh"
 
 namespace Spheral {
@@ -121,5 +117,13 @@ protected:
 template<typename Dimension> int DataBaseView<Dimension>::nDim = Dimension::nDim;
 
 }
+
+// Include these here to help classes including DataBaseView
+#include "NodeList/NodeListView.hh"
+#include "NodeList/FluidNodeListView.hh"
+#include "NodeList/SolidNodeListView.hh"
+#include "NodeList/DEMNodeListView.hh"
+#include "Field/FieldView.hh"
+#include "Field/FieldListView.hh"
 
 #endif
