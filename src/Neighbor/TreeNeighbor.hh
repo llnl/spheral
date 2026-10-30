@@ -13,6 +13,7 @@
 #define __Spheral_TreeNeighbor_hh__
 
 #include "Neighbor.hh"
+#include "Neighbor/TreeNeighborView.hh"
 
 #include <cstdint>
 #include <vector>
@@ -34,11 +35,11 @@ public:
 
   using NodeID = typename Neighbor<Dimension>::NodeID;
 
-  using Viewtype = TreeNeighborView<Dimension>;
+  using ViewType = TreeNeighborView<Dimension>;
 
   // Data types we use to build the internal tree structure.
-  using LevelKey = uint32_t;
-  using CellKey = uint64_t;
+  using LevelKey = typename ViewType::LevelKey;
+  using CellKey = typename ViewType::CellKey;
 
   // Constructors and destructors
   TreeNeighbor(DataBase<Dimension>& dataBase, 
@@ -46,13 +47,12 @@ public:
                const double kernelExtent,
                const Vector& xmin,
                const Vector& xmax);
-  TreeNeighbor(const TreeNeighbor&) = default;
-  TreeNeighbor(TreeNeighbor&&) = default;
   virtual ~TreeNeighbor() = default;
 
   // Disabled methods
   TreeNeighbor() = delete;
   TreeNeighbor(const TreeNeighbor&) = delete;
+  TreeNeighbor(TreeNeighbor&&) = delete;
   TreeNeighbor& operator=(const TreeNeighbor&) = delete;
 
   //.............................................................................
@@ -101,6 +101,7 @@ private:
     Cell(const CellKey& keyi): key(keyi), daughters(), members() {}
     Cell(const Cell&) = default;
     Cell(const Cell&&) = default;
+    Cell& operator=(const Cell&) = default;
 
     // Throw in comparison operators for help sorting.
     bool operator==(const Cell& rhs) const { return key == rhs.key; }
@@ -108,12 +109,12 @@ private:
   };
 
   // Define the types we use to build the tree.
-  using TreeLevel = std::unordered_map<CellKey, CellView>;
+  using TreeLevel = std::unordered_map<CellKey, Cell>;
   using Tree = std::vector<TreeLevel>;
 
   // Types for flattening a fully constructed Tree for use in the TreeNeighborView
-  using typename ViewType::FlatCellView;
-  using FlatTree = std::vector<FlatCellView>;
+  using FlatCell = typename ViewType::FlatCell;
+  using FlatTree = std::vector<FlatCell>;
   using FlatTreeDaughters = std::vector<size_t>;
   using FlatTreeMembers = std::vector<NodeID>;
 
@@ -149,7 +150,20 @@ private:
   FlatTree mFlatTree;
   FlatTreeDaughters mFlatTreeDaughters;
   FlatTreeMembers mFlatTreeMembers;
-  std::vector<size_t> mFlatTreeOffsets;
+  std::vector<size_t> mFlatTreeLevelOffsets;
+
+  // Stuff we get from base classes
+  using Neighbor<Dimension>::mDataBase;
+  using Neighbor<Dimension>::mNodeExtent;
+
+  using TreeNeighborView<Dimension>::num1dbits;
+  using TreeNeighborView<Dimension>::max1dKey;
+  using TreeNeighborView<Dimension>::xkeymask;
+  using TreeNeighborView<Dimension>::ykeymask;
+  using TreeNeighborView<Dimension>::zkeymask;
+  using TreeNeighborView<Dimension>::log2inv;
+  using TreeNeighborView<Dimension>::mSearchType;
+  using TreeNeighborView<Dimension>::mKernelExtent;
 };
 
 }

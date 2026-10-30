@@ -70,8 +70,6 @@ private:
   //-------------------------- Private Interface --------------------------//
   using Neighbor<Dimension>::mDataBase;
   using Neighbor<Dimension>::mNodeExtent;
-  using Neighbor<Dimension>::mSearchType;
-  using Neighbor<Dimension>::mKernelExtent;
 };
 
 }

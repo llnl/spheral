@@ -20,7 +20,7 @@ PythonNeighbor<Dimension>::
 PythonNeighbor(DataBase<Dimension>& dataBase,
                const NeighborSearchType searchType,
                const Scalar kernelExtent):
-  Neighbor<Dimension>(dataBase, searchType, kernelExtent),
+  Neighbor<Dimension>(dataBase),
   NeighborView<Dimension, PythonNeighbor<Dimension>>(dataBase.view(), searchType, kernelExtent) {
 }
 

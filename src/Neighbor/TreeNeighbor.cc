@@ -12,13 +12,14 @@
 #include "TreeNeighbor.hh"
 #include "Utilities/globalBoundingVolumes.hh"
 #include "Utilities/packElement.hh"
-#include "Distributed/allReduce.hh"
+#include "Utilities/SpheralMessage.hh"
 #include "Utilities/FastMath.hh"
+#include "Utilities/DBC.hh"
+#include "Distributed/allReduce.hh"
 #include "Boundary/mapPositionThroughPlanes.hh"
 #include "Geometry/Dimension.hh"
 #include "Geometry/GeomPlane.hh"
 #include "Distributed/Communicator.hh"
-#include "Utilities/DBC.hh"
 
 #include <cstdio>
 #include <cstdlib>
@@ -40,7 +41,8 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
              const double kernelExtent,
              const Vector& xmin,
              const Vector& xmax):
-  Neighbor<Dimension>(dataBase, searchType, kernelExtent, xmin, xmax),
+  Neighbor<Dimension>(dataBase),
+  TreeNeighborView<Dimension>(dataBase.view(), searchType, kernelExtent, xmin, xmax),
   mBoxLength((xmax - xmin).maxElement()),
   mGridLevelConst0(0.0),
   mTree() {
@@ -61,7 +63,7 @@ updateNodes() {
 
   // Grab the state.
   const auto numNodeLists = mDataBase.numNodeLists();
-  const auto positions = mDataBase.globalPositions();
+  const auto positions = mDataBase.globalPosition();
   const auto H = mDataBase.globalHfield();
   CHECK(positions.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
@@ -82,8 +84,11 @@ updateNodes() {
     }
   }
 
+  // Construct the immutable, device-accessible representation of the tree.
+  this->flattenTreeAndUpdateView();
+
   // Force the node extents to be calculated.
-  this->setNodeExtents();
+  this->setNodeExtents(mDataBase.view());
 
   ENSURE(valid());
 }
@@ -94,7 +99,7 @@ updateNodes() {
 template<typename Dimension>
 void 
 TreeNeighbor<Dimension>::
-updateNodes(const std::vector<NodeID>&) {
+updateNodes(const std::span<NodeID>&) {
   this->updateNodes();  // Punt and just rebuild everything.
 }
 
@@ -142,25 +147,22 @@ TreeNeighbor<Dimension>::
 valid() const {
   bool result = true;
 
-  // Make sure each node is listed only once.
-  unordered_map<NodeID, size_t> nodeCount;
+  // Make sure each node is listed once and only once.
+  auto nodeCount = mDataBase.newGlobalFieldList(size_t(0), "node count");
   for (const auto& level: mTree) {
     for (const auto& [key, cell]: level) {
       for (const auto nid: cell.members) {
-        auto itr = nodeCount.find(nid);
-        if (itr == nodeCount.end()) {
-          nodeCount[nid] = 1u;
-        } else {
-          ++(itr->second);
-        }
+        nodeCount(nid.first, nid.second)++;
       }
     }
   }
 
-  for (const auto [i, count]: nodeCount) {
-    if (count != 1u) {
-      SpheralWarning << "TreeNeighor::valid failing test of nodes uniquely assigned to cell: " << i << " " << count << std::endl;
-      result = false;
+  for (auto k = 0u; k < nodeCount.numFields(); ++k) {
+    for (auto i = 0u; i < nodeCount[k]->numElements(); ++i) {
+      if (nodeCount(k,i) != 1u) {
+        SpheralWarning << "TreeNeighor::valid failing test of nodes uniquely assigned to cell: " << k << " " << i << " " << nodeCount(k,i) << std::endl;
+        result = false;
+      }
     }
   }
 
@@ -207,7 +209,7 @@ dumpTree(const Tree& tree,
     const auto numProcs = Process::getTotalNumberOfProcesses();
     const auto rank = Process::getRank();
     if (globalTree) {
-      for (auto sendProc = 0u; sendProc < numProcs; ++sendProc) {
+      for (auto sendProc = 0; sendProc < numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();
         MPI_Bcast(&bufSize, 1, MPI_UNSIGNED, sendProc, Communicator::communicator());
         if (bufSize > 0u) {
@@ -230,13 +232,13 @@ dumpTree(const Tree& tree,
     ss << "--------------------------------------------------------------------------------\n" 
        << " Level " << ilevel << " : boxsize = " << mBoxLength/(1 << ilevel) << " : numCells = " << cells.size() << "\n";
     for (const auto& cell: cells) {
-      extractCellIndices(cell.key, ix, iy, iz);
+      this->extractCellIndices(cell.key, ix, iy, iz);
       ss << "    Cell key=" << cell.key << " : (ix,iy,iz)=(" << ix << " " << iy << " " << iz << ")\n"
          << "         daughters = ( ";
-      for (const auto daughter: cell.daughters) ss << *ditr << " ";
+      for (const auto& daughter: cell.daughters) ss << daughter << " ";
       ss << ")\n"
          << "         nodes = [";
-      for (const auto& nid: cell.members) ss << "(" << cell.members[k].first << " " cell.members.second << ") ";
+      for (const auto& nid: cell.members) ss << "(" << nid.first << " " << nid.second << ") ";
       ss <<" ]\n";
     }
   }
@@ -282,7 +284,7 @@ dumpTreeStatistics(const Tree& tree,
     const auto numProcs = Process::getTotalNumberOfProcesses();
     const auto rank = Process::getRank();
     if (globalTree) {
-      for (auto sendProc = 0u; sendProc < numProcs; ++sendProc) {
+      for (auto sendProc = 0; sendProc < numProcs; ++sendProc) {
         unsigned bufSize = localBuffer.size();
         MPI_Bcast(&bufSize, 1, MPI_UNSIGNED, sendProc, Communicator::communicator());
         if (bufSize > 0) {
@@ -376,6 +378,7 @@ deserialize(vector<char>::const_iterator& bufItr,
       mTree[ilevel][key] = cell;
     }
   }
+  flattenTreeAndUpdateView();
 }
 
 //------------------------------------------------------------------------------
@@ -448,7 +451,7 @@ addNodeToTree(const Vector& xi,
     if (ilevel == tree.size()) tree.push_back(TreeLevel());
 
     // Create the key for the cell containing this particle on this level.
-    buildCellKey(ilevel, xi, key, ix, iy, iz);
+    this->buildCellKey(ilevel, xi, key, ix, iy, iz);
     itr = tree[ilevel].find(key);
 
     // Is this a new cell?
@@ -486,34 +489,89 @@ flattenTreeAndUpdateView() {
   mFlatTreeMembers.clear();
   mFlatTreeLevelOffsets.clear();
 
-  // Walk the tree
+  size_t numCells = 0u, numDaughters = 0u, numMembers = 0u;
   for (const auto& level: mTree) {
-    mFlatTreeLevelOffsets.push_back(mFlatTreeLevelOffsets.size());
-
-    // Walk the cells on this level
+    numCells += level.size();
     for (const auto& [key, cell]: level) {
-      const auto numDaughters = cell.daughters.size();
-      const auto numMembers = cell.members.size();
+      numDaughters += cell.daughters.size();
+      numMembers += cell.members.size();
+    }
+  }
+  mFlatTree.reserve(numCells);
+  mFlatTreeDaughters.reserve(numDaughters);
+  mFlatTreeMembers.reserve(numMembers);
+  mFlatTreeLevelOffsets.reserve(mTree.size() + 1u);
+
+  // Flatten each level into a contiguous, key-sorted range.  Reserve space in
+  // the daughter array here; the absolute daughter indices are filled once all
+  // level ranges have been constructed.
+  for (const auto& level: mTree) {
+    const auto levelBegin = mFlatTree.size();
+    mFlatTreeLevelOffsets.push_back(levelBegin);
+
+    for (const auto& [key, cell]: level) {
       mFlatTree.emplace_back(FlatCell(key,
                                       mFlatTreeDaughters.size(),
                                       cell.daughters.size(),
                                       mFlatTreeMembers.size(),
                                       cell.members.size()));
-      std::ranges::copy(cell.daughters, std::back_inserter(mFlatTreeDaughters));
+      mFlatTreeDaughters.resize(mFlatTreeDaughters.size() + cell.daughters.size());
       std::ranges::copy(cell.members, std::back_inserter(mFlatTreeMembers));
     }
+
+    std::sort(mFlatTree.begin() + levelBegin, mFlatTree.end());
   }
-  CHECK(mFlatTreeLevelOffsets.size() == mTree.size());
+  mFlatTreeLevelOffsets.push_back(mFlatTree.size());
+  CHECK(mFlatTreeLevelOffsets.size() == mTree.size() + 1u);
+
+  // Convert each daughter's key to its absolute index in mFlatTree.  Daughter
+  // cells are on the next level, whose range is sorted by key above.
+  if (mTree.size() > 0u) {
+    for (size_t levelID = 0u; levelID < mTree.size() - 1u; ++levelID) {
+      const auto daughterBegin = mFlatTree.begin() + mFlatTreeLevelOffsets[levelID + 1u];
+      const auto daughterEnd = mFlatTree.begin() + mFlatTreeLevelOffsets[levelID + 2u];
+
+      for (auto i = mFlatTreeLevelOffsets[levelID];
+                i < mFlatTreeLevelOffsets[levelID + 1u];
+                ++i) {
+        const auto& flatCell = mFlatTree[i];
+        const auto& cell = mTree[levelID].at(flatCell.key);
+        CHECK(cell.daughters.size() == flatCell.numDaughters);
+
+        for (size_t daughterID = 0u; daughterID < flatCell.numDaughters; ++daughterID) {
+          const auto daughterKey = cell.daughters[daughterID];
+          const auto daughterItr = std::lower_bound(daughterBegin,
+                                                    daughterEnd,
+                                                    daughterKey,
+                                                    [](const FlatCell& lhs, const CellKey rhs) {
+                                                      return lhs.key < rhs;
+                                                    });
+          CHECK(daughterItr != daughterEnd and daughterItr->key == daughterKey);
+          mFlatTreeDaughters[flatCell.daughterOffset + daughterID] =
+            static_cast<size_t>(std::distance(mFlatTree.begin(), daughterItr));
+        }
+      }
+    }
+
+    // The cells on the deepest level should have no daughters
+    BEGIN_CONTRACT_SCOPE;
+    for (auto i = mFlatTreeLevelOffsets[mTree.size() - 1u];
+              i < mFlatTreeLevelOffsets[mTree.size()];
+              ++i) {
+      CHECK(mFlatTree[i].numDaughters == 0u);
+    }
+    END_CONTRACT_SCOPE;
+  }
 
   // Update the TreeNeighborView data to reference the new FlatTree
 #ifdef SPHERAL_UNIFIED_MEMORY
   ViewType::mFlatTreeView = mFlatTree;
-  ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughtersIndices;
+  ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughters;
   ViewType::mFlatTreeMembersView = mFlatTreeMembers;
   ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
 #else
   GPUUtils::initMAView(ViewType::mFlatTreeView, mFlatTree);
-  GPUUtils::initMAView(ViewType::mFlatTreeDaughtersIndicesView, mFlatTreeDaughtersIndices);
+  GPUUtils::initMAView(ViewType::mFlatTreeDaughtersIndicesView, mFlatTreeDaughters);
   GPUUtils::initMAView(ViewType::mFlatTreeMembersView, mFlatTreeMembers);
   GPUUtils::initMAView(ViewType::mFlatTreeLevelOffsetsView, mFlatTreeLevelOffsets);
   ViewType::mFlatTreeView.registerTouch(chai::CPU);

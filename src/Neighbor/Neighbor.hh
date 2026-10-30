@@ -32,19 +32,13 @@ public:
   using NodeID = std::pair<size_t, size_t>;  // (NodeList ID, node ID)
 
   // Constructors and destructors
-  Neighbor(DataBase<Dimension>& dataBase,
-           const NeighborSearchType searchType,
-           const Scalar kernelExtent);
+  Neighbor(DataBase<Dimension>& dataBase);
   Neighbor(const Neighbor& rhs) = default;
   Neighbor(Neighbor&& rhs) = default;
   virtual ~Neighbor() = default;
 
   // Public access to our basic state data
   const FieldList<Dimension, Vector>& nodeExtent()       const { return mNodeExtent; }
-
-  // Set internal data
-  void neighborSearchType(const NeighborSearchType& x)         { mSearchType = x; }
-  void kernelExtent(const Scalar x)                            { VERIFY(x > 0.0); mKernelExtent = x; }
 
   //.............................................................................
   // Requirements for rebuilding the internal data of a Neighbor object.
@@ -63,8 +57,6 @@ protected:
   //-------------------------- Protected Interface --------------------------//
   DataBase<Dimension>& mDataBase;
   FieldList<Dimension, Vector> mNodeExtent;
-  NeighborSearchType mSearchType;
-  Scalar mKernelExtent;
 };
 
 }

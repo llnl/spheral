@@ -15,13 +15,9 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 Neighbor<Dimension>::
-Neighbor(DataBase<Dimension>& dataBase,
-         const NeighborSearchType searchType,
-         const Scalar kernelExtent):
+Neighbor(DataBase<Dimension>& dataBase):
   mDataBase(dataBase),
-  mNodeExtent(FieldStorageType::CopyFields),
-  mSearchType(searchType),
-  mKernelExtent(kernelExtent) {
+  mNodeExtent(FieldStorageType::CopyFields) {
 }
 
 }
