@@ -46,4 +46,3 @@ Overall, the following options can be provided to ``host-config-build.py``
             ::
 
                 ./scripts/devtools/host-config-build.py --host-config linux-ubuntu20-gcc@10.3.1.cmake -DENABLE_DEV_BUILD=ON
-

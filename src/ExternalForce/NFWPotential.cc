@@ -118,7 +118,7 @@ dt(const DataBase<Dimension>& dataBase,
   // (Delta phi)/phi = -(Delta r)/(r^2 + rc^2)
   // dt = (Delta phi)/phi (r^2 + rc^2) / v
   Scalar mindt = FLT_MAX;
-  Scalar minr, minv;
+  Scalar minr = 0.0, minv = 0.0;
   const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
   const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
   for (InternalNodeIterator<Dimension> nodeItr = dataBase.internalNodeBegin();
