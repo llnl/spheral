@@ -57,7 +57,7 @@ public:
                                    const size_t maxNumNeighbors = 500);
   SPHERAL_HOST_DEVICE NodeListView(const NodeListView& rhs) = default;
   SPHERAL_HOST_DEVICE NodeListView(NodeListView&& rhs) = default;
-  SPHERAL_HOST_DEVICE virtual ~NodeListView() = default;
+  virtual ~NodeListView() = default;
 
   // Assignment.
   SPHERAL_HOST_DEVICE NodeListView& operator=(NodeListView& rhs) = default;

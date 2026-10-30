@@ -44,7 +44,7 @@ public:
   SPHERAL_HOST_DEVICE PairwiseFieldView()                                        = default;
   SPHERAL_HOST_DEVICE PairwiseFieldView(const PairwiseFieldView& rhs)            = default;
   SPHERAL_HOST_DEVICE PairwiseFieldView(PairwiseFieldView&& rhs)                 = default;
-  SPHERAL_HOST_DEVICE virtual ~PairwiseFieldView()                               = default;
+  SPHERAL_HOST_DEVICE ~PairwiseFieldView()                                       = default;
   SPHERAL_HOST_DEVICE PairwiseFieldView& operator=(const PairwiseFieldView& rhs) = default;
 
   // Access the data
