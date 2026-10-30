@@ -12,7 +12,7 @@ TreeNeighborView<Dimension>::
 gridLevel(const Scalar& h) const {   
   // REQUIRE2(this->kernelExtent()*h <= mBoxLength,
   //          "h larger than box size: " << this->kernelExtent()*h << " " << mBoxLength);
-  const LevelKey result = std::clamp(int(mGridLevelConst0 - log(h)*log2inv), 0, int(num1dbits) - 1);
+  const LevelKey result = std::clamp(int(mGridLevelConst0 - std::log(h)*log2inv), 0, int(num1dbits) - 1);
   ENSURE(result < num1dbits);
   ENSURE2((result == 0) or (result == num1dbits - 1) or
           (fuzzyLessThanOrEqual(h*this->kernelExtent(), mBoxLength/(1U << result), 1.0e-10) and

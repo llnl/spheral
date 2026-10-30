@@ -19,6 +19,8 @@
 #include "chai/ExecutionSpaces.hpp"
 
 #include <axom/core.hpp>
+#include <algorithm>
+#include <cmath>
 #include <span>
 #include <cstdint>
 #include <numbers>
@@ -102,7 +104,7 @@ public:
   SPHERAL_HOST_DEVICE Scalar cellSize(const LevelKey levelID) const { return mBoxLength/(1u << levelID); }
 
   // How many grid levels in the current tree?
-  SPHERAL_HOST_DEVICE LevelKey numGridLevels()                const { return mFlatTreeLevelOffsetsView.size() - 1u; }
+  SPHERAL_HOST_DEVICE LevelKey numGridLevels()                const { return mFlatTreeLevelOffsetsView.size() > 0u ? LevelKey(mFlatTreeLevelOffsetsView.size() - 1u) : 0u; }
 
   // Find the nearest cell center on the given grid level.
   SPHERAL_HOST_DEVICE Vector nearestCellCenter(const Vector& xi, const Scalar& hi) const;

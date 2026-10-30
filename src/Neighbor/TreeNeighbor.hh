@@ -144,8 +144,6 @@ private:
                                  const bool globalTree) const;
 
   // Private data.
-  double mBoxLength, mGridLevelConst0;
-  Vector mXmin, mXmax;
   Tree mTree;
   FlatTree mFlatTree;
   FlatTreeDaughters mFlatTreeDaughters;
@@ -164,6 +162,10 @@ private:
   using TreeNeighborView<Dimension>::log2inv;
   using TreeNeighborView<Dimension>::mSearchType;
   using TreeNeighborView<Dimension>::mKernelExtent;
+  using TreeNeighborView<Dimension>::mBoxLength;
+  using TreeNeighborView<Dimension>::mGridLevelConst0;
+  using TreeNeighborView<Dimension>::mXmin;
+  using TreeNeighborView<Dimension>::mXmax;
 };
 
 }

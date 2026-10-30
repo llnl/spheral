@@ -28,6 +28,7 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <cmath>
 
 namespace Spheral {
 
@@ -43,8 +44,6 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
              const Vector& xmax):
   Neighbor<Dimension>(dataBase),
   TreeNeighborView<Dimension>(dataBase.view(), searchType, kernelExtent, xmin, xmax),
-  mBoxLength((xmax - xmin).maxElement()),
-  mGridLevelConst0(0.0),
   mTree() {
   this->reinitialize(xmin, xmax, (xmax - xmin).maxElement()/4.0);
 }
@@ -114,8 +113,9 @@ TreeNeighbor<Dimension>::
 reinitialize() {
   const auto etaMax = this->kernelExtent();
   mBoxLength = (mXmax - mXmin).maxElement();
-  mGridLevelConst0 = log(mBoxLength/etaMax)/log(2.0);
+  mGridLevelConst0 = std::log(mBoxLength/etaMax)*log2inv;
   mTree.clear();
+  flattenTreeAndUpdateView();
 }
 
 template<typename Dimension>
@@ -128,8 +128,9 @@ reinitialize(const typename Dimension::Vector& xmin,
   mXmin = xmin;
   mXmax = xmax;
   mBoxLength = (mXmax - mXmin).maxElement();
-  mGridLevelConst0 = log(mBoxLength/etaMax)/log(2.0);
+  mGridLevelConst0 = std::log(mBoxLength/etaMax)*log2inv;
   mTree.clear();
+  flattenTreeAndUpdateView();
 
   // // Now optimize the box-size so we have a level near the target size.
   // const auto lvl = this->gridLevel(htarget) + 1U;
@@ -196,10 +197,10 @@ dumpTree(const Tree& tree,
   for (auto ilevel = 0u; ilevel < nlevels; ++ilevel) {
 
     // Gather up the level cells and sort them.
-    vector<Cell> cells;
-    vector<char> localBuffer;
-    cells.reserve(tree[ilevel].size());
+    std::vector<Cell> cells;
+    std::vector<char> localBuffer;
     if (ilevel < tree.size()) {
+      cells.reserve(tree[ilevel].size());
       for (const auto& [key, cell]: tree[ilevel]) {
         cells.push_back(cell);
         this->serialize(cell, localBuffer);
@@ -271,10 +272,10 @@ dumpTreeStatistics(const Tree& tree,
   for (auto ilevel = 0u; ilevel < nlevels; ++ilevel) {
 
     // Gather up the level cells and sort them.
-    vector<Cell> cells;
-    vector<char> localBuffer;
-    cells.reserve(tree[ilevel].size());
+    std::vector<Cell> cells;
+    std::vector<char> localBuffer;
     if (ilevel < tree.size()) {
+      cells.reserve(tree[ilevel].size());
       for (const auto& [key, cell]: tree[ilevel]) {
         cells.push_back(cell);
         this->serialize(cell, localBuffer);
@@ -288,10 +289,10 @@ dumpTreeStatistics(const Tree& tree,
         unsigned bufSize = localBuffer.size();
         MPI_Bcast(&bufSize, 1, MPI_UNSIGNED, sendProc, Communicator::communicator());
         if (bufSize > 0) {
-          vector<char> buffer = localBuffer;
+          std::vector<char> buffer = localBuffer;
           MPI_Bcast(&buffer.front(), bufSize, MPI_CHAR, sendProc, Communicator::communicator());
           if (rank != sendProc) {
-            vector<char>::const_iterator itr = buffer.begin();
+            std::vector<char>::const_iterator itr = buffer.begin();
             while (itr < buffer.end()) {
               cells.push_back(Cell());
               this->deserialize(cells.back(), itr, buffer.end());
@@ -328,7 +329,7 @@ serialize(std::vector<char>& buffer) const {
   const unsigned nlevels = mTree.size();
   packElement(nlevels, buffer);
   for (auto ilevel = 0u; ilevel < nlevels; ++ilevel) {
-    const auto ncells = mTree[ilevel].size();
+    const size_t ncells = mTree[ilevel].size();
     packElement(ncells, buffer);
     for (const auto& [key, cell]: mTree[ilevel]) {
       packElement(key, buffer);
@@ -356,8 +357,8 @@ serialize(const TreeNeighbor<Dimension>::Cell& cell,
 template<typename Dimension>
 void
 TreeNeighbor<Dimension>::
-deserialize(vector<char>::const_iterator& bufItr,
-            const vector<char>::const_iterator& endItr) {
+deserialize(std::vector<char>::const_iterator& bufItr,
+            const std::vector<char>::const_iterator& endItr) {
   unpackElement(mBoxLength, bufItr, endItr);
   unpackElement(mGridLevelConst0, bufItr, endItr);
   unpackElement(mXmin, bufItr, endItr);
@@ -366,9 +367,10 @@ deserialize(vector<char>::const_iterator& bufItr,
   CellKey key;
   Cell cell;
   unpackElement(nlevels, bufItr, endItr);
+  mTree.clear();
   mTree.resize(nlevels);
   for (auto ilevel = 0u; ilevel < nlevels; ++ilevel) {
-    unsigned ncells;
+    size_t ncells;
     unpackElement(ncells, bufItr, endItr);
     for (auto i = 0u; i < ncells; ++i) {
       cell.daughters.clear();
@@ -388,8 +390,8 @@ template<typename Dimension>
 void
 TreeNeighbor<Dimension>::
 deserialize(typename TreeNeighbor<Dimension>::Cell& cell,
-            vector<char>::const_iterator& bufItr,
-            const vector<char>::const_iterator& endItr) const {
+            std::vector<char>::const_iterator& bufItr,
+            const std::vector<char>::const_iterator& endItr) const {
   unpackElement(cell.key, bufItr, endItr);
   unpackElement(cell.daughters, bufItr, endItr);
   unpackElement(cell.members, bufItr, endItr);
@@ -399,11 +401,11 @@ deserialize(typename TreeNeighbor<Dimension>::Cell& cell,
 // Return the set of occupied cells.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-vector<vector<typename TreeNeighbor<Dimension>::CellKey>>
+std::vector<std::vector<typename TreeNeighbor<Dimension>::CellKey>>
 TreeNeighbor<Dimension>::
 occupiedCells() const {
   const auto numLevels = mTree.size();
-  vector<vector<CellKey>> result(numLevels);
+  std::vector<std::vector<CellKey>> result(numLevels);
   for (auto ilevel = 0u; ilevel < numLevels; ++ilevel) {
     for (const auto& keyCell: mTree[ilevel]) {
       if (not keyCell.second.members.empty()) result[ilevel].push_back(keyCell.first);
@@ -438,7 +440,9 @@ addNodeToTree(const Vector& xi,
               Tree& tree) const {
 
   // Determine the level for this point.
-  const LevelKey homeLevel = this->gridLevel(Hi);
+  // Level zero is the structural root and must never contain members: both
+  // neighbor walks begin with its daughters.
+  const LevelKey homeLevel = std::max(LevelKey(1u), this->gridLevel(Hi));
 
   LevelKey ilevel = 0u;
   CellKey key, parentKey, ix, iy, iz;
