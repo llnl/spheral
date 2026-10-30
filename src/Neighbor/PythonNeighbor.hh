@@ -12,10 +12,18 @@
 #ifndef __Spheral_PythonNeighbor__
 #define __Spheral_PythonNeighbor__
 
-#include "Neighbor/Neighbor.hh"
-#include "Neighbor/NeighborView.hh"
+#include "Neighbor/NeighborSearchType.hh"
+
+#include <utility>
+#include <vector>
 
 namespace Spheral {
+
+// Forward declarations
+template<typename Dimension> class Neighbor;
+template<typename Dimension, typename Descendant> class NeighborView;
+template<typename Dimension> class GeomPlane;
+template<typename Dimension> class DataBase;
 
 template<typename Dimension>
 class PythonNeighbor:
@@ -73,5 +81,8 @@ private:
 };
 
 }
+
+#include "Neighbor/Neighbor.hh"
+#include "Neighbor/NeighborView.hh"
 
 #endif

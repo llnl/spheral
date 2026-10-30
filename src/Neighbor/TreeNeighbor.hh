@@ -9,17 +9,24 @@
 //
 // Created by J. Michael Owen, Fri Mar 23 15:50:35 PDT 2012
 //----------------------------------------------------------------------------//
-#ifndef __Spheral_TreeNeighbor_hh__
-#define __Spheral_TreeNeighbor_hh__
+#ifndef __Spheral_TreeNeighbor__
+#define __Spheral_TreeNeighbor__
 
-#include "Neighbor.hh"
-#include "Neighbor/TreeNeighborView.hh"
+#include "Neighbor/NeighborSearchType.hh"
 
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <span>
+#include <string>
 
 namespace Spheral {
+
+// Forward declarations
+template<typename Dimension> class Neighbor;
+template<typename Dimension> class TreeNeighborView;
+template<typename Dimension> class GeomPlane;
+template<typename Dimension> class DataBase;
 
 template<typename Dimension>
 class TreeNeighbor:
@@ -169,5 +176,8 @@ private:
 };
 
 }
+
+#include "Neighbor.hh"
+#include "Neighbor/TreeNeighborView.hh"
 
 #endif

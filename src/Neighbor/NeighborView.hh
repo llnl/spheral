@@ -40,6 +40,7 @@ public:
   SPHERAL_HOST_DEVICE virtual ~NeighborView() = default;
 
   // Access our data
+  SPHERAL_HOST_DEVICE const DataBaseView<Dimension>& dataBaseView()              const { return mDataBaseView; }
   SPHERAL_HOST_DEVICE const FieldListView<Dimension, Vector>& nodeExtentView()   const { return mNodeExtentView; }
   SPHERAL_HOST_DEVICE NeighborSearchType neighborSearchType()                    const { return mSearchType; }
   SPHERAL_HOST_DEVICE Scalar kernelExtent()                                      const { return mKernelExtent; }

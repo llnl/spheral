@@ -8,17 +8,14 @@
 #define __Spheral_Neighbor__
 
 #include "Neighbor/NeighborSearchType.hh"
-#include "DataBase/DataBase.hh"
-#include "Field/FieldList.hh"
-#include "Utilities/DBC.hh"
 
 #include <utility>     // std::pair
 #include <span>
 
 namespace Spheral {
 
-// template<typename Dimension> class DataBase;
-// template<typename Dimension, typename DataType> class FieldList;
+template<typename Dimension> class DataBase;
+template<typename Dimension, typename DataType> class FieldList;
 
 template<typename Dimension>
 class Neighbor {
@@ -60,5 +57,8 @@ protected:
 };
 
 }
+
+#include "DataBase/DataBase.hh"
+#include "Field/FieldList.hh"
 
 #endif
