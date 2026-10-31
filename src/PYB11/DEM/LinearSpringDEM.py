@@ -35,6 +35,30 @@ class LinearSpringDEM(DEMBase):
                xmin = "const Vector&",
                xmax = "const Vector&"):
         "DEMBase constructor"
+        
+    def pyinit1(self,
+                dataBase = "const DataBase<%(Dimension)s>&",
+                normalSpringConstant = "const Scalar",
+                normalRestitutionCoefficient = "const Scalar",
+                tangentialSpringConstant = "const Scalar",
+                tangentialRestitutionCoefficient = "const Scalar",
+                dynamicFrictionCoefficient = "const Scalar",
+                staticFrictionCoefficient = "const Scalar",
+                rollingFrictionCoefficient = "const Scalar",
+                torsionalFrictionCoefficient = "const Scalar",
+                normalRestitutionCoefficientParticleBoundary = "const Scalar",
+                tangentialRestitutionCoefficientParticleBoundary = "const Scalar",
+                dynamicFrictionCoefficientParticleBoundary = "const Scalar",
+                staticFrictionCoefficientParticleBoundary = "const Scalar",
+                rollingFrictionCoefficientParticleBoundary = "const Scalar",
+                torsionalFrictionCoefficientParticleBoundary = "const Scalar",
+                cohesiveTensileStrength = "const Scalar",
+                shapeFactor = "const Scalar",
+                stepsPerCollision = "const Scalar",
+                enableFastTimeStepping = "const bool",
+                xmin = "const Vector&",
+                xmax = "const Vector&"):
+        "DEMBase constructor with particle-boundary contact coefficients"
 
     @PYB11virtual
     @PYB11const
@@ -138,10 +162,18 @@ class LinearSpringDEM(DEMBase):
     staticFrictionCoefficient = PYB11property("Scalar", "staticFrictionCoefficient", "staticFrictionCoefficient", doc="sliding friction coefficient - static")
     rollingFrictionCoefficient = PYB11property("Scalar", "rollingFrictionCoefficient", "rollingFrictionCoefficient", doc="rolling friction coefficient")
     torsionalFrictionCoefficient = PYB11property("Scalar", "torsionalFrictionCoefficient", "torsionalFrictionCoefficient", doc="torsional friction coefficient")
+    normalRestitutionCoefficientParticleBoundary = PYB11property("Scalar", "normalRestitutionCoefficientParticleBoundary", "normalRestitutionCoefficientParticleBoundary", doc="particle-boundary normal restitution coefficient")
+    tangentialRestitutionCoefficientParticleBoundary = PYB11property("Scalar", "tangentialRestitutionCoefficientParticleBoundary", "tangentialRestitutionCoefficientParticleBoundary", doc="particle-boundary tangential restitution coefficient")
+    dynamicFrictionCoefficientParticleBoundary = PYB11property("Scalar", "dynamicFrictionCoefficientParticleBoundary", "dynamicFrictionCoefficientParticleBoundary", doc="particle-boundary sliding friction coefficient - dynamic")
+    staticFrictionCoefficientParticleBoundary = PYB11property("Scalar", "staticFrictionCoefficientParticleBoundary", "staticFrictionCoefficientParticleBoundary", doc="particle-boundary sliding friction coefficient - static")
+    rollingFrictionCoefficientParticleBoundary = PYB11property("Scalar", "rollingFrictionCoefficientParticleBoundary", "rollingFrictionCoefficientParticleBoundary", doc="particle-boundary rolling friction coefficient")
+    torsionalFrictionCoefficientParticleBoundary = PYB11property("Scalar", "torsionalFrictionCoefficientParticleBoundary", "torsionalFrictionCoefficientParticleBoundary", doc="particle-boundary torsional friction coefficient")
     
     shapeFactor = PYB11property("Scalar", "shapeFactor", "shapeFactor", doc="shape factor - simple approach to non-spherical particles")
     normalBeta = PYB11property("Scalar", "normalBeta", "normalBeta", doc="a damping parameter")
     tangentialBeta = PYB11property("Scalar", "tangentialBeta", "tangentialBeta", doc="a damping parameter")
+    normalBetaParticleBoundary = PYB11property("Scalar", "normalBetaParticleBoundary", "normalBetaParticleBoundary", doc="a particle-boundary damping parameter")
+    tangentialBetaParticleBoundary = PYB11property("Scalar", "tangentialBetaParticleBoundary", "tangentialBetaParticleBoundary", doc="a particle-boundary damping parameter")
     collisionDuration = PYB11property("Scalar", "collisionDuration", "collisionDuration", doc="duration of a contact")
 
     momentOfInertia = PYB11property("const FieldList<%(Dimension)s, Scalar>&","momentOfInertia", returnpolicy="reference_internal")

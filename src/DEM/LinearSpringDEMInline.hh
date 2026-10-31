@@ -1,5 +1,17 @@
 namespace Spheral {
 
+namespace LinearSpringDEMDetail {
+
+inline
+double
+computeBeta(const double restitutionCoefficient) {
+  CHECK(restitutionCoefficient >= 0);
+  CHECK(restitutionCoefficient <= 1);
+  const double tiny = 1.0e-8;
+  return std::acos(-1.0)/std::log(std::min(std::max(restitutionCoefficient, tiny), 1.0 - tiny));
+}
+
+}
 
 //------------------------------------------------------------------------------
 // set/get to activate/deactivate fast timestepping
@@ -55,6 +67,7 @@ void
 LinearSpringDEM<Dimension>::
 normalRestitutionCoefficient(typename Dimension::Scalar x) {
   mNormalRestitutionCoefficient = x;
+  mNormalBeta = LinearSpringDEMDetail::computeBeta(x);
 }
 
 //------------------------------------------------------------------------------
@@ -92,6 +105,7 @@ void
 LinearSpringDEM<Dimension>::
 tangentialRestitutionCoefficient(typename Dimension::Scalar x) {
   mTangentialRestitutionCoefficient = x;
+  mTangentialBeta = LinearSpringDEMDetail::computeBeta(x);
 }
 
 //------------------------------------------------------------------------------
@@ -169,6 +183,101 @@ torsionalFrictionCoefficient(typename Dimension::Scalar x) {
 }
 
 //------------------------------------------------------------------------------
+// set/get particle-boundary coefficients
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+normalRestitutionCoefficientParticleBoundary() const {
+  return mNormalRestitutionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+normalRestitutionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mNormalRestitutionCoefficientParticleBoundary = x;
+  mNormalBetaParticleBoundary = LinearSpringDEMDetail::computeBeta(x);
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+tangentialRestitutionCoefficientParticleBoundary() const {
+  return mTangentialRestitutionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+tangentialRestitutionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mTangentialRestitutionCoefficientParticleBoundary = x;
+  mTangentialBetaParticleBoundary = LinearSpringDEMDetail::computeBeta(x);
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+dynamicFrictionCoefficientParticleBoundary() const {
+  return mDynamicFrictionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+dynamicFrictionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mDynamicFrictionCoefficientParticleBoundary = x;
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+staticFrictionCoefficientParticleBoundary() const {
+  return mStaticFrictionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+staticFrictionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mStaticFrictionCoefficientParticleBoundary = x;
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+rollingFrictionCoefficientParticleBoundary() const {
+  return mRollingFrictionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+rollingFrictionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mRollingFrictionCoefficientParticleBoundary = x;
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+torsionalFrictionCoefficientParticleBoundary() const {
+  return mTorsionalFrictionCoefficientParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+torsionalFrictionCoefficientParticleBoundary(typename Dimension::Scalar x) {
+  mTorsionalFrictionCoefficientParticleBoundary = x;
+}
+
+//------------------------------------------------------------------------------
 // cohesive coefficient
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -235,6 +344,36 @@ void
 LinearSpringDEM<Dimension>::
 tangentialBeta(typename Dimension::Scalar x) {
   mTangentialBeta = x;
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+normalBetaParticleBoundary() const {
+  return mNormalBetaParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+normalBetaParticleBoundary(typename Dimension::Scalar x) {
+  mNormalBetaParticleBoundary = x;
+}
+
+template<typename Dimension>
+inline
+typename Dimension::Scalar
+LinearSpringDEM<Dimension>::
+tangentialBetaParticleBoundary() const {
+  return mTangentialBetaParticleBoundary;
+}
+template<typename Dimension>
+inline
+void
+LinearSpringDEM<Dimension>::
+tangentialBetaParticleBoundary(typename Dimension::Scalar x) {
+  mTangentialBetaParticleBoundary = x;
 }
 
 template<typename Dimension>
