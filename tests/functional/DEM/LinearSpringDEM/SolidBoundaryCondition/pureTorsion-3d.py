@@ -195,7 +195,9 @@ packages.append(gravity)
 # implement boundary condition using the DEM packages solid wall feature
 if useSolidBoundary:
     
-    solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), Vector( 0.0, 0.0, 1.0))
+    solidWall = InfinitePlaneSolidBoundary(Vector(0.0, 0.0, 0.0), 
+                                           Vector(0.0, 0.0, 1.0),
+                                           Vector(0.0, 0.0, 0.0))
     dem.appendSolidBoundary(solidWall)
 
 # implement boundary condition using Spheral's ghost particle reflection
