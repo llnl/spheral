@@ -13,6 +13,7 @@
 #include "NodeList/FluidNodeList.hh"
 #include "NodeList/SolidNodeList.hh"
 #include "NodeList/DEMNodeList.hh"
+#include "Neighbor/NeighborVariant.hh"
 #include "Neighbor/ConnectivityMap.hh"
 
 #include <vector>
@@ -142,6 +143,9 @@ public:
   // Optimize all Neighbor objects for the current state.
   void reinitializeNeighbors() const;
 
+  // The Neighbor object
+  const NeighborVariant<Dimension>& neighbor()                         const { return mNeighbor; }
+
   // Update the internal connectivity map.
   void updateConnectivityMap(const bool computeGhostConnectivity,
                              const bool computeOverlapConnectivity,
@@ -169,6 +173,12 @@ public:
   void deleteNodeList(SolidNodeList<Dimension>& nodeList);
   void deleteNodeList(FluidNodeList<Dimension>& nodeList);
   void deleteNodeList(NodeList<Dimension>& nodeList);
+
+  // Find the index of a NodeList in the current set
+  size_t nodeListIndex(const NodeList<Dimension>* x)           const { return std::distance(mNodeListPtrs.begin(), std::ranges::find(mNodeListPtrs, x)); }
+  size_t fluidNodeListIndex(const FluidNodeList<Dimension>* x) const { return std::distance(mFluidNodeListPtrs.begin(), std::ranges::find(mFluidNodeListPtrs, x)); }
+  size_t solidNodeListIndex(const SolidNodeList<Dimension>* x) const { return std::distance(mSolidNodeListPtrs.begin(), std::ranges::find(mSolidNodeListPtrs, x)); }
+  size_t DEMNodeListIndex(const DEMNodeList<Dimension>* x)     const { return std::distance(mDEMNodeListPtrs.begin(), std::ranges::find(mDEMNodeListPtrs, x)); }
 
   // Query methods which return "global" fields (FieldLists) for quantities
   // defined over all NodeLists.  These methods all build up FieldLists
@@ -349,7 +359,8 @@ private:
   ValueContainer<NodeList<Dimension>*>      mDEMNodeListAsNodeListPtrs;
 
   // Neighbor stuff
-  mutable ConnectivityMapPtr mConnectivityMapPtr;
+  mutable NeighborVariant<Dimension>        mNeighbor;
+  mutable ConnectivityMapPtr                mConnectivityMapPtr;
 
   // Storage for DataBaseView
 #ifdef SPHERAL_UNIFIED_MEMORY  

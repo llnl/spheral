@@ -68,7 +68,8 @@ public:
   SPHERAL_HOST_DEVICE static Vector Hextent(const SymTensor& H, const Scalar& kernelExtent);
 
   // Cast to the descendant type
-  SPHERAL_HOST_DEVICE Descendant* asDescendant()                                       { return static_cast<Descendant*>(*this); }
+  SPHERAL_HOST_DEVICE Descendant* asDescendant()                                       { return static_cast<Descendant*>(this); }
+  SPHERAL_HOST_DEVICE const Descendant* asDescendant()                           const { return static_cast<const Descendant*>(this); }
 
   //.............................................................................
   // Set or refine the neighbor lists
