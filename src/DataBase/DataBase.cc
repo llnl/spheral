@@ -203,9 +203,16 @@ DataBase<Dimension>::
 updateConnectivityMap(const bool computeGhostConnectivity,
                       const bool computeOverlapConnectivity,
                       const bool computeIntersectionConnectivity) const {
-  REQUIRE(mConnectivityMapPtr);
-  mConnectivityMapPtr->rebuild(nodeListBegin(), nodeListEnd(),
-                               computeGhostConnectivity, computeOverlapConnectivity, computeIntersectionConnectivity);
+  if (mConnectivityMapPtr) {
+    mConnectivityMapPtr->rebuild(computeGhostConnectivity,
+                                 computeOverlapConnectivity,
+                                 computeIntersectionConnectivity);
+  } else {
+    mConnectivityMapPtr = std::make_shared<ConnectivityMap<Dimension>>(*this,
+                                                                       computeGhostConnectivity,
+                                                                       computeOverlapConnectivity,
+                                                                       computeIntersectionConnectivity);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -1723,4 +1730,3 @@ DataBase<Dimension>::updateView() {
 }
 
 }
-

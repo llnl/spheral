@@ -7,7 +7,10 @@
 #define __Spheral_NeighborVariant__
 
 #include <memory>
+#include <utility>
 #include <variant>
+
+#include "Utilities/DBC.hh"
 
 namespace Spheral {
 
