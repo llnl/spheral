@@ -20,10 +20,40 @@
 #include "Utilities/SpheralMessage.hh"
 
 #include <ctime>
+#include <type_traits>
 
 namespace Spheral {
 
 namespace {
+//------------------------------------------------------------------------------
+// Adapt ConnectivityMap's host vectors to each concrete Neighbor buffer type.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename NeighborType>
+inline
+std::tuple<bool, size_t, size_t>
+setMasterList(const NeighborType& neighbor,
+              const typename Dimension::Vector& position,
+              const typename Dimension::SymTensor& H,
+              std::vector<std::pair<size_t, size_t>>& masterList,
+              std::vector<std::pair<size_t, size_t>>& coarseNeighbors,
+              const bool ghostConnectivity) {
+  if constexpr (std::is_same_v<std::remove_cvref_t<NeighborType>, PythonNeighbor<Dimension>>) {
+    return neighbor.setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
+  } else {
+    using NativeContainer = typename TreeNeighborView<Dimension>::template Container<std::pair<size_t, size_t>>;
+#ifdef SPHERAL_UNIFIED_MEMORY
+    NativeContainer nativeMasterList(masterList.data(), masterList.size());
+    NativeContainer nativeCoarseNeighbors(coarseNeighbors.data(), coarseNeighbors.size());
+#else
+    auto nativeMasterList = chai::makeManagedArray(masterList.data(), masterList.size(), chai::CPU, false);
+    auto nativeCoarseNeighbors = chai::makeManagedArray(coarseNeighbors.data(), coarseNeighbors.size(), chai::CPU, false);
+#endif
+    const auto result = neighbor.setMasterList(position, H,
+                                               nativeMasterList, nativeCoarseNeighbors,
+                                               ghostConnectivity);
+    return result;
+  }
+}
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1
 //------------------------------------------------------------------------------
@@ -290,6 +320,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
         intersection[pair] = newintersect;
       }
     }
+    mIntersectionConnectivity = std::move(intersection);
   }
 
   // You can't check valid yet 'cause the NodeLists have not been resized
@@ -664,6 +695,16 @@ template<typename Dimension>
 void
 ConnectivityMap<Dimension>::
 computeConnectivity() {
+  if (mDataBase.numNodeLists() == 0u) {
+    mOffsets.clear();
+    mConnectivity.clear();
+    mOverlapConnectivity.clear();
+    mNodeTraversalIndices.clear();
+    mIntersectionConnectivity.clear();
+    mNumNeighbors = mDataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
+    mNodePairListPtr = std::make_shared<NodePairList>();
+    return;
+  }
   const auto& neighborVariant = mDataBase.neighbor();
   visitNeighbor(neighborVariant,
                 [this](const auto& neighbor) {
@@ -683,9 +724,6 @@ computeConnectivityImpl(const NeighborType& neighbor) {
 
   using Key = typename KeyTraits::Key;
 
-  // Pre-conditions.
-  ENSURE(valid());
-
   // Do we need to build the ghost connectivity as well?
   const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
   const auto ghostConnectivity = (mBuildGhostConnectivity or
@@ -699,6 +737,7 @@ computeConnectivityImpl(const NeighborType& neighbor) {
   // Erase any prior information.
   mOffsets.clear();
   mConnectivity.clear();
+  mOverlapConnectivity.clear();
   mNodeTraversalIndices = std::vector<std::vector<size_t>>(numNodeLists);
   mIntersectionConnectivity.clear();
   mNumNeighbors = mDataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
@@ -754,18 +793,20 @@ computeConnectivityImpl(const NeighborType& neighbor) {
         bool ok = false;
         size_t numMaster, numCoarse;
         while (not ok) {
-          std::tie(ok, numMaster, numCoarse) = neighbor.setMasterList(position(iiNodeList, ii),
-                                                                      H(iiNodeList, ii),
-                                                                      masterList,
-                                                                      coarseNeighbors,
-                                                                      ghostConnectivity);
+          std::tie(ok, numMaster, numCoarse) = setMasterList<Dimension>(neighbor,
+                                                                        position(iiNodeList, ii),
+                                                                        H(iiNodeList, ii),
+                                                                        masterList,
+                                                                        coarseNeighbors,
+                                                                        ghostConnectivity);
           if (masterList.size() < size_t(1.1*numMaster)) masterList.resize(size_t(1.1*numMaster));
           if (coarseNeighbors.size() < size_t(1.1*numCoarse)) coarseNeighbors.resize(size_t(1.1*numCoarse));
         }
         CHECK(ok);
 
         // Iterate over the master nodes
-        for (const auto [iNodeList, i]: masterList) {
+        for (auto imaster = 0u; imaster < numMaster; ++imaster) {
+          const auto [iNodeList, i] = masterList[imaster];
           CHECK2(flagNodeDone(iNodeList, i) == 0, "(" << iNodeList << " " << i << ")");
 
           // Get the state for this node.
@@ -775,7 +816,8 @@ computeConnectivityImpl(const NeighborType& neighbor) {
           const auto start = Timing::currentTime();
 
           // Check the coarse neighbors
-          for (const auto [jNodeList, j]: coarseNeighbors) {
+          for (auto icoarse = 0u; icoarse < numCoarse; ++icoarse) {
+            const auto [jNodeList, j] = coarseNeighbors[icoarse];
             const auto firstGhostNodej = nodeLists[jNodeList]->firstGhostNode();
             const auto& rj = position(jNodeList, j);
             const auto& Hj = H(jNodeList, j);
@@ -967,6 +1009,11 @@ buildPerPointConnectivity() {
                                                                 nodeLists[k]->numNodes() :
                                                                 nodeLists[k]->numInternalNodes()); };
   const auto numNodeLists = nodeLists.size();
+  if (numNodeLists == 0u) {
+    mOverlapConnectivity.clear();
+    TIME_END("ConnectivityMap_buildPerPointConnectivity");
+    return;
+  }
   std::vector<size_t> numNodes(numNodeLists);
   for (auto k = 0u; k < numNodeLists; ++k) numNodes[k] = numNodesInNodeList(k);
 
