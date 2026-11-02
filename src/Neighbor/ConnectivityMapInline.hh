@@ -16,13 +16,14 @@ connectivityForNode(const NodeList<Dimension>* nodeListPtr,
                     const size_t nodeID) const {
   if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
   REQUIRE(nodeID >= 0 and 
           ((nodeID < nodeListPtr->numInternalNodes()) or
           (ghostValid and nodeID < nodeListPtr->numNodes())));
   const auto nodeListID = mDataBase.nodeListIndex(nodeListPtr);
-  REQUIRE(nodeListID < mConnectivity.size() and nodeListID < mOffsets.size());
+  REQUIRE(nodeListID < mDataBase.numNodeLists() and nodeListID < mOffsets.size());
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mConnectivity[mOffsets[nodeListID] + nodeID];
 }
@@ -38,11 +39,12 @@ connectivityForNode(const size_t nodeListID,
                     const size_t nodeID) const {
   if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   const auto& nodeLists = mDataBase.nodeListPtrs();
   CONTRACT_VAR(ghostValid);
   CONTRACT_VAR(nodeLists);
-  REQUIRE(nodeListID >= 0 and nodeListID < mConnectivity.size());
+  REQUIRE(nodeListID < nodeLists.size() and nodeListID < mOffsets.size());
   REQUIRE((nodeID < nodeLists[nodeListID]->numInternalNodes()) or
           (ghostValid and nodeID < nodeLists[nodeListID]->numNodes()));
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
@@ -59,14 +61,17 @@ const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
 overlapConnectivityForNode(const NodeList<Dimension>* nodeListPtr,
                            const size_t nodeID) const {
+  REQUIRE(mBuildOverlapConnectivity);
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
   REQUIRE((nodeID < nodeListPtr->numInternalNodes()) or
           (ghostValid and nodeID < nodeListPtr->numNodes()));
   const auto nodeListID = mDataBase.nodeListIndex(nodeListPtr);
-  REQUIRE(nodeListID < mConnectivity.size() and nodeListID < mOffsets.size());
+  REQUIRE(nodeListID < mDataBase.numNodeLists() and nodeListID < mOffsets.size());
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mOverlapConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -79,15 +84,18 @@ const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
 overlapConnectivityForNode(const size_t nodeListID,
                            const size_t nodeID) const {
+  REQUIRE(mBuildOverlapConnectivity);
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   const auto& nodeLists = mDataBase.nodeListPtrs();
   CONTRACT_VAR(ghostValid);
   CONTRACT_VAR(nodeLists);
-  REQUIRE(nodeListID < mConnectivity.size());
+  REQUIRE(nodeListID < nodeLists.size() and nodeListID < mOffsets.size());
   REQUIRE((nodeID < nodeLists[nodeListID]->numInternalNodes()) or
           (ghostValid and nodeID < nodeLists[nodeListID]->numNodes()));
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mOverlapConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
