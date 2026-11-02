@@ -6,23 +6,29 @@
 #ifndef __Spheral_NeighborVariants__
 #define __Spheral_NeighborVariants__
 
-#include "Neighbor/PythonNeighbor.hh"
-#include "Neighbor/TreeNeighbor.hh"
-
+#include <memory>
 #include <variant>
 
 namespace Spheral {
 
+template<typename Dimension> class TreeNeighbor;
+template<typename Dimension> class TreeNeighborView;
+
+template<typename Dimension> class PythonNeighbor;
+
 // NeighborViews: used by clients to get potential Neighbors (possibly on device)
 template<typename Dimension>
-using NeighborViewVariant = std::variant<TreeNeighborView<Dimension>,
-                                         PythonNeighbor<Dimension>>;
+using NeighborViewVariant = std::variant<std::unique_ptr<TreeNeighborView<Dimension>>,
+                                         std::unique_ptr<PythonNeighbor<Dimension>>>;
 
 // NeighorValues: the full Neighbor objects that allocate and hold memory
 template<typename Dimension>
-using NeighborValueVariant = std::variant<TreeNeighbor<Dimension>,
-                                          PythonNeighbor<Dimension>>;
+using NeighborVariant = std::variant<std::unique_ptr<TreeNeighbor<Dimension>>,
+                                     std::unique_ptr<PythonNeighbor<Dimension>>>;
 
 }
+
+#include "Neighbor/PythonNeighbor.hh"
+#include "Neighbor/TreeNeighbor.hh"
 
 #endif
