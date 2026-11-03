@@ -12,7 +12,8 @@
 #ifndef __Spheral_TreeNeighbor__
 #define __Spheral_TreeNeighbor__
 
-#include "Neighbor/NeighborSearchType.hh"
+#include "Neighbor/Neighbor.hh"
+#include "Neighbor/TreeNeighborView.hh"
 
 #include <cstdint>
 #include <vector>
@@ -23,8 +24,6 @@
 namespace Spheral {
 
 // Forward declarations
-template<typename Dimension> class Neighbor;
-template<typename Dimension> class TreeNeighborView;
 template<typename Dimension> class GeomPlane;
 template<typename Dimension> class DataBase;
 
@@ -176,8 +175,5 @@ private:
 };
 
 }
-
-#include "Neighbor.hh"
-#include "Neighbor/TreeNeighborView.hh"
 
 #endif

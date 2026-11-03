@@ -9,6 +9,8 @@
 
 #include "Neighbor/NeighborSearchType.hh"
 #include "Neighbor/NeighborViewContainer.hh"
+#include "DataBase/DataBaseView.hh"
+#include "Field/FieldListView.hh"
 #include "Geometry/GeomPlane.hh"
 #include "Utilities/DBC.hh"
 
@@ -24,8 +26,6 @@ namespace Spheral {
 
 template<typename Dimension> class NodeListView;
 template<typename Dimension, typename DataType> class FieldView;
-template<typename Dimension, typename DataType> class FieldListView;
-template<typename Dimension> class DataBaseView;
 
 template<typename Dimension, typename Descendant>
 class NeighborView {

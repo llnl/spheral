@@ -9,6 +9,7 @@
 //----------------------------------------------------------------------------//
 
 #include "Neighbor/PythonNeighbor.hh"
+#include "DataBase/DataBase.hh"
 
 namespace Spheral {
 

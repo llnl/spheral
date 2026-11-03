@@ -10,6 +10,7 @@
 // Created by J. Michael Owen, Fri Mar 23 15:50:35 PDT 2012
 //----------------------------------------------------------------------------//
 #include "TreeNeighbor.hh"
+#include "DataBase/DataBase.hh"
 #include "Utilities/globalBoundingVolumes.hh"
 #include "Utilities/packElement.hh"
 #include "Utilities/SpheralMessage.hh"
