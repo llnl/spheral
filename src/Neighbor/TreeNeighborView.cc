@@ -511,24 +511,40 @@ findTreeNeighbors(const LevelKey masterLevel,
                   Container<NodeID>& neighbors,
                   size_t numNeighbors) const {
 
-  // Declare variables.
-  constexpr size_t maxDaughters = Dimension::pownu(4u);  // Down 2 levels
-  LevelKey ilevel = 0;
+  // Declare variables.  Walk depth-first so the candidate storage is bounded
+  // by the maximum branching factor and tree depth, rather than by the number
+  // of occupied cells on any one level.
+  constexpr size_t maxDaughters = Dimension::pownu(2u);
+  constexpr size_t maxStackSize = 1u + (maxDaughters - 1u)*num1dbits;
+  LevelKey ilevel;
   CellKey ix, iy, iz, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max, delta;
-  size_t numRemainingDaughters, numNewDaughters;
-  std::array<size_t, maxDaughters> remainingDaughters, newDaughters;
+  size_t stackSize = 0u;
+  std::array<size_t, maxStackSize> candidateCells;
+  std::array<LevelKey, maxStackSize> candidateLevels;
 
   // Walk the tree until we run out of daughters to check.
   bool ok = true;
   if (mFlatTreeView.size() > 0u) {
     CHECK2(mFlatTreeView[0].numMembers == 0u, "TreeNeighbor root cell occupied!  Will miss neighbors... " << mFlatTreeView[0].numMembers);
-    numRemainingDaughters = mFlatTreeView[0].numDaughters;
-    CHECK(numRemainingDaughters <= maxDaughters);
-    std::copy_n(mFlatTreeDaughtersIndicesView.begin() + mFlatTreeView[0].daughterOffset, numRemainingDaughters, remainingDaughters.begin());
-                
-    while (numRemainingDaughters > 0u) {
-      numNewDaughters = 0u;
-      ++ilevel;
+    const auto& root = mFlatTreeView[0];
+    CHECK(root.numDaughters <= maxDaughters);
+
+    // Push in reverse order so popping the stack preserves the original
+    // daughter traversal order.
+    for (auto daughterID = root.numDaughters; daughterID > 0u; --daughterID) {
+      candidateCells[stackSize] = mFlatTreeDaughtersIndicesView[root.daughterOffset + daughterID - 1u];
+      candidateLevels[stackSize] = 1u;
+      ++stackSize;
+    }
+
+    while (stackSize > 0u) {
+      --stackSize;
+      const auto cellIndex = candidateCells[stackSize];
+      ilevel = candidateLevels[stackSize];
+      CHECK(ilevel < num1dbits);
+      CHECK(cellIndex < mFlatTreeView.size());
+      const auto& cell = mFlatTreeView[cellIndex];
+
       delta = (ilevel <= masterLevel ? 1U : (1U << (ilevel - masterLevel)));
 
       // Find the target range of keys on this level.
@@ -544,30 +560,23 @@ findTreeNeighbors(const LevelKey masterLevel,
       CHECK(ix_min <= ix_max and ix_max <= max1dKey);
       CHECK(iy_min <= iy_max and iy_max <= max1dKey);
       CHECK(iz_min <= iz_max and iz_max <= max1dKey);
-    
-      // Walk the candidate daughters on this level.
-      for (auto candidateID = 0u; candidateID < numRemainingDaughters; ++candidateID) {
-        const auto cellIndex = remainingDaughters[candidateID];
-        CHECK(cellIndex < mFlatTreeView.size());
-        const auto& cell = mFlatTreeView[cellIndex];
 
-        // Is this daughter in range?
-        if (keyInRange(cell.key, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max)) {
-        
-          // Copy this cells members to the result.
-          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, neighbors, cell.memberOffset, numNeighbors);
-          numNeighbors += cell.numMembers;
+      // If this cell is in range, collect its members and descend into its
+      // daughters.  A depth-first stack is bounded by
+      // 1 + (branching factor - 1)*maximum depth.
+      if (keyInRange(cell.key, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max)) {
+        ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, neighbors, cell.memberOffset, numNeighbors);
+        numNeighbors += cell.numMembers;
 
-          // Add any daughters of this cell to our candidates to check on the next level.
-          CHECK(numNewDaughters + cell.numDaughters <= maxDaughters);
-          std::copy_n(mFlatTreeDaughtersIndicesView.begin() + cell.daughterOffset, cell.numDaughters, newDaughters.begin() + numNewDaughters);
-          numNewDaughters += cell.numDaughters;
+        CHECK(cell.numDaughters <= maxDaughters);
+        CHECK(stackSize + cell.numDaughters <= maxStackSize);
+        CHECK(cell.numDaughters == 0u or ilevel + 1u < num1dbits);
+        for (auto daughterID = cell.numDaughters; daughterID > 0u; --daughterID) {
+          candidateCells[stackSize] = mFlatTreeDaughtersIndicesView[cell.daughterOffset + daughterID - 1u];
+          candidateLevels[stackSize] = ilevel + 1u;
+          ++stackSize;
         }
       }
-
-      // Update the daughters to check on the next pass.
-      numRemainingDaughters = numNewDaughters;
-      remainingDaughters = newDaughters;
     }
   }
 
