@@ -79,10 +79,9 @@ public:
 
   //.............................................................................
   // Set or refine the neighbor lists
-  // The Containers should be sized with enough space before calling, and the final sizes are returned as the
-  // size_type results.
-  // If the containers are not allocated with sufficient space, then the required size is returned as the
-  // result, and the status (first bool) is false.
+  // The final sizes are returned as the size_type results. Resizable containers
+  // are grown as needed. If a fixed-capacity container has insufficient space,
+  // the required size is returned and the status (first bool) is false.
   // In the refine nodes nodes we assume the refineNeighborViews is at least as large as coarseNeighborViews, so there
   // should always be enough room and the bool status flag is not needed.
 

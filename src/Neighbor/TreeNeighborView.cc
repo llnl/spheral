@@ -96,7 +96,8 @@ findCellVertices(const Dim<3>::Vector& xmin,
 }
 
 //------------------------------------------------------------------------------
-// Append elements to a container checking if it can be resized
+// Append elements to a container. Grow resizable containers when necessary;
+// fixed-capacity views report failure so their owning caller can resize and retry.
 //------------------------------------------------------------------------------
 template<typename InContainer,
          typename OutContainer>
@@ -108,21 +109,20 @@ copy_n_conditional(const InContainer& source,
                    OutContainer& dest,
                    const size_t sourceOffset = 0u,
                    const size_t destOffset = 0u) {
-  // If there's enough space available in the destination, it's simple
+  REQUIRE(sourceOffset <= source.size());
+  REQUIRE(numSource <= source.size() - sourceOffset);
+  if (numSource == 0u) return true;
   const auto sizeAvail = destOffset < dest.size() ? dest.size() - destOffset : 0u;
   if (sizeAvail >= numSource) {
     std::copy_n(source.begin() + sourceOffset, numSource, dest.begin() + destOffset);
     return true;
   }
 
-  // There is not enough space available to start. If the destination can
-  // be resized do it, otherwise we have to fail
   if constexpr (requires { dest.resize(std::size_t{0}); }) {
-      dest.resize(dest.size() + numSource - sizeAvail);
-      CHECK(dest.size() == destOffset + numSource);
-      std::copy_n(source.begin() + sourceOffset, numSource, dest.begin() + destOffset);
-      return true;
-    }
+    dest.resize(destOffset + numSource);
+    std::copy_n(source.begin() + sourceOffset, numSource, dest.begin() + destOffset);
+    return true;
+  }
 
   return false;
 }
@@ -220,94 +220,95 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
               Container<NodeID>& masterList,
               Container<NodeID>& coarseNeighbors) const {
 
-  // Maximum sizes
-  const auto maxMaster = masterList.size();
-  const auto maxCoarse = coarseNeighbors.size();
-  constexpr size_t maxDaughters = Dimension::pownu(4u);  // Down 2 levels
+  // A depth-first walk has bounded candidate storage based only on the tree's
+  // maximum branching factor and depth.  The mapped-cell buffer has a separate
+  // bound: mapping one cell through the planes can overlap at most four cells
+  // per dimension.
+  constexpr size_t maxDaughters = Dimension::pownu(2u);
+  constexpr size_t maxStackSize = 1u + (maxDaughters - 1u)*num1dbits;
+  constexpr size_t maxMappedCells = Dimension::pownu(4u);
 
   // Get the master and coarse lists.
   bool ok = true;
-  size_t numMaster = 0u, numCoarse = 0u, numNewDaughters;
-  std::array<size_t, maxDaughters> remainingDaughters, newDaughters;
-  std::array<CellKey, maxDaughters> mappedKeys;
+  size_t numMaster = 0u, numCoarse = 0u, stackSize = 0u;
+  std::array<size_t, maxStackSize> candidateCells;
+  std::array<LevelKey, maxStackSize> candidateLevels;
+  std::array<CellKey, maxMappedCells> mappedKeys;
   if (mFlatTreeView.size() > 0) {
     CHECK(mFlatTreeLevelOffsetsView[0] == 0u and mFlatTreeLevelOffsetsView[1] == 1u);    // Only one root cell
     CHECK(mFlatTreeView[0].numMembers == 0u);                                            // No points are members of the root cell
 
-    // Declare a bunch of variables we're going to need.
-    LevelKey ilevel = 0u;
+    // Seed the stack with the root daughters in reverse order so popping the
+    // stack preserves the original daughter traversal order.
+    const auto& root = mFlatTreeView[0];
+    CHECK(root.numDaughters <= maxDaughters);
+    for (auto daughterID = root.numDaughters; daughterID > 0u; --daughterID) {
+      candidateCells[stackSize] = mFlatTreeDaughtersIndicesView[root.daughterOffset + daughterID - 1u];
+      candidateLevels[stackSize] = 1u;
+      ++stackSize;
+    }
+
+    LevelKey ilevel;
     CellKey ix, iy, iz;
-    Scalar cellSize;
-    size_t numRemainingDaughters = mFlatTreeView[0].numDaughters;
-    CHECK(numRemainingDaughters <= maxDaughters);
-    std::copy_n(mFlatTreeDaughtersIndicesView.begin() + mFlatTreeView[0].daughterOffset, numRemainingDaughters, remainingDaughters.begin());
+    while (stackSize > 0u) {
+      --stackSize;
+      const auto cellIndex = candidateCells[stackSize];
+      ilevel = candidateLevels[stackSize];
+      CHECK(ilevel < num1dbits);
+      CHECK(cellIndex < mFlatTreeView.size());
+      const auto& cell = mFlatTreeView[cellIndex];
+      const auto cellSize = this->cellSize(ilevel);
 
-    // Walk the tree, looking for any master cells that are in range of the entrance plane.
-    while (numRemainingDaughters > 0u) {
-      numNewDaughters = 0u;
-      ++ilevel;
-      cellSize = this->cellSize(ilevel);
-    
-      // Walk the candidates.
-      for (auto candidateID = 0u; candidateID < numRemainingDaughters; ++candidateID) {
-        const auto daughterIndex = remainingDaughters[candidateID];
-        CHECK(daughterIndex < mFlatTreeView.size());
-        const auto& cell = mFlatTreeView[daughterIndex];
+      // Check if we're in range of either plane.
+      const bool entranceCheck = (this->distanceToCell(ilevel, cell.key, enterPlane) <= cellSize);
+      const bool exitCheck = (this->distanceToCell(ilevel, cell.key, exitPlane) <= cellSize);
 
-        // Check if we're in range of either plane.
-        const bool entranceCheck = (this->distanceToCell(ilevel, cell.key, enterPlane) <= cellSize);
-        const bool exitCheck = (this->distanceToCell(ilevel, cell.key, exitPlane) <= cellSize);
-
-        // If so, add the daughters to check on the next pass.
-        if (entranceCheck or exitCheck) {
-          CHECK(numNewDaughters + cell.numDaughters <= maxDaughters);
-          std::copy_n(mFlatTreeDaughtersIndicesView.begin() + cell.daughterOffset, cell.numDaughters, newDaughters.begin() + numNewDaughters);
-          numNewDaughters += cell.numDaughters;
-        }
-
-        // Does this cell have members in range of the entrance plane?
-        if (entranceCheck and cell.numMembers > 0u) {
-          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, masterList, cell.memberOffset, numMaster);
-          numMaster += cell.numMembers;
-
-          // Map the cell key through to the exit plane (which may result in more
-          // than one equivalent key).  Then find all the neighbors for those cells,
-          // and add them to the coarse set.
-          auto numMapped = this->mapKey(ilevel, cell.key, enterPlane, exitPlane, mappedKeys);
-          for (auto k = 0u; k < numMapped; ++k) {
-            this->extractCellIndices(mappedKeys[k], ix, iy, iz);
-            const auto coarseOffset = std::min(numCoarse, maxCoarse);
-            auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
-                                                                       coarseNeighbors, coarseOffset);
-            ok &= neighborsOK;
-            numCoarse = numNeighbors;
-            CHECK(numCoarse <= maxCoarse or not ok);
-          }
-        }
-
-        // Does this cell have members in range of the exit plane?
-        if (exitCheck and cell.numMembers > 0u) {
-          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, coarseNeighbors, cell.memberOffset, numCoarse);
-          numCoarse += cell.numMembers;
-
-          // Map the cell key through to the entrance plane.  Any nodes we interact
-          // with on that side are potential masters.
-          auto numMapped = this->mapKey(ilevel, cell.key, exitPlane, enterPlane, mappedKeys);
-          for (auto k = 0u; k < numMapped; ++k) {
-            this->extractCellIndices(mappedKeys[k], ix, iy, iz);
-            const auto masterOffset = std::min(numMaster, maxMaster);
-            auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
-                                                                       masterList, masterOffset);
-            ok &= neighborsOK;
-            numMaster = numNeighbors;
-            CHECK(numMaster <= maxMaster or not ok);
-          }
+      // If so, add the daughters to the depth-first stack.
+      if (entranceCheck or exitCheck) {
+        CHECK(cell.numDaughters <= maxDaughters);
+        CHECK(stackSize + cell.numDaughters <= maxStackSize);
+        CHECK(cell.numDaughters == 0u or ilevel + 1u < num1dbits);
+        for (auto daughterID = cell.numDaughters; daughterID > 0u; --daughterID) {
+          candidateCells[stackSize] = mFlatTreeDaughtersIndicesView[cell.daughterOffset + daughterID - 1u];
+          candidateLevels[stackSize] = ilevel + 1u;
+          ++stackSize;
         }
       }
 
-      // Update the set of daughters to check on the next pass.
-      numRemainingDaughters = numNewDaughters;
-      remainingDaughters = newDaughters;
+      // Does this cell have members in range of the entrance plane?
+      if (entranceCheck and cell.numMembers > 0u) {
+        ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, masterList, cell.memberOffset, numMaster);
+        numMaster += cell.numMembers;
+
+        // Map the cell key through to the exit plane (which may result in more
+        // than one equivalent key).  Then find all the neighbors for those cells,
+        // and add them to the coarse set.
+        const auto numMapped = this->mapKey(ilevel, cell.key, enterPlane, exitPlane, mappedKeys);
+        for (auto k = 0u; k < numMapped; ++k) {
+          this->extractCellIndices(mappedKeys[k], ix, iy, iz);
+          auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
+                                                                     coarseNeighbors, numCoarse);
+          ok &= neighborsOK;
+          numCoarse = numNeighbors;
+        }
+      }
+
+      // Does this cell have members in range of the exit plane?
+      if (exitCheck and cell.numMembers > 0u) {
+        ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, coarseNeighbors, cell.memberOffset, numCoarse);
+        numCoarse += cell.numMembers;
+
+        // Map the cell key through to the entrance plane.  Any nodes we interact
+        // with on that side are potential masters.
+        const auto numMapped = this->mapKey(ilevel, cell.key, exitPlane, enterPlane, mappedKeys);
+        for (auto k = 0u; k < numMapped; ++k) {
+          this->extractCellIndices(mappedKeys[k], ix, iy, iz);
+          auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
+                                                                     masterList, numMaster);
+          ok &= neighborsOK;
+          numMaster = numNeighbors;
+        }
+      }
     }
 
     // Remove duplicates from the master and coarse sets.
