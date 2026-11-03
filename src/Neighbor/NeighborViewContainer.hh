@@ -6,10 +6,14 @@
 #ifndef __Spheral_NeighborViewContainer__
 #define __Spheral_NeighborViewContainer__
 
-#include <span>
-
 #include "chai/ManagedArray.hpp"
 #include "chai/ExecutionSpaces.hpp"
+
+#ifdef SPHERAL_ENABLE_GPU
+#include <span>
+#else
+#include <vector>
+#endif
 
 namespace Spheral {
 

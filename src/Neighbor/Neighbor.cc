@@ -17,7 +17,7 @@ template<typename Dimension>
 Neighbor<Dimension>::
 Neighbor(DataBase<Dimension>& dataBase):
   mDataBase(dataBase),
-  mNodeExtent(FieldStorageType::CopyFields) {
+  mNodeExtent(dataBase.newGlobalFieldList(Vector::zero(), "node extents")) {
 }
 
 }

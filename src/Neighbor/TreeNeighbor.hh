@@ -172,6 +172,8 @@ private:
   using TreeNeighborView<Dimension>::mGridLevelConst0;
   using TreeNeighborView<Dimension>::mXmin;
   using TreeNeighborView<Dimension>::mXmax;
+  using TreeNeighborView<Dimension>::mDataBaseView;
+  using TreeNeighborView<Dimension>::mNodeExtentView;
 };
 
 }

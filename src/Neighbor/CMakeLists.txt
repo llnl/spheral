@@ -1,10 +1,13 @@
 set(Neighbor_inst
   Neighbor
-  PythonNeighbor
   TreeNeighborView
   TreeNeighbor
   ConnectivityMap
 )
+
+if (NOT SPHERAL_ENABLE_GPU)
+  list(APPEND Neighbor_inst PythonNeighbor)
+endif()
 
 set(Neighbor_sources 
   NodePairList.cc
@@ -13,7 +16,7 @@ set(Neighbor_sources
 instantiate(Neighbor_inst Neighbor_sources)
 
 set(Neighbor_headers
-  NeighborVariants.hh
+  NeighborVariant.hh
   NeighborSearchType.hh
   ConnectivityMap.hh
   ConnectivityMapInline.hh

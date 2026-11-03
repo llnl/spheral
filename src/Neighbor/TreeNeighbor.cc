@@ -84,11 +84,11 @@ updateNodes() {
     }
   }
 
-  // Construct the immutable, device-accessible representation of the tree.
-  this->flattenTreeAndUpdateView();
-
   // Force the node extents to be calculated.
   this->setNodeExtents(mDataBase.view());
+
+  // Construct the immutable, device-accessible representation of the tree.
+  this->flattenTreeAndUpdateView();
 
   ENSURE(valid());
 }
@@ -591,6 +591,9 @@ flattenTreeAndUpdateView() {
   ViewType::mFlatTreeMembersView = mFlatTreeMembers;
   ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
 #endif
+
+  mDataBaseView = mDataBase.view();
+  mNodeExtentView = mNodeExtent.view();
 }
 
 }
