@@ -198,7 +198,8 @@ protected:
                                                                  const CellKey ix_master,
                                                                  const CellKey iy_master,
                                                                  const CellKey iz_master,
-                                                                 std::span<NodeID> neighbors) const;
+                                                                 Container<NodeID>& neighbors,
+                                                                 size_t numNeighbors = 0u) const;
 
   // Shift a 1D key from one level to another.
   SPHERAL_HOST_DEVICE CellKey shiftKeyLevel(const CellKey ix, const LevelKey level0, const LevelKey level1) const;

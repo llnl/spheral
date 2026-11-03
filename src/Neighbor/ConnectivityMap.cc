@@ -37,7 +37,11 @@ setMasterList(const NeighborType& neighbor,
               std::vector<std::pair<size_t, size_t>>& masterList,
               std::vector<std::pair<size_t, size_t>>& coarseNeighbors,
               const bool ghostConnectivity) {
+
+#ifdef SPHERAL_ENABLE_GPU
+  // GPU friendly views
   using NodeID = std::pair<size_t, size_t>;
+
 #ifdef SPHERAL_UNIFIED_MEMORY
   NeighborViewContainer<NodeID> nativeMasterList(masterList.data(), masterList.size());
   NeighborViewContainer<NodeID> nativeCoarseNeighbors(coarseNeighbors.data(), coarseNeighbors.size());
@@ -48,7 +52,17 @@ setMasterList(const NeighborType& neighbor,
   return neighbor.setMasterList(position, H,
                                 nativeMasterList, nativeCoarseNeighbors,
                                 ghostConnectivity);
+#else
+
+  // Not using GPU's, just directly uss the std::vectors
+  return neighbor.setMasterList(position, H,
+                                masterList, coarseNeighbors,
+                                ghostConnectivity);
+
+#endif
+
 }
+
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1
 //------------------------------------------------------------------------------

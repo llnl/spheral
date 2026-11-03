@@ -13,10 +13,19 @@
 
 namespace Spheral {
 
+#ifdef SPHERAL_ENABLE_GPU
+
+// GPU friendly container for views  
 #ifdef SPHERAL_UNIFIED_MEMORY
 template<typename T> using NeighborViewContainer = std::span<T>;
 #else
 template<typename T> using NeighborViewContainer = chai::ManagedArray<T>;
+#endif
+
+#else
+// Non-GPU container, just reference the std::vector
+template<typename T> using NeighborViewContainer = std::vector<T>;
+
 #endif
 
 }

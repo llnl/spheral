@@ -25,15 +25,21 @@ template<typename Dimension> class PythonNeighbor;
 // NeighborViews: used by clients to get potential Neighbors (possibly on device)
 //------------------------------------------------------------------------------
 template<typename Dimension>
-using NeighborViewVariant = std::variant<std::unique_ptr<TreeNeighborView<Dimension>>,
-                                         std::unique_ptr<PythonNeighbor<Dimension>>>;
+using NeighborViewVariant = std::variant<std::unique_ptr<TreeNeighborView<Dimension>>
+#ifndef SPHERAL_ENABLE_GPU
+                                        ,std::unique_ptr<PythonNeighbor<Dimension>>
+#endif
+                                         >;
 
 //------------------------------------------------------------------------------
 // NeighorValues: the full Neighbor objects that allocate and hold memory
 //------------------------------------------------------------------------------
 template<typename Dimension>
-using NeighborVariant = std::variant<std::unique_ptr<TreeNeighbor<Dimension>>,
-                                     std::unique_ptr<PythonNeighbor<Dimension>>>;
+using NeighborVariant = std::variant<std::unique_ptr<TreeNeighbor<Dimension>>
+#ifndef SPHERAL_ENABLE_GPU
+                                    ,std::unique_ptr<PythonNeighbor<Dimension>>
+#endif
+                                     >;
 
 //------------------------------------------------------------------------------
 // Visitor pattern

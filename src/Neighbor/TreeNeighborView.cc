@@ -95,6 +95,38 @@ findCellVertices(const Dim<3>::Vector& xmin,
   }};
 }
 
+//------------------------------------------------------------------------------
+// Append elements to a container checking if it can be resized
+//------------------------------------------------------------------------------
+template<typename InContainer,
+         typename OutContainer>
+SPHERAL_HOST_DEVICE
+inline
+bool
+copy_n_conditional(const InContainer& source,
+                   const size_t numSource,
+                   OutContainer& dest,
+                   const size_t sourceOffset = 0u,
+                   const size_t destOffset = 0u) {
+  // If there's enough space available in the destination, it's simple
+  const auto sizeAvail = destOffset < dest.size() ? dest.size() - destOffset : 0u;
+  if (sizeAvail >= numSource) {
+    std::copy_n(source.begin() + sourceOffset, numSource, dest.begin() + destOffset);
+    return true;
+  }
+
+  // There is not enough space available to start. If the destination can
+  // be resized do it, otherwise we have to fail
+  if constexpr (requires { dest.resize(std::size_t{0}); }) {
+      dest.resize(dest.size() + numSource - sizeAvail);
+      CHECK(dest.size() == destOffset + numSource);
+      std::copy_n(source.begin() + sourceOffset, numSource, dest.begin() + destOffset);
+      return true;
+    }
+
+  return false;
+}
+
 }  // anonymous
 
 //------------------------------------------------------------------------------
@@ -235,8 +267,7 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
 
         // Does this cell have members in range of the entrance plane?
         if (entranceCheck and cell.numMembers > 0u) {
-          ok &= numMaster + cell.numMembers <= maxMaster;
-          if (ok) std::copy_n(mFlatTreeMembersView.begin() + cell.memberOffset, cell.numMembers, masterList.begin() + numMaster);
+          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, masterList, cell.memberOffset, numMaster);
           numMaster += cell.numMembers;
 
           // Map the cell key through to the exit plane (which may result in more
@@ -247,18 +278,16 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
             this->extractCellIndices(mappedKeys[k], ix, iy, iz);
             const auto coarseOffset = std::min(numCoarse, maxCoarse);
             auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
-                                                                       std::span<NodeID>(coarseNeighbors.begin() + coarseOffset,
-                                                                                         maxCoarse - coarseOffset));
+                                                                       coarseNeighbors, coarseOffset);
             ok &= neighborsOK;
-            numCoarse += numNeighbors;
+            numCoarse = numNeighbors;
             CHECK(numCoarse <= maxCoarse or not ok);
           }
         }
 
         // Does this cell have members in range of the exit plane?
         if (exitCheck and cell.numMembers > 0u) {
-          ok &= numCoarse + cell.numMembers <= maxCoarse;
-          if (ok) std::copy_n(mFlatTreeMembersView.begin() + cell.memberOffset, cell.numMembers, coarseNeighbors.begin() + numCoarse);
+          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, coarseNeighbors, cell.memberOffset, numCoarse);
           numCoarse += cell.numMembers;
 
           // Map the cell key through to the entrance plane.  Any nodes we interact
@@ -268,10 +297,9 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
             this->extractCellIndices(mappedKeys[k], ix, iy, iz);
             const auto masterOffset = std::min(numMaster, maxMaster);
             auto [neighborsOK, numNeighbors] = this->findTreeNeighbors(ilevel, ix, iy, iz,
-                                                                       std::span<NodeID>(masterList.begin() + masterOffset,
-                                                                                         maxMaster - masterOffset));
+                                                                       masterList, masterOffset);
             ok &= neighborsOK;
-            numMaster += numNeighbors;
+            numMaster = numNeighbors;
             CHECK(numMaster <= maxMaster or not ok);
           }
         }
@@ -339,7 +367,6 @@ setTreeMasterList(const LevelKey levelID,
                   Container<NodeID>& coarseNeighbors,
                   const bool ghostConnectivity) const {
   REQUIRE(levelID < num1dbits);
-  const auto maxMaster = masterList.size();
 
   // Get the per dimension cell indices.
   CellKey ix_master, iy_master, iz_master;
@@ -356,8 +383,7 @@ setTreeMasterList(const LevelKey levelID,
     if (k < mFlatTreeView.size()) {
       const auto& cell = mFlatTreeView[k];
       numMaster = cell.numMembers;
-      ok &= numMaster <= maxMaster;
-      if (ok) std::copy_n(mFlatTreeMembersView.begin() + cell.memberOffset, cell.numMembers, masterList.begin());
+      ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, masterList, cell.memberOffset);
     }
   }
 
@@ -368,25 +394,25 @@ setTreeMasterList(const LevelKey levelID,
                                                        ix_master,
                                                        iy_master,
                                                        iz_master,
-                                                       std::span<NodeID>(coarseNeighbors.begin(), coarseNeighbors.size()));
+                                                       coarseNeighbors);
     ok &= ok_coarse;
   }
 
   // Remove all ghost nodes from the master list.
-  if (numMaster <= maxMaster) {
+  if (ok) {
     std::sort(masterList.begin(), masterList.begin() + numMaster);
-  }
-  if (numMaster <= maxMaster and not ghostConnectivity) {
-    const auto& nodeLists = mDataBaseView.nodeListViews();
-    size_t writeIndex = 0u;
-    for (size_t readIndex = 0u; readIndex < numMaster; ++readIndex) {
-      const auto& nodeID = masterList[readIndex];
-      CHECK(nodeID.first < nodeLists.size());
-      if (nodeID.second < nodeLists[nodeID.first].firstGhostNode()) {
-        masterList[writeIndex++] = nodeID;
+    if (not ghostConnectivity) {
+      const auto& nodeLists = mDataBaseView.nodeListViews();
+      size_t writeIndex = 0u;
+      for (size_t readIndex = 0u; readIndex < numMaster; ++readIndex) {
+        const auto& nodeID = masterList[readIndex];
+        CHECK(nodeID.first < nodeLists.size());
+        if (nodeID.second < nodeLists[nodeID.first].firstGhostNode()) {
+          masterList[writeIndex++] = nodeID;
+        }
       }
+      numMaster = writeIndex;
     }
-    numMaster = writeIndex;
   }
 
   // Post conditions.
@@ -482,10 +508,10 @@ findTreeNeighbors(const LevelKey masterLevel,
                   const CellKey ix_master,
                   const CellKey iy_master,
                   const CellKey iz_master,
-                  std::span<NodeID> neighbors) const {
+                  Container<NodeID>& neighbors,
+                  size_t numNeighbors) const {
 
   // Declare variables.
-  const auto maxNeighbors = neighbors.size();
   constexpr size_t maxDaughters = Dimension::pownu(4u);  // Down 2 levels
   LevelKey ilevel = 0;
   CellKey ix, iy, iz, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max, delta;
@@ -494,7 +520,6 @@ findTreeNeighbors(const LevelKey masterLevel,
 
   // Walk the tree until we run out of daughters to check.
   bool ok = true;
-  size_t numNeighbors = 0u;
   if (mFlatTreeView.size() > 0u) {
     CHECK2(mFlatTreeView[0].numMembers == 0u, "TreeNeighbor root cell occupied!  Will miss neighbors... " << mFlatTreeView[0].numMembers);
     numRemainingDaughters = mFlatTreeView[0].numDaughters;
@@ -530,8 +555,7 @@ findTreeNeighbors(const LevelKey masterLevel,
         if (keyInRange(cell.key, ix_min, iy_min, iz_min, ix_max, iy_max, iz_max)) {
         
           // Copy this cells members to the result.
-          ok &= numNeighbors + cell.numMembers <= maxNeighbors;
-          if (ok) std::copy_n(mFlatTreeMembersView.begin() + cell.memberOffset, cell.numMembers, neighbors.begin() + numNeighbors);
+          ok &= copy_n_conditional(mFlatTreeMembersView, cell.numMembers, neighbors, cell.memberOffset, numNeighbors);
           numNeighbors += cell.numMembers;
 
           // Add any daughters of this cell to our candidates to check on the next level.
