@@ -126,14 +126,6 @@ public:
     return asDescendant()->setMasterList(enterPlane, exitPlane, masterList, coarseNeighbors);
   }
 
-  //.............................................................................
-  // Requirements for rebuilding the internal data of a NeighborView object.
-  // Expected to be CPU Value object tasks for now.
-  // Force the update of internal data for the NodeList.
-  SPHERAL_HOST_DEVICE void updateNodes(const DataBaseView<Dimension>& dataBase) { asDescendant()->updateNodes(dataBase); }
-  SPHERAL_HOST_DEVICE void updateNodes(const DataBaseView<Dimension>& dataBase,
-                                       const std::span<NodeID>& nodeIDs)        { asDescendant()->updateNodes(dataBase, nodeIDs); }
-
 protected:
   //-------------------------- Protected Interface --------------------------//
   DataBaseView<Dimension> mDataBaseView;

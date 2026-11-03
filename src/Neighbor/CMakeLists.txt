@@ -18,6 +18,7 @@ instantiate(Neighbor_inst Neighbor_sources)
 set(Neighbor_headers
   NeighborVariant.hh
   NeighborSearchType.hh
+  NeighborViewContainer.hh
   ConnectivityMap.hh
   ConnectivityMapInline.hh
   NodePairIdxType.hh
