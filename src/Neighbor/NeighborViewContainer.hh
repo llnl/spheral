@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// Common non-owning container used by all NeighborView implementations.
+// Common fixed-capacity container interface used by NeighborView implementations.
 //
 // Created by J. Michael Owen, Mon Sep 28 16:53:54 PDT 2026
 //----------------------------------------------------------------------------//
@@ -27,7 +27,8 @@ template<typename T> using NeighborViewContainer = chai::ManagedArray<T>;
 #endif
 
 #else
-// Non-GPU container, just reference the std::vector
+// Non-GPU container. NeighborView methods treat this as fixed-capacity; owning
+// callers are responsible for resizing and retrying when a method returns false.
 template<typename T> using NeighborViewContainer = std::vector<T>;
 
 #endif
