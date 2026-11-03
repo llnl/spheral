@@ -20,13 +20,13 @@
 #include "Utilities/SpheralMessage.hh"
 
 #include <ctime>
-#include <type_traits>
 
 namespace Spheral {
 
 namespace {
 //------------------------------------------------------------------------------
-// Adapt ConnectivityMap's host vectors to each concrete Neighbor buffer type.
+// Present ConnectivityMap's owning host vectors through the common,
+// non-owning NeighborViewContainer interface.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename NeighborType>
 inline
@@ -37,22 +37,17 @@ setMasterList(const NeighborType& neighbor,
               std::vector<std::pair<size_t, size_t>>& masterList,
               std::vector<std::pair<size_t, size_t>>& coarseNeighbors,
               const bool ghostConnectivity) {
-  if constexpr (std::is_same_v<std::remove_cvref_t<NeighborType>, PythonNeighbor<Dimension>>) {
-    return neighbor.setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
-  } else {
-    using NativeContainer = typename TreeNeighborView<Dimension>::template Container<std::pair<size_t, size_t>>;
+  using NodeID = std::pair<size_t, size_t>;
 #ifdef SPHERAL_UNIFIED_MEMORY
-    NativeContainer nativeMasterList(masterList.data(), masterList.size());
-    NativeContainer nativeCoarseNeighbors(coarseNeighbors.data(), coarseNeighbors.size());
+  NeighborViewContainer<NodeID> nativeMasterList(masterList.data(), masterList.size());
+  NeighborViewContainer<NodeID> nativeCoarseNeighbors(coarseNeighbors.data(), coarseNeighbors.size());
 #else
-    auto nativeMasterList = chai::makeManagedArray(masterList.data(), masterList.size(), chai::CPU, false);
-    auto nativeCoarseNeighbors = chai::makeManagedArray(coarseNeighbors.data(), coarseNeighbors.size(), chai::CPU, false);
+  NeighborViewContainer<NodeID> nativeMasterList = chai::makeManagedArray(masterList.data(), masterList.size(), chai::CPU, false);
+  NeighborViewContainer<NodeID> nativeCoarseNeighbors = chai::makeManagedArray(coarseNeighbors.data(), coarseNeighbors.size(), chai::CPU, false);
 #endif
-    const auto result = neighbor.setMasterList(position, H,
-                                               nativeMasterList, nativeCoarseNeighbors,
-                                               ghostConnectivity);
-    return result;
-  }
+  return neighbor.setMasterList(position, H,
+                                nativeMasterList, nativeCoarseNeighbors,
+                                ghostConnectivity);
 }
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1

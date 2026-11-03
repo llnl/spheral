@@ -37,8 +37,11 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using NodeID = typename Neighbor<Dimension>::NodeID;
-  using Container = std::vector<NodeID>;
+  using BaseValueType = Neighbor<Dimension>;
+  using BaseViewType  = NeighborView<Dimension, PythonNeighbor<Dimension>>;
+
+  using NodeID = typename BaseValueType::NodeID;
+  template<typename T> using Container = typename BaseViewType::template Container<T>;
 
   PythonNeighbor(DataBase<Dimension>& dataBase,
                  const NeighborSearchType searchType,
@@ -49,30 +52,32 @@ public:
   // The required interface for NeighborView objects
   virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                          const SymTensor& H,
-                                                         Container& masterList,
-                                                         Container& coarseNeighbors,
+                                                         Container<NodeID>& masterList,
+                                                         Container<NodeID>& coarseNeighbors,
                                                          const bool ghostConnectivity = false) const = 0;
 
-  virtual std::tuple<bool, size_t, size_t> setRefineNeighborList(const Vector& position,
-                                                                 const SymTensor& H,
-                                                                 const Container& coarseNeighbors,
-                                                                 Container& refineNeighbors) const = 0;
+  virtual size_t setRefineNeighborList(const Vector& position,
+                                       const SymTensor& H,
+                                       const size_t numCoarse,
+                                       const Container<NodeID>& coarseNeighbors,
+                                       Container<NodeID>& refineNeighbors) const = 0;
 
   // Set Neighbors for the given position.
   virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
-                                                         Container& masterList,
-                                                         Container& coarseNeighbors,
+                                                         Container<NodeID>& masterList,
+                                                         Container<NodeID>& coarseNeighbors,
                                                          const bool ghostConnectivity = false) const = 0;
 
-  virtual std::tuple<bool, size_t, size_t> setRefineNeighborList(const Vector& position,
-                                                                 const Container& coarseNeighbors,
-                                                                 Container& refineNeighbors) const = 0;
+  virtual size_t setRefineNeighborList(const Vector& position,
+                                       const size_t numCoarse,
+                                       const Container<NodeID>& coarseNeighbors,
+                                       Container<NodeID>& refineNeighbors) const = 0;
 
   // Set the neighbor lists based on proximity to planes.
   virtual std::tuple<bool, size_t, size_t> setMasterList(const GeomPlane<Dimension>& enterPlane,
                                                          const GeomPlane<Dimension>& exitPlane,
-                                                         Container& masterList,
-                                                         Container& coarseNeighbors) const = 0;
+                                                         Container<NodeID>& masterList,
+                                                         Container<NodeID>& coarseNeighbors) const = 0;
 
 private:
   //-------------------------- Private Interface --------------------------//

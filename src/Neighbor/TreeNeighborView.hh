@@ -15,10 +15,6 @@
 
 #include "Neighbor/NeighborView.hh"
 
-#include "chai/ManagedArray.hpp"
-#include "chai/ExecutionSpaces.hpp"
-
-#include <axom/core.hpp>
 #include <algorithm>
 #include <cmath>
 #include <span>
@@ -39,16 +35,11 @@ public:
   using DimensionType = Dimension;
   using BaseType = NeighborView<Dimension, TreeNeighborView<Dimension>>;
   using NodeID = typename BaseType::NodeID;
+  template<typename T> using Container = typename BaseType::template Container<T>;
 
   // Data types we use to build the internal tree structure.
   using LevelKey = uint32_t;
   using CellKey = uint64_t;
-
-#ifdef SPHERAL_UNIFIED_MEMORY
-  template<typename T> using Container = std::span<T>;
-#else
-  template<typename T> using Container = typename chai::ManagedArray<T>;
-#endif
 
   // Constructors and destructors
   SPHERAL_HOST_DEVICE TreeNeighborView(DataBaseView<Dimension> dataBase,

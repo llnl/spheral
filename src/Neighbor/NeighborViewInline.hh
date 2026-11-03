@@ -112,13 +112,12 @@ setGhostNodeExtents(const DataBaseView<Dimension>& dataBase) {
 }
 
 template<typename Dimension, typename Descendant>
-template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 void
 NeighborView<Dimension, Descendant>::
 setNodeExtents(const DataBaseView<Dimension>& dataBase,
-               const Container<size_t>& nodeIDs) {
+               const Container<NodeID>& nodeIDs) {
   REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
   const auto& nodeListViews = dataBase.nodeListViews();
   for (auto [k, i]: nodeIDs) {
@@ -132,7 +131,6 @@ setNodeExtents(const DataBaseView<Dimension>& dataBase,
 // extents.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 NeighborView<Dimension, Descendant>::
@@ -202,94 +200,6 @@ precullList(const FieldListView<Dimension, Vector>& positions,
   ENSURE(result <= numCoarse);
   return result;
 }
-
-// //------------------------------------------------------------------------------
-// // Static method for setting master/coarse on multiple NodeLists/Neighbors.
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename Descendant>
-// template<typename NodeListIterator, typename ContainerOfContainers, typename Container>
-// SPHERAL_HOST_DEVICE 
-// bool                       // success/fail
-// Neighbor<Dimension, Descendant>::
-// setMasterNeighborGroup(const typename Dimension::Vector& position,
-//                        const typename Dimension::SymTensor& H,
-//                        const NodeListIterator& nodeListBegin,
-//                        const NodeListIterator& nodeListEnd,
-//                        const Scalar kernelExtent,
-//                        ContainerOfContainers& masterLists,
-//                        ContainerOfContainers& coarseNeighbors,
-//                        Container& numMasters,
-//                        Container& numCoarseNeighbors,
-//                        const bool ghostConnectivity) {
-
-//   // Pre-conditions
-//   const auto numNodeLists = std::distance(nodeListBegin, nodeListEnd);
-//   REQUIRE(masterLists.size() == numNodeLists and
-//           coarseNeighbors.size() == numNodeLists and
-//           numMasters.size() == numNodeLists and
-//           numCoarseNeighbors.size() == numNodeLists);
-
-//   // Initializations
-//   Vector minMasterPosition = Vector::one() * std::numeric_limits<Scalar>::max();
-//   Vector maxMasterPosition = Vector::one() * std::numeric_limits<Scalar>::lowest();
-//   Vector minMasterExtent, maxMasterExtent;
-
-//   // Loop over all the NodeLists.
-//   bool result = true;
-//   for (auto [nodeListi, nodeListPtr]: enumerate(nodeListBegin, nodeListEnd)) { 
-//     const auto& neighbor = nodeListPtr->neighborView();
-
-//     // Begin by setting the basic master/coarse neighbor info for each individual NodeList.
-//     bool status;
-//     std::tie(status, numMasters[nodeListi], numCoarseNeighbors[nodeListi]) = neighbor.setMasterList(position, H, masterLists[nodeListi], coarseNeighbors[nodeListi], ghostConnectivity);
-//     result &= status;
-
-//     // Accumulate the min/max master node positions and extents.
-//     if (result) {
-//       const auto& positions = nodeListPtr->positions();
-//       const auto& extents = neighbor.nodeExtentField();
-//       for (auto imaster = 0; imaster < numMasters[nodeListi]; ++imaster) {
-//         const auto  i = masterLists[nodeListi][imaster];
-//         const auto& ri = positions(i);
-//         const auto  minExtenti = ri - extents(i);
-//         const auto  maxExtenti = ri + extents(i);
-//         for (auto k = 0u; k < Dimension::nDim; ++k) {
-//           minMasterPosition(k) = std::min(minMasterPosition(k), ri(k));
-//           maxMasterPosition(k) = std::max(maxMasterPosition(k), ri(k));
-//           minMasterExtent(k) = std::min(minMasterExtent(k), minExtenti(k));
-//           maxMasterExtent(k) = std::max(maxMasterExtent(k), maxExtenti(k));
-//         }
-//       }
-//     }
-//   }
-
-//   // Don't forget to compare these positions and extents with the given position/extent. :-P
-//   if (result) {
-//     const auto extent = HExtent(H, kernelExtent);
-//     const auto minExtenti = position - extent;
-//     const auto maxExtenti = position + extent;
-//     for (auto k = 0u; k < Dimension::nDim; ++k) {
-//       minMasterPosition(k) = std::min(minMasterPosition(k), position(k));
-//       maxMasterPosition(k) = std::max(maxMasterPosition(k), position(k));
-//       minMasterExtent(k) = std::min(minMasterExtent(k), minExtenti(k));
-//       maxMasterExtent(k) = std::max(maxMasterExtent(k), maxExtenti(k));
-//     }
-
-//     // Loop over the nodes again, and cull the coarse neighbor lists according
-//     // to the overall min/max master distribution we just calcuated.
-//     // WARNING!  After this step the neighbor information in the NodeLists is only
-//     // guaranteed complete for the set of NodeLists passed to this method!
-//     for (auto nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
-//       const auto& nodeList = **(nodeListBegin + nodeListi);
-//       const auto& neighbor = nodeList.neighbor();
-//       numCoarseNeighbors[nodeListi] = neighbor.precullList(minMasterPosition, maxMasterPosition,
-//                                                            minMasterExtent, maxMasterExtent,
-//                                                            coarseNeighbors[nodeListi]);
-//     }
-//   }
-
-//   return result;
-// }
 
 //------------------------------------------------------------------------------
 // Calculate the maximum radial extent of a given smoothing tensor.

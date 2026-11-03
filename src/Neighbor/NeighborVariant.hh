@@ -1,5 +1,5 @@
 //---------------------------------Spheral++----------------------------------//
-// NeighborVariants -- The variant type of possible Neighbor objects
+// NeighborVariant -- The variant types of possible Neighbor objects
 //
 // Created by J. Michael Owen, Mon Sep 28 16:53:54 PDT 2026
 //----------------------------------------------------------------------------//
@@ -7,16 +7,18 @@
 #define __Spheral_NeighborVariant__
 
 #include <memory>
+#include <span>
 #include <utility>
 #include <variant>
 
+#include "Neighbor/NeighborViewContainer.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
 
+// Forward declarations
 template<typename Dimension> class TreeNeighbor;
 template<typename Dimension> class TreeNeighborView;
-
 template<typename Dimension> class PythonNeighbor;
 
 //------------------------------------------------------------------------------
