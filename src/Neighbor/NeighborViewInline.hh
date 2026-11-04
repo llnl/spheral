@@ -71,9 +71,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 NeighborView<Dimension, Descendant>::
-setNodeExtents(const DataBaseView<Dimension>& dataBase) {
-  REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
-  for (auto [k, nv]: enumerate(dataBase.nodeListViews())) {
+setNodeExtents() {
+  REQUIRE(mNodeExtentView.numFields() == mDataBaseView.numNodeLists());
+  for (auto [k, nv]: enumerate(mDataBaseView.nodeListViews())) {
     const auto& H = nv.Hfield();
     for (auto i = 0u; i < nv.numNodes(); ++i) {
       mNodeExtentView(k,i) = Hextent(H(i), mKernelExtent);
@@ -86,9 +86,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 NeighborView<Dimension, Descendant>::
-setInternalNodeExtents(const DataBaseView<Dimension>& dataBase) {
-  REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
-  for (auto [k, nv]: enumerate(dataBase.nodeListViews())) {
+setInternalNodeExtents() {
+  REQUIRE(mNodeExtentView.numFields() == mDataBaseView.numNodeLists());
+  for (auto [k, nv]: enumerate(mDataBaseView.nodeListViews())) {
     const auto& H = nv.Hfield();
     for (auto i = 0u; i < nv.numInternalNodes(); ++i) {
       mNodeExtentView(k,i) = Hextent(H(i), mKernelExtent);
@@ -101,9 +101,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 NeighborView<Dimension, Descendant>::
-setGhostNodeExtents(const DataBaseView<Dimension>& dataBase) {
-  REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
-  for (auto [k, nv]: enumerate(dataBase.nodeListViews())) {
+setGhostNodeExtents() {
+  REQUIRE(mNodeExtentView.numFields() == mDataBaseView.numNodeLists());
+  for (auto [k, nv]: enumerate(mDataBaseView.nodeListViews())) {
     const auto& H = nv.Hfield();
     for (auto i = nv.firstGhostNode(); i < nv.numNodes(); ++i) {
       mNodeExtentView(k,i) = Hextent(H(i), mKernelExtent);
@@ -116,10 +116,9 @@ SPHERAL_HOST_DEVICE
 inline
 void
 NeighborView<Dimension, Descendant>::
-setNodeExtents(const DataBaseView<Dimension>& dataBase,
-               const Container<NodeID>& nodeIDs) {
-  REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
-  const auto& nodeListViews = dataBase.nodeListViews();
+setNodeExtents(const Container<NodeID>& nodeIDs) {
+  REQUIRE(mNodeExtentView.numFields() == mDataBaseView.numNodeLists());
+  const auto& nodeListViews = mDataBaseView.nodeListViews();
   for (auto [k, i]: nodeIDs) {
     const auto& Hi = nodeListViews[k].Hfield()(i);
     mNodeExtentView(k,i) = Hextent(Hi, mKernelExtent);

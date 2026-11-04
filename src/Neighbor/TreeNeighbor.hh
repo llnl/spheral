@@ -63,6 +63,7 @@ public:
 
   //.............................................................................
   // The required Neighbor interface
+
   // Force the update of internal data for the NodeList.
   virtual void updateNodes() override;
   virtual void updateNodes(const std::span<NodeID>& nodeIDs) override;

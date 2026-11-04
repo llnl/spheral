@@ -20,4 +20,17 @@ Neighbor(DataBase<Dimension>& dataBase):
   mNodeExtent(dataBase.newGlobalFieldList(Vector::zero(), "node extents")) {
 }
 
+//------------------------------------------------------------------------------
+// Force the nodeExtent FieldList to be sized correctly
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+Neighbor<Dimension>::
+resizeNodeExtents() {
+  mDataBase.resizeGlobalFieldList(mNodeExtent,
+                                  Vector::zero(),
+                                  "node extents",
+                                  false);
+}
+
 }

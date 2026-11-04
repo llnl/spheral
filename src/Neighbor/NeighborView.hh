@@ -45,7 +45,7 @@ public:
                                    const Scalar kernelExtent);
   SPHERAL_HOST_DEVICE NeighborView(const NeighborView& rhs) = default;
   SPHERAL_HOST_DEVICE NeighborView(NeighborView&& rhs) = default;
-  SPHERAL_HOST_DEVICE virtual ~NeighborView() = default;
+  SPHERAL_HOST_DEVICE ~NeighborView() = default;
 
   // Access our data
   SPHERAL_HOST_DEVICE const DataBaseView<Dimension>& dataBaseView()              const { return mDataBaseView; }
@@ -54,11 +54,10 @@ public:
   SPHERAL_HOST_DEVICE Scalar kernelExtent()                                      const { return mKernelExtent; }
 
   // Force the node extent field to be computed.
-  SPHERAL_HOST_DEVICE void setNodeExtents(const DataBaseView<Dimension>& dataBase);
-  SPHERAL_HOST_DEVICE void setInternalNodeExtents(const DataBaseView<Dimension>& dataBase);
-  SPHERAL_HOST_DEVICE void setGhostNodeExtents(const DataBaseView<Dimension>& dataBase);
-  SPHERAL_HOST_DEVICE void setNodeExtents(const DataBaseView<Dimension>& dataBase,
-                                          const Container<NodeID>& nodeIDs);
+  SPHERAL_HOST_DEVICE void setNodeExtents();
+  SPHERAL_HOST_DEVICE void setInternalNodeExtents();
+  SPHERAL_HOST_DEVICE void setGhostNodeExtents();
+  SPHERAL_HOST_DEVICE void setNodeExtents(const Container<NodeID>& nodeIDs);
 
   // Helper method to cull lists of neighbors based on min/max positions and min/max extents.
   // Note: this method modifies the passed coarseList in-place, and returns the resulting size

@@ -86,7 +86,7 @@ updateNodes() {
 
   // Force the node extents to be calculated.
   mDataBase.resizeGlobalFieldList(mNodeExtent, Vector::zero(), "node extents", false);
-  this->setNodeExtents(mDataBase.view());
+  this->setNodeExtents();
 
   // Construct the immutable, device-accessible representation of the tree.
   this->flattenTreeAndUpdateView();

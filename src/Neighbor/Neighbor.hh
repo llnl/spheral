@@ -35,7 +35,11 @@ public:
   virtual ~Neighbor() = default;
 
   // Public access to our basic state data
+  const DataBase<Dimension>& dataBase()                  const { return mDataBase; }
   const FieldList<Dimension, Vector>& nodeExtent()       const { return mNodeExtent; }
+
+  // Force the nodeExtent FieldList to be sized correctly
+  void resizeNodeExtents();
 
   //.............................................................................
   // Requirements for rebuilding the internal data of a Neighbor object.

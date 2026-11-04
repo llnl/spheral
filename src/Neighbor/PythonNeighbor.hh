@@ -80,8 +80,9 @@ public:
 
 private:
   //-------------------------- Private Interface --------------------------//
-  using Neighbor<Dimension>::mDataBase;
-  using Neighbor<Dimension>::mNodeExtent;
+  using BaseValueType::mDataBase;
+  using BaseValueType::mNodeExtent;
+  using BaseViewType::mDataBaseView;
 };
 
 }
