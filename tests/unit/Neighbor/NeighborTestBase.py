@@ -373,7 +373,9 @@ class NeighborTestBase:
         for pair in random.sample(pairs, self.ncheck):
             print("Checking ", pair)
             answer = intersectionAnswer(pair)
-            intersect = convertToSets(answer)
+            intersect = convertToSets(
+                cm.connectivityIntersectionForNodes(pair.i_list, pair.i_node,
+                                                    pair.j_list, pair.j_node))
             assert len(intersect) == numNodeLists
             print(answer)
             print(intersect)
