@@ -19,6 +19,7 @@
 #include "Utilities/SpheralMessage.hh"
 #include "Distributed/allReduce.hh"
 #include "Distributed/Communicator.hh"
+#include "Threading/GPUUtils.hh"
 #include "Utilities/DBC.hh"
 
 #ifdef SPHERAL_ENABLE_MPI
@@ -35,7 +36,7 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 DataBase<Dimension>::
-DataBase():
+DataBase(const Scalar kernelExtent):
   DataBaseView<Dimension>(),
   mNodeListPtrs(),
   mFluidNodeListPtrs(),
@@ -44,6 +45,11 @@ DataBase():
   mSolidNodeListAsNodeListPtrs(),
   mDEMNodeListPtrs(),
   mDEMNodeListAsNodeListPtrs(),
+  mNeighbor(std::make_unique<TreeNeighbor<Dimension>>(*this,
+                                                      NeighborSearchType::GatherScatter,
+                                                      kernelExtent,
+                                                     -10.0 * Vector::one(),
+                                                      10.0 * Vector::one())),
   mConnectivityMapPtr(nullptr),
   mNodeListViewStorage(),
   mFluidNodeListViewStorage(),
@@ -143,55 +149,56 @@ void
 DataBase<Dimension>::
 reinitializeNeighbors() const {
 
-  // // Find the current bounding box and average node extent in one loop.
-  // // Compute the average node extent.
-  // auto xmin = Vector(0.1*std::numeric_limits<Scalar>::max()), xmax = 0.1*Vector(std::numeric_limits<Scalar>::lowest());
-  // unsigned ntot = 0;
-  // Scalar havg = 0.0, hmax = 0.0, maxExtent = 0.0;
-  // for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
-  //   const auto positions = (*itr)->positions();
-  //   const auto  n = (*itr)->numInternalNodes();
-  //   const auto& neighbor = (*itr)->neighbor();
-  //   const auto  etaMax = neighbor.kernelExtent();
-  //   maxExtent = std::max(maxExtent, etaMax);
-  //   ntot += n;
-  //   for (auto i = 0u; i < n; ++i) {
-  //     const auto& xi = positions(i);
-  //     xmin = elementWiseMin(xmin, xi);
-  //     xmax = elementWiseMax(xmax, xi);
-  //     const auto hi = neighbor.nodeExtent(i).maxElement()/etaMax;
-  //     havg += hi;
-  //     hmax = std::max(hmax, hi);
-  //   }
-  // }
+  // Make sure the node extents are up to date and grab them
+  const auto& nodeExtents = visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.resizeNodeExtents(); neighbor.setNodeExtents(); return neighbor.nodeExtentView(); });
 
-  // // Find the global result across all processors.
-  // auto box = 0.0;
-  // for (auto i = 0; i != Dimension::nDim; ++i) {
-  //   xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
-  //   xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
-  //   box = std::max(box, xmax(i) - xmin(i));
-  // }
-  // havg = allReduce(havg, SPHERAL_OP_SUM);
-  // ntot = allReduce(ntot, SPHERAL_OP_SUM);
-  // hmax = allReduce(hmax, SPHERAL_OP_MAX);
-  // if (ntot > 0) {
-  //   havg /= ntot;
+  // Find the current bounding box and average node extent in one loop.
+  // Compute the average node extent.
+  auto xmin = Vector(0.1*std::numeric_limits<Scalar>::max()), xmax = 0.1*Vector(std::numeric_limits<Scalar>::lowest());
+  size_t ntot = 0u;
+  auto havg = 0.0, hmax = 0.0;
+  const auto  etaMax = visitNeighbor(mNeighbor, [](const auto& neighbor) { return neighbor.kernelExtent(); });
+  for (const auto [k, nptr]: enumerate(mNodeListPtrs)) {
+    const auto positions = nptr->positions();
+    const auto  n = nptr->numInternalNodes();
+    ntot += n;
+    for (auto i = 0u; i < n; ++i) {
+      const auto& xi = positions(i);
+      xmin = elementWiseMin(xmin, xi);
+      xmax = elementWiseMax(xmax, xi);
+      const auto hi = nodeExtents(k,i).maxElement()/etaMax;
+      havg += hi;
+      hmax = std::max(hmax, hi);
+    }
+  }
 
-  //   box = std::max(box, maxExtent*hmax);
-  //   for (auto i = 0; i < Dimension::nDim; ++i) {
-  //     xmin(i) -= box;
-  //     xmax(i) += box;
-  //   }
+  // Find the global result across all processors.
+  auto box = 0.0;
+  for (auto i = 0; i < Dimension::nDim; ++i) {
+    xmin(i) = allReduce(xmin(i), SPHERAL_OP_MIN);
+    xmax(i) = allReduce(xmax(i), SPHERAL_OP_MAX);
+    box = std::max(box, xmax(i) - xmin(i));
+  }
+  havg = allReduce(havg, SPHERAL_OP_SUM);
+  ntot = allReduce(ntot, SPHERAL_OP_SUM);
+  hmax = allReduce(hmax, SPHERAL_OP_MAX);
+  if (ntot > 0) havg /= ntot;
 
-  //   // Now initialize the neighbors.
-  //   for (auto itr = this->nodeListBegin(); itr != this->nodeListEnd(); ++itr) {
-  //     auto& neighbor = (*itr)->neighbor();
-  //     neighbor.reinitialize(xmin, xmax, havg);
-  //     neighbor.updateNodes();
-  //   }
-  // }
-  VERIFY(false);
+  box = std::max(box, etaMax*hmax);
+  for (auto i = 0; i < Dimension::nDim; ++i) {
+    xmin(i) -= box;
+    xmax(i) += box;
+  }
+
+  // Now initialize the neighbor
+  visitNeighbor(mNeighbor,
+                [&](auto& neighbor) {
+                  neighbor.reinitialize(xmin, xmax, havg);
+                  neighbor.updateNodes();
+                });
+
+  // The ConnectivityMap probably is no longer valid
+  mConnectivityMapPtr.reset();
 }
 
 //------------------------------------------------------------------------------
@@ -255,6 +262,7 @@ appendNodeList(DEMNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -293,6 +301,7 @@ appendNodeList(SolidNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -322,6 +331,7 @@ appendNodeList(FluidNodeList<Dimension>& nodeList) {
                                         &nodeList);
 
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -344,6 +354,7 @@ appendNodeList(NodeList<Dimension>& nodeList) {
                                                        nodeListEnd());
     mNodeListPtrs.insert(orderItr, &nodeList);
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -380,6 +391,7 @@ deleteNodeList(DEMNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != DEMNodeListAsNodeListEnd());
     mDEMNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -425,6 +437,7 @@ deleteNodeList(SolidNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != fluidNodeListAsNodeListEnd());
     mFluidNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -458,6 +471,7 @@ deleteNodeList(FluidNodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != fluidNodeListAsNodeListEnd());
     mFluidNodeListAsNodeListPtrs.erase(nodeListItr);
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -479,6 +493,7 @@ deleteNodeList(NodeList<Dimension>& nodeList) {
     CHECK(nodeListItr != nodeListEnd());
     mNodeListPtrs.erase(nodeListItr);
   }
+  mConnectivityMapPtr.reset();
   updateView();
   ENSURE(valid());
 }
@@ -1426,46 +1441,43 @@ DataBase<Dimension>::localSamplingBoundingBoxes(vector<Vector>& xminima,
 
   // We use our connectivity to make this more efficient.
   this->updateConnectivityMap(false, false, false);
-  const ConnectivityMap<Dimension>& connectivityMap = this->connectivityMap(false, false, false);
-  const FieldList<Dimension, Vector> positions = this->globalPosition();
-  const FieldList<Dimension, Vector> extent = this->globalNodeExtent();
-  const int numNodeLists = this->numNodeLists();
+  const auto& connectivityMap = this->connectivityMap(false, false, false);
+  const auto  positions = this->globalPosition();
+  const auto  extent = this->globalNodeExtent();
+  const auto  numNodeLists = this->numNodeLists();
 
   // Iterate over the nodes and progressively build up the result by linking
   // things together as they're connected.
   FieldList<Dimension, int> flags = this->newGlobalFieldList(0, "flags");
-  for (int nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    const NodeList<Dimension>& nodeList = positions[nodeListi]->nodeList();
-    for (auto i = 0u; i != nodeList.numInternalNodes(); ++i) {
-      if (flags(nodeListi, i) == 0) {
-        const Vector& xi = positions(nodeListi, i);
-        const Vector& extenti = extent(nodeListi, i);
-        Vector xminGroup = xi - extenti;
-        Vector xmaxGroup = xi + extenti;
-        flags(nodeListi, i) = 1;
+  for (auto [ki, nptr]: enumerate(mNodeListPtrs)) {
+    const auto n = nptr->numInternalNodes();
+    for (auto i = 0u; i < n; ++i) {
+      if (flags(ki, i) == 0) {
+        const auto& xi = positions(ki, i);
+        const auto& extenti = extent(ki, i);
+        auto xminGroup = xi - extenti;
+        auto xmaxGroup = xi + extenti;
+        flags(ki, i) = 1;
 
         // Find the min/max extent of this connected set of nodes.
-        const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
-        CHECK((int)fullConnectivity.size() == numNodeLists);
-        for (int nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-          const vector<int>& connectivity = fullConnectivity[nodeListj];
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
-            const Vector& xj = positions(nodeListj, j);
-            const Vector& extentj = extent(nodeListj, j);
+        const auto& fullConnectivity = connectivityMap.connectivityForNode(ki, i);
+        CHECK(fullConnectivity.size() == numNodeLists);
+        for (auto kj = 0u; kj < numNodeLists; ++kj) {
+          const auto& connectivity = fullConnectivity[kj];
+          for (auto j: connectivity) {
+            const auto& xj = positions(kj, j);
+            const auto& extentj = extent(kj, j);
             xminGroup = elementWiseMin(xminGroup, xj - extentj);
             xmaxGroup = elementWiseMax(xmaxGroup, xj + extentj);
-            flags(nodeListj, j) = 1;
+            flags(kj, j) = 1;
           }
         }
 
         // Compare this batches min/max extents with the results so far.
         CHECK(xminima.size() == xmaxima.size());
-        unsigned int k = 0;
+        auto k = 0u;
         bool matched = false;
-        while (k != xminima.size() and not matched) {
+        while (k < xminima.size() and not matched) {
           if (testBoxIntersection(xminGroup, xmaxGroup, xminima[k], xmaxima[k])) {
             xminima[k] = elementWiseMin(xminima[k], xminGroup);
             xmaxima[k] = elementWiseMax(xmaxima[k], xmaxGroup);
@@ -1482,10 +1494,10 @@ DataBase<Dimension>::localSamplingBoundingBoxes(vector<Vector>& xminima,
   }
 
   // Look for any overlaps between the boxes.
-  int ibox = xminima.size() - 1;
-  while (ibox > 0) {
-    int jbox = 0;
-    while (jbox != ibox) {
+  auto ibox = xminima.size() - 1u;
+  while (ibox > 0u) {
+    auto jbox = 0u;
+    while (jbox < ibox) {
       if (testBoxIntersection(xminima[ibox], xmaxima[ibox], xminima[jbox], xmaxima[jbox])) {
         xminima[jbox] = elementWiseMin(xminima[jbox], xminima[ibox]);
         xmaxima[jbox] = elementWiseMax(xmaxima[jbox], xmaxima[ibox]);
@@ -1675,6 +1687,11 @@ DataBase<Dimension>::valid() const {
       for (auto k = 0u; k < mSolidNodeListViewStorage.size(); ++k) ok &= mSolidNodeListViewStorage[k] == static_cast<SolidNodeListView<Dimension>&>(*mSolidNodeListPtrs[k]);
       for (auto k = 0u; k < mDEMNodeListViewStorage.size(); ++k)   ok &= mDEMNodeListViewStorage[k] == static_cast<DEMNodeListView<Dimension>&>(*mDEMNodeListPtrs[k]);
     }
+
+    ok &= mNodeListViews.size() == mNodeListPtrs.size();
+    ok &= mFluidNodeListViews.size() == mFluidNodeListPtrs.size();
+    ok &= mSolidNodeListViews.size() == mSolidNodeListPtrs.size();
+    ok &= mDEMNodeListViews.size() == mDEMNodeListPtrs.size();
   }
 
   return ok;
@@ -1691,7 +1708,7 @@ DataBase<Dimension>::updateView() {
 #ifdef SPHERAL_UNIFIED_MEMORY
   mNodeListViewStorage.resize(mNodeListPtrs.size());
   mFluidNodeListViewStorage.resize(mFluidNodeListPtrs.size());
-  mSolidNodeListViewStorage.resize()mSolidNodeListPtrs.size();
+  mSolidNodeListViewStorage.resize(mSolidNodeListPtrs.size());
   mDEMNodeListViewStorage.resize(mDEMNodeListPtrs.size());
 #else
   auto allocateManagedArray = []<typename T>(ViewSpan<T>& array, const size_t n) {
@@ -1715,15 +1732,19 @@ DataBase<Dimension>::updateView() {
 
   // Assign View spans
 #ifdef SPHERAL_UNIFIED_MEMORY
-  DataBaseView<Dimension>::mNodeListViews      = mNodeListViewStorage;
-  DataBaseView<Dimension>::mFluidNodeListViews = mFluidNodeListViewStorage;
-  DataBaseView<Dimension>::mSolidNodeListViews = mSolidNodeListViewStorage;
-  DataBaseView<Dimension>::mDEMNodeListViews   = mDEMNodeListViewStorage;
+  mNodeListViews      = mNodeListViewStorage;
+  mFluidNodeListViews = mFluidNodeListViewStorage;
+  mSolidNodeListViews = mSolidNodeListViewStorage;
+  mDEMNodeListViews   = mDEMNodeListViewStorage;
 #else
-  for (auto i = 0u; i < mNodeListViewStorage.size(); ++i)      DataBaseView<Dimension>::mNodeListViews[i]      = mNodeListViewStorage[i];
-  for (auto i = 0u; i < mFluidNodeListViewStorage.size(); ++i) DataBaseView<Dimension>::mFluidNodeListViews[i] = mFluidNodeListViewStorage[i];
-  for (auto i = 0u; i < mSolidNodeListViewStorage.size(); ++i) DataBaseView<Dimension>::mSolidNodeListViews[i] = mSolidNodeListViewStorage[i];
-  for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   DataBaseView<Dimension>::mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
+  GPUUtils::initMAView(mNodeListViews,      mNodeListViewStorage);
+  GPUUtils::initMAView(mFluidNodeListViews, mFluidNodeListViewStorage);
+  GPUUtils::initMAView(mSolidNodeListViews, mSolidNodeListViewStorage);
+  GPUUtils::initMAView(mDEMNodeListViews,   mDEMNodeListViewStorage);
+  for (auto i = 0u; i < mNodeListViewStorage.size(); ++i)      mNodeListViews[i]      = mNodeListViewStorage[i];
+  for (auto i = 0u; i < mFluidNodeListViewStorage.size(); ++i) mFluidNodeListViews[i] = mFluidNodeListViewStorage[i];
+  for (auto i = 0u; i < mSolidNodeListViewStorage.size(); ++i) mSolidNodeListViews[i] = mSolidNodeListViewStorage[i];
+  for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
 
   ENSURE(valid());

@@ -62,14 +62,15 @@ public:
   using ViewType = DataBaseView<Dimension>;
 
   // Constructors, destructor
-  DataBase();
-  DataBase(const DataBase& rhs) = default;
-  DataBase(DataBase&& rhs) = default;
+  DataBase(const Scalar kernelExtent);
+  DataBase() = delete;
+  DataBase(const DataBase& rhs) = delete;
+  DataBase(DataBase&& rhs) = delete;
   virtual ~DataBase() = default;
 
   // Assignment.
-  DataBase& operator=(const DataBase& rhs) = default;
-  DataBase& operator=(DataBase&& rhs) = default;
+  DataBase& operator=(const DataBase& rhs) = delete;
+  DataBase& operator=(DataBase&& rhs) = delete;
 
   // Global numbers of nodes
   size_t globalNumInternalNodes() const;
@@ -145,6 +146,8 @@ public:
 
   // The Neighbor object
   const NeighborVariant<Dimension>& neighbor()                         const { return mNeighbor; }
+  template<typename NT>
+  void neighbor(std::unique_ptr<NT> x)                                       { mNeighbor = std::move(x); mConnectivityMapPtr.reset(); }
 
   // Update the internal connectivity map.
   void updateConnectivityMap(const bool computeGhostConnectivity,
@@ -345,7 +348,7 @@ public:
   bool valid() const;
 
   // Manage the View object
-  ViewType view()  { return static_cast<DataBaseView<Dimension>&>(*this); }
+  ViewType view() { return static_cast<DataBaseView<Dimension>&>(*this); }
 
 private:
   //--------------------------- Private Interface ---------------------------//
@@ -377,6 +380,12 @@ private:
 
   // Keep the DataBaseView in sync
   void updateView();
+
+  // Expose the View data
+  using ViewType::mNodeListViews;
+  using ViewType::mFluidNodeListViews;
+  using ViewType::mSolidNodeListViews;
+  using ViewType::mDEMNodeListViews;
 };
 
 }
