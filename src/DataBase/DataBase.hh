@@ -74,46 +74,38 @@ public:
   DataBase& operator=(DataBase&& rhs) = delete;
 
   // Global numbers of nodes
-  size_t numNodeLists() const { return mNodeListPtrs.size(); }
-  size_t numFluidNodeLists() const { return mFluidNodeListPtrs.size(); }
-  size_t numSolidNodeLists() const { return mSolidNodeListPtrs.size(); }
-  size_t numDEMNodeLists() const { return mDEMNodeListPtrs.size(); }
-  size_t numInternalNodes() const { ensureViewCurrent(); return ViewType::numInternalNodes(); }
-  size_t numGhostNodes() const { ensureViewCurrent(); return ViewType::numGhostNodes(); }
-  size_t numNodes() const { ensureViewCurrent(); return ViewType::numNodes(); }
-  size_t numFluidInternalNodes() const { ensureViewCurrent(); return ViewType::numFluidInternalNodes(); }
-  size_t numFluidGhostNodes() const { ensureViewCurrent(); return ViewType::numFluidGhostNodes(); }
-  size_t numFluidNodes() const { ensureViewCurrent(); return ViewType::numFluidNodes(); }
-  size_t numSolidInternalNodes() const { ensureViewCurrent(); return ViewType::numSolidInternalNodes(); }
-  size_t numSolidGhostNodes() const { ensureViewCurrent(); return ViewType::numSolidGhostNodes(); }
-  size_t numSolidNodes() const { ensureViewCurrent(); return ViewType::numSolidNodes(); }
-  size_t numDEMInternalNodes() const { ensureViewCurrent(); return ViewType::numDEMInternalNodes(); }
-  size_t numDEMGhostNodes() const { ensureViewCurrent(); return ViewType::numDEMGhostNodes(); }
-  size_t numDEMNodes() const { ensureViewCurrent(); return ViewType::numDEMNodes(); }
-  const auto& nodeListViews() const { ensureViewCurrent(); return ViewType::nodeListViews(); }
-  const auto& fluidNodeListViews() const { ensureViewCurrent(); return ViewType::fluidNodeListViews(); }
-  const auto& solidNodeListViews() const { ensureViewCurrent(); return ViewType::solidNodeListViews(); }
-  const auto& DEMNodeListViews() const { ensureViewCurrent(); return ViewType::DEMNodeListViews(); }
-  bool haveNodeList(const NodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
-  bool haveNodeList(const FluidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
-  bool haveNodeList(const SolidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
-  bool haveNodeList(const DEMNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
-  size_t nodeListIndex(const NodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  size_t numNodeLists()                                       const { return mNodeListPtrs.size(); }
+  size_t numFluidNodeLists()                                  const { return mFluidNodeListPtrs.size(); }
+  size_t numSolidNodeLists()                                  const { return mSolidNodeListPtrs.size(); }
+  size_t numDEMNodeLists()                                    const { return mDEMNodeListPtrs.size(); }
+  size_t numInternalNodes()                                   const { ensureViewCurrent(); return ViewType::numInternalNodes(); }
+  size_t numGhostNodes()                                      const { ensureViewCurrent(); return ViewType::numGhostNodes(); }
+  size_t numNodes()                                           const { ensureViewCurrent(); return ViewType::numNodes(); }
+  size_t numFluidInternalNodes()                              const { ensureViewCurrent(); return ViewType::numFluidInternalNodes(); }
+  size_t numFluidGhostNodes()                                 const { ensureViewCurrent(); return ViewType::numFluidGhostNodes(); }
+  size_t numFluidNodes()                                      const { ensureViewCurrent(); return ViewType::numFluidNodes(); }
+  size_t numSolidInternalNodes()                              const { ensureViewCurrent(); return ViewType::numSolidInternalNodes(); }
+  size_t numSolidGhostNodes()                                 const { ensureViewCurrent(); return ViewType::numSolidGhostNodes(); }
+  size_t numSolidNodes()                                      const { ensureViewCurrent(); return ViewType::numSolidNodes(); }
+  size_t numDEMInternalNodes()                                const { ensureViewCurrent(); return ViewType::numDEMInternalNodes(); }
+  size_t numDEMGhostNodes()                                   const { ensureViewCurrent(); return ViewType::numDEMGhostNodes(); }
+  size_t numDEMNodes()                                        const { ensureViewCurrent(); return ViewType::numDEMNodes(); }
+  const auto& nodeListViews()                                 const { ensureViewCurrent(); return ViewType::nodeListViews(); }
+  const auto& fluidNodeListViews()                            const { ensureViewCurrent(); return ViewType::fluidNodeListViews(); }
+  const auto& solidNodeListViews()                            const { ensureViewCurrent(); return ViewType::solidNodeListViews(); }
+  const auto& DEMNodeListViews()                              const { ensureViewCurrent(); return ViewType::DEMNodeListViews(); }
+  bool haveNodeList(const NodeListView<Dimension>& x)         const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const FluidNodeListView<Dimension>& x)    const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const SolidNodeListView<Dimension>& x)    const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const DEMNodeListView<Dimension>& x)      const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  size_t nodeListIndex(const NodeListView<Dimension>& x)      const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
   size_t nodeListIndex(const FluidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
   size_t nodeListIndex(const SolidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
-  size_t nodeListIndex(const DEMNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
-  void setDEMHfieldFromParticleRadius(const size_t startUniqueIndex, const Scalar kernelExtent) {
-    ensureViewCurrent();
-    ViewType::setDEMHfieldFromParticleRadius(startUniqueIndex, kernelExtent);
-  }
-  Scalar maxDEMNeighborSearchBuffer() const {
-    ensureViewCurrent();
-    return ViewType::maxDEMNeighborSearchBuffer();
-  }
-  size_t generation() const {
-    ensureViewCurrent();
-    return ViewType::generation();
-  }
+  size_t nodeListIndex(const DEMNodeListView<Dimension>& x)   const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  void setDEMHfieldFromParticleRadius(const size_t startUniqueIndex,
+                                      const Scalar kernelExtent)    { ensureViewCurrent(); ViewType::setDEMHfieldFromParticleRadius(startUniqueIndex, kernelExtent); }
+  Scalar maxDEMNeighborSearchBuffer()                         const { ensureViewCurrent(); return ViewType::maxDEMNeighborSearchBuffer(); }
+  size_t generation()                                         const { ensureViewCurrent(); return ViewType::generation(); }
 
   size_t globalNumInternalNodes() const;
   size_t globalNumGhostNodes() const;
