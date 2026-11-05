@@ -142,13 +142,15 @@ TreeNeighborView(DataBaseView<Dimension> dataBase,
                  const Vector& xmax):
   NeighborView<Dimension, TreeNeighborView<Dimension>>(dataBase, searchType, kernelExtent),
   mBoxLength((xmax - xmin).maxElement()),
-  mGridLevelConst0(std::log((xmax - xmin).maxElement()/kernelExtent)*log2inv),
+  mGridLevelConst0(0.0),
   mXmin(xmin),
   mXmax(xmax),
   mFlatTreeView(),
   mFlatTreeDaughtersIndicesView(),
   mFlatTreeMembersView(),
   mFlatTreeLevelOffsetsView() {
+  REQUIRE(kernelExtent > 0.0);
+  mGridLevelConst0 = std::log((xmax - xmin).maxElement()/kernelExtent)*log2inv;
 }
 
 //------------------------------------------------------------------------------

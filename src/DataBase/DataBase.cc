@@ -1768,7 +1768,8 @@ DataBase<Dimension>::updateView() {
   for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
 
-  // mNeighborView = visitNeighbor<
+  mNeighborView = visitNeighbor(mNeighbor, [](auto& x) { return &x; });
+  mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
 
   ENSURE(valid());
 }
