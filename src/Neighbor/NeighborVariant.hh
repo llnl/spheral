@@ -12,24 +12,14 @@
 #include <variant>
 
 #include "Neighbor/NeighborViewContainer.hh"
+#include "Neighbor/NeighborViewVariant.hh"
 #include "Utilities/DBC.hh"
 
 namespace Spheral {
 
 // Forward declarations
 template<typename Dimension> class TreeNeighbor;
-template<typename Dimension> class TreeNeighborView;
 template<typename Dimension> class PythonNeighbor;
-
-//------------------------------------------------------------------------------
-// NeighborViews: used by clients to get potential Neighbors (possibly on device)
-//------------------------------------------------------------------------------
-template<typename Dimension>
-using NeighborViewVariant = std::variant<std::unique_ptr<TreeNeighborView<Dimension>>
-#ifndef SPHERAL_ENABLE_GPU
-                                        ,std::unique_ptr<PythonNeighbor<Dimension>>
-#endif
-                                         >;
 
 //------------------------------------------------------------------------------
 // NeighorValues: the full Neighbor objects that allocate and hold memory

@@ -3,6 +3,21 @@
 namespace Spheral {
 
 //------------------------------------------------------------------------------
+// Set the current Neighbor
+//------------------------------------------------------------------------------
+template<typename Dimension>
+template<typename NT>
+inline
+void
+DataBase<Dimension>::
+neighbor(std::unique_ptr<NT> x) {
+  mNeighbor = std::move(x);
+  updateNeighborView();
+  mConnectivityMapPtr.reset();
+  mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
+}
+
+//------------------------------------------------------------------------------
 // Get the current connectivity map.
 //------------------------------------------------------------------------------
 template<typename Dimension>

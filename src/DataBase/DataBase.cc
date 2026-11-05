@@ -55,6 +55,19 @@ DataBase(const Scalar kernelExtent):
   mFluidNodeListViewStorage(),
   mSolidNodeListViewStorage(),
   mDEMNodeListViewStorage() {
+  updateNeighborView();
+}
+
+//------------------------------------------------------------------------------
+// Point the DataBaseView at the current owning Neighbor.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DataBase<Dimension>::updateNeighborView() {
+  visitNeighbor(mNeighbor,
+                [this](auto& neighbor) {
+                  mNeighborView = &neighbor;
+                });
 }
 
 //------------------------------------------------------------------------------

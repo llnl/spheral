@@ -17,6 +17,7 @@ instantiate(Neighbor_inst Neighbor_sources)
 
 set(Neighbor_headers
   NeighborVariant.hh
+  NeighborViewVariant.hh
   NeighborSearchType.hh
   NeighborViewContainer.hh
   ConnectivityMap.hh
@@ -38,4 +39,3 @@ set(Neighbor_headers
 )
 
 spheral_add_package(Neighbor)
-

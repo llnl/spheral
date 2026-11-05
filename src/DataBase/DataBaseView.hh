@@ -10,6 +10,7 @@
 #include "chai/ExecutionSpaces.hpp"
 
 #include "Geometry/Dimension.hh"
+#include "Neighbor/NeighborViewVariant.hh"
 #include "Utilities/span.hh"
 
 namespace Spheral {
@@ -101,7 +102,10 @@ public:
   SPHERAL_HOST_DEVICE Scalar maxDEMNeighborSearchBuffer() const;
 
   // Get the maximum kernel extent from the Neighbor
-  SPHERAL_HOST_DEVICE Scalar kernelExtent()                                               const { return mNeighborView.kernelExtent(); }
+  SPHERAL_HOST_DEVICE Scalar kernelExtent()                                                const { return mKernelExtent; }
+
+  // Access the non-owning Neighbor view handle.
+  SPHERAL_HOST_DEVICE const NeighborViewVariant<Dimension>& neighborView()                 const { return mNeighborView; }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -109,7 +113,8 @@ protected:
   Container<FluidNodeListView<Dimension>> mFluidNodeListViews;
   Container<SolidNodeListView<Dimension>> mSolidNodeListViews;
   Container<DEMNodeListView<Dimension>> mDEMNodeListViews;
-  mutable NeighborViewVariant<Dimension> mNeighborView;
+  NeighborViewVariant<Dimension> mNeighborView;
+  Scalar mKernelExtent;
 };
 
 //------------------------------------------------------------------------------
