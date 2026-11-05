@@ -149,6 +149,7 @@ protected:
   void refreshVelocityView();
   void refreshHfieldView();
   void refreshWorkView();
+  void updateViewHash();
 
   friend class FieldBase<Dimension>;
 

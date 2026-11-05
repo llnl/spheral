@@ -45,7 +45,9 @@ public:
   SPHERAL_HOST_DEVICE DEMNodeListView& operator=(DEMNodeListView&&) = default;
 
   // Comparison
-  SPHERAL_HOST_DEVICE bool operator==(const DEMNodeListView&) const = default;
+  SPHERAL_HOST_DEVICE bool operator==(const DEMNodeListView& rhs) const {
+    return NodeListViewType::operator==(rhs);
+  }
 
   // Field views.
   SPHERAL_HOST_DEVICE ScalarView& particleRadius()                          { return mParticleRadiusView; }

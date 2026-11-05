@@ -46,7 +46,9 @@ public:
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&&) = default;
 
   // Comparison
-  SPHERAL_HOST_DEVICE bool operator==(const SolidNodeListView&) const = default;
+  SPHERAL_HOST_DEVICE bool operator==(const SolidNodeListView& rhs) const {
+    return FluidNodeListViewType::operator==(rhs);
+  }
 
   // Field views.
   SPHERAL_HOST_DEVICE SymTensorView& deviatoricStress()                      { return mDeviatoricStressView; }

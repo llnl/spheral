@@ -17,6 +17,7 @@
 #include "Hydro/HydroFieldNames.hh"
 
 #include <algorithm>
+#include <functional>
 using std::vector;
 using std::list;
 using std::string;
@@ -66,6 +67,7 @@ NodeList<Dimension>::NodeList(std::string name,
   this->mhminratio = hminratio;
   this->mNodesPerSmoothingScale = nPerh;
   this->mMaxNumNeighbors = maxNumNeighbors;
+  updateViewHash();
 
   NodeListRegistrar<Dimension>::instance().registerNodeList(*this);
 
@@ -251,6 +253,15 @@ NodeList<Dimension>::refreshView() {
   refreshVelocityView();
   refreshHfieldView();
   refreshWorkView();
+}
+
+//------------------------------------------------------------------------------
+// Update the stable identity copied into NodeListView objects.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::updateViewHash() {
+  this->mHash = std::hash<std::string>{}(mName);
 }
 
 //------------------------------------------------------------------------------
@@ -486,6 +497,7 @@ restoreState(const FileIO& file, const string& pathName) {
 
   // Restore the name of the NodeList.
   file.read(mName, pathName + "/name");
+  updateViewHash();
 
   // Read and reset the number of internal nodes.
   size_t numNodes;

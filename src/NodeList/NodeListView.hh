@@ -62,7 +62,11 @@ public:
   SPHERAL_HOST_DEVICE NodeListView& operator=(NodeListView&& rhs) = default;
 
   // Comparison
-  SPHERAL_HOST_DEVICE bool operator==(const NodeListView&) const = default;
+  SPHERAL_HOST_DEVICE bool operator==(const NodeListView& rhs) const { return mHash == rhs.mHash; }
+
+  // Stable identity for copied views.  The owning NodeList computes this from
+  // its unique registered name.
+  SPHERAL_HOST_DEVICE size_t hash() const { return mHash; }
 
   // Node count accessors.
   SPHERAL_HOST_DEVICE size_t numNodes()                         const { return mNumNodes; }
@@ -110,6 +114,7 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
+  size_t mHash = 0u;
   size_t mNumNodes = 0u;
   size_t mFirstGhostNode = 0u;
   Scalar mhmin = 1.0e-20;

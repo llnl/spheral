@@ -43,7 +43,9 @@ public:
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&&) = default;
 
   // Comparison
-  SPHERAL_HOST_DEVICE bool operator==(const FluidNodeListView&) const = default;
+  SPHERAL_HOST_DEVICE bool operator==(const FluidNodeListView& rhs) const {
+    return NodeListViewType::operator==(rhs);
+  }
 
   // Field views.
   SPHERAL_HOST_DEVICE ScalarView& massDensity()                              { return mMassDensityView; }
