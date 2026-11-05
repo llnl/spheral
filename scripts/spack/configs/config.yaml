@@ -18,5 +18,3 @@ repos:
   builtin:
     destination: $spack/../packages-1.2.2
     git: "https://github.com/spack/spack-packages.git"
-    # CHAI 2026.07.1 is newer than Spack 1.2.2's default catalog release.
-    branch: develop
