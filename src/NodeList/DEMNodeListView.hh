@@ -38,7 +38,7 @@ public:
                                       const Scalar neighborSearchBuffer = 0.1);
   SPHERAL_HOST_DEVICE DEMNodeListView(const DEMNodeListView&) = default;
   SPHERAL_HOST_DEVICE DEMNodeListView(DEMNodeListView&&) = default;
-  SPHERAL_HOST_DEVICE virtual ~DEMNodeListView() = default;
+  SPHERAL_HOST_DEVICE ~DEMNodeListView() = default;
 
   // Assignment.
   SPHERAL_HOST_DEVICE DEMNodeListView& operator=(DEMNodeListView&) = default;

@@ -46,7 +46,7 @@ public:
   SPHERAL_HOST_DEVICE DataBaseView() = default;
   SPHERAL_HOST_DEVICE DataBaseView(const DataBaseView& rhs) = default;
   SPHERAL_HOST_DEVICE DataBaseView(DataBaseView&& rhs) = default;
-  SPHERAL_HOST_DEVICE virtual ~DataBaseView() = default;
+  SPHERAL_HOST_DEVICE ~DataBaseView() = default;
 
   // Assignment.
   SPHERAL_HOST_DEVICE DataBaseView& operator=(DataBaseView& rhs) = default;

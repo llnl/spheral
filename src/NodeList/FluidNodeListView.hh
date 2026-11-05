@@ -36,7 +36,7 @@ public:
                                         const Scalar rhoMax = 1.0e100);
   SPHERAL_HOST_DEVICE FluidNodeListView(const FluidNodeListView&) = default;
   SPHERAL_HOST_DEVICE FluidNodeListView(FluidNodeListView&&) = default;
-  SPHERAL_HOST_DEVICE virtual ~FluidNodeListView() = default;
+  SPHERAL_HOST_DEVICE ~FluidNodeListView() = default;
 
   // Assignment.
   SPHERAL_HOST_DEVICE FluidNodeListView& operator=(FluidNodeListView&) = default;

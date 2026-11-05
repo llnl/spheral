@@ -39,7 +39,7 @@ public:
                                         const IntView& particleTypes);
   SPHERAL_HOST_DEVICE SolidNodeListView(const SolidNodeListView&) = default;
   SPHERAL_HOST_DEVICE SolidNodeListView(SolidNodeListView&&) = default;
-  SPHERAL_HOST_DEVICE virtual ~SolidNodeListView() = default;
+  SPHERAL_HOST_DEVICE ~SolidNodeListView() = default;
 
   // Assignment.
   SPHERAL_HOST_DEVICE SolidNodeListView& operator=(SolidNodeListView&) = default;
