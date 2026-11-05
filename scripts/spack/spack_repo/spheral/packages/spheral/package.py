@@ -131,7 +131,8 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
 
         depends_on('chai+raja', type='build')
-        depends_on('chai@2025.12.0', type='build', when='@2026.06.0:')
+        depends_on('chai@2026.07.1', type='build', when='@develop')
+        depends_on('chai@2025.12.0', type='build', when='@2026.06.0')
         depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
     # Forward MPI Variants
