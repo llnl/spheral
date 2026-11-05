@@ -63,6 +63,10 @@ public:
 
   //.............................................................................
   // The required Neighbor interface
+  virtual void resizeNodeExtents() override;
+
+  // Clear the current Neighbor state
+  virtual void clear() override;
 
   // Force the update of internal data for the NodeList.
   virtual void updateNodes() override;

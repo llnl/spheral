@@ -182,20 +182,28 @@ reinitializeNeighbors() const {
   havg = allReduce(havg, SPHERAL_OP_SUM);
   ntot = allReduce(ntot, SPHERAL_OP_SUM);
   hmax = allReduce(hmax, SPHERAL_OP_MAX);
-  if (ntot > 0) havg /= ntot;
+  if (ntot > 0) {
+    havg /= ntot;
 
-  box = std::max(box, etaMax*hmax);
-  for (auto i = 0; i < Dimension::nDim; ++i) {
-    xmin(i) -= box;
-    xmax(i) += box;
+    box = std::max(box, etaMax*hmax);
+    for (auto i = 0; i < Dimension::nDim; ++i) {
+      xmin(i) -= box;
+      xmax(i) += box;
+    }
+
+    // Now initialize the neighbor
+    visitNeighbor(mNeighbor,
+                  [&](auto& neighbor) {
+                    neighbor.reinitialize(xmin, xmax, havg);
+                    neighbor.updateNodes();
+                  });
+
+  } else {
+
+    // If there are no nodes, just clear the Neighbor
+    visitNeighbor(mNeighbor, [](auto& neighbor) { neighbor.clear(); });
+
   }
-
-  // Now initialize the neighbor
-  visitNeighbor(mNeighbor,
-                [&](auto& neighbor) {
-                  neighbor.reinitialize(xmin, xmax, havg);
-                  neighbor.updateNodes();
-                });
 
   // The ConnectivityMap probably is no longer valid
   mConnectivityMapPtr.reset();
@@ -1746,6 +1754,8 @@ DataBase<Dimension>::updateView() {
   for (auto i = 0u; i < mSolidNodeListViewStorage.size(); ++i) mSolidNodeListViews[i] = mSolidNodeListViewStorage[i];
   for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
+
+  // mNeighborView = visitNeighbor<
 
   ENSURE(valid());
 }

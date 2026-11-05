@@ -101,7 +101,7 @@ public:
   SPHERAL_HOST_DEVICE Scalar maxDEMNeighborSearchBuffer() const;
 
   // Get the maximum kernel extent from the Neighbor
-  SPHERAL_HOST_DEVICE Scalar maxKernelExtent()                                            const { VERIFY(false); return 0.0; }
+  SPHERAL_HOST_DEVICE Scalar kernelExtent()                                               const { return mNeighborView.kernelExtent(); }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -109,6 +109,7 @@ protected:
   Container<FluidNodeListView<Dimension>> mFluidNodeListViews;
   Container<SolidNodeListView<Dimension>> mSolidNodeListViews;
   Container<DEMNodeListView<Dimension>> mDEMNodeListViews;
+  mutable NeighborViewVariant<Dimension> mNeighborView;
 };
 
 //------------------------------------------------------------------------------

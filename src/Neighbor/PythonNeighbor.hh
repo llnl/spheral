@@ -48,6 +48,13 @@ public:
   virtual ~PythonNeighbor() = default;
 
   //.............................................................................
+  // The required Neighbor interface
+  virtual void resizeNodeExtents() override;
+
+  // Clear the current Neighbor state
+  virtual void clear() override;
+
+  //.............................................................................
   // The required interface for NeighborView objects
   virtual std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                          const SymTensor& H,
@@ -83,6 +90,7 @@ private:
   using BaseValueType::mDataBase;
   using BaseValueType::mNodeExtent;
   using BaseViewType::mDataBaseView;
+  using BaseViewType::mNodeExtentView;
 };
 
 }

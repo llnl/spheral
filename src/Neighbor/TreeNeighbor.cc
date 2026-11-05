@@ -50,6 +50,36 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
 }
 
 //------------------------------------------------------------------------------
+// Force the nodeExtent FieldList to be sized correctly
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+resizeNodeExtents() {
+  mDataBase.resizeGlobalFieldList(mNodeExtent,
+                                  Vector::zero(),
+                                  "node extents",
+                                  false);
+  mNodeExtentView = mNodeExtent.view();
+}
+
+//------------------------------------------------------------------------------
+// Clear our state
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+clear() {
+  mTree.clear();
+  mFlatTree.clear();
+  mFlatTreeDaughters.clear();
+  mFlatTreeMembers.clear();
+  mFlatTreeLevelOffsets.clear();
+  resizeNodeExtents();
+  flattenTreeAndUpdateView();
+}
+
+//------------------------------------------------------------------------------
 // Update the internal data for all nodes.
 //------------------------------------------------------------------------------
 template<typename Dimension>

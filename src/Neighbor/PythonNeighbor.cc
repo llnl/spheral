@@ -25,4 +25,28 @@ PythonNeighbor(DataBase<Dimension>& dataBase,
   NeighborView<Dimension, PythonNeighbor<Dimension>>(dataBase.view(), searchType, kernelExtent) {
 }
 
+//------------------------------------------------------------------------------
+// Force the nodeExtent FieldList to be sized correctly
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+PythonNeighbor<Dimension>::
+resizeNodeExtents() {
+  mDataBase.resizeGlobalFieldList(mNodeExtent,
+                                  Vector::zero(),
+                                  "node extents",
+                                  false);
+  mNodeExtentView = mNodeExtent.view();
+}
+
+//------------------------------------------------------------------------------
+// Clear our state
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+PythonNeighbor<Dimension>::
+clear() {
+  resizeNodeExtents();
+}
+
 }

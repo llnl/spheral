@@ -38,10 +38,14 @@ public:
   const DataBase<Dimension>& dataBase()                  const { return mDataBase; }
   const FieldList<Dimension, Vector>& nodeExtent()       const { return mNodeExtent; }
 
-  // Force the nodeExtent FieldList to be sized correctly
-  void resizeNodeExtents();
-
   //.............................................................................
+  // Force the nodeExtent FieldList to be sized correctly
+  // Descendants need to make sure the Value/View for the nodeExtents stay in sync
+  virtual void resizeNodeExtents() = 0;
+
+  // Clear the current Neighbor state
+  virtual void clear() = 0;
+
   // Requirements for rebuilding the internal data of a Neighbor object.
   // Expected to be CPU Value object tasks for now.
   // Force the update of internal data for the NodeList.
