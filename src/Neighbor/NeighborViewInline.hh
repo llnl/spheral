@@ -1,4 +1,5 @@
 #include "DataBase/DataBaseView.hh"
+#include "Utilities/testBoxIntersection.hh"
 #include "Utilities/DBC.hh"
 
 #include <algorithm>

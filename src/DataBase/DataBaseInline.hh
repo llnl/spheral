@@ -1,20 +1,42 @@
 #include "Utilities/DBC.hh"
 
+#include <type_traits>
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Set the current Neighbor
+// Replace the current Neighbor by constructing a supported value in place.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<typename NT>
+template<typename NT, typename... Args>
 inline
-void
+NT&
 DataBase<Dimension>::
-neighbor(std::unique_ptr<NT> x) {
-  mNeighbor = std::move(x);
-  updateNeighborView();
+emplaceNeighbor(Args&&... args) {
+  auto& result = [&]() -> NT& {
+    if constexpr (std::is_constructible_v<NT, DataBase&, Args...>) {
+      return mNeighbor.template emplace<NT>(*this,
+                                            std::forward<Args>(args)...);
+    } else {
+      return mNeighbor.template emplace<NT>(std::forward<Args>(args)...);
+    }
+  }();
   mConnectivityMapPtr.reset();
-  mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
+  mKernelExtent = result.kernelExtent();
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Return a device-safe snapshot of the current Neighbor view.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+NeighborViewVariant<Dimension>
+DataBase<Dimension>::neighborView() const {
+  return visitNeighbor(mNeighbor,
+                       [](const auto& neighbor) -> NeighborViewVariant<Dimension> {
+                         return neighbor.view();
+                       });
 }
 
 //------------------------------------------------------------------------------

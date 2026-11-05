@@ -14,6 +14,7 @@
 #include "NodeList/SolidNodeList.hh"
 #include "NodeList/DEMNodeList.hh"
 #include "Neighbor/NeighborVariant.hh"
+#include "Neighbor/NeighborViewVariant.hh"
 #include "Neighbor/ConnectivityMap.hh"
 
 #include <vector>
@@ -146,8 +147,9 @@ public:
 
   // The Neighbor object
   const NeighborVariant<Dimension>& neighbor()                         const { return mNeighbor; }
-  template<typename NT>
-  void neighbor(std::unique_ptr<NT> x);
+  NeighborViewVariant<Dimension> neighborView()                        const;
+  template<typename NT, typename... Args>
+  NT& emplaceNeighbor(Args&&... args);
 
   // Update the internal connectivity map.
   void updateConnectivityMap(const bool computeGhostConnectivity,
@@ -380,14 +382,12 @@ private:
 
   // Keep the DataBaseView in sync
   void updateView();
-  void updateNeighborView();
 
   // Expose the View data
   using ViewType::mNodeListViews;
   using ViewType::mFluidNodeListViews;
   using ViewType::mSolidNodeListViews;
   using ViewType::mDEMNodeListViews;
-  using ViewType::mNeighborView;
   using ViewType::mKernelExtent;
 };
 

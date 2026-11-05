@@ -45,29 +45,18 @@ DataBase(const Scalar kernelExtent):
   mSolidNodeListAsNodeListPtrs(),
   mDEMNodeListPtrs(),
   mDEMNodeListAsNodeListPtrs(),
-  mNeighbor(std::make_unique<TreeNeighbor<Dimension>>(*this,
-                                                      NeighborSearchType::GatherScatter,
-                                                      kernelExtent,
-                                                     -10.0 * Vector::one(),
-                                                      10.0 * Vector::one())),
+  mNeighbor(std::in_place_type<TreeNeighbor<Dimension>>,
+            *this,
+            NeighborSearchType::GatherScatter,
+            kernelExtent,
+           -10.0 * Vector::one(),
+            10.0 * Vector::one()),
   mConnectivityMapPtr(nullptr),
   mNodeListViewStorage(),
   mFluidNodeListViewStorage(),
   mSolidNodeListViewStorage(),
   mDEMNodeListViewStorage() {
-  updateNeighborView();
-}
-
-//------------------------------------------------------------------------------
-// Point the DataBaseView at the current owning Neighbor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DataBase<Dimension>::updateNeighborView() {
-  visitNeighbor(mNeighbor,
-                [this](auto& neighbor) {
-                  mNeighborView = &neighbor;
-                });
+  mKernelExtent = kernelExtent;
 }
 
 //------------------------------------------------------------------------------
@@ -1768,7 +1757,6 @@ DataBase<Dimension>::updateView() {
   for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
 
-  mNeighborView = visitNeighbor(mNeighbor, [](auto& x) { return &x; });
   mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
 
   ENSURE(valid());

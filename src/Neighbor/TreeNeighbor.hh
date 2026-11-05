@@ -14,6 +14,7 @@
 
 #include "Neighbor/Neighbor.hh"
 #include "Neighbor/TreeNeighborView.hh"
+#include "Neighbor/NeighborViewVariant.hh"
 
 #include <cstdint>
 #include <vector>
@@ -96,6 +97,10 @@ public:
   // Return the set of occupied cells on each level.
   std::vector<std::vector<CellKey>> occupiedCells() const;
 
+  // Return device-safe snapshots of the inherited view state.
+  ViewType view()                              const { return static_cast<const ViewType&>(*this); }
+  NeighborViewVariant<Dimension> variantView() const { return this->view(); }
+
 private:
   //--------------------------- Private Interface ---------------------------//
   //----------------------------------------------------------------------------
@@ -116,7 +121,7 @@ private:
 
     // Throw in comparison operators for help sorting.
     bool operator==(const Cell& rhs) const { return key == rhs.key; }
-    bool operator<(const Cell& rhs) const { return key < rhs.key; }
+    bool operator<(const Cell& rhs)  const { return key < rhs.key; }
   };
 
   // Define the types we use to build the tree.

@@ -6,49 +6,44 @@
 #ifndef __Spheral_NeighborVariant__
 #define __Spheral_NeighborVariant__
 
-#include <memory>
-#include <span>
 #include <utility>
 #include <variant>
 
-#include "Neighbor/NeighborViewContainer.hh"
-#include "Neighbor/NeighborViewVariant.hh"
-#include "Utilities/DBC.hh"
+#include "Neighbor/TreeNeighbor.hh"
+#ifndef SPHERAL_ENABLE_GPU
+#include "Neighbor/PythonNeighborCallView.hh"
+#endif
 
 namespace Spheral {
 
-// Forward declarations
-template<typename Dimension> class TreeNeighbor;
-template<typename Dimension> class PythonNeighbor;
-
 //------------------------------------------------------------------------------
-// NeighorValues: the full Neighbor objects that allocate and hold memory
+// Neighbor dispatch objects.  Native neighbors are stored by value; CPU-only
+// Python neighbors are represented by a lightweight, non-owning call view.
 //------------------------------------------------------------------------------
+#ifdef SPHERAL_ENABLE_GPU
 template<typename Dimension>
-using NeighborVariant = std::variant<std::unique_ptr<TreeNeighbor<Dimension>>
-#ifndef SPHERAL_ENABLE_GPU
-                                    ,std::unique_ptr<PythonNeighbor<Dimension>>
+using NeighborVariant = std::variant<TreeNeighbor<Dimension>>;
+#else
+template<typename Dimension>
+using NeighborVariant = std::variant<TreeNeighbor<Dimension>,
+                                     PythonNeighborCallView<Dimension>>;
 #endif
-                                     >;
 
 //------------------------------------------------------------------------------
 // Visitor pattern
 //------------------------------------------------------------------------------
 template<typename Variant, typename Visitor>
 decltype(auto)
-visitNeighbor(Variant&& neighborPtr,
+visitNeighbor(Variant&& neighborVariant,
               Visitor&& visitor) {
   return std::visit(
-    [&](const auto& neighborPtr) -> decltype(auto) {
-      REQUIRE(neighborPtr);
-      return std::forward<Visitor>(visitor)(*neighborPtr);
+    [&](auto&& neighbor) -> decltype(auto) {
+      return std::forward<Visitor>(visitor)(
+        std::forward<decltype(neighbor)>(neighbor));
     },
-    std::forward<Variant>(neighborPtr));
+    std::forward<Variant>(neighborVariant));
 }
 
 }
-
-#include "Neighbor/PythonNeighbor.hh"
-#include "Neighbor/TreeNeighbor.hh"
 
 #endif

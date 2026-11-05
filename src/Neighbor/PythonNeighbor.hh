@@ -14,6 +14,8 @@
 
 #include "Neighbor/Neighbor.hh"
 #include "Neighbor/NeighborView.hh"
+#include "Neighbor/NeighborViewVariant.hh"
+#include "Neighbor/PythonNeighborCallView.hh"
 
 #include <utility>
 #include <vector>
@@ -38,6 +40,7 @@ public:
 
   using BaseValueType = Neighbor<Dimension>;
   using BaseViewType  = NeighborView<Dimension, PythonNeighbor<Dimension>>;
+  using ViewType = PythonNeighborCallView<Dimension>;
 
   using NodeID = typename BaseValueType::NodeID;
   template<typename T> using Container = typename BaseViewType::template Container<T>;
@@ -53,6 +56,11 @@ public:
 
   // Clear the current Neighbor state
   virtual void clear() override;
+
+  // Return a lightweight callback adapter.  The adapter does not own this
+  // PythonNeighbor, so this object must outlive all copies of the view.
+  ViewType view() { return ViewType(this); }
+  NeighborViewVariant<Dimension> variantView() { return this->view(); }
 
   //.............................................................................
   // The required interface for NeighborView objects

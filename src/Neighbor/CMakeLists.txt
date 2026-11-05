@@ -33,6 +33,7 @@ set(Neighbor_headers
   NeighborView.hh
   NeighborViewInline.hh
   PythonNeighbor.hh
+  PythonNeighborCallView.hh
   TreeNeighborView.hh
   TreeNeighborViewInline.hh
   TreeNeighbor.hh
