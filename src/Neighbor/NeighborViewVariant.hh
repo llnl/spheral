@@ -7,7 +7,10 @@
 #ifndef __Spheral_NeighborViewVariant__
 #define __Spheral_NeighborViewVariant__
 
+#include "Utilities/DBC.hh"
+
 #include <variant>
+#include <utility>
 
 namespace Spheral {
 
