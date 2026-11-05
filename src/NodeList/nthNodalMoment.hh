@@ -21,6 +21,7 @@ namespace Spheral {
 // Forward declarations.
 template<typename Dimension, typename Value> class FieldList;
 template<typename Dimension> class TableKernel;
+template<typename Dimension> class DataBase;
 
 // A trait class to figure out the result type.
 template<typename Dimension, unsigned n> struct MomentTraits;
@@ -29,18 +30,16 @@ template<typename Dimension> struct MomentTraits<Dimension, 1U> { typedef typena
 template<typename Dimension> struct MomentTraits<Dimension, 2U> { typedef typename Dimension::SymTensor Moment; };
 
 // Compute a particular moment.
-template<typename Dimension, typename NodeListIterator, unsigned moment>
+template<typename Dimension, unsigned moment>
 FieldList<Dimension, typename MomentTraits<Dimension, moment>::Moment>
-nthNodalMoment(const NodeListIterator nodeListBegin,
-               const NodeListIterator nodeListEnd,
+nthNodalMoment(const DataBase<Dimension>& dataBase,
                const TableKernel<Dimension>& W,
                const bool renormalize);
 
 // Compute the non-normalized zeroth and normalized first moment.
-template<typename Dimension, typename NodeListIterator>
+template<typename Dimension>
 void
-zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
-                           const NodeListIterator nodeListEnd,
+zerothAndFirstNodalMoments(const DataBase<Dimension>& dataBase,
                            const TableKernel<Dimension>& W,
                            const bool useKernelAsGradient,
                            FieldList<Dimension, typename Dimension::Scalar>& zerothMoment,
