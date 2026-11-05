@@ -63,6 +63,7 @@ particleRadius(const Field<Dimension, typename Dimension::Scalar>& radii) {
   mParticleRadius = radii;
   mParticleRadius.name(DEMFieldNames::particleRadius);
   refreshParticleRadiusView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -75,6 +76,7 @@ compositeParticleIndex(const Field<Dimension, int>& ids) {
   mCompositeParticleIndex = ids;
   mCompositeParticleIndex.name(DEMFieldNames::compositeParticleIndex);
   refreshCompositeParticleIndexView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -87,6 +89,7 @@ uniqueIndex(const Field<Dimension, size_t>& ids) {
   mUniqueIndex = ids;
   mUniqueIndex.name(DEMFieldNames::uniqueIndices);
   refreshUniqueIndexView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------

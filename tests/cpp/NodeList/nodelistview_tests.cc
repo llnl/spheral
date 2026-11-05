@@ -663,6 +663,17 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DataBaseGenerationRefresh) {
   SPHERAL_ASSERT_EQ(metadataDataBaseView.nodeListViews()[0].hmin(), 2.0e-8);
   SPHERAL_ASSERT_EQ(metadataDataBaseView.nodeListViews()[0].generation(),
                     nodes.viewGeneration());
+
+  auto replacementPositions = nodes.positions();
+  replacementPositions[0] = Vector(10.0, 20.0, 30.0);
+  const auto metadataGeneration = dataBase.generation();
+  nodes.positions(replacementPositions);
+  SPHERAL_ASSERT_TRUE(dataBase.generation() > metadataGeneration);
+  const auto replacementDataBaseView = dataBase.view();
+  SPHERAL_ASSERT_EQ(replacementDataBaseView.nodeListViews()[0].position(0),
+                    replacementPositions[0]);
+  SPHERAL_ASSERT_EQ(replacementDataBaseView.nodeListViews()[0].generation(),
+                    nodes.viewGeneration());
 }
 
 REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,

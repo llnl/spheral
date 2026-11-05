@@ -83,6 +83,7 @@ massDensity(const Field<Dimension, typename Dimension::Scalar>& rho) {
   mMassDensity = rho;
   mMassDensity.name(HydroFieldNames::massDensity);
   refreshMassDensityView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -96,6 +97,7 @@ massDensityRZ(const Field<Dimension, typename Dimension::Scalar>& rho) {
   *mMassDensityRZptr = rho;
   mMassDensityRZptr->name(HydroFieldNames::massDensityRZ);
   refreshMassDensityRZView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -108,6 +110,7 @@ specificThermalEnergy(const Field<Dimension, typename Dimension::Scalar>& eps) {
   mSpecificThermalEnergy = eps;
   mSpecificThermalEnergy.name(HydroFieldNames::specificThermalEnergy);
   refreshSpecificThermalEnergyView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------

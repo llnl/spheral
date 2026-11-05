@@ -141,6 +141,7 @@ mass(const Field<Dimension, typename Dimension::Scalar>& m) {
   mMass = m;
   mMass.name(HydroFieldNames::mass);
   refreshMassView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -154,6 +155,7 @@ massRZ(const Field<Dimension, typename Dimension::Scalar>& m) {
   *mMassRZptr = m;
   mMassRZptr->name(HydroFieldNames::massRZ);
   refreshMassRZView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -166,6 +168,7 @@ positions(const Field<Dimension, typename Dimension::Vector>& r) {
   mPositions = r;
   mPositions.name(HydroFieldNames::position);
   refreshPositionsView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -178,6 +181,7 @@ velocity(const Field<Dimension, typename Dimension::Vector>& v) {
   mVelocity = v;
   mVelocity.name(HydroFieldNames::velocity);
   refreshVelocityView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -190,6 +194,7 @@ Hfield(const Field<Dimension, typename Dimension::SymTensor>& H) {
   mH = H;
   mH.name(HydroFieldNames::H);
   refreshHfieldView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -202,6 +207,7 @@ work(const Field<Dimension, typename Dimension::Scalar>& w) {
   mWork = w;
   mWork.name(HydroFieldNames::work);
   refreshWorkView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
