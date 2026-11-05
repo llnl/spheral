@@ -23,6 +23,7 @@ emplaceNeighbor(Args&&... args) {
   }();
   mConnectivityMapPtr.reset();
   mKernelExtent = result.kernelExtent();
+  ++mGeneration;
   return result;
 }
 

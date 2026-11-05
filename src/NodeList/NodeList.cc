@@ -253,6 +253,7 @@ NodeList<Dimension>::refreshView() {
   refreshVelocityView();
   refreshHfieldView();
   refreshWorkView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------

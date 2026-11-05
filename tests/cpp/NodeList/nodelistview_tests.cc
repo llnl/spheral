@@ -6,6 +6,7 @@
 #include "test-utilities.hh"
 
 #include "NodeList/NodeList.hh"
+#include "DataBase/DataBase.hh"
 
 #include <type_traits>
 #include <utility>
@@ -634,6 +635,36 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, HostStateAndInheritedView) {
   SPHERAL_ASSERT_EQ(nodesView.hminratio(), 0.25);
 }
 
+//------------------------------------------------------------------------------
+// DataBase snapshots are lazily rebuilt when a NodeList generation changes.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, DataBaseGenerationRefresh) {
+  NodeList_t nodes("NodeListDataBaseGenerationRefresh", Ninternal, Nghost);
+  Spheral::DataBase<DIM3> dataBase(2.0);
+  dataBase.appendNodeList(nodes);
+
+  const auto initialNodeGeneration = nodes.viewGeneration();
+  const auto initialDataBaseView = dataBase.view();
+  SPHERAL_ASSERT_EQ(initialDataBaseView.numNodes(), Ntotal);
+
+  nodes.numGhostNodes(Nghost + 2u);
+  SPHERAL_ASSERT_TRUE(nodes.viewGeneration() > initialNodeGeneration);
+
+  const auto refreshedDataBaseView = dataBase.view();
+  SPHERAL_ASSERT_TRUE(refreshedDataBaseView.generation() > initialDataBaseView.generation());
+  SPHERAL_ASSERT_EQ(refreshedDataBaseView.numNodes(), Ninternal + Nghost + 2u);
+  SPHERAL_ASSERT_EQ(refreshedDataBaseView.nodeListViews()[0].generation(),
+                    nodes.viewGeneration());
+
+  const auto resizedDataBaseGeneration = dataBase.generation();
+  nodes.hmin(2.0e-8);
+  SPHERAL_ASSERT_TRUE(dataBase.generation() > resizedDataBaseGeneration);
+  const auto metadataDataBaseView = dataBase.view();
+  SPHERAL_ASSERT_EQ(metadataDataBaseView.nodeListViews()[0].hmin(), 2.0e-8);
+  SPHERAL_ASSERT_EQ(metadataDataBaseView.nodeListViews()[0].generation(),
+                    nodes.viewGeneration());
+}
+
 REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             DefaultAndExplicitConstruction,
                             ValueSemantics,
@@ -647,7 +678,8 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             ResizeAndReacquire,
                             AppendInternalNodesRefreshesInheritedView,
                             ReorderNodesRefreshesInheritedView,
-                            HostStateAndInheritedView);
+                            HostStateAndInheritedView,
+                            DataBaseGenerationRefresh);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodeList,
                                NodeListViewTypedTest,

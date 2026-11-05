@@ -49,14 +49,14 @@ public:
   const FieldList<Dimension, Vector>& nodeExtent() const;
 
   // Common Neighbor view state and operations.
-  const DataBaseView<Dimension>& dataBaseView() const;
   const FieldListView<Dimension, Vector>& nodeExtentView() const;
   NeighborSearchType neighborSearchType() const;
   Scalar kernelExtent() const;
-  void setNodeExtents();
-  void setInternalNodeExtents();
-  void setGhostNodeExtents();
-  void setNodeExtents(const Container<NodeID>& nodeIDs);
+  void setNodeExtents(const DataBaseView<Dimension>& dataBase);
+  void setInternalNodeExtents(const DataBaseView<Dimension>& dataBase);
+  void setGhostNodeExtents(const DataBaseView<Dimension>& dataBase);
+  void setNodeExtents(const DataBaseView<Dimension>& dataBase,
+                      const Container<NodeID>& nodeIDs);
   size_t precullList(const FieldListView<Dimension, Vector>& positions,
                      const Vector& minMasterPosition,
                      const Vector& maxMasterPosition,

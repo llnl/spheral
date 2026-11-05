@@ -38,6 +38,11 @@ public:
   using ViewType = NodeListView<Dimension>;
   using ViewType::numInternalNodes;
   using ViewType::numGhostNodes;
+  using ViewType::nodesPerSmoothingScale;
+  using ViewType::maxNumNeighbors;
+  using ViewType::hmin;
+  using ViewType::hmax;
+  using ViewType::hminratio;
 
   using FieldBaseSpan = SPHERAL_SPAN_TYPE<std::reference_wrapper<FieldBase<Dimension>>>;
 
@@ -63,6 +68,11 @@ public:
   // Set the number of Nodes.
   void numInternalNodes(size_t size);
   void numGhostNodes(size_t size);
+  void nodesPerSmoothingScale(Scalar val) { ViewType::nodesPerSmoothingScale(val); ++this->mGeneration; }
+  void maxNumNeighbors(size_t val)        { ViewType::maxNumNeighbors(val); ++this->mGeneration; }
+  void hmin(Scalar val)                   { ViewType::hmin(val); ++this->mGeneration; }
+  void hmax(Scalar val)                   { ViewType::hmax(val); ++this->mGeneration; }
+  void hminratio(Scalar val)              { ViewType::hminratio(val); ++this->mGeneration; }
 
   // The NodeList state Fields.
   Field<Dimension, Scalar>& mass()                          { return mMass; }
@@ -131,6 +141,7 @@ public:
 
   // Get the view of NodeList-owned data.
   ViewType view();
+  size_t viewGeneration() const { return this->mGeneration; }
 
   // No default constructor, copying, or assignment.
   NodeList() = delete;

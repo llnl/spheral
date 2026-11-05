@@ -44,7 +44,7 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
              const Vector& xmin,
              const Vector& xmax):
   Neighbor<Dimension>(dataBase),
-  TreeNeighborView<Dimension>(dataBase.view(), searchType, kernelExtent, xmin, xmax),
+  TreeNeighborView<Dimension>(searchType, kernelExtent, xmin, xmax),
   mTree() {
   this->reinitialize(xmin, xmax, (xmax - xmin).maxElement()/4.0);
 }
@@ -115,8 +115,8 @@ updateNodes() {
   }
 
   // Force the node extents to be calculated.
-  mDataBase.resizeGlobalFieldList(mNodeExtent, Vector::zero(), "node extents", false);
-  this->setNodeExtents();
+  resizeNodeExtents();
+  this->setNodeExtents(mDataBase.view());
 
   // Construct the immutable, device-accessible representation of the tree.
   this->flattenTreeAndUpdateView();
@@ -524,6 +524,7 @@ flattenTreeAndUpdateView() {
   mFlatTreeDaughters.clear();
   mFlatTreeMembers.clear();
   mFlatTreeLevelOffsets.clear();
+  mFirstGhostNodes.clear();
 
   size_t numCells = 0u, numDaughters = 0u, numMembers = 0u;
   for (const auto& level: mTree) {
@@ -537,6 +538,10 @@ flattenTreeAndUpdateView() {
   mFlatTreeDaughters.reserve(numDaughters);
   mFlatTreeMembers.reserve(numMembers);
   mFlatTreeLevelOffsets.reserve(mTree.size() + 1u);
+  mFirstGhostNodes.reserve(mDataBase.numNodeLists());
+  for (const auto* nodeListPtr: mDataBase.nodeListPtrs()) {
+    mFirstGhostNodes.push_back(nodeListPtr->firstGhostNode());
+  }
 
   // Flatten each level into a contiguous, key-sorted range.  Reserve space in
   // the daughter array here; the absolute daughter indices are filled once all
@@ -606,24 +611,27 @@ flattenTreeAndUpdateView() {
   ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughters;
   ViewType::mFlatTreeMembersView = mFlatTreeMembers;
   ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
+  ViewType::mFirstGhostNodeView = mFirstGhostNodes;
 #else
   GPUUtils::initMAView(ViewType::mFlatTreeView, mFlatTree);
   GPUUtils::initMAView(ViewType::mFlatTreeDaughtersIndicesView, mFlatTreeDaughters);
   GPUUtils::initMAView(ViewType::mFlatTreeMembersView, mFlatTreeMembers);
   GPUUtils::initMAView(ViewType::mFlatTreeLevelOffsetsView, mFlatTreeLevelOffsets);
+  GPUUtils::initMAView(ViewType::mFirstGhostNodeView, mFirstGhostNodes);
   ViewType::mFlatTreeView.registerTouch(chai::CPU);
   ViewType::mFlatTreeDaughtersIndicesView.registerTouch(chai::CPU);
   ViewType::mFlatTreeMembersView.registerTouch(chai::CPU);
   ViewType::mFlatTreeLevelOffsetsView.registerTouch(chai::CPU);
+  ViewType::mFirstGhostNodeView.registerTouch(chai::CPU);
 #endif
 #else
   ViewType::mFlatTreeView = mFlatTree;
   ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughters;
   ViewType::mFlatTreeMembersView = mFlatTreeMembers;
   ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
+  ViewType::mFirstGhostNodeView = mFirstGhostNodes;
 #endif
 
-  mDataBaseView = mDataBase.view();
   mNodeExtentView = mNodeExtent.view();
 }
 

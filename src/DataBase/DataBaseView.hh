@@ -102,6 +102,7 @@ public:
 
   // Get the maximum kernel extent from the Neighbor
   SPHERAL_HOST_DEVICE Scalar kernelExtent()                                                const { return mKernelExtent; }
+  SPHERAL_HOST_DEVICE size_t generation()                                                  const { return mGeneration; }
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
@@ -110,6 +111,7 @@ protected:
   Container<SolidNodeListView<Dimension>> mSolidNodeListViews;
   Container<DEMNodeListView<Dimension>> mDEMNodeListViews;
   Scalar mKernelExtent = 0.0;
+  size_t mGeneration = 0u;
 };
 
 //------------------------------------------------------------------------------

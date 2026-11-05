@@ -42,8 +42,7 @@ public:
   using CellKey = uint64_t;
 
   // Constructors and destructors
-  SPHERAL_HOST_DEVICE TreeNeighborView(DataBaseView<Dimension> dataBase,
-                                       const NeighborSearchType searchType,
+  SPHERAL_HOST_DEVICE TreeNeighborView(const NeighborSearchType searchType,
                                        const double kernelExtent,
                                        const Vector& xmin,
                                        const Vector& xmax);
@@ -228,8 +227,8 @@ protected:
   Container<size_t> mFlatTreeDaughtersIndicesView;
   Container<NodeID> mFlatTreeMembersView;
   Container<size_t> mFlatTreeLevelOffsetsView;
+  Container<size_t> mFirstGhostNodeView;
 
-  using BaseType::mDataBaseView;
   using BaseType::mNodeExtentView;
   using BaseType::mSearchType;
   using BaseType::mKernelExtent;

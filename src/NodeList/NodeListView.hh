@@ -67,6 +67,7 @@ public:
   // Stable identity for copied views.  The owning NodeList computes this from
   // its unique registered name.
   SPHERAL_HOST_DEVICE size_t hash() const { return mHash; }
+  SPHERAL_HOST_DEVICE size_t generation() const { return mGeneration; }
 
   // Node count accessors.
   SPHERAL_HOST_DEVICE size_t numNodes()                         const { return mNumNodes; }
@@ -115,6 +116,7 @@ public:
 protected:
   //--------------------------- Protected Interface ---------------------------//
   size_t mHash = 0u;
+  size_t mGeneration = 0u;
   size_t mNumNodes = 0u;
   size_t mFirstGhostNode = 0u;
   Scalar mhmin = 1.0e-20;

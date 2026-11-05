@@ -97,7 +97,6 @@ private:
   //-------------------------- Private Interface --------------------------//
   using BaseValueType::mDataBase;
   using BaseValueType::mNodeExtent;
-  using BaseViewType::mDataBaseView;
   using BaseViewType::mNodeExtentView;
 };
 

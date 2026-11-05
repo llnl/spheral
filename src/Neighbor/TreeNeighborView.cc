@@ -135,12 +135,11 @@ copy_n_conditional(const InContainer& source,
 template<typename Dimension>
 SPHERAL_HOST_DEVICE 
 TreeNeighborView<Dimension>::
-TreeNeighborView(DataBaseView<Dimension> dataBase,
-                 const NeighborSearchType searchType,
+TreeNeighborView(const NeighborSearchType searchType,
                  const double kernelExtent,
                  const Vector& xmin,
                  const Vector& xmax):
-  NeighborView<Dimension, TreeNeighborView<Dimension>>(dataBase, searchType, kernelExtent),
+  NeighborView<Dimension, TreeNeighborView<Dimension>>(searchType, kernelExtent),
   mBoxLength((xmax - xmin).maxElement()),
   mGridLevelConst0(0.0),
   mXmin(xmin),
@@ -148,7 +147,8 @@ TreeNeighborView(DataBaseView<Dimension> dataBase,
   mFlatTreeView(),
   mFlatTreeDaughtersIndicesView(),
   mFlatTreeMembersView(),
-  mFlatTreeLevelOffsetsView() {
+  mFlatTreeLevelOffsetsView(),
+  mFirstGhostNodeView() {
   REQUIRE(kernelExtent > 0.0);
   mGridLevelConst0 = std::log((xmax - xmin).maxElement()/kernelExtent)*log2inv;
 }
@@ -405,12 +405,11 @@ setTreeMasterList(const LevelKey levelID,
   if (ok) {
     std::sort(masterList.begin(), masterList.begin() + numMaster);
     if (not ghostConnectivity) {
-      const auto& nodeLists = mDataBaseView.nodeListViews();
       size_t writeIndex = 0u;
       for (size_t readIndex = 0u; readIndex < numMaster; ++readIndex) {
         const auto& nodeID = masterList[readIndex];
-        CHECK(nodeID.first < nodeLists.size());
-        if (nodeID.second < nodeLists[nodeID.first].firstGhostNode()) {
+        CHECK(nodeID.first < mFirstGhostNodeView.size());
+        if (nodeID.second < mFirstGhostNodeView[nodeID.first]) {
           masterList[writeIndex++] = nodeID;
         }
       }

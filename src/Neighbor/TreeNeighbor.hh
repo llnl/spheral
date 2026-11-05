@@ -165,6 +165,7 @@ private:
   FlatTreeDaughters mFlatTreeDaughters;
   FlatTreeMembers mFlatTreeMembers;
   std::vector<size_t> mFlatTreeLevelOffsets;
+  std::vector<size_t> mFirstGhostNodes;
 
   // Stuff we get from base classes
   using Neighbor<Dimension>::mDataBase;
@@ -182,7 +183,6 @@ private:
   using TreeNeighborView<Dimension>::mGridLevelConst0;
   using TreeNeighborView<Dimension>::mXmin;
   using TreeNeighborView<Dimension>::mXmax;
-  using TreeNeighborView<Dimension>::mDataBaseView;
   using TreeNeighborView<Dimension>::mNodeExtentView;
 };
 

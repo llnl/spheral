@@ -87,8 +87,8 @@ public:
   Scalar rhoMin() const { return ViewType::rhoMin(); }
   Scalar rhoMax() const { return ViewType::rhoMax(); }
 
-  void rhoMin(Scalar x) { ViewType::rhoMin(x); }
-  void rhoMax(Scalar x) { ViewType::rhoMax(x); }
+  void rhoMin(Scalar x) { ViewType::rhoMin(x); ++this->mGeneration; }
+  void rhoMax(Scalar x) { ViewType::rhoMax(x); ++this->mGeneration; }
 
   // Get the view of FluidNodeList-owned data.
   ViewType view();

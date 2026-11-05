@@ -52,6 +52,7 @@ DataBase(const Scalar kernelExtent):
            -10.0 * Vector::one(),
             10.0 * Vector::one()),
   mConnectivityMapPtr(nullptr),
+  mNodeListViewGenerations(),
   mNodeListViewStorage(),
   mFluidNodeListViewStorage(),
   mSolidNodeListViewStorage(),
@@ -152,7 +153,8 @@ DataBase<Dimension>::
 reinitializeNeighbors() const {
 
   // Make sure the node extents are up to date and grab them
-  const auto& nodeExtents = visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.resizeNodeExtents(); neighbor.setNodeExtents(); return neighbor.nodeExtentView(); });
+  const auto dataBaseView = this->view();
+  const auto& nodeExtents = visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.resizeNodeExtents(); neighbor.setNodeExtents(dataBaseView); return neighbor.nodeExtentView(); });
 
   // Find the current bounding box and average node extent in one loop.
   // Compute the average node extent.
@@ -1587,6 +1589,7 @@ globalSamplingBoundingBoxes(vector<Vector>& xminima,
 template<typename Dimension>
 bool
 DataBase<Dimension>::valid() const {
+  ensureViewCurrent();
 
   bool ok = (this->numNodeLists() >= this->numFluidNodeLists());
 
@@ -1740,6 +1743,9 @@ DataBase<Dimension>::updateView() {
   for (auto [i, nptr]: enumerate(mSolidNodeListPtrs)) mSolidNodeListViewStorage[i] = nptr->view();
   for (auto [i, nptr]: enumerate(mDEMNodeListPtrs))   mDEMNodeListViewStorage[i] = nptr->view();
 
+  mNodeListViewGenerations.resize(mNodeListPtrs.size());
+  for (auto [i, nptr]: enumerate(mNodeListPtrs)) mNodeListViewGenerations[i] = nptr->viewGeneration();
+
   // Assign View spans
 #ifdef SPHERAL_UNIFIED_MEMORY
   mNodeListViews      = mNodeListViewStorage;
@@ -1758,8 +1764,24 @@ DataBase<Dimension>::updateView() {
 #endif
 
   mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
+  ++mGeneration;
 
   ENSURE(valid());
+}
+
+//------------------------------------------------------------------------------
+// Lazily rebuild copied NodeList views after an owning NodeList changes its
+// generation.  Previously returned DataBaseViews remain snapshots and must be
+// reacquired by their caller.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DataBase<Dimension>::ensureViewCurrent() const {
+  auto current = mNodeListViewGenerations.size() == mNodeListPtrs.size();
+  for (auto i = 0u; current and i < mNodeListPtrs.size(); ++i) {
+    current = mNodeListViewGenerations[i] == mNodeListPtrs[i]->viewGeneration();
+  }
+  if (not current) const_cast<DataBase<Dimension>*>(this)->updateView();
 }
 
 }

@@ -33,7 +33,7 @@ PythonNeighbor(DataBase<Dimension>& dataBase,
                const NeighborSearchType searchType,
                const Scalar kernelExtent):
   Neighbor<Dimension>(dataBase),
-  NeighborView<Dimension, PythonNeighbor<Dimension>>(dataBase.view(), searchType, kernelExtent) {
+  NeighborView<Dimension, PythonNeighbor<Dimension>>(searchType, kernelExtent) {
 }
 
 //------------------------------------------------------------------------------
@@ -122,13 +122,6 @@ nodeExtent() const {
 }
 
 template<typename Dimension>
-const DataBaseView<Dimension>&
-PythonNeighborCallView<Dimension>::
-dataBaseView() const {
-  return mParent->dataBaseView();
-}
-
-template<typename Dimension>
 const FieldListView<Dimension, typename Dimension::Vector>&
 PythonNeighborCallView<Dimension>::
 nodeExtentView() const {
@@ -152,29 +145,30 @@ kernelExtent() const {
 template<typename Dimension>
 void
 PythonNeighborCallView<Dimension>::
-setNodeExtents() {
-  mParent->setNodeExtents();
+setNodeExtents(const DataBaseView<Dimension>& dataBase) {
+  mParent->setNodeExtents(dataBase);
 }
 
 template<typename Dimension>
 void
 PythonNeighborCallView<Dimension>::
-setInternalNodeExtents() {
-  mParent->setInternalNodeExtents();
+setInternalNodeExtents(const DataBaseView<Dimension>& dataBase) {
+  mParent->setInternalNodeExtents(dataBase);
 }
 
 template<typename Dimension>
 void
 PythonNeighborCallView<Dimension>::
-setGhostNodeExtents() {
-  mParent->setGhostNodeExtents();
+setGhostNodeExtents(const DataBaseView<Dimension>& dataBase) {
+  mParent->setGhostNodeExtents(dataBase);
 }
 
 template<typename Dimension>
 void
 PythonNeighborCallView<Dimension>::
-setNodeExtents(const Container<NodeID>& nodeIDs) {
-  mParent->setNodeExtents(nodeIDs);
+setNodeExtents(const DataBaseView<Dimension>& dataBase,
+               const Container<NodeID>& nodeIDs) {
+  mParent->setNodeExtents(dataBase, nodeIDs);
 }
 
 template<typename Dimension>
