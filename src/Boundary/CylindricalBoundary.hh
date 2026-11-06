@@ -84,9 +84,9 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  const DataBase<Dim<3>>& mDataBase;
   FieldList<Dim<3>, Scalar> mDeltaPhi;
   FieldList<Dim<3>, Vector> mGhostPositions;
-  Scalar mKernelExtent;
 
   // The restart registration.
   RestartRegistrationType mRestart;

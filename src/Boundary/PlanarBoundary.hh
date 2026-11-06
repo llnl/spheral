@@ -90,9 +90,9 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  const DataBase<Dimension>& mDataBase;
   GeomPlane<Dimension> mEnterPlane;
   GeomPlane<Dimension> mExitPlane;
-  Scalar mKernelExtent;
 
   // The restart registration.
   RestartRegistrationType mRestart;

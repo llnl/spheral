@@ -24,11 +24,11 @@ namespace Spheral {
 CylindricalBoundary::
 CylindricalBoundary(const DataBase<Dim<3> >& dataBase):
   Boundary<Dim<3> >(),
+  mDataBase(dataBase),
   mDeltaPhi(dataBase.newGlobalFieldList(0.0, "Delta angle for generating ghosts")),
   mGhostPositions(dataBase.newGlobalFieldList(Dim<3>::Vector(), "Ghost node positions")),
-  mKernelExtent(dataBase.kernelExtent()),
   mRestart(registerWithRestart(*this)) {
-  VERIFY(distinctlyGreaterThan(mKernelExtent, 0.0));
+  VERIFY(distinctlyGreaterThan(mDataBase.kernelExtent(), 0.0));
 }
 
 //------------------------------------------------------------------------------
@@ -60,6 +60,7 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
 
   // Get the number of nodes per h, and the kernel extent.
   const double nPerh = nodeList.nodesPerSmoothingScale();
+  const double kernelExtent = mDataBase.kernelExtent();
   CHECK(distinctlyGreaterThan(nPerh, 0.0));
 
   // The vector of ghost positions we'll build up, to assign all at once at the
@@ -78,13 +79,13 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
 
     // Have we computed the set of ghost nodes for this node yet?
     if (deltaPhi(i) == 0.0) {
-      deltaPhi(i) = angularSpacing(ri, hzi, nPerh, mKernelExtent);
+      deltaPhi(i) = angularSpacing(ri, hzi, nPerh, kernelExtent);
     }
     const double dphi = deltaPhi(i);
     CHECK(dphi > 0.0);
 
     // Create the ghost nodes positions.
-    const int nbins = max(1, int(min(M_PI - dphi, 1.5*mKernelExtent*hzi/(ri + 1.0e-50))/dphi + 0.5));
+    const int nbins = max(1, int(min(M_PI - dphi, 1.5*kernelExtent*hzi/(ri + 1.0e-50))/dphi + 0.5));
     if (!(nbins >= 1 && nbins*dphi < M_PI)) {
       cerr << nbins << " "
            << dphi <<  " "

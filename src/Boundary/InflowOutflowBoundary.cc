@@ -49,7 +49,6 @@ InflowOutflowBoundary(DataBase<Dimension>& dataBase,
   Boundary<Dimension>(),
   Physics<Dimension>(),
   mInflowRadius(std::numeric_limits<double>::max()),
-  mKernelExtent(dataBase.kernelExtent()),
   mDataBase(dataBase),
   mPlane(plane),
   mBoundaryCount(dataBase.numNodeLists()),
@@ -81,7 +80,7 @@ setGhostNodes(NodeList<Dimension>& nodeList) {
     
     // Use the planar boundary to find the set of points that interact with
     // the entrance plane.  We make these the control nodes.
-    cNodes = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mKernelExtent);
+    cNodes = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mDataBase.kernelExtent());
 
     // Create the ghost nodes.
     nodeList.numGhostNodes(currentNumGhostNodes + mNumInflowNodes[nodeList.name()]);
@@ -241,7 +240,7 @@ InflowOutflowBoundary<Dimension>::initializeProblemStartup(const bool /*final*/)
     // Use a planar boundary to figure out what sort of nodes are in range of the plane.
     // We use those to create a stencil of the in/outflow conditions.
     const auto& nhat = mPlane.normal();
-    auto nodeIDs = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mKernelExtent);
+    auto nodeIDs = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mDataBase.kernelExtent());
     if (mEmpty) nodeIDs.clear();
 
     // Remove any ghost nodes from other BCs.

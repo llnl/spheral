@@ -71,9 +71,9 @@ PlanarBoundary(const DataBase<Dimension>& dataBase,
                const GeomPlane<Dimension>& enterPlane,
                const GeomPlane<Dimension>& exitPlane):
   Boundary<Dimension>(),
+  mDataBase(dataBase),
   mEnterPlane(enterPlane),
   mExitPlane(exitPlane),
-  mKernelExtent(dataBase.kernelExtent()),
   mRestart(registerWithRestart(*this)) {
   ENSURE(valid());
 }
@@ -88,7 +88,7 @@ PlanarBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
   // Remember which node list we are setting the ghost nodes for.
   this->addNodeList(nodeList);
   auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  boundaryNodes.controlNodes = findNodesTouchingThroughPlanes(nodeList, mEnterPlane, mExitPlane, mKernelExtent);
+  boundaryNodes.controlNodes = findNodesTouchingThroughPlanes(nodeList, mEnterPlane, mExitPlane, mDataBase.kernelExtent());
 
   // std::sort(controlNodes.begin(), controlNodes.end());
   // controlNodes.erase(std::unique(controlNodes.begin(), controlNodes.end()), controlNodes.end());

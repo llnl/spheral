@@ -151,7 +151,6 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   Scalar mInflowRadius;   // radius to clip inflow
-  Scalar mKernelExtent;
 
   DataBase<Dimension>& mDataBase;
   GeomPlane<Dimension> mPlane;
