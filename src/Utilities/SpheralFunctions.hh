@@ -35,7 +35,11 @@ using std::max;
 template<typename DataType>
 SPHERAL_HOST_DEVICE
 constexpr DataType clamp(const DataType value, const DataType lower, const DataType upper) {
+#ifdef SPHERAL_ENABLE_GPU
    return value < lower ? lower : (upper < value ? upper : value);
+#else
+   return std::clamp(value, lower, upper);
+#endif
 }
 
 //------------------------------------------------------------------------------
