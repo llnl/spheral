@@ -1,4 +1,3 @@
-#include "Field/NodeIterators.hh"
 #include "Field/FieldView.hh"
 
 #include "Geometry/Dimension.hh"
@@ -246,91 +245,6 @@ Field<Dimension, DataType>::operator==(const FieldBase<Dimension>& rhs) const {
     return false;
   }
 }
-
-//------------------------------------------------------------------------------
-// Element access by Node ID iterator.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType&
-Field<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) {
-  CHECK(itr.nodeListPtr() == this->nodeListPtr());
-  CHECK(itr.nodeID() >= 0 && itr.nodeID() < size());
-  return mDataArray[itr.nodeID()];
-}
-
-template<typename Dimension, typename DataType>
-inline
-const DataType&
-Field<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) const {
-  CHECK(itr.nodeListPtr() == this->nodeListPtr());
-  CHECK(itr.nodeID() >= 0 && itr.nodeID() < size());
-  return mDataArray[itr.nodeID()];
-}
-
-// //------------------------------------------------------------------------------
-// // Element access by CoarseNodeIterator.
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// DataType&
-// Field<Dimension, DataType>::
-// operator()(const CoarseNodeIterator<Dimension>& itr) {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewCoarseNodes) {
-//     cacheCoarseValues();
-//     mNewCoarseNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mCoarseCache.size());
-//   return mCoarseCache[itr.cacheID()];
-// }
-
-// template<typename Dimension, typename DataType>
-// inline
-// const DataType&
-// Field<Dimension, DataType>::
-// operator()(const CoarseNodeIterator<Dimension>& itr) const {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewCoarseNodes) {
-//     cacheCoarseValues();
-//     mNewCoarseNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mCoarseCache.size());
-//   return mCoarseCache[itr.cacheID()];
-// }
-
-// //------------------------------------------------------------------------------
-// // Element access by RefineNodeIterator.
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// DataType&
-// Field<Dimension, DataType>::
-// operator()(const RefineNodeIterator<Dimension>& itr) {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewRefineNodes) {
-//     cacheRefineValues();
-//     mNewRefineNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mRefineCache.size());
-//   return mRefineCache[itr.cacheID()];
-// }
-
-// template<typename Dimension, typename DataType>
-// inline
-// const DataType&
-// Field<Dimension, DataType>::
-// operator()(const RefineNodeIterator<Dimension>& itr) const {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewRefineNodes) {
-//     cacheRefineValues();
-//     mNewRefineNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mRefineCache.size());
-//   return mRefineCache[itr.cacheID()];
-// }
 
 //------------------------------------------------------------------------------
 // Zero out the field elements.

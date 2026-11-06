@@ -27,7 +27,7 @@ public:
   using NperhIView = CubicHermiteInterpolatorView;
 
   SPHERAL_HOST_DEVICE TableKernelView() = default;
-  SPHERAL_HOST_DEVICE virtual ~TableKernelView() = default;
+  SPHERAL_HOST_DEVICE ~TableKernelView() = default;
 
   // Equivalence
   SPHERAL_HOST_DEVICE bool operator==(const TableKernelView& rhs) const;
@@ -87,4 +87,3 @@ protected:
 #include "TableKernelViewInline.hh"
 
 #endif
-

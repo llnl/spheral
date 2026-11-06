@@ -4,18 +4,21 @@
 //
 // Created by JMO, Sun Feb  6 13:44:49 PST 2000
 //----------------------------------------------------------------------------//
-#ifndef DataBase_HH
-#define DataBase_HH
+#ifndef __Spheral_DataBase__
+#define __Spheral_DataBase__
 
+#include "DataBase/DataBaseView.hh"
 #include "Geometry/Dimension.hh"
 #include "NodeList/NodeList.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "NodeList/SolidNodeList.hh"
 #include "NodeList/DEMNodeList.hh"
-#include "Field/NodeIterators.hh"
+#include "Neighbor/NeighborVariant.hh"
+#include "Neighbor/NeighborViewVariant.hh"
 #include "Neighbor/ConnectivityMap.hh"
 
 #include <vector>
+#include <span>
 
 namespace Spheral {
   template<typename Dimension, typename DataType> class Field;
@@ -26,7 +29,7 @@ namespace Spheral {
 namespace Spheral {
 
 template<typename Dimension>
-class DataBase {
+class DataBase: public DataBaseView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -34,147 +37,152 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  using NodeListIterator = typename std::vector<NodeList<Dimension>*>::iterator;
-  using ConstNodeListIterator = typename std::vector<NodeList<Dimension>*>::const_iterator;
+  template<typename T> using ValueContainer = std::vector<T>;
 
-  using FluidNodeListIterator = typename std::vector<FluidNodeList<Dimension>*>::iterator;
-  using ConstFluidNodeListIterator = typename std::vector<FluidNodeList<Dimension>*>::const_iterator;
+#ifdef SPHERAL_UNIFIED_MEMORY
+  template<typename T> using ViewSpan = std::span<T>;
+#else
+  template<typename T> using ViewSpan = chai::ManagedArray<T>;
+#endif
 
-  using SolidNodeListIterator = typename std::vector<SolidNodeList<Dimension>*>::iterator;
-  using ConstSolidNodeListIterator = typename std::vector<SolidNodeList<Dimension>*>::const_iterator;
+  using NodeListIterator = typename ValueContainer<NodeList<Dimension>*>::iterator;
+  using ConstNodeListIterator = typename ValueContainer<NodeList<Dimension>*>::const_iterator;
 
-  using DEMNodeListIterator = typename std::vector<DEMNodeList<Dimension>*>::iterator;
-  using ConstDEMNodeListIterator = typename std::vector<DEMNodeList<Dimension>*>::const_iterator;
+  using FluidNodeListIterator = typename ValueContainer<FluidNodeList<Dimension>*>::iterator;
+  using ConstFluidNodeListIterator = typename ValueContainer<FluidNodeList<Dimension>*>::const_iterator;
+
+  using SolidNodeListIterator = typename ValueContainer<SolidNodeList<Dimension>*>::iterator;
+  using ConstSolidNodeListIterator = typename ValueContainer<SolidNodeList<Dimension>*>::const_iterator;
+
+  using DEMNodeListIterator = typename ValueContainer<DEMNodeList<Dimension>*>::iterator;
+  using ConstDEMNodeListIterator = typename ValueContainer<DEMNodeList<Dimension>*>::const_iterator;
 
   using ConnectivityMapType = ConnectivityMap<Dimension>;
   using ConnectivityMapPtr = std::shared_ptr<ConnectivityMapType>;
   
-  // It is convenient to be able to query the DataBase for the problem
-  // dimensionality for Python.
-  static int nDim;
+  using ViewType = DataBaseView<Dimension>;
 
-  // Constructors.
-  DataBase();
-
-  // Destructor.
-  ~DataBase() = default;
+  // Constructors, destructor
+  DataBase(const Scalar kernelExtent);
+  DataBase() = delete;
+  DataBase(const DataBase& rhs) = delete;
+  DataBase(DataBase&& rhs) = delete;
+  virtual ~DataBase() = default;
 
   // Assignment.
-  DataBase& operator=(const DataBase& rhs) = default;
+  DataBase& operator=(const DataBase& rhs) = delete;
+  DataBase& operator=(DataBase&& rhs) = delete;
 
-  // Number of NodeLists we have in the DataBase.
-  size_t numNodeLists()                                            const { return mNodeListPtrs.size(); }
-  size_t numFluidNodeLists()                                       const { return mFluidNodeListPtrs.size(); }
-  size_t numSolidNodeLists()                                       const { return mSolidNodeListPtrs.size(); }
-  size_t numDEMNodeLists()                                         const { return mDEMNodeListPtrs.size(); }
-
-  // Numbers of nodes.
-  size_t numInternalNodes() const;
-  size_t numGhostNodes() const;
-  size_t numNodes() const;
+  // Global numbers of nodes
+  size_t numNodeLists()                                       const { return mNodeListPtrs.size(); }
+  size_t numFluidNodeLists()                                  const { return mFluidNodeListPtrs.size(); }
+  size_t numSolidNodeLists()                                  const { return mSolidNodeListPtrs.size(); }
+  size_t numDEMNodeLists()                                    const { return mDEMNodeListPtrs.size(); }
+  size_t numInternalNodes()                                   const { ensureViewCurrent(); return ViewType::numInternalNodes(); }
+  size_t numGhostNodes()                                      const { ensureViewCurrent(); return ViewType::numGhostNodes(); }
+  size_t numNodes()                                           const { ensureViewCurrent(); return ViewType::numNodes(); }
+  size_t numFluidInternalNodes()                              const { ensureViewCurrent(); return ViewType::numFluidInternalNodes(); }
+  size_t numFluidGhostNodes()                                 const { ensureViewCurrent(); return ViewType::numFluidGhostNodes(); }
+  size_t numFluidNodes()                                      const { ensureViewCurrent(); return ViewType::numFluidNodes(); }
+  size_t numSolidInternalNodes()                              const { ensureViewCurrent(); return ViewType::numSolidInternalNodes(); }
+  size_t numSolidGhostNodes()                                 const { ensureViewCurrent(); return ViewType::numSolidGhostNodes(); }
+  size_t numSolidNodes()                                      const { ensureViewCurrent(); return ViewType::numSolidNodes(); }
+  size_t numDEMInternalNodes()                                const { ensureViewCurrent(); return ViewType::numDEMInternalNodes(); }
+  size_t numDEMGhostNodes()                                   const { ensureViewCurrent(); return ViewType::numDEMGhostNodes(); }
+  size_t numDEMNodes()                                        const { ensureViewCurrent(); return ViewType::numDEMNodes(); }
+  const auto& nodeListViews()                                 const { ensureViewCurrent(); return ViewType::nodeListViews(); }
+  const auto& fluidNodeListViews()                            const { ensureViewCurrent(); return ViewType::fluidNodeListViews(); }
+  const auto& solidNodeListViews()                            const { ensureViewCurrent(); return ViewType::solidNodeListViews(); }
+  const auto& DEMNodeListViews()                              const { ensureViewCurrent(); return ViewType::DEMNodeListViews(); }
+  bool haveNodeList(const NodeListView<Dimension>& x)         const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const FluidNodeListView<Dimension>& x)    const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const SolidNodeListView<Dimension>& x)    const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  bool haveNodeList(const DEMNodeListView<Dimension>& x)      const { ensureViewCurrent(); return ViewType::haveNodeList(x); }
+  size_t nodeListIndex(const NodeListView<Dimension>& x)      const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  size_t nodeListIndex(const FluidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  size_t nodeListIndex(const SolidNodeListView<Dimension>& x) const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  size_t nodeListIndex(const DEMNodeListView<Dimension>& x)   const { ensureViewCurrent(); return ViewType::nodeListIndex(x); }
+  void setDEMHfieldFromParticleRadius(const size_t startUniqueIndex,
+                                      const Scalar kernelExtent)    { ensureViewCurrent(); ViewType::setDEMHfieldFromParticleRadius(startUniqueIndex, kernelExtent); }
+  Scalar maxDEMNeighborSearchBuffer()                         const { ensureViewCurrent(); return ViewType::maxDEMNeighborSearchBuffer(); }
+  size_t generation()                                         const { ensureViewCurrent(); return ViewType::generation(); }
 
   size_t globalNumInternalNodes() const;
   size_t globalNumGhostNodes() const;
   size_t globalNumNodes() const;
 
-  // Numbers of fluid nodes.
-  size_t numFluidInternalNodes() const;
-  size_t numFluidGhostNodes() const;
-  size_t numFluidNodes() const;
-
+  // Global numbers of fluid nodes
   size_t globalNumFluidInternalNodes() const;
   size_t globalNumFluidGhostNodes() const;
   size_t globalNumFluidNodes() const;
    
+  // Global numbers of solid nodes
+  size_t globalNumSolidInternalNodes() const;
+  size_t globalNumSolidGhostNodes() const;
+  size_t globalNumSolidNodes() const;
+   
+  // Global numbers of DEM nodes
+  size_t globalNumDEMInternalNodes() const;
+  size_t globalNumDEMGhostNodes() const;
+  size_t globalNumDEMNodes() const;
+   
   // Access the various NodeLists
-  const std::vector<NodeList<Dimension>*>& nodeListPtrs()           const { return mNodeListPtrs; }
-  const std::vector<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const { return mFluidNodeListPtrs; }
-  const std::vector<SolidNodeList<Dimension>*>& solidNodeListPtrs() const { return mSolidNodeListPtrs; }
-  const std::vector<DEMNodeList<Dimension>*>& DEMNodeListPtrs()     const { return mDEMNodeListPtrs; }
+  const ValueContainer<NodeList<Dimension>*>& nodeListPtrs()           const { return mNodeListPtrs; }
+  const ValueContainer<FluidNodeList<Dimension>*>& fluidNodeListPtrs() const { return mFluidNodeListPtrs; }
+  const ValueContainer<SolidNodeList<Dimension>*>& solidNodeListPtrs() const { return mSolidNodeListPtrs; }
+  const ValueContainer<DEMNodeList<Dimension>*>& DEMNodeListPtrs()     const { return mDEMNodeListPtrs; }
 
   // Provide normal iterator methods over the DataBase NodeLists.
-  NodeListIterator nodeListBegin()                                        { return mNodeListPtrs.begin(); }
-  NodeListIterator nodeListEnd()                                          { return mNodeListPtrs.end(); }
+  NodeListIterator nodeListBegin()                                           { return mNodeListPtrs.begin(); }
+  NodeListIterator nodeListEnd()                                             { return mNodeListPtrs.end(); }
 
-  ConstNodeListIterator nodeListBegin()                             const { return mNodeListPtrs.begin(); }
-  ConstNodeListIterator nodeListEnd()                               const { return mNodeListPtrs.end(); }
+  ConstNodeListIterator nodeListBegin()                                const { return mNodeListPtrs.begin(); }
+  ConstNodeListIterator nodeListEnd()                                  const { return mNodeListPtrs.end(); }
 
-  FluidNodeListIterator fluidNodeListBegin()                              { return mFluidNodeListPtrs.begin(); }
-  FluidNodeListIterator fluidNodeListEnd()                                { return mFluidNodeListPtrs.end(); }
+  FluidNodeListIterator fluidNodeListBegin()                                 { return mFluidNodeListPtrs.begin(); }
+  FluidNodeListIterator fluidNodeListEnd()                                   { return mFluidNodeListPtrs.end(); }
 
-  ConstFluidNodeListIterator fluidNodeListBegin()                   const { return mFluidNodeListPtrs.begin(); }
-  ConstFluidNodeListIterator fluidNodeListEnd()                     const { return mFluidNodeListPtrs.end(); }
+  ConstFluidNodeListIterator fluidNodeListBegin()                      const { return mFluidNodeListPtrs.begin(); }
+  ConstFluidNodeListIterator fluidNodeListEnd()                        const { return mFluidNodeListPtrs.end(); }
 
-  NodeListIterator fluidNodeListAsNodeListBegin()                         { return mFluidNodeListAsNodeListPtrs.begin(); }
-  NodeListIterator fluidNodeListAsNodeListEnd()                           { return mFluidNodeListAsNodeListPtrs.end(); }
+  NodeListIterator fluidNodeListAsNodeListBegin()                            { return mFluidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator fluidNodeListAsNodeListEnd()                              { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator fluidNodeListAsNodeListBegin()              const { return mFluidNodeListAsNodeListPtrs.begin(); }
-  ConstNodeListIterator fluidNodeListAsNodeListEnd()                const { return mFluidNodeListAsNodeListPtrs.end(); }
+  ConstNodeListIterator fluidNodeListAsNodeListBegin()                 const { return mFluidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator fluidNodeListAsNodeListEnd()                   const { return mFluidNodeListAsNodeListPtrs.end(); }
 
-  SolidNodeListIterator solidNodeListBegin()                              { return mSolidNodeListPtrs.begin(); }
-  SolidNodeListIterator solidNodeListEnd()                                { return mSolidNodeListPtrs.end(); }
+  SolidNodeListIterator solidNodeListBegin()                                 { return mSolidNodeListPtrs.begin(); }
+  SolidNodeListIterator solidNodeListEnd()                                   { return mSolidNodeListPtrs.end(); }
 
-  ConstSolidNodeListIterator solidNodeListBegin()                   const { return mSolidNodeListPtrs.begin(); }
-  ConstSolidNodeListIterator solidNodeListEnd()                     const { return mSolidNodeListPtrs.end(); }
+  ConstSolidNodeListIterator solidNodeListBegin()                      const { return mSolidNodeListPtrs.begin(); }
+  ConstSolidNodeListIterator solidNodeListEnd()                        const { return mSolidNodeListPtrs.end(); }
 
-  NodeListIterator solidNodeListAsNodeListBegin()                         { return mSolidNodeListAsNodeListPtrs.begin(); }
-  NodeListIterator solidNodeListAsNodeListEnd()                           { return mSolidNodeListAsNodeListPtrs.end(); }
+  NodeListIterator solidNodeListAsNodeListBegin()                            { return mSolidNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator solidNodeListAsNodeListEnd()                              { return mSolidNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator solidNodeListAsNodeListBegin()              const { return mSolidNodeListAsNodeListPtrs.begin(); }
-  ConstNodeListIterator solidNodeListAsNodeListEnd()                const { return mSolidNodeListAsNodeListPtrs.end(); }
+  ConstNodeListIterator solidNodeListAsNodeListBegin()                 const { return mSolidNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator solidNodeListAsNodeListEnd()                   const { return mSolidNodeListAsNodeListPtrs.end(); }
   
-  DEMNodeListIterator DEMNodeListBegin()                                  { return mDEMNodeListPtrs.begin(); }
-  DEMNodeListIterator DEMNodeListEnd()                                    { return mDEMNodeListPtrs.end(); }
+  DEMNodeListIterator DEMNodeListBegin()                                     { return mDEMNodeListPtrs.begin(); }
+  DEMNodeListIterator DEMNodeListEnd()                                       { return mDEMNodeListPtrs.end(); }
 
-  ConstDEMNodeListIterator DEMNodeListBegin()                       const { return mDEMNodeListPtrs.begin(); }
-  ConstDEMNodeListIterator DEMNodeListEnd()                         const { return mDEMNodeListPtrs.end(); }
+  ConstDEMNodeListIterator DEMNodeListBegin()                          const { return mDEMNodeListPtrs.begin(); }
+  ConstDEMNodeListIterator DEMNodeListEnd()                            const { return mDEMNodeListPtrs.end(); }
 
-  NodeListIterator DEMNodeListAsNodeListBegin()                           { return mDEMNodeListAsNodeListPtrs.begin(); }
-  NodeListIterator DEMNodeListAsNodeListEnd()                             { return mDEMNodeListAsNodeListPtrs.end(); }
+  NodeListIterator DEMNodeListAsNodeListBegin()                              { return mDEMNodeListAsNodeListPtrs.begin(); }
+  NodeListIterator DEMNodeListAsNodeListEnd()                                { return mDEMNodeListAsNodeListPtrs.end(); }
 
-  ConstNodeListIterator DEMNodeListAsNodeListBegin()                const { return mDEMNodeListAsNodeListPtrs.begin(); }
-  ConstNodeListIterator DEMNodeListAsNodeListEnd()                  const { return mDEMNodeListAsNodeListPtrs.end(); }
-
-  // Provide NodeIterators to go over the elements of NodeLists/FieldLists.
-  AllNodeIterator<Dimension> nodeBegin() const;
-  AllNodeIterator<Dimension> nodeEnd() const;
-
-  InternalNodeIterator<Dimension> internalNodeBegin() const;
-  InternalNodeIterator<Dimension> internalNodeEnd() const;
-  
-  GhostNodeIterator<Dimension> ghostNodeBegin() const;
-  GhostNodeIterator<Dimension> ghostNodeEnd() const;
-  
-  MasterNodeIterator<Dimension> masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const;
-  MasterNodeIterator<Dimension> masterNodeEnd() const;
-  
-  CoarseNodeIterator<Dimension> coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const;
-  CoarseNodeIterator<Dimension> coarseNodeEnd() const;
-  
-  RefineNodeIterator<Dimension> refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const;
-  RefineNodeIterator<Dimension> refineNodeEnd() const;
-
-  // Same iterator methods, but over FluidNodeLists.
-  AllNodeIterator<Dimension> fluidNodeBegin() const;
-  AllNodeIterator<Dimension> fluidNodeEnd() const;
-  
-  InternalNodeIterator<Dimension> fluidInternalNodeBegin() const;
-  InternalNodeIterator<Dimension> fluidInternalNodeEnd() const;
-  
-  GhostNodeIterator<Dimension> fluidGhostNodeBegin() const;
-  GhostNodeIterator<Dimension> fluidGhostNodeEnd() const;
-  
-  MasterNodeIterator<Dimension> fluidMasterNodeBegin(const std::vector<std::vector<int>>& masterLists) const;
-  MasterNodeIterator<Dimension> fluidMasterNodeEnd() const;
-  
-  CoarseNodeIterator<Dimension> fluidCoarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const;
-  CoarseNodeIterator<Dimension> fluidCoarseNodeEnd() const;
-  
-  RefineNodeIterator<Dimension> fluidRefineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const;
-  RefineNodeIterator<Dimension> fluidRefineNodeEnd() const;
+  ConstNodeListIterator DEMNodeListAsNodeListBegin()                   const { return mDEMNodeListAsNodeListPtrs.begin(); }
+  ConstNodeListIterator DEMNodeListAsNodeListEnd()                     const { return mDEMNodeListAsNodeListPtrs.end(); }
 
   // Optimize all Neighbor objects for the current state.
   void reinitializeNeighbors() const;
+
+  // The Neighbor object
+  const NeighborVariant<Dimension>& neighbor()                         const { return mNeighbor; }
+  NeighborViewVariant<Dimension> neighborView()                        const;
+  template<typename NT, typename... Args>
+  NT& emplaceNeighbor(Args&&... args);
 
   // Update the internal connectivity map.
   void updateConnectivityMap(const bool computeGhostConnectivity,
@@ -204,30 +212,11 @@ public:
   void deleteNodeList(FluidNodeList<Dimension>& nodeList);
   void deleteNodeList(NodeList<Dimension>& nodeList);
 
-  bool haveNodeList(const NodeList<Dimension>& nodeList) const;
-  size_t nodeListIndex(const NodeList<Dimension>& nodeList) const;
-
-  // Provide convenience functions for manipulating the neighbor information
-  // of the NodeLists.
-  void setMasterNodeLists(const Vector& position,
-                          const SymTensor& H,
-                          std::vector<std::vector<int>>& masterLists,
-                          std::vector<std::vector<int>>& coarseNeighbors,
-                          const bool computeGhostConnectivity) const;
-  void setMasterFluidNodeLists(const Vector& position,
-                               const SymTensor& H,
-                               std::vector<std::vector<int>>& masterLists,
-                               std::vector<std::vector<int>>& coarseNeighbors,
-                               const bool computeGhostConnectivity) const;
-
-  void setRefineNodeLists(const Vector& position,
-                          const SymTensor& H,
-                          const std::vector<std::vector<int>>& coarseNeighbors,
-                          std::vector<std::vector<int>>& refineNeighbors) const;
-  void setRefineFluidNodeLists(const Vector& position,
-                               const SymTensor& H,
-                               const std::vector<std::vector<int>>& coarseNeighbors,
-                               std::vector<std::vector<int>>& refineNeighbors) const;
+  // Find the index of a NodeList in the current set
+  size_t nodeListIndex(const NodeList<Dimension>* x)           const { return std::distance(mNodeListPtrs.begin(), std::ranges::find(mNodeListPtrs, x)); }
+  size_t fluidNodeListIndex(const FluidNodeList<Dimension>* x) const { return std::distance(mFluidNodeListPtrs.begin(), std::ranges::find(mFluidNodeListPtrs, x)); }
+  size_t solidNodeListIndex(const SolidNodeList<Dimension>* x) const { return std::distance(mSolidNodeListPtrs.begin(), std::ranges::find(mSolidNodeListPtrs, x)); }
+  size_t DEMNodeListIndex(const DEMNodeList<Dimension>* x)     const { return std::distance(mDEMNodeListPtrs.begin(), std::ranges::find(mDEMNodeListPtrs, x)); }
 
   // Query methods which return "global" fields (FieldLists) for quantities
   // defined over all NodeLists.  These methods all build up FieldLists
@@ -273,9 +262,7 @@ public:
   FieldList<Dimension, int> DEMCompositeParticleIndex() const;
   FieldList<Dimension, size_t> DEMUniqueIndex() const;
 
-  void setDEMHfieldFromParticleRadius(const int startUniqueIndex);
   void setDEMUniqueIndices();
-  Scalar maxNeighborSearchBuffer() const;
 
   // We can also return the node extent Fields stored in the Neighbor objects.
   FieldList<Dimension, Vector> globalNodeExtent() const;
@@ -300,7 +287,7 @@ public:
                          FieldList<Dimension, Scalar>& result) const;
 
   // Collect the number of neighbors for each node from the ConnectivityMap.
-  FieldList<Dimension, int> numNeighbors() const;
+  FieldList<Dimension, size_t> numNeighbors() const;
 
   // Return the number of internal nodes for the sets of NodeLists
   std::vector<size_t> numInternalNodesPerNodeList() const;
@@ -370,9 +357,6 @@ public:
                                                     const bool resetValues = true) const;
   //............................................................................
 
-  // Get the maximum kernel extent for all NodeLists.
-  Scalar maxKernelExtent() const;
-
   // Compute coordinates bounding all nodes in the DataBase.
   void boundingBox(Vector& xmin, Vector& xmax,
                    const bool ghost = true) const;
@@ -398,29 +382,50 @@ public:
   // valid state.
   bool valid() const;
 
-  // Prevent copying.
-  DataBase(const DataBase& rhs) = delete;
+  // Manage the View object
+  ViewType view() const { ensureViewCurrent(); return static_cast<const ViewType&>(*this); }
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  std::vector<NodeList<Dimension>*> mNodeListPtrs;
+  // NodeList pointer arrays
+  ValueContainer<NodeList<Dimension>*>      mNodeListPtrs;
+  ValueContainer<FluidNodeList<Dimension>*> mFluidNodeListPtrs;
+  ValueContainer<NodeList<Dimension>*>      mFluidNodeListAsNodeListPtrs;
+  ValueContainer<SolidNodeList<Dimension>*> mSolidNodeListPtrs;
+  ValueContainer<NodeList<Dimension>*>      mSolidNodeListAsNodeListPtrs;
+  ValueContainer<DEMNodeList<Dimension>*>   mDEMNodeListPtrs;
+  ValueContainer<NodeList<Dimension>*>      mDEMNodeListAsNodeListPtrs;
 
-  std::vector<FluidNodeList<Dimension>*> mFluidNodeListPtrs;
-  std::vector<NodeList<Dimension>*> mFluidNodeListAsNodeListPtrs;
+  // Neighbor stuff
+  mutable NeighborVariant<Dimension>        mNeighbor;
+  mutable ConnectivityMapPtr                mConnectivityMapPtr;
+  mutable std::vector<size_t>                mNodeListViewGenerations;
 
-  std::vector<SolidNodeList<Dimension>*> mSolidNodeListPtrs;
-  std::vector<NodeList<Dimension>*> mSolidNodeListAsNodeListPtrs;
+  // Storage for DataBaseView
+#ifdef SPHERAL_UNIFIED_MEMORY  
+  ValueContainer<NodeListView<Dimension>>      mNodeListViewStorage;
+  ValueContainer<FluidNodeListView<Dimension>> mFluidNodeListViewStorage;
+  ValueContainer<SolidNodeListView<Dimension>> mSolidNodeListViewStorage;
+  ValueContainer<DEMNodeListView<Dimension>>   mDEMNodeListViewStorage;
+#else
+  ViewSpan<NodeListView<Dimension>>      mNodeListViewStorage;
+  ViewSpan<FluidNodeListView<Dimension>> mFluidNodeListViewStorage;
+  ViewSpan<SolidNodeListView<Dimension>> mSolidNodeListViewStorage;
+  ViewSpan<DEMNodeListView<Dimension>>   mDEMNodeListViewStorage;
+#endif
 
-  std::vector<DEMNodeList<Dimension>*> mDEMNodeListPtrs;
-  std::vector<NodeList<Dimension>*> mDEMNodeListAsNodeListPtrs;
+  // Keep the DataBaseView in sync
+  void updateView();
+  void ensureViewCurrent() const;
 
-  mutable ConnectivityMapPtr mConnectivityMapPtr;
+  // Expose the View data
+  using ViewType::mNodeListViews;
+  using ViewType::mFluidNodeListViews;
+  using ViewType::mSolidNodeListViews;
+  using ViewType::mDEMNodeListViews;
+  using ViewType::mKernelExtent;
+  using ViewType::mGeneration;
 };
-
-//------------------------------------------------------------------------------
-// Static varaible initialization
-//------------------------------------------------------------------------------
-template<typename Dimension> int DataBase<Dimension>::nDim = Dimension::nDim;
 
 }
 

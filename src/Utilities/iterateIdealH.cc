@@ -49,13 +49,17 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   auto m = dataBase.fluidMass();
   auto rho = dataBase.fluidMassDensity();
   auto H = dataBase.fluidHfield();
+  const auto& fluidNodeListPtrs = dataBase.fluidNodeListPtrs();
 
   // If we're using the fixDeterminant, take a snapshot of the input H determinants.
   auto Hdet0 = dataBase.newFluidFieldList(double());
   if (fixDeterminant) {
-    for (auto itr = dataBase.internalNodeBegin();
-         itr != dataBase.internalNodeEnd();
-         ++itr) Hdet0(itr) = H(itr).Determinant();
+    for (auto nodeListi = 0u; nodeListi < fluidNodeListPtrs.size(); ++nodeListi) {
+      const auto numInternalNodes = fluidNodeListPtrs[nodeListi]->numInternalNodes();
+      for (auto nodei = 0u; nodei < numInternalNodes; ++nodei) {
+        Hdet0(nodeListi, nodei) = H(nodeListi, nodei).Determinant();
+      }
+    }
   }
 
   // Store the input nperh for each NodeList.
@@ -63,7 +67,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   vector<double> nperh0;
   // Pulled divide by nPerhForIteration out of loop to improve optimization
   if (distinctlyGreaterThan(nPerhForIteration, 0.0)) {
-    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+    for (auto* nodeListPtr: fluidNodeListPtrs) {
       const auto nperh = nodeListPtr->nodesPerSmoothingScale();
       nperh0.push_back(nperh);
       auto& Hfield = **(H.fieldForNodeList(*nodeListPtr));
@@ -71,7 +75,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
       nodeListPtr->nodesPerSmoothingScale(nPerhForIteration);
     }
   } else {
-    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+    for (auto* nodeListPtr: fluidNodeListPtrs) {
       const auto nperh = nodeListPtr->nodesPerSmoothingScale();
       nperh0.push_back(nperh);
     }
@@ -82,19 +86,22 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   // we need a snapshot of the rescaled H determinant as well.
   auto Hdet1 = dataBase.newFluidFieldList(double());
   if (fixDeterminant) {
-    for (auto itr = dataBase.internalNodeBegin();
-         itr != dataBase.internalNodeEnd();
-         ++itr) Hdet1(itr) = H(itr).Determinant();
+    for (auto nodeListi = 0u; nodeListi < fluidNodeListPtrs.size(); ++nodeListi) {
+      const auto numInternalNodes = fluidNodeListPtrs[nodeListi]->numInternalNodes();
+      for (auto nodei = 0u; nodei < numInternalNodes; ++nodei) {
+        Hdet1(nodeListi, nodei) = H(nodeListi, nodei).Determinant();
+      }
+    }
   }
 
   // If requested, start by making all the H's round (volume preserving).
   if (sphericalStart) {
-    for (auto itr = dataBase.internalNodeBegin();
-         itr != dataBase.internalNodeEnd();
-         ++itr) {
-      const auto Hdeti = H(itr).Determinant();
-      const auto Hi = Dimension::rootnu(Hdeti) * SymTensor::one();
-      H(itr) = Hi;
+    for (auto nodeListi = 0u; nodeListi < fluidNodeListPtrs.size(); ++nodeListi) {
+      const auto numInternalNodes = fluidNodeListPtrs[nodeListi]->numInternalNodes();
+      for (auto nodei = 0u; nodei < numInternalNodes; ++nodei) {
+        const auto Hdeti = H(nodeListi, nodei).Determinant();
+        H(nodeListi, nodei) = Dimension::rootnu(Hdeti) * SymTensor::one();
+      }
     }
   }
 
@@ -131,7 +138,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     // flagNodeDone = 0;
 
     // Remove any old ghost node information from the NodeLists.
-    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+    for (auto* nodeListPtr: fluidNodeListPtrs) {
       nodeListPtr->numGhostNodes(0);
       nodeListPtr->neighbor().updateNodes();
     }
@@ -140,7 +147,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     for (auto* boundaryPtr: boundaries) {
       boundaryPtr->setAllGhostNodes(dataBase);
       boundaryPtr->finalizeGhostBoundary();
-      for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) nodeListPtr->neighbor().updateNodes();
+      for (auto* nodeListPtr: fluidNodeListPtrs) nodeListPtr->neighbor().updateNodes();
     }
     for (auto* boundaryPtr: boundaries) {
       boundaryPtr->applyFieldListGhostBoundary(m);
@@ -179,7 +186,7 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     for (auto* pkg: packages) pkg->finalize(0.0, 1.0, dataBase, state1, derivs);
     
     // Set the new H and measure how much it changed
-    for (auto [nodeListi_, nodeListPtr_] : enumerate(dataBase.fluidNodeListPtrs())) {     // __clang__
+    for (auto [nodeListi_, nodeListPtr_] : enumerate(fluidNodeListPtrs)) {                // __clang__
       const auto nodeListi = nodeListi_;                                                  // __clang__
       const auto nodeListPtr = nodeListPtr_;                                              // __clang__
       const auto ni = nodeListPtr->numInternalNodes();
@@ -235,23 +242,24 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 
   // If we're fixing the determinant, restore them.
   if (fixDeterminant) {
-    for (auto itr = dataBase.internalNodeBegin();
-         itr != dataBase.internalNodeEnd();
-         ++itr) {
-      H(itr) *= Dimension::rootnu(Hdet0(itr)/H(itr).Determinant());
-      ENSURE(fuzzyEqual(H(itr).Determinant(), Hdet0(itr), 1.0e-10));
+    for (auto nodeListi = 0u; nodeListi < fluidNodeListPtrs.size(); ++nodeListi) {
+      const auto numInternalNodes = fluidNodeListPtrs[nodeListi]->numInternalNodes();
+      for (auto nodei = 0u; nodei < numInternalNodes; ++nodei) {
+        H(nodeListi, nodei) *= Dimension::rootnu(Hdet0(nodeListi, nodei)/H(nodeListi, nodei).Determinant());
+        ENSURE(fuzzyEqual(H(nodeListi, nodei).Determinant(), Hdet0(nodeListi, nodei), 1.0e-10));
+      }
     }
   }
 
   // Leave the boundary conditions properly enforced.
-  for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+  for (auto* nodeListPtr: fluidNodeListPtrs) {
     nodeListPtr->numGhostNodes(0);
     nodeListPtr->neighbor().updateNodes();
   }
   for (auto* boundaryPtr: boundaries) {
     boundaryPtr->setAllGhostNodes(dataBase);
     boundaryPtr->finalizeGhostBoundary();
-    for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
+    for (auto* nodeListPtr: fluidNodeListPtrs) {
       nodeListPtr->neighbor().updateNodes();
     }
   }
@@ -272,4 +280,3 @@ iterateIdealH(DataBase<Dimension>& dataBase,
 }
 
 }
-

@@ -29,6 +29,7 @@ set(FieldOperations_sources )
 instantiate(FieldOperations_inst FieldOperations_sources)
 
 set(FieldOperations_headers
+    FieldListConnectivity.hh
     FieldListFunctions.hh
     FieldListFunctionsMash.hh
     FieldListSecondDerivatives.hh
@@ -40,4 +41,3 @@ set(FieldOperations_headers
     )
 
 spheral_add_package(FieldOperations)
-

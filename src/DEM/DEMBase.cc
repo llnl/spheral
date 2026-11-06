@@ -849,7 +849,7 @@ updateContactMap(const DataBase<Dimension>& dataBase){
   const auto& solidBoundaries = this->solidBoundaryConditions();
   const auto  numSolidBoundaries = this->numSolidBoundaries();
 
-  const auto bufferDistance = dataBase.maxNeighborSearchBuffer();
+  const auto bufferDistance = dataBase.maxDEMNeighborSearchBuffer();
 
   // Particle-Particle Contacts
   //---------------------------------------------------------------
@@ -956,7 +956,7 @@ void
 DEMBase<Dimension>::
 identifyInactiveContacts(const DataBase<Dimension>& dataBase){
   TIME_BEGIN("DEMidentifyInactiveContacts");
-  const auto bufferDistance = dataBase.maxNeighborSearchBuffer();
+  const auto bufferDistance = dataBase.maxDEMNeighborSearchBuffer();
   const auto  numNodeLists = dataBase.numNodeLists();
   const auto& nodeListPtrs = dataBase.DEMNodeListPtrs();
   const auto& radius = dataBase.DEMParticleRadius();

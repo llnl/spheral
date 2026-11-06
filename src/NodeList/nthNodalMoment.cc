@@ -17,13 +17,12 @@
 #include "Geometry/Dimension.hh"
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
+#include "DataBase/DataBase.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Kernel/TableKernel.hh"
 #include "Utilities/safeInv.hh"
 
 namespace Spheral {
-
-using std::vector;
 
 //------------------------------------------------------------------------------
 // Specialized method to compute the pair-wise contribution to the moment.
@@ -42,36 +41,21 @@ template<typename Dimension> struct nthMomentKernel<Dimension, 2U> {
 //------------------------------------------------------------------------------
 // Generalized moment.
 //------------------------------------------------------------------------------
-template<typename Dimension, typename NodeListIterator, unsigned moment>
+template<typename Dimension, unsigned moment>
 FieldList<Dimension, typename MomentTraits<Dimension, moment>::Moment>
-nthNodalMoment(const NodeListIterator nodeListBegin,
-               const NodeListIterator nodeListEnd,
+nthNodalMoment(const DataBase<Dimension>& dataBase,
                const TableKernel<Dimension>& W,
                const bool renormalize) {
 
-  using Scalar = typename Dimension::Scalar;
-  using Vector = typename Dimension::Vector;
-  using SymTensor = typename Dimension::SymTensor;
   using Moment = typename MomentTraits<Dimension, moment>::Moment;
 
-  // Build a connectivity map for walking nodes.  This relies on the NodeLists 
-  // Neighbor objects being up to date.
-  const ConnectivityMap<Dimension> cm(nodeListBegin, nodeListEnd, false, false, false);
+  // Grab our state from the DataBase
+  const auto& cm = dataBase.connectivityMap();
   const auto& pairs = cm.nodePairList();
-
-  // Build up the FieldLists of positions, H's, and the first moment that we're going
-  // to build.
-  FieldList<Dimension, Vector> pos(FieldStorageType::ReferenceFields);
-  FieldList<Dimension, SymTensor> H(FieldStorageType::ReferenceFields);
-  FieldList<Dimension, Scalar> wsum(FieldStorageType::CopyFields);
-  FieldList<Dimension, Moment> result(FieldStorageType::CopyFields);
-  for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr) {
-    const NodeList<Dimension>& nodes = **itr;
-    pos.appendField(nodes.positions());
-    H.appendField(nodes.Hfield());
-    wsum.appendNewField("wsum", nodes, W(0.0, 1.0));
-    result.appendNewField("moment", nodes, DataTypeTraits<Moment>::zero());
-  }
+  const auto  pos = dataBase.globalPosition();
+  const auto  H = dataBase.globalHfield();
+  auto        wsum = dataBase.newGlobalFieldList(W(0.0, 1.0), "wsum");
+  auto        result = dataBase.newGlobalFieldList(DataTypeTraits<Moment>::zero(), "moment");
 
   // Find the moment of the node distribution in eta coordinates.
   for (const auto& p: pairs) {
@@ -105,10 +89,9 @@ nthNodalMoment(const NodeListIterator nodeListBegin,
 //------------------------------------------------------------------------------
 // Zeroth and first moment.
 //------------------------------------------------------------------------------
-template<typename Dimension, typename NodeListIterator>
+template<typename Dimension>
 void
-zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
-                           const NodeListIterator nodeListEnd,
+zerothAndFirstNodalMoments(const DataBase<Dimension>& dataBase,
                            const TableKernel<Dimension>& W,
                            const bool useGradientAsKernel,
                            FieldList<Dimension, typename Dimension::Scalar>& zerothMoment,
@@ -118,31 +101,21 @@ zerothAndFirstNodalMoments(const NodeListIterator nodeListBegin,
   VERIFY(zerothMoment.numFields() == 0);
   VERIFY(firstMoment.numFields() == 0);
 
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Vector = typename Dimension::Vector;
 
   // The total number of NodeLists we're working on.
-  const size_t numNodeLists = distance(nodeListBegin, nodeListEnd);
-
-  // Build a connectivity map for walking nodes.  This relies on the NodeLists 
-  // Neighbor objects being up to date.
-  const ConnectivityMap<Dimension> cm(nodeListBegin, nodeListEnd, false, false, false);
-  const auto& pairs = cm.nodePairList();
+  const auto numNodeLists = dataBase.numNodeLists();
 
   // Value of the kernel at the center.
   const double W0 = 0.0; // useGradientAsKernel ?  abs(W.gradValue(0.0, 1.0)) : W.kernelValue(0.0, 1.0);
 
-  // Build up the FieldLists of positions, H's, and the moments that we're going
-  // to build.
-  FieldList<Dimension, Vector> pos(FieldStorageType::ReferenceFields);
-  FieldList<Dimension, SymTensor> H(FieldStorageType::ReferenceFields);
-  for (NodeListIterator itr = nodeListBegin; itr != nodeListEnd; ++itr) {
-    const NodeList<Dimension>& nodes = **itr;
-    pos.appendField(nodes.positions());
-    H.appendField(nodes.Hfield());
-    zerothMoment.appendNewField("zeroth moment", nodes, W0);
-    firstMoment.appendNewField("first moment", nodes, Vector::zero());
-  }
+  // Get the state
+  const auto& cm = dataBase.connectivityMap();
+  const auto& pairs = cm.nodePairList();
+  const auto  pos = dataBase.globalPosition();
+  const auto  H = dataBase.globalHfield();
+  dataBase.resizeGlobalFieldList(zerothMoment, W0, "zeroth moment");
+  dataBase.resizeGlobalFieldList(firstMoment, Vector::zero(), "first moment");
 
   // Find the moment of the node distribution in eta coordinates.
   for (const auto& p: pairs) {

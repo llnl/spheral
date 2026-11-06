@@ -1,39 +1,43 @@
 set(Neighbor_inst
-    ConnectivityMap
-    GridCellIndex
-    GridCellPlane
-    Neighbor
-    NestedGridNeighbor
-    TreeNeighbor
-   )
+  Neighbor
+  TreeNeighborView
+  TreeNeighbor
+  ConnectivityMap
+)
 
+if (NOT SPHERAL_ENABLE_GPU)
+  list(APPEND Neighbor_inst PythonNeighbor)
+endif()
 
 set(Neighbor_sources 
-    NodePairList.cc)
+  NodePairList.cc
+)
 
 instantiate(Neighbor_inst Neighbor_sources)
 
 set(Neighbor_headers
-    ConnectivityMap.hh
-    ConnectivityMapInline.hh
-    GridCellIndex.hh
-    GridCellIndexBase.hh
-    GridCellIndexInline.hh
-    GridCellPlane.hh
-    GridCellPlaneInline.hh
-    Neighbor.hh
-    NeighborInline.hh
-    NestedGridNeighbor.hh
-    NestedGridNeighborInline.hh
-    NodePairIdxType.hh
-    NodePairList.hh
-    NodePairListView.hh
-    TreeNeighbor.hh
-    PairwiseField.hh
-    PairwiseFieldElementAccessor.hh
-    PairwiseFieldInline.hh
-    PairwiseFieldView.hh
-    )
+  NeighborVariant.hh
+  NeighborViewVariant.hh
+  NeighborSearchType.hh
+  HExtent.hh
+  NeighborViewContainer.hh
+  ConnectivityMap.hh
+  ConnectivityMapInline.hh
+  NodePairIdxType.hh
+  NodePairList.hh
+  NodePairListView.hh
+  PairwiseField.hh
+  PairwiseFieldElementAccessor.hh
+  PairwiseFieldInline.hh
+  PairwiseFieldView.hh
+  Neighbor.hh
+  NeighborView.hh
+  NeighborViewInline.hh
+  PythonNeighbor.hh
+  PythonNeighborCallView.hh
+  TreeNeighborView.hh
+  TreeNeighborViewInline.hh
+  TreeNeighbor.hh
+)
 
 spheral_add_package(Neighbor)
-
