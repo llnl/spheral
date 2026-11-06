@@ -1,5 +1,5 @@
 #include "Geometry/Dimension.hh"
-#include "Neighbor/Neighbor.hh"
+#include "Neighbor/HExtent.hh"
 #include "safeInv.hh"
 
 namespace Spheral {
@@ -14,7 +14,7 @@ boundingBox(const typename Dimension::Vector& xi,
             const typename Dimension::SymTensor& Hi,
             const typename Dimension::Scalar& kernelExtent) {
   typedef typename Dimension::Vector Vector;
-  const Vector extent = Neighbor<Dimension>::HExtent(Hi, kernelExtent);
+  const Vector extent = HExtent<Dimension>(Hi, kernelExtent);
   return std::make_pair(xi - extent, xi + extent);
 }
 

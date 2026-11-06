@@ -19,6 +19,7 @@ set(Neighbor_headers
   NeighborVariant.hh
   NeighborViewVariant.hh
   NeighborSearchType.hh
+  HExtent.hh
   NeighborViewContainer.hh
   ConnectivityMap.hh
   ConnectivityMapInline.hh
