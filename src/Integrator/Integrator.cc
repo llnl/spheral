@@ -179,7 +179,7 @@ void
 Integrator<Dimension>::preStepInitialize(State<Dimension>& state,
                                          StateDerivatives<Dimension>& derivs) const {
   auto& db = mDataBase.get();
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->preStepInitialize(db, state, derivs);
   }
 }
@@ -202,7 +202,7 @@ Integrator<Dimension>::initializeDerivatives(const double t,
 
   // Loop over the physics packages and perform any necessary initializations.
   auto updateBoundaries = false;
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     updateBoundaries |= physicsPtr->initialize(t, dt, db, state, derivs);
   }
 
@@ -225,7 +225,7 @@ Integrator<Dimension>::evaluateDerivatives(const Scalar t,
                                            StateDerivatives<Dimension>& derivs) const {
 
   // Loop over the physics packages and have them evaluate their derivatives.
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->evaluateDerivatives(t, dt, dataBase, state, derivs);
   }
 }
@@ -242,7 +242,7 @@ Integrator<Dimension>::finalizeDerivatives(const Scalar t,
                                            StateDerivatives<Dimension>& derivs) const {
 
   // Loop over the physics packages and have them finalize their derivatives.
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->finalizeDerivatives(t, dt, dataBase, state, derivs);
   }
 }
@@ -261,7 +261,7 @@ Integrator<Dimension>::postStateUpdate(const Scalar t,
 
   // Loop over the physics packages.
   auto updateBoundaries = false;
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     updateBoundaries |= physicsPtr->postStateUpdate(t, dt, dataBase, state, derivs);
   }
 
@@ -284,7 +284,7 @@ Integrator<Dimension>::postStepFinalize(const double t,
 
   // Loop over the physics packages and perform any necessary finalizations.
   auto& db = mDataBase.get();
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->finalize(t, dt, db, state, derivs);
   }
 }
@@ -338,10 +338,10 @@ uniqueBoundaryConditions() const {
   vector<Boundary<Dimension>*> result;
 
   // Iterate over each physics package.
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
 
     // Iterate over the boundary conditions associated with this package.
-    for (auto* boundaryPtr: range(physicsPtr->boundaryBegin(), physicsPtr->boundaryEnd())) {
+    for (auto* boundaryPtr: physicsPtr->boundaryConditions()) {
       if (find(result.begin(), result.end(), boundaryPtr) == result.end())
         result.push_back(boundaryPtr);
     }
@@ -355,8 +355,8 @@ uniqueBoundaryConditions() const {
 
   BEGIN_CONTRACT_SCOPE
   // Ensure that all boundary conditions are included in the result
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
-    for (auto* boundaryPtr: range(physicsPtr->boundaryBegin(), physicsPtr->boundaryEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
+    for (auto* boundaryPtr: physicsPtr->boundaryConditions()) {
       CONTRACT_VAR(boundaryPtr);
       ENSURE(find(result.begin(), result.end(), boundaryPtr) != result.end());
     }
@@ -393,63 +393,28 @@ Integrator<Dimension>::setGhostNodes() const {
   const auto boundaries = uniqueBoundaryConditions();
 
   // Remove any old ghost node information from the NodeLists.
-  for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-    nodeListPtr->numGhostNodes(0);
-  }
-  for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-    nodeListPtr->numGhostNodes(0);
-  }
+  for (auto* nodeListPtr: db.fluidNodeListPtrs()) nodeListPtr->numGhostNodes(0);
+  for (auto* nodeListPtr: db.DEMNodeListPtrs()) nodeListPtr->numGhostNodes(0);
 
   // If we're need overlap connectivity, we need to double the kernel extent before setting ghost nodes.
   if (mRequireOverlapConnectivity) {
-    for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-      auto& neighbor = nodeListPtr->neighbor();
-      auto maxeta = 2.0*neighbor.kernelExtent();
-      neighbor.kernelExtent(maxeta);
-    }
-    for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-      auto& neighbor = nodeListPtr->neighbor();
-      auto maxeta = 2.0*neighbor.kernelExtent();
-      neighbor.kernelExtent(maxeta);
-    }
-  }
-
-  // Update neighboring
-  for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-    auto& neighbor = nodeListPtr->neighbor();
-    neighbor.updateNodes();
-  }
-  for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-    auto& neighbor = nodeListPtr->neighbor();
-    neighbor.updateNodes();
+    auto maxeta = 2.0*db.kernelExtent();
+    db.kernelExtent(maxeta); // Implies reinitializeNeighbors
+  } else {
+    db.reinitializeNeighbors();
   }
 
   // Iterate over the boundaries and set their ghost node info.
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
+  for (auto* boundaryPtr: boundaries) {
     boundaryPtr->setAllGhostNodes(db);
     boundaryPtr->finalizeGhostBoundary();
-    for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-      nodeListPtr->neighbor().updateNodes();
-    }
-    for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-      nodeListPtr->neighbor().updateNodes();
-    }
+    db.reinitializeNeighbors();
   }
 
   // If we doubled the kernel extents for overlap connectivity, put 'em back.
   if (mRequireOverlapConnectivity) {
-    for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-      auto& neighbor = nodeListPtr->neighbor();
-      auto maxeta = 0.5*neighbor.kernelExtent();
-      neighbor.kernelExtent(maxeta);
-      neighbor.updateNodes();
-    }
-    for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-      auto& neighbor = nodeListPtr->neighbor();
-      auto maxeta = 0.5*neighbor.kernelExtent();
-      neighbor.kernelExtent(maxeta);
-      neighbor.updateNodes();
-    }
+    auto maxeta = 0.5*db.kernelExtent();
+    db.kernelExtent(maxeta);  // Implies reinitializeNeighbors
   }
 
   if (mRequireConnectivity) {
@@ -474,23 +439,22 @@ Integrator<Dimension>::setGhostNodes() const {
       }
       
       // Look for points needed for boundary conditions
-      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
+      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListPtrs())) {
         const auto& nodeList = *nodeListPtr;
 
         // Ghost nodes that are control nodes for other ghost nodes we're keeping must
         // be kept as well.
         const auto firstGhostNode = nodeList.firstGhostNode();
-        for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
-          const auto& boundary = *boundaryPtr;
-          const auto& controlNodes = boundary.controlNodes(nodeList);
-          const auto& ghostNodes = boundary.ghostNodes(nodeList);
+        for (auto* boundaryPtr: boundaries) {
+          const auto& controlNodes = boundaryPtr->controlNodes(nodeList);
+          const auto& ghostNodes = boundaryPtr->ghostNodes(nodeList);
           // CHECK(controlNodes.size() == ghostNodes.size());  // Not true if this is a DistributedBoundary!
           for (auto i: controlNodes) {
             if (i >= firstGhostNode) flags(nodeListi, i) = 1;
           }
 
           // Boundary conditions are allowed to opt out of culling entirely.
-          if (not boundary.allowGhostCulling()) {
+          if (not boundaryPtr->allowGhostCulling()) {
             for (auto i: ghostNodes) flags(nodeListi, i) = 1;
           }
         }
@@ -498,14 +462,14 @@ Integrator<Dimension>::setGhostNodes() const {
 
       // Create the index mapping from old to new node orderings.
       FieldList<Dimension, size_t> old2newIndexMap = db.newGlobalFieldList(size_t(0u), "index map");
-      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
+      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListPtrs())) {
         const auto numNodes = nodeListPtr->numNodes();
         for (auto i = 0u; i < numNodes; ++i) old2newIndexMap(nodeListi, i) = i;
       }
 
       // Now use these flags to cull the boundary conditions.
       vector<size_t> numNodesRemoved(numNodeLists, 0);
-      for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
+      for (auto* boundaryPtr: boundaries) {
         boundaryPtr->cullGhostNodes(flags, old2newIndexMap, numNodesRemoved);
       }
 
@@ -514,15 +478,14 @@ Integrator<Dimension>::setGhostNodes() const {
 
       // Now the boundary conditions have been updated, so we can go ahead and remove
       // the ghost nodes themselves from the NodeLists.
-      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListBegin(), db.nodeListEnd())) {
-        auto& nodeList = *nodeListPtr;
+      for (auto [nodeListi, nodeListPtr]: enumerate(db.nodeListPtrs())) {
         vector<size_t> nodesToRemove;
-        for (auto i = nodeList.firstGhostNode(); i < nodeList.numNodes(); ++i) {
+        for (auto i = nodeListPtr->firstGhostNode(); i < nodeListPtr->numNodes(); ++i) {
           if (flags(nodeListi, i) == 0) nodesToRemove.push_back(i);
         }
-        nodeList.deleteNodes(nodesToRemove);
-        nodeList.neighbor().updateNodes();
+        nodeListPtr->deleteNodes(nodesToRemove);
       }
+      db.reinitializeNeighbors();
 
       // All nodes should now be labeled as keepers.
       BEGIN_CONTRACT_SCOPE
@@ -569,22 +532,15 @@ Integrator<Dimension>::applyGhostBoundaries(State<Dimension>& state,
 
   // If we didn't call setGhostNodes, then make each boundary update it's 
   // ghost node info (position and H).
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
-    for (auto* nodeListPtr: range(db.nodeListBegin(), db.nodeListEnd())) {
-      boundaryPtr->updateGhostNodes(*nodeListPtr);
-    }
+  for (auto* boundaryPtr: boundaries) {
+    for (auto* nodeListPtr: db.nodeListPtrs()) boundaryPtr->updateGhostNodes(*nodeListPtr);
     boundaryPtr->finalizeGhostBoundary();
   }
-  for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-    nodeListPtr->neighbor().updateNodes();
-  }
-  for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-    nodeListPtr->neighbor().updateNodes();
-  }
+  db.reinitializeNeighbors();
 
   // Iterate over the physics packages, and have them apply ghost boundaries
   // for their state.
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->applyGhostBoundaries(state, derivs);
   }
 
@@ -618,7 +574,7 @@ Integrator<Dimension>::finalizeGhostBoundaries() const {
 
   // If we're being rigorous about boundaries, we have to reset the ghost nodes.
   const vector<Boundary<Dimension>*> boundaries = uniqueBoundaryConditions();
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
+  for (auto* boundaryPtr: boundaries) {
     boundaryPtr->finalizeGhostBoundary();
   }
 
@@ -647,17 +603,10 @@ Integrator<Dimension>::setViolationNodes() const {
   const vector<Boundary<Dimension>*> boundaries = uniqueBoundaryConditions();
 
   // Have each boundary identify the set of nodes that violate it.
-  for (auto* boundaryPtr: range(boundaries.begin(), boundaries.end())) {
-    boundaryPtr->setAllViolationNodes(db);
-  }
+  for (auto* boundaryPtr: boundaries) boundaryPtr->setAllViolationNodes(db);
 
   // Fix neighbor information.
-  for (auto* nodeListPtr: range(db.fluidNodeListBegin(), db.fluidNodeListEnd())) {
-    nodeListPtr->neighbor().updateNodes();
-  }
-  for (auto* nodeListPtr: range(db.DEMNodeListBegin(), db.DEMNodeListEnd())) {
-    nodeListPtr->neighbor().updateNodes();
-  }
+  db.reinitializeNeighbors();
 }
 
 //------------------------------------------------------------------------------
@@ -674,7 +623,7 @@ Integrator<Dimension>::enforceBoundaries(State<Dimension>& state,
 
   // Iterate over the physics packages, and have them apply ghost boundaries
   // for their state.
-  for (auto* physicsPtr: range(physicsPackagesBegin(), physicsPackagesEnd())) {
+  for (auto* physicsPtr: mPhysicsPackages) {
     physicsPtr->enforceBoundaries(state, derivs);
   }
 }
