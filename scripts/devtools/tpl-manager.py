@@ -420,11 +420,11 @@ class SpheralTPL:
 
         if (self.args.show_specs):
             find_cmd = SpackCommand("find")
-            find_cmd("-r")
+            print(find_cmd("-r"))
             sys.exit(0)
         if (self.args.show_info):
             info_cmd = SpackCommand("info")
-            info_cmd("spheral")
+            print(info_cmd("spheral"))
             sys.exit(0)
         # Check if any files in scripts/spack are newer than the spack.lock
         if (not self.args.clean):
