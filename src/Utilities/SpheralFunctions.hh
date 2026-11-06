@@ -21,6 +21,27 @@ namespace Spheral {
 using std::min;
 using std::max;
 
+/**
+ * @brief Clamp a value to an inclusive interval on the host or device.
+ * @tparam DataType Scalar type supporting comparisons.
+ * @param value Value to clamp.
+ * @param lower Lower bound.
+ * @param upper Upper bound.
+ * @return The nearest bound if value is outside the interval, otherwise value.
+ * @pre The bounds are ordered: lower <= upper.
+ * @details Uses comparisons to avoid host-only libstdc++ assertion calls in
+ * std::clamp when compiling HIP device code with GCC 14 headers.
+ */
+template<typename DataType>
+SPHERAL_HOST_DEVICE
+constexpr DataType clamp(const DataType value, const DataType lower, const DataType upper) {
+#ifdef SPHERAL_ENABLE_GPU
+   return value < lower ? lower : (upper < value ? upper : value);
+#else
+   return std::clamp(value, lower, upper);
+#endif
+}
+
 //------------------------------------------------------------------------------
 // Fuzzy comparisons.
 //------------------------------------------------------------------------------
