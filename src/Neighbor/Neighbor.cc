@@ -20,4 +20,19 @@ Neighbor(DataBase<Dimension>& dataBase):
   mNodeExtent(dataBase.newGlobalFieldList(Vector::zero(), "node extents")) {
 }
 
+//------------------------------------------------------------------------------
+// Update the neighbor info for just the nodes of a NodeList
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+Neighbor<Dimension>::
+updateNodes(const NodeList<Dimension>& nodes) {
+  const auto k = mDataBase.nodeListIndex(nodes);
+  CHECK(k < mDataBase.numNodeLists());
+  const auto n = nodes.numNodes();
+  std::vector<NodeID> ids(n);
+  for (auto i = 0u; i < n; ++i) ids[i] = std::make_pair(k, i);
+  this->updateNodes(ids);
+}
+
 }

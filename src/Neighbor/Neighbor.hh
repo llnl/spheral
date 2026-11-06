@@ -51,6 +51,7 @@ public:
   // Force the update of internal data for the NodeList.
   virtual void updateNodes() = 0;
   virtual void updateNodes(const std::span<NodeID>& nodeIDs) = 0;
+  virtual void updateNodes(const NodeList<Dimension>& nodes);
 
   // Reinitialize based on the desired target h and box dimensions.
   virtual void reinitialize() = 0;
