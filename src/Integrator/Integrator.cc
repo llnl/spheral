@@ -690,11 +690,26 @@ Integrator<Dimension>::copyGhostState(const State<Dimension>& state0,
   const FieldList<Dimension, SymTensor> H0 = state0.fields(HydroFieldNames::H, SymTensor::zero());
   FieldList<Dimension, Vector> x1 = state1.fields(HydroFieldNames::position, Vector::zero());
   FieldList<Dimension, SymTensor> H1 = state1.fields(HydroFieldNames::H, SymTensor::zero());
-  for (GhostNodeIterator<Dimension> itr = x0.ghostNodeBegin();
-       itr != x0.ghostNodeEnd();
-       ++itr) {
-    x1(itr) = x0(itr);
-    H1(itr) = H0(itr);
+  const auto numNodeLists = x0.numFields();
+  CHECK(H0.numFields() == numNodeLists);
+  CHECK(x1.numFields() == numNodeLists);
+  CHECK(H1.numFields() == numNodeLists);
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto firstGhostNode = x0[nodeListi]->numInternalElements();
+    const auto numNodes = x0[nodeListi]->numElements();
+    CHECK(H0[nodeListi]->nodeListPtr() == x0[nodeListi]->nodeListPtr());
+    CHECK(x1[nodeListi]->nodeListPtr() == x0[nodeListi]->nodeListPtr());
+    CHECK(H1[nodeListi]->nodeListPtr() == x0[nodeListi]->nodeListPtr());
+    CHECK(H0[nodeListi]->numInternalElements() == firstGhostNode);
+    CHECK(x1[nodeListi]->numInternalElements() == firstGhostNode);
+    CHECK(H1[nodeListi]->numInternalElements() == firstGhostNode);
+    CHECK(H0[nodeListi]->numElements() == numNodes);
+    CHECK(x1[nodeListi]->numElements() == numNodes);
+    CHECK(H1[nodeListi]->numElements() == numNodes);
+    for (auto nodei = firstGhostNode; nodei < numNodes; ++nodei) {
+      x1(nodeListi, nodei) = x0(nodeListi, nodei);
+      H1(nodeListi, nodei) = H0(nodeListi, nodei);
+    }
   }
 }
 
