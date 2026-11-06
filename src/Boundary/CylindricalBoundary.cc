@@ -10,7 +10,6 @@
 #include "NodeList/FluidNodeList.hh"
 #include "Utilities/DBC.hh"
 #include "RK/ReproducingKernelMethods.hh"
-#include "Neighbor/NeighborVariant.hh"
 
 #include "Boundary/CylindricalBoundary.hh"
 
@@ -27,7 +26,7 @@ CylindricalBoundary(const DataBase<Dim<3> >& dataBase):
   Boundary<Dim<3> >(),
   mDeltaPhi(dataBase.newGlobalFieldList(0.0, "Delta angle for generating ghosts")),
   mGhostPositions(dataBase.newGlobalFieldList(Dim<3>::Vector(), "Ghost node positions")),
-  mKernelExtent(visitNeighbor(dataBase.neighbor(), [](const auto& x) { return x.kernelExtent(); })),
+  mKernelExtent(dataBase.kernelExtent()),
   mRestart(registerWithRestart(*this)) {
   VERIFY(distinctlyGreaterThan(mKernelExtent, 0.0));
 }

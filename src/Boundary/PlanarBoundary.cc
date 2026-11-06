@@ -73,7 +73,7 @@ PlanarBoundary(const DataBase<Dimension>& dataBase,
   Boundary<Dimension>(),
   mEnterPlane(enterPlane),
   mExitPlane(exitPlane),
-  mKernelExtent(visitNeighbor(dataBase.neighbor(), [](const auto& x) { return x.kernelExtent(); })),
+  mKernelExtent(dataBase.kernelExtent()),
   mRestart(registerWithRestart(*this)) {
   ENSURE(valid());
 }
