@@ -6,8 +6,8 @@
 // Created by JMO, Wed Feb 16 21:01:02 PST 2000
 //----------------------------------------------------------------------------//
 
-#ifndef RigidBoundary_HH
-#define RigidBoundary_HH
+#ifndef __Spheral_RigidBoundary_
+#define __Spheral_RigidBoundary_
 
 #include "ReflectingBoundary.hh"
 
@@ -18,19 +18,19 @@ class RigidBoundary: public ReflectingBoundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   // Constructors and destructors.
-  RigidBoundary();
-  RigidBoundary(const GeomPlane<Dimension>& plane);
-  virtual ~RigidBoundary();
+  RigidBoundary(const DataBase<Dimension>& dataBase,
+                const GeomPlane<Dimension>& plane);
+  virtual ~RigidBoundary() = default;
 
   // Apply the boundary condition to the ghost values of given Field.
   virtual void applyGhostBoundary(Field<Dimension, Vector>& field) const override;

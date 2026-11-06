@@ -40,7 +40,6 @@ public:
 
   //**********************************************************************
   // Override the vector enforceBoundary method.
-  // Use the given NodeList's neighbor object to select the ghost nodes.
   virtual void enforceBoundary(Field<Dimension, Vector>& field) const override;
 
   // Restart methods.

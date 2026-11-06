@@ -32,7 +32,7 @@ public:
   PlanarSymmetryBoundary(TableKernel<Dim<3> >* kernel);
   virtual ~PlanarSymmetryBoundary();
 
-  // Use the given NodeList's neighbor object to select the ghost nodes.
+  // Select the ghost nodes.
   virtual void setGhostNodes(NodeList<Dim<3> >& nodeList);
   virtual void updateGhostNodes(NodeList<Dim<3> >& nodeList);
 

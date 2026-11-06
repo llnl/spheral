@@ -102,17 +102,18 @@ contained(const Vector& p, const std::vector<Plane>& planes) {
 // Find the node touching a given facet
 //------------------------------------------------------------------------------
 // Polygon
-std::vector<int>
+std::vector<size_t>
 nodesTouchingFacet(const NodeList<Dim<2>>& nodes,
                    const GeomFacet2d& facet,
+                   const double kernelExtent,
                    const bool interiorBoundary) {
   const auto& p1 = facet.point1();
   const auto& p2 = facet.point2();
   const auto  phat = (p2 - p1).unitVector();
   const auto  smax = (p2 - p1).magnitude();
   const auto  plane = facetPlane(facet, interiorBoundary);
-  const auto potentials = findNodesTouchingThroughPlanes(nodes, plane, plane);
-  std::vector<int> result;
+  const auto  potentials = findNodesTouchingThroughPlanes(nodes, plane, plane, kernelExtent);
+  std::vector<size_t> result;
   const auto& pos = nodes.positions();
   for (const auto i: potentials) {
     const auto s = (pos(i) - p1).dot(phat);
@@ -124,9 +125,11 @@ nodesTouchingFacet(const NodeList<Dim<2>>& nodes,
 //..............................................................................
 // Polyhedron
 std::vector<int>
-nodesTouchingFacet(const NodeList<Dim<3>>&,
-                   const GeomFacet3d&,
-                   const bool /*interiorBoundary*/) {
+nodesTouchingFacet(const NodeList<Dim<3>>& nodes,
+                   const GeomFacet3d& facet,
+                   const double kernelExtent,
+                   const bool interiorBoundary) {
+  VERIFY2(false, "FacetedVolumeBoundary nodesTouchingFacet not implemented in 3D yet");
   std::vector<int> result;
   return result;
 }
@@ -308,10 +311,12 @@ enforceViolationValues(Field<Dimension, Value>& field,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 FacetedVolumeBoundary<Dimension>::FacetedVolumeBoundary(const FacetedVolume& poly,
+                                                        const Scalar kernelExtent,
                                                         const bool interiorBoundary,
                                                         const bool useGhosts):
   Boundary<Dimension>(),
   mPoly(poly),
+  mKernelExtent(kernelExtent),
   mInteriorBoundary(interiorBoundary),
   mUseGhosts(useGhosts),
   mReflectOperators(),
@@ -370,7 +375,7 @@ FacetedVolumeBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
       const auto  plane = facetPlane(facet, mInteriorBoundary);
       const auto& R = mReflectOperators[k];
       ghostRanges[k].first = firstGhost;
-      const auto  potentials = nodesTouchingFacet(nodeList, facet, mInteriorBoundary);
+      const auto  potentials = nodesTouchingFacet(nodeList, facet, mKernelExtent, mInteriorBoundary);
       for (const auto i: potentials) {
         const auto posj = mapPositionThroughPlanes(pos(i), plane, plane);
         if (contained(posj, boundPlanes)) {

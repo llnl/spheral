@@ -20,19 +20,20 @@ class FacetedVolumeBoundary: public Boundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
-  typedef typename FacetedVolume::Facet Facet;
-  typedef GeomPlane<Dimension> Plane;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
+  using Facet = typename FacetedVolume::Facet;
+  using Plane = GeomPlane<Dimension>;
 
   // Constructors and destructors.
   FacetedVolumeBoundary(const FacetedVolume& poly,
+                        const Scalar kernelExtent,
                         const bool interiorBoundary,
                         const bool useGhosts);
   virtual ~FacetedVolumeBoundary();
@@ -81,10 +82,11 @@ public:
                               std::vector<size_t>& numNodesRemoved) override;
 
   // Read access to internal data
-  const FacetedVolume& polyVolume() const;
-  bool interiorBoundary() const;
-  bool useGhosts() const;
-  const Tensor& reflectOperator(unsigned facetID) const;
+  const FacetedVolume& polyVolume()                     const { return mPoly; }
+  Scalar kernelExtent()                                 const { return mKernelExtent; }
+  bool interiorBoundary()                               const { return mInteriorBoundary; }
+  bool useGhosts()                                      const { return mUseGhosts; }
+  const Tensor& reflectOperator(const unsigned facetID) const { REQUIRE(facetID < mReflectOperators.size()); return mReflectOperators[facetID]; }
 
   // Prevent the Boundary virtual methods from being hidden
   using Boundary<Dimension>::applyGhostBoundary;
@@ -93,6 +95,7 @@ public:
 private:
   //--------------------------- Private Interface ---------------------------//
   const FacetedVolume& mPoly;
+  Scalar mKernelExtent;
   bool mInteriorBoundary, mUseGhosts;
   std::vector<Tensor> mReflectOperators;
   std::map<std::string, std::vector<std::vector<int>>> mFacetControlNodes;
@@ -101,7 +104,5 @@ private:
 };
 
 }
-
-#include "FacetedVolumeBoundaryInline.hh"
 
 #endif

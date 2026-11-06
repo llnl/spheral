@@ -25,14 +25,8 @@ SphericalBoundary(const DataBase<Dim<3> >& dataBase):
   Boundary<Dim<3> >(),
   mGhostPositions(dataBase.newGlobalFieldList(std::vector<Dim<3>::Vector>(),
                                               "Ghost node positions")),
+  mKernelExtent(visitNeighbor(dataBase.neighbor(), [](const auto& x) { return x.kernelExtent(); })),
   mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-SphericalBoundary::
-~SphericalBoundary() {
 }
 
 //------------------------------------------------------------------------------
@@ -64,15 +58,14 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
 
   // Get the number of nodes per h, and the kernel extent.
   const double nPerh = nodeList.nodesPerSmoothingScale();
-  const double kernelExtent = nodeList.neighbor().kernelExtent();
   CHECK(distinctlyGreaterThan(nPerh, 0.0));
-  CHECK(distinctlyGreaterThan(kernelExtent, 0.0));
+  CHECK(distinctlyGreaterThan(mKernelExtent, 0.0));
 
   // The critical phi angle, at which the surface of ghost nodes will 
   // extend for 45 degrees around the full sphere.  At this point we
   // decide it is worth simply filling in the entire spherical surface
   // with ghost nodes.
-  const double phicrit = 0.25*M_PI/(nPerh*kernelExtent);
+  const double phicrit = 0.25*M_PI/(nPerh*mKernelExtent);
 
   // Iterate over the internal nodes.
   for (auto i = 0u; i != nodeList.numInternalNodes(); ++i) {
@@ -99,7 +92,7 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
         // We're outside the critical point for doing the entire sphere, so 
         // just create a section of the surface with enough ghost nodes that 
         // this one shouldn't see beyond them.
-        const int nbins = int(kernelExtent*nPerh + 0.5);
+        const int nbins = int(mKernelExtent*nPerh + 0.5);
         CHECK(nbins >= 1);
         for (int ibin = 0; ibin != nbins; ++ibin) {
           const double phij = (ibin + 1)*dphi;
@@ -217,9 +210,6 @@ updateGhostNodes(NodeList<Dim<3> >& nodeList) {
   // H's of the ghost nodes.
   Field<Dimension, SymTensor>& H = nodeList.Hfield();
   applyGhostBoundary(H);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (ghostNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -526,9 +516,6 @@ updateViolationNodes(NodeList<Dim<3> >& nodeList) {
   // Set the Hfield.
   Field<Dim<3> , SymTensor>& Hfield = nodeList.Hfield();
   this->enforceBoundary(Hfield);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); //(vNodes);
 }    
 
 //------------------------------------------------------------------------------

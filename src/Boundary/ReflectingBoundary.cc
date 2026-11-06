@@ -127,22 +127,13 @@ clipFacetedVolume(const ReflectingBoundary<Dim<3>>& bc,
 }   // anonymous
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ReflectingBoundary<Dimension>::ReflectingBoundary():
-  PlanarBoundary<Dimension>(),
-  mReflectOperator(),
-  mrkReflectOperators() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given plane.
+// Constructor
 //------------------------------------------------------------------------------
 template<typename Dimension>
 ReflectingBoundary<Dimension>::
-ReflectingBoundary(const GeomPlane<Dimension>& plane):
-  PlanarBoundary<Dimension>(plane, plane) {
+ReflectingBoundary(const DataBase<Dimension>& dataBase,
+                   const GeomPlane<Dimension>& plane):
+  PlanarBoundary<Dimension>(dataBase, plane, plane) {
 
   // Once the plane has been set, construct the reflection operator.
   mReflectOperator = planarReflectingOperator(plane);
@@ -164,13 +155,6 @@ ReflectingBoundary(const GeomPlane<Dimension>& plane):
 
   // Once we're done the boundary condition should be in a valid state.
   ENSURE(valid());
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ReflectingBoundary<Dimension>::~ReflectingBoundary() {
 }
 
 //------------------------------------------------------------------------------

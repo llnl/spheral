@@ -5,8 +5,8 @@
 // Created by JMO, Wed Feb 16 21:01:02 PST 2000
 //----------------------------------------------------------------------------//
 
-#ifndef ReflectingBoundary_HH
-#define ReflectingBoundary_HH
+#ifndef __Spheral_ReflectingBoundary__
+#define __Spheral_ReflectingBoundary__
 
 #include "Boundary/Boundary.hh"
 #include "Boundary/PlanarBoundary.hh"
@@ -34,9 +34,9 @@ public:
   typedef typename Eigen::SparseMatrix<double> TransformationMatrix;
 
   // Constructors and destructors.
-  ReflectingBoundary();
-  ReflectingBoundary(const GeomPlane<Dimension>& plane);
-  virtual ~ReflectingBoundary();
+  ReflectingBoundary(const DataBase<Dimension>& dataBase,
+                     const GeomPlane<Dimension>& plane);
+  virtual ~ReflectingBoundary() = default;
 
   // Apply the boundary condition to the ghost values of given Field.
   virtual void applyGhostBoundary(Field<Dimension, Vector>& field) const override;

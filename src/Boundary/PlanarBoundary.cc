@@ -13,7 +13,7 @@
 #include "Mesh/Mesh.hh"
 #include "Utilities/DBC.hh"
 
-#include "PlanarBoundary.hh"
+#include "Boundary/PlanarBoundary.hh"
 
 using std::vector;
 
@@ -63,35 +63,19 @@ clipBoxWithPlane(const GeomPlane<Dim<3> >& plane,
 }
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PlanarBoundary<Dimension>::PlanarBoundary():
-  Boundary<Dimension>(),
-  mEnterPlane(),
-  mExitPlane(),
-  mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given entrance and exit planes.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 PlanarBoundary<Dimension>::
-PlanarBoundary(const GeomPlane<Dimension>& enterPlane,
+PlanarBoundary(const DataBase<Dimension>& dataBase,
+               const GeomPlane<Dimension>& enterPlane,
                const GeomPlane<Dimension>& exitPlane):
   Boundary<Dimension>(),
   mEnterPlane(enterPlane),
   mExitPlane(exitPlane),
+  mKernelExtent(visitNeighbor(dataBase.neighbor(), [](const auto& x) { return x.kernelExtent(); })),
   mRestart(registerWithRestart(*this)) {
   ENSURE(valid());
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PlanarBoundary<Dimension>::~PlanarBoundary() {
 }
 
 //------------------------------------------------------------------------------
@@ -104,7 +88,7 @@ PlanarBoundary<Dimension>::setGhostNodes(NodeList<Dimension>& nodeList) {
   // Remember which node list we are setting the ghost nodes for.
   this->addNodeList(nodeList);
   auto& boundaryNodes = this->accessBoundaryNodes(nodeList);
-  boundaryNodes.controlNodes = findNodesTouchingThroughPlanes(nodeList, mEnterPlane, mExitPlane);
+  boundaryNodes.controlNodes = findNodesTouchingThroughPlanes(nodeList, mEnterPlane, mExitPlane, mKernelExtent);
 
   // std::sort(controlNodes.begin(), controlNodes.end());
   // controlNodes.erase(std::unique(controlNodes.begin(), controlNodes.end()), controlNodes.end());

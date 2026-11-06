@@ -30,7 +30,7 @@ public:
   ThreeOneDimensionBoundary();
   virtual ~ThreeOneDimensionBoundary();
 
-  // Use the given NodeList's neighbor object to select the ghost nodes.
+  // Select the ghost nodes.
   virtual void setGhostNodes(NodeList<Dimension>& nodeList);
   virtual void updateGhostNodes(NodeList<Dimension>& nodeList);
 

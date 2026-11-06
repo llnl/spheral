@@ -6,9 +6,10 @@
 // Created by JMO, Thu Mar  2 21:34:25 PST 2000
 //----------------------------------------------------------------------------//
 
-#ifndef PlanarBoundary_HH
-#define PlanarBoundary_HH
+#ifndef __Spheral_PlanarBoundary__
+#define __Spheral_PlanarBoundary__
 
+#include "DataBase/DataBase.hh"
 #include "DataOutput/registerWithRestart.hh"
 #include "Boundary.hh"
 #include "Geometry/GeomPlane.hh"
@@ -26,20 +27,20 @@ class PlanarBoundary: public Boundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename Boundary<Dimension>::BoundaryNodes BoundaryNodes;
+  using BoundaryNodes = typename Boundary<Dimension>::BoundaryNodes;
 
   // Constructors and destructors.
-  PlanarBoundary();
-  PlanarBoundary(const GeomPlane<Dimension>& enterPlane,
+  PlanarBoundary(const DataBase<Dimension>& dataBase,
+                 const GeomPlane<Dimension>& enterPlane,
                  const GeomPlane<Dimension>& exitPlane);
-  virtual ~PlanarBoundary();
+  virtual ~PlanarBoundary() = default;
 
-  // Use the given NodeList's neighbor object to select the ghost nodes.
+  // Select the ghost nodes.
   virtual void setGhostNodes(NodeList<Dimension>& nodeList) override;
   virtual void updateGhostNodes(NodeList<Dimension>& nodeList) override;
 
@@ -91,6 +92,7 @@ private:
   //--------------------------- Private Interface ---------------------------//
   GeomPlane<Dimension> mEnterPlane;
   GeomPlane<Dimension> mExitPlane;
+  Scalar mKernelExtent;
 
   // The restart registration.
   RestartRegistrationType mRestart;

@@ -49,6 +49,7 @@ InflowOutflowBoundary(DataBase<Dimension>& dataBase,
   Boundary<Dimension>(),
   Physics<Dimension>(),
   mInflowRadius(std::numeric_limits<double>::max()),
+  mKernelExtent(visitNeighbor(dataBase.neighbor(), [](const auto& x) { return x.kernelExtent(); })),
   mDataBase(dataBase),
   mPlane(plane),
   mBoundaryCount(dataBase.numNodeLists()),
@@ -80,7 +81,7 @@ setGhostNodes(NodeList<Dimension>& nodeList) {
     
     // Use the planar boundary to find the set of points that interact with
     // the entrance plane.  We make these the control nodes.
-    cNodes = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane);
+    cNodes = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mKernelExtent);
 
     // Create the ghost nodes.
     nodeList.numGhostNodes(currentNumGhostNodes + mNumInflowNodes[nodeList.name()]);
@@ -240,7 +241,7 @@ InflowOutflowBoundary<Dimension>::initializeProblemStartup(const bool /*final*/)
     // Use a planar boundary to figure out what sort of nodes are in range of the plane.
     // We use those to create a stencil of the in/outflow conditions.
     const auto& nhat = mPlane.normal();
-    auto nodeIDs = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, 1.0);
+    auto nodeIDs = findNodesTouchingThroughPlanes(nodeList, mPlane, mPlane, mKernelExtent);
     if (mEmpty) nodeIDs.clear();
 
     // Remove any ghost nodes from other BCs.
@@ -374,7 +375,6 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
   bool altered = false;
   for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
     auto& nodeList = *nodeListPtr;
-    bool nodeListAltered = false;
     // cerr << "--------------------------------------------------------------------------------" << endl
     //      << nodeList.name() << " " << nodeList.numInternalNodes() << " " << nodeList.numGhostNodes() << " " << nodeList.numNodes() << endl;
 
@@ -396,7 +396,7 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
 
     const auto numNew = insideNodes.size();
     if (numNew > 0) {
-      nodeListAltered = true;
+      altered = true;
 
       // cerr << "Promoting to internal: ";
       // for (auto i: insideNodes) cerr << " : " << gNodes[0] + i << " " << pos[gNodes[0] + i];
@@ -434,13 +434,8 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
       // cerr << endl;
 
       // Those nodes get deleted.
-      nodeListAltered = true;
-      nodeList.deleteNodes(outsideNodes);
-    }
-
-    if (nodeListAltered) {
       altered = true;
-      nodeList.neighbor().updateNodes();
+      nodeList.deleteNodes(outsideNodes);
     }
   }
   altered = (allReduce((altered ? 1 : 0), SPHERAL_OP_MAX) == 1);
@@ -450,23 +445,15 @@ InflowOutflowBoundary<Dimension>::finalize(const Scalar /*time*/,
     // Remove any old ghost node information from the NodeLists.
     for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) {
       nodeListPtr->numGhostNodes(0);
-      nodeListPtr->neighbor().updateNodes();
     }
-    for (auto boundaryItr = this->boundaryBegin(); 
-         boundaryItr < this->boundaryEnd();
-         ++boundaryItr) (*boundaryItr)->reset(dataBase);
+    dataBase.reinitializeNeighbors();
+    for (auto* bcPtr: this->boundaryConditions()) bcPtr->reset(dataBase);
 
     // Iterate over the boundaries and set their ghost node info.
-    for (auto boundaryItr = this->boundaryBegin(); 
-         boundaryItr < this->boundaryEnd();
-         ++boundaryItr) {
-      (*boundaryItr)->setAllGhostNodes(dataBase);
-      (*boundaryItr)->finalizeGhostBoundary();
-      for (auto nodeListItr = dataBase.fluidNodeListBegin();
-           nodeListItr < dataBase.fluidNodeListEnd(); 
-           ++nodeListItr) {
-        (*nodeListItr)->neighbor().updateNodes();
-      }
+    for (auto* bcPtr: this->boundaryConditions()) {
+      bcPtr->setAllGhostNodes(dataBase);
+      bcPtr->finalizeGhostBoundary();
+      dataBase.reinitializeNeighbors();
     }
   }
 }

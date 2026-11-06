@@ -59,7 +59,6 @@ set(Boundary_headers
     CylindricalBoundary.hh
     CylindricalBoundaryInline.hh
     FacetedVolumeBoundary.hh
-    FacetedVolumeBoundaryInline.hh
     InflowOutflowBoundary.hh
     InflowOutflowBoundaryInline.hh
     PeriodicBoundary.hh
