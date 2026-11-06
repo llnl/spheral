@@ -143,9 +143,13 @@ gradientRK(const FieldList<Dimension, std::vector<DataType>>& fieldList,
   typedef typename MathTraits<Dimension, DataType>::GradientType GradientType;
 
   // Get size of vector
-  const auto vectorSize = (fieldList.numInternalElements() > 0 ?
-                           fieldList(fieldList.internalNodeBegin()).size() :
-                           0);
+  size_t vectorSize = 0u;
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    if (fieldList[nodeListi]->numInternalElements() > 0u) {
+      vectorSize = fieldList(nodeListi, 0u).size();
+      break;
+    }
+  }
   
   // Prepare the result.
   FieldList<Dimension, std::vector<GradientType>> result;
