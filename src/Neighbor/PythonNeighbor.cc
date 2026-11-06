@@ -145,6 +145,13 @@ kernelExtent() const {
 template<typename Dimension>
 void
 PythonNeighborCallView<Dimension>::
+kernelExtent(const Scalar value) {
+  mParent->kernelExtent(value);
+}
+
+template<typename Dimension>
+void
+PythonNeighborCallView<Dimension>::
 setNodeExtents(const DataBaseView<Dimension>& dataBase) {
   mParent->setNodeExtents(dataBase);
 }

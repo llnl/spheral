@@ -10,6 +10,7 @@
 #include "chai/ExecutionSpaces.hpp"
 
 #include "Geometry/Dimension.hh"
+#include "Utilities/DBC.hh"
 #include "Utilities/span.hh"
 
 namespace Spheral {
@@ -106,6 +107,11 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
+  SPHERAL_HOST_DEVICE void setKernelExtent(const Scalar value) {
+    REQUIRE(value > 0.0);
+    mKernelExtent = value;
+  }
+
   Container<NodeListView<Dimension>> mNodeListViews;
   Container<FluidNodeListView<Dimension>> mFluidNodeListViews;
   Container<SolidNodeListView<Dimension>> mSolidNodeListViews;

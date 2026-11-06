@@ -57,7 +57,22 @@ DataBase(const Scalar kernelExtent):
   mFluidNodeListViewStorage(),
   mSolidNodeListViewStorage(),
   mDEMNodeListViewStorage() {
-  mKernelExtent = kernelExtent;
+  this->setKernelExtent(kernelExtent);
+}
+
+//------------------------------------------------------------------------------
+// Change the Neighbor kernel extent and rebuild all dependent state.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DataBase<Dimension>::
+kernelExtent(const Scalar value) {
+  REQUIRE(value > 0.0);
+  visitNeighbor(mNeighbor, [value](auto& neighbor) { neighbor.kernelExtent(value); });
+  this->setKernelExtent(value);
+  ++mGeneration;
+  this->reinitializeNeighbors();
+  ENSURE(this->kernelExtent() == value);
 }
 
 //------------------------------------------------------------------------------
@@ -1763,7 +1778,7 @@ DataBase<Dimension>::updateView() {
   for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
 
-  mKernelExtent = visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); });
+  this->setKernelExtent(visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); }));
   ++mGeneration;
 
   ENSURE(valid());

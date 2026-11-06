@@ -52,6 +52,7 @@ public:
   const FieldListView<Dimension, Vector>& nodeExtentView() const;
   NeighborSearchType neighborSearchType() const;
   Scalar kernelExtent() const;
+  void kernelExtent(const Scalar value);
   void setNodeExtents(const DataBaseView<Dimension>& dataBase);
   void setInternalNodeExtents(const DataBaseView<Dimension>& dataBase);
   void setGhostNodeExtents(const DataBaseView<Dimension>& dataBase);

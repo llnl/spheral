@@ -61,6 +61,7 @@ public:
   using ConnectivityMapPtr = std::shared_ptr<ConnectivityMapType>;
   
   using ViewType = DataBaseView<Dimension>;
+  using ViewType::kernelExtent;
 
   // Constructors, destructor
   DataBase(const Scalar kernelExtent);
@@ -181,6 +182,7 @@ public:
   // The Neighbor object
   const NeighborVariant<Dimension>& neighbor()                         const { return mNeighbor; }
   NeighborViewVariant<Dimension> neighborView()                        const;
+  void kernelExtent(const Scalar value);
   template<typename NT, typename... Args>
   NT& emplaceNeighbor(Args&&... args);
 
@@ -423,7 +425,6 @@ private:
   using ViewType::mFluidNodeListViews;
   using ViewType::mSolidNodeListViews;
   using ViewType::mDEMNodeListViews;
-  using ViewType::mKernelExtent;
   using ViewType::mGeneration;
 };
 

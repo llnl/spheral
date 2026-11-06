@@ -125,6 +125,11 @@ public:
 
 protected:
   //-------------------------- Protected Interface --------------------------//
+  SPHERAL_HOST_DEVICE void setKernelExtent(const Scalar value) {
+    REQUIRE(value > 0.0);
+    mKernelExtent = value;
+  }
+
   FieldListView<Dimension, Vector> mNodeExtentView;
   NeighborSearchType mSearchType;
   Scalar mKernelExtent;

@@ -43,6 +43,7 @@ public:
   using NodeID = typename Neighbor<Dimension>::NodeID;
 
   using ViewType = TreeNeighborView<Dimension>;
+  using ViewType::kernelExtent;
 
   // Data types we use to build the internal tree structure.
   using LevelKey = typename ViewType::LevelKey;
@@ -78,6 +79,9 @@ public:
   virtual void reinitialize(const Vector& xmin,
                             const Vector& xmax,
                             const Scalar htarget) override;
+
+  // Change the kernel extent.  DataBase owns rebuilding dependent state.
+  void kernelExtent(const Scalar value) { this->setKernelExtent(value); }
   //.............................................................................
 
   // Checks for internal validity.

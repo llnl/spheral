@@ -41,6 +41,7 @@ public:
   using BaseValueType = Neighbor<Dimension>;
   using BaseViewType  = NeighborView<Dimension, PythonNeighbor<Dimension>>;
   using ViewType = PythonNeighborCallView<Dimension>;
+  using BaseViewType::kernelExtent;
 
   using NodeID = typename BaseValueType::NodeID;
   template<typename T> using Container = typename BaseViewType::template Container<T>;
@@ -56,6 +57,9 @@ public:
 
   // Clear the current Neighbor state
   virtual void clear() override;
+
+  // Change the kernel extent.  DataBase owns rebuilding dependent state.
+  void kernelExtent(const Scalar value) { this->setKernelExtent(value); }
 
   // Return a lightweight callback adapter.  The adapter does not own this
   // PythonNeighbor, so this object must outlive all copies of the view.
