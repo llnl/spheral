@@ -176,7 +176,10 @@ public:
   ConstNodeListIterator DEMNodeListAsNodeListBegin()                   const { return mDEMNodeListAsNodeListPtrs.begin(); }
   ConstNodeListIterator DEMNodeListAsNodeListEnd()                     const { return mDEMNodeListAsNodeListPtrs.end(); }
 
-  // Optimize all Neighbor objects for the current state.
+  // Update the Neighbor info -- does not change ConnectivityMap
+  void updateNeighbors() const;
+
+  // Optimize all Neighbor objects for the current state -- clears any existing ConnectivityMap
   void reinitializeNeighbors() const;
 
   // The Neighbor object

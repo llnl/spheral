@@ -485,7 +485,7 @@ Integrator<Dimension>::setGhostNodes() const {
         }
         nodeListPtr->deleteNodes(nodesToRemove);
       }
-      db.reinitializeNeighbors();
+      db.updateNeighbors();
 
       // All nodes should now be labeled as keepers.
       BEGIN_CONTRACT_SCOPE
@@ -536,7 +536,7 @@ Integrator<Dimension>::applyGhostBoundaries(State<Dimension>& state,
     for (auto* nodeListPtr: db.nodeListPtrs()) boundaryPtr->updateGhostNodes(*nodeListPtr);
     boundaryPtr->finalizeGhostBoundary();
   }
-  db.reinitializeNeighbors();
+  db.updateNeighbors();
 
   // Iterate over the physics packages, and have them apply ghost boundaries
   // for their state.
@@ -606,7 +606,7 @@ Integrator<Dimension>::setViolationNodes() const {
   for (auto* boundaryPtr: boundaries) boundaryPtr->setAllViolationNodes(db);
 
   // Fix neighbor information.
-  db.reinitializeNeighbors();
+  db.updateNeighbors();
 }
 
 //------------------------------------------------------------------------------

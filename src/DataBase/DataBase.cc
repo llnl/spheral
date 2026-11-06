@@ -160,6 +160,16 @@ DataBase<Dimension>::globalNumDEMNodes() const {
 }
 
 //------------------------------------------------------------------------------
+// Update the Neighbor info
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DataBase<Dimension>::
+updateNeighbors() const {
+  visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.updateNodes(); });
+}
+
+//------------------------------------------------------------------------------
 // Optimize neighbor objects.
 //------------------------------------------------------------------------------
 template<typename Dimension>
