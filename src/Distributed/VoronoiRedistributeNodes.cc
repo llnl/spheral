@@ -352,21 +352,13 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   if (this->workBalance()) { // or mBalanceGenerators) {
 
     // Enforce boundary conditions for the work computation.
-    for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) {
-      (*nodeListItr)->numGhostNodes(0);
-      (*nodeListItr)->neighbor().updateNodes();
+    for (auto* nPtr: dataBase.nodeListPtrs()) nPtr->numGhostNodes(0);
+    dataBase.updateNeighbors();
+    for (auto bcPtr: boundaries) {
+      bcPtr->setAllGhostNodes(dataBase);
+      bcPtr->finalizeGhostBoundary();
     }
-    for (typename vector<Boundary<Dimension>*>::iterator boundaryItr = boundaries.begin(); 
-         boundaryItr != boundaries.end();
-         ++boundaryItr) {
-      (*boundaryItr)->setAllGhostNodes(dataBase);
-      (*boundaryItr)->finalizeGhostBoundary();
-      for (typename DataBase<Dimension>::FluidNodeListIterator nodeListItr = dataBase.fluidNodeListBegin();
-           nodeListItr != dataBase.fluidNodeListEnd(); 
-           ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
-    }
+    dataBase.updateNeighbors();
 
     // Update the connectivity.
     dataBase.updateConnectivityMap(false, false, false);
@@ -389,9 +381,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   // Clear out any ghost nodes.
   // We won't bother to update the neighbor info at this point -- we don't need 
   // it for this algorithm, so we just update it when we're done.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) (*nodeListItr)->numGhostNodes(0);
+  for (auto* nPtr: dataBase.nodeListPtrs()) nPtr->numGhostNodes(0);
 
   // Get the bounding boxes for the node set.
   Vector xmin, xmax;
@@ -667,11 +657,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   this->enforceDomainDecomposition(nodeDistribution, dataBase);
 
   // Reinitialize neighbor info.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  dataBase.updateNeighbors();
 
   // Notify everyone that the nodes have just been shuffled around.
   RedistributionRegistrar::instance().broadcastRedistributionNotifications();

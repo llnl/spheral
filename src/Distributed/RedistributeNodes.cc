@@ -461,7 +461,6 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
           CHECK(nodeListBufItr != procBufItr->end());
           const list< vector<char> >& bufs = *nodeListBufItr;
           (*nodeListItr)->appendInternalNodes(numNewNodes, bufs);
-          (*nodeListItr)->neighbor().updateNodes();
           ++nodeListBufItr;
         }
       }
@@ -469,6 +468,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
       ++procBufItr;
     }
   }
+  dataBase.updateNeighbors();
   CHECK(procBufItr == fieldBuffers.end());
 
   // Wait until all our sends are completed.

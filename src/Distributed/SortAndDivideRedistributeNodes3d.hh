@@ -21,17 +21,17 @@ class SortAndDivideRedistributeNodes3d: public SortAndDivideRedistributeNodes<Di
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef Dim<3> Dimension;
-  typedef Dim<3>::Scalar Scalar;
-  typedef Dim<3>::Vector Vector;
-  typedef Dim<3>::Tensor Tensor;
-  typedef Dim<3>::SymTensor SymTensor;
+  using Dimension = Dim<3>;
+  using Scalar = Dim<3>::Scalar;
+  using Vector = Dim<3>::Vector;
+  using Tensor = Dim<3>::Tensor;
+  using SymTensor = Dim<3>::SymTensor;
 
   // Constructors
   SortAndDivideRedistributeNodes3d(const double HExtent);
 
   // Destructor
-  virtual ~SortAndDivideRedistributeNodes3d();
+  virtual ~SortAndDivideRedistributeNodes3d() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
   virtual void redistributeNodes(DataBase<Dim<3> >& dataBase,

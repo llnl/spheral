@@ -41,13 +41,6 @@ SortAndDivideRedistributeNodes2d(const double Hextent):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-SortAndDivideRedistributeNodes2d::
-~SortAndDivideRedistributeNodes2d() {
-}
-
-//------------------------------------------------------------------------------
 // The main method of this class.  Repartition the node distribution.
 //------------------------------------------------------------------------------
 void
@@ -59,12 +52,8 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
-  for (DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nPtr: dataBase.nodeListPtrs()) nPtr->numGhostNodes(0);
+  dataBase.updateNeighbors();
 
   // If the user did not specify any boundaries, then create a Distributed
   // boundary for local use.
@@ -75,26 +64,18 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
 
   // Use the boundaries to create the ghost nodes.  We need this to compute the
   // work per node (defined as the number of neighbors) correctly.
-  for (vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) {
-    (*boundItr)->setAllGhostNodes(dataBase);
-    (*boundItr)->finalizeGhostBoundary();
-    for (DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
+  for (auto bcPtr: boundaries) {
+    bcPtr->setAllGhostNodes(dataBase);
+    bcPtr->finalizeGhostBoundary();
   }
+  dataBase.updateNeighbors();
 
   // Get the work per node.
   const FieldList<Dimension, Scalar> work = this->workPerNode(dataBase, Hextent());
 
   // Once again clear out any ghost nodes.
-  for (DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nPtr: dataBase.nodeListPtrs()) nPtr->numGhostNodes(0);
+  dataBase.updateNeighbors();
 
   // Build the set of global node IDs.
   const FieldList<Dimension, size_t> globalIDs = globalNodeIDs(dataBase);
