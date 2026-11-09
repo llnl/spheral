@@ -468,7 +468,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
       ++procBufItr;
     }
   }
-  dataBase.updateNeighbors();
+  dataBase.reinitializeNeighbors();
   CHECK(procBufItr == fieldBuffers.end());
 
   // Wait until all our sends are completed.

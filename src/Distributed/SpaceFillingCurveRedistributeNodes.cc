@@ -265,7 +265,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       for (auto i = 0u; i < n; ++i) ordering[orderedkeys[i].second] = i;
       nodeListPtr->reorderNodes(ordering);
     }
-    dataBase.updateNeighbors();
+    dataBase.reinitializeNeighbors();
 
     // Notify everyone that the nodes have just been shuffled around.
     RedistributionRegistrar::instance().broadcastRedistributionNotifications();
@@ -319,8 +319,7 @@ SpaceFillingCurveRedistributeNodes<Dimension>::
 buildIndex2IDPairs(const FieldList<Dimension, typename SpaceFillingCurveRedistributeNodes<Dimension>::Key>& indices,
                    const vector<DomainNode<Dimension> >& domainNodes) const {
 
-  vector<pair<Key, DomainNode<Dimension>>> result;
-  result.reserve(domainNodes.size());
+  vector<pair<Key, DomainNode<Dimension>>> result(domainNodes.size());
   for (auto [i, dn]: enumerate(domainNodes)) {
     result[i] = std::make_pair(indices(dn.nodeListID, dn.localNodeID), dn);
   }
