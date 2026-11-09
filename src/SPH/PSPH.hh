@@ -94,7 +94,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               chai::managed_ptr<QType>& Q) const;
+                               QType Q) const;
 
   // Post-state update. For PSPH this is where we recompute the PSPH pressure and corrections.
   virtual 

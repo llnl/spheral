@@ -8,5 +8,7 @@ text = """
 namespace Spheral {
   template class PythonArtificialViscosity<Dim<%(ndim)s>, Dim<%(ndim)s>::Scalar>;
   template class PythonArtificialViscosity<Dim<%(ndim)s>, Dim<%(ndim)s>::Tensor>;
+  template class PythonArtificialViscosityCallView<Dim<%(ndim)s>, Dim<%(ndim)s>::Scalar>;
+  template class PythonArtificialViscosityCallView<Dim<%(ndim)s>, Dim<%(ndim)s>::Tensor>;
 }
 """

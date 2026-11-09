@@ -287,7 +287,7 @@ dt(const DataBase<Dimension>& dataBase,
 
           // Velocity divergence limit.
           const auto divVelocity = Fdiv(DvDx(nodeListi, i), position(nodeListi, i), velocity(nodeListi, i));
-          const auto divvDt = 1.0/(std::abs(divVelocity) + tiny);
+          const auto divvDt = 1.0/(-std::min(0.0, divVelocity) + tiny);
           if (divvDt < minDt_local.first) {
             minDt_local = TimeStepType(divvDt, ("Velocity divergence limit: dt = " + to_string(divvDt) + "\n" +
                                                 "                 div velocity = " + to_string(divVelocity) + "\n" +

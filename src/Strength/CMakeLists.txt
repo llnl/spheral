@@ -1,4 +1,3 @@
-include_directories(.)
 set(Strength_inst
     BulkModulusPolicy
     DeviatoricStressPolicy
@@ -21,5 +20,5 @@ set(Strength_headers
     effectiveKernelVolume.hh
     )
 
-spheral_add_obj_library(Strength SPHERAL_OBJ_LIBS)
+spheral_add_package(Strength)
 

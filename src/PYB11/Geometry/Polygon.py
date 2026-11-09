@@ -78,8 +78,9 @@ meaning that the full set of points passed in may not appear in the vertices."""
     @PYB11pycppname("intersect")
     def intersect2(self,
                    s0 = "const Vector&",
-                   s1 = "const Vector&"):
-        "Test if we intersect a line segment (interior counts as intersection)."
+                   s1 = "const Vector&",
+                   countInterior = ("const bool", "true")):
+        "Test if we intersect a line segment."
         return "bool"
 
     @PYB11const

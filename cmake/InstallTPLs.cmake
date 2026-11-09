@@ -55,9 +55,6 @@ if (SPHERAL_ENABLE_PYTHON)
   )
 endif()
 
-# This is currently unfilled in spheral
-set_property(GLOBAL PROPERTY SPHERAL_SUBMOD_INCLUDES "${SPHERAL_SUBMOD_INCLUDES}")
-
 # PolyClipper
 if (NOT polyclipper_DIR)
   # If no PolyClipper is specified, build it as an internal target
@@ -213,6 +210,20 @@ if (SPHERAL_ENABLE_SUNDIALS)
 endif()
 
 message("-----------------------------------------------------------------------------")
+# Singularity EOS
+if (SPHERAL_ENABLE_SINGULARITY)
+  find_package(singularity-eos REQUIRED NO_DEFAULT_PATH
+    PATHS ${singularity_eos_DIR})
+  list(APPEND SPHERAL_BLT_DEPENDS
+    singularity-eos::singularity-eos_Interface
+    singularity-eos::singularity-eos_Common
+  )
+  list(APPEND SPHERAL_FP_TPLS singularity-eos)
+  list(APPEND SPHERAL_FP_DIRS ${singularity_eos_DIR})
+  message("Found Singularity EOS External Package.")
+endif()
+
+message("-----------------------------------------------------------------------------")
 if(NOT SPHERAL_EXTERNAL_INSTALL)
   find_package(Boost REQUIRED NO_DEFAULT_PATH COMPONENTS filesystem PATHS ${boost_DIR})
   if(Boost_FOUND)
@@ -223,9 +234,6 @@ else()
   # This is used in case a code wants to use an unconventional Boost install
   list(APPEND SPHERAL_EXTERN_LIBS boost)
 endif()
-
-set_property(GLOBAL PROPERTY SPHERAL_FP_TPLS ${SPHERAL_FP_TPLS})
-set_property(GLOBAL PROPERTY SPHERAL_FP_DIRS ${SPHERAL_FP_DIRS})
 
 message("-----------------------------------------------------------------------------")
 # In case we start using find_package on Silo, we should save the silo_DIR path
@@ -245,7 +253,6 @@ foreach(lib ${SPHERAL_EXTERN_LIBS})
   list(APPEND SPHERAL_BLT_DEPENDS ${lib})
 endforeach()
 blt_convert_to_system_includes(TARGETS "${SPHERAL_BLT_DEPENDS}")
-# Note: SPHERAL_BLT_DEPENDS is made global after this in SetupSpheral.cmake
 
 # This calls LLNLSpheralInstallTPLs.cmake
 if (EXISTS ${EXTERNAL_SPHERAL_TPL_CMAKE})

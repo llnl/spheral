@@ -489,8 +489,9 @@ intersect(const std::pair<Vector, Vector>& rhs) const {
 //------------------------------------------------------------------------------
 bool
 GeomPolyhedron::
-intersect(const Vector& s0, const Vector& s1) const {
-  if (this->contains(s0) or this->contains(s1)) return true;
+intersect(const Vector& s0, const Vector& s1,
+          const bool countInterior) const {
+  if (countInterior and (this->contains(s0) or this->contains(s1))) return true;
 
   const auto shat = (s1 - s0).unitVector();
   const auto q01 = (s1 - s0).magnitude();

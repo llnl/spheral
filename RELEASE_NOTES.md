@@ -11,23 +11,40 @@ Notable changes include:
     * Converted SpheralMessage macros to behave like streams rather than functions.
     * Moved massRZ and massDensityRZ to NodeLists (out of RZ hydro specializations).
     * Moved RZ iniitalization of node properties to generation/distribution stage, so the correct state is available immediately during script generation.
-    * Volume upgrade
+    * Volume upgrade:
       * Separates the volume calculation from RKCorrections and adds controls for when the volume is updated. Previously, the Voronoi was being calculated way too often in VoronoiCells and getting overwritten by the volumes from RKCorrections.
       * Makes VoronoiCells inherit from VolumeUpdate. It optionally overwrites its own volume calculation with the user's choice of volume.
       * Lets the user choose the volume for all packages, not just RKCorrections.
       * Stores both 3D (annulus or spherical shell) volume and patch volume, which are the same in Cartesian coordinates.
-    * Physics package requirements upgrade
-      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity
-        * Returns {conn, ghost, overlap, intersection}
-      * requireVoronoiCells has been replaced by requireVolumes
-        * Returns {explicit, implicit, voronoi}
-      * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels
-        * Returns tuple {explicit, implicit, hessian}
+    * Physics package requirements upgrade.
+      * requireConnectivity, requireGhostConnectivity, requireOverlapConnectivity, requireIntersectionConnectivity have been replaced by requireConnectivity.
+        * Returns {conn, ghost, overlap, intersection}.
+      * requireVoronoiCells has been replaced by requireVolumes.
+        * Returns {explicit, implicit, voronoi}.
+      * requireReproducingKernels, requireReproducingKernelInFinalize, requireReproducingKernelHessian have been replaced by requireReproducingKernels.
+        * Returns tuple {explicit, implicit, hessian}.
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
       * Note: Python overrides only work on CPU runs
     * Added rolling restarts to SpheralController (rollingRestartStep, rollingRestartWallTime, rollingRestartMax): restart files written on a cycle and/or wall clock cadence, keeping only the most recent few.
+    * Singularity can now be brought in as a TPL.
+    * ArtificialViscosity value/view design is completely refactored. Initial tests show ~10% speedups for CPU tests and 5-15% speedup for GPU tests.
+      * Removes the use of CHAI managed pointers.
+      * Eliminates on-device dynamic polymorphism for the virtual function QPiij using an std::variant design.
+      * Allows the value class to inherit from the view class, mirroring our other value/view implementations.
+      * The dynamic stack limit on-device is no longer increased by default.
+    * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
 
   * Build changes / improvements:
+    * Major overhaul to CMake system:
+      * CXX library is now a monolithic static, shared, or interface (for dev builds) library.
+      * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before. Results in significantly fewer global CMake variables.
+      * One downside is that the cpp only tests now must depend on the entire `Spheral_CXX` target instead of individual packages.
+      * Removed unused SPHERAL_SUBMOD_DEPENDS variable.
+      * `spheral_add_obj_library` no longer takes the name of the list being modified as an argument. Instead, the `SPHERAL_ACTIVE_CXX_TARGET` variable is set in the parent scope, providing the name of the CXX target.
+      * `spheral_add_obj_library` is renamed to `spheral_add_package`.
+      * Removed unnecessary `include_directories(.)` calls.
+      * The PYB11 targets no longer depend on TPLs directly. Instead, they depend on the Spheral_CXX target, which depends on the TPLs. This fixes a major issue involving destruction of static variables at exit from the python.
+    * Build definition SPHERAL_GPU_ENABLED renamed to SPHERAL_ENABLE_GPU to be consistent with other CMake/compiler/preprocessor definitions.
     * Moved GPU and OpenMP code to new "Threading" package (from "Utilities").
     * Update to Thicket version 2026.1.0.
     * Improved the buildcache generation logic to include a tar of the Spack and Spack packages repos.
@@ -46,11 +63,13 @@ Notable changes include:
   * Bug Fixes / improvements:
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.
-    * GenerateRatioSphere accessing the wrong element when SPH = True
+    * GenerateRatioSphere accessing the wrong element when SPH = True.
     * Bugfix for strain-porosity in power-law compaction regime from Sean Wiggins (apparently the paper by Collins et al. had a typo).
     * Another bugfix for Jaumann rate definition in all solid hydro packages (issue #534)
-    * added new strain model PlasticBenzAsphaugStrain to DamageModel physics package
+    * Added new strain model PlasticBenzAsphaugStrain to DamageModel physics package.
     * Fixed bugs affecting 2D rejecters in RejecterBase helper
+    * Fixed bugs for matplotlib plotting of polygons
+    * The default damage coupling (PairMaxDamageNodeCoupling) was decoupling nodes in different NodeLists when damage is on, but this changed the behaviour of nodes without damage. We have removed the NodeList check from the decoupling criterion to avoid this side-effect.
 
 Version v2026.06.0 -- Release date 2026-06-22
 ==============================================

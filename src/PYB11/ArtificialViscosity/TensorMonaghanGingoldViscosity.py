@@ -8,7 +8,7 @@ from ArtificialViscosity import *
 class TensorMonaghanGingoldViscosity(ArtificialViscosity):
     """A modified form of the Monaghan & Gingold viscosity, extended to tensor formalism.
 This method is described in
-Owen, J Michael (2004), 'A tensor artficial visocity for SPH', Journal of Computational Physics, 201(2), 601-629
+Owen, J Michael (2004), 'A tensor artificial visocity for SPH', Journal of Computational Physics, 201(2), 601-629
 """
 
     PYB11typedefs = """
