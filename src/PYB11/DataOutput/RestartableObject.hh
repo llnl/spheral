@@ -16,7 +16,7 @@
 #ifndef __Spheral_RestartableObject__
 #define __Spheral_RestartableObject__
 
-#include "pybind11/pybind11.h"
+#include "PYB11/SpheralTypeCasters.hh"
 #include "pybind11/functional.h"
 
 #include <string>

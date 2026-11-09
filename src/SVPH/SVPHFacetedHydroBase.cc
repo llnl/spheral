@@ -735,7 +735,7 @@ dt(const DataBase<Dimension>& dataBase,
   string lastNodeListName, reason;
   Scalar lastNodeScale = 0;
   Scalar lastCs = 0;
-  Scalar lastRho, lastEps, lastDivVelocity;
+  Scalar lastRho = 0.0, lastEps = 0.0, lastDivVelocity = 0.0;
   Vector lastVelocity, lastAcc;
 
   // Loop over every fluid node.

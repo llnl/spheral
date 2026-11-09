@@ -10,6 +10,8 @@
 #ifndef __Spheral_PyFileIO_hh__
 #define __Spheral_PyFileIO_hh__
 
+// Native and generated Python I/O code must use the same vector type_caster definitions.
+#include "PYB11/SpheralTypeCasters.hh"
 #include "FileIO/FileIO.hh"
 #include "Geometry/Dimension.hh"
 #include "Utilities/DBC.hh"
