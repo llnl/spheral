@@ -169,6 +169,18 @@ updateNeighbors() const {
   visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.updateNodes(); });
 }
 
+template<typename Dimension>
+void
+DataBase<Dimension>::
+updateNeighbor(const NodeList<Dimension>& nodes) const {
+  const auto k = this->nodeListIndex(nodes);
+  CHECK(k < this->numNodeLists());
+  const auto n = nodes.numNodes();
+  std::vector<typename Neighbor<Dimension>::NodeID> ids(n);
+  for (auto i = 0u; i < n; ++i) ids[i] = std::make_pair(k, i);
+  visitNeighbor(mNeighbor, [&](auto& neighbor) { neighbor.updateNodes(ids); });
+}
+
 //------------------------------------------------------------------------------
 // Optimize neighbor objects.
 //------------------------------------------------------------------------------
