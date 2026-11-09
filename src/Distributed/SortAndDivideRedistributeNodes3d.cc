@@ -8,7 +8,6 @@
 #include "Boundary/Boundary.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
 #include "Geometry/EigenStruct.hh"
 #include "Utilities/globalNodeIDs.hh"
