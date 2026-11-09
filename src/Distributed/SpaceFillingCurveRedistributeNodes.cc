@@ -109,8 +109,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       for (auto* boundaryPtr: boundaries) {
         boundaryPtr->setAllGhostNodes(dataBase);
         boundaryPtr->finalizeGhostBoundary();
+        dataBase.updateNeighbors();
       }
-      dataBase.updateNeighbors();
 
       // Get the local description of the domain distribution, with the work per node filled in.
       workField = this->workPerNode(dataBase, 1.0);

@@ -357,8 +357,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     for (auto bcPtr: boundaries) {
       bcPtr->setAllGhostNodes(dataBase);
       bcPtr->finalizeGhostBoundary();
+      dataBase.updateNeighbors();
     }
-    dataBase.updateNeighbors();
 
     // Update the connectivity.
     dataBase.updateConnectivityMap(false, false, false);
@@ -1009,4 +1009,3 @@ maxIterations(unsigned val) {
 }
 
 }
-

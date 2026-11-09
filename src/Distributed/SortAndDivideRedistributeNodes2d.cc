@@ -66,8 +66,8 @@ redistributeNodes(DataBase<Dim<2> >& dataBase,
   for (auto bcPtr: boundaries) {
     bcPtr->setAllGhostNodes(dataBase);
     bcPtr->finalizeGhostBoundary();
+    dataBase.updateNeighbors();
   }
-  dataBase.updateNeighbors();
 
   // Get the work per node.
   const FieldList<Dimension, Scalar> work = this->workPerNode(dataBase, Hextent());
