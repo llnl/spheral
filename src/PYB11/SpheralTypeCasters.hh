@@ -276,6 +276,13 @@ PYBIND11_MAKE_OPAQUE(std::vector<Spheral::FieldList<Spheral::Dim<3>, Spheral::Di
 PYBIND11_MAKE_OPAQUE(std::vector<std::vector<Spheral::FieldList<Spheral::Dim<3>, Spheral::Dim<3>::SymTensor>>>);
 PYBIND11_MAKE_OPAQUE(std::vector<Spheral::FieldList<Spheral::Dim<3>, Spheral::Dim<3>::SymTensor>*>);
 
+// Parent projects can extend the common declarations before conversion helpers
+// or generated binding consumers use their types. The extension must add only
+// its own specializations and must not include this header back.
+#ifdef SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER
+#include SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER
+#endif
+
 namespace Spheral {
 
 // A source-filter marker for implicitly_convertible, not a Python-visible class

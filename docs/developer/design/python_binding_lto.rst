@@ -174,6 +174,34 @@ descriptions and handwritten conversion consumers before removing it from
 the shared header. Different aliases of the same C++ type must not introduce
 duplicate specializations.
 
+Parent projects with additional container bindings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A parent project that builds Spheral together with additional bindings must
+extend the shared declarations for its own opaque containers. Selecting
+Spheral's shared header suppresses generated module-specific declarations in
+the parent's bindings too; ``opaque=True`` alone therefore does not suffice.
+
+Set the CMake variable ``SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER`` to the
+parent's extension header, for example ``"PYB11/ProjectTypeCasters.hh"``,
+before including ``SetupSpheral.cmake`` or creating any binding targets.
+``spheral_add_pybind11_library`` passes the same setting as a quoted compiler
+definition to each binding target, including the combined module.
+
+``SpheralTypeCasters.hh`` includes that extension after Spheral's opaque
+declarations and before the vector conversion helpers. The extension should
+have an include guard, supporting includes or element forward declarations,
+and fully qualified ``PYBIND11_MAKE_OPAQUE`` declarations for the additional
+types. Do not repeat Spheral's declarations or include ``SpheralTypeCasters.hh``
+back from the extension. Keep the extension consistent with the parent's
+Python container descriptions, including every dimensional instantiation.
+
+The parent must make the header available through the binding include paths
+and install it alongside the shared header under ``include/PYB11``. Any
+separately compiled binding consumers of those types must select the same
+extension before first including ``SpheralTypeCasters.hh``. With the setting
+absent, standalone Spheral uses only its own declarations.
+
 Configuration, build, and runtime
 ---------------------------------
 
@@ -319,6 +347,9 @@ code. The shared header's relevant order is:
    // Supporting C++ includes and element forward declarations come next.
    PYBIND11_MAKE_OPAQUE(std::vector<int>);
    // Other explicit container declarations follow.
+   #ifdef SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER
+   #include SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER
+   #endif
    // The implicit vector input helper follows the opaque declarations.
 
 When the macro selects the shared header, generated module-specific opaque

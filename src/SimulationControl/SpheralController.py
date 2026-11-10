@@ -707,7 +707,8 @@ class SpheralController:
         self._insertVolume(W, volumeType, facetedBoundaries, forceVoronoi)
 
         # InflowOutflowBoundary can cause issues for other packages if it is not last
-        packages = self.integrator.physicsPackages()
+        # Sort a Python list snapshot; physicsPackages() returns a bound C++ vector.
+        packages = list(self.integrator.physicsPackages())
         if any("InflowOutflowBoundary" in type(p).__name__ for p in packages):
             packages.sort(key=lambda p: "InflowOutflowBoundary" in type(p).__name__)
             self.integrator.resetPhysicsPackages(packages)
