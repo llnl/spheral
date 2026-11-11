@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # A simple class to control simulation runs for Spheral.
 #------------------------------------------------------------------------------
-import sys, os, gc, warnings, mpi
+import sys, os, gc, shutil, time, warnings, mpi
 
 from SpheralCompiledPackages import *
 from SpheralTimer import SpheralTimer
@@ -15,6 +15,20 @@ from findLastRestart import findLastRestart
 from spheralDimensions import spheralDimensions
 dims = spheralDimensions()
 
+#-------------------------------------------------------------------------------
+# Remove a file or directory, ignoring anything that's already gone.  This is
+# what the rolling restart background threads execute.
+#-------------------------------------------------------------------------------
+def _removeRestartPath(path):
+    try:
+        if os.path.isdir(path) and not os.path.islink(path):
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            os.remove(path)
+    except OSError:
+        pass
+    return
+
 class SpheralController:
 
     #--------------------------------------------------------------------------
@@ -27,6 +41,10 @@ class SpheralController:
                  garbageCollectionStep = 100,
                  redistributeStep = None,
                  restartStep = None,
+                 rollingRestartStep = None,
+                 rollingRestartWallTime = None,
+                 rollingRestartMax = 3,
+                 rollingRestartCheckStep = 10,
                  restartBaseName = "restart",
                  restartObjects = [],
                  restartFileConstructor = SiloFileIO,
@@ -65,13 +83,13 @@ class SpheralController:
         self._break = False
 
         # test of dem if so throw in a default kernel (all we need is the extent)
-        self.isDEM = self.packagesContainDEM(integrator.physicsPackages())
+        self.isDEM = self.packagesContainDEM(self.integrator.physicsPackages())
         if self.isDEM and kernel is None:
-            kernel = eval("TableKernel{0}d(WendlandC2Kernel{0}d(), 100)".format(integrator.dataBase.nDim))
+            kernel = eval("TableKernel{0}d(WendlandC2Kernel{0}d(), 100)".format(self.integrator.dataBase.nDim))
 
         # Extract the interpolation kernel for iterating H and such
         if kernel is None:
-            for package in integrator.physicsPackages():
+            for package in self.integrator.physicsPackages():
                 if hasattr(package, "kernel"):
                     kernel = package.kernel
                     break
@@ -98,14 +116,14 @@ class SpheralController:
         self.vizDerivs = vizDerivs
 
         # If this is in spherical or cylindrical coordinates, add axis boundary
-        self.insertAxisBoundary(integrator.physicsPackages())
+        self.insertAxisBoundary(self.integrator.physicsPackages())
         
         # Organize the physics packages as appropriate
         self.organizePhysicsPackages(self.kernel, volumeType, facetedBoundaries, forceVoronoi)
 
         # If this is a parallel run, automatically construct and insert
         # a DistributedBoundaryCondition into each physics package.
-        self.insertDistributedBoundary(integrator.physicsPackages())
+        self.insertDistributedBoundary(self.integrator.physicsPackages())
 
         # Should we look for the last restart set?
         if restartBaseName:
@@ -123,6 +141,10 @@ class SpheralController:
                                  garbageCollectionStep = garbageCollectionStep,
                                  redistributeStep = redistributeStep,
                                  restartStep = restartStep,
+                                 rollingRestartStep = rollingRestartStep,
+                                 rollingRestartWallTime = rollingRestartWallTime,
+                                 rollingRestartMax = rollingRestartMax,
+                                 rollingRestartCheckStep = rollingRestartCheckStep,
                                  restoreCycle = restoreCycle,
                                  initializeDerivatives = initializeDerivatives,
                                  vizDir = vizDir,
@@ -164,6 +186,10 @@ class SpheralController:
                             garbageCollectionStep = 100,
                             redistributeStep = None,
                             restartStep = None,
+                            rollingRestartStep = None,
+                            rollingRestartWallTime = None,
+                            rollingRestartMax = 3,
+                            rollingRestartCheckStep = 10,
                             restoreCycle = None,
                             initializeDerivatives = False,
                             vizDir = None,
@@ -192,7 +218,12 @@ class SpheralController:
         # Prepare an empty set of periodic work.
         self._periodicWork = []
         self._periodicTimeWork = []
-        
+
+        # Prepare the rolling restart bookkeeping.
+        self.rollingRestartMax = rollingRestartMax
+        self.rollingRestartWallTime = rollingRestartWallTime
+        self._rollingRestartSetup()
+
         # Set the restart file base name.
         if restartBaseName:
             self.setRestartBaseName(restartBaseName)
@@ -275,6 +306,9 @@ class SpheralController:
         self.appendPeriodicWork(self.garbageCollection, garbageCollectionStep)
         self.appendPeriodicWork(self.updateConservation, statsStep)
         self.appendPeriodicWork(self.updateRestart, restartStep)
+        self.appendPeriodicWork(self.updateRollingRestart, rollingRestartStep)
+        self.appendPeriodicWork(self.updateRollingRestartWallTime,
+                                rollingRestartCheckStep if rollingRestartWallTime else None)
         self.appendPeriodicWork(self.reinitializeNeighbors, reinitializeNeighborsStep)
         for x, freq in periodicWork:
             self.appendPeriodicWork(x, freq)
@@ -318,6 +352,10 @@ class SpheralController:
         # base name.
         if procs > 1:
             self.restartBaseName += '_rank%i_of_%idomains' % (rank, procs)
+
+        # Any rolling restart bookkeeping we're carrying refers to the old base
+        # name, so start over with the new one.
+        self._rollingRestartSetup()
 
         return
 
@@ -560,6 +598,203 @@ class SpheralController:
         return
 
     #--------------------------------------------------------------------------
+    # Periodically drop a rolling restart file: identical to a normal restart
+    # file, but only the most recent rollingRestartMax of them are retained.
+    #--------------------------------------------------------------------------
+    def updateRollingRestart(self, cycle, Time, dt):
+
+        # If we already wrote a restart file for this cycle there's nothing to do.
+        if (self.totalSteps in self._keepRestartCycles or
+            (self._rollingCycles and self._rollingCycles[-1] == self.totalSteps)):
+            return
+        while gc.collect():
+            pass
+        self.dropRestartFile(keep=False)
+        return
+
+    #--------------------------------------------------------------------------
+    # Drop a rolling restart file on a wall clock cadence.  The decision has to
+    # be made on a single rank and broadcast, or the ranks can disagree about
+    # whether this cycle writes a restart file.
+    #--------------------------------------------------------------------------
+    def updateRollingRestartWallTime(self, cycle, Time, dt):
+        if self.rollingRestartWallTime is None:
+            return
+        dropIt = None
+        if mpi.rank == 0:
+            dropIt = (time.monotonic() - self._lastRestartWallTime) >= self.rollingRestartWallTime
+        if mpi.procs > 1:
+            dropIt = mpi.bcast(dropIt, 0)
+        if dropIt:
+            self.updateRollingRestart(cycle, Time, dt)
+        return
+
+    #--------------------------------------------------------------------------
+    # (Re)initialize the rolling restart bookkeeping.
+    #--------------------------------------------------------------------------
+    def _rollingRestartSetup(self):
+        self._rollingCycles = []          # cycles holding a rolling restart, ascending
+        self._keepRestartCycles = set()   # cycles we must never delete
+        self._rollingSeeded = False
+        self._rollingTrashCount = 0
+        self._rollingExecutor = None
+        self._lastRestartWallTime = time.monotonic()
+        return
+
+    #--------------------------------------------------------------------------
+    # The hidden per-rank directory holding the rolling restart bookkeeping.
+    # It's hidden so that findLastRestart never sees anything in it, and it's
+    # small so that scanning it is cheap no matter how many restart files are
+    # sitting in the restart directory itself.
+    #--------------------------------------------------------------------------
+    def _rollingRestartDir(self):
+        dire, base = os.path.split(os.path.abspath(self.restartBaseName))
+        return os.path.join(dire, "." + base + "_rolling")
+
+    #--------------------------------------------------------------------------
+    # The files (and directories) making up the restart set for a cycle.  We
+    # probe the handful of possible names rather than scanning the directory.
+    #--------------------------------------------------------------------------
+    def _restartSetPaths(self, cycle):
+        fileName = self.restartBaseName + "_cycle%i" % cycle
+        return [x for x in (fileName,                # Sidre datastore dir, FlatFileIO
+                            fileName + ".silo",
+                            fileName + ".gz",
+                            fileName + ".root")      # Sidre index
+                if os.path.exists(x)]
+
+    #--------------------------------------------------------------------------
+    # Pick up the rolling restarts left behind by a previous run, and sweep any
+    # files it was in the middle of deleting.  Done once per run: rank 0 reads
+    # the markers and broadcasts, since every rank writes the same cycles.
+    #--------------------------------------------------------------------------
+    def _seedRollingRestarts(self):
+        if self._rollingSeeded:
+            return
+        self._rollingSeeded = True
+        rdir = self._rollingRestartDir()
+        ok = True
+        try:
+            os.makedirs(rdir, exist_ok=True)
+        except OSError as e:
+            warnings.warn("Unable to create rolling restart directory %s: %s" % (rdir, e))
+            ok = False
+
+        # Sweep this rank's leftover trash, and find a fresh trash counter.
+        if ok:
+            trash = []
+            with os.scandir(rdir) as entries:
+                for entry in entries:
+                    if entry.name.startswith("trash"):
+                        trash.append(entry.path)
+                        count = entry.name[5:].split("_")[0]
+                        if count.isdigit():
+                            self._rollingTrashCount = max(self._rollingTrashCount, int(count) + 1)
+            self._rollingDelete(trash)
+
+        # Rank 0 owns the cycle markers.  Note every rank has to reach the
+        # broadcast below, so we can't bail out early on a local failure.
+        cycles = None
+        if mpi.rank == 0 and ok:
+            cycles = []
+            with os.scandir(rdir) as entries:
+                for entry in entries:
+                    if entry.name.startswith("cycle") and entry.name[5:].isdigit():
+                        cycles.append(int(entry.name[5:]))
+            # Drop markers whose restart files are already gone (a run killed
+            # between deleting the files and deleting the marker).
+            stale = [c for c in cycles if not self._restartSetPaths(c)]
+            for c in stale:
+                _removeRestartPath(os.path.join(rdir, "cycle%i" % c))
+            cycles = sorted(set(cycles) - set(stale))
+        if mpi.procs > 1:
+            cycles = mpi.bcast(cycles, 0)
+        self._rollingCycles = cycles if cycles else []
+        return
+
+    #--------------------------------------------------------------------------
+    # Note that a rolling restart file was written for this cycle, and retire
+    # any rolling restarts beyond our retention limit.  Called only after the
+    # new file is closed, so we never dip below rollingRestartMax good sets.
+    #--------------------------------------------------------------------------
+    def _registerRollingRestart(self, cycle):
+        self._seedRollingRestarts()
+        if mpi.rank == 0:
+            marker = os.path.join(self._rollingRestartDir(), "cycle%i" % cycle)
+            try:
+                with open(marker, "w"):
+                    pass
+            except OSError as e:
+                warnings.warn("Unable to write rolling restart marker %s: %s" % (marker, e))
+        if not cycle in self._rollingCycles:
+            self._rollingCycles.append(cycle)
+            self._rollingCycles.sort()
+        while len(self._rollingCycles) > max(1, self.rollingRestartMax):
+            self._retireRestartSet(self._rollingCycles.pop(0))
+        return
+
+    #--------------------------------------------------------------------------
+    # Stop treating a cycle as a rolling restart, without deleting anything.
+    # Used when a cycle is (also) written as a permanent restart, which happens
+    # for instance when both cadences fire on the same cycle.
+    #--------------------------------------------------------------------------
+    def _forgetRollingRestart(self, cycle):
+        if cycle in self._rollingCycles:
+            self._rollingCycles.remove(cycle)
+        if mpi.rank == 0:
+            marker = os.path.join(self._rollingRestartDir(), "cycle%i" % cycle)
+            if os.path.exists(marker):
+                _removeRestartPath(marker)
+        return
+
+    #--------------------------------------------------------------------------
+    # Retire a rolling restart set.  We rename it out of the way first, which
+    # is a single cheap metadata operation and immediately hides it from
+    # findLastRestart, then delete it in the background.
+    #--------------------------------------------------------------------------
+    def _retireRestartSet(self, cycle):
+
+        # A cycle that also holds a permanent restart file is off limits: just
+        # drop our claim on it.
+        if cycle in self._keepRestartCycles:
+            self._forgetRollingRestart(cycle)
+            return
+        rdir = self._rollingRestartDir()
+        paths = self._restartSetPaths(cycle)
+        if mpi.rank == 0:
+            marker = os.path.join(rdir, "cycle%i" % cycle)
+            if os.path.exists(marker):
+                paths.append(marker)
+        doomed = []
+        for path in paths:
+            target = os.path.join(rdir, "trash%i_%s" % (self._rollingTrashCount,
+                                                        os.path.basename(path)))
+            self._rollingTrashCount += 1
+            try:
+                os.rename(path, target)
+                doomed.append(target)
+            except OSError:
+                doomed.append(path)   # couldn't move it, so delete it where it is
+        self._rollingDelete(doomed)
+        return
+
+    #--------------------------------------------------------------------------
+    # Queue paths for deletion on a background thread pool.  These are pure
+    # unlink/rmtree calls, which release the GIL, and the pool is joined at
+    # interpreter exit so nothing is left half deleted.
+    #--------------------------------------------------------------------------
+    def _rollingDelete(self, paths):
+        if not paths:
+            return
+        if self._rollingExecutor is None:
+            from concurrent.futures import ThreadPoolExecutor
+            self._rollingExecutor = ThreadPoolExecutor(max_workers = 4,
+                                                       thread_name_prefix = "SpheralRollingRestart")
+        for path in paths:
+            self._rollingExecutor.submit(_removeRestartPath, path)
+        return
+
+    #--------------------------------------------------------------------------
     # Periodically reinitialize neighbors.
     #--------------------------------------------------------------------------
     def reinitializeNeighbors(self, cycle, Time, dt):
@@ -599,7 +834,7 @@ class SpheralController:
     #--------------------------------------------------------------------------
     # Iterate over all the restartable objects and drop their state to a file.
     #--------------------------------------------------------------------------
-    def dropRestartFile(self):
+    def dropRestartFile(self, keep=True):
 
         if not self.restartBaseName:
             return
@@ -623,6 +858,15 @@ class SpheralController:
 
         file.close()
         del file
+
+        # Record what we just wrote for the rolling restart bookkeeping.
+        self._lastRestartWallTime = time.monotonic()
+        if keep:
+            self._keepRestartCycles.add(self.totalSteps)
+            if self._rollingSeeded:
+                self._forgetRollingRestart(self.totalSteps)
+        else:
+            self._registerRollingRestart(self.totalSteps)
         return
 
     #--------------------------------------------------------------------------
