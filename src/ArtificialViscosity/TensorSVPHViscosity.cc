@@ -117,7 +117,9 @@ initialize(const Scalar t,
     CHECK(ok);
 
     // Iterate over the neighbors
-    for (auto [nodeListj, j]: coarseNeighbors) {
+    for (auto k = 0u; k < numCoarse; ++k) {
+      const auto nodeListj = coarseNeighbors[k].first;
+      const auto j = coarseNeighbors[k].second;
 
       // Get the state for node j
       const Vector& rj = position(nodeListj, j);
