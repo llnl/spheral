@@ -70,8 +70,9 @@ class Box1d:
     @PYB11pycppname("intersect")
     def intersect3(self,
                    s0 = "const Vector&",
-                   s1 = "const Vector&"):
-        "Test if we intersect a line segment (interior counts as intersection)."
+                   s1 = "const Vector&",
+                   countInterior = ("const bool", "true")):
+        "Test if we intersect a line segment."
         return "bool"
 
     @PYB11const
