@@ -52,38 +52,38 @@ public:
 
   // -------------------- NeighborViews must provide these methods --------------------
   // Set or refine the neighbor lists for the given position and smoothing scale.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                                      const SymTensor& H,
-                                                                     Container<NodeID>& masterList,
-                                                                     Container<NodeID>& coarseNeighbors,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const;
 
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const SymTensor& H,
                                                    const size_t numCoarse,
-                                                   const Container<NodeID>& coarseNeighbors,
-                                                   Container<NodeID>& refineNeighbors) const;
+                                                   const Container& coarseNeighbors,
+                                                   Container& refineNeighbors) const;
 
   // Set Neighbors for the given position.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
-                                                                     Container<NodeID>& masterList,
-                                                                     Container<NodeID>& coarseNeighbors,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const;
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const size_t numCoarse,
-                                                   const Container<NodeID>& coarseNeighbors,
-                                                   Container<NodeID>& refineNeighbors) const;
+                                                   const Container& coarseNeighbors,
+                                                   Container& refineNeighbors) const;
 
   // Set the neighbor lists based on proximity to planes.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const GeomPlane<Dimension>& enterPlane,
                                                                      const GeomPlane<Dimension>& exitPlane,
-                                                                     Container<NodeID>& masterList,
-                                                                     Container<NodeID>& coarseNeighbors) const;
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors) const;
   // -----------------------------------------------------------------------------------
 
   // Compute the grid level appropriate for the given smoothing scale.
@@ -113,11 +113,11 @@ public:
 
   // For our parallel algorithm it is useful to be able to set the master/coarse
   // information based on the given (level, cell).
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setTreeMasterList(const LevelKey levelID,
                                                                          const CellKey cellID,
-                                                                         Container<NodeID>& masterList,
-                                                                         Container<NodeID>& coarseNeighbors,
+                                                                         Container& masterList,
+                                                                         Container& coarseNeighbors,
                                                                          const bool ghostConnectivity) const;
 
   // Expose hidden Neighbor methods
@@ -186,27 +186,27 @@ protected:
                                               CellKey& iz) const;
 
   // Actual method for setting the master list.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setTreeMasterList(const Vector& position,
                                                                          const Scalar& h,
-                                                                         Container<NodeID>& masterList,
-                                                                         Container<NodeID>& coarseNeighbors,
+                                                                         Container& masterList,
+                                                                         Container& coarseNeighbors,
                                                                          const bool ghostConnectivity) const;
 
   // Set the refine neighbors
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t setTreeRefineNeighborList(const Vector& position,
                                                        const SymTensor& H,
                                                        const size_t numCoarse,
-                                                       const Container<NodeID>& coarseNeighbors,
-                                                       Container<NodeID>& refineNeighbors) const;
+                                                       const Container& coarseNeighbors,
+                                                       Container& refineNeighbors) const;
   // Return all the members in range of the specified cell.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t> findTreeNeighbors(const LevelKey masterLevel,
                                                                  const CellKey ix_master,
                                                                  const CellKey iy_master,
                                                                  const CellKey iz_master,
-                                                                 Container<NodeID>& neighbors,
+                                                                 Container& neighbors,
                                                                  size_t numNeighbors = 0u) const;
 
   // Shift a 1D key from one level to another.

@@ -111,13 +111,13 @@ setGhostNodeExtents(const DataBaseView<Dimension>& dataBase) {
 }
 
 template<typename Dimension, typename Descendant>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 void
 NeighborView<Dimension, Descendant>::
 setNodeExtents(const DataBaseView<Dimension>& dataBase,
-               const Container<NodeID>& nodeIDs) {
+               const Container& nodeIDs) {
   REQUIRE(mNodeExtentView.numFields() == dataBase.numNodeLists());
   const auto& nodeListViews = dataBase.nodeListViews();
   for (auto [k, i]: nodeIDs) {
@@ -131,7 +131,7 @@ setNodeExtents(const DataBaseView<Dimension>& dataBase,
 // extents.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 NeighborView<Dimension, Descendant>::
@@ -139,7 +139,7 @@ precullList(const FieldListView<Dimension, Vector>& positions,
             const Vector& minMasterPosition, const Vector& maxMasterPosition,
             const Vector& minMasterExtent, const Vector& maxMasterExtent,
             const size_t numCoarse,
-            Container<NodeID>& coarseList) const {
+            Container& coarseList) const {
   REQUIRE(numCoarse <= coarseList.size());
 
   // What kind of preculling we're doing determines the applied test.

@@ -58,18 +58,18 @@ public:
   SPHERAL_HOST_DEVICE void setNodeExtents(const DataBaseView<Dimension>& dataBase);
   SPHERAL_HOST_DEVICE void setInternalNodeExtents(const DataBaseView<Dimension>& dataBase);
   SPHERAL_HOST_DEVICE void setGhostNodeExtents(const DataBaseView<Dimension>& dataBase);
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE void setNodeExtents(const DataBaseView<Dimension>& dataBase,
-                                          const Container<NodeID>& nodeIDs);
+                                          const Container& nodeIDs);
 
   // Helper method to cull lists of neighbors based on min/max positions and min/max extents.
   // Note: this method modifies the passed coarseList in-place, and returns the resulting size
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t precullList(const FieldListView<Dimension, Vector>& positions,
                                          const Vector& minMasterPosition, const Vector& maxMasterPostion,
                                          const Vector& minMasterExtent, const Vector& maxMasterExtent,
                                          const size_t numCoarse,
-                                         Container<NodeID>& coarseList) const;
+                                         Container& coarseList) const;
 
   // Determine the maximum extent of a given H smoothing scale along the
   // Cartesian axes.
@@ -89,47 +89,47 @@ public:
   // should always be enough room and the bool status flag is not needed.
 
   // Set neighbors given (position, H)
-  template<template<typename ...> typename ContainerType>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                                      const SymTensor& H,
-                                                                     ContainerType<NodeID>& masterList,
-                                                                     ContainerType<NodeID>& coarseNeighbors,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const {
     return asDescendant()->setMasterList(position, H, masterList, coarseNeighbors, ghostConnectivity);
   }
 
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const SymTensor& H,
                                                    const size_t numCoarse,
-                                                   const Container<NodeID>& coarseNeighbors,
-                                                   Container<NodeID>& refineNeighbors) const {
+                                                   const Container& coarseNeighbors,
+                                                   Container& refineNeighbors) const {
     return asDescendant()->setRefineNeighborList(position, H, numCoarse, coarseNeighbors, refineNeighbors);
   }
 
   // Set Neighbors for the given position
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
-                                                                     Container<NodeID>& masterList,
-                                                                     Container<NodeID>& coarseNeighbors,
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const {
     return asDescendant()->setMasterList(position, masterList, coarseNeighbors, ghostConnectivity);
   }
 
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const size_t numCoarse,
-                                                   const Container<NodeID>& coarseNeighbors,
-                                                   Container<NodeID>& refineNeighbors) const {
+                                                   const Container& coarseNeighbors,
+                                                   Container& refineNeighbors) const {
     return asDescendant()->setRefineNeighborList(position, numCoarse, coarseNeighbors, refineNeighbors);
   }
 
   // Set the neighbor lists based on proximity to planes.
-  template<template<typename ...> typename Container>
+  template<typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const GeomPlane<Dimension>& enterPlane,
                                                                      const GeomPlane<Dimension>& exitPlane,
-                                                                     Container<NodeID>& masterList,
-                                                                     Container<NodeID>& coarseNeighbors) const {
+                                                                     Container& masterList,
+                                                                     Container& coarseNeighbors) const {
     return asDescendant()->setMasterList(enterPlane, exitPlane, masterList, coarseNeighbors);
   }
 

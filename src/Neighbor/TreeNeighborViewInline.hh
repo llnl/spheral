@@ -1,5 +1,7 @@
 #include "Utilities/copy_n_conditional.hh"
 
+#include <array>
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
@@ -148,15 +150,15 @@ keyInRange(const CellKey key,
 // Set the master list for the given position & H
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename ContainerType>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t, size_t>
 TreeNeighborView<Dimension>::
 setMasterList(const Vector& position,
               const SymTensor& H,
-              ContainerType<NodeID>& masterList,
-              ContainerType<NodeID>& coarseNeighbors,
+              Container& masterList,
+              Container& coarseNeighbors,
               const bool ghostConnectivity) const {
   REQUIRE(H.Determinant() > 0.0);
   const auto hinvValues = H.eigenValues();
@@ -166,14 +168,14 @@ setMasterList(const Vector& position,
 }
 
 template<typename Dimension>
-template<template<typename ...> typename ContainerType>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t, size_t>
 TreeNeighborView<Dimension>::
 setMasterList(const Vector& position,
-              ContainerType<NodeID>& masterList,
-              ContainerType<NodeID>& coarseNeighbors,
+              Container& masterList,
+              Container& coarseNeighbors,
               const bool ghostConnectivity) const {
   return this->setTreeMasterList(position, 1.0e-30*mBoxLength, masterList, coarseNeighbors, ghostConnectivity);
 }
@@ -182,15 +184,15 @@ setMasterList(const Vector& position,
 // Set the master & coarse neighbor sets by walking the tree.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename ContainerType>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t, size_t>
 TreeNeighborView<Dimension>::
 setTreeMasterList(const Vector& position,
                   const Scalar& h,
-                  ContainerType<NodeID>& masterList,
-                  ContainerType<NodeID>& coarseNeighbors,
+                  Container& masterList,
+                  Container& coarseNeighbors,
                   const bool ghostConnectivity) const {
 
   // Set the working master grid level and cell.
@@ -207,15 +209,15 @@ setTreeMasterList(const Vector& position,
 // Set the master & coarse neighbor sets for a given tree level and cell ID.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename ContainerType>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t, size_t>
 TreeNeighborView<Dimension>::
 setTreeMasterList(const LevelKey levelID,
                   const CellKey cellID,
-                  ContainerType<NodeID>& masterList,
-                  ContainerType<NodeID>& coarseNeighbors,
+                  Container& masterList,
+                  Container& coarseNeighbors,
                   const bool ghostConnectivity) const {
   REQUIRE(levelID < num1dbits);
 
@@ -274,7 +276,7 @@ setTreeMasterList(const LevelKey levelID,
 // Set the refine neighbor list for position & H
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 size_t
@@ -282,22 +284,22 @@ TreeNeighborView<Dimension>::
 setRefineNeighborList(const Vector& position,
                       const SymTensor& H,
                       const size_t numCoarse,
-                      const Container<NodeID>& coarseNeighbors,
-                      Container<NodeID>& refineNeighbors) const {
+                      const Container& coarseNeighbors,
+                      Container& refineNeighbors) const {
   REQUIRE(H.Determinant() > 0.0);
   return this->setTreeRefineNeighborList(position, H, numCoarse, coarseNeighbors, refineNeighbors);
 }
 
 template<typename Dimension>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 size_t
 TreeNeighborView<Dimension>::
 setRefineNeighborList(const Vector& position,
                       const size_t numCoarse,
-                      const Container<NodeID>& coarseNeighbors,
-                      Container<NodeID>& refineNeighbors) const {
+                      const Container& coarseNeighbors,
+                      Container& refineNeighbors) const {
   return this->setTreeRefineNeighborList(position, 1.0e30*mBoxLength*SymTensor::one(), numCoarse, coarseNeighbors, refineNeighbors);
 }
 
@@ -305,15 +307,15 @@ setRefineNeighborList(const Vector& position,
 // Set the master list based on proximity to planes.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t, size_t>
 TreeNeighborView<Dimension>::
 setMasterList(const GeomPlane<Dimension>& enterPlane,
               const GeomPlane<Dimension>& exitPlane,
-              Container<NodeID>& masterList,
-              Container<NodeID>& coarseNeighbors) const {
+              Container& masterList,
+              Container& coarseNeighbors) const {
 
   // A depth-first walk has bounded candidate storage based only on the tree's
   // maximum branching factor and depth.  The mapped-cell buffer has a separate
@@ -421,7 +423,7 @@ setMasterList(const GeomPlane<Dimension>& enterPlane,
 // Produce the refined list of potential neighbors for a single node.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 inline
@@ -429,8 +431,8 @@ TreeNeighborView<Dimension>::
 setTreeRefineNeighborList(const Vector& /*position*/,
                           const SymTensor& /*H*/,
                           const size_t numCoarse,
-                          const Container<NodeID>& coarseNeighbors,
-                          Container<NodeID>& refineNeighbors) const {
+                          const Container& coarseNeighbors,
+                          Container& refineNeighbors) const {
 
   // // Determine the maximum extent of this H tensor in each dimension.
   // const Vector extent = this->HExtent(H, this->kernelExtent());
@@ -449,7 +451,7 @@ setTreeRefineNeighborList(const Vector& /*position*/,
 // pair.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-template<template<typename ...> typename Container>
+template<typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 std::tuple<bool, size_t>
@@ -458,7 +460,7 @@ findTreeNeighbors(const LevelKey masterLevel,
                   const CellKey ix_master,
                   const CellKey iy_master,
                   const CellKey iz_master,
-                  Container<NodeID>& neighbors,
+                  Container& neighbors,
                   size_t numNeighbors) const {
 
   // Declare variables.  Walk depth-first so the candidate storage is bounded
