@@ -5,7 +5,11 @@
 #ifndef __Spheral_copy_n_conditional__
 #define __Spheral_copy_n_conditional__
 
+#include "config.hh"
+#include "Utilities/DBC.hh"
+
 #include <algorithm>
+#include <cstddef>
 
 namespace Spheral {
 
