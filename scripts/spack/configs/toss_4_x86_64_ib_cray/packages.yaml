@@ -37,8 +37,8 @@ packages:
   cray-mpich:
     buildable: false
     externals:
-    - spec: cray-mpich@9.0.1%llvm-amdgpu@7.2.1
-      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-7.2.1-magic
+    - spec: cray-mpich@9.1.0%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.1.0-rocmcc-7.2.1-magic
 
   hip:
     version: [7.2.1]
