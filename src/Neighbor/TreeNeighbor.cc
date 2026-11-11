@@ -605,7 +605,6 @@ flattenTreeAndUpdateView() {
   }
 
   // Update the TreeNeighborView data to reference the new FlatTree
-#ifdef SPHERAL_ENABLE_GPU
 #ifdef SPHERAL_UNIFIED_MEMORY
   ViewType::mFlatTreeView = mFlatTree;
   ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughters;
@@ -623,13 +622,6 @@ flattenTreeAndUpdateView() {
   ViewType::mFlatTreeMembersView.registerTouch(chai::CPU);
   ViewType::mFlatTreeLevelOffsetsView.registerTouch(chai::CPU);
   ViewType::mFirstGhostNodeView.registerTouch(chai::CPU);
-#endif
-#else
-  ViewType::mFlatTreeView = mFlatTree;
-  ViewType::mFlatTreeDaughtersIndicesView = mFlatTreeDaughters;
-  ViewType::mFlatTreeMembersView = mFlatTreeMembers;
-  ViewType::mFlatTreeLevelOffsetsView = mFlatTreeLevelOffsets;
-  ViewType::mFirstGhostNodeView = mFirstGhostNodes;
 #endif
 
   mNodeExtentView = mNodeExtent.view();

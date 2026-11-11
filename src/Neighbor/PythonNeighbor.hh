@@ -44,7 +44,7 @@ public:
   using BaseViewType::kernelExtent;
 
   using NodeID = typename BaseValueType::NodeID;
-  template<typename T> using Container = typename BaseViewType::template Container<T>;
+  template<typename T> using Container = std::vector<T>;
 
   PythonNeighbor(DataBase<Dimension>& dataBase,
                  const NeighborSearchType searchType,

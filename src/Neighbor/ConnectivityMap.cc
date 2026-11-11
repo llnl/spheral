@@ -24,44 +24,6 @@
 namespace Spheral {
 
 namespace {
-//------------------------------------------------------------------------------
-// Present ConnectivityMap's owning host vectors through the common,
-// non-owning NeighborViewContainer interface.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename NeighborType>
-inline
-std::tuple<bool, size_t, size_t>
-setMasterList(const NeighborType& neighbor,
-              const typename Dimension::Vector& position,
-              const typename Dimension::SymTensor& H,
-              std::vector<std::pair<size_t, size_t>>& masterList,
-              std::vector<std::pair<size_t, size_t>>& coarseNeighbors,
-              const bool ghostConnectivity) {
-
-#ifdef SPHERAL_ENABLE_GPU
-  // GPU friendly views
-  using NodeID = std::pair<size_t, size_t>;
-
-#ifdef SPHERAL_UNIFIED_MEMORY
-  NeighborViewContainer<NodeID> nativeMasterList(masterList.data(), masterList.size());
-  NeighborViewContainer<NodeID> nativeCoarseNeighbors(coarseNeighbors.data(), coarseNeighbors.size());
-#else
-  NeighborViewContainer<NodeID> nativeMasterList = chai::makeManagedArray(masterList.data(), masterList.size(), chai::CPU, false);
-  NeighborViewContainer<NodeID> nativeCoarseNeighbors = chai::makeManagedArray(coarseNeighbors.data(), coarseNeighbors.size(), chai::CPU, false);
-#endif
-  return neighbor.setMasterList(position, H,
-                                nativeMasterList, nativeCoarseNeighbors,
-                                ghostConnectivity);
-#else
-
-  // Not using GPU's, just directly uss the std::vectors
-  return neighbor.setMasterList(position, H,
-                                masterList, coarseNeighbors,
-                                ghostConnectivity);
-
-#endif
-
-}
 
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1
@@ -802,12 +764,11 @@ computeConnectivityImpl(const NeighborType& neighbor) {
         bool ok = false;
         size_t numMaster, numCoarse;
         while (not ok) {
-          std::tie(ok, numMaster, numCoarse) = setMasterList<Dimension>(neighbor,
-                                                                        position(iiNodeList, ii),
-                                                                        H(iiNodeList, ii),
-                                                                        masterList,
-                                                                        coarseNeighbors,
-                                                                        ghostConnectivity);
+          std::tie(ok, numMaster, numCoarse) = neighbor.setMasterList(position(iiNodeList, ii),
+                                                                      H(iiNodeList, ii),
+                                                                      masterList,
+                                                                      coarseNeighbors,
+                                                                      ghostConnectivity);
           if (masterList.size() < size_t(1.1*numMaster)) masterList.resize(size_t(1.1*numMaster));
           if (coarseNeighbors.size() < size_t(1.1*numCoarse)) coarseNeighbors.resize(size_t(1.1*numCoarse));
         }

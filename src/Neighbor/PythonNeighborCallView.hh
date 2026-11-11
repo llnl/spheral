@@ -9,10 +9,10 @@
 #define __Spheral_PythonNeighborCallView__
 
 #include "Neighbor/NeighborSearchType.hh"
-#include "Neighbor/NeighborViewContainer.hh"
 #include "Field/FieldListView.hh"
 
 #include <cstddef>
+#include <vector>
 #include <span>
 #include <tuple>
 #include <utility>
@@ -32,7 +32,7 @@ public:
   using Vector = typename Dimension::Vector;
   using SymTensor = typename Dimension::SymTensor;
   using NodeID = std::pair<size_t, size_t>;
-  template<typename T> using Container = NeighborViewContainer<T>;
+  template<typename T> using Container = std::vector<T>;
 
   explicit PythonNeighborCallView(PythonNeighbor<Dimension>* parent);
 

@@ -111,6 +111,7 @@ setGhostNodeExtents(const DataBaseView<Dimension>& dataBase) {
 }
 
 template<typename Dimension, typename Descendant>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 inline
 void
@@ -130,6 +131,7 @@ setNodeExtents(const DataBaseView<Dimension>& dataBase,
 // extents.
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Descendant>
+template<template<typename ...> typename Container>
 SPHERAL_HOST_DEVICE 
 size_t
 NeighborView<Dimension, Descendant>::

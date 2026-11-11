@@ -35,7 +35,7 @@ public:
   using DimensionType = Dimension;
   using BaseType = NeighborView<Dimension, TreeNeighborView<Dimension>>;
   using NodeID = typename BaseType::NodeID;
-  template<typename T> using Container = typename BaseType::template Container<T>;
+  template<typename T> using ContainerView = typename BaseType::template ContainerView<T>;
 
   // Data types we use to build the internal tree structure.
   using LevelKey = uint32_t;
@@ -52,12 +52,14 @@ public:
 
   // -------------------- NeighborViews must provide these methods --------------------
   // Set or refine the neighbor lists for the given position and smoothing scale.
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                                      const SymTensor& H,
                                                                      Container<NodeID>& masterList,
                                                                      Container<NodeID>& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const;
 
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const SymTensor& H,
                                                    const size_t numCoarse,
@@ -65,16 +67,19 @@ public:
                                                    Container<NodeID>& refineNeighbors) const;
 
   // Set Neighbors for the given position.
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const Vector& position,
                                                                      Container<NodeID>& masterList,
                                                                      Container<NodeID>& coarseNeighbors,
                                                                      const bool ghostConnectivity = false) const;
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE size_t setRefineNeighborList(const Vector& position,
                                                    const size_t numCoarse,
                                                    const Container<NodeID>& coarseNeighbors,
                                                    Container<NodeID>& refineNeighbors) const;
 
   // Set the neighbor lists based on proximity to planes.
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setMasterList(const GeomPlane<Dimension>& enterPlane,
                                                                      const GeomPlane<Dimension>& exitPlane,
                                                                      Container<NodeID>& masterList,
@@ -108,6 +113,7 @@ public:
 
   // For our parallel algorithm it is useful to be able to set the master/coarse
   // information based on the given (level, cell).
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setTreeMasterList(const LevelKey levelID,
                                                                          const CellKey cellID,
                                                                          Container<NodeID>& masterList,
@@ -180,6 +186,7 @@ protected:
                                               CellKey& iz) const;
 
   // Actual method for setting the master list.
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t, size_t> setTreeMasterList(const Vector& position,
                                                                          const Scalar& h,
                                                                          Container<NodeID>& masterList,
@@ -187,12 +194,14 @@ protected:
                                                                          const bool ghostConnectivity) const;
 
   // Set the refine neighbors
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE size_t setTreeRefineNeighborList(const Vector& position,
                                                        const SymTensor& H,
                                                        const size_t numCoarse,
                                                        const Container<NodeID>& coarseNeighbors,
                                                        Container<NodeID>& refineNeighbors) const;
   // Return all the members in range of the specified cell.
+  template<template<typename ...> typename Container>
   SPHERAL_HOST_DEVICE std::tuple<bool, size_t> findTreeNeighbors(const LevelKey masterLevel,
                                                                  const CellKey ix_master,
                                                                  const CellKey iy_master,
@@ -223,11 +232,11 @@ protected:
   Vector mXmin, mXmax;
   
   // The FlatTreeView data
-  Container<FlatCell> mFlatTreeView;
-  Container<size_t> mFlatTreeDaughtersIndicesView;
-  Container<NodeID> mFlatTreeMembersView;
-  Container<size_t> mFlatTreeLevelOffsetsView;
-  Container<size_t> mFirstGhostNodeView;
+  ContainerView<FlatCell> mFlatTreeView;
+  ContainerView<size_t> mFlatTreeDaughtersIndicesView;
+  ContainerView<NodeID> mFlatTreeMembersView;
+  ContainerView<size_t> mFlatTreeLevelOffsetsView;
+  ContainerView<size_t> mFirstGhostNodeView;
 
   using BaseType::mNodeExtentView;
   using BaseType::mSearchType;
