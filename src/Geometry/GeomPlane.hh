@@ -91,7 +91,6 @@ template<typename Dimension> std::ostream& operator<<(std::ostream& os, const Ge
 }
 
 #include "GeomPlaneInline.hh"
-#include "Dimension.hh"
 
 // Declare specialized methods.
 namespace Spheral {
