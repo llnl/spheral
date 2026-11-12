@@ -93,19 +93,27 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     acceptorNodeListPtr = field->nodeListPtr();
     *field = SymTensor::zero();
   }
+  VERIFY2(donorNodeListPtr != nullptr, "overlayRemapFields ERROR: at least one donor field is required.");
+  VERIFY2(acceptorNodeListPtr != nullptr, "overlayRemapFields ERROR: at least one acceptor field is required.");
   const auto nD = donorNodeListPtr->numInternalNodes();
+
+  // computeVoronoiVolume operates on the fluid FieldLists, so make sure the
+  // temporary DataBases register these NodeLists through the fluid hierarchy.
+  const auto* donorFluidNodeListPtr = dynamic_cast<const FluidNodeList<Dimension>*>(donorNodeListPtr);
+  const auto* acceptorFluidNodeListPtr = dynamic_cast<const FluidNodeList<Dimension>*>(acceptorNodeListPtr);
+  VERIFY2(donorFluidNodeListPtr != nullptr, "overlayRemapFields ERROR: donor NodeList must be a FluidNodeList.");
+  VERIFY2(acceptorFluidNodeListPtr != nullptr, "overlayRemapFields ERROR: acceptor NodeList must be a FluidNodeList.");
 
   // Build DataBases of the donor and acceptor and get the Neighbor objects
   DataBase<Dimension> dbD(etaMax), dbA(etaMax);
-  dbD.appendNodeList(*const_cast<NodeList<Dimension>*>(donorNodeListPtr));
-  dbA.appendNodeList(*const_cast<NodeList<Dimension>*>(acceptorNodeListPtr));
-  const auto& neighborD = dbD.neighbor();
+  dbD.appendNodeList(*const_cast<FluidNodeList<Dimension>*>(donorFluidNodeListPtr));
+  dbA.appendNodeList(*const_cast<FluidNodeList<Dimension>*>(acceptorFluidNodeListPtr));
   const auto& neighborA = dbA.neighbor();
 
   // Build the donor volumes.
   Field<Dimension, FacetedVolume> localDonorCells("donor cells", *donorNodeListPtr);
   {
-    dbD.updateNeighbors();
+    dbD.reinitializeNeighbors();
     for (auto* boundPtr: boundaries) boundPtr->setAllGhostNodes(dbD);
     for (auto* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
     dbD.updateNeighbors();
@@ -132,7 +140,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   // Build the acceptor volumes.
   Field<Dimension, FacetedVolume> localAcceptorCells("acceptor cells", *acceptorNodeListPtr);
   {
-    dbA.updateNeighbors();
+    dbA.reinitializeNeighbors();
     for (auto* boundPtr: boundaries) boundPtr->setAllGhostNodes(dbA);
     for (auto* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
     dbA.updateNeighbors();
@@ -207,9 +215,11 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
 
     for (auto i = 0; i < donorN; ++i) {
       vector<NodeID> Amasters, Acoarse, Arefine;
-      auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) { 
+      auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) {
                                                   auto [ok, numMaster, numCoarse] = neighbor.setMasterList(donorPos[i], donorH[i], Amasters, Acoarse);
                                                   CHECK(ok);
+                                                  CONTRACT_VAR(numMaster);
+                                                  Arefine.resize(numCoarse);
                                                   return neighbor.setRefineNeighborList(donorPos[i], donorH[i], numCoarse, Acoarse, Arefine);
                                                 });
       for (auto k = 0u; k < numRefine; ++k) {
@@ -358,9 +368,11 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   Field<Dimension, vector<Scalar>> intersectVols("intesection volumes", *donorNodeListPtr);
   for (unsigned i = 0; i != nD; ++i) {
     vector<NodeID> Amasters, Acoarse, Arefine;
-    auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) { 
+    auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) {
                                                 auto [ok, numMaster, numCoarse] = neighbor.setMasterList(posD[i], HD[i], Amasters, Acoarse);
                                                 CHECK(ok);
+                                                CONTRACT_VAR(numMaster);
+                                                Arefine.resize(numCoarse);
                                                 return neighbor.setRefineNeighborList(posD[i], HD[i], numCoarse, Acoarse, Arefine);
                                               });
     for (auto k = 0u; k < numRefine; ++k) {
