@@ -27,8 +27,8 @@ computeShepardsInterpolation(const FieldList<Dimension, DataType>& fieldList,
   REQUIRE(H.size() == numNodeLists);
   REQUIRE(weight.size() == numNodeLists);
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
 
   // Some scratch variables.
   size_t nodeListi, nodeListj;
@@ -43,58 +43,50 @@ computeShepardsInterpolation(const FieldList<Dimension, DataType>& fieldList,
     wsum.appendNewField("weight sum", fieldList[nodeListi]->nodeList(), 0.0);
   }
 
-  // Walk all the points.
-  for (nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-    for (typename ConnectivityMap<Dimension>::const_iterator iItr = connectivityMap.begin(nodeListi);
-         iItr != connectivityMap.end(nodeListi);
-         ++iItr) {
-      const int i = *iItr;
+  // Walk all the pairs
+  const auto& pairs = connectivityMap.nodePairList();
+  for (const auto p: pairs) {
+    const auto ki = p.i_list;
+    const auto kj = p.j_list;
+    const auto i = p.i_node;
+    const auto j = p.j_node;
 
-      // Get the state for node i.
-      const auto& ri = position(nodeListi, i);
-      const auto  weighti = weight(nodeListi, i);
-      const auto& Hi = H(nodeListi, i);
-      const auto  Hdeti = Hi.Determinant();
+    // State for i
+    const auto& ri = position(ki, i);
+    const auto  weighti = weight(ki, i);
+    const auto& Hi = H(ki, i);
+    const auto  Hdeti = Hi.Determinant();
 
-      // Walk the neighbor NodeLists.
-      const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
-      for (nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const auto& connectivity = fullConnectivity[nodeListj];
-        const int firstGhostNodej = fieldList[nodeListi]->nodeList().firstGhostNode();
-        for (vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) {
-          const int j = *jItr;
+    // State for j
+    const auto& rj = position(kj, j);
+    const auto  weightj = weight(kj, j);
+    const auto& Hj = H(kj, j);
+    const auto  Hdetj = Hj.Determinant();
 
-          // Check if this node pair has already been calculated.
-          if (connectivityMap.calculatePairInteraction(nodeListi, i, 
-                                                       nodeListj, j,
-                                                       firstGhostNodej)) {
-            const auto& rj = position(nodeListi, j);
-            const auto  weightj = weight(nodeListi, j);
-            const auto& Hj = H(nodeListi, j);
-            const auto  Hdetj = Hj.Determinant();
+    // Kernel weighting and gradient.
+    rij = ri - rj;
+    etai = Hi*rij;
+    etaj = Hj*rij;
+    Wi = W.kernelValue(etai.magnitude(), Hdeti);
+    Wj = W.kernelValue(etaj.magnitude(), Hdetj);
 
-            // Kernel weighting and gradient.
-            rij = ri - rj;
-            etai = Hi*rij;
-            etaj = Hj*rij;
-            Wi = W.kernelValue(etai.magnitude(), Hdeti);
-            Wj = W.kernelValue(etaj.magnitude(), Hdetj);
-
-            // Sum the pair-wise contributions.
-            wsum(nodeListi, i) += weightj*Wj;
-            wsum(nodeListj, j) += weighti*Wi;
-            result(nodeListi, i) += fieldList(nodeListi, i) * weightj*Wj;
-            result(nodeListj, j) += fieldList(nodeListj, j) * weighti*Wi;
-          }
-        }
-      }
+    // Sum the pair-wise contributions.
+    wsum(ki, i) += weightj*Wj;
+    wsum(kj, j) += weighti*Wi;
+    result(ki, i) += fieldList(ki, i) * weightj*Wj;
+    result(kj, j) += fieldList(kj, j) * weighti*Wi;
+  }
   
-      // Finalize the interpolation for node i.
-      const auto wW0 = weighti*W.kernelValue(0.0, Hdeti);
-      result(nodeListi, i) = ((result(nodeListi, i) + fieldList(nodeListi, i) * wW0)/
-                              (wsum(nodeListi, i) + wW0));
+  // Finalize the interpolation 
+  for (auto ki = 0u; ki < numNodeLists; ++ki) {
+    const auto n = result[ki]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto  weighti = weight(ki, i);
+      const auto& Hi = H(ki, i);
+      const auto  Hdeti = Hi.Determinant();
+      const auto  wW0 = weighti*W.kernelValue(0.0, Hdeti);
+      result(ki, i) = ((result(ki, i) + fieldList(ki, i) * wW0)/
+                       (wsum(ki, i) + wW0));
     }
   }
 

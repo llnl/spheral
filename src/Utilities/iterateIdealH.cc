@@ -138,16 +138,14 @@ iterateIdealH(DataBase<Dimension>& dataBase,
     // flagNodeDone = 0;
 
     // Remove any old ghost node information from the NodeLists.
-    for (auto* nodeListPtr: fluidNodeListPtrs) {
-      nodeListPtr->numGhostNodes(0);
-      nodeListPtr->neighbor().updateNodes();
-    }
+    for (auto* nodeListPtr: fluidNodeListPtrs) nodeListPtr->numGhostNodes(0);
+    dataBase.updateNeighbors();
 
     // Enforce boundary conditions.
     for (auto* boundaryPtr: boundaries) {
       boundaryPtr->setAllGhostNodes(dataBase);
       boundaryPtr->finalizeGhostBoundary();
-      for (auto* nodeListPtr: fluidNodeListPtrs) nodeListPtr->neighbor().updateNodes();
+      dataBase.updateNeighbors();
     }
     for (auto* boundaryPtr: boundaries) {
       boundaryPtr->applyFieldListGhostBoundary(m);
@@ -252,16 +250,12 @@ iterateIdealH(DataBase<Dimension>& dataBase,
   }
 
   // Leave the boundary conditions properly enforced.
-  for (auto* nodeListPtr: fluidNodeListPtrs) {
-    nodeListPtr->numGhostNodes(0);
-    nodeListPtr->neighbor().updateNodes();
-  }
+  for (auto* nodeListPtr: fluidNodeListPtrs) nodeListPtr->numGhostNodes(0);
+  dataBase.updateNeighbors();
   for (auto* boundaryPtr: boundaries) {
     boundaryPtr->setAllGhostNodes(dataBase);
     boundaryPtr->finalizeGhostBoundary();
-    for (auto* nodeListPtr: fluidNodeListPtrs) {
-      nodeListPtr->neighbor().updateNodes();
-    }
+    dataBase.updateNeighbors();
   }
 
   for (auto* boundaryPtr: boundaries) boundaryPtr->applyFieldListGhostBoundary(m);

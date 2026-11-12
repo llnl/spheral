@@ -15,7 +15,8 @@ overlayRemapFields(const std::vector<Boundary<Dim<%(ndim)s>>*>& boundaries,
                    std::vector<Field<Dim<%(ndim)s>, Dim<%(ndim)s>::Scalar>*>& scalarAcceptorFields,
                    std::vector<Field<Dim<%(ndim)s>, Dim<%(ndim)s>::Vector>*>& vectorAcceptorFields,
                    std::vector<Field<Dim<%(ndim)s>, Dim<%(ndim)s>::Tensor>*>& tensorAcceptorFields,
-                   std::vector<Field<Dim<%(ndim)s>, Dim<%(ndim)s>::SymTensor>*>& symTensorAcceptorFields);
+                   std::vector<Field<Dim<%(ndim)s>, Dim<%(ndim)s>::SymTensor>*>& symTensorAcceptorFields,
+                   const Dim<%(ndim)s>::Scalar etaMax);
 }
 
 """
