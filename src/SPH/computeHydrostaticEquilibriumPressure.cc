@@ -55,7 +55,7 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
   pressure = 0.0;
 
   // We assume that the Connectivity in the DataBase has already been updated!
-  const ConnectivityMap<Dim<3> >& connectivityMap = db.connectivityMap();
+  const auto& connectivityMap = db.connectivityMap();
 
   // Get the global IDs for all nodes.
   const FieldList<Dim<3>, size_t> globalIDs = globalNodeIDs<Dim<3>, DataBase<Dim<3> >::ConstFluidNodeListIterator>(db.fluidNodeListBegin(), db.fluidNodeListEnd());
@@ -83,29 +83,26 @@ computeSPHHydrostaticEquilibriumPressure(const DataBase<Dim<3> >& db,
       s[2][iglobal] = rhoi*gi.z();
 
       // Get the neighbors for this node (in this NodeList).
-      const vector<vector<int> >& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
       CHECK(connectivity.size() == numNodeLists);
-      for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        for (vector<int>::const_iterator jItr = connectivity[nodeListj].begin();
-             jItr != connectivity[nodeListj].end();
-             ++jItr) {
-          const unsigned j = *jItr;
+      for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
+        for (const auto j: connectivity[nodeListj]) {
           const auto jglobal = globalIDs(nodeListj, j);
 
           // State for node j.
-          const Vector& rj = position(nodeListj, j);
-          const Scalar& mj = mass(nodeListj, j);
-          const Scalar& rhoj = massDensity(nodeListj, j);
-          const SymTensor& Hj = H(nodeListj, j);
-          const Scalar Hdetj = Hj.Determinant();
+          const auto& rj = position(nodeListj, j);
+          const auto  mj = mass(nodeListj, j);
+          const auto  rhoj = massDensity(nodeListj, j);
+          const auto& Hj = H(nodeListj, j);
+          const auto  Hdetj = Hj.Determinant();
 
           // Kernel gradient.
-          const Vector rji = rj - ri;
-          const Vector etai = Hi*rji;
-          const Vector etaj = Hj*rji;
-          const Scalar etaMagi = etai.magnitude();
-          const Scalar etaMagj = etaj.magnitude();
-          const Vector gradWij = 0.5*(etai*W.gradValue(etaMagi, Hdeti) +
+          const auto rji = rj - ri;
+          const auto etai = Hi*rji;
+          const auto etaj = Hj*rji;
+          const auto etaMagi = etai.magnitude();
+          const auto etaMagj = etaj.magnitude();
+          const auto gradWij = 0.5*(etai*W.gradValue(etaMagi, Hdeti) +
                                       etaj*W.gradValue(etaMagj, Hdetj));
           M[0].insert(iglobal, jglobal) = mj/rhoj*gradWij.x();
           M[1].insert(iglobal, jglobal) = mj/rhoj*gradWij.y();
