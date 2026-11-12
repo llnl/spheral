@@ -1,8 +1,9 @@
 //------------------------------------------------------------------------------
 // C++ counterpart to tests/unit/Neighbor/NeighborTestBase.py.
 //
-// The ordering, names, setup values, and test bodies intentionally follow the
-// Python implementation so the two versions can be compared side by side.
+// The ordering, names, full-mode setup values, and test bodies follow the Python
+// implementation.  The default uses smaller populations; --full restores the
+// original workload.
 //------------------------------------------------------------------------------
 
 #include "test-utilities.hh"
@@ -19,17 +20,21 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <iostream>
 #include <iterator>
 #include <memory>
 #include <numeric>
 #include <random>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
 
 using namespace Spheral;
+
+bool fullTest = false;
 
 // Match Python's process-global random module state.
 std::mt19937 globalRandomGenerator(std::random_device{}());
@@ -310,6 +315,53 @@ public:
     return result;
   }
 
+  // In the default mode, explicitly cover both x boundaries of each NodeList
+  // (including the interfaces between lists), then retain random interior nodes.
+  // Full mode keeps the original sampling behavior.
+  std::vector<size_t>
+  sampleNodes(const NodeList& nodes, const size_t sampleSize) {
+    if (fullTest) return randomSample(nodes.numInternalNodes() - 1u, sampleSize);
+    auto result = randomSample(nodes.numInternalNodes(), sampleSize);
+    if (result.empty()) return result;
+    size_t lower = 0u, upper = 0u;
+    for (size_t i = 1u; i < nodes.numInternalNodes(); ++i) {
+      if (nodes.positions()[i][0] < nodes.positions()[lower][0]) lower = i;
+      if (nodes.positions()[i][0] > nodes.positions()[upper][0]) upper = i;
+    }
+    const auto include = [&](const size_t node, const size_t slot) {
+      const auto itr = std::find(result.begin(), result.end(), node);
+      if (itr == result.end()) {
+        result[slot] = node;
+      } else {
+        std::iter_swap(result.begin() + slot, itr);
+      }
+    };
+    include(lower, 0u);
+    if (result.size() > 1u and upper != lower) include(upper, 1u);
+    return result;
+  }
+
+  // Cover every available within-list and cross-list pair category before
+  // filling the remaining slots with random pairs in the default mode.
+  std::vector<size_t>
+  samplePairs(const std::vector<NodePairIdxType>& pairs) {
+    const auto random = randomSample(pairs.size(), ncheck);
+    if (fullTest) return random;
+    std::vector<size_t> result;
+    std::set<std::pair<size_t, size_t>> categories;
+    for (size_t i = 0u; i < pairs.size() and result.size() < ncheck; ++i) {
+      if (categories.emplace(std::min(pairs[i].i_list, pairs[i].j_list),
+                             std::max(pairs[i].i_list, pairs[i].j_list)).second) {
+        result.push_back(i);
+      }
+    }
+    for (const auto i: random) {
+      if (result.size() == ncheck) break;
+      if (std::find(result.begin(), result.end(), i) == result.end()) result.push_back(i);
+    }
+    return result;
+  }
+
   static std::vector<int>
   sorted(std::vector<int> values) {
     std::sort(values.begin(), values.end());
@@ -326,8 +378,8 @@ public:
       const auto& position = nodes->positions();
       const auto& H = nodes->Hfield();
 
-      // Randomly select nodes from each NodeList to explicitly test.
-      for (const auto nodeID: randomSample(nodes->numInternalNodes() - 1u, ncheck)) {
+      // Select boundary and random nodes in default mode, random nodes in full mode.
+      for (const auto nodeID: sampleNodes(*nodes, ncheck)) {
         const auto ri = position[nodeID];
         const auto Hi = H[nodeID];
 
@@ -376,8 +428,8 @@ public:
       const auto& position = inodes->positions();
       const auto& H = inodes->Hfield();
 
-      // Randomly select nodes from each NodeList to explicitly test.
-      for (const auto i: randomSample(inodes->numInternalNodes() - 1u, ncheck)) {
+      // Select boundary and random nodes in default mode, random nodes in full mode.
+      for (const auto i: sampleNodes(*inodes, ncheck)) {
         const auto ri = position[i];
         const auto Hi = H[i];
         const auto& cmneighbors = cm.connectivityForNode(inodes, int(i));
@@ -443,9 +495,8 @@ public:
     for (size_t iNL = 0; iNL < nodeLists.size(); ++iNL) {
       const auto* inodes = nodeLists[iNL];
 
-      // Randomly select nodes from each NodeList to explicitly test.
-      for (const auto i: randomSample(inodes->numInternalNodes() - 1u,
-                                      noverlapcheck)) {
+      // Select boundary nodes in default mode, random nodes in full mode.
+      for (const auto i: sampleNodes(*inodes, noverlapcheck)) {
         const auto ri = inodes->positions()[i];
         const auto Hi = inodes->Hfield()[i];
         const auto& cmneighbors = cm.overlapConnectivityForNode(inodes, int(i));
@@ -503,8 +554,8 @@ public:
       return result;
     };
 
-    // Randomly select pairs to test.
-    for (const auto pairIndex: randomSample(pairs.size(), ncheck)) {
+    // Include within-list and cross-list pairs in default mode.
+    for (const auto pairIndex: samplePairs(pairs)) {
       const auto& pair = pairs[pairIndex];
       const auto answer = intersectionAnswer(pair);
       const auto intersect = convertToSets(
@@ -533,9 +584,9 @@ public:
   void SetUp() override {
     ncheck = 10u;
     noverlapcheck = 2u;
-    const auto n1 = 1000u;
-    const auto n2 = 2500u;
-    const auto n3 = 500u;
+    const auto n1 = fullTest ? 1000u : 40u;
+    const auto n2 = fullTest ? 2500u : 100u;
+    const auto n3 = fullTest ? 500u : 20u;
     const VolumeRange volrange1 = {{{-2.0, -1.0}}};
     const VolumeRange volrange2 = {{{-1.0,  0.5}}};
     const VolumeRange volrange3 = {{{ 0.5,  2.0}}};
@@ -571,9 +622,9 @@ public:
   void SetUp() override {
     ncheck = 10u;
     noverlapcheck = 2u;
-    const auto n1 = 10000u;
-    const auto n2 = 25000u;
-    const auto n3 = 5000u;
+    const auto n1 = fullTest ? 10000u : 80u;
+    const auto n2 = fullTest ? 25000u : 200u;
+    const auto n3 = fullTest ? 5000u : 40u;
     const VolumeRange volrange1 = {{{-2.0, -1.0}, {0.0, 1.0}}};
     const VolumeRange volrange2 = {{{-1.0, -0.5}, {0.0, 1.0}}};
     const VolumeRange volrange3 = {{{-0.5,  0.0}, {0.0, 1.0}}};
@@ -608,10 +659,10 @@ class NeighborRandom3d: public NeighborTestBase<Dim<3>> {
 public:
   void SetUp() override {
     ncheck = 10u;
-    noverlapcheck = 0u;
-    const auto n1 = 1000u;
-    const auto n2 = 2500u;
-    const auto n3 = 1500u;
+    noverlapcheck = fullTest ? 0u : 2u;
+    const auto n1 = fullTest ? 1000u : 64u;
+    const auto n2 = fullTest ? 2500u : 160u;
+    const auto n3 = fullTest ? 1500u : 96u;
     const VolumeRange volrange1 = {{{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}}};
     const VolumeRange volrange2 = {{{1.0, 1.5}, {0.0, 1.0}, {0.0, 1.0}}};
     const VolumeRange volrange3 = {{{1.5, 2.0}, {0.0, 1.0}, {0.0, 1.0}}};
@@ -645,7 +696,7 @@ TEST_F(NeighborRandom3d, testConnectivityComputeIntersection) {
 class NeighborCylindrical2d: public NeighborTestBase<Dim<2>> {
 public:
   void SetUp() override {
-    ncheck = 50u;
+    ncheck = fullTest ? 50u : 20u;
     noverlapcheck = 2u;
 
     // Match GenerateNodeDistribution2d(..., distributionType="constantDTheta").
@@ -657,7 +708,7 @@ public:
     nodes1 = std::make_unique<NodeSet>("cylindrical nodes 1", *eos,
                                       Vector(-10.0), Vector(10.0));
 
-    constexpr auto nRadial = 100u;
+    const auto nRadial = fullTest ? 100u : 12u;
     constexpr auto rmin = 0.0;
     constexpr auto rmax = 1.0;
     constexpr auto theta = 0.5*3.14159265358979323846;
@@ -721,3 +772,22 @@ TEST_F(NeighborCylindrical2d, testConnectivityComputeIntersection) {
 }
 
 } // anonymous namespace
+
+int main(int argc, char* argv[]) {
+  // Remove our option before GoogleTest parses its own flags.  Keep argv
+  // compact and null-terminated so filters, repeats, and XML output still work.
+  auto remaining = 1;
+  for (auto i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--full") {
+      fullTest = true;
+    } else {
+      argv[remaining++] = argv[i];
+    }
+  }
+  argc = remaining;
+  argv[argc] = nullptr;
+  ::testing::InitGoogleTest(&argc, argv);
+  std::cout << "NeighborTestBase mode: " << (fullTest ? "full" : "default")
+            << " (use --full for the original workload)\n";
+  return RUN_ALL_TESTS();
+}
