@@ -4,6 +4,7 @@ namespace Spheral {
 // Global comparator functions.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator==(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -11,6 +12,7 @@ operator==(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator!=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -18,6 +20,7 @@ operator!=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator<(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -25,6 +28,7 @@ operator<(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pla
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator>(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -32,6 +36,7 @@ operator>(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pla
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator<=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -39,6 +44,7 @@ operator<=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator>=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
