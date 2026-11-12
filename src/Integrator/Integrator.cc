@@ -448,7 +448,6 @@ Integrator<Dimension>::setGhostNodes() const {
 
         // Ghost nodes that are control nodes for other ghost nodes we're keeping must
         // be kept as well.
-        const auto firstGhostNode = nodeList.firstGhostNode();
         for (auto* boundaryPtr: boundaries) {
           const auto& controlNodes = boundaryPtr->controlNodes(nodeList);
           const auto& ghostNodes = boundaryPtr->ghostNodes(nodeList);

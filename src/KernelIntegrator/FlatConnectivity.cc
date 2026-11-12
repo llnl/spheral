@@ -23,7 +23,7 @@ namespace Spheral {
 namespace { // anonymous
 template<typename Dimension>
 int
-numFluidNeighbors(const std::vector<std::vector<int>>& connectivity,
+numFluidNeighbors(const std::vector<std::vector<size_t>>& connectivity,
                   const DataBase<Dimension>& dataBase)
 {
    auto numNeighbors = 0;
