@@ -255,6 +255,13 @@ function(spheral_add_pybind11_library package_name module_list_name)
     IS_SUBMODULE    ${${package_name}_IS_SUBMODULE}
     SUBMODULES      ${${package_name}_SUBMODULES})
 
+  # Every generated module/class source sees the same type_caster definitions first.
+  target_compile_definitions(${MODULE_NAME} PRIVATE
+    "PYB11_SHARED_TYPE_CASTER_HEADER=\"PYB11/SpheralTypeCasters.hh\"")
+  if(SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER)
+    target_compile_definitions(${MODULE_NAME} PRIVATE
+      "SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER=\"${SPHERAL_PYB11_EXTRA_TYPE_CASTER_HEADER}\"")
+  endif()
   target_include_directories(${MODULE_NAME} SYSTEM PRIVATE ${SPHERAL_EXTERN_INCLUDES})
 
   add_dependencies(${MODULE_NAME} generate_spheralDimensions)

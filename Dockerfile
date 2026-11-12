@@ -4,6 +4,7 @@
 #     --progress=plain        : Prints plain output to terminal instead of windowed version.
 #     --build-args SPEC=...   : Specify optional build argument to override. Default = gcc
 #                               e.g. --build-args SPEC=clang
+#     --build-arg UBUNTU_VERSION=latest : Use the current Ubuntu image (default: 26.04).
 
 # To build and run a spheral test:
 #   sudo env DOCKERBUILDKIT=1 docker build . --target spheral --tag spheral (--progress=plain) (--network none)
@@ -22,7 +23,8 @@
 # -----------------------------------------------------------------------------
 # SPHERAL-BUILD-ENV
 # -----------------------------------------------------------------------------
-FROM ubuntu:24.04 AS spheral-build-env-local
+ARG UBUNTU_VERSION=26.04
+FROM ubuntu:${UBUNTU_VERSION} AS spheral-build-env-local
 
 ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
@@ -46,8 +48,8 @@ RUN apt-get update -y && \
         uuid \
         gettext \
         cmake \
-        openmpi-bin \
-        libopenmpi-dev \
+        mpich \
+        libmpich-dev \
         libncurses-dev \
         libgdbm-dev \
         libffi-dev \
