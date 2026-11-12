@@ -61,6 +61,7 @@ Notable changes include:
       * Installs are moved from $spack/opts to $spack/../installs.
 
   * Bug Fixes / improvements:
+    * Added C++ parity coverage for Neighbor tests and corrected ConnectivityMap intersection validation to compare against computed results.
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.
     * GenerateRatioSphere accessing the wrong element when SPH = True.
