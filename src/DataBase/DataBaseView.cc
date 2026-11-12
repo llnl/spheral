@@ -201,10 +201,9 @@ nodeListIndex(const DEMNodeListView<Dimension>& x) const {
 template<typename Dimension>
 SPHERAL_HOST_DEVICE 
 void
-DataBaseView<Dimension>::setDEMHfieldFromParticleRadius(const size_t startUniqueIndex,
-                                                        const Scalar kernelExtent) {
+DataBaseView<Dimension>::setDEMHfieldFromParticleRadius(const size_t startUniqueIndex) {
   for (auto& x: mDEMNodeListViews) x.setHfieldFromParticleRadius(startUniqueIndex,
-                                                                 kernelExtent);
+                                                                 mKernelExtent);
 }
 
 //------------------------------------------------------------------------------

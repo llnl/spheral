@@ -97,8 +97,7 @@ public:
   SPHERAL_HOST_DEVICE size_t nodeListIndex(const DEMNodeListView<Dimension>& x) const;
 
   // Special DEM methods
-  SPHERAL_HOST_DEVICE void setDEMHfieldFromParticleRadius(const size_t startUniqueIndex,
-                                                          const Scalar kernelExtent);
+  SPHERAL_HOST_DEVICE void setDEMHfieldFromParticleRadius(const size_t startUniqueIndex);
   SPHERAL_HOST_DEVICE Scalar maxDEMNeighborSearchBuffer() const;
 
   // Get the maximum kernel extent from the Neighbor
