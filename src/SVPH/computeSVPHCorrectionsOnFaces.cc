@@ -4,7 +4,7 @@
 // the points themselves.
 //------------------------------------------------------------------------------
 #include "computeSVPHCorrectionsOnFaces.hh"
-#include "Field/Field.hh"
+#include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Kernel/TableKernel.hh"
@@ -27,6 +27,7 @@ namespace Spheral {
 template<typename Dimension, typename BoundaryIterator>
 void
 computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
+                              const DataBase<Dimension>& dataBase,
                               const TableKernel<Dimension>& W,
                               const FieldList<Dimension, typename Dimension::Scalar>& volume,
                               const FieldList<Dimension, typename Dimension::Vector>& position,
@@ -36,18 +37,20 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
                               vector<typename Dimension::Scalar>& A,
                               vector<typename Dimension::Vector>& B) {
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Mesh<Dimension>::Face Face;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
+  using Face = typename Mesh<Dimension>::Face;
+  using NodeID = std::pair<size_t, size_t>;
 
   // Pre-conditions.
-  const size_t numNodeLists = volume.size();
+  const size_t numNodeLists = dataBase.numFluidNodeLists();
+  REQUIRE(dataBase.numNodeLists() == numNodeLists);
+  REQUIRE(volume.size() == numNodeLists);
   REQUIRE(position.size() == numNodeLists);
   REQUIRE(H.size() == numNodeLists);
 
-  // Extract the NodeLists we're working on.
-  const vector<NodeList<Dimension>*> nodeLists = volume.nodeListPtrs();
+  const auto& neighbor = dataBase.neighbor();
 
   // Zero out the result.
   const unsigned nfaces = mesh.numFaces();
@@ -60,7 +63,7 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
   vector<SymTensor> m2(nfaces, SymTensor::zero());
 
   // Walk the faces.
-  unsigned iface, nodeListj, j;
+  unsigned iface;
   Vector posFace;
   const SymTensor Hface = 1.0e100*SymTensor::one();
   for (iface = 0; iface != nfaces; ++iface) {
@@ -68,44 +71,41 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
     posFace = face.position();
 
     // Set the neighbors for this face.
-    vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-    Neighbor<Dimension>::setMasterNeighborGroup(posFace, Hface,
-                                                nodeLists.begin(), nodeLists.end(),
-                                                W.kernelExtent(),
-                                                masterLists,
-                                                coarseNeighbors);
+    vector<NodeID> masterLists, coarseNeighbors, refineNeighbors;
+    auto [ok, numMaster, numCoarse] = visitNeighbor(neighbor, [&](const auto& x) { return x.setMasterList(posFace, Hface,
+                                                                                                          masterLists,
+                                                                                                          coarseNeighbors); });
+    CHECK(ok);
+    CONTRACT_VAR(numMaster);
+    refineNeighbors.resize(numCoarse);
+    const auto numRefine = visitNeighbor(neighbor, [&](const auto& x) { return x.setRefineNeighborList(posFace, Hface, numCoarse, coarseNeighbors, refineNeighbors); });
 
-    // Iterate over the NodeLists.
-    for (nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-      const NodeList<Dimension>& nodeList = *nodeLists[nodeListj];
-      Neighbor<Dimension>& neighbor = const_cast<Neighbor<Dimension>&>(nodeList.neighbor());
-      neighbor.setRefineNeighborList(posFace, Hface, coarseNeighbors[nodeListj], refineNeighbors[nodeListj]);
-      for (auto neighborItr = refineNeighbors[nodeListj].begin(); neighborItr != refineNeighbors[nodeListj].end(); ++neighborItr) {
-        j = *neighborItr;
+    // Iterate over the neighbors
+    for (auto k = 0u; k < numRefine; ++k) {
+      const auto [nodeListj, j] = refineNeighbors[k];
 
-        // Get the state for node j
-        const Vector& rj = position(nodeListj, j);
-        const Scalar& Vj = volume(nodeListj, j);
-        const SymTensor& Hj = H(nodeListj, j);
-        const Scalar Hdetj = Hj.Determinant();
-        CHECK(Vj > 0.0);
-        CHECK(Hdetj > 0.0);
+      // Get the state for node j
+      const Vector& rj = position(nodeListj, j);
+      const Scalar& Vj = volume(nodeListj, j);
+      const SymTensor& Hj = H(nodeListj, j);
+      const Scalar Hdetj = Hj.Determinant();
+      CHECK(Vj > 0.0);
+      CHECK(Hdetj > 0.0);
 
-        // Pair-wise kernel type stuff.
-        const Vector rij = posFace - rj;
-        const Vector etaj = Hj*rij;
-        const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
+      // Pair-wise kernel type stuff.
+      const Vector rij = posFace - rj;
+      const Vector etaj = Hj*rij;
+      const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
 
-        // Normalization (zeroth moment).
-        A[iface] += Vj*Wj;
+      // Normalization (zeroth moment).
+      A[iface] += Vj*Wj;
 
-        // First moment. 
-        m1[iface] += Vj*Wj * rij;
+      // First moment.
+      m1[iface] += Vj*Wj * rij;
 
-        // Second moment.
-        const SymTensor thpt = rij.selfdyad();
-        m2[iface] += Vj*Wj * thpt;
-      }
+      // Second moment.
+      const SymTensor thpt = rij.selfdyad();
+      m2[iface] += Vj*Wj * thpt;
     }
   }
 
@@ -134,4 +134,3 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
 }
 
 }
-
