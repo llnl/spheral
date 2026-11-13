@@ -16,14 +16,13 @@ class MinMaxFieldList(__FieldListBase):
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
-    using ViewType = typename FieldListType::ViewType;
 """
 
-    def applyScalarMin(self):
+    def applyScalarMin(self, rhs="const Scalar"):
         "Enforce a double floor on the values of the Field."
         return
 
-    def applyScalarMax(self):
+    def applyScalarMax(self, rhs="const Scalar"):
         "Enforce a double ceiling on the values of the Field."
         return
 

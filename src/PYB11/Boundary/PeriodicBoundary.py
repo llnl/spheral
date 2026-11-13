@@ -24,10 +24,8 @@ class PeriodicBoundary(PlanarBoundary):
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
-        "Default constructor"
-
-    def pyinit1(self,
+    def pyinit(self,
+                dataBase = "const DataBase<%(Dimension)s>&",
                 plane1 = "const Plane&",
                 plane2 = "const Plane&"):
         "Construct a periodic boundary mapping between the two (enter/exit) planes"

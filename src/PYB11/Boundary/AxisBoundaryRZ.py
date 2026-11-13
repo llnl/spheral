@@ -2,12 +2,12 @@
 # AxisBoundaryRZ
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from Boundary import *
+from ReflectingBoundary import *
 from BoundaryAbstractMethods import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-class AxisBoundaryRZ(Boundary):
+class AxisBoundaryRZ(ReflectingBoundary):
 
     PYB11typedefs = """
     typedef %(Dimension)s::Scalar Scalar;
@@ -23,6 +23,7 @@ class AxisBoundaryRZ(Boundary):
     #...........................................................................
     # Constructors
     def pyinit(self,
+               dataBase = "const DataBase<%(Dimension)s>&",
                etamin = "double"):
         "Construct with the DataBase"
 

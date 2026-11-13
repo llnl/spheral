@@ -2,12 +2,12 @@
 # SphericalOriginBoundary
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from Boundary import *
+from ReflectingBoundary import *
 from BoundaryAbstractMethods import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<1>"})
-class SphericalOriginBoundary(Boundary):
+class SphericalOriginBoundary(ReflectingBoundary):
     PYB11typedefs = """
     typedef %(Dimension)s::Scalar Scalar;
     typedef %(Dimension)s::Vector Vector;
@@ -21,8 +21,8 @@ class SphericalOriginBoundary(Boundary):
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
-        "Default constructor"
+    def pyinit(self, dataBase="const DataBase<%(Dimension)s>&"):
+        "Construct with the DataBase"
 
     #...........................................................................
     # Methods

@@ -24,10 +24,8 @@ class RigidBoundary(PlanarBoundary):
 
     #............................................................................
     # Constructors
-    def pyinit(self):
-        "Default constructor"
-
-    def pyinit1(self,
+    def pyinit(self,
+                dataBase = "const DataBase<%(Dimension)s>&",
                 plane = "const Plane&"):
         "Construct with the rigid plane"
 
