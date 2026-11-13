@@ -144,6 +144,7 @@ class NodeList:
         return "bool"
 
     @PYB11const
+    @PYB11implementation("[](const NodeList<%(Dimension)s>& self, const size_t ID) { return self.nodeType(ID); }")
     def nodeType(self,
                  ID = "size_t"):
         "Return the classification of the given node"
@@ -176,21 +177,36 @@ class NodeList:
     #...........................................................................
     # Properties
     name = PYB11property("std::string", doc="Name of the NodeList")
-    numNodes = PYB11property("size_t", doc="Total number of nodes in this NodeList")
-    numInternalNodes = PYB11property("size_t", "numInternalNodes", "numInternalNodes", doc="Number of internal nodes in this NodeList")
-    numGhostNodes = PYB11property("size_t", "numGhostNodes", "numGhostNodes", doc="Number of ghost nodes in this NodeList")
+    numNodes = PYB11property(getterraw="[](const NodeList<%(Dimension)s>& self) { return self.numNodes(); }",
+                               doc="Total number of nodes in this NodeList")
+    numInternalNodes = PYB11property("size_t", setter="numInternalNodes",
+                                      getterraw="[](const NodeList<%(Dimension)s>& self) { return self.numInternalNodes(); }",
+                                      doc="Number of internal nodes in this NodeList")
+    numGhostNodes = PYB11property("size_t", setter="numGhostNodes",
+                                   getterraw="[](const NodeList<%(Dimension)s>& self) { return self.numGhostNodes(); }",
+                                   doc="Number of ghost nodes in this NodeList")
     numFields = PYB11property("size_t", doc="Number of fields defined on this NodeList")
-    firstGhostNode = PYB11property("size_t", doc="Index of the first ghost node on this NodeList")
-    hash = PYB11property("size_t", "hash", doc="Stable identity hash used by NodeList snapshots")
-    generation = PYB11property("size_t", "generation", doc="Generation stored in the current NodeList snapshot")
+    firstGhostNode = PYB11property(getterraw="[](const NodeList<%(Dimension)s>& self) { return self.firstGhostNode(); }",
+                                    doc="Index of the first ghost node on this NodeList")
+    hash = PYB11property(getterraw="[](const NodeList<%(Dimension)s>& self) { return self.hash(); }",
+                          doc="Stable identity hash used by NodeList snapshots")
+    generation = PYB11property(getterraw="[](const NodeList<%(Dimension)s>& self) { return self.generation(); }",
+                                doc="Generation stored in the current NodeList snapshot")
     viewGeneration = PYB11property("size_t", "viewGeneration", doc="Generation of the current NodeList data snapshot")
-    nodesPerSmoothingScale = PYB11property("Scalar", "nodesPerSmoothingScale", "nodesPerSmoothingScale", 
+    nodesPerSmoothingScale = PYB11property("Scalar", setter="nodesPerSmoothingScale",
+                                           getterraw="[](const NodeList<%(Dimension)s>& self) { return self.nodesPerSmoothingScale(); }",
                                            doc="The target number of nodes per smoothing scale")
-    maxNumNeighbors = PYB11property("size_t", "maxNumNeighbors", "maxNumNeighbors",
+    maxNumNeighbors = PYB11property("size_t", setter="maxNumNeighbors",
+                                    getterraw="[](const NodeList<%(Dimension)s>& self) { return self.maxNumNeighbors(); }",
                                     doc="The maximum number of neighbors per node allowed for this NodeList")
-    hmin = PYB11property("Scalar", "hmin", "hmin", doc="Minimum allowed smoothing scale")
-    hmax = PYB11property("Scalar", "hmax", "hmax", doc="Maximum allowed smoothing scale")
-    hminratio = PYB11property("Scalar", "hminratio", "hminratio", 
+    hmin = PYB11property("Scalar", setter="hmin",
+                         getterraw="[](const NodeList<%(Dimension)s>& self) { return self.hmin(); }",
+                         doc="Minimum allowed smoothing scale")
+    hmax = PYB11property("Scalar", setter="hmax",
+                         getterraw="[](const NodeList<%(Dimension)s>& self) { return self.hmax(); }",
+                         doc="Maximum allowed smoothing scale")
+    hminratio = PYB11property("Scalar", setter="hminratio",
+                              getterraw="[](const NodeList<%(Dimension)s>& self) { return self.hminratio(); }",
                               doc="Minimum allowed ratio of min/max smoothing scale eigenvalues on each node")
 
 #-------------------------------------------------------------------------------
