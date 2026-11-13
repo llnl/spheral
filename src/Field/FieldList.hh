@@ -273,8 +273,7 @@ private:
   FieldCacheType mFieldCache;
   FieldStorageType mStorageType;
 
-  // Maintain a vector of the NodeLists this FieldList is defined in order to
-  // construct NodeIterators.
+  // Maintain a vector of the NodeLists this FieldList is defined on.
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 

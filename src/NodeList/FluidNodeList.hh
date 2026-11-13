@@ -12,13 +12,6 @@
 
 namespace Spheral {
 
-template<typename Dimension> class NodeIteratorBase;
-template<typename Dimension> class AllNodeIterator;
-template<typename Dimension> class InternalNodeIterator;
-template<typename Dimension> class GhostNodeIterator;
-template<typename Dimension> class MasterNodeIterator;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
 template<typename Dimension> class ConnectivityMap;
