@@ -58,6 +58,11 @@ public:
   // Clear the current Neighbor state
   virtual void clear() override;
 
+  // Python implementations may rebuild their complete state when a subset is
+  // requested; this keeps the Python override surface container-friendly.
+  virtual void updateNodes() override = 0;
+  virtual void updateNodes(const std::span<NodeID>&) override { this->updateNodes(); }
+
   // Change the kernel extent.  DataBase owns rebuilding dependent state.
   void kernelExtent(const Scalar value) { this->setKernelExtent(value); }
 

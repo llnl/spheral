@@ -8,22 +8,23 @@ from PYB11Generator import *
 from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
+import SpheralConfigs
 
 #-------------------------------------------------------------------------------
 # Includes
 #-------------------------------------------------------------------------------
 PYB11includes += ['"Geometry/GeomPlane.hh"',
                   '"Boundary/Boundary.hh"',
-                  '"Neighbor/GridCellIndex.hh"',
-                  '"Neighbor/GridCellPlane.hh"',
                   '"Neighbor/Neighbor.hh"',
-                  '"Neighbor/NestedGridNeighbor.hh"',
                   '"Neighbor/TreeNeighbor.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
                   '"Neighbor/NodePairIdxType.hh"',
                   '"Neighbor/NodePairList.hh"',
                   '"Neighbor/PairwiseField.hh"',
                   '<utility>']
+
+if not SpheralConfigs.gpu_enabled():
+    PYB11includes += ['"Neighbor/PythonNeighbor.hh"']
                   
 
 #-------------------------------------------------------------------------------
@@ -40,10 +41,7 @@ NeighborSearchType = PYB11enum(("Gather", "Scatter", "GatherScatter"), export_va
 #-------------------------------------------------------------------------------
 # Instantiate our types
 #-------------------------------------------------------------------------------
-from GridCellIndex import *
-from GridCellPlane import *
 from Neighbor import *
-from NestedGridNeighbor import *
 from TreeNeighbor import *
 from ConnectivityMap import *
 from NodePairIdxType import *
@@ -51,19 +49,25 @@ from NodePairList import *
 from PairwiseField import *
 from PairwiseMultiValueField import *
 
+if not SpheralConfigs.gpu_enabled():
+    from PythonNeighbor import *
+
+# Node IDs are shared by all dimensions.  Binding this vector opaquely preserves
+# mutations made by the master/refine-list methods.
+vector_of_NodeID = PYB11_bind_vector("std::pair<size_t, size_t>", opaque=True, local=False)
+
 for ndim in dims:
     suffix = f"{ndim}d"
     Dimension = f"Dim<{ndim}>"
     exec(f'''
-GridCellIndex{suffix} = PYB11TemplateClass(GridCellIndex, template_parameters="{Dimension}")
-GridCellPlane{suffix} = PYB11TemplateClass(GridCellPlane, template_parameters="{Dimension}")
 Neighbor{suffix} = PYB11TemplateClass(Neighbor, template_parameters="{Dimension}")
-NestedGridNeighbor{suffix} = PYB11TemplateClass(NestedGridNeighbor, template_parameters="{Dimension}")
 TreeNeighbor{suffix} = PYB11TemplateClass(TreeNeighbor, template_parameters="{Dimension}")
 ConnectivityMap{suffix} = PYB11TemplateClass(ConnectivityMap, template_parameters="{Dimension}")
+''')
 
-vector_of_GridCellIndex{suffix} = PYB11_bind_vector("GridCellIndex<{Dimension}>", opaque=True, local=False)
-vector_of_vector_of_GridCellIndex{suffix} = PYB11_bind_vector("std::vector<GridCellIndex<{Dimension}>>", opaque=True, local=False)
+    if not SpheralConfigs.gpu_enabled():
+        exec(f'''
+PythonNeighbor{suffix} = PYB11TemplateClass(PythonNeighbor, template_parameters="{Dimension}")
 ''')
 
     for Value in ("Scalar", "Vector", "Tensor", "SymTensor"):

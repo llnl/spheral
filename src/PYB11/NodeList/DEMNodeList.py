@@ -60,12 +60,32 @@ class DEMNodeList(NodeList):
         "the unique particle index field"
         return "const sizetField&"
 
+    @PYB11implementation("[](DEMNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.particleRadius()[nodeID]; }")
+    @PYB11pycppname("particleRadius")
+    @PYB11returnpolicy("reference_internal")
+    def particleRadius1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](DEMNodeList<%(Dimension)s>& self, const size_t nodeID) -> int& { return self.compositeParticleIndex()[nodeID]; }")
+    @PYB11pycppname("compositeParticleIndex")
+    @PYB11returnpolicy("reference_internal")
+    def compositeParticleIndex1(self, nodeID="const size_t"):
+        return "int&"
+
+    @PYB11implementation("[](DEMNodeList<%(Dimension)s>& self, const size_t nodeID) -> size_t& { return self.uniqueIndex()[nodeID]; }")
+    @PYB11pycppname("uniqueIndex")
+    @PYB11returnpolicy("reference_internal")
+    def uniqueIndex1(self, nodeID="const size_t"):
+        return "size_t&"
+
     @PYB11pycppname("uniqueIndex")
     def setUniqueIndex(self, val="const sizetField&"):
         "set the unique particle indices"
         return "void"
 
-    def setHfieldFromParticleRadius(uniqueIndex = "const size_t"):
+    def setHfieldFromParticleRadius(self,
+                                    startUniqueIndex = "const size_t",
+                                    kernelExtent = "const Scalar"):
         "set a good H value for the neighbor search based on the particle radius"
         return "void"
 
@@ -84,6 +104,8 @@ class DEMNodeList(NodeList):
 
     #...........................................................................
     # Properties
+    neighborSearchBuffer = PYB11property("Scalar", "neighborSearchBuffer", "neighborSearchBuffer",
+                                         doc="The fractional padding used for DEM neighbor searches")
 
 
 #-------------------------------------------------------------------------------

@@ -69,6 +69,40 @@ class NodeList:
         "The CPU work field"
         return "ScalarField&"
 
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.mass()[nodeID]; }")
+    @PYB11pycppname("mass")
+    @PYB11returnpolicy("reference_internal")
+    def mass1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.massRZ()[nodeID]; }")
+    @PYB11pycppname("massRZ")
+    @PYB11returnpolicy("reference_internal")
+    def massRZ1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> Vector& { return self.positions()[nodeID]; }")
+    @PYB11returnpolicy("reference_internal")
+    def position(self, nodeID="const size_t"):
+        return "Vector&"
+
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> Vector& { return self.velocity()[nodeID]; }")
+    @PYB11pycppname("velocity")
+    @PYB11returnpolicy("reference_internal")
+    def velocity1(self, nodeID="const size_t"):
+        return "Vector&"
+
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> SymTensor& { return self.Hfield()[nodeID]; }")
+    @PYB11returnpolicy("reference_internal")
+    def H(self, nodeID="const size_t"):
+        return "SymTensor&"
+
+    @PYB11implementation("[](NodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.work()[nodeID]; }")
+    @PYB11pycppname("work")
+    @PYB11returnpolicy("reference_internal")
+    def work1(self, nodeID="const size_t"):
+        return "Scalar&"
+
     @PYB11pycppname("mass")
     def setmass(self, newValue="const ScalarField&"):
         "Set the mass field"
@@ -115,20 +149,6 @@ class NodeList:
         "Return the classification of the given node"
         return "NodeType"
 
-    @PYB11const
-    @PYB11returnpolicy("reference_internal")
-    def neighbor(self):
-        "Neighbor object associated with this NodeList"
-        return "Neighbor<%(Dimension)s>&"
-
-    def registerNeighbor(self, neighbor="Neighbor<%(Dimension)s>&"):
-        "Associate a Neighbor object with this NodeList"
-        return "void"
-
-    def unregisterNeighbor(self):
-        "Break the relation of this NodeList with it's Neighbor object"
-        return "void"
-
     # Virtual methods
     @PYB11virtual
     def deleteNodes(self, nodeIDs="const std::vector<size_t>&"):
@@ -161,6 +181,9 @@ class NodeList:
     numGhostNodes = PYB11property("size_t", "numGhostNodes", "numGhostNodes", doc="Number of ghost nodes in this NodeList")
     numFields = PYB11property("size_t", doc="Number of fields defined on this NodeList")
     firstGhostNode = PYB11property("size_t", doc="Index of the first ghost node on this NodeList")
+    hash = PYB11property("size_t", "hash", doc="Stable identity hash used by NodeList snapshots")
+    generation = PYB11property("size_t", "generation", doc="Generation stored in the current NodeList snapshot")
+    viewGeneration = PYB11property("size_t", "viewGeneration", doc="Generation of the current NodeList data snapshot")
     nodesPerSmoothingScale = PYB11property("Scalar", "nodesPerSmoothingScale", "nodesPerSmoothingScale", 
                                            doc="The target number of nodes per smoothing scale")
     maxNumNeighbors = PYB11property("size_t", "maxNumNeighbors", "maxNumNeighbors",

@@ -93,6 +93,9 @@ public:
 
   PythonNeighborCallView view() const { return *this; }
 
+  // Access the CPU Value object represented by this adapter.
+  PythonNeighbor<Dimension>* parent() const { return mParent; }
+
 private:
   PythonNeighbor<Dimension>* mParent;
 };

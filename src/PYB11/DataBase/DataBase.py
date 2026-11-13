@@ -3,6 +3,7 @@
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
 from DataBase import *
+import SpheralConfigs
 
 @PYB11template("Dimension")
 @PYB11dynamic_attr
@@ -22,8 +23,8 @@ class DataBase:
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
-        "Default constructor"
+    def pyinit(self, kernelExtent=("const Scalar", "2.0")):
+        "Construct a DataBase with the kernel extent used by its Neighbor."
 
     #...........................................................................
     # Methods
@@ -31,6 +32,60 @@ class DataBase:
     def reinitializeNeighbors(self):
         "Optimize all Neighbor objects for the current state."
         return "void"
+
+    @PYB11const
+    def updateNeighbors(self):
+        "Update all Neighbor data without invalidating the ConnectivityMap."
+        return "void"
+
+    @PYB11const
+    def updateNeighbor(self, nodes="const NodeList<%(Dimension)s>&"):
+        "Update Neighbor data for one NodeList without invalidating the ConnectivityMap."
+        return "void"
+
+    @PYB11implementation("""[](DataBase<%(Dimension)s>& self) -> py::object {
+      return visitNeighbor(self.neighbor(), [&self](const auto& neighbor) -> py::object {
+        using NeighborType = std::decay_t<decltype(neighbor)>;
+        if constexpr (std::is_same_v<NeighborType, TreeNeighbor<%(Dimension)s>>) {
+          return py::cast(&neighbor, py::return_value_policy::reference_internal, py::cast(&self));
+        }
+#ifndef SPHERAL_ENABLE_GPU
+        else {
+          return py::cast(neighbor.parent(), py::return_value_policy::reference_internal, py::cast(&self));
+        }
+#endif
+      });
+    }""")
+    def neighbor(self):
+        "Return the active Neighbor Value object (never a View object)."
+        return "py::object"
+
+    @PYB11implementation("""[](DataBase<%(Dimension)s>& self,
+                                const NeighborSearchType searchType,
+                                const Scalar kernelExtent,
+                                const Vector& xmin,
+                                const Vector& xmax) -> TreeNeighbor<%(Dimension)s>& {
+      return self.template emplaceNeighbor<TreeNeighbor<%(Dimension)s>>(searchType, kernelExtent, xmin, xmax);
+    }""")
+    @PYB11returnpolicy("reference_internal")
+    def emplaceTreeNeighbor(self,
+                            searchType=("const NeighborSearchType", "NeighborSearchType::GatherScatter"),
+                            kernelExtent=("const Scalar", "2.0"),
+                            xmin=("const Vector&", "-10.0 * Vector::one()"),
+                            xmax=("const Vector&", " 10.0 * Vector::one()")):
+        "Replace the active Neighbor with a TreeNeighbor."
+        return "TreeNeighbor<%(Dimension)s>&"
+
+    if not SpheralConfigs.gpu_enabled():
+        @PYB11implementation("""[](DataBase<%(Dimension)s>& self,
+                                    PythonNeighbor<%(Dimension)s>& neighbor) {
+          if (&neighbor.dataBase() != &self) throw py::value_error("PythonNeighbor belongs to a different DataBase");
+          self.template emplaceNeighbor<PythonNeighborCallView<%(Dimension)s>>(&neighbor);
+        }""")
+        @PYB11keepalive(1, 2)
+        def setPythonNeighbor(self, neighbor="PythonNeighbor<%(Dimension)s>&"):
+            "Install a non-owning CallView for a PythonNeighbor and retain its Python owner."
+            return "void"
 
     @PYB11const
     def updateConnectivityMap(self,
@@ -82,7 +137,7 @@ class DataBase:
     # it will call the base NodeList function instead of this one. Voodoo?
     # It is probably overwriting the above function for standard NodeList.
     @PYB11pycppname("appendNodeList")
-    def appendNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
+    def appendNodeList3(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Add a DEMNodeList"
         return "void"
 
@@ -102,52 +157,34 @@ class DataBase:
 
     # See the comment above for appendNodeList2
     @PYB11pycppname("deleteNodeList")
-    def deleteNodeList2(self, nodeList="DEMNodeList<%(Dimension)s>&"):
+    def deleteNodeList3(self, nodeList="DEMNodeList<%(Dimension)s>&"):
         "Remove a DEMNodeList"
         return "void"
 
     @PYB11const
+    @PYB11implementation("""[](const DataBase<%(Dimension)s>& self,
+                                const NodeList<%(Dimension)s>& nodeList) {
+                                  return self.haveNodeList(static_cast<const NodeListView<%(Dimension)s>&>(nodeList));
+                                }""")
     def haveNodeList(self, nodeList="const NodeList<%(Dimension)s>&"):
         "Check if a NodeList is in the DataBase"
         return "bool"
 
-    @PYB11const
-    def setMasterNodeLists(self,
-                           position = "const Vector&",
-                           H = "const SymTensor&",
-                           masterLists = "std::vector<std::vector<int>>&",
-                           coarseNeighbors = "std::vector<std::vector<int>>&",
-                           computeGhostConnectivity = "bool"):
-        "Set the master/coarse neighbor lists for all NodeLists"
-        return "void"
+    @PYB11implementation("[](const DataBase<%(Dimension)s>& self, const NodeList<%(Dimension)s>& nodes) { return self.nodeListIndex(&nodes); }")
+    def nodeListIndex(self, nodes="const NodeList<%(Dimension)s>&"):
+        return "size_t"
 
-    @PYB11const
-    def setMasterFluidNodeLists(self,
-                                position = "const Vector&",
-                                H = "const SymTensor&",
-                                masterLists = "std::vector<std::vector<int>>&",
-                                coarseNeighbors = "std::vector<std::vector<int>>&",
-                                computeGhostConnectivity = "bool"):
-        "Set the master/coarse neighbor lists for all NodeLists"
-        return "void"
+    @PYB11implementation("[](const DataBase<%(Dimension)s>& self, const FluidNodeList<%(Dimension)s>& nodes) { return self.fluidNodeListIndex(&nodes); }")
+    def fluidNodeListIndex(self, nodes="const FluidNodeList<%(Dimension)s>&"):
+        return "size_t"
 
-    @PYB11const
-    def setRefineNodeLists(self,
-                           position = "const Vector&",
-                           H = "const SymTensor&",
-                           coarseNeighbors = "const std::vector<std::vector<int>>&",
-                           refineNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the refine neighbor lists for all NodeLists"
-        return "void"
+    @PYB11implementation("[](const DataBase<%(Dimension)s>& self, const SolidNodeList<%(Dimension)s>& nodes) { return self.solidNodeListIndex(&nodes); }")
+    def solidNodeListIndex(self, nodes="const SolidNodeList<%(Dimension)s>&"):
+        return "size_t"
 
-    @PYB11const
-    def setRefineFluidNodeLists(self,
-                                position = "const Vector&",
-                                H = "const SymTensor&",
-                                coarseNeighbors = "const std::vector<std::vector<int>>&",
-                                refineNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the refine neighbor lists for all FluidNodeLists"
-        return "void"
+    @PYB11implementation("[](const DataBase<%(Dimension)s>& self, const DEMNodeList<%(Dimension)s>& nodes) { return self.DEMNodeListIndex(&nodes); }")
+    def DEMNodeListIndex(self, nodes="const DEMNodeList<%(Dimension)s>&"):
+        return "size_t"
 
     @PYB11const
     def globalHinverse(self, result="FieldList<%(Dimension)s, SymTensor>&"):
@@ -688,7 +725,10 @@ will get the new value regardless of resetValues."""
     # def DEMNodeLists(self):
     #     return "const std::vector<DEMNodeList<%(Dimension)s>*>&"
 
-    def setDEMHfieldFromParticleRadius(self, startUniqueIndex = "const int"):
+    def setDEMHfieldFromParticleRadius(self, startUniqueIndex="const size_t"):
+        return "void"
+
+    def setDEMUniqueIndices(self):
         return "void"
 
     #...........................................................................
@@ -714,17 +754,35 @@ will get the new value regardless of resetValues."""
     numFluidInternalNodes = PYB11property("size_t", "numFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase")
     numFluidGhostNodes = PYB11property("size_t", "numFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase")
 
+    numSolidNodes = PYB11property("size_t", "numSolidNodes", doc="Number of nodes in all SolidNodeLists")
+    numSolidInternalNodes = PYB11property("size_t", "numSolidInternalNodes", doc="Number of internal nodes in all SolidNodeLists")
+    numSolidGhostNodes = PYB11property("size_t", "numSolidGhostNodes", doc="Number of ghost nodes in all SolidNodeLists")
+
+    numDEMNodes = PYB11property("size_t", "numDEMNodes", doc="Number of nodes in all DEMNodeLists")
+    numDEMInternalNodes = PYB11property("size_t", "numDEMInternalNodes", doc="Number of internal nodes in all DEMNodeLists")
+    numDEMGhostNodes = PYB11property("size_t", "numDEMGhostNodes", doc="Number of ghost nodes in all DEMNodeLists")
+
     globalNumFluidNodes = PYB11property("size_t", "globalNumFluidNodes", doc="Number of nodes in all NodeLists in DataBase across all processors")
     globalNumFluidInternalNodes = PYB11property("size_t", "globalNumFluidInternalNodes", doc="Number of internal nodes in all NodeLists in DataBase across all processors")
     globalNumFluidGhostNodes = PYB11property("size_t", "globalNumFluidGhostNodes", doc="Number of ghost nodes in all NodeLists in DataBase across all processors")
+
+    globalNumSolidNodes = PYB11property("size_t", "globalNumSolidNodes", doc="Number of solid nodes across all processors")
+    globalNumSolidInternalNodes = PYB11property("size_t", "globalNumSolidInternalNodes", doc="Number of internal solid nodes across all processors")
+    globalNumSolidGhostNodes = PYB11property("size_t", "globalNumSolidGhostNodes", doc="Number of ghost solid nodes across all processors")
+
+    globalNumDEMNodes = PYB11property("size_t", "globalNumDEMNodes", doc="Number of DEM nodes across all processors")
+    globalNumDEMInternalNodes = PYB11property("size_t", "globalNumDEMInternalNodes", doc="Number of internal DEM nodes across all processors")
+    globalNumDEMGhostNodes = PYB11property("size_t", "globalNumDEMGhostNodes", doc="Number of ghost DEM nodes across all processors")
     
     nodeLists = PYB11property("const std::vector<NodeList<%(Dimension)s>*>&", "nodeListPtrs", doc="The set of NodeLists in the DataBase")
     fluidNodeLists = PYB11property("const std::vector<FluidNodeList<%(Dimension)s>*>&", "fluidNodeListPtrs", doc="The set of FluidNodeLists in the DataBase")
     solidNodeLists = PYB11property("const std::vector<SolidNodeList<%(Dimension)s>*>&", "solidNodeListPtrs", doc="The set of SolidNodeLists in the DataBase")
     DEMNodeLists = PYB11property("const std::vector<DEMNodeList<%(Dimension)s>*>&", "DEMNodeListPtrs", doc="The set of NodeLists in the DataBase")
     
-    maxKernelExtent = PYB11property("Scalar")
-    maxNeighborSearchBuffer = PYB11property("Scalar")
+    kernelExtent = PYB11property("Scalar", "kernelExtent", "kernelExtent",
+                                 doc="Kernel extent used by the active Neighbor")
+    maxDEMNeighborSearchBuffer = PYB11property("Scalar", "maxDEMNeighborSearchBuffer")
+    generation = PYB11property("size_t", "generation", doc="Generation of the current DataBase snapshot")
 
     globalMass = PYB11property("FieldList<%(Dimension)s, Scalar>")
     globalMassRZ = PYB11property("FieldList<%(Dimension)s, Scalar>")
@@ -757,6 +815,7 @@ will get the new value regardless of resetValues."""
     solidPlasticStrainRate = PYB11property("FieldList<%(Dimension)s, Scalar>")
     solidDamage = PYB11property("FieldList<%(Dimension)s, SymTensor>")
     solidFragmentIDs = PYB11property("FieldList<%(Dimension)s, int>")
+    solidParticleTypes = PYB11property("FieldList<%(Dimension)s, int>")
 
     DEMMass = PYB11property("FieldList<%(Dimension)s, Scalar>")
     DEMPosition = PYB11property("FieldList<%(Dimension)s, Vector>")
@@ -769,3 +828,5 @@ will get the new value regardless of resetValues."""
     globalNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")
     fluidNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")
     solidNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")
+    DEMNodeExtent = PYB11property("FieldList<%(Dimension)s, Vector>")
+    numNeighbors = PYB11property("FieldList<%(Dimension)s, size_t>")

@@ -55,6 +55,24 @@ class FluidNodeList(NodeList):
         "The specific thermal energy field"
         return "const ScalarField&"
 
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.massDensity()[nodeID]; }")
+    @PYB11pycppname("massDensity")
+    @PYB11returnpolicy("reference_internal")
+    def massDensity1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.massDensityRZ()[nodeID]; }")
+    @PYB11pycppname("massDensityRZ")
+    @PYB11returnpolicy("reference_internal")
+    def massDensityRZ1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.specificThermalEnergy()[nodeID]; }")
+    @PYB11pycppname("specificThermalEnergy")
+    @PYB11returnpolicy("reference_internal")
+    def specificThermalEnergy1(self, nodeID="const size_t"):
+        return "Scalar&"
+
     @PYB11pycppname("massDensity")
     def setmassDensity(self, val="const ScalarField&"):
         "Set the mass density field"

@@ -53,6 +53,12 @@ class SolidNodeList(FluidNodeList):
 
     @PYB11virtual
     @PYB11const
+    def shearModulus(self, result="ScalarField&"):
+        "Compute the current shear modulus, storing the result in the argument ScalarField."
+        return "void"
+
+    @PYB11virtual
+    @PYB11const
     def yieldStrength(self, result="ScalarField&"):
         "Compute the current yield strength, storing the result in the argument ScalarField."
         return "void"
@@ -112,6 +118,40 @@ given the mass density, bulk modulus, and shear modulus (rho, K, mu)"""
     def particleTypes(self):
         "The particle type field"
         return "const IntField&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> SymTensor& { return self.deviatoricStress()[nodeID]; }")
+    @PYB11pycppname("deviatoricStress")
+    @PYB11returnpolicy("reference_internal")
+    def deviatoricStress1(self, nodeID="const size_t"):
+        return "SymTensor&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.plasticStrain()[nodeID]; }")
+    @PYB11pycppname("plasticStrain")
+    @PYB11returnpolicy("reference_internal")
+    def plasticStrain1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.plasticStrainRate()[nodeID]; }")
+    @PYB11pycppname("plasticStrainRate")
+    @PYB11returnpolicy("reference_internal")
+    def plasticStrainRate1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> SymTensor& { return self.damage()[nodeID]; }")
+    @PYB11pycppname("damage")
+    @PYB11returnpolicy("reference_internal")
+    def damage1(self, nodeID="const size_t"):
+        return "SymTensor&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> int& { return self.fragmentIDs()[nodeID]; }")
+    @PYB11returnpolicy("reference_internal")
+    def fragmentID(self, nodeID="const size_t"):
+        return "int&"
+
+    @PYB11implementation("[](SolidNodeList<%(Dimension)s>& self, const size_t nodeID) -> int& { return self.particleTypes()[nodeID]; }")
+    @PYB11returnpolicy("reference_internal")
+    def particleType(self, nodeID="const size_t"):
+        return "int&"
 
     @PYB11const
     @PYB11returnpolicy("reference_internal")
