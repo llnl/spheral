@@ -10,7 +10,6 @@
 #include "Field/Field.hh"
 
 #include "NodeList/FluidNodeList.hh"
-#include "Neighbor/TreeNeighbor.hh"
 #include "Neighbor/NodePairList.hh"
 #include "Material/GammaLawGas.hh"
 #include "Kernel/TableKernel.hh"
@@ -31,7 +30,6 @@ using FieldViewVector = Spheral::FieldView<DIM3, Vector>;
 using FieldListVector = Spheral::FieldList<DIM3, Vector>;
 using NodeList_t = Spheral::NodeList<DIM3>;
 using FluidNodeList_t = Spheral::FluidNodeList<DIM3>;
-using TreeNeighbor_t = Spheral::TreeNeighbor<DIM3>;
 using GammaLawGas_t = Spheral::GammaLawGas<DIM3>;
 using TableKernel_t = Spheral::TableKernel<DIM3>;
 using BSplineKernel_t = Spheral::BSplineKernel<DIM3>;
@@ -52,29 +50,21 @@ static constexpr double nPerh = 2.01;
 static constexpr size_t maxNumNeighbors = 500;
 static constexpr double rhoMin = 1.0e-10;
 static constexpr double rhoMax = 1.0e10;
-static constexpr double kernelExtents = 2.0;
 static Spheral::PhysicalConstants units(1.0, 1.0, 1.0);
 static constexpr double dx = 0.1;
-static constexpr double L = dx*(Nx - 1);
 
 class LoopTest : public ::testing::Test {
 public:
   // Constructor
-  LoopTest(Vector xmin = Vector(0.0, 0.0, 0.0),
-           Vector xmax = Vector(L, L, L),
-           std::string name = "FNL", size_t count = N) :
+  LoopTest(std::string name = "FNL", size_t count = N) :
     WT(BSplineKernel_t(), N_table),
     eos(2.0, 2.0, units, -1E200, 1E200,
         Spheral::MaterialPressureMinType::PressureFloor, 0.0),
     fluid_node_list(name, eos, count, 0,
                     hmin, hmax, hminratio,
                     nPerh, maxNumNeighbors,
-                    rhoMin, rhoMax),
-    tree_neighbor(fluid_node_list,
-                  Spheral::NeighborSearchType::GatherScatter,
-                  kernelExtents, xmin, xmax) {
+                    rhoMin, rhoMax) {
     Spheral::GPUUtils::initGPUs();
-    fluid_node_list.registerNeighbor(tree_neighbor);
   }
 
   template<typename TypeParam>
@@ -98,7 +88,6 @@ public:
       });
     pos.move(chai::CPU);
     H.move(chai::CPU);
-    fluid_node_list.neighbor().updateNodes();
   }
 
   NPL findNeighbors(double r2) {
@@ -120,7 +109,6 @@ public:
   TableKernel_t WT;
   GammaLawGas_t eos;
   FluidNodeList_t fluid_node_list;
-  TreeNeighbor_t tree_neighbor;
 };
 
 // Setting up G Test for Loops
