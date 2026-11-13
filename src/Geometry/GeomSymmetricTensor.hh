@@ -257,17 +257,6 @@ private:
   SPHERAL_HOST_DEVICE size_type elementIndex(const size_type row, const size_type column) const;
 };
 
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>::GeomSymmetricTensor(const double, const double, const double);
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>::GeomSymmetricTensor(const double, const double,
-                                                                           const double, const double,
-                                                                           const double);
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3>::GeomSymmetricTensor(const double, const double, const double,
-                                                                           const double, const double, const double,
-                                                                           const double, const double, const double);
-
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>::GeomSymmetricTensor(const GeomSymmetricTensor<3>&);
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>::GeomSymmetricTensor(const GeomSymmetricTensor<3>&);
-
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>& GeomSymmetricTensor<1>::operator=(const GeomTensor<1>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>& GeomSymmetricTensor<2>::operator=(const GeomTensor<2>& rhs);
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<3>& GeomSymmetricTensor<3>::operator=(const GeomTensor<3>& rhs);
@@ -411,8 +400,6 @@ template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<1>::maxAbsElement3D() 
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<2>::maxAbsElement3D() const;
 template<> SPHERAL_HOST_DEVICE double GeomSymmetricTensor<3>::maxAbsElement3D() const;
 
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1>& GeomSymmetricTensor<1>::operator+=(const GeomSymmetricTensor<3>&);
-template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2>& GeomSymmetricTensor<2>::operator+=(const GeomSymmetricTensor<3>&);
 
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<1> GeomSymmetricTensor<1>::enforceMinEigenValue(const double&) const;
 template<> SPHERAL_HOST_DEVICE GeomSymmetricTensor<2> GeomSymmetricTensor<2>::enforceMinEigenValue(const double&) const;
