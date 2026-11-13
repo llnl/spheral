@@ -213,7 +213,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     for (auto i = 0u; i != donorN; ++i) unpackElement(donorH[i], bufItr, buffer.end());
     CHECK(bufItr == buffer.end());
 
-    for (auto i = 0; i < donorN; ++i) {
+    for (auto i = 0u; i < donorN; ++i) {
       vector<NodeID> Amasters, Acoarse, Arefine;
       auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) {
                                                   auto [ok, numMaster, numCoarse] = neighbor.setMasterList(donorPos[i], donorH[i], Amasters, Acoarse);

@@ -54,7 +54,6 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
   auto deltaCentroid = db.newFluidFieldList(Vector::zero(), "delta centroid");
   auto corrections0 = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections0");
   auto corrections = db.newFluidFieldList(RKCoefficients<Dimension>(), "corrections");
-  const auto& neighbor = db.neighbor();
 
   // Temporary until we decide to propagate void info to this method.
   auto etaVoidPoints = db.newFluidFieldList(vector<Vector>(), "eta void points");
