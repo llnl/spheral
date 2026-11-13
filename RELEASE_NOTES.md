@@ -35,6 +35,10 @@ Notable changes include:
     * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
 
   * Build changes / improvements:
+    * Updated the LC ROCm toolchain from 6.4.3 to 7.2.1 and Cray MPICH from 9.0.1 to 9.1.0.
+    * Updated to use CHAI 2026.07.1, RAJA 2026.07.1, Umpire 2026.07.2, and CAMP 2026.07.2.
+    * LC ROCm builds now use CMake 3.31 to correctly detect LLVM Flang runtime libraries.
+    * Axom builds now use C++20 when consuming CAMP 2026.07 or newer.
     * Major overhaul to CMake system:
       * CXX library is now a monolithic static, shared, or interface (for dev builds) library.
       * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before. Results in significantly fewer global CMake variables.

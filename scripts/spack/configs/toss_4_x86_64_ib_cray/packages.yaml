@@ -8,20 +8,19 @@ packages:
       zlib-api: [zlib]
   llvm-amdgpu:
     externals:
-    - spec: llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic
+    - spec: llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocmcc-7.2.1-magic
       extra_attributes:
         compilers:
-          c: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang
-          cxx: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdclang++
-          fortran: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/bin/amdflang
-        extra_rpaths: [/usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/llvm/lib]
+          c: /usr/tce/packages/rocmcc/rocmcc-7.2.1-magic/bin/amdclang
+          cxx: /usr/tce/packages/rocmcc/rocmcc-7.2.1-magic/bin/amdclang++
+          fortran: /usr/tce/packages/rocmcc/rocmcc-7.2.1-magic/bin/amdflang
+        extra_rpaths: [/usr/tce/packages/rocmcc/rocmcc-7.2.1-magic/llvm/lib]
   cmake:
-    version: [3.24.2]
-    buildable: false
-    externals:
-    - spec: cmake@3.24.2
-      prefix: /usr/tce/packages/cmake/cmake-3.24.2
+    # CMake 3.24 leaves LLVM Flang's implicit runtime libraries undetected.
+    # Allow Spack to select a supported patch release of CMake 3.31.
+    require: "@3.31"
+    buildable: true
   gmake:
     version: [4.2.1]
     buildable: false
@@ -38,39 +37,39 @@ packages:
   cray-mpich:
     buildable: false
     externals:
-    - spec: cray-mpich@9.0.1%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.0.1-rocmcc-6.4.3-magic
+    - spec: cray-mpich@9.1.0%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/cray-mpich/cray-mpich-9.1.0-rocmcc-7.2.1-magic
 
   hip:
-    version: [6.4.3]
+    version: [7.2.1]
     buildable: false
     externals:
-    - spec: hip@6.4.3%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocmcc-6.4.3-magic/
+    - spec: hip@7.2.1%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocmcc-7.2.1-magic/
   hsa-rocr-dev:
-    version: [6.4.3]
+    version: [7.2.1]
     buildable: false
     externals:
-    - spec: hsa-rocr-dev@6.4.3%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
+    - spec: hsa-rocr-dev@7.2.1%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocm-7.2.1-magic/
   rocminfo:
-    version: [6.4.3]
+    version: [7.2.1]
     buildable: false
     externals:
-    - spec: rocminfo@6.4.3%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
+    - spec: rocminfo@7.2.1%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocm-7.2.1-magic/
   rocm-device-libs:
-    version: [6.4.3]
+    version: [7.2.1]
     buildable: false
     externals:
-    - spec: rocm-device-libs@6.4.3%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
+    - spec: rocm-device-libs@7.2.1%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocm-7.2.1-magic/
   rocprim:
-    version: [6.4.3]
+    version: [7.2.1]
     buildable: false
     externals:
-    - spec: rocprim@6.4.3%llvm-amdgpu@6.4.3
-      prefix: /usr/tce/packages/rocmcc/rocm-6.4.3-magic/
+    - spec: rocprim@7.2.1%llvm-amdgpu@7.2.1
+      prefix: /usr/tce/packages/rocmcc/rocm-7.2.1-magic/
 
 # ------ SYSTEM LIBS -------
   readline:
