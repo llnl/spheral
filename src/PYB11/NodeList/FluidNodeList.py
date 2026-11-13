@@ -137,15 +137,13 @@ class FluidNodeList(NodeList):
 
     #...........................................................................
     # Comparison
-    @PYB11pyname("__eq__")
     @PYB11implementation("[](const FluidNodeList<%(Dimension)s>& self, const FluidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) == static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
-    def equal(self, rhs="const FluidNodeList<%(Dimension)s>&"):
+    def __eq__(self, rhs="const FluidNodeList<%(Dimension)s>&"):
         "Equivalence test with another FluidNodeList"
         return "bool"
 
-    @PYB11pyname("__ne__")
     @PYB11implementation("[](const FluidNodeList<%(Dimension)s>& self, const FluidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) != static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
-    def notEqual(self, rhs="const FluidNodeList<%(Dimension)s>&"):
+    def __ne__(self, rhs="const FluidNodeList<%(Dimension)s>&"):
         "Inequivalence test with another FluidNodeList"
         return "bool"
 

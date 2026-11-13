@@ -160,15 +160,13 @@ given the mass density, bulk modulus, and shear modulus (rho, K, mu)"""
         return "const StrengthModel<%(Dimension)s>&"
 
     # Comparison
-    @PYB11pyname("__eq__")
     @PYB11implementation("[](const SolidNodeList<%(Dimension)s>& self, const SolidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) == static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
-    def equal(self, rhs="const SolidNodeList<%(Dimension)s>&"):
+    def __eq__(self, rhs="const SolidNodeList<%(Dimension)s>&"):
         "Equivalence test with another SolidNodeList"
         return "bool"
 
-    @PYB11pyname("__ne__")
     @PYB11implementation("[](const SolidNodeList<%(Dimension)s>& self, const SolidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) != static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
-    def notEqual(self, rhs="const SolidNodeList<%(Dimension)s>&"):
+    def __ne__(self, rhs="const SolidNodeList<%(Dimension)s>&"):
         "Inequivalence test with another SolidNodeList"
         return "bool"
 
