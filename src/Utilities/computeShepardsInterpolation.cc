@@ -31,14 +31,14 @@ computeShepardsInterpolation(const FieldList<Dimension, DataType>& fieldList,
   using Vector = typename Dimension::Vector;
 
   // Some scratch variables.
-  size_t nodeListi, nodeListj;
+  size_t nodeListi;
   Scalar Wi, Wj;
   Vector rij, etai, etaj;
 
   // Prepare the return value.
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
   FieldList<Dimension, Scalar> wsum(FieldStorageType::CopyFields);
-  for (nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
+  for (nodeListi = 0; nodeListi < numNodeLists; ++nodeListi) {
     result.appendNewField(fieldList[nodeListi]->name(), fieldList[nodeListi]->nodeList(), DataTypeTraits<DataType>::zero());
     wsum.appendNewField("weight sum", fieldList[nodeListi]->nodeList(), 0.0);
   }
