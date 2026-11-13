@@ -19,6 +19,81 @@ GeomPlane<Dimension>::GeomPlane(const typename Dimension::Vector& point,
 }
 
 //------------------------------------------------------------------------------
+// Construct as the best fit to a cloud of points.
+//------------------------------------------------------------------------------
+// 1D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<1>>::GeomPlane(const Container<Dim<1>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<1>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal(Dim<1>::Vector::one()) {
+  REQUIRE2(points.size() > 0, "GeomPlane(points) ERROR: need at least 1 point.");
+}
+
+// 2D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<2>>::GeomPlane(const Container<Dim<2>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<2>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal() {
+  const unsigned n = points.size();
+  CONTRACT_VAR(n);
+  REQUIRE2(n >= 2, "GeomPlane(points) ERROR: need at least 2 points.");
+  double xy = 0.0, xx = 0.0;
+  for (const auto& v: points) {
+    const Vector d = v - mPoint;
+    xy += d.x()*d.y();
+    xx += d.x()*d.x();
+  }
+  const double m = xy*safeInvVar(xx);
+  mNormal = Vector(m, -1.0).unitVector();
+}
+
+// 3D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<3>>::GeomPlane(const Container<Dim<3>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal() {
+  const unsigned n = points.size();
+  CONTRACT_VAR(n);
+  REQUIRE2(n >= 3, "GeomPlane(points) ERROR: need at least 3 points.");
+  // Calc full 3x3 covariance matrix, excluding symmetries:
+  SymTensor A;
+  for (const auto& p: points) {
+    const auto r = p - mPoint;
+    A(0,0) += r.x() * r.x();
+    A(0,1) += r.x() * r.y();
+    A(0,2) += r.x() * r.z();
+    A(1,1) += r.y() * r.y();
+    A(1,2) += r.y() * r.z();
+    A(2,2) += r.z() * r.z();
+  }
+
+  const double det_x = A.yy()*A.zz() - A.yz()*A.yz();
+  const double det_y = A.xx()*A.zz() - A.xz()*A.xz();
+  const double det_z = A.xx()*A.yy() - A.xy()*A.xy();
+
+  const double det_max = std::max(det_x, std::max(det_y, det_z));
+  CHECK2(det_max > 0.0, "The points don't span a plane");
+
+  // Pick path with best conditioning:
+  if (det_max == det_x) {
+    const double a = (A.xz()*A.yz() - A.xy()*A.zz()) / det_x;
+    const double b = (A.xy()*A.yz() - A.xz()*A.yy()) / det_x;
+    mNormal = Vector(1.0, a, b).unitVector();
+  } else if (det_max == det_y) {
+    const double a = (A.yz()*A.xz() - A.xy()*A.zz()) / det_y;
+    const double b = (A.xy()*A.xz() - A.yz()*A.xx()) / det_y;
+    mNormal = Vector(a, 1.0, b).unitVector();
+  } else {
+    const double a = (A.yz()*A.xy() - A.xz()*A.yy()) / det_z;
+    const double b = (A.xz()*A.xy() - A.yz()*A.xx()) / det_z;
+    mNormal = Vector(a, b, 1.0);
+  }
+}
+
+//------------------------------------------------------------------------------
 // Negative operator (reverse the sign of the normal).
 //------------------------------------------------------------------------------
 template<typename Dimension>

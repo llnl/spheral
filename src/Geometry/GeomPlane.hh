@@ -29,10 +29,9 @@ public:
   SPHERAL_HOST_DEVICE GeomPlane(const Vector& point, const Vector& normal);
   SPHERAL_HOST_DEVICE GeomPlane& operator=(const GeomPlane& rhs) = default;
 
-  // // This special constructor finds a plane fitted to a collection of points.
-  // template<template<typename ...> typename Container>
-  // SPHERAL_HOST_DEVICE 
-  // explicit GeomPlane(const Container<Vector>& points);
+  // This special constructor finds a plane fitted to a collection of points.
+  template<template<typename ...> typename Container>
+  explicit GeomPlane(const Container<Vector>& points);
 
   // Destructor.
   SPHERAL_HOST_DEVICE ~GeomPlane() = default;
