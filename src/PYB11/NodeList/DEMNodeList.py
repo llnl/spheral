@@ -91,11 +91,17 @@ class DEMNodeList(NodeList):
 
     #...........................................................................
     # Comparison
-    def __eq__(self):
+    @PYB11pyname("__eq__")
+    @PYB11implementation("[](const DEMNodeList<%(Dimension)s>& self, const DEMNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) == static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
+    def equal(self, rhs="const DEMNodeList<%(Dimension)s>&"):
         "Equivalence test with another DEMNodeList"
+        return "bool"
 
-    def __ne__(self):
+    @PYB11pyname("__ne__")
+    @PYB11implementation("[](const DEMNodeList<%(Dimension)s>& self, const DEMNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) != static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
+    def notEqual(self, rhs="const DEMNodeList<%(Dimension)s>&"):
         "Inequivalence test with another DEMNodeList"
+        return "bool"
 
     @PYB11implementation("[](const DEMNodeList<%(Dimension)s>& self) -> std::uintptr_t { return reinterpret_cast<std::uintptr_t>(&self); }")
     def __hash__(self):
