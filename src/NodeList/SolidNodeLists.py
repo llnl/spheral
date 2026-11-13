@@ -1,4 +1,5 @@
 from SpheralCompiledPackages import *
+import warnings
 
 from spheralDimensions import spheralDimensions
 dims = spheralDimensions()
@@ -9,9 +10,6 @@ dims = spheralDimensions()
 def SolidNodeListFactory(ndim):
     suffix = "{}d".format(ndim)
     SolidNodeList = eval("SolidNodeList" + suffix)
-    TreeNeighbor = eval("TreeNeighbor" + suffix)
-    NestedGridNeighbor = eval("NestedGridNeighbor" + suffix)
-    Vector = eval("Vector" + suffix)
     NullStrength = eval("NullStrength" + suffix)
     def factory(name,
                 eos,
@@ -25,15 +23,10 @@ def SolidNodeListFactory(ndim):
                 maxNumNeighbors = 500,
                 rhoMin = 1.0e-10,
                 rhoMax = 1e10,
-
-                # Neighboring stuff
-                NeighborType = TreeNeighbor,
-                searchType = GatherScatter,
-                kernelExtent = 2.0,
-
-                # Parameters for TreeNeighbor
-                xmin = Vector.one * -10.0,
-                xmax = Vector.one *  10.0):
+                **unused):
+        if unused:
+            warnings.warn("makeSolidNodeList{}d ignoring unsupported arguments: {}".format(
+                ndim, ", ".join(sorted(unused))), stacklevel=2)
         result = SolidNodeList(name = name,
                                eos = eos,
                                strength = strength,
@@ -48,15 +41,6 @@ def SolidNodeListFactory(ndim):
                                rhoMax = rhoMax)
         result.eos = eos
         result.strength = strength
-        if NeighborType == TreeNeighbor:
-            result._neighbor = TreeNeighbor(result, searchType, kernelExtent, xmin, xmax)
-        elif NeighborType == NestedGridNeighbor:
-            print("SolidNodeList Deprecation Warning: NestedGridNeighbor is deprecated: suggest using TreeNeighbor.")
-            result._neighbor = NestedGridNeighbor(result, searchType, 
-                                                  kernelExtent = kernelExtent)
-        else:
-            raise ValueError("Unknown NeighborType")
-        result.registerNeighbor(result._neighbor)
         return result
     return factory
 
