@@ -33,6 +33,10 @@ Notable changes include:
       * Allows the value class to inherit from the view class, mirroring our other value/view implementations.
       * The dynamic stack limit on-device is no longer increased by default.
     * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
+    * Creating GPU friendly toplogical search with new Neighbor interface. This involves several user script changes to the API:
+      * NodeLists no longer have the Neighbor object: DataBase does
+      * Several boundary conditions now require the DataBase as a constructor argument
+      * A single Neighbor now searches across all NodeLists simultaneously
 
   * Build changes / improvements:
     * Major overhaul to CMake system:
