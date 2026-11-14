@@ -52,10 +52,6 @@ from PairwiseMultiValueField import *
 if not SpheralConfigs.gpu_enabled():
     from PythonNeighbor import *
 
-# Node IDs are shared by all dimensions.  Binding this vector opaquely preserves
-# mutations made by the master/refine-list methods.
-vector_of_NodeID = PYB11_bind_vector("std::pair<size_t, size_t>", opaque=True, local=False)
-
 for ndim in dims:
     suffix = f"{ndim}d"
     Dimension = f"Dim<{ndim}>"
