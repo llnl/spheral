@@ -1,150 +1,30 @@
 #include "NodeList/FluidNodeList.hh"
 #include "NodeList/NodeListRegistrar.hh"
+#include "DataBase/DataBase.hh"
 
 #include <algorithm>
 
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Constructor.
-// The input iterators must dereference to const NodeList*, and must be 
-// const FluidNodeLists underneath.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-template<typename NodeListIterator>
-inline
-ConnectivityMap<Dimension>::
-ConnectivityMap(const NodeListIterator& begin,
-                const NodeListIterator& end,
-                const bool buildGhostConnectivity,
-                const bool buildOverlapConnectivity,
-                const bool buildIntersectionConnectivity):
-  mNodeLists(),
-  mBuildGhostConnectivity(buildGhostConnectivity or buildIntersectionConnectivity),
-  mBuildOverlapConnectivity(buildOverlapConnectivity),
-  mBuildIntersectionConnectivity(buildIntersectionConnectivity),
-  mOffsets(),
-  mConnectivity(),
-  mNodeTraversalIndices(),
-  mKeys(FieldStorageType::CopyFields),
-  mCouplingPtr(std::make_shared<NodeCoupling>()) {
-
-  // The private method does the grunt work of filling in the connectivity once we have
-  // established the set of NodeLists.
-  rebuild(begin, end, mBuildGhostConnectivity, mBuildOverlapConnectivity, mBuildIntersectionConnectivity);
-}
-
-//------------------------------------------------------------------------------
-// Rebuild for a given set of NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-template<typename NodeListIterator>
-inline
-void
-ConnectivityMap<Dimension>::
-rebuild(const NodeListIterator& begin,
-        const NodeListIterator& end, 
-        const bool buildGhostConnectivity,
-        const bool buildOverlapConnectivity,
-        const bool buildIntersectionConnectivity) {
-  mBuildGhostConnectivity = buildGhostConnectivity or buildIntersectionConnectivity;
-  mBuildOverlapConnectivity = buildOverlapConnectivity;
-  mBuildIntersectionConnectivity = buildIntersectionConnectivity;
-  mOffsets.clear();
-
-  // Copy the set of NodeLists in the order prescribed by the NodeListRegistrar.
-  auto& registrar = NodeListRegistrar<Dimension>::instance();
-  mNodeLists = std::vector<const NodeList<Dimension>*>(begin, end);
-  registrar.sortInNodeListOrder(mNodeLists.begin(), mNodeLists.end());
-
-  computeConnectivity();
-  ENSURE(valid());
-}
-
-//------------------------------------------------------------------------------
-// Are we computing ghost connectivity?
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-bool
-ConnectivityMap<Dimension>::
-buildGhostConnectivity() const {
-  return mBuildGhostConnectivity;
-}
-
-//------------------------------------------------------------------------------
-// Are we computing overlap connectivity?
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-bool
-ConnectivityMap<Dimension>::
-buildOverlapConnectivity() const {
-  return mBuildOverlapConnectivity;
-}
-
-//------------------------------------------------------------------------------
-// Are we computing intersection connectivity?
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-bool
-ConnectivityMap<Dimension>::
-buildIntersectionConnectivity() const {
-  return mBuildIntersectionConnectivity;
-}
-
-//------------------------------------------------------------------------------
-// Get the set of NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-const std::vector<const NodeList<Dimension>*>&
-ConnectivityMap<Dimension>::
-nodeLists() const {
-  return mNodeLists;
-}
-
-
-//------------------------------------------------------------------------------
-// Get the set of NodePairs
-//------------------------------------------------------------------------------
-template<typename Dimension>
-inline
-const NodePairList&
-ConnectivityMap<Dimension>::
-nodePairList() const {
-  REQUIRE(mNodePairListPtr);
-  return *mNodePairListPtr;
-}
-
-template<typename Dimension>
-inline
-std::shared_ptr<NodePairList>
-ConnectivityMap<Dimension>::
-nodePairListPtr() const {
-  return mNodePairListPtr;
-}
-
-//------------------------------------------------------------------------------
 // Get the set of neighbors for the given node in the given NodeList.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-const std::vector< std::vector<int> >&
+const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
 connectivityForNode(const NodeList<Dimension>* nodeListPtr,
-                    const int nodeID) const {
+                    const size_t nodeID) const {
   if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
   REQUIRE(nodeID >= 0 and 
-          ((nodeID < (int)nodeListPtr->numInternalNodes()) or
-          (ghostValid and nodeID < (int)nodeListPtr->numNodes())));
-  const int nodeListID = std::distance(mNodeLists.begin(),
-                                       std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
-  REQUIRE(nodeListID < (int)mConnectivity.size() and nodeListID < (int)mOffsets.size());
+          ((nodeID < nodeListPtr->numInternalNodes()) or
+          (ghostValid and nodeID < nodeListPtr->numNodes())));
+  const auto nodeListID = mDataBase.nodeListIndex(nodeListPtr);
+  REQUIRE(nodeListID < mDataBase.numNodeLists() and nodeListID < mOffsets.size());
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mConnectivity[mOffsets[nodeListID] + nodeID];
 }
@@ -154,18 +34,20 @@ connectivityForNode(const NodeList<Dimension>* nodeListPtr,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-const std::vector< std::vector<int> >&
+const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
-connectivityForNode(const int nodeListID,
-                    const int nodeID) const {
+connectivityForNode(const size_t nodeListID,
+                    const size_t nodeID) const {
   if (mConnectivity.empty()) const_cast<ConnectivityMap<Dimension>*>(this)->buildPerPointConnectivity();
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
+  const auto& nodeLists = mDataBase.nodeListPtrs();
   CONTRACT_VAR(ghostValid);
-  REQUIRE(nodeListID >= 0 and nodeListID < (int)mConnectivity.size());
-  REQUIRE(nodeID >= 0 and 
-          ((nodeID < (int)mNodeLists[nodeListID]->numInternalNodes()) or
-          (ghostValid and nodeID < (int)mNodeLists[nodeListID]->numNodes())));
+  CONTRACT_VAR(nodeLists);
+  REQUIRE(nodeListID < nodeLists.size() and nodeListID < mOffsets.size());
+  REQUIRE((nodeID < nodeLists[nodeListID]->numInternalNodes()) or
+          (ghostValid and nodeID < nodeLists[nodeListID]->numNodes()));
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
   return mConnectivity[mOffsets[nodeListID] + nodeID];
 }
@@ -176,20 +58,21 @@ connectivityForNode(const int nodeListID,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-const std::vector< std::vector<int> >&
+const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
 overlapConnectivityForNode(const NodeList<Dimension>* nodeListPtr,
-                           const int nodeID) const {
+                           const size_t nodeID) const {
+  REQUIRE(mBuildOverlapConnectivity);
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
-  REQUIRE(nodeID >= 0 and 
-          ((nodeID < (int)nodeListPtr->numInternalNodes()) or
-          (ghostValid and nodeID < (int)nodeListPtr->numNodes())));
-  const int nodeListID = std::distance(mNodeLists.begin(),
-                                       std::find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
-  REQUIRE(nodeListID < (int)mConnectivity.size() and nodeListID < (int)mOffsets.size());
+  REQUIRE((nodeID < nodeListPtr->numInternalNodes()) or
+          (ghostValid and nodeID < nodeListPtr->numNodes()));
+  const auto nodeListID = mDataBase.nodeListIndex(nodeListPtr);
+  REQUIRE(nodeListID < mDataBase.numNodeLists() and nodeListID < mOffsets.size());
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mOverlapConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -198,18 +81,22 @@ overlapConnectivityForNode(const NodeList<Dimension>* nodeListPtr,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-const std::vector< std::vector<int> >&
+const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
-overlapConnectivityForNode(const int nodeListID,
-                           const int nodeID) const {
+overlapConnectivityForNode(const size_t nodeListID,
+                           const size_t nodeID) const {
+  REQUIRE(mBuildOverlapConnectivity);
   const bool ghostValid = (mBuildGhostConnectivity or
+                           mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
+  const auto& nodeLists = mDataBase.nodeListPtrs();
   CONTRACT_VAR(ghostValid);
-  REQUIRE(nodeListID >= 0 and nodeListID < (int)mConnectivity.size());
-  REQUIRE(nodeID >= 0 and 
-          ((nodeID < (int)mNodeLists[nodeListID]->numInternalNodes()) or
-          (ghostValid and nodeID < (int)mNodeLists[nodeListID]->numNodes())));
+  CONTRACT_VAR(nodeLists);
+  REQUIRE(nodeListID < nodeLists.size() and nodeListID < mOffsets.size());
+  REQUIRE((nodeID < nodeLists[nodeListID]->numInternalNodes()) or
+          (ghostValid and nodeID < nodeLists[nodeListID]->numNodes()));
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
+  REQUIRE(mOffsets[nodeListID] + nodeID < mOverlapConnectivity.size());
   return mOverlapConnectivity[mOffsets[nodeListID] + nodeID];
 }
 
@@ -221,16 +108,16 @@ inline
 size_t
 ConnectivityMap<Dimension>::
 numNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
-                    const int nodeID) const {
-  return mNumNeighbors(nodeListIndex(nodeListPtr), nodeID);
+                    const size_t nodeID) const {
+  return mNumNeighbors(mDataBase.nodeListIndex(nodeListPtr), nodeID);
 }
 
 template<typename Dimension>
 inline
 size_t
 ConnectivityMap<Dimension>::
-numNeighborsForNode(const int nodeListID,
-                    const int nodeID) const {
+numNeighborsForNode(const size_t nodeListID,
+                    const size_t nodeID) const {
   return mNumNeighbors(nodeListID, nodeID);
 }
 
@@ -242,7 +129,7 @@ inline
 size_t
 ConnectivityMap<Dimension>::
 numOverlapNeighborsForNode(const NodeList<Dimension>* nodeListPtr,
-                           const int nodeID) const {
+                           const size_t nodeID) const {
   const auto& allneighbors = overlapConnectivityForNode(nodeListPtr, nodeID);
   size_t result = 0u;
   for (const auto& neighbors: allneighbors) result += neighbors.size();
@@ -253,10 +140,11 @@ template<typename Dimension>
 inline
 size_t
 ConnectivityMap<Dimension>::
-numOverlapNeighborsForNode(const int nodeListID,
-                           const int nodeID) const {
-  REQUIRE(nodeListID < (int)mNodeLists.size());
-  return this->numOverlapNeighborsForNode(mNodeLists[nodeListID], nodeID);
+numOverlapNeighborsForNode(const size_t nodeListID,
+                           const size_t nodeID) const {
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  REQUIRE(nodeListID < nodeLists.size());
+  return this->numOverlapNeighborsForNode(nodeLists[nodeListID], nodeID);
 }
 
 //------------------------------------------------------------------------------
@@ -267,9 +155,9 @@ template<typename Dimension>
 inline
 bool
 ConnectivityMap<Dimension>::
-calculatePairInteraction(const int nodeListi, const int i,
-                         const int nodeListj, const int j,
-                         const int firstGhostNodej) const {
+calculatePairInteraction(const size_t nodeListi, const size_t i,
+                         const size_t nodeListj, const size_t j,
+                         const size_t firstGhostNodej) const {
   return ((nodeListj > nodeListi) or
           (nodeListj == nodeListi and j > i) or
           (nodeListj < nodeListi and j >= firstGhostNodej));
@@ -283,8 +171,8 @@ template<typename Dimension>
 inline
 typename ConnectivityMap<Dimension>::const_iterator
 ConnectivityMap<Dimension>::
-begin(const int nodeList) const {
-  REQUIRE(nodeList >= 0 and nodeList < (int)mNodeTraversalIndices.size());
+begin(const size_t nodeList) const {
+  REQUIRE(nodeList < mNodeTraversalIndices.size());
   return mNodeTraversalIndices[nodeList].begin();
 }
 
@@ -292,8 +180,8 @@ template<typename Dimension>
 inline
 typename ConnectivityMap<Dimension>::const_iterator
 ConnectivityMap<Dimension>::
-end(const int nodeList) const {
-  REQUIRE(nodeList >= 0 and nodeList < (int)mNodeTraversalIndices.size());
+end(const size_t nodeList) const {
+  REQUIRE(nodeList < mNodeTraversalIndices.size());
   return mNodeTraversalIndices[nodeList].end();
 }
 
@@ -304,8 +192,8 @@ template<typename Dimension>
 inline
 size_t
 ConnectivityMap<Dimension>::
-numNodes(const int nodeList) const {
-  REQUIRE(nodeList >= 0 and nodeList < (int)mNodeLists.size());
+numNodes(const size_t nodeList) const {
+  REQUIRE(nodeList >= 0 and nodeList < mDataBase.numNodeLists());
   return mNodeTraversalIndices[nodeList].size();
 }
 
@@ -314,11 +202,11 @@ numNodes(const int nodeList) const {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 inline
-int
+size_t
 ConnectivityMap<Dimension>::
-ithNode(const int nodeList, const int index) const {
-  REQUIRE(nodeList >= 0 and nodeList < (int)mNodeLists.size());
-  REQUIRE(index >= 0 and index < (int)mNodeTraversalIndices[nodeList].size());
+ithNode(const size_t nodeList, const size_t index) const {
+  REQUIRE(nodeList < mDataBase.numNodeLists());
+  REQUIRE(index < mNodeTraversalIndices[nodeList].size());
   return mNodeTraversalIndices[nodeList][index];
 }
 
@@ -329,40 +217,17 @@ template<typename Dimension>
 inline
 const NodeList<Dimension>&
 ConnectivityMap<Dimension>::
-nodeList(const int index) const {
-  REQUIRE(index >= 0 and index < (int)mNodeLists.size());
-  return *(mNodeLists[index]);
-}
-
-//------------------------------------------------------------------------------
-// The NodeCoupling functor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-NodeCoupling&
-ConnectivityMap<Dimension>::
-coupling() {
-  return *mCouplingPtr;
-}
-
-template<typename Dimension>
-const NodeCoupling&
-ConnectivityMap<Dimension>::
-coupling() const {
-  return *mCouplingPtr;
-}
-
-template<typename Dimension>
-void
-ConnectivityMap<Dimension>::
-coupling(typename ConnectivityMap<Dimension>::NodeCouplingPtr couplingPtr) {
-  mCouplingPtr = couplingPtr;
+nodeList(const size_t index) const {
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  REQUIRE(index < nodeLists.size());
+  return *(nodeLists[index]);
 }
 
 //------------------------------------------------------------------------------
 // intersection connectivity, if available
 //------------------------------------------------------------------------------
 template<typename Dimension>
-const std::vector<std::vector<int>>&
+const std::vector<std::vector<size_t>>&
 ConnectivityMap<Dimension>::
 intersectionConnectivity(const NodePairIdxType& pair) const {
   const auto itr = mIntersectionConnectivity.find(pair);

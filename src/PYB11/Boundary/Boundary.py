@@ -28,6 +28,7 @@ class Boundary:
     #...........................................................................
     # Virtual methods
     @PYB11pycppname("applyGhostBoundary")
+    @PYB11virtual
     @PYB11const
     def applyGhostBoundary0(self,
                             fieldBase = "FieldBase<%(Dimension)s>&"):
@@ -270,52 +271,6 @@ class Boundary:
                        old2newIndexMap = "FieldList<%(Dimension)s, size_t>&",
                        numNodesRemoved = "std::vector<size_t>&"):
         "Use a set of flags to cull out inactive ghost nodes."
-        return "void"
-
-    @PYB11pycppname("applyGhostBoundary")
-    @PYB11virtual
-    @PYB11const
-    def applyGhostBoundary20(self,
-                             field = "Field<%(Dimension)s, std::vector<Scalar>>&"):
-        "We provide default copies for arrays of values, but descendants can override these."
-        return "void"
-
-    @PYB11pycppname("applyGhostBoundary")
-    @PYB11virtual
-    @PYB11const
-    def applyGhostBoundary21(self,
-                             field = "Field<%(Dimension)s, std::vector<Vector>>&"):
-        "We provide default copies for arrays of values, but descendants can override these."
-        return "void"
-
-    @PYB11pycppname("enforceBoundary")
-    @PYB11virtual
-    @PYB11const
-    def enforceBoundary20(self,
-                          field = "Field<%(Dimension)s, std::vector<Scalar>>&"):
-        return "void"
-
-    @PYB11pycppname("enforceBoundary")
-    @PYB11virtual
-    @PYB11const
-    def enforceBoundary21(self,
-                          field = "Field<%(Dimension)s, std::vector<Vector>>&"):
-        return "void"
-
-    @PYB11pycppname("applyGhostBoundary")
-    @PYB11virtual
-    @PYB11const
-    def applyGhostBoundary22(self,
-                             field = "Field<%(Dimension)s, RKCoefficients<%(Dimension)s>>&"):
-        "We provide default copies for RKCoefficients, but descendants can override these."
-        return "void"
-
-    @PYB11pycppname("enforceBoundary")
-    @PYB11virtual
-    @PYB11const
-    def enforceBoundary22(self,
-                          field = "Field<%(Dimension)s, RKCoefficients<%(Dimension)s>>&"):
-        "Default noop for RKCoefficients"
         return "void"
 
     @PYB11virtual

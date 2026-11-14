@@ -2,27 +2,29 @@
 # AxisBoundaryRZ
 #-------------------------------------------------------------------------------
 from PYB11Generator import *
-from Boundary import *
+from ReflectingBoundary import *
 from BoundaryAbstractMethods import *
 
 @PYB11template()
 @PYB11template_dict({"Dimension" : "Dim<2>"})
-class AxisBoundaryRZ(Boundary):
+class AxisBoundaryRZ(ReflectingBoundary):
 
     PYB11typedefs = """
-    typedef %(Dimension)s::Scalar Scalar;
-    typedef %(Dimension)s::Vector Vector;
-    typedef %(Dimension)s::Tensor Tensor;
-    typedef %(Dimension)s::SymTensor SymTensor;
-    typedef %(Dimension)s::ThirdRankTensor ThirdRankTensor;
-    typedef %(Dimension)s::FourthRankTensor FourthRankTensor;
-    typedef %(Dimension)s::FifthRankTensor FifthRankTensor;
-    typedef %(Dimension)s::FacetedVolume FacetedVolume;
+  using Scalar = %(Dimension)s::Scalar;
+  using Vector = %(Dimension)s::Vector;
+  using Tensor = %(Dimension)s::Tensor;
+  using SymTensor = %(Dimension)s::SymTensor;
+  using ThirdRankTensor = %(Dimension)s::ThirdRankTensor;
+  using FourthRankTensor = %(Dimension)s::FourthRankTensor;
+  using FifthRankTensor = %(Dimension)s::FifthRankTensor;
+  using FacetedVolume = %(Dimension)s::FacetedVolume;
+  using Plane = GeomPlane<%(Dimension)s>;
 """
 
     #...........................................................................
     # Constructors
     def pyinit(self,
+               dataBase = "const DataBase<%(Dimension)s>&",
                etamin = "double"):
         "Construct with the DataBase"
 

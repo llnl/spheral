@@ -10,9 +10,9 @@
 #include "Geometry/Dimension.hh"
 #include "binFieldList2Lattice.hh"
 #include "Kernel/TableKernel.hh"
+#include "Neighbor/HExtent.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
 #include "Geometry/MathTraits.hh"
 #include "Utilities/testBoxIntersection.hh"
@@ -48,7 +48,7 @@ incrementCellValues(vector<Value>& values,
                     const TableKernel<Dim<1> >& W) {
   REQUIRE(nsample.size() == 1 and nsample[0] > 0);
   typedef Dim<1>::Vector Vector;
-  const Vector extent = Neighbor<Dim<1> >::HExtent(Hi, W.kernelExtent());
+  const Vector extent = HExtent<Dim<1>>(Hi, W.kernelExtent());
   const double xstep = (xmax.x() - xmin.x())/nsample[0];
   const size_t nx = size_t(extent.x()/xstep);
   const int ipx = max(0, min(int(nsample[0]) - 1, int((xi.x() - xmin.x())/xstep)));
@@ -77,7 +77,7 @@ incrementCellValues(vector<Value>& values,
   REQUIRE(nsample.size() == 2 and nsample[0] > 0 and nsample[1] > 0);
   typedef Dim<2>::Vector Vector;
   const unsigned ncells = nsample[0]*nsample[1];
-  const Vector extent = Neighbor<Dim<2> >::HExtent(Hi, W.kernelExtent());
+  const Vector extent = HExtent<Dim<2>>(Hi, W.kernelExtent());
   const double xstep = (xmax.x() - xmin.x())/nsample[0];
   const double ystep = (xmax.y() - xmin.y())/nsample[1];
   const size_t nx = size_t(extent.x()/xstep);
@@ -116,7 +116,7 @@ incrementCellValues(vector<Value>& values,
   REQUIRE(nsample.size() == 2 and nsample[0] > 0 and nsample[1] > 0 and nsample[2] > 0);
   typedef Dim<3>::Vector Vector;
   const unsigned ncells = nsample[0]*nsample[1]*nsample[2];
-  const Vector extent = Neighbor<Dim<3> >::HExtent(Hi, W.kernelExtent());
+  const Vector extent = HExtent<Dim<3>>(Hi, W.kernelExtent());
   const double xstep = (xmax.x() - xmin.x())/nsample[0];
   const double ystep = (xmax.y() - xmin.y())/nsample[1];
   const double zstep = (xmax.z() - xmin.z())/nsample[2];
@@ -187,26 +187,27 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   vector<Value> result(ntotal, DataTypeTraits<Value>::zero());
 
   // Loop over the nodes.
-  for (AllNodeIterator<Dimension> nodeItr = fieldList.nodeBegin();
-       nodeItr != fieldList.nodeEnd();
-       ++nodeItr) {
+  for (auto fieldi = 0u; fieldi < fieldList.numFields(); ++fieldi) {
+    const auto* nodeListPtr = fieldList[fieldi]->nodeListPtr();
+    const auto& positions = nodeListPtr->positions();
+    for (auto nodei = 0u; nodei < nodeListPtr->numNodes(); ++nodei) {
 
     // Mask out any parallel boundary nodes.
 #ifdef SPHERAL_ENABLE_MPI
-    const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
-                          count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
-                                distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
-                                nodeItr.nodeID()) == 0);
+    const bool useNode = ((not distributedBoundary.haveNodeList(*nodeListPtr)) or
+                          count(distributedBoundary.ghostNodes(*nodeListPtr).begin(),
+                                distributedBoundary.ghostNodes(*nodeListPtr).end(), nodei) == 0);
 #else
     const bool useNode = true;
 #endif
-    const Vector& xi = nodeItr.position();
+    const Vector& xi = positions(nodei);
     if (useNode and testPointInBox(xi, xmin, xmax)) {
 
       // Add this nodes contribution to it's cell.
-      const size_t i = latticeIndex(xi, xmin, xmax, nsample);
-      result[i] += fieldList(nodeItr);
+      const size_t latticei = latticeIndex(xi, xmin, xmax, nsample);
+      result[latticei] += fieldList(fieldi, nodei);
 
+    }
     }
   }
 
@@ -275,24 +276,26 @@ binFieldList2Lattice(const FieldList<Dimension, Value>& fieldList,
   vector<Value> result(ntotal, DataTypeTraits<Value>::zero());
 
   // Loop over the nodes.
-  for (AllNodeIterator<Dimension> nodeItr = fieldList.nodeBegin();
-       nodeItr != fieldList.nodeEnd();
-       ++nodeItr) {
+  for (auto fieldi = 0u; fieldi < fieldList.numFields(); ++fieldi) {
+    const auto* nodeListPtr = fieldList[fieldi]->nodeListPtr();
+    const auto& positions = nodeListPtr->positions();
+    const auto& Hfield = nodeListPtr->Hfield();
+    for (auto nodei = 0u; nodei < nodeListPtr->numNodes(); ++nodei) {
 
     // Mask out any parallel boundary nodes.
 #ifdef SPHERAL_ENABLE_MPI
-    const bool useNode = ((not distributedBoundary.haveNodeList(*nodeItr.nodeListPtr())) or
-                          count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
-                                distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
-                                nodeItr.nodeID()) == 0);
+    const bool useNode = ((not distributedBoundary.haveNodeList(*nodeListPtr)) or
+                          count(distributedBoundary.ghostNodes(*nodeListPtr).begin(),
+                                distributedBoundary.ghostNodes(*nodeListPtr).end(), nodei) == 0);
 #else
     const bool useNode = true;
 #endif
-    if (useNode and testPointInBox(nodeItr.position(), xmin, xmax)) {
+    if (useNode and testPointInBox(positions(nodei), xmin, xmax)) {
 
       // Add this nodes contribution to it's cells.
-      incrementCellValues(result, fieldList(nodeItr), nodeItr.position(), nodeItr.H(), xmin, xmax, nsample, W);
+      incrementCellValues(result, fieldList(fieldi, nodei), positions(nodei), Hfield(nodei), xmin, xmax, nsample, W);
 
+    }
     }
   }
 

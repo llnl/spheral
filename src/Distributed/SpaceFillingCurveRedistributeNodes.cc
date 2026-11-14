@@ -15,7 +15,6 @@
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/bisectSearch.hh"
@@ -105,18 +104,16 @@ redistributeNodes(DataBase<Dimension>& dataBase,
     if (this->workBalance()) {
 
       // Enforce boundary conditions for the work computation.
-      for (auto* nodeListPtr: dataBase.nodeListPtrs()) {
-        nodeListPtr->numGhostNodes(0);
-        nodeListPtr->neighbor().updateNodes();
-      }
+      for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
+      dataBase.updateNeighbors();
       for (auto* boundaryPtr: boundaries) {
         boundaryPtr->setAllGhostNodes(dataBase);
         boundaryPtr->finalizeGhostBoundary();
-        for (auto* nodeListPtr: dataBase.fluidNodeListPtrs()) nodeListPtr->neighbor().updateNodes();
+        dataBase.updateNeighbors();
       }
 
       // Get the local description of the domain distribution, with the work per node filled in.
-      workField = this->workPerNode(dataBase, 1.0);
+      workField = this->workPerNode(dataBase);
 
     } else {
 
@@ -267,8 +264,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       vector<size_t> ordering(n);
       for (auto i = 0u; i < n; ++i) ordering[orderedkeys[i].second] = i;
       nodeListPtr->reorderNodes(ordering);
-      nodeListPtr->neighbor().updateNodes();
     }
+    dataBase.reinitializeNeighbors();
 
     // Notify everyone that the nodes have just been shuffled around.
     RedistributionRegistrar::instance().broadcastRedistributionNotifications();
@@ -322,21 +319,13 @@ SpaceFillingCurveRedistributeNodes<Dimension>::
 buildIndex2IDPairs(const FieldList<Dimension, typename SpaceFillingCurveRedistributeNodes<Dimension>::Key>& indices,
                    const vector<DomainNode<Dimension> >& domainNodes) const {
 
-  vector<pair<Key, DomainNode<Dimension> > > result;
-  result.reserve(domainNodes.size());
-  size_t i = 0;
-  for (InternalNodeIterator<Dimension> nodeItr = indices.internalNodeBegin();
-       nodeItr != indices.internalNodeEnd();
-       ++nodeItr, ++i) {
-    CHECK(i < domainNodes.size());
-    result.push_back(pair<Key, DomainNode<Dimension> >(indices(nodeItr),
-                                                       domainNodes[i]));
+  vector<pair<Key, DomainNode<Dimension>>> result(domainNodes.size());
+  for (auto [i, dn]: enumerate(domainNodes)) {
+    result[i] = std::make_pair(indices(dn.nodeListID, dn.localNodeID), dn);
   }
-  ENSURE(i == domainNodes.size());
-  ENSURE(result.size() == domainNodes.size());
 
   // Sort locally by the hashed index.
-  sort(result.begin(), result.end(), SortNodesByHashedIndex<DomainNode<Dimension> >());
+  std::sort(result.begin(), result.end(), SortNodesByHashedIndex<DomainNode<Dimension> >());
   return result;
 }
 

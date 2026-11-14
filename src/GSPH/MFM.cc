@@ -19,7 +19,6 @@
 #include "DataBase/ReplaceWithRatioPolicy.hh"
 
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
@@ -246,4 +245,3 @@ restoreState(const FileIO& file, const string& pathName) {
 }
 
 }
-

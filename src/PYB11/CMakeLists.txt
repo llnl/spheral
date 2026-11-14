@@ -7,7 +7,6 @@ set (_python_packages
   DataOutput
   NodeList
   FieldView
-  FieldListView
   Field
   FieldList
   Kernel

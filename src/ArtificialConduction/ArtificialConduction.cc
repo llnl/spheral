@@ -17,6 +17,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/safeInv.hh"
+#include "Utilities/range.hh"
 
 namespace Spheral {
 
@@ -35,13 +36,6 @@ ArtificialConduction(const TableKernel<Dimension>& W,
   mAlphaArCond(alphaArCond),
   mACcorrectionOrder(ACcorrectionOrder){
 
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ArtificialConduction<Dimension>::~ArtificialConduction() {
 }
 
 //------------------------------------------------------------------------------
@@ -128,9 +122,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   }
 
   // The connectivity map
-  const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap();
-  const vector<const NodeList<Dimension>*>& nodeLists = connectivityMap.nodeLists();
-  const size_t numNodeLists = nodeLists.size();
+  const auto& connectivityMap = dataBase.connectivityMap();
+  const auto& nodeLists = connectivityMap.nodeLists();
+  const auto  numNodeLists = nodeLists.size();
 
   // The relevant fields
   const FieldList<Dimension, Scalar> mass = state.fields(HydroFieldNames::mass, 0.0);
@@ -164,17 +158,14 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   }
 
   // Start our big loop over all FluidNodeLists.
-  size_t nodeListi = 0;
-  for (typename DataBase<Dimension>::ConstFluidNodeListIterator itr = dataBase.fluidNodeListBegin();
-       itr != dataBase.fluidNodeListEnd();
-       ++itr, ++nodeListi) {
-    const NodeList<Dimension>& nodeList = **itr;
+  for (auto [nodeListi, nptr]: enumerate(dataBase.fluidNodeListPtrs())) {
+    const NodeList<Dimension>& nodeList = *nptr;
 
     // Iterate over the internal nodes in this NodeList.
     for (typename ConnectivityMap<Dimension>::const_iterator iItr = connectivityMap.begin(nodeListi);
          iItr != connectivityMap.end(nodeListi);
          ++iItr) {
-      const int i = *iItr;
+      const auto i = *iItr;
 
       // Get the state for node i.
       const Vector& ri    = position(nodeListi, i);
@@ -194,25 +185,22 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
       Scalar& vsigi = vsigMax(nodeListi, i);
 
       // Get the connectivity info for this node.
-      const vector< vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
+      const auto& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
 
       // Iterate over the NodeLists.
       for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
 
         // Connectivity of this node with this NodeList.  We only need to proceed if
         // there are some nodes in this list.
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+        const auto& connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
 
           // Loop over the neighbors.
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
-            const int firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
+          for (const auto j: connectivity) {
+            const auto firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
 
             // Only proceed if this node pair has not been calculated yet.
             if (connectivityMap.calculatePairInteraction(nodeListi, i,
@@ -320,7 +308,7 @@ dt(const DataBase<Dimension>& dataBase,
        nodeListItr != dataBase.fluidNodeListEnd();
        ++nodeListItr, ++nodeListi) {
     const FluidNodeList<Dimension>& fluidNodeList = **nodeListItr;
-    const Scalar kernelExtent = fluidNodeList.neighbor().kernelExtent();
+    const Scalar kernelExtent = dataBase.kernelExtent();
     CONTRACT_VAR(kernelExtent);
     CHECK(kernelExtent > 0.0);
 

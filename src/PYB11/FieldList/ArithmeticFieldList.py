@@ -16,7 +16,6 @@ class ArithmeticFieldList(__FieldListBase):
     using Scalar = %(Dimension)s::Scalar;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
-    using ViewType = typename FieldListType::ViewType;
 """
 
     # @PYB11const
@@ -101,6 +100,32 @@ class ArithmeticFieldList(__FieldListBase):
 
     #...........................................................................
     # Methods
+    def applyMin(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s floor on the values of the FieldList."
+        return "void"
+
+    def applyMax(self, rhs="const %(Value)s&"):
+        "Enforce a %(Value)s ceiling on the values of the FieldList."
+        return "void"
+
+    @PYB11const
+    def localMin(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the local minimum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def localMax(self,
+                 includeGhosts = ("bool", "false")):
+        "Return the local maximum value in the FieldList."
+        return "%(Value)s"
+
+    @PYB11const
+    def localSumElements(self,
+                         includeGhosts = ("bool", "false")):
+        "Return the local sum of the elements in the FieldList."
+        return "%(Value)s"
+
     @PYB11const
     def min(self,
             includeGhosts = ("bool", "false")):

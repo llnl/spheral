@@ -12,18 +12,12 @@
 #include "Geometry/GeometryRegistrar.hh"
 #include "NodeListRegistrar.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
-#include "Neighbor/Neighbor.hh"
-#include "DataBase/State.hh"
-#include "Kernel/TableKernel.hh"
 #include "Utilities/DBC.hh"
-#include "Utilities/packElement.hh"
 #include "Utilities/SpheralMessage.hh"
 #include "Hydro/HydroFieldNames.hh"
-#include "DataBase/IncrementState.hh"
-#include "DataBase/ReplaceState.hh"
 
 #include <algorithm>
+#include <functional>
 using std::vector;
 using std::list;
 using std::string;
@@ -60,9 +54,19 @@ NodeList<Dimension>::NodeList(std::string name,
   mMassRZptr(),
   mWork(HydroFieldNames::work),
   mFieldBases(),
-  mNeighborPtr(nullptr),
-  mDummyList(),
   mRestart(registerWithRestart(*this, 10)) {
+
+  // Initialize the inherited live base view.  Specialized NodeLists build
+  // their complete value snapshots on demand rather than inheriting another
+  // View and forming a diamond around this state.
+  this->mNumNodes = numInternal + numGhost;
+  this->mFirstGhostNode = numInternal;
+  this->mhmin = hmin;
+  this->mhmax = hmax;
+  this->mhminratio = hminratio;
+  this->mNodesPerSmoothingScale = nPerh;
+  this->mMaxNumNeighbors = maxNumNeighbors;
+  updateViewHash();
 
   NodeListRegistrar<Dimension>::instance().registerNodeList(*this);
 
@@ -71,7 +75,6 @@ NodeList<Dimension>::NodeList(std::string name,
   mVelocity.setNodeList(*this);
   mH.setNodeList(*this);
   mWork.setNodeList(*this);
-  mDummyList.push_back(this);
 
   // If we're in RZ allocate massRZ
   if (GeometryRegistrar::coords() == CoordinateType::RZ) {
@@ -128,148 +131,6 @@ NodeList<Dimension>::numGhostNodes(size_t size) {
 }
 
 //------------------------------------------------------------------------------
-// Provide NodeIterators for all nodes in this NodeList.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-AllNodeIterator<Dimension>
-NodeList<Dimension>::nodeBegin() const {
-  return AllNodeIterator<Dimension>(mDummyList.begin(),
-                                    mDummyList.begin(),
-                                    mDummyList.end());
-}
-
-template<typename Dimension>
-AllNodeIterator<Dimension>
-NodeList<Dimension>::nodeEnd() const {
-  return AllNodeIterator<Dimension>(mDummyList.end(),
-                                    mDummyList.begin(),
-                                    mDummyList.end());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for internal nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-InternalNodeIterator<Dimension>
-NodeList<Dimension>::internalNodeBegin() const {
-  return InternalNodeIterator<Dimension>(mDummyList.begin(),
-                                         mDummyList.begin(),
-                                         mDummyList.end());
-}
-
-template<typename Dimension>
-InternalNodeIterator<Dimension>
-NodeList<Dimension>::internalNodeEnd() const {
-  return InternalNodeIterator<Dimension>(mDummyList.end(),
-                                         mDummyList.begin(),
-                                         mDummyList.end());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for ghost nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-GhostNodeIterator<Dimension>
-NodeList<Dimension>::ghostNodeBegin() const {
-  return GhostNodeIterator<Dimension>(mDummyList.begin(),
-                                      mDummyList.begin(),
-                                      mDummyList.end(),
-                                      this->firstGhostNode());
-}
-
-template<typename Dimension>
-GhostNodeIterator<Dimension>
-NodeList<Dimension>::ghostNodeEnd() const {
-  return GhostNodeIterator<Dimension>(mDummyList.end(),
-                                      mDummyList.begin(),
-                                      mDummyList.end());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for master neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MasterNodeIterator<Dimension>
-NodeList<Dimension>::masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
-  REQUIRE(mNeighborPtr != 0);
-  REQUIRE(masterLists.size() == 1);
-  if (masterLists[0].size() > 0) {
-    return MasterNodeIterator<Dimension>(mDummyList.begin(),
-                                         mDummyList.begin(),
-                                         mDummyList.end(),
-                                         masterLists[0].begin(),
-                                         masterLists);
-  } else {
-    return this->masterNodeEnd();
-  }
-}
-
-template<typename Dimension>
-MasterNodeIterator<Dimension>
-NodeList<Dimension>::masterNodeEnd() const {
-  return MasterNodeIterator<Dimension>(mDummyList.end(),
-                                       mDummyList.begin(),
-                                       mDummyList.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for coarse neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-NodeList<Dimension>::coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
-  REQUIRE(mNeighborPtr != 0);
-  REQUIRE(coarseNeighbors.size() == 1);
-  if (coarseNeighbors[0].size() > 0) {
-    return CoarseNodeIterator<Dimension>(mDummyList.begin(),
-                                         mDummyList.begin(),
-                                         mDummyList.end(),
-                                         coarseNeighbors[0].begin(),
-                                         coarseNeighbors);
-  } else {
-    return this->coarseNodeEnd();
-  }
-}
-
-template<typename Dimension>
-CoarseNodeIterator<Dimension>
-NodeList<Dimension>::coarseNodeEnd() const {
-  return CoarseNodeIterator<Dimension>(mDummyList.end(),
-                                       mDummyList.begin(),
-                                       mDummyList.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node iterators for refine neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-NodeList<Dimension>::refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
-  REQUIRE(mNeighborPtr != 0);
-  REQUIRE(refineNeighbors.size() == 1);
-  if (refineNeighbors[0].size() > 0) {
-    return RefineNodeIterator<Dimension>(mDummyList.begin(),
-                                         mDummyList.begin(),
-                                         mDummyList.end(),
-                                         refineNeighbors[0].begin(),
-                                         refineNeighbors);
-  } else {
-    return this->refineNodeEnd();
-  }
-}
-
-template<typename Dimension>
-RefineNodeIterator<Dimension>
-NodeList<Dimension>::refineNodeEnd() const {
-  return RefineNodeIterator<Dimension>(mDummyList.end(),
-                                       mDummyList.begin(),
-                                       mDummyList.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
 // Set the mass field.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -279,6 +140,7 @@ mass(const Field<Dimension, typename Dimension::Scalar>& m) {
   mMass = m;
   mMass.name(HydroFieldNames::mass);
   refreshMassView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -292,6 +154,7 @@ massRZ(const Field<Dimension, typename Dimension::Scalar>& m) {
   *mMassRZptr = m;
   mMassRZptr->name(HydroFieldNames::massRZ);
   refreshMassRZView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -304,6 +167,7 @@ positions(const Field<Dimension, typename Dimension::Vector>& r) {
   mPositions = r;
   mPositions.name(HydroFieldNames::position);
   refreshPositionsView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -316,6 +180,7 @@ velocity(const Field<Dimension, typename Dimension::Vector>& v) {
   mVelocity = v;
   mVelocity.name(HydroFieldNames::velocity);
   refreshVelocityView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -328,6 +193,7 @@ Hfield(const Field<Dimension, typename Dimension::SymTensor>& H) {
   mH = H;
   mH.name(HydroFieldNames::H);
   refreshHfieldView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -340,6 +206,7 @@ work(const Field<Dimension, typename Dimension::Scalar>& w) {
   mWork = w;
   mWork.name(HydroFieldNames::work);
   refreshWorkView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -391,6 +258,16 @@ NodeList<Dimension>::refreshView() {
   refreshVelocityView();
   refreshHfieldView();
   refreshWorkView();
+  ++this->mGeneration;
+}
+
+//------------------------------------------------------------------------------
+// Update the stable identity copied into NodeListView objects.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::updateViewHash() {
+  this->mHash = std::hash<std::string>{}(mName);
 }
 
 //------------------------------------------------------------------------------
@@ -626,6 +503,7 @@ restoreState(const FileIO& file, const string& pathName) {
 
   // Restore the name of the NodeList.
   file.read(mName, pathName + "/name");
+  updateViewHash();
 
   // Read and reset the number of internal nodes.
   size_t numNodes;
@@ -640,10 +518,6 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mWork, pathName + "/work");
   if (mMassRZptr) file.read(*mMassRZptr, pathName + "/massRZ");
   refreshView();
-
-  // The neighbor object doesn't actually write out state, but does need to be
-  // reinitialized with the new NodeList state.
-  mNeighborPtr->updateNodes();
 }
 
 //------------------------------------------------------------------------------
@@ -675,27 +549,6 @@ NodeList<Dimension>::unregisterField(FieldBase<Dimension>& field) const {
                        [&](const std::reference_wrapper<FieldBase<Dimension>>& x) { return &(x.get()) == &field; });
     if (itr != mFieldBases.end()) mFieldBases.erase(itr);
   }
-}
-
-//------------------------------------------------------------------------------
-// Register the given neighbor object with this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::
-registerNeighbor(Neighbor<Dimension>& neighbor) {
-  DEBUG_LOG << "NodeList::registerNeighbor : " << mName << " " << this << " : " << &neighbor;
-  mNeighborPtr = &neighbor;
-}
-
-//------------------------------------------------------------------------------
-// Unregister the current neighbor object from this node list.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-NodeList<Dimension>::unregisterNeighbor() {
-  DEBUG_LOG << "NodeList::unregisterNeighbor : " << mName << " " << this;
-  mNeighborPtr = nullptr;
 }
 
 }

@@ -22,23 +22,23 @@ class CylindricalBoundary: public Boundary<Dim<3> > {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef Dim<3> Dimension;
-  typedef Dimension::Scalar Scalar;
-  typedef Dimension::Vector Vector;
-  typedef Dimension::Tensor Tensor;
-  typedef Dimension::SymTensor SymTensor;
-  typedef Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef Dimension::FourthRankTensor FourthRankTensor;
-  typedef Dimension::FifthRankTensor FifthRankTensor;
-  typedef Dimension::FacetedVolume FacetedVolume;
+  using Dimension = Dim<3>;
+  using Scalar = Dimension::Scalar;
+  using Vector = Dimension::Vector;
+  using Tensor = Dimension::Tensor;
+  using SymTensor = Dimension::SymTensor;
+  using ThirdRankTensor = Dimension::ThirdRankTensor;
+  using FourthRankTensor = Dimension::FourthRankTensor;
+  using FifthRankTensor = Dimension::FifthRankTensor;
+  using FacetedVolume = Dimension::FacetedVolume;
 
-  typedef Boundary<Dimension>::BoundaryNodes BoundaryNodes;
+  using BoundaryNodes = Boundary<Dimension>::BoundaryNodes;
 
   // Constructors and destructors.
   CylindricalBoundary(const DataBase<Dim<3> >& dataBase);
-  virtual ~CylindricalBoundary();
+  virtual ~CylindricalBoundary() = default;
 
-  // Use the given NodeList's neighbor object to select the ghost nodes.
+  // Select the ghost nodes.
   virtual void setGhostNodes(NodeList<Dimension>& nodeList) override;
   virtual void updateGhostNodes(NodeList<Dimension>& nodeList) override;
 
@@ -84,6 +84,7 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  const DataBase<Dim<3>>& mDataBase;
   FieldList<Dim<3>, Scalar> mDeltaPhi;
   FieldList<Dim<3>, Vector> mGhostPositions;
 

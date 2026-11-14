@@ -21,16 +21,6 @@
 
 namespace Spheral {
 
-template<typename Dimension> class AllNodeIterator;
-template<typename Dimension> class InternalNodeIterator;
-template<typename Dimension> class GhostNodeIterator;
-template<typename Dimension> class MasterNodeIterator;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
-template<typename Dimension> class State;
-template<typename Dimension> class Neighbor;
-template<typename Dimension> class DataBase;
-template<typename Dimension> class TableKernel;
 template<typename Dimension> class FieldBase;
 template<typename Dimension, typename Value> class Field;
 class FileIO;
@@ -48,6 +38,11 @@ public:
   using ViewType = NodeListView<Dimension>;
   using ViewType::numInternalNodes;
   using ViewType::numGhostNodes;
+  using ViewType::nodesPerSmoothingScale;
+  using ViewType::maxNumNeighbors;
+  using ViewType::hmin;
+  using ViewType::hmax;
+  using ViewType::hminratio;
 
   using FieldBaseSpan = SPHERAL_SPAN_TYPE<std::reference_wrapper<FieldBase<Dimension>>>;
 
@@ -73,25 +68,11 @@ public:
   // Set the number of Nodes.
   void numInternalNodes(size_t size);
   void numGhostNodes(size_t size);
-
-  // Provide the standard NodeIterators over the nodes of this NodeList.
-  AllNodeIterator<Dimension> nodeBegin() const;
-  AllNodeIterator<Dimension> nodeEnd() const;
-          
-  InternalNodeIterator<Dimension> internalNodeBegin() const;
-  InternalNodeIterator<Dimension> internalNodeEnd() const;
-          
-  GhostNodeIterator<Dimension> ghostNodeBegin() const;
-  GhostNodeIterator<Dimension> ghostNodeEnd() const;
-          
-  MasterNodeIterator<Dimension> masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const;
-  MasterNodeIterator<Dimension> masterNodeEnd() const;
-          
-  CoarseNodeIterator<Dimension> coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const;
-  CoarseNodeIterator<Dimension> coarseNodeEnd() const;
-
-  RefineNodeIterator<Dimension> refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const;
-  RefineNodeIterator<Dimension> refineNodeEnd() const;
+  void nodesPerSmoothingScale(Scalar val) { ViewType::nodesPerSmoothingScale(val); ++this->mGeneration; }
+  void maxNumNeighbors(size_t val)        { ViewType::maxNumNeighbors(val); ++this->mGeneration; }
+  void hmin(Scalar val)                   { ViewType::hmin(val); ++this->mGeneration; }
+  void hmax(Scalar val)                   { ViewType::hmax(val); ++this->mGeneration; }
+  void hminratio(Scalar val)              { ViewType::hminratio(val); ++this->mGeneration; }
 
   // The NodeList state Fields.
   Field<Dimension, Scalar>& mass()                          { return mMass; }
@@ -133,9 +114,6 @@ public:
   size_t numFields() const { return mFieldBases.size(); }
   bool haveField(const FieldBase<Dimension>& field) const;
 
-  // Access the neighbor object.
-  Neighbor<Dimension>& neighbor()                          const { CHECK(mNeighborPtr != nullptr); return *mNeighborPtr; }
-
   //****************************************************************************
   // Methods for adding/removing individual nodes to/from the NodeList
   // (including all Field information.  These methods are primarily useful
@@ -163,10 +141,7 @@ public:
 
   // Get the view of NodeList-owned data.
   ViewType view();
-
-  // Neighbor object registration
-  void registerNeighbor(Neighbor<Dimension>& neighbor);
-  void unregisterNeighbor();
+  size_t viewGeneration() const { return this->mGeneration; }
 
   // No default constructor, copying, or assignment.
   NodeList() = delete;
@@ -175,16 +150,17 @@ public:
 
 protected:
   //--------------------------- Protected Interface ---------------------------//
-  // Methods to handle registering Fields and Neighbors
+  // Methods to handle registering Fields
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
-  void refreshView();
+  virtual void refreshView();
   void refreshMassView();
   void refreshMassRZView();
   void refreshPositionsView();
   void refreshVelocityView();
   void refreshHfieldView();
   void refreshWorkView();
+  void updateViewHash();
 
   friend class FieldBase<Dimension>;
 
@@ -206,10 +182,6 @@ private:
 
   // List of Fields that are defined over this NodeList.
   mutable std::vector<std::reference_wrapper<FieldBase<Dimension>>> mFieldBases;
-  Neighbor<Dimension>* mNeighborPtr;
-
-  // Provide a dummy vector to buid NodeIterators against.
-  std::vector<NodeList<Dimension>*> mDummyList;
 
   // The restart registration.
   RestartRegistrationType mRestart;

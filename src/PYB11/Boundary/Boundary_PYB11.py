@@ -32,6 +32,7 @@ PYB11includes += ['"Boundary/Boundary.hh"',
                   '"Boundary/mapPositionThroughPlanes.hh"',
                   '"Boundary/findNodesTouchingThroughPlanes.hh"',
                   '"Boundary/FacetedVolumeBoundary.hh"',
+                  '"Geometry/GeomPlane.hh"',
                   '"Field/Field.hh"',
                   '"Field/FieldList.hh"',
                   '"NodeList/NodeList.hh"',
@@ -66,6 +67,7 @@ pair and return the mapped position."""
 def findNodesTouchingThroughPlanes(nodeList = "const NodeList<%(Dimension)s>&",
                                    enterPlane = "const GeomPlane<%(Dimension)s>&",
                                    exitPlane = "const GeomPlane<%(Dimension)s>&",
+                                   kernelExtent = "const double",
                                    hmultiplier = ("double", "1.0")):
     "Find the set of nodes that see through a pair of planes."
     return "std::vector<size_t>"
@@ -125,4 +127,3 @@ if 3 in dims:
     FacetedVolumeBoundary3d = PYB11TemplateClass(FacetedVolumeBoundary, template_parameters="Dim<3>")
     from CylindricalBoundary import *
     from SphericalBoundary import *
-

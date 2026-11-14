@@ -5,6 +5,7 @@
 #include "VoronoiCells/computeVoronoiVolume.hh"
 #include "RK/ReproducingKernel.hh"
 #include "RK/gradientRK.hh"
+#include "Utilities/range.hh"
 
 #include <ctime>
 using std::vector;
@@ -35,8 +36,8 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
                          FieldList<Dimension, int>& surfacePoint,
                          FieldList<Dimension, typename Dimension::FacetedVolume>& cells) {
 
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Vector = typename Dimension::Vector;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   // Read some state.
   const auto numNodeLists = db.numNodeLists();
@@ -83,20 +84,16 @@ centroidalRelaxNodesImpl(DataBase<Dimension>& db,
     iter += 1;
 
     // Remove any old ghost nodes info, and update the mass density
-    {
-      unsigned nodeListi = 0U;
-      for (auto& nodes: db.fluidNodeListPtrs()) {
-        nodes->numGhostNodes(0);
-        nodes->neighbor().updateNodes();
-        if (not rhoConst) for (unsigned i = 0; i != nodes->numInternalNodes(); ++i) rhof(nodeListi, i) = rhofunc(pos(nodeListi, i));
-      }
-      ++nodeListi;
+    for (auto [nodeListi, nodes]: enumerate(db.fluidNodeListPtrs())) {
+      nodes->numGhostNodes(0);
+      if (not rhoConst) for (unsigned i = 0; i != nodes->numInternalNodes(); ++i) rhof(nodeListi, i) = rhofunc(pos(nodeListi, i));
     }
+    db.updateNeighbors();
 
     // Create the new ghost nodes.
     for (auto& bc: boundaries) bc->setAllGhostNodes(db);
     for (auto& bc: boundaries) bc->finalizeGhostBoundary();
-    for (auto& nodes: db.fluidNodeListPtrs()) nodes->neighbor().updateNodes();
+    db.updateNeighbors();
 
     // Compute the new connectivity.
     std::clock_t tcm = std::clock();

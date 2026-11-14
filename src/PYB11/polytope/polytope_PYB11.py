@@ -13,6 +13,7 @@ dims = spheralDimensions()
 
 PYB11includes = ['"polytope/Tessellation.hh"',
                  '"Mesh/copy2polytope.hh"',
+                 '"Geometry/GeomPlane.hh"',
                  '<sstream>']
 
 PYB11namespaces = ["Spheral",

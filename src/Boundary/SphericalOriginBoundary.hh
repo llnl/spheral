@@ -18,16 +18,16 @@ class SphericalOriginBoundary: public ReflectingBoundary<Dim<1>> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef Dim<1> Dimension;
-  typedef Dimension::Scalar Scalar;
-  typedef Dimension::Vector Vector;
-  typedef Dimension::Tensor Tensor;
-  typedef Dimension::SymTensor SymTensor;
-  typedef Dimension::ThirdRankTensor ThirdRankTensor;
+  using Dimension = Dim<1>;
+  using Scalar = Dimension::Scalar;
+  using Vector = Dimension::Vector;
+  using Tensor = Dimension::Tensor;
+  using SymTensor = Dimension::SymTensor;
+  using ThirdRankTensor = Dimension::ThirdRankTensor;
 
   // Constructors and destructors.
-  SphericalOriginBoundary();
-  virtual ~SphericalOriginBoundary();
+  SphericalOriginBoundary(const DataBase<Dimension>& dataBase);
+  virtual ~SphericalOriginBoundary() = default;
 
   // Override the ghost node methods to not make ghost nodes
   virtual void setGhostNodes(NodeList<Dimension>& nodeList) override;

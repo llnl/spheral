@@ -35,7 +35,7 @@ public:
                        const Scalar alphaArCond, const RKOrder ACcorrectionOrder = RKOrder::LinearOrder);
 
   // Destructor
-  virtual ~ArtificialConduction();
+  virtual ~ArtificialConduction() = default;
 
   // Do any required one-time initializations on problem start up.
   virtual void initializeProblemStartup(DataBase<Dimension>& dataBase) override;

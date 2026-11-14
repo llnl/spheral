@@ -1,4 +1,5 @@
 from SpheralCompiledPackages import *
+import warnings
 
 from spheralDimensions import spheralDimensions
 dims = spheralDimensions()
@@ -8,9 +9,6 @@ dims = spheralDimensions()
 #-------------------------------------------------------------------------------
 def FluidNodeListFactory(ndim):
     suffix = "{}d".format(ndim)
-    TreeNeighbor = eval("TreeNeighbor" + suffix)
-    NestedGridNeighbor = eval("NestedGridNeighbor" + suffix)
-    Vector = eval("Vector" + suffix)
     FluidNodeList = eval("FluidNodeList" + suffix)
     def factory(name,
                 eos,
@@ -23,29 +21,15 @@ def FluidNodeListFactory(ndim):
                 maxNumNeighbors = 500,
                 rhoMin = 1.0e-10,
                 rhoMax = 1e10,
-
-                # Neighboring stuff
-                NeighborType = TreeNeighbor,
-                searchType = GatherScatter,
-                kernelExtent = 2.0,
-
-                # Parameters for TreeNeighbor
-                xmin = Vector.one * -10.0,
-                xmax = Vector.one *  10.0):
+                **unused):
+        if unused:
+            warnings.warn("makeFluidNodeList{}d ignoring unsupported arguments: {}".format(
+                ndim, ", ".join(sorted(unused))), stacklevel=2)
         result = FluidNodeList(name, eos, numInternal, numGhost, 
                                hmin, hmax, hminratio, 
                                nPerh, maxNumNeighbors,
                                rhoMin, rhoMax)
         result.eos = eos
-        if NeighborType == TreeNeighbor:
-            result._neighbor = TreeNeighbor(result, searchType, kernelExtent, xmin, xmax)
-        elif NeighborType == NestedGridNeighbor:
-            print("SolidNodeList Deprecation Warning: NestedGridNeighbor is deprecated: suggest using TreeNeighbor.")
-            result._neighbor = NestedGridNeighbor(result, searchType, 
-                                                  kernelExtent = kernelExtent)
-        else:
-            raise ValueError("Unknown NeighborType")
-        result.registerNeighbor(result._neighbor)
         return result
     return factory
 

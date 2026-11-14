@@ -20,6 +20,7 @@ std::vector<size_t>
 findNodesTouchingThroughPlanes(const NodeList<Dimension>& nodeList,
                                const GeomPlane<Dimension>& enterPlane,
                                const GeomPlane<Dimension>& exitPlane,
+                               const double kernelExtent,
                                const double hmultiplier = 1.0);
 
 }

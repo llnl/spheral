@@ -16,6 +16,7 @@
 #include "DataBase/StateDerivatives.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "Utilities/rotationMatrix.hh"
+#include "Utilities/range.hh"
 
 #include "Utilities/DBC.hh"
 
@@ -56,12 +57,11 @@ initialize(const Scalar t,
            StateDerivatives<Dimension>& derivs) {
 
   using Face = typename Mesh<Dimension>::Face;
+  using NodeID = std::pair<size_t, size_t>;
   const auto& W = this->kernel();
-
-  // The set of NodeLists.
-  const vector<const NodeList<Dimension>*> nodeLists(dataBase.fluidNodeListBegin(),
-                                                     dataBase.fluidNodeListEnd());
-  const unsigned numNodeLists = nodeLists.size();
+  const auto& neighborVariant = dataBase.neighbor();
+  const unsigned numNodeLists = dataBase.numFluidNodeLists();
+  CHECK(dataBase.numNodeLists() == numNodeLists);
 
   // Grab the state we need.
   const Mesh<Dimension>& mesh = state.mesh();
@@ -110,43 +110,37 @@ initialize(const Scalar t,
     const Scalar hface2 = hface*hface;
 
     // Set the neighbors for this face.
-    vector<vector<int>> masterLists, coarseNeighbors;
-    Neighbor<Dimension>::setMasterNeighborGroup(posFace, H0,
-                                                nodeLists.begin(), nodeLists.end(),
-                                                W.kernelExtent(),
-                                                masterLists,
-                                                coarseNeighbors);
+    vector<NodeID> masterLists, coarseNeighbors;
+    auto [ok, numMaster, numCoarse] = visitNeighbor(neighborVariant, [&](const auto& neighbor) { return neighbor.setMasterList(posFace, H0,
+                                                                                                                               masterLists,
+                                                                                                                               coarseNeighbors); });
+    CHECK(ok);
 
-    // Iterate over the NodeLists.
-    for (unsigned nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-      const NodeList<Dimension>& nodeList = *nodeLists[nodeListj];
-      Neighbor<Dimension>& neighbor = const_cast<Neighbor<Dimension>&>(nodeList.neighbor());
-      vector<int> refineNeighbors;
-      neighbor.setRefineNeighborList(posFace, H0, coarseNeighbors[nodeListj], refineNeighbors);
-      for (auto neighborItr = refineNeighbors.begin(); neighborItr < refineNeighbors.end(); ++neighborItr) {
-        const unsigned j = *neighborItr;
-      
-        // Get the state for node j
-        const Vector& rj = position(nodeListj, j);
-        const Vector& vj = velocity(nodeListj, j);
-        const SymTensor& Hj = H(nodeListj, j);
-        const Scalar& Vj = volume(nodeListj, j);
-        const Scalar Hdetj = Hj.Determinant();
-        CHECK(Vj > 0.0);
-        CHECK(Hdetj > 0.0);
+    // Iterate over the neighbors
+    for (auto k = 0u; k < numCoarse; ++k) {
+      const auto nodeListj = coarseNeighbors[k].first;
+      const auto j = coarseNeighbors[k].second;
 
-        // Pair-wise kernel type stuff.
-        const Vector rij = posFace - rj;
-        const Vector etaj = Hj*rij;
-        const Vector Hetaj = Hj*etaj.unitVector();
-        Scalar Wj, gWj;
-        W.kernelAndGradValue(etaj.magnitude(), Hdetj, Wj, gWj);
-        const Vector gradWj = gWj*Hetaj;
+      // Get the state for node j
+      const Vector& rj = position(nodeListj, j);
+      const Vector& vj = velocity(nodeListj, j);
+      const SymTensor& Hj = H(nodeListj, j);
+      const Scalar& Vj = volume(nodeListj, j);
+      const Scalar Hdetj = Hj.Determinant();
+      CHECK(Vj > 0.0);
+      CHECK(Hdetj > 0.0);
 
-        // Increment the face fluid properties.
-        volSum += Vj*Wj;
-        mDvDx[iface] += (vface - vj)*Vj*gradWj;
-      }
+      // Pair-wise kernel type stuff.
+      const Vector rij = posFace - rj;
+      const Vector etaj = Hj*rij;
+      const Vector Hetaj = Hj*etaj.unitVector();
+      Scalar Wj, gWj;
+      W.kernelAndGradValue(etaj.magnitude(), Hdetj, Wj, gWj);
+      const Vector gradWj = gWj*Hetaj;
+
+      // Increment the face fluid properties.
+      volSum += Vj*Wj;
+      mDvDx[iface] += (vface - vj)*Vj*gradWj;
     }
 
     // Finish the background velocity gradient.

@@ -11,7 +11,6 @@
 #include "Kernel/TableKernel.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Strength/SolidFieldNames.hh"
-#include "DataBase/IncrementState.hh"
 #include "SolidMaterial/StrengthModel.hh"
 #include "Utilities/safeInv.hh"
 #include "Utilities/DBC.hh"
@@ -62,6 +61,21 @@ SolidNodeList(string name,
   mFragmentIDs(SolidFieldNames::fragmentIDs, *this),
   mParticleTypes(SolidFieldNames::particleTypes, *this),
   mStrength(strength) {
+}
+
+//------------------------------------------------------------------------------
+// Get and refresh the view of SolidNodeList-owned data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename SolidNodeList<Dimension>::ViewType
+SolidNodeList<Dimension>::view() {
+  return ViewType(FluidNodeList<Dimension>::view(),
+                  mDeviatoricStress.view(),
+                  mPlasticStrain.view(),
+                  mPlasticStrainRate.view(),
+                  mDamage.view(),
+                  mFragmentIDs.view(),
+                  mParticleTypes.view());
 }
 
 //------------------------------------------------------------------------------
@@ -207,6 +221,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mDamage, pathName + "/" + mDamage.name());
   file.read(mFragmentIDs, pathName + "/" + mFragmentIDs.name());
   file.read(mParticleTypes, pathName + "/" + mParticleTypes.name());
+  ++this->mGeneration;
 }
 
 }

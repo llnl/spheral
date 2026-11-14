@@ -72,8 +72,7 @@ for, once and only once, etc.)."""
 
     @PYB11const
     def workPerNode(self,
-                    dataBase = "const DataBase<%(Dimension)s>&",
-                    Hextent = "const double"):
+                    dataBase = "const DataBase<%(Dimension)s>&"):
         "Compute the work per node."
         return "FieldList<%(Dimension)s, Scalar>"
 

@@ -40,9 +40,9 @@ detectSurface(const ConnectivityMap<Dimension>& connectivityMap,
   REQUIRE(H.size() == numNodeLists);
   REQUIRE(surfacePoint.size() == numNodeLists);
         
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
         
   const Scalar cosSweepAngle = cos(sweepAngle);
         
@@ -67,16 +67,13 @@ detectSurface(const ConnectivityMap<Dimension>& connectivityMap,
                 
       if (std::abs(m0i - 1.0) > detectThreshold) {
         // Get neighbors
-        const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+        const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
         CHECK(fullConnectivity.size() == numNodeLists);
         // Loop over them
         size_t nodeListj = 0;
         while (!particleDetected and nodeListj != numNodeLists) {
-          const vector<int>& connectivity = fullConnectivity[nodeListj];
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          const auto& connectivity = fullConnectivity[nodeListj];
+          for (auto j: connectivity) {
 
             // Get the state for node j.
             const Vector& rj    = position(nodeListj, j);

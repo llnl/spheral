@@ -70,8 +70,7 @@ public:
                                 const DataBase<Dimension>& dataBase) const;
 
   // Compute the work per node.
-  FieldList<Dimension, Scalar> workPerNode(const DataBase<Dimension>& dataBase,
-                                           const double Hextent) const;
+  FieldList<Dimension, Scalar> workPerNode(const DataBase<Dimension>& dataBase) const;
 
   // Gather up and print the statistics of the current domain distribution based on
   // a computed work field.

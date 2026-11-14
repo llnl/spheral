@@ -20,8 +20,7 @@ divide algorithm for domain decomposition."""
 
     #...........................................................................
     # Constructors
-    def pyinit(self,
-               Hextent = "const double"):
+    def pyinit(self):
         "Constructor"
 
     #...........................................................................

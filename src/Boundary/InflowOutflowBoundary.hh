@@ -48,7 +48,6 @@ public:
 
   //**********************************************************************
   // Boundary condition methods:
-  // Use the given NodeList's neighbor object to select the ghost nodes.
   virtual void setGhostNodes(NodeList<Dimension>& nodeList) override;
 
   // For the computed set of ghost nodes, set the positions and H's.

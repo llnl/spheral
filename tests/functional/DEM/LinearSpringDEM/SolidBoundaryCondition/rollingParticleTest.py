@@ -290,7 +290,7 @@ control = SpheralController(integrator,
                             periodicWork=periodicWork)
 output("control")
 
-#control.redistribute = PeanoHilbertOrderRedistributeNodes(db.maxKernelExtent,workBalance=False)
+#control.redistribute = PeanoHilbertOrderRedistributeNodes(db.kernelExtent,workBalance=False)
 #-------------------------------------------------------------------------------
 # Advance to the end time.
 #-------------------------------------------------------------------------------
@@ -299,4 +299,3 @@ if not steps is None:
     control.step(steps)
 else:
     control.advance(goalTime, maxSteps)
-

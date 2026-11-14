@@ -21,30 +21,21 @@ class SortAndDivideRedistributeNodes1d: public SortAndDivideRedistributeNodes<Di
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef Dim<1> Dimension;
-  typedef Dim<1>::Scalar Scalar;
-  typedef Dim<1>::Vector Vector;
-  typedef Dim<1>::Tensor Tensor;
-  typedef Dim<1>::SymTensor SymTensor;
+  using Dimension = Dim<1>;
+  using Scalar = Dim<1>::Scalar;
+  using Vector = Dim<1>::Vector;
+  using Tensor = Dim<1>::Tensor;
+  using SymTensor = Dim<1>::SymTensor;
 
   // Constructors
-  SortAndDivideRedistributeNodes1d(const double HExtent);
-
-  // Destructor
-  virtual ~SortAndDivideRedistributeNodes1d();
+  SortAndDivideRedistributeNodes1d() = default;
+  SortAndDivideRedistributeNodes1d(const SortAndDivideRedistributeNodes1d&) = delete;
+  SortAndDivideRedistributeNodes1d& operator=(const SortAndDivideRedistributeNodes1d&) = delete;
+  virtual ~SortAndDivideRedistributeNodes1d() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
   virtual void redistributeNodes(DataBase<Dim<1> >& dataBase,
                                  std::vector<Boundary<Dim<1> >*> boundaries = std::vector<Boundary<Dim<1> >*>());
-
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  // No default constructor, copy, or assignment operations.
-  SortAndDivideRedistributeNodes1d();
-  SortAndDivideRedistributeNodes1d(const SortAndDivideRedistributeNodes1d&);
-  SortAndDivideRedistributeNodes1d& operator=(const SortAndDivideRedistributeNodes1d&);
-
 };
 
 }

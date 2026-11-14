@@ -1,9 +1,310 @@
+#include "Dimension.hh"
+#include "Utilities/SpheralFunctions.hh"
+#include "Utilities/pointDistances.hh"
+#include "Utilities/DBC.hh"
+
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Construct with the given point and normal.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+GeomPlane<Dimension>::GeomPlane(const typename Dimension::Vector& point,
+				const typename Dimension::Vector& normal):
+  mPoint(point),
+  mNormal(normal.unitVector()) {
+  ENSURE(valid());
+}
+
+//------------------------------------------------------------------------------
+// Construct as the best fit to a cloud of points.
+//------------------------------------------------------------------------------
+// 1D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<1>>::GeomPlane(const Container<Dim<1>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<1>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal(Dim<1>::Vector::one()) {
+  REQUIRE2(points.size() > 0, "GeomPlane(points) ERROR: need at least 1 point.");
+}
+
+// 2D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<2>>::GeomPlane(const Container<Dim<2>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<2>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal() {
+  const unsigned n = points.size();
+  CONTRACT_VAR(n);
+  REQUIRE2(n >= 2, "GeomPlane(points) ERROR: need at least 2 points.");
+  double xy = 0.0, xx = 0.0;
+  for (const auto& v: points) {
+    const Vector d = v - mPoint;
+    xy += d.x()*d.y();
+    xx += d.x()*d.x();
+  }
+  const double m = xy*safeInvVar(xx);
+  mNormal = Vector(m, -1.0).unitVector();
+}
+
+// 3D
+template<>
+template<template<typename ...> typename Container>
+GeomPlane<Dim<3>>::GeomPlane(const Container<Dim<3>::Vector>& points):
+  mPoint(std::accumulate(points.begin(), points.end(), Dim<3>::Vector::zero())/std::max(size_t(1), points.size())),
+  mNormal() {
+  const unsigned n = points.size();
+  CONTRACT_VAR(n);
+  REQUIRE2(n >= 3, "GeomPlane(points) ERROR: need at least 3 points.");
+  // Calc full 3x3 covariance matrix, excluding symmetries:
+  SymTensor A;
+  for (const auto& p: points) {
+    const auto r = p - mPoint;
+    A(0,0) += r.x() * r.x();
+    A(0,1) += r.x() * r.y();
+    A(0,2) += r.x() * r.z();
+    A(1,1) += r.y() * r.y();
+    A(1,2) += r.y() * r.z();
+    A(2,2) += r.z() * r.z();
+  }
+
+  const double det_x = A.yy()*A.zz() - A.yz()*A.yz();
+  const double det_y = A.xx()*A.zz() - A.xz()*A.xz();
+  const double det_z = A.xx()*A.yy() - A.xy()*A.xy();
+
+  const double det_max = std::max(det_x, std::max(det_y, det_z));
+  CHECK2(det_max > 0.0, "The points don't span a plane");
+
+  // Pick path with best conditioning:
+  if (det_max == det_x) {
+    const double a = (A.xz()*A.yz() - A.xy()*A.zz()) / det_x;
+    const double b = (A.xy()*A.yz() - A.xz()*A.yy()) / det_x;
+    mNormal = Vector(1.0, a, b).unitVector();
+  } else if (det_max == det_y) {
+    const double a = (A.yz()*A.xz() - A.xy()*A.zz()) / det_y;
+    const double b = (A.xy()*A.xz() - A.yz()*A.xx()) / det_y;
+    mNormal = Vector(a, 1.0, b).unitVector();
+  } else {
+    const double a = (A.yz()*A.xy() - A.xz()*A.yy()) / det_z;
+    const double b = (A.xz()*A.xy() - A.yz()*A.xx()) / det_z;
+    mNormal = Vector(a, b, 1.0);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Negative operator (reverse the sign of the normal).
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+GeomPlane<Dimension>
+GeomPlane<Dimension>::operator-() const {
+  GeomPlane<Dimension> result(*this);
+  result.normal(-result.normal());
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Calculate the signed distance from a point to the plane.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+typename Dimension::Scalar
+GeomPlane<Dimension>::
+signedDistance(const Vector& point) const {
+  REQUIRE(valid());
+  return mNormal.dot(point - mPoint);
+}
+
+//------------------------------------------------------------------------------
+// Calculate the minimum distance from a point to the plane.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+typename Dimension::Scalar
+GeomPlane<Dimension>::
+minimumDistance(const Vector& point) const {
+  REQUIRE(valid());
+  return std::abs(mNormal.dot(point - mPoint));
+}
+
+//------------------------------------------------------------------------------
+// Find the closest point on the plane to a given point.
+//------------------------------------------------------------------------------
+template<>
+SPHERAL_HOST_DEVICE 
+inline
+Dim<1>::Vector
+GeomPlane<Dim<1>>::
+closestPointOnPlane(const Vector&) const {
+  return mPoint;
+}
+
+template<>
+SPHERAL_HOST_DEVICE 
+inline
+Dim<2>::Vector
+GeomPlane<Dim<2>>::
+closestPointOnPlane(const Dim<2>::Vector& point) const {
+  const Vector a0p = point - mPoint;
+  const Vector direction(-mNormal.y(), mNormal.x());
+  const double s = a0p.dot(direction);
+  return mPoint + s*direction;
+}
+
+template<>
+SPHERAL_HOST_DEVICE 
+inline
+Dim<3>::Vector
+GeomPlane<Dim<3>>::
+closestPointOnPlane(const Vector& point) const {
+  return Spheral::closestPointOnPlane(point, mPoint, mNormal);
+}
+
+//------------------------------------------------------------------------------
+// Test whether the given plane is parallel to this one.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+bool
+GeomPlane<Dimension>::parallel(const GeomPlane<Dimension>& rhs) const {
+  REQUIRE(valid());
+  REQUIRE(rhs.valid());
+  return fuzzyEqual(fabs(mNormal.dot(rhs.normal())), 1.0);
+}
+
+//------------------------------------------------------------------------------
+// operator ==
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+bool
+GeomPlane<Dimension>::operator==(const GeomPlane<Dimension>& rhs) const {
+  return (fuzzyEqual(mNormal.dot(rhs.normal()), 1.0) &&
+	  fuzzyEqual(minimumDistance(rhs.point()), 0.0));
+}
+
+//------------------------------------------------------------------------------
+// operator !=
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+bool
+GeomPlane<Dimension>::operator!=(const GeomPlane<Dimension>& rhs) const {
+  return !(*this == rhs);
+}
+
+//------------------------------------------------------------------------------
+// operator <
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+bool
+GeomPlane<Dimension>::operator<(const GeomPlane<Dimension>& rhs) const {
+  return (mPoint < rhs.mPoint   ? true :
+          mNormal < rhs.mNormal ? true:
+                                  false);
+}
+
+//------------------------------------------------------------------------------
+// operator == (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator==(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) == 0;
+}
+
+//------------------------------------------------------------------------------
+// operator != (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator!=(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) != 0;
+}
+
+//------------------------------------------------------------------------------
+// operator > (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator>(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) == 1;
+}
+
+//------------------------------------------------------------------------------
+// operator < (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator<(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) == -1;
+}
+
+//------------------------------------------------------------------------------
+// operator >= (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator>=(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) != -1;
+}
+
+//------------------------------------------------------------------------------
+// operator <= (Point)
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::operator<=(const typename Dimension::Vector& rhs) const {
+  return compare(rhs) != 1;
+}
+
+//------------------------------------------------------------------------------
+// Test if the plane is below, equal to or above the point (-1, 0, 1).
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+inline
+int
+GeomPlane<Dimension>::
+compare(const typename Dimension::Vector& rhs) const {
+  const auto thpt = mNormal.dot(rhs - mPoint);
+  return (fuzzyEqual(thpt, 0.0) ?  0 :
+          thpt > 0.0            ? -1 :
+                                   1);
+}
+
+
+//------------------------------------------------------------------------------
+// Valid test.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+SPHERAL_HOST_DEVICE 
+bool
+GeomPlane<Dimension>::valid() const {
+  return fuzzyEqual(mNormal.magnitude2(), 1.0);
+}
 
 //------------------------------------------------------------------------------
 // Global comparator functions.
 //------------------------------------------------------------------------------
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator==(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -11,6 +312,7 @@ operator==(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator!=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -18,6 +320,7 @@ operator!=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator<(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -25,6 +328,7 @@ operator<(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pla
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator>(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -32,6 +336,7 @@ operator>(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pla
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator<=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {
@@ -39,6 +344,7 @@ operator<=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& pl
 }
   
 template<typename Dimension>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 operator>=(const typename Dimension::Vector& vec, const GeomPlane<Dimension>& plane) {

@@ -25,8 +25,7 @@ are:
 
     #...........................................................................
     # Constructors
-    def pyinit(self,
-               Hextent = "const double"):
+    def pyinit(self):
         "Constructor"
 
     #...........................................................................
@@ -79,7 +78,3 @@ the primary frame of the given shape tensor."""
                              sendProc = "const int"):
         "Broadcast a vector<DomainNode> from the given processor."
         return "std::vector<DomainNode<%(Dimension)s> >"
-
-    #...........................................................................
-    # Properties
-    Hextent = PYB11property("double", "Hextent", "Hextent")

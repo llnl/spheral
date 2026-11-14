@@ -49,7 +49,7 @@ NodeList.
 
     #...........................................................................
     # Properties
-    nodeList = PYB11property("const NodeList<%(Dimension)s>&", "nodeList", doc="The NodeList this boundary applies to")
+    nodeList = PYB11property("const NodeList<%(Dimension)s>&", "nodeList", returnpolicy="reference_internal", doc="The NodeList this boundary applies to")
     nodeIndices = PYB11property("std::vector<size_t>", "nodeIndices", doc="The nodes this boundary is in control of")
     velocityCondition = PYB11property("std::vector<Vector>", "velocityCondition", doc="The velocities for the nodes we control")
 

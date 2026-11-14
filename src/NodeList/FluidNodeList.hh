@@ -8,19 +8,12 @@
 #define __Spheral_FluidNodeList__
 
 #include "NodeList/NodeList.hh"
+#include "NodeList/FluidNodeListView.hh"
 
 namespace Spheral {
 
-template<typename Dimension> class NodeIteratorBase;
-template<typename Dimension> class AllNodeIterator;
-template<typename Dimension> class InternalNodeIterator;
-template<typename Dimension> class GhostNodeIterator;
-template<typename Dimension> class MasterNodeIterator;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class State;
 template<typename Dimension> class StateDerivatives;
-template<typename Dimension> class Neighbor;
 template<typename Dimension> class ConnectivityMap;
 template<typename Dimension, typename DataType> class Field;
 template<typename Dimension, typename DataType> class FieldList;
@@ -38,6 +31,7 @@ public:
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
+  using ViewType = FluidNodeListView<Dimension>;
   
   // Constructors.
   FluidNodeList(std::string name,
@@ -85,15 +79,18 @@ public:
   Scalar rhoMin() const { return mRhoMin; }
   Scalar rhoMax() const { return mRhoMax; }
 
-  void rhoMin(Scalar x) { mRhoMin = x; }
-  void rhoMax(Scalar x) { mRhoMax = x; }
+  void rhoMin(Scalar x) { mRhoMin = x; ++this->mGeneration; }
+  void rhoMax(Scalar x) { mRhoMax = x; ++this->mGeneration; }
+
+  // Get the view of FluidNodeList-owned data.
+  ViewType view();
 
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label() const { return "FluidNodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label() const override { return "FluidNodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // No default constructor or copying.
@@ -103,10 +100,10 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  // Min/max mass densities.
-  Scalar mRhoMin, mRhoMax;
 
   // Fields that define the fluid's current state.
+  Scalar mRhoMin;
+  Scalar mRhoMax;
   Field<Dimension, Scalar> mMassDensity;
   Field<Dimension, Scalar> mSpecificThermalEnergy;
   std::unique_ptr<Field<Dimension, Scalar>> mMassDensityRZptr;
@@ -118,4 +115,3 @@ private:
 }
 
 #endif
-

@@ -1,4 +1,5 @@
 #include "computeFragmentField.hh"
+#include "DataBase/DataBase.hh"
 #include "Strength/SolidFieldNames.hh"
 #include "NodeList/NodeList.hh"
 #include "Field/Field.hh"
@@ -79,9 +80,10 @@ computeFragmentField(const NodeList<Dimension>& nodes,
                      const double damageThreshold,
                      const bool assignDustToFragments) {
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
+  using NodeID = std::pair<size_t, size_t>;
 
   REQUIRE(nodes.numGhostNodes() == 0);
   REQUIRE(density.nodeListPtr() == &nodes);
@@ -104,7 +106,12 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   const Field<Dimension, Scalar>& m = nodes.mass();
   const Field<Dimension, Vector>& r = nodes.positions();
   const Field<Dimension, SymTensor>& H = nodes.Hfield();
-  Neighbor<Dimension>& neighbor = nodes.neighbor();
+
+  // Build a local DataBase of just this NodeList
+  DataBase<Dimension> db(linkRadius);
+  db.appendNodeList(const_cast<NodeList<Dimension>&>(nodes));
+  db.reinitializeNeighbors();
+  const auto& neighbor = db.neighbor();
 
   // Get the total number of nodes, and the global IDs on this domain.
   auto numGlobalNodesRemaining = numGlobalNodes(nodes);
@@ -149,11 +156,6 @@ computeFragmentField(const NodeList<Dimension>& nodes,
   CHECK(numDustNodes <= numGlobalNodesRemaining);
   numGlobalNodesRemaining -= numDustNodes;
   CHECK(numGlobalNodesRemaining >= 0);
-
-  // Reset the neighbor extent for our use.
-  const double oldLinkRadius = neighbor.kernelExtent();
-  neighbor.kernelExtent(linkRadius);
-  neighbor.updateNodes();
 
   // Iterate until all nodes have been assigned.
   while (numGlobalNodesRemaining > 0) {
@@ -201,23 +203,26 @@ computeFragmentField(const NodeList<Dimension>& nodes,
 #endif
 
     // Find the neighbors for this node within the desired radius.
-    vector<int> masterList, coarseNeighbors, refineNeighbors;
-    neighbor.setMasterList(ri, Hi, masterList, coarseNeighbors);
-    neighbor.setRefineNeighborList(ri, Hi, coarseNeighbors, refineNeighbors);
+    vector<NodeID> masterList, coarseNeighbors, refineNeighbors;
+    auto [ok, numMaster, numCoarse] = visitNeighbor(neighbor, [&](const auto& x) { return x.setMasterList(ri, Hi, masterList, coarseNeighbors); });
+    CHECK(ok);
+    auto numRefine = visitNeighbor(neighbor, [&](const auto& x) { return x.setRefineNeighborList(ri, Hi, numCoarse, coarseNeighbors, refineNeighbors); });
     vector<int> significantNeighbors;
     vector<int> fragIDs;
-    significantNeighbors.reserve(refineNeighbors.size());
-    fragIDs.reserve(refineNeighbors.size());
-    for (auto itr = refineNeighbors.begin(); itr < refineNeighbors.end(); ++itr) {
-      const Vector& rj = r(*itr);
-      const SymTensor& Hj = H(*itr);
+    significantNeighbors.reserve(numRefine);
+    fragIDs.reserve(numRefine);
+    for (auto k = 0u; k < numRefine; ++k) {
+      CHECK(refineNeighbors[k].first == 0);
+      const auto j = refineNeighbors[k].second;
+      const Vector& rj = r(j);
+      const SymTensor& Hj = H(j);
       const Vector rij = ri - rj;
       const double etai = (Hi*rij).magnitude();
       const double etaj = (Hj*rij).magnitude();
-      if (result(*itr) <= int(maxGlobalID) && 
+      if (result(j) <= int(maxGlobalID) && 
           (etai <= linkRadius || etaj <= linkRadius)) {
-        significantNeighbors.push_back(*itr);
-        fragIDs.push_back(result(*itr));
+        significantNeighbors.push_back(j);
+        fragIDs.push_back(result(j));
       }
     }
 
@@ -356,10 +361,6 @@ computeFragmentField(const NodeList<Dimension>& nodes,
       CHECK(numFragments == 1 or result[i] < dustID);
     
   }
-
-  // Set the neighbor state back how we found it.
-  neighbor.kernelExtent(oldLinkRadius);
-  neighbor.updateNodes();
 
   return result;
 }

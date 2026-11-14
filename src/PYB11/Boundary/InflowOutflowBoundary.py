@@ -89,7 +89,6 @@ Really we should rename this post-step finalize."""
 
     #...........................................................................
     @PYB11template("DataType")
-    @PYB11returnpolicy("reference")
     def storedValues(self,
                      key = "const std::string",
                      dummy = ("const %(DataType)s&", "%(DataType)s()")):
@@ -110,7 +109,6 @@ Really we should rename this post-step finalize."""
 
     #...........................................................................
     @PYB11template("DataType")
-    @PYB11returnpolicy("reference")
     @PYB11cppname("storedValues")
     def storedValuesF(self,
                       field = "const Field<%(Dimension)s, %(DataType)s>&"):
@@ -143,6 +141,8 @@ Really we should rename this post-step finalize."""
     setStoredValues_Tensor =          PYB11TemplateMethod(setStoredValues, "Tensor")
     setStoredValues_SymTensor =       PYB11TemplateMethod(setStoredValues, "SymTensor")
     setStoredValues_ThirdRankTensor = PYB11TemplateMethod(setStoredValues, "ThirdRankTensor")
+    setStoredValues_FourthRankTensor = PYB11TemplateMethod(setStoredValues, "FourthRankTensor")
+    setStoredValues_FifthRankTensor = PYB11TemplateMethod(setStoredValues, "FifthRankTensor")
     setStoredValues_FacetedVolume =   PYB11TemplateMethod(setStoredValues, "FacetedVolume")
     setStoredValues_vectorScalar =    PYB11TemplateMethod(setStoredValues, "std::vector<Scalar>")
     setStoredValues_vectorVector =    PYB11TemplateMethod(setStoredValues, "std::vector<Vector>")
@@ -162,6 +162,8 @@ Really we should rename this post-step finalize."""
     setStoredValuesF_Tensor =          PYB11TemplateMethod(setStoredValuesF, "Tensor", pyname="setStoredValues")
     setStoredValuesF_SymTensor =       PYB11TemplateMethod(setStoredValuesF, "SymTensor", pyname="setStoredValues")
     setStoredValuesF_ThirdRankTensor = PYB11TemplateMethod(setStoredValuesF, "ThirdRankTensor", pyname="setStoredValues")
+    setStoredValuesF_FourthRankTensor = PYB11TemplateMethod(setStoredValuesF, "FourthRankTensor", pyname="setStoredValues")
+    setStoredValuesF_FifthRankTensor = PYB11TemplateMethod(setStoredValuesF, "FifthRankTensor", pyname="setStoredValues")
     setStoredValuesF_FacetedVolume =   PYB11TemplateMethod(setStoredValuesF, "FacetedVolume", pyname="setStoredValues")
     setStoredValuesF_vectorScalar =    PYB11TemplateMethod(setStoredValuesF, "std::vector<Scalar>", pyname="setStoredValues")
     setStoredValuesF_vectorVector =    PYB11TemplateMethod(setStoredValuesF, "std::vector<Vector>", pyname="setStoredValues")
@@ -181,6 +183,8 @@ Really we should rename this post-step finalize."""
     setConstantStoredValues_Tensor =          PYB11TemplateMethod(setConstantStoredValues, "Tensor")
     setConstantStoredValues_SymTensor =       PYB11TemplateMethod(setConstantStoredValues, "SymTensor")
     setConstantStoredValues_ThirdRankTensor = PYB11TemplateMethod(setConstantStoredValues, "ThirdRankTensor")
+    setConstantStoredValues_FourthRankTensor = PYB11TemplateMethod(setConstantStoredValues, "FourthRankTensor")
+    setConstantStoredValues_FifthRankTensor = PYB11TemplateMethod(setConstantStoredValues, "FifthRankTensor")
     setConstantStoredValues_FacetedVolume =   PYB11TemplateMethod(setConstantStoredValues, "FacetedVolume")
     setConstantStoredValues_vectorScalar =    PYB11TemplateMethod(setConstantStoredValues, "std::vector<Scalar>")
     setConstantStoredValues_vectorVector =    PYB11TemplateMethod(setConstantStoredValues, "std::vector<Vector>")
@@ -200,6 +204,8 @@ Really we should rename this post-step finalize."""
     setConstantStoredValuesF_Tensor =          PYB11TemplateMethod(setConstantStoredValuesF, "Tensor", pyname="setConstantStoredValues")
     setConstantStoredValuesF_SymTensor =       PYB11TemplateMethod(setConstantStoredValuesF, "SymTensor", pyname="setConstantStoredValues")
     setConstantStoredValuesF_ThirdRankTensor = PYB11TemplateMethod(setConstantStoredValuesF, "ThirdRankTensor", pyname="setConstantStoredValues")
+    setConstantStoredValuesF_FourthRankTensor = PYB11TemplateMethod(setConstantStoredValuesF, "FourthRankTensor", pyname="setConstantStoredValues")
+    setConstantStoredValuesF_FifthRankTensor = PYB11TemplateMethod(setConstantStoredValuesF, "FifthRankTensor", pyname="setConstantStoredValues")
     setConstantStoredValuesF_FacetedVolume =   PYB11TemplateMethod(setConstantStoredValuesF, "FacetedVolume", pyname="setConstantStoredValues")
     setConstantStoredValuesF_vectorScalar =    PYB11TemplateMethod(setConstantStoredValuesF, "std::vector<Scalar>", pyname="setConstantStoredValues")
     setConstantStoredValuesF_vectorVector =    PYB11TemplateMethod(setConstantStoredValuesF, "std::vector<Vector>", pyname="setConstantStoredValues")
@@ -207,9 +213,9 @@ Really we should rename this post-step finalize."""
     #...........................................................................
     # Properties
     inflowRadius = PYB11property("Scalar", "inflowRadius", "inflowRadius",doc="radius of inflow clip")
-    dataBase = PYB11property(doc="The DataBase for the NodeLists we know about")
-    plane = PYB11property(doc="The inflowplane")
-    storedKeys = PYB11property(doc="Keys for all the Fields we have stored ghost information about")
+    dataBase = PYB11property("const DataBase<%(Dimension)s>&", returnpolicy="reference_internal", doc="The DataBase for the NodeLists we know about")
+    plane = PYB11property("const Plane&", returnpolicy="reference_internal", doc="The inflow plane")
+    storedKeys = PYB11property("std::vector<std::string>", doc="Keys for all the Fields we have stored ghost information about")
 
 #-------------------------------------------------------------------------------
 # Inject methods

@@ -31,7 +31,6 @@
 #include "ArtificialViscosity/TensorSVPHViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/timingUtilities.hh"
@@ -134,7 +133,9 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
 
   // Construct the mesh and volumes.
   NodeList<Dimension> voidNodes("internal void", 0, 0);
-  vector<const NodeList<Dimension>*> nodeLists(dataBase.nodeListBegin(), dataBase.nodeListEnd());
+  vector<const NodeList<Dimension>*> nodeLists;
+  nodeLists.reserve(dataBase.numNodeLists() + 1u);
+  for (const auto* nodeListPtr: dataBase.nodeListPtrs()) nodeLists.push_back(nodeListPtr);
   nodeLists.push_back(&voidNodes);
   // std::sort(nodeLists.begin(), nodeLists.end(), typename NodeListRegistrar<Dimension>::NodeListComparator());
   generateMesh<Dimension,
@@ -193,15 +194,13 @@ initializeProblemStartup(DataBase<Dimension>& dataBase) {
 
   // If needed, initialize the cell pressure.
   mCellPressure = dataBase.newFluidFieldList(0.0, "Cell" + HydroFieldNames::pressure);
-  for (typename DataBase<Dimension>::ConstFluidNodeListIterator itr = dataBase.fluidNodeListBegin();
-       itr != dataBase.fluidNodeListEnd();
-       ++itr) {
-    Field<Dimension, Scalar>& P = **mCellPressure.fieldForNodeList(**itr);
-    const Field<Dimension, Scalar>& vol = **mVolume.fieldForNodeList(**itr);
-    const Field<Dimension, Scalar>& mass = (*itr)->mass();
-    const Field<Dimension, Scalar>& eps = (*itr)->specificThermalEnergy();
+  for (const auto* fluidNodeListPtr: dataBase.fluidNodeListPtrs()) {
+    Field<Dimension, Scalar>& P = **mCellPressure.fieldForNodeList(*fluidNodeListPtr);
+    const Field<Dimension, Scalar>& vol = **mVolume.fieldForNodeList(*fluidNodeListPtr);
+    const Field<Dimension, Scalar>& mass = fluidNodeListPtr->mass();
+    const Field<Dimension, Scalar>& eps = fluidNodeListPtr->specificThermalEnergy();
     Field<Dimension, Scalar> rho = mass/vol;
-    const EquationOfState<Dimension>& eos = (*itr)->equationOfState();
+    const EquationOfState<Dimension>& eos = fluidNodeListPtr->equationOfState();
     eos.setPressure(P, rho, eps);
   }
 }
@@ -231,7 +230,7 @@ registerState(DataBase<Dimension>& dataBase,
   }
 
   // Now register away.
-  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
 
     // Mass.
     state.enroll(fluidNodeListPtr->mass());
@@ -326,7 +325,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mFaceForce, vector<Vector>(), HydroFieldNames::faceForce, false);
   // dataBase.resizeFluidFieldList(mFaceAcceleration, vector<Vector>(), IncrementState<Dimension, Vector>::prefix() + "Face " + HydroFieldNames::velocity, false);
 
-  for (auto [i, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  for (auto [i, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
     derivs.enroll(*mMassDensitySum[i]);
     derivs.enroll(*mXSVPHDeltaV[i]);
 
@@ -369,9 +368,9 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   const TableKernel<Dimension>& W = this->kernel();
 
   // The set of NodeLists.
-  const vector<const NodeList<Dimension>*> nodeLists(dataBase.fluidNodeListBegin(),
-                                                     dataBase.fluidNodeListEnd());
+  const auto& nodeLists = dataBase.fluidNodeListPtrs();
   const size_t numNodeLists = nodeLists.size();
+  REQUIRE(dataBase.numNodeLists() == numNodeLists);
 
   // The mesh.
   const Mesh<Dimension>& mesh = state.mesh();
@@ -434,7 +433,7 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   // Compute the SVPH corrections.
   vector<Scalar> A;
   vector<Vector> B;
-  computeSVPHCorrectionsOnFaces(mesh, W,
+  computeSVPHCorrectionsOnFaces(mesh, dataBase, W,
                                 volume, position, H,
                                 this->boundaryBegin(),
                                 this->boundaryEnd(),
@@ -442,8 +441,8 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   if (not mLinearConsistent) B = vector<Vector>(numFaces, Vector::zero());
 
   // Walk the faces and sample their fluid properties.
+  using NodeID = std::pair<size_t, size_t>;
   unsigned i, j, k, nodeListi, nodeListj, z1id, z2id;
-  Scalar Hdetj;
   const SymTensor H0 = 1.0e100*SymTensor::one();
   for (k = 0; k != numFaces; ++k) {
     const Face& face = mesh.face(k);
@@ -472,39 +471,38 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
     PcellFace[k] = 0.5*(cellPressure(nodeListi, i) + cellPressure(nodeListj, j));
 
     // Set the neighbors for this face.
-    vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-    Neighbor<Dimension>::setMasterNeighborGroup(posFace[k], H0,
-                                                nodeLists.begin(), nodeLists.end(),
-                                                W.kernelExtent(),
-                                                masterLists,
-                                                coarseNeighbors);
+    vector<NodeID> masterList, coarseNeighbors, refineNeighbors;
+    const auto [ok, numMaster, numCoarse] = visitNeighbor(dataBase.neighbor(), [&](const auto& neighbor) {
+      return neighbor.setMasterList(posFace[k], H0, masterList, coarseNeighbors);
+    });
+    CHECK(ok);
+    CONTRACT_VAR(numMaster);
+    refineNeighbors.resize(numCoarse);
+    const auto numRefine = visitNeighbor(dataBase.neighbor(), [&](const auto& neighbor) {
+      return neighbor.setRefineNeighborList(posFace[k], H0, numCoarse, coarseNeighbors, refineNeighbors);
+    });
 
-    // Iterate over the NodeLists.
-    for (nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-      const NodeList<Dimension>& nodeList = *nodeLists[nodeListj];
-      Neighbor<Dimension>& neighbor = const_cast<Neighbor<Dimension>&>(nodeList.neighbor());
-      neighbor.setRefineNeighborList(posFace[k], H0, coarseNeighbors[nodeListj], refineNeighbors[nodeListj]);
-      for (auto neighborItr = refineNeighbors[nodeListj].begin(); neighborItr != refineNeighbors[nodeListj].end(); ++neighborItr) {
-        j = *neighborItr;
+    // Iterate over the neighbors.
+    for (auto neighborIndex = 0u; neighborIndex < numRefine; ++neighborIndex) {
+      const auto [neighborNodeList, neighborNode] = refineNeighbors[neighborIndex];
       
-        // Get the state for node j
-        const Vector& rj = position(nodeListj, j);
-        const Scalar& Pj = pressure(nodeListj, j);
-        const SymTensor& Hj = H(nodeListj, j);
-        const Scalar& Vj = volume(nodeListj, j);
-        Hdetj = Hj.Determinant();
-        CHECK(Vj > 0.0);
-        CHECK(Hdetj > 0.0);
+      // Get the state for node j
+      const Vector& rj = position(neighborNodeList, neighborNode);
+      const Scalar& Pj = pressure(neighborNodeList, neighborNode);
+      const SymTensor& Hj = H(neighborNodeList, neighborNode);
+      const Scalar& Vj = volume(neighborNodeList, neighborNode);
+      const auto Hdetj = Hj.Determinant();
+      CHECK(Vj > 0.0);
+      CHECK(Hdetj > 0.0);
 
-        // Pair-wise kernel type stuff.
-        const Vector rij = posFace[k] - rj;
-        const Vector etaj = Hj*rij;
-        const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
-        const Scalar VWRj = Vj*(1.0 + Bi.dot(rij))*Wj;
+      // Pair-wise kernel type stuff.
+      const Vector rij = posFace[k] - rj;
+      const Vector etaj = Hj*rij;
+      const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
+      const Scalar VWRj = Vj*(1.0 + Bi.dot(rij))*Wj;
 
-        // Increment the face fluid properties.
-        Pface[k] += VWRj*Pj;
-      }
+      // Increment the face fluid properties.
+      Pface[k] += VWRj*Pj;
     }
   }
 
@@ -517,58 +515,6 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
   //   (*itr)->enforceBoundary(Pface, mesh);
   //   (*itr)->enforceBoundary(velFace, mesh);
   //   (*itr)->enforceBoundary(Hface, mesh);
-  // }
-
-  // Determine the Q (requires correct boundary enforced velocities).
-  // if (Qptr == 0) {
-  //   for (k = 0; k != numFaces; ++k) {
-  //     const Vector& Bi = B[k];
-
-  //     // Set the neighbors for this face.
-  //     vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-  //     Neighbor<Dimension>::setMasterNeighborGroup(posFace[k], H0,
-  //                                                 nodeLists.begin(), nodeLists.end(),
-  //                                                 W.kernelExtent(),
-  //                                                 masterLists,
-  //                                                 coarseNeighbors);
-
-  //     // Iterate over the NodeLists.
-  //     for (nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-  //       const NodeList<Dimension>& nodeList = *nodeLists[nodeListj];
-  //       Neighbor<Dimension>& neighbor = const_cast<Neighbor<Dimension>&>(nodeList.neighbor());
-  //       neighbor.setRefineNeighborList(posFace[k], H0, coarseNeighbors[nodeListj], refineNeighbors[nodeListj]);
-  //       for (auto neighborItr = refineNeighbors[nodeListj].begin(); neighborItr != refineNeighbors[nodeListj].end(); ++neighborItr) {
-  //         j = *neighborItr;
-      
-  //         // Get the state for node j
-  //         const Vector& rj = position(nodeListj, j);
-  //         const Vector& vj = velocity(nodeListj, j);
-  //         const Scalar& rhoj = massDensity(nodeListj, j);
-  //         const Scalar& cj = soundSpeed(nodeListj, j);
-  //         const SymTensor& Hj = H(nodeListj, j);
-  //         const Scalar& Vj = volume(nodeListj, j);
-  //         Hdetj = Hj.Determinant();
-  //         CHECK(Vj > 0.0);
-  //         CHECK(Hdetj > 0.0);
-
-  //         // Pair-wise kernel type stuff.
-  //         const Vector rij = posFace[k] - rj;
-  //         const Vector etai = Hface[k]*rij;
-  //         const Vector etaj = Hj*rij;
-  //         const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
-  //         const Scalar VWRj = Vj*(1.0 + Bi.dot(rij))*Wj;
-
-  //         // Get the face Q values (in this case P/rho^2).
-  //         const pair<Tensor, Tensor> QPiij = Q.Piij(nodeListj, j, nodeListj, j,
-  //                                                   posFace[k], etai, velFace[k], rhoFace[k], csFace[k], Hface[k],
-  //                                                   rj, etaj, vj, rhoj, cj, Hj);
-  //         //Qface[k] += 0.5*VWRj*(rhoFace[k]*rhoFace[k]*QPiij.first + rhoj*rhoj*QPiij.second);
-  //         Qface[k] += VWRj*rhoj*rhoj*QPiij.second;
-  //         const Scalar Qj = rhoj*rhoj*(QPiij.second.diagonalElements().maxAbsElement());
-  //         maxViscousPressure(nodeListj, j) = max(maxViscousPressure(nodeListj, j), Qj);
-  //       }
-  //     }
-  //   }
   // }
 
   // // Boundaries!
@@ -739,12 +685,9 @@ dt(const DataBase<Dimension>& dataBase,
   Vector lastVelocity, lastAcc;
 
   // Loop over every fluid node.
-  size_t nodeListi = 0;
-  for (typename DataBase<Dimension>::ConstFluidNodeListIterator nodeListItr = dataBase.fluidNodeListBegin();
-       nodeListItr != dataBase.fluidNodeListEnd();
-       ++nodeListItr, ++nodeListi) {
-    const FluidNodeList<Dimension>& fluidNodeList = **nodeListItr;
-    const Scalar kernelExtent = fluidNodeList.neighbor().kernelExtent();
+  const auto kernelExtent = dataBase.kernelExtent();
+  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
+    const FluidNodeList<Dimension>& fluidNodeList = *fluidNodeListPtr;
     CONTRACT_VAR(kernelExtent);
     CHECK(kernelExtent > 0.0);
 

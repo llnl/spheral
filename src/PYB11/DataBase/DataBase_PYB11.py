@@ -8,6 +8,7 @@ from PYB11Generator import *
 from SpheralCommon import *
 from spheralDimensions import *
 dims = spheralDimensions()
+import SpheralConfigs
 
 #-------------------------------------------------------------------------------
 # Opaque types
@@ -131,10 +132,15 @@ PYB11includes += ['"DataBase/DataBase.hh"',
                   '"Boundary/Boundary.hh"',
                   '"Field/Field.hh"',
                   '"Neighbor/ConnectivityMap.hh"',
+                  '"Neighbor/TreeNeighbor.hh"',
                   '"Physics/Physics.hh"',
                   '"Utilities/DataTypeTraits.hh"',
                   '"Geometry/CellFaceFlag.hh"',
-                  '"RK/RKCoefficients.hh"']
+                  '"RK/RKCoefficients.hh"',
+                  '<type_traits>']
+
+if not SpheralConfigs.gpu_enabled():
+    PYB11includes += ['"Neighbor/PythonNeighbor.hh"']
 
 #-------------------------------------------------------------------------------
 # Namespaces

@@ -2,13 +2,11 @@
 // DEMNodeList -- An abstract base class for the NodeLists to represent
 //                  fluids.
 //----------------------------------------------------------------------------//
+#include "NodeList/DEMNodeList.hh"
 #include "FileIO/FileIO.hh"
 #include "DEM/DEMFieldNames.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "DataBase/State.hh"
-#include "DataBase/StateDerivatives.hh"
-#include "DEMNodeList.hh"
 
 using std::vector;
 using std::list;
@@ -49,6 +47,7 @@ DEMNodeList<Dimension>::
 particleRadius(const Field<Dimension, typename Dimension::Scalar>& radii) {
   mParticleRadius = radii;
   mParticleRadius.name(DEMFieldNames::particleRadius);
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -60,6 +59,7 @@ DEMNodeList<Dimension>::
 compositeParticleIndex(const Field<Dimension, int>& ids) {
   mCompositeParticleIndex = ids;
   mCompositeParticleIndex.name(DEMFieldNames::compositeParticleIndex);
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -71,6 +71,20 @@ DEMNodeList<Dimension>::
 uniqueIndex(const Field<Dimension, size_t>& ids) {
   mUniqueIndex = ids;
   mUniqueIndex.name(DEMFieldNames::uniqueIndices);
+  ++this->mGeneration;
+}
+
+//------------------------------------------------------------------------------
+// Get and refresh the view of DEMNodeList-owned data.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+typename DEMNodeList<Dimension>::ViewType
+DEMNodeList<Dimension>::view() {
+  return ViewType(NodeList<Dimension>::view(),
+                  mParticleRadius.view(),
+                  mCompositeParticleIndex.view(),
+                  mUniqueIndex.view(),
+                  mNeighborSearchBuffer);
 }
 //------------------------------------------------------------------------------
 // Calculate and return the volume per node.
@@ -116,34 +130,6 @@ uniqueIndex(const Field<Dimension, size_t>& ids) {
 //   field.name(HydroFieldNames::totalEnergy);
 // }
 
-
-//------------------------------------------------------------------------------
-// when problem starts set our equilibrium overlap
-//------------------------------------------------------------------------------
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::
-setHfieldFromParticleRadius(const size_t startUniqueIndex){
-  
-  const auto kernelExtent = this->neighbor().kernelExtent();
-  const auto& radius = this->particleRadius();
-  const auto& uniqId = this->uniqueIndex();
-  auto& Hfield = this->Hfield();
-  const auto ni = this->numInternalNodes();
-
-#pragma omp parallel for
-  for (auto i = 0u; i < ni; ++i) {
-    const auto ui = uniqId[i];
-    if(ui >= startUniqueIndex) {
-      const auto Ri = radius[i];
-      auto& Hi = Hfield[i];
-      const auto hInv = safeInv(2.0 * Ri * (1.0+mNeighborSearchBuffer)/kernelExtent);
-      Hi = SymTensor::one() * hInv;
-    }
-  }
-}
-
-
 //------------------------------------------------------------------------------
 // Dump the current state of the NodeList to the given file.
 //------------------------------------------------------------------------------
@@ -176,6 +162,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mParticleRadius, pathName + "/particleRadius");
   file.read(mCompositeParticleIndex, pathName + "/compositeParticleIndex");
   file.read(mUniqueIndex, pathName + "/uniqueIndex");
+  ++this->mGeneration;
 }  
 
 }

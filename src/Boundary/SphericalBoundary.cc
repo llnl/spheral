@@ -23,16 +23,10 @@ namespace Spheral {
 SphericalBoundary::
 SphericalBoundary(const DataBase<Dim<3> >& dataBase):
   Boundary<Dim<3> >(),
+  mDataBase(dataBase),
   mGhostPositions(dataBase.newGlobalFieldList(std::vector<Dim<3>::Vector>(),
                                               "Ghost node positions")),
   mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-SphericalBoundary::
-~SphericalBoundary() {
 }
 
 //------------------------------------------------------------------------------
@@ -64,7 +58,7 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
 
   // Get the number of nodes per h, and the kernel extent.
   const double nPerh = nodeList.nodesPerSmoothingScale();
-  const double kernelExtent = nodeList.neighbor().kernelExtent();
+  const double kernelExtent = mDataBase.kernelExtent();
   CHECK(distinctlyGreaterThan(nPerh, 0.0));
   CHECK(distinctlyGreaterThan(kernelExtent, 0.0));
 
@@ -217,9 +211,6 @@ updateGhostNodes(NodeList<Dim<3> >& nodeList) {
   // H's of the ghost nodes.
   Field<Dimension, SymTensor>& H = nodeList.Hfield();
   applyGhostBoundary(H);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (ghostNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -526,9 +517,6 @@ updateViolationNodes(NodeList<Dim<3> >& nodeList) {
   // Set the Hfield.
   Field<Dim<3> , SymTensor>& Hfield = nodeList.Hfield();
   this->enforceBoundary(Hfield);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); //(vNodes);
 }    
 
 //------------------------------------------------------------------------------

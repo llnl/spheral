@@ -6,6 +6,7 @@
 #define __Spheral_DEMNodeList__
 
 #include "NodeList.hh"
+#include "DEMNodeListView.hh"
 #include "Geometry/Dimension.hh"
 
 #include <float.h>
@@ -26,6 +27,7 @@ public:
   typedef typename Dimension::Scalar Scalar;
   typedef typename Dimension::Vector Vector;
   typedef typename Dimension::SymTensor SymTensor;
+  using ViewType = DEMNodeListView<Dimension>;
   // Constructors.
   DEMNodeList(std::string name,
               const size_t numInternal,
@@ -55,14 +57,14 @@ public:
   Scalar neighborSearchBuffer() const;
   void   neighborSearchBuffer(Scalar x);
 
-  void setHfieldFromParticleRadius(const size_t startUniqueIndex);
+  ViewType view();
 
   //****************************************************************************
   // Methods required for restarting.
   // Dump and restore the NodeList state.
-  virtual std::string label() const { return "DEMNodeList"; }
-  virtual void dumpState(FileIO& file, const std::string& pathName) const;
-  virtual void restoreState(const FileIO& file, const std::string& pathName);
+  virtual std::string label() const override { return "DEMNodeList"; }
+  virtual void dumpState(FileIO& file, const std::string& pathName) const override;
+  virtual void restoreState(const FileIO& file, const std::string& pathName) override;
   //****************************************************************************
 
   // No default constructor or copying.
@@ -83,4 +85,3 @@ private:
 #include "DEMNodeListInline.hh"
 
 #endif
-

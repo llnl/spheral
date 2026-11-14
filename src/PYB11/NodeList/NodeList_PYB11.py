@@ -19,6 +19,7 @@ PYB11includes += ['"NodeList/NodeListRegistrar.hh"',
                   '"NodeList/DEMNodeList.hh"',
                   '"NodeList/generateVoidNodes.hh"',
                   '"NodeList/nthNodalMoment.hh"',
+                  '"DataBase/DataBase.hh"',
                   '"Material/EquationOfState.hh"',
                   '"SolidMaterial/StrengthModel.hh"',
                   '"Kernel/TableKernel.hh"',
@@ -89,13 +90,12 @@ nodes."""
     return "void"
 
 @PYB11template("Dimension", "moment")
-@PYB11implementation("""[](const std::vector<NodeList<%(Dimension)s>*>& nodeLists,
+@PYB11implementation("""[](const DataBase<%(Dimension)s>& dataBase,
                            const TableKernel<%(Dimension)s>& W,
                            const bool renormalize) -> FieldList<%(Dimension)s, typename MomentTraits<%(Dimension)s, %(moment)s>::Moment> {
-                               return nthNodalMoment<%(Dimension)s, typename std::vector<NodeList<%(Dimension)s>*>::const_iterator, %(moment)s>
-                               (nodeLists.begin(), nodeLists.end(), W, renormalize);
+                               return nthNodalMoment<%(Dimension)s, %(moment)s>(dataBase, W, renormalize);
                            }""")
-def nthNodalMoment(nodeLists = "const std::vector<NodeList<%(Dimension)s>*>&",
+def nthNodalMoment(dataBase = "const DataBase<%(Dimension)s>&",
                    W = "const TableKernel<%(Dimension)s>&",
                    renormalize = "const bool"):
     r""" Compute the nth (with n=%(moment)s moment of the local nodal distribution in \\eta space:
@@ -107,15 +107,15 @@ def nthNodalMoment(nodeLists = "const std::vector<NodeList<%(Dimension)s>*>&",
     return "FieldList<%(Dimension)s, typename MomentTraits<%(Dimension)s, %(moment)s>::Moment>"
 
 @PYB11template("Dimension")
-@PYB11implementation("""[](const std::vector<NodeList<%(Dimension)s>*>& nodeLists,
+@PYB11implementation("""[](const DataBase<%(Dimension)s>& dataBase,
                            const TableKernel<%(Dimension)s>& W,
                            const bool useGradientAsKernel,
                            FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>& zerothMoment,
                            FieldList<%(Dimension)s, typename %(Dimension)s::Vector>& firstMoment) {
-                                 zerothAndFirstNodalMoments<%(Dimension)s, typename std::vector<NodeList<%(Dimension)s>*>::const_iterator>
-                                 (nodeLists.begin(), nodeLists.end(), W, useGradientAsKernel, zerothMoment, firstMoment);
+                                 zerothAndFirstNodalMoments<%(Dimension)s>
+                                 (dataBase, W, useGradientAsKernel, zerothMoment, firstMoment);
                            }""")
-def zerothAndFirstNodalMoments(nodeLists = "const std::vector<NodeList<%(Dimension)s>*>&",
+def zerothAndFirstNodalMoments(dataBase = "const DataBase<%(Dimension)s>&",
                                W = "const TableKernel<%(Dimension)s>&",
                                useKernelAsGradient = "const bool",
                                zerothMoment = "FieldList<%(Dimension)s, typename %(Dimension)s::Scalar>&",
