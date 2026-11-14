@@ -112,7 +112,7 @@ public:
                                const DataBase<Dimension>& dataBase,
                                const State<Dimension>& state,
                                StateDerivatives<Dimension>& derivatives,
-                               chai::managed_ptr<QType>& Q) const;
+                               QType Q) const;
 
   // Provide a hook to be called after all physics packages have had their
   // evaluateDerivatives method called, but before anyone does anything

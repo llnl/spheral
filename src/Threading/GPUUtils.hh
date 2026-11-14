@@ -47,7 +47,8 @@ namespace GPUUtils {
 
 int deviceCount();
 
-void initGPUs(const int stack_mult = 8);
+// This defaults to a no-op
+void initGPUs(const int stack_mult = -1);
 
 void deviceSync();
 

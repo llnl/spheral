@@ -30,7 +30,7 @@ import scipy.spatial
 from SpheralCompiledPackages import *
 
 # ------------------------------------------------------------------------------
-# Run initGPUs() to increase the device stack size.
+# Run initGPUs(). Does nothing by default
 # ------------------------------------------------------------------------------
 initGPUs()
 

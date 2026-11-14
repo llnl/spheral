@@ -75,6 +75,9 @@ source("unit/FileIO/testGzipFileIO.py")
 source("unit/FileIO/testSiloFileIO.py")
 source("unit/FileIO/testSidreFileIO.py")
 
+# SimulationControl tests
+source("unit/SimulationControl/testRollingRestart.py")
+
 # Utilities tests
 source("unit/Utilities/testSegmentSegmentIntersection.py")
 source("unit/Utilities/testDistances3d.py")

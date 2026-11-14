@@ -1,4 +1,3 @@
-include_directories(.)
 set(Mesh_inst
     MeshPolicy
     computeGenerators
@@ -54,5 +53,5 @@ spheral_install_python_files(
   siloMeshDump.py
   )
 
-spheral_add_obj_library(Mesh SPHERAL_OBJ_LIBS)
+spheral_add_package(Mesh)
 

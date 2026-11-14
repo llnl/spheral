@@ -677,8 +677,9 @@ intersect(const std::pair<Vector, Vector>& rhs) const {
 //------------------------------------------------------------------------------
 bool
 GeomPolygon::
-intersect(const Vector& s0, const Vector& s1) const {
-  if (this->contains(s0) or this->contains(s1)) return true;
+intersect(const Vector& s0, const Vector& s1,
+          const bool countInterior) const {
+  if (countInterior and (this->contains(s0) or this->contains(s1))) return true;
 
   // Check each segment of the polygon
   Vector inter1, inter2;

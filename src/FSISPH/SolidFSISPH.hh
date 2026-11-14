@@ -134,7 +134,7 @@ public:
                              const DataBase<Dimension>& dataBase,
                              const State<Dimension>& state,
                                    StateDerivatives<Dimension>& derivatives,
-                             chai::managed_ptr<QType> Q) const;
+                             QType Q) const;
 
   virtual 
   void finalizeDerivatives(const Scalar time, 

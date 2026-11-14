@@ -1,4 +1,3 @@
-include_directories(.)
 set(Physics_inst
     GenericBodyForce
     GenericHydro
@@ -15,5 +14,5 @@ set(Physics_headers
     Physics.hh
     )
 
-spheral_add_obj_library(Physics SPHERAL_OBJ_LIBS)
+spheral_add_package(Physics)
 

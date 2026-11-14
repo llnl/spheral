@@ -1,4 +1,3 @@
-include_directories(.)
 set(SmoothingScale_inst
   SmoothingScaleBase
   SPHSmoothingScale
@@ -26,4 +25,4 @@ set(SmoothingScale_headers
   polySecondMoment.hh
 )
 
-spheral_add_obj_library(SmoothingScale SPHERAL_OBJ_LIBS)
+spheral_add_package(SmoothingScale)

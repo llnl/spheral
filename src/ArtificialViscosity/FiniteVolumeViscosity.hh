@@ -7,28 +7,30 @@
 #ifndef __Spheral_FiniteVolumeViscosity__
 #define __Spheral_FiniteVolumeViscosity__
 
-#include "FiniteVolumeViscosityView.hh"
+#include "ArtificialViscosity.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class FiniteVolumeViscosity: public ArtificialViscosity<Dimension> {
+class FiniteVolumeViscosity: public ArtificialViscosity<Dimension>,
+                             public FiniteVolumeViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
   using Vector = typename Dimension::Vector;
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
-  using ArtViscView = ArtificialViscosityView<Dimension, Scalar>;
   using ViewType = FiniteVolumeViscosityView<Dimension>;
 
   // Constructor, destructor
   FiniteVolumeViscosity(const Scalar Clinear,
                         const Scalar Cquadratic,
                         const TableKernel<Dimension>& WT) :
-    ArtificialViscosity<Dimension>(Clinear, Cquadratic, WT) { }
+    ArtificialViscosity<Dimension>(WT),
+    ViewType(Clinear, Cquadratic) { }
 
-  virtual ~FiniteVolumeViscosity() { m_viewPtr.free(); }
+  virtual ~FiniteVolumeViscosity() = default;
 
   // No default construction, copying, or assignment
   FiniteVolumeViscosity() = delete;
@@ -36,52 +38,44 @@ public:
   FiniteVolumeViscosity& operator=(const FiniteVolumeViscosity&) const = delete;
 
   // We are going to use a velocity gradient
-  virtual bool requireVelocityGradient()             const override { return true; }
+  virtual bool requireVelocityGradient() const override { return true; }
+
+  // Restart methods.
+  virtual std::string label()            const override { return "FiniteVolumeViscosity"; }
 
   // Override the method of computing the velocity gradient
   virtual void updateVelocityGradient(const DataBase<Dimension>& db,
                                       const State<Dimension>& state,
                                       const StateDerivatives<Dimension>& derivs) override;
 
-  // Restart methods.
-  virtual std::string label()                        const override { return "FiniteVolumeViscosity"; }
-
-  // View methods
-  virtual std::type_index QPiTypeIndex() const override {
-    return std::type_index(typeid(Scalar));
+  // Forward ArtificialViscosity's virtual parameter interface to ViewType.
+  virtual Scalar Cl() const override { return ViewType::Cl(); }
+  virtual Scalar Cq() const override { return ViewType::Cq(); }
+  virtual bool balsaraShearCorrection() const override {
+    return ViewType::balsaraShearCorrection();
+  }
+  virtual Scalar epsilon2() const override { return ViewType::epsilon2(); }
+  virtual Scalar negligibleSoundSpeed() const override {
+    return ViewType::negligibleSoundSpeed();
   }
 
-  virtual chai::managed_ptr<ArtViscView> getScalarView() override {
-    return chai::dynamic_pointer_cast<ArtViscView, ViewType>(m_viewPtr);
+  virtual void Cl(const Scalar x) override { ViewType::Cl(x); }
+  virtual void Cq(const Scalar x) override { ViewType::Cq(x); }
+  virtual void balsaraShearCorrection(const bool x) override {
+    ViewType::balsaraShearCorrection(x);
+  }
+  virtual void epsilon2(const Scalar x) override { ViewType::epsilon2(x); }
+  virtual void negligibleSoundSpeed(const Scalar x) override {
+    ViewType::negligibleSoundSpeed(x);
   }
 
-  // Useful for testing
-  chai::managed_ptr<ViewType> getView() {
-    initView();
-    return m_viewPtr;
+  // Return a device-safe snapshot of the inherited view state.
+  ViewType view() const {
+    return static_cast<const ViewType&>(*this);
   }
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  // Initialize the managed pointer if it doesn't exist
-  void initView() {
-    if (!m_viewPtr) {
-      m_viewPtr = chai::make_managed<ViewType>(mClinear, mCquadratic);
-    }
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    return this->view();
   }
-
-  // Reinitialize the managed pointer if it exists so member variables are up to date
-  virtual void updateManagedPtr() override {
-    if (m_viewPtr) {
-      m_viewPtr.free();
-      initView();
-    }
-  }
-  using ArtificialViscosity<Dimension>::mClinear;
-  using ArtificialViscosity<Dimension>::mCquadratic;
-private:
-  std::type_index m_viewType = typeid(ViewType);
-  chai::managed_ptr<ViewType> m_viewPtr = nullptr;
 };
 
 }

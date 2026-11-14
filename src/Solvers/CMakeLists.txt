@@ -1,4 +1,3 @@
-include_directories(.)
 set(Solvers_inst )
 
 set(Solvers_sources
@@ -12,4 +11,4 @@ set(Solvers_headers
   KINSOL.hh
 )
 
-spheral_add_obj_library(Solvers SPHERAL_OBJ_LIBS)
+spheral_add_package(Solvers)

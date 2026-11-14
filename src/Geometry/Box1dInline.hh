@@ -171,12 +171,18 @@ intersect(const std::pair<Vector, Vector>& rhs) const {
 inline
 bool
 Box1d::
-intersect(const Vector& s0, const Vector& s1) const {
+intersect(const Vector& s0, const Vector& s1,
+          const bool countInterior) const {
   const auto smin = std::min(s0.x(), s1.x());
   const auto smax = std::max(s0.x(), s1.x());
   if ((smin > mCenter.x() + mExtent) or
       (smax < mCenter.x() - mExtent)) return false;
-  return true;
+  if (countInterior) {
+    return true;
+  } else {
+    return ((smin < mCenter.x() + mExtent) or
+            (smax > mCenter.x() - mExtent));
+  }
 }
 
 //------------------------------------------------------------------------------

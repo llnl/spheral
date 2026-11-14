@@ -136,18 +136,6 @@ class PythonArtificialViscosity(ArtificialViscosity):
         return "std::tuple<%(QPiType)s, %(QPiType)s, Scalar, Scalar>"
 
     @PYB11virtual
-    @PYB11protected
-    def updateManagedPtr(self):
-        "Update member data for managed pointer."
-        return "void"
-
-    @PYB11virtual
-    @PYB11const
-    def QPiTypeIndex(self):
-        "Require ArtificialViscosities to specify the type_index of the descendant QPiType"
-        return "std::type_index"
-
-    @PYB11virtual
     @PYB11const
     def label(self):
         return "std::string"

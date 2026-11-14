@@ -1,6 +1,7 @@
 //---------------------------------Spheral++----------------------------------//
 // A version of our tensor viscosity specialized for the SVPHFacetedHydro
-// algorithm.
+// algorithm. This class is not an ArtificialViscosityVariant class but provides
+// an unrelated variant to fulfill the virtual function requirement.
 //
 // Created by J. Michael Owen, Sat Aug 31 13:31:51 PDT 2013
 //----------------------------------------------------------------------------//
@@ -8,11 +9,14 @@
 #define __Spheral_TensorSVPHViscosity__
 
 #include "ArtificialViscosity.hh"
+#include "ArtificialViscosityVariant.hh"
 
 namespace Spheral {
 
 template<typename Dimension>
-class TensorSVPHViscosity: public ArtificialViscosity<Dimension> {
+class TensorSVPHViscosity:
+    public ArtificialViscosity<Dimension>,
+    public ArtificialViscosityView<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -35,27 +39,26 @@ public:
                           State<Dimension>& state,
                           StateDerivatives<Dimension>& derivs) override;
 
-  // We are abusing the normal ArtificialViscosity interface, and this normally
-  // required method is a no-op for this specialization.
-  // virtual void QPiij(Tensor& QPiij, Tensor& QPiji,      // result for QPi (Q/rho^2)
-  //                    Scalar& Qij, Scalar& Qji,          // result for viscous pressure
-  //                    const size_t nodeListi, const size_t i, 
-  //                    const size_t nodeListj, const size_t j,
-  //                    const Vector& xi,
-  //                    const SymTensor& Hi,
-  //                    const Vector& etai,
-  //                    const Vector& vi,
-  //                    const Scalar rhoi,
-  //                    const Scalar csi,
-  //                    const Vector& xj,
-  //                    const SymTensor& Hj,
-  //                    const Vector& etaj,
-  //                    const Vector& vj,
-  //                    const Scalar rhoj,
-  //                    const Scalar csj,
-  //                    const FieldList<Dimension, Scalar>& fCl,
-  //                    const FieldList<Dimension, Scalar>& fCq,
-  //                    const FieldList<Dimension, Tensor>& DvDx) const override { VERIFY2(false, "TensorSVPHViscosity ERROR: cannot call QPiij"); }
+  // Forward ArtificialViscosity's virtual parameter interface to the view.
+  virtual Scalar Cl() const override { return ArtificialViscosityView<Dimension>::Cl(); }
+  virtual Scalar Cq() const override { return ArtificialViscosityView<Dimension>::Cq(); }
+  virtual bool balsaraShearCorrection() const override {
+    return ArtificialViscosityView<Dimension>::balsaraShearCorrection();
+  }
+  virtual Scalar epsilon2() const override { return ArtificialViscosityView<Dimension>::epsilon2(); }
+  virtual Scalar negligibleSoundSpeed() const override {
+    return ArtificialViscosityView<Dimension>::negligibleSoundSpeed();
+  }
+
+  virtual void Cl(const Scalar x) override { ArtificialViscosityView<Dimension>::Cl(x); }
+  virtual void Cq(const Scalar x) override { ArtificialViscosityView<Dimension>::Cq(x); }
+  virtual void balsaraShearCorrection(const bool x) override {
+    ArtificialViscosityView<Dimension>::balsaraShearCorrection(x);
+  }
+  virtual void epsilon2(const Scalar x) override { ArtificialViscosityView<Dimension>::epsilon2(x); }
+  virtual void negligibleSoundSpeed(const Scalar x) override {
+    ArtificialViscosityView<Dimension>::negligibleSoundSpeed(x);
+  }
 
   // Access our internal state.
   Scalar fslice()                               const          { return mfslice; }
@@ -65,10 +68,14 @@ public:
   const std::vector<Scalar>& shearCorrection()  const          { return mShearCorrection; }
   const std::vector<Tensor>& Qface()            const          { return mQface; }
 
-  virtual std::type_index QPiTypeIndex() const override        { return typeid(Tensor); }
-
   // Restart methods.
   virtual std::string label()                   const override { return "TensorSVPHViscosity"; }
+
+  // Dummy function to fulfill the variantView override
+  ArtificialViscosityVariant<Dimension> variantView() const override {
+    VERIFY2(false, "Cannot call variantView with TensorSVPHViscosity");
+    return std::monostate{};
+  }
 
 private:
   //--------------------------- Private Interface ---------------------------//
