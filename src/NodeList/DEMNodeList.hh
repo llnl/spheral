@@ -20,8 +20,7 @@ template<typename Dimension, typename DataType> class FieldList;
 class FileIO;
 
 template<typename Dimension>
-class DEMNodeList: public NodeList<Dimension>,
-                   public DEMNodeListView<Dimension> {
+class DEMNodeList: public NodeList<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -72,13 +71,6 @@ public:
   DEMNodeList() = delete;
   DEMNodeList(const DEMNodeList& nodes) = delete;
   DEMNodeList& operator=(const DEMNodeList& rhs) = delete;
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  virtual void refreshView() override;
-  void refreshParticleRadiusView();
-  void refreshCompositeParticleIndexView();
-  void refreshUniqueIndexView();
 
 private:
   //--------------------------- Private Interface ---------------------------//

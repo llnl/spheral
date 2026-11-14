@@ -26,7 +26,7 @@ template<typename Dimension, typename Value> class Field;
 class FileIO;
 
 template<typename Dimension>
-class NodeList: public virtual NodeListView<Dimension> {
+class NodeList: public NodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//

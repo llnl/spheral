@@ -29,8 +29,8 @@ inline
 FluidNodeListView<Dimension>::
 FluidNodeListView(const size_t numNodes,
                   const size_t firstGhostNode,
-                  const ScalarView& massDensity,
-                  const ScalarView& specificThermalEnergy,
+                  const ScalarFieldView& massDensity,
+                  const ScalarFieldView& specificThermalEnergy,
                   const Scalar rhoMin,
                   const Scalar rhoMax):
   NodeListViewType(numNodes, firstGhostNode),
@@ -40,6 +40,28 @@ FluidNodeListView(const size_t numNodes,
   mMassDensityRZView(),
   mSpecificThermalEnergyView(specificThermalEnergy) {
   REQUIRE(mMassDensityView.numElements() == this->mNumNodes);
+  REQUIRE(mSpecificThermalEnergyView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+FluidNodeListView<Dimension>::
+FluidNodeListView(const NodeListViewType& nodeListView,
+                  const ScalarFieldView& massDensity,
+                  const ScalarFieldView& massDensityRZ,
+                  const ScalarFieldView& specificThermalEnergy,
+                  const Scalar rhoMin,
+                  const Scalar rhoMax):
+  NodeListViewType(nodeListView),
+  mRhoMin(rhoMin),
+  mRhoMax(rhoMax),
+  mMassDensityView(massDensity),
+  mMassDensityRZView(massDensityRZ),
+  mSpecificThermalEnergyView(specificThermalEnergy) {
+  REQUIRE(mMassDensityView.numElements() == this->mNumNodes);
+  REQUIRE(mMassDensityRZView.numElements() == 0u or
+          mMassDensityRZView.numElements() == this->mNumNodes);
   REQUIRE(mSpecificThermalEnergyView.numElements() == this->mNumNodes);
 }
 

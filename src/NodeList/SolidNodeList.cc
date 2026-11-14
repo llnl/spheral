@@ -43,22 +43,6 @@ SolidNodeList(string name,
               const size_t maxNumNeighbors,
               const Scalar rhoMin,
               const Scalar rhoMax):
-  NodeListView<Dimension>(numInternal + numGhost,
-                          numInternal,
-                          hmin,
-                          hmax,
-                          hminratio,
-                          nPerh,
-                          maxNumNeighbors),
-  FluidNodeListView<Dimension>(numInternal + numGhost,
-                               numInternal,
-                               hmin,
-                               hmax,
-                               hminratio,
-                               nPerh,
-                               maxNumNeighbors,
-                               rhoMin,
-                               rhoMax),
   FluidNodeList<Dimension>(name, 
                            eos,
                            numInternal, 
@@ -70,15 +54,6 @@ SolidNodeList(string name,
                            maxNumNeighbors,
                            rhoMin,
                            rhoMax),
-  ViewType(numInternal + numGhost,
-           numInternal,
-           hmin,
-           hmax,
-           hminratio,
-           nPerh,
-           maxNumNeighbors,
-           rhoMin,
-           rhoMax),
   mDeviatoricStress(SolidFieldNames::deviatoricStress, *this),
   mPlasticStrain(SolidFieldNames::plasticStrain, *this),
   mPlasticStrainRate(SolidFieldNames::plasticStrainRate, *this),
@@ -86,7 +61,6 @@ SolidNodeList(string name,
   mFragmentIDs(SolidFieldNames::fragmentIDs, *this),
   mParticleTypes(SolidFieldNames::particleTypes, *this),
   mStrength(strength) {
-  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -95,36 +69,14 @@ SolidNodeList(string name,
 template<typename Dimension>
 typename SolidNodeList<Dimension>::ViewType
 SolidNodeList<Dimension>::view() {
-  return static_cast<ViewType>(*this);
+  return ViewType(FluidNodeList<Dimension>::view(),
+                  mDeviatoricStress.view(),
+                  mPlasticStrain.view(),
+                  mPlasticStrainRate.view(),
+                  mDamage.view(),
+                  mFragmentIDs.view(),
+                  mParticleTypes.view());
 }
-
-template<typename Dimension>
-void
-SolidNodeList<Dimension>::refreshView() {
-  FluidNodeList<Dimension>::refreshView();
-  refreshDeviatoricStressView();
-  refreshPlasticStrainView();
-  refreshPlasticStrainRateView();
-  refreshDamageView();
-  refreshFragmentIDsView();
-  refreshParticleTypesView();
-}
-
-#define SPHERAL_REFRESH_SOLID_VIEW(METHOD, MEMBER, VIEW)                     \
-  template<typename Dimension>                                               \
-  void SolidNodeList<Dimension>::METHOD() {                                  \
-    this->VIEW = MEMBER.view();                                               \
-    ENSURE(this->VIEW.numElements() == this->mNumNodes);                     \
-  }
-
-SPHERAL_REFRESH_SOLID_VIEW(refreshDeviatoricStressView, mDeviatoricStress, mDeviatoricStressView)
-SPHERAL_REFRESH_SOLID_VIEW(refreshPlasticStrainView, mPlasticStrain, mPlasticStrainView)
-SPHERAL_REFRESH_SOLID_VIEW(refreshPlasticStrainRateView, mPlasticStrainRate, mPlasticStrainRateView)
-SPHERAL_REFRESH_SOLID_VIEW(refreshDamageView, mDamage, mDamageView)
-SPHERAL_REFRESH_SOLID_VIEW(refreshFragmentIDsView, mFragmentIDs, mFragmentIDsView)
-SPHERAL_REFRESH_SOLID_VIEW(refreshParticleTypesView, mParticleTypes, mParticleTypesView)
-
-#undef SPHERAL_REFRESH_SOLID_VIEW
 
 //------------------------------------------------------------------------------
 // Calculate and return the sound speed field.
@@ -269,7 +221,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mDamage, pathName + "/" + mDamage.name());
   file.read(mFragmentIDs, pathName + "/" + mFragmentIDs.name());
   file.read(mParticleTypes, pathName + "/" + mParticleTypes.name());
-  refreshView();
+  ++this->mGeneration;
 }
 
 }

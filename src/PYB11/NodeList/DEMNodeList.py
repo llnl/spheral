@@ -83,6 +83,7 @@ class DEMNodeList(NodeList):
         "set the unique particle indices"
         return "void"
 
+    @PYB11implementation("[](DEMNodeList<%(Dimension)s>& self, const size_t startUniqueIndex, const Scalar kernelExtent) { auto view = self.view(); view.setHfieldFromParticleRadius(startUniqueIndex, kernelExtent); }")
     def setHfieldFromParticleRadius(self,
                                     startUniqueIndex = "const size_t",
                                     kernelExtent = "const Scalar"):

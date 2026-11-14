@@ -24,11 +24,30 @@ inline
 DEMNodeListView<Dimension>::
 DEMNodeListView(const size_t numNodes,
                 const size_t firstGhostNode,
-                const ScalarView& particleRadius,
-                const IntView& compositeParticleIndex,
-                const IndexView& uniqueIndex,
+                const ScalarFieldView& particleRadius,
+                const IntFieldView& compositeParticleIndex,
+                const IndexFieldView& uniqueIndex,
                 const Scalar neighborSearchBuffer):
   NodeListViewType(numNodes, firstGhostNode),
+  mNeighborSearchBuffer(neighborSearchBuffer),
+  mParticleRadiusView(particleRadius),
+  mCompositeParticleIndexView(compositeParticleIndex),
+  mUniqueIndexView(uniqueIndex) {
+  REQUIRE(mParticleRadiusView.numElements() == this->mNumNodes);
+  REQUIRE(mCompositeParticleIndexView.numElements() == this->mNumNodes);
+  REQUIRE(mUniqueIndexView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+DEMNodeListView<Dimension>::
+DEMNodeListView(const NodeListViewType& nodeListView,
+                const ScalarFieldView& particleRadius,
+                const IntFieldView& compositeParticleIndex,
+                const IndexFieldView& uniqueIndex,
+                const Scalar neighborSearchBuffer):
+  NodeListViewType(nodeListView),
   mNeighborSearchBuffer(neighborSearchBuffer),
   mParticleRadiusView(particleRadius),
   mCompositeParticleIndexView(compositeParticleIndex),

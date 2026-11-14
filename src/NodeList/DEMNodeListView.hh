@@ -9,16 +9,16 @@
 namespace Spheral {
 
 template<typename Dimension>
-class DEMNodeListView: public virtual NodeListView<Dimension> {
+class DEMNodeListView: public NodeListView<Dimension> {
 public:
   using Scalar = typename Dimension::Scalar;
   using SymTensor = typename Dimension::SymTensor;
 
   using NodeListViewType = NodeListView<Dimension>;
 
-  using ScalarView = FieldView<Dimension, Scalar>;
-  using IntView = FieldView<Dimension, int>;
-  using IndexView = FieldView<Dimension, size_t>;
+  using ScalarFieldView = FieldView<Dimension, Scalar>;
+  using IntFieldView = FieldView<Dimension, int>;
+  using IndexFieldView = FieldView<Dimension, size_t>;
 
   // Constructors, destructor.
   SPHERAL_HOST_DEVICE DEMNodeListView() = default;
@@ -32,9 +32,14 @@ public:
                                       const size_t maxNumNeighbors = 500);
   SPHERAL_HOST_DEVICE DEMNodeListView(const size_t numNodes,
                                       const size_t firstGhostNode,
-                                      const ScalarView& particleRadius,
-                                      const IntView& compositeParticleIndex,
-                                      const IndexView& uniqueIndex,
+                                      const ScalarFieldView& particleRadius,
+                                      const IntFieldView& compositeParticleIndex,
+                                      const IndexFieldView& uniqueIndex,
+                                      const Scalar neighborSearchBuffer = 0.1);
+  SPHERAL_HOST_DEVICE DEMNodeListView(const NodeListViewType& nodeListView,
+                                      const ScalarFieldView& particleRadius,
+                                      const IntFieldView& compositeParticleIndex,
+                                      const IndexFieldView& uniqueIndex,
                                       const Scalar neighborSearchBuffer = 0.1);
   SPHERAL_HOST_DEVICE DEMNodeListView(const DEMNodeListView&) = default;
   SPHERAL_HOST_DEVICE DEMNodeListView(DEMNodeListView&&) = default;
@@ -50,20 +55,20 @@ public:
   }
 
   // Field views.
-  SPHERAL_HOST_DEVICE ScalarView& particleRadius()                          { return mParticleRadiusView; }
-  SPHERAL_HOST_DEVICE const ScalarView& particleRadius()              const { return mParticleRadiusView; }
-  SPHERAL_HOST_DEVICE IntView& compositeParticleIndex()                     { return mCompositeParticleIndexView; }
-  SPHERAL_HOST_DEVICE const IntView& compositeParticleIndex()         const { return mCompositeParticleIndexView; }
-  SPHERAL_HOST_DEVICE IndexView& uniqueIndex()                              { return mUniqueIndexView; }
-  SPHERAL_HOST_DEVICE const IndexView& uniqueIndex()                  const { return mUniqueIndexView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& particleRadius()                          { return mParticleRadiusView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& particleRadius()              const { return mParticleRadiusView; }
+  SPHERAL_HOST_DEVICE IntFieldView& compositeParticleIndex()                     { return mCompositeParticleIndexView; }
+  SPHERAL_HOST_DEVICE const IntFieldView& compositeParticleIndex()         const { return mCompositeParticleIndexView; }
+  SPHERAL_HOST_DEVICE IndexFieldView& uniqueIndex()                              { return mUniqueIndexView; }
+  SPHERAL_HOST_DEVICE const IndexFieldView& uniqueIndex()                  const { return mUniqueIndexView; }
 
   // DEM particle properties
   SPHERAL_HOST_DEVICE Scalar& particleRadius(size_t nodeID) const;
   SPHERAL_HOST_DEVICE int& compositeParticleIndex(size_t nodeID) const;
   SPHERAL_HOST_DEVICE size_t& uniqueIndex(size_t nodeID) const;
 
-  SPHERAL_HOST_DEVICE Scalar neighborSearchBuffer()                   const { return mNeighborSearchBuffer; }
-  SPHERAL_HOST_DEVICE void neighborSearchBuffer(const Scalar x)             { mNeighborSearchBuffer = x; }
+  SPHERAL_HOST_DEVICE Scalar neighborSearchBuffer()                        const { return mNeighborSearchBuffer; }
+  SPHERAL_HOST_DEVICE void neighborSearchBuffer(const Scalar x)                  { mNeighborSearchBuffer = x; }
 
   SPHERAL_HOST_DEVICE void setHfieldFromParticleRadius(const size_t startUniqueIndex,
                                                        const Scalar kernelExtent);
@@ -74,9 +79,9 @@ public:
 
 protected:
   Scalar mNeighborSearchBuffer = 0.1;
-  ScalarView mParticleRadiusView;
-  IntView mCompositeParticleIndexView;
-  IndexView mUniqueIndexView;
+  ScalarFieldView mParticleRadiusView;
+  IntFieldView mCompositeParticleIndexView;
+  IndexFieldView mUniqueIndexView;
 };
 
 }

@@ -23,8 +23,7 @@ template<typename Dimension> class DataBase;
 class FileIO;
 
 template<typename Dimension>
-class FluidNodeList: public NodeList<Dimension>,
-                     public virtual FluidNodeListView<Dimension> {
+class FluidNodeList: public NodeList<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
@@ -77,11 +76,11 @@ public:
 
   // Optional bounding mass densities for use when time integrating
   // the density.
-  Scalar rhoMin() const { return ViewType::rhoMin(); }
-  Scalar rhoMax() const { return ViewType::rhoMax(); }
+  Scalar rhoMin() const { return mRhoMin; }
+  Scalar rhoMax() const { return mRhoMax; }
 
-  void rhoMin(Scalar x) { ViewType::rhoMin(x); ++this->mGeneration; }
-  void rhoMax(Scalar x) { ViewType::rhoMax(x); ++this->mGeneration; }
+  void rhoMin(Scalar x) { mRhoMin = x; ++this->mGeneration; }
+  void rhoMax(Scalar x) { mRhoMax = x; ++this->mGeneration; }
 
   // Get the view of FluidNodeList-owned data.
   ViewType view();
@@ -99,17 +98,12 @@ public:
   FluidNodeList(const FluidNodeList& nodes) = delete;
   FluidNodeList& operator=(const FluidNodeList& rhs) = delete;
 
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  virtual void refreshView() override;
-  void refreshMassDensityView();
-  void refreshMassDensityRZView();
-  void refreshSpecificThermalEnergyView();
-
 private:
   //--------------------------- Private Interface ---------------------------//
 
   // Fields that define the fluid's current state.
+  Scalar mRhoMin;
+  Scalar mRhoMax;
   Field<Dimension, Scalar> mMassDensity;
   Field<Dimension, Scalar> mSpecificThermalEnergy;
   std::unique_ptr<Field<Dimension, Scalar>> mMassDensityRZptr;

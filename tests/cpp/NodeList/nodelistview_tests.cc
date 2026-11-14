@@ -6,7 +6,11 @@
 #include "test-utilities.hh"
 
 #include "NodeList/NodeList.hh"
+#include "NodeList/FluidNodeList.hh"
+#include "NodeList/SolidNodeList.hh"
+#include "NodeList/DEMNodeList.hh"
 #include "DataBase/DataBase.hh"
+#include "Material/GammaLawGas.hh"
 
 #include <type_traits>
 #include <utility>
@@ -17,6 +21,12 @@ using Vector = typename DIM3::Vector;
 using SymTensor = typename DIM3::SymTensor;
 using NodeList_t = Spheral::NodeList<DIM3>;
 using NodeListView_t = Spheral::NodeListView<DIM3>;
+using FluidNodeList_t = Spheral::FluidNodeList<DIM3>;
+using FluidNodeListView_t = Spheral::FluidNodeListView<DIM3>;
+using SolidNodeList_t = Spheral::SolidNodeList<DIM3>;
+using SolidNodeListView_t = Spheral::SolidNodeListView<DIM3>;
+using DEMNodeList_t = Spheral::DEMNodeList<DIM3>;
+using DEMNodeListView_t = Spheral::DEMNodeListView<DIM3>;
 
 static constexpr size_t Ninternal = 12;
 static constexpr size_t Nghost = 3;
@@ -676,6 +686,47 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, DataBaseGenerationRefresh) {
                     nodes.viewGeneration());
 }
 
+//------------------------------------------------------------------------------
+// Specialized owners have a single live base View and produce complete,
+// ordinary-inheritance snapshots.  Appending a FluidNodeList exercises the
+// vector-backed construction path that previously assigned into raw CHAI
+// storage and crashed for a virtual-base View.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, SpecializedSnapshotAndDataBaseAppend) {
+  static_assert(std::is_base_of<NodeListView_t, FluidNodeListView_t>::value);
+  static_assert(std::is_base_of<FluidNodeListView_t, SolidNodeListView_t>::value);
+  static_assert(std::is_base_of<NodeListView_t, DEMNodeListView_t>::value);
+  static_assert(!std::is_base_of<FluidNodeListView_t, FluidNodeList_t>::value);
+  static_assert(!std::is_base_of<SolidNodeListView_t, SolidNodeList_t>::value);
+  static_assert(!std::is_base_of<DEMNodeListView_t, DEMNodeList_t>::value);
+
+  const Spheral::PhysicalConstants units(1.0, 1.0, 1.0);
+  Spheral::GammaLawGas<DIM3> eos(5.0/3.0, 1.0, units,
+                                -1.0e200, 1.0e200,
+                                Spheral::MaterialPressureMinType::PressureFloor,
+                                0.0);
+  FluidNodeList_t nodes("FluidNodeListSpecializedSnapshot", eos,
+                        Ninternal, Nghost,
+                        1.0e-20, 1.0e20, 0.1, 2.01, 500u,
+                        1.0e-10, 1.0e100);
+
+  auto nodesView = nodes.view();
+  SPHERAL_ASSERT_EQ(nodesView.numNodes(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodesView.mass().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodesView.massDensity().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodesView.specificThermalEnergy().numElements(), Ntotal);
+  SPHERAL_ASSERT_EQ(nodesView.hash(), nodes.hash());
+
+  Spheral::DataBase<DIM3> dataBase(2.0);
+  dataBase.appendNodeList(nodes);
+  const auto dataBaseView = dataBase.view();
+  SPHERAL_ASSERT_EQ(dataBaseView.numNodeLists(), 1u);
+  SPHERAL_ASSERT_EQ(dataBaseView.numFluidNodeLists(), 1u);
+  SPHERAL_ASSERT_EQ(dataBaseView.nodeListViews()[0].hash(), nodesView.hash());
+  SPHERAL_ASSERT_EQ(dataBaseView.fluidNodeListViews()[0].hash(), nodesView.hash());
+  SPHERAL_ASSERT_EQ(dataBaseView.fluidNodeListViews()[0].massDensity().numElements(), Ntotal);
+}
+
 REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             DefaultAndExplicitConstruction,
                             ValueSemantics,
@@ -690,7 +741,8 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             AppendInternalNodesRefreshesInheritedView,
                             ReorderNodesRefreshesInheritedView,
                             HostStateAndInheritedView,
-                            DataBaseGenerationRefresh);
+                            DataBaseGenerationRefresh,
+                            SpecializedSnapshotAndDataBaseAppend);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodeList,
                                NodeListViewTypedTest,

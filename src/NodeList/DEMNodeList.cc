@@ -31,26 +31,11 @@ DEMNodeList(string name,
             const Scalar nPerh,
             const Scalar neighborSearchBuffer,
             const size_t maxNumNeighbors):
-  NodeListView<Dimension>(numInternal + numGhost,
-                          numInternal,
-                          hmin,
-                          hmax,
-                          hminratio,
-                          nPerh,
-                          maxNumNeighbors),
   NodeList<Dimension>(name, numInternal, numGhost, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
-  ViewType(numInternal + numGhost,
-           numInternal,
-           hmin,
-           hmax,
-           hminratio,
-           nPerh,
-           neighborSearchBuffer,
-           maxNumNeighbors),
+  mNeighborSearchBuffer(neighborSearchBuffer),
   mParticleRadius(DEMFieldNames::particleRadius, *this),
   mCompositeParticleIndex(DEMFieldNames::compositeParticleIndex, *this),
   mUniqueIndex(DEMFieldNames::uniqueIndices, *this){
-  refreshView();
 }
 
 //------------------------------------------------------------------------------
@@ -62,7 +47,6 @@ DEMNodeList<Dimension>::
 particleRadius(const Field<Dimension, typename Dimension::Scalar>& radii) {
   mParticleRadius = radii;
   mParticleRadius.name(DEMFieldNames::particleRadius);
-  refreshParticleRadiusView();
   ++this->mGeneration;
 }
 
@@ -75,7 +59,6 @@ DEMNodeList<Dimension>::
 compositeParticleIndex(const Field<Dimension, int>& ids) {
   mCompositeParticleIndex = ids;
   mCompositeParticleIndex.name(DEMFieldNames::compositeParticleIndex);
-  refreshCompositeParticleIndexView();
   ++this->mGeneration;
 }
 
@@ -88,7 +71,6 @@ DEMNodeList<Dimension>::
 uniqueIndex(const Field<Dimension, size_t>& ids) {
   mUniqueIndex = ids;
   mUniqueIndex.name(DEMFieldNames::uniqueIndices);
-  refreshUniqueIndexView();
   ++this->mGeneration;
 }
 
@@ -98,37 +80,11 @@ uniqueIndex(const Field<Dimension, size_t>& ids) {
 template<typename Dimension>
 typename DEMNodeList<Dimension>::ViewType
 DEMNodeList<Dimension>::view() {
-  return static_cast<ViewType>(*this);
-}
-
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::refreshView() {
-  NodeList<Dimension>::refreshView();
-  refreshParticleRadiusView();
-  refreshCompositeParticleIndexView();
-  refreshUniqueIndexView();
-}
-
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::refreshParticleRadiusView() {
-  this->mParticleRadiusView = mParticleRadius.view();
-  ENSURE(this->mParticleRadiusView.numElements() == this->mNumNodes);
-}
-
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::refreshCompositeParticleIndexView() {
-  this->mCompositeParticleIndexView = mCompositeParticleIndex.view();
-  ENSURE(this->mCompositeParticleIndexView.numElements() == this->mNumNodes);
-}
-
-template<typename Dimension>
-void
-DEMNodeList<Dimension>::refreshUniqueIndexView() {
-  this->mUniqueIndexView = mUniqueIndex.view();
-  ENSURE(this->mUniqueIndexView.numElements() == this->mNumNodes);
+  return ViewType(NodeList<Dimension>::view(),
+                  mParticleRadius.view(),
+                  mCompositeParticleIndex.view(),
+                  mUniqueIndex.view(),
+                  mNeighborSearchBuffer);
 }
 //------------------------------------------------------------------------------
 // Calculate and return the volume per node.
@@ -206,7 +162,7 @@ restoreState(const FileIO& file, const string& pathName) {
   file.read(mParticleRadius, pathName + "/particleRadius");
   file.read(mCompositeParticleIndex, pathName + "/compositeParticleIndex");
   file.read(mUniqueIndex, pathName + "/uniqueIndex");
-  refreshView();
+  ++this->mGeneration;
 }  
 
 }

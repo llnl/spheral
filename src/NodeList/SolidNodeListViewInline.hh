@@ -15,7 +15,6 @@ SolidNodeListView(const size_t numNodes,
                   const size_t maxNumNeighbors,
                   const Scalar rhoMin,
                   const Scalar rhoMax):
-  NodeListView<Dimension>(numNodes, firstGhostNode, hmin, hmax, hminratio, nPerh, maxNumNeighbors),
   FluidNodeListViewType(numNodes, firstGhostNode, hmin, hmax, hminratio, nPerh, maxNumNeighbors, rhoMin, rhoMax) {
 }
 
@@ -25,14 +24,39 @@ inline
 SolidNodeListView<Dimension>::
 SolidNodeListView(const size_t numNodes,
                   const size_t firstGhostNode,
-                  const SymTensorView& deviatoricStress,
-                  const ScalarView& plasticStrain,
-                  const ScalarView& plasticStrainRate,
-                  const SymTensorView& damage,
-                  const IntView& fragmentIDs,
-                  const IntView& particleTypes):
-  NodeListView<Dimension>(numNodes, firstGhostNode),
+                  const SymTensorFieldView& deviatoricStress,
+                  const ScalarFieldView& plasticStrain,
+                  const ScalarFieldView& plasticStrainRate,
+                  const SymTensorFieldView& damage,
+                  const IntFieldView& fragmentIDs,
+                  const IntFieldView& particleTypes):
   FluidNodeListViewType(numNodes, firstGhostNode),
+  mDeviatoricStressView(deviatoricStress),
+  mPlasticStrainView(plasticStrain),
+  mPlasticStrainRateView(plasticStrainRate),
+  mDamageView(damage),
+  mFragmentIDsView(fragmentIDs),
+  mParticleTypesView(particleTypes) {
+  REQUIRE(mDeviatoricStressView.numElements() == this->mNumNodes);
+  REQUIRE(mPlasticStrainView.numElements() == this->mNumNodes);
+  REQUIRE(mPlasticStrainRateView.numElements() == this->mNumNodes);
+  REQUIRE(mDamageView.numElements() == this->mNumNodes);
+  REQUIRE(mFragmentIDsView.numElements() == this->mNumNodes);
+  REQUIRE(mParticleTypesView.numElements() == this->mNumNodes);
+}
+
+template<typename Dimension>
+SPHERAL_HOST_DEVICE
+inline
+SolidNodeListView<Dimension>::
+SolidNodeListView(const FluidNodeListViewType& fluidNodeListView,
+                  const SymTensorFieldView& deviatoricStress,
+                  const ScalarFieldView& plasticStrain,
+                  const ScalarFieldView& plasticStrainRate,
+                  const SymTensorFieldView& damage,
+                  const IntFieldView& fragmentIDs,
+                  const IntFieldView& particleTypes):
+  FluidNodeListViewType(fluidNodeListView),
   mDeviatoricStressView(deviatoricStress),
   mPlasticStrainView(plasticStrain),
   mPlasticStrainRateView(plasticStrainRate),

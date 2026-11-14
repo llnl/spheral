@@ -18,7 +18,6 @@
 #include "Neighbor/ConnectivityMap.hh"
 
 #include <vector>
-#include <span>
 
 namespace Spheral {
   template<typename Dimension, typename DataType> class Field;
@@ -38,12 +37,6 @@ public:
   using SymTensor = typename Dimension::SymTensor;
 
   template<typename T> using ValueContainer = std::vector<T>;
-
-#ifdef SPHERAL_UNIFIED_MEMORY
-  template<typename T> using ViewSpan = std::span<T>;
-#else
-  template<typename T> using ViewSpan = chai::ManagedArray<T>;
-#endif
 
   using NodeListIterator = typename ValueContainer<NodeList<Dimension>*>::iterator;
   using ConstNodeListIterator = typename ValueContainer<NodeList<Dimension>*>::const_iterator;
@@ -68,7 +61,7 @@ public:
   DataBase() = delete;
   DataBase(const DataBase& rhs) = delete;
   DataBase(DataBase&& rhs) = delete;
-  virtual ~DataBase() = default;
+  virtual ~DataBase();
 
   // Assignment.
   DataBase& operator=(const DataBase& rhs) = delete;
@@ -406,18 +399,11 @@ private:
   mutable ConnectivityMapPtr                mConnectivityMapPtr;
   mutable std::vector<size_t>                mNodeListViewGenerations;
 
-  // Storage for DataBaseView
-#ifdef SPHERAL_UNIFIED_MEMORY  
+  // Constructed host storage for DataBaseView snapshots.
   ValueContainer<NodeListView<Dimension>>      mNodeListViewStorage;
   ValueContainer<FluidNodeListView<Dimension>> mFluidNodeListViewStorage;
   ValueContainer<SolidNodeListView<Dimension>> mSolidNodeListViewStorage;
   ValueContainer<DEMNodeListView<Dimension>>   mDEMNodeListViewStorage;
-#else
-  ViewSpan<NodeListView<Dimension>>      mNodeListViewStorage;
-  ViewSpan<FluidNodeListView<Dimension>> mFluidNodeListViewStorage;
-  ViewSpan<SolidNodeListView<Dimension>> mSolidNodeListViewStorage;
-  ViewSpan<DEMNodeListView<Dimension>>   mDEMNodeListViewStorage;
-#endif
 
   // Keep the DataBaseView in sync
   void updateView();

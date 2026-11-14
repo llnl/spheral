@@ -9,13 +9,13 @@
 namespace Spheral {
 
 template<typename Dimension>
-class FluidNodeListView: public virtual NodeListView<Dimension> {
+class FluidNodeListView: public NodeListView<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
   using NodeListViewType = NodeListView<Dimension>;
-  using ScalarView = FieldView<Dimension, Scalar>;
+  using ScalarFieldView = FieldView<Dimension, Scalar>;
 
   // Constructors, destructor.
   SPHERAL_HOST_DEVICE FluidNodeListView() = default;
@@ -30,8 +30,14 @@ public:
                                         const Scalar rhoMax = 1.0e100);
   SPHERAL_HOST_DEVICE FluidNodeListView(const size_t numNodes,
                                         const size_t firstGhostNode,
-                                        const ScalarView& massDensity,
-                                        const ScalarView& specificThermalEnergy,
+                                        const ScalarFieldView& massDensity,
+                                        const ScalarFieldView& specificThermalEnergy,
+                                        const Scalar rhoMin = 1.0e-10,
+                                        const Scalar rhoMax = 1.0e100);
+  SPHERAL_HOST_DEVICE FluidNodeListView(const NodeListViewType& nodeListView,
+                                        const ScalarFieldView& massDensity,
+                                        const ScalarFieldView& massDensityRZ,
+                                        const ScalarFieldView& specificThermalEnergy,
                                         const Scalar rhoMin = 1.0e-10,
                                         const Scalar rhoMax = 1.0e100);
   SPHERAL_HOST_DEVICE FluidNodeListView(const FluidNodeListView&) = default;
@@ -48,12 +54,12 @@ public:
   }
 
   // Field views.
-  SPHERAL_HOST_DEVICE ScalarView& massDensity()                              { return mMassDensityView; }
-  SPHERAL_HOST_DEVICE const ScalarView& massDensity()                  const { return mMassDensityView; }
-  SPHERAL_HOST_DEVICE ScalarView& massDensityRZ()                            { return mMassDensityRZView; }
-  SPHERAL_HOST_DEVICE const ScalarView& massDensityRZ()                const { return mMassDensityRZView; }
-  SPHERAL_HOST_DEVICE ScalarView& specificThermalEnergy()                    { return mSpecificThermalEnergyView; }
-  SPHERAL_HOST_DEVICE const ScalarView& specificThermalEnergy()        const { return mSpecificThermalEnergyView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& massDensity()                              { return mMassDensityView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& massDensity()                  const { return mMassDensityView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& massDensityRZ()                            { return mMassDensityRZView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& massDensityRZ()                const { return mMassDensityRZView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& specificThermalEnergy()                    { return mSpecificThermalEnergyView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& specificThermalEnergy()        const { return mSpecificThermalEnergyView; }
 
   // Index for values
   SPHERAL_HOST_DEVICE Scalar& massDensity(const size_t nodeID) const;
@@ -74,9 +80,9 @@ protected:
   //--------------------------- Protected Interface ---------------------------//
   Scalar mRhoMin = 1.0e-10;
   Scalar mRhoMax = 1.0e100;
-  ScalarView mMassDensityView;
-  ScalarView mMassDensityRZView;
-  ScalarView mSpecificThermalEnergyView;
+  ScalarFieldView mMassDensityView;
+  ScalarFieldView mMassDensityRZView;
+  ScalarFieldView mSpecificThermalEnergyView;
 };
 
 }

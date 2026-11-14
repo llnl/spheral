@@ -61,6 +61,21 @@ DataBase(const Scalar kernelExtent):
 }
 
 //------------------------------------------------------------------------------
+// Destructor
+//
+// Release the non-owning CHAI aliases while their vector-backed storage is
+// still alive.  The vector members are destroyed before the DataBaseView base.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+DataBase<Dimension>::
+~DataBase() {
+  GPUUtils::freeMAView(mNodeListViews);
+  GPUUtils::freeMAView(mFluidNodeListViews);
+  GPUUtils::freeMAView(mSolidNodeListViews);
+  GPUUtils::freeMAView(mDEMNodeListViews);
+}
+
+//------------------------------------------------------------------------------
 // Change the Neighbor kernel extent and rebuild all dependent state.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -1732,10 +1747,10 @@ DataBase<Dimension>::valid() const {
     ok &= mSolidNodeListViewStorage.size() == mSolidNodeListPtrs.size();
     ok &= mDEMNodeListViewStorage.size() == mDEMNodeListPtrs.size();
     if (ok) {
-      for (auto k = 0u; k < mNodeListViewStorage.size(); ++k)      ok &= mNodeListViewStorage[k] == static_cast<NodeListView<Dimension>&>(*mNodeListPtrs[k]);
-      for (auto k = 0u; k < mFluidNodeListViewStorage.size(); ++k) ok &= mFluidNodeListViewStorage[k] == static_cast<FluidNodeListView<Dimension>&>(*mFluidNodeListPtrs[k]);
-      for (auto k = 0u; k < mSolidNodeListViewStorage.size(); ++k) ok &= mSolidNodeListViewStorage[k] == static_cast<SolidNodeListView<Dimension>&>(*mSolidNodeListPtrs[k]);
-      for (auto k = 0u; k < mDEMNodeListViewStorage.size(); ++k)   ok &= mDEMNodeListViewStorage[k] == static_cast<DEMNodeListView<Dimension>&>(*mDEMNodeListPtrs[k]);
+      for (auto k = 0u; k < mNodeListViewStorage.size(); ++k)      ok &= mNodeListViewStorage[k] == mNodeListPtrs[k]->view();
+      for (auto k = 0u; k < mFluidNodeListViewStorage.size(); ++k) ok &= mFluidNodeListViewStorage[k] == mFluidNodeListPtrs[k]->view();
+      for (auto k = 0u; k < mSolidNodeListViewStorage.size(); ++k) ok &= mSolidNodeListViewStorage[k] == mSolidNodeListPtrs[k]->view();
+      for (auto k = 0u; k < mDEMNodeListViewStorage.size(); ++k)   ok &= mDEMNodeListViewStorage[k] == mDEMNodeListPtrs[k]->view();
     }
 
     ok &= mNodeListViews.size() == mNodeListPtrs.size();
@@ -1754,25 +1769,19 @@ template<typename Dimension>
 void
 DataBase<Dimension>::updateView() {
 
-  // Clear out view storage
-#ifdef SPHERAL_UNIFIED_MEMORY
+  // Release CHAI aliases before vector resize can invalidate their pointers.
+#ifndef SPHERAL_UNIFIED_MEMORY
+  GPUUtils::freeMAView(mNodeListViews);
+  GPUUtils::freeMAView(mFluidNodeListViews);
+  GPUUtils::freeMAView(mSolidNodeListViews);
+  GPUUtils::freeMAView(mDEMNodeListViews);
+#endif
+
+  // Resize constructed host storage.
   mNodeListViewStorage.resize(mNodeListPtrs.size());
   mFluidNodeListViewStorage.resize(mFluidNodeListPtrs.size());
   mSolidNodeListViewStorage.resize(mSolidNodeListPtrs.size());
   mDEMNodeListViewStorage.resize(mDEMNodeListPtrs.size());
-#else
-  auto allocateManagedArray = []<typename T>(ViewSpan<T>& array, const size_t n) {
-    if (array.size() == 0u and !array.data(chai::CPU, false)) {
-      array.allocate(n, chai::CPU);
-    } else {
-      array.reallocate(n);
-    }
-  };
-  allocateManagedArray(mNodeListViewStorage,      mNodeListPtrs.size());
-  allocateManagedArray(mFluidNodeListViewStorage, mFluidNodeListPtrs.size());
-  allocateManagedArray(mSolidNodeListViewStorage, mSolidNodeListPtrs.size());
-  allocateManagedArray(mDEMNodeListViewStorage,   mDEMNodeListPtrs.size());
-#endif
 
   // Set storage arrays for View
   for (auto [i, nptr]: enumerate(mNodeListPtrs))      mNodeListViewStorage[i] = nptr->view();
@@ -1794,10 +1803,6 @@ DataBase<Dimension>::updateView() {
   GPUUtils::initMAView(mFluidNodeListViews, mFluidNodeListViewStorage);
   GPUUtils::initMAView(mSolidNodeListViews, mSolidNodeListViewStorage);
   GPUUtils::initMAView(mDEMNodeListViews,   mDEMNodeListViewStorage);
-  for (auto i = 0u; i < mNodeListViewStorage.size(); ++i)      mNodeListViews[i]      = mNodeListViewStorage[i];
-  for (auto i = 0u; i < mFluidNodeListViewStorage.size(); ++i) mFluidNodeListViews[i] = mFluidNodeListViewStorage[i];
-  for (auto i = 0u; i < mSolidNodeListViewStorage.size(); ++i) mSolidNodeListViews[i] = mSolidNodeListViewStorage[i];
-  for (auto i = 0u; i < mDEMNodeListViewStorage.size(); ++i)   mDEMNodeListViews[i]   = mDEMNodeListViewStorage[i];
 #endif
 
   this->setKernelExtent(visitNeighbor(mNeighbor, [](const auto& x) { return x.kernelExtent(); }));

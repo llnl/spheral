@@ -56,10 +56,9 @@ NodeList<Dimension>::NodeList(std::string name,
   mFieldBases(),
   mRestart(registerWithRestart(*this, 10)) {
 
-  // NodeListView is a virtual base so progressively specialized views share
-  // one copy of the common node state.  Initialize it here as well as in the
-  // initializer list: when NodeList is an indirect base, construction of the
-  // virtual base belongs to the most-derived type.
+  // Initialize the inherited live base view.  Specialized NodeLists build
+  // their complete value snapshots on demand rather than inheriting another
+  // View and forming a diamond around this state.
   this->mNumNodes = numInternal + numGhost;
   this->mFirstGhostNode = numInternal;
   this->mhmin = hmin;

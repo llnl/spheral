@@ -31,9 +31,9 @@ public:
   using Vector = typename Dimension::Vector;
   using SymTensor = typename Dimension::SymTensor;
 
-  using ScalarView = FieldView<Dimension, Scalar>;
-  using VectorView = FieldView<Dimension, Vector>;
-  using SymTensorView = FieldView<Dimension, SymTensor>;
+  using ScalarFieldView = FieldView<Dimension, Scalar>;
+  using VectorFieldView = FieldView<Dimension, Vector>;
+  using SymTensorFieldView = FieldView<Dimension, SymTensor>;
 
   // Constructors, destructor.
   SPHERAL_HOST_DEVICE NodeListView() = default;
@@ -46,8 +46,8 @@ public:
                                    const size_t maxNumNeighbors = 500);
   SPHERAL_HOST_DEVICE NodeListView(const size_t numNodes,
                                    const size_t firstGhostNode,
-                                   const VectorView& positions,
-                                   const SymTensorView& Hfield,
+                                   const VectorFieldView& positions,
+                                   const SymTensorFieldView& Hfield,
                                    const Scalar hmin = 1.0e-20,
                                    const Scalar hmax = 1.0e20,
                                    const Scalar hminratio = 0.1,
@@ -89,18 +89,18 @@ public:
   SPHERAL_HOST_DEVICE void hminratio(Scalar val)                      { mhminratio = val; }
 
   // Field views.
-  SPHERAL_HOST_DEVICE ScalarView& mass()                              { return mMassView; }
-  SPHERAL_HOST_DEVICE const ScalarView& mass()                  const { return mMassView; }
-  SPHERAL_HOST_DEVICE ScalarView& massRZ()                            { return mMassRZView; }
-  SPHERAL_HOST_DEVICE const ScalarView& massRZ()                const { return mMassRZView; }
-  SPHERAL_HOST_DEVICE VectorView& positions()                         { return mPositionsView; }
-  SPHERAL_HOST_DEVICE const VectorView& positions()             const { return mPositionsView; }
-  SPHERAL_HOST_DEVICE VectorView& velocity()                          { return mVelocityView; }
-  SPHERAL_HOST_DEVICE const VectorView& velocity()              const { return mVelocityView; }
-  SPHERAL_HOST_DEVICE SymTensorView& Hfield()                         { return mHfieldView; }
-  SPHERAL_HOST_DEVICE const SymTensorView& Hfield()             const { return mHfieldView; }
-  SPHERAL_HOST_DEVICE ScalarView& work()                              { return mWorkView; }
-  SPHERAL_HOST_DEVICE const ScalarView& work()                  const { return mWorkView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& mass()                         { return mMassView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& mass()             const { return mMassView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& massRZ()                       { return mMassRZView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& massRZ()           const { return mMassRZView; }
+  SPHERAL_HOST_DEVICE VectorFieldView& positions()                    { return mPositionsView; }
+  SPHERAL_HOST_DEVICE const VectorFieldView& positions()        const { return mPositionsView; }
+  SPHERAL_HOST_DEVICE VectorFieldView& velocity()                     { return mVelocityView; }
+  SPHERAL_HOST_DEVICE const VectorFieldView& velocity()         const { return mVelocityView; }
+  SPHERAL_HOST_DEVICE SymTensorFieldView& Hfield()                    { return mHfieldView; }
+  SPHERAL_HOST_DEVICE const SymTensorFieldView& Hfield()        const { return mHfieldView; }
+  SPHERAL_HOST_DEVICE ScalarFieldView& work()                         { return mWorkView; }
+  SPHERAL_HOST_DEVICE const ScalarFieldView& work()             const { return mWorkView; }
 
   SPHERAL_HOST_DEVICE Scalar& mass(const size_t nodeID)         const { REQUIRE(nodeID < mMassView.numElements()); return mMassView[nodeID]; }
   SPHERAL_HOST_DEVICE Scalar& massRZ(const size_t nodeID)       const { REQUIRE(nodeID < mMassRZView.numElements()); return mMassRZView[nodeID]; }
@@ -124,12 +124,12 @@ protected:
   Scalar mhminratio = 0.1;
   Scalar mNodesPerSmoothingScale = 2.01;
   size_t mMaxNumNeighbors = 500u;
-  ScalarView mMassView;
-  ScalarView mMassRZView;
-  VectorView mPositionsView;
-  VectorView mVelocityView;
-  SymTensorView mHfieldView;
-  ScalarView mWorkView;
+  ScalarFieldView mMassView;
+  ScalarFieldView mMassRZView;
+  VectorFieldView mPositionsView;
+  VectorFieldView mVelocityView;
+  SymTensorFieldView mHfieldView;
+  ScalarFieldView mWorkView;
 };
 
 }

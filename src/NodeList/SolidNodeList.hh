@@ -15,8 +15,7 @@ namespace Spheral {
 template<typename Dimension> class StrengthModel;
 
 template<typename Dimension>
-class SolidNodeList: public FluidNodeList<Dimension>,
-                     public SolidNodeListView<Dimension> {
+class SolidNodeList: public FluidNodeList<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
   using Scalar = typename Dimension::Scalar;
@@ -95,16 +94,6 @@ public:
   // No default constructor or copying.
   SolidNodeList() = delete;
   SolidNodeList(const SolidNodeList& solidNodeList) = delete;
-
-protected:
-  //--------------------------- Protected Interface ---------------------------//
-  virtual void refreshView() override;
-  void refreshDeviatoricStressView();
-  void refreshPlasticStrainView();
-  void refreshPlasticStrainRateView();
-  void refreshDamageView();
-  void refreshFragmentIDsView();
-  void refreshParticleTypesView();
 
 private:
   //--------------------------- Private Interface ---------------------------//
