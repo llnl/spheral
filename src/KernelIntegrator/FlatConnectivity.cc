@@ -428,7 +428,7 @@ computeSurfaceIndices(const DataBase<Dimension>& dataBase,
 #if REPLACEOVERLAP
   const auto H = dataBase.fluidHfield();
   const auto position = dataBase.fluidPosition();
-  const auto extent = dataBase.maxKernelExtent();
+  const auto extent = dataBase.kernelExtent();
 #endif
   
   // Make sure number of nodes has not changed since computing indices

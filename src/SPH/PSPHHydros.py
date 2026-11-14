@@ -49,8 +49,8 @@ def PSPH(dataBase,
 
     # Artificial viscosity.
     if not Q:
-        Cl = 2.0*(dataBase.maxKernelExtent/2.0)
-        Cq = 2.0*(dataBase.maxKernelExtent/2.0)**2
+        Cl = 2.0*(dataBase.kernelExtent/2.0)
+        Cq = 2.0*(dataBase.kernelExtent/2.0)**2
         Q = eval("LimitedMonaghanGingoldViscosity%id(Clinear=%g, Cquadratic=%g, kernel=WPi)" % (ndim, Cl, Cq))
 
     # Build the constructor arguments

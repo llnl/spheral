@@ -654,7 +654,7 @@ if fhourglass > 0.0:
 bcs = []
 if x0 == xwall:
     xPlane0 = Plane(Vector(0.0), Vector(1.0))
-    xbc0 = ReflectingBoundary(xPlane0)
+    xbc0 = ReflectingBoundary(db, xPlane0)
     bcs = [xbc0]
 
 if inflow:
