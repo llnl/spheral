@@ -150,11 +150,6 @@ def distributeNodesGeneric(listOfNodeTuples,
         repartition.redistributeNodes(db)
     print("distributeNodesGeneric: redistribution done.")
 
-    # Update the neighboring info.
-    #exec("Spheral.Neighbor%id.setBoundingBox()" % db.nDim)
-    for nodes in db.nodeLists:
-        nodes.neighbor().updateNodes()
-
     # Make sure we finished with the correct numbers of nodes!
     totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists]), mpi.SUM)
     assert totalCheck == totalNumGlobalNodes
