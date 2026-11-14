@@ -113,7 +113,7 @@ redistributeNodes(DataBase<Dimension>& dataBase,
       }
 
       // Get the local description of the domain distribution, with the work per node filled in.
-      workField = this->workPerNode(dataBase, 1.0);
+      workField = this->workPerNode(dataBase);
 
     } else {
 

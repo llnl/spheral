@@ -30,14 +30,6 @@ using std::make_pair;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Construct with the given node extent.
-//------------------------------------------------------------------------------
-SortAndDivideRedistributeNodes3d::
-SortAndDivideRedistributeNodes3d(const double Hextent):
-  SortAndDivideRedistributeNodes<Dim<3> >(Hextent) {
-}
-
-//------------------------------------------------------------------------------
 // The main method of this class.  Repartition the node distribution.
 //------------------------------------------------------------------------------
 void
@@ -68,7 +60,7 @@ redistributeNodes(DataBase<Dim<3> >& dataBase,
   }
 
   // Get the work per node.
-  const FieldList<Dimension, Scalar> work = this->workPerNode(dataBase, Hextent());
+  const FieldList<Dimension, Scalar> work = this->workPerNode(dataBase);
 
   // Once again clear out any ghost nodes.
   for (auto* nPtr: dataBase.nodeListPtrs()) nPtr->numGhostNodes(0);

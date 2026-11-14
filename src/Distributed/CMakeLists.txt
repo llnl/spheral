@@ -61,7 +61,6 @@ if (ENABLE_MPI)
       SortAndDivideRedistributeNodes1d.hh
       SortAndDivideRedistributeNodes2d.hh
       SortAndDivideRedistributeNodes3d.hh
-      SortAndDivideRedistributeNodesInline.hh
       SpaceFillingCurveRedistributeNodes.hh
       TreeDistributedBoundary.hh
       VoronoiRedistributeNodes.hh

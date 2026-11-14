@@ -28,9 +28,9 @@ public:
   using SymTensor = Dim<3>::SymTensor;
 
   // Constructors
-  SortAndDivideRedistributeNodes3d(const double HExtent);
-
-  // Destructor
+  SortAndDivideRedistributeNodes3d() = default;
+  SortAndDivideRedistributeNodes3d(const SortAndDivideRedistributeNodes3d&) = delete;
+  SortAndDivideRedistributeNodes3d& operator=(const SortAndDivideRedistributeNodes3d&) = delete;
   virtual ~SortAndDivideRedistributeNodes3d() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
@@ -40,14 +40,6 @@ public:
   // Compute the appropriate number of domains in each dimension for a given
   // shape tensor EigenStruct.
   std::vector< std::vector<int> > domainsPerChunk(const SymTensor::EigenStructType& shapeTensor) const;
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  // No default constructor, copy, or assignment operations.
-  SortAndDivideRedistributeNodes3d();
-  SortAndDivideRedistributeNodes3d(const SortAndDivideRedistributeNodes3d&);
-  SortAndDivideRedistributeNodes3d& operator=(const SortAndDivideRedistributeNodes3d&);
-
 };
 
 }

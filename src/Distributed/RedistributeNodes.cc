@@ -674,8 +674,7 @@ validDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistribution,
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Scalar>
 RedistributeNodes<Dimension>::
-workPerNode(const DataBase<Dimension>& dataBase,
-            const double /*Hextent*/) const {
+workPerNode(const DataBase<Dimension>& dataBase) const {
 
   // Prepare the result.
   FieldList<Dimension, Scalar> result = dataBase.newGlobalFieldList(Scalar(), "work per node");

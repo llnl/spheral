@@ -28,23 +28,14 @@ public:
   using SymTensor = Dim<1>::SymTensor;
 
   // Constructors
-  SortAndDivideRedistributeNodes1d(const double HExtent);
-
-  // Destructor
+  SortAndDivideRedistributeNodes1d() = default;
+  SortAndDivideRedistributeNodes1d(const SortAndDivideRedistributeNodes1d&) = delete;
+  SortAndDivideRedistributeNodes1d& operator=(const SortAndDivideRedistributeNodes1d&) = delete;
   virtual ~SortAndDivideRedistributeNodes1d() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
   virtual void redistributeNodes(DataBase<Dim<1> >& dataBase,
                                  std::vector<Boundary<Dim<1> >*> boundaries = std::vector<Boundary<Dim<1> >*>());
-
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  // No default constructor, copy, or assignment operations.
-  SortAndDivideRedistributeNodes1d();
-  SortAndDivideRedistributeNodes1d(const SortAndDivideRedistributeNodes1d&);
-  SortAndDivideRedistributeNodes1d& operator=(const SortAndDivideRedistributeNodes1d&);
-
 };
 
 }

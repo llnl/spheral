@@ -30,16 +30,16 @@ class SortAndDivideRedistributeNodes: public RedistributeNodes<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors
-  SortAndDivideRedistributeNodes(const double HExtent);
-
-  // Destructor
-  virtual ~SortAndDivideRedistributeNodes();
+  SortAndDivideRedistributeNodes() = default;
+  SortAndDivideRedistributeNodes(const SortAndDivideRedistributeNodes&) = delete;
+  SortAndDivideRedistributeNodes& operator=(const SortAndDivideRedistributeNodes&) = delete;
+  virtual ~SortAndDivideRedistributeNodes() = default;
 
   // Sort the given set of DomainNodes by a position component (where positionIndex
   // maps as
@@ -72,25 +72,8 @@ public:
   // Broadcast a vector<DomainNode> from the given processor.
   std::vector<DomainNode<Dimension> > broadcastDomainNodes(const std::vector<DomainNode<Dimension> >& nodes,
                                                            const int sendProc) const;
-
-  // Access the HExtent we're using.
-  double Hextent() const;
-  void Hextent(double val);
-
-private:
-  //--------------------------- Private Interface ---------------------------//
-  // The cutoff radius in normalized space for nodes to interact.
-  double mHextent;
-
-  // No default constructor, copy, or assignment operations.
-  SortAndDivideRedistributeNodes();
-  SortAndDivideRedistributeNodes(const SortAndDivideRedistributeNodes&);
-  SortAndDivideRedistributeNodes& operator=(const SortAndDivideRedistributeNodes&);
-
 };
 
 }
-
-#include "SortAndDivideRedistributeNodesInline.hh"
 
 #endif
