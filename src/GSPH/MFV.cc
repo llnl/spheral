@@ -155,9 +155,10 @@ dt(const DataBase<Dimension>& dataBase,
   const auto  position = state.fields(HydroFieldNames::position, Vector::zero());
   const auto  H = state.fields(HydroFieldNames::H, SymTensor::zero());
   const auto  vf = derivs.fields(GSPHFieldNames::maxFluxSpeed, 0.0);
-  const auto& connectivityMap = dataBase.connectivityMap(this->requireGhostConnectivity(),
-                                                         this->requireOverlapConnectivity(),
-                                                         this->requireIntersectionConnectivity());
+  const auto& [conn_, ghost_, overlap_, intersect_] = this->requireConnectivity();
+  const auto& connectivityMap = dataBase.connectivityMap(ghost_,
+                                                         overlap_,
+                                                         intersect_);
   const auto  numNodeLists = connectivityMap.nodeLists().size();
 
   // Initialize the return value to some impossibly high value.
