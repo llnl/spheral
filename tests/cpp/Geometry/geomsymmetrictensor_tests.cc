@@ -17,9 +17,10 @@ class GeomSymmetricTensorTest : public ::testing::Test {};
 
 // Figure out which elements of a 3 vector (b) correspond to the elements in another (a)
 // This is terrible with the C like restrictions of device code...
+// Return false without changing indices if no permutation matches the minimum.
 SPHERAL_HOST_DEVICE
 inline
-void matchVectorElements(const Vector& a, const Vector& b, unsigned (&indices)[3]) {
+bool matchVectorElements(const Vector& a, const Vector& b, unsigned (&indices)[3]) {
   unsigned permutations[6][3] = {{0,1,2},
                                  {0,2,1},
                                  {1,0,2},
@@ -49,10 +50,12 @@ void matchVectorElements(const Vector& a, const Vector& b, unsigned (&indices)[3
     memcpy(indices, permutations[3], sizeof(permutations[3]));
   } else if (m4 == mmin) {
     memcpy(indices, permutations[4], sizeof(permutations[4]));
-  } else {
-    SPHERAL_ASSERT_EQ(m5, mmin);
+  } else if (m5 == mmin) {
     memcpy(indices, permutations[5], sizeof(permutations[5]));
+  } else {
+    return false;
   }
+  return true;
 }
 
 // Setting up Typed Test Suite for GeomSymmetricTensor
@@ -478,7 +481,8 @@ GPU_TYPED_TEST_P(GeomSymmetricTensorTypedTest, EigenVectors) {
     T1.rotationalTransform(R);
     auto estruct = T1.eigenVectors();
     unsigned indices[3];
-    matchVectorElements(Vector(1, 2, -3), estruct.eigenValues, indices);
+    // Assert in the caller so a failed match stops before indices are used.
+    SPHERAL_ASSERT_TRUE(matchVectorElements(Vector(1, 2, -3), estruct.eigenValues, indices));
     SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[0]), 1.0);
     SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[1]), 2.0);
     SPHERAL_ASSERT_FLOAT_EQ(estruct.eigenValues(indices[2]), -3.0);

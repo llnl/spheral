@@ -4,6 +4,10 @@ Spheral Developer Guide
 
 Welcome to Spheral's developer documentation. This documentation is a work in progress...
 
+For Python interface changes, see :doc:`design/python_binding_lto` for the
+class and data-type recipe, shared container declarations, and Python list
+versus bound-vector input, output, and ownership behavior.
+
 .. toctree::
    :maxdepth: 1
    
