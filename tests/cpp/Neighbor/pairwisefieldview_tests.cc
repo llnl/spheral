@@ -67,6 +67,30 @@ public:
   }
 };
 
+//------------------------------------------------------------------------------
+// Host-side Value semantics.
+//------------------------------------------------------------------------------
+TEST_F(PairwiseFieldViewTest, EmptyIterators) {
+  auto pairs = createNPL(0u);
+  PairwiseFieldDouble field(pairs);
+  const auto& constField = field;
+  EXPECT_EQ(field.begin(), field.end());
+  EXPECT_EQ(constField.begin(), constField.end());
+}
+
+TEST_F(PairwiseFieldViewTest, ComparisonIncludesPairTopology) {
+  auto pairs = createNPL(4u);
+  auto otherPairs = std::make_shared<NPL>(*pairs);
+  PairwiseFieldDouble lhs(pairs);
+  PairwiseFieldDouble rhs(pairs);
+  PairwiseFieldDouble otherTopology(otherPairs);
+
+  EXPECT_EQ(lhs, rhs);
+  EXPECT_NE(lhs, otherTopology);
+  rhs[0] = 1.0;
+  EXPECT_NE(lhs, rhs);
+}
+
 // Setting up Templated Test for PairwiseFieldView
 TYPED_TEST_SUITE_P(PairwiseFieldViewTypedTest);
 template <typename T> class PairwiseFieldViewTypedTest : public PairwiseFieldViewTest {};
@@ -203,4 +227,3 @@ REGISTER_TYPED_TEST_SUITE_P(PairwiseFieldViewTypedTest,
 
 INSTANTIATE_TYPED_TEST_SUITE_P(Field, PairwiseFieldViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
-

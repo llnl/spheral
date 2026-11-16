@@ -23,6 +23,8 @@ class NodePairList;
 
 template<typename Dimension, typename Value, size_t numElements=1>
 class PairwiseField: public PairwiseFieldView<Value, numElements> {
+  static_assert(numElements > 0u, "PairwiseField requires at least one value per node pair");
+
 public:
   //--------------------------- Public Interface ---------------------------//
   using ViewType = PairwiseFieldView<Value, numElements>;
@@ -53,15 +55,21 @@ public:
   reference       operator()(const NodePairIdxType& x);
 
   // Iterators
-  const_iterator begin() const                                  { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mArray.begin())); }
-  const_iterator end() const                                    { REQUIRE(!mPairsPtr.expired()); return const_iterator(&(*mArray.end())); }
+  const_iterator begin() const                                  { REQUIRE(!mPairsPtr.expired()); return const_iterator(mArray.data()); }
+  const_iterator end() const                                    { REQUIRE(!mPairsPtr.expired()); return const_iterator(mArray.empty() ? mArray.data() : mArray.data() + mArray.size()); }
 
-  iterator begin()                                              { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.begin())); }
-  iterator end()                                                { REQUIRE(!mPairsPtr.expired()); return iterator(&(*mArray.end())); }
+  iterator begin()                                              { REQUIRE(!mPairsPtr.expired()); return iterator(mArray.data()); }
+  iterator end()                                                { REQUIRE(!mPairsPtr.expired()); return iterator(mArray.empty() ? mArray.data() : mArray.data() + mArray.size()); }
 
   // Comparators
-  bool operator==(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mArray == rhs.mArray; }
-  bool operator!=(const PairwiseField& rhs) const               { REQUIRE(!mPairsPtr.expired()); return mArray != rhs.mArray; }
+  bool operator==(const PairwiseField& rhs) const {
+    const auto lhsPairs = mPairsPtr.lock();
+    const auto rhsPairs = rhs.mPairsPtr.lock();
+    REQUIRE(lhsPairs);
+    REQUIRE(rhsPairs);
+    return lhsPairs == rhsPairs and mArray == rhs.mArray;
+  }
+  bool operator!=(const PairwiseField& rhs) const               { return not (*this == rhs); }
 
   // Other methods
   const NodePairList& pairs() const;
