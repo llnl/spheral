@@ -277,12 +277,11 @@ private:
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 
-  // FieldViews for use in FieldListView
-#ifdef SPHERAL_UNIFIED_MEMORY  
-  std::vector<FieldView<Dimension, DataType>> mFieldViews;
-#else
+  // Constructed host storage and the span exposed to FieldListView.  In the
+  // CHAI build mFieldViews is a non-owning ManagedArray alias: ManagedArray
+  // allocation alone does not start the lifetime of non-trivial FieldViews.
+  std::vector<FieldView<Dimension, DataType>> mFieldViewStorage;
   FieldViewSpan mFieldViews;
-#endif
 
   // CHAI callback functions for debugging
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;

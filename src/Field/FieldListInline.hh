@@ -10,6 +10,7 @@
 #include "Distributed/allReduce.hh"
 #include "Utilities/range.hh"
 #include "Utilities/Logger.hh"
+#include "Threading/GPUUtils.hh"
 
 #ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
@@ -37,6 +38,7 @@ FieldList<Dimension, DataType>::FieldList():
   mStorageType(FieldStorageType::ReferenceFields),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
@@ -60,6 +62,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   mStorageType(aStorageType),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
@@ -85,6 +88,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
   mStorageType(rhs.storageType()),
   mNodeListPtrs(rhs.mNodeListPtrs),
   mNodeListIndexMap(rhs.mNodeListIndexMap),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(rhs.reductionType),
@@ -113,9 +117,7 @@ inline
 FieldList<Dimension, DataType>::
 ~FieldList() {
   DEBUG_LOG << "FieldList::~FieldList : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.free();
-#endif
+  GPUUtils::freeMAView(mFieldViews);
 }  
 
 //------------------------------------------------------------------------------
@@ -1211,28 +1213,25 @@ buildDependentArrays() {
   mNodeListIndexMap.clear();
 
   const auto nfields = mFieldPtrs.size();
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.resize(nfields);
-#else
-#ifndef CHAI_DISABLE_RM
-  mFieldViews.setUserCallback(getCallback());
-#endif
-  if (mFieldViews.size() == 0u && !mFieldViews.data(chai::CPU, false)) {
-    mFieldViews.allocate(nfields, chai::CPU);
-  } else {
-    mFieldViews.reallocate(nfields);
-  }
-#endif
+
+  // mFieldViews is a non-owning alias in CHAI builds, so release it before
+  // resizing the vector that owns and constructs the FieldView objects.
+  GPUUtils::freeMAView(mFieldViews);
+  mFieldViewStorage.resize(nfields);
 
   for (auto [i, fptr]: enumerate(mFieldPtrs)) {
     mFieldBasePtrs.push_back(fptr);
-    mFieldViews[i] = fptr->view();
+    mFieldViewStorage[i] = fptr->view();
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
     mNodeListIndexMap[nptr] = i;
   }
 
+  GPUUtils::initMAView(mFieldViews, mFieldViewStorage);
 #ifndef SPHERAL_UNIFIED_MEMORY
+#ifndef CHAI_DISABLE_RM
+  mFieldViews.setUserCallback(getCallback());
+#endif
   mFieldViews.registerTouch(chai::CPU);
 #endif
 
