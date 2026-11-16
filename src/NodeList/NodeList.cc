@@ -285,7 +285,7 @@ void
 NodeList<Dimension>::refreshMassRZView() {
   if (mMassRZptr) {
     this->mMassRZView = mMassRZptr->view();
-    ENSURE(this->mMassView.numElements() == this->mNumNodes);
+    ENSURE(this->mMassRZView.numElements() == this->mNumNodes);
   }
 }
 
