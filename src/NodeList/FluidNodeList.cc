@@ -50,6 +50,7 @@ FluidNodeList(string name,
   if (GeometryRegistrar::coords() == CoordinateType::RZ) {
     mMassDensityRZptr = std::make_unique<Field<Dimension, Scalar>>(HydroFieldNames::massDensityRZ, *this);
   }
+  mEnableFluidViewNotifications = true;
 }
 
 //------------------------------------------------------------------------------
@@ -106,6 +107,23 @@ view() {
                   mSpecificThermalEnergy.view(),
                   mRhoMin,
                   mRhoMax);
+}
+
+//------------------------------------------------------------------------------
+// Track storage changes for Fields included in FluidNodeListView snapshots.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+FluidNodeList<Dimension>::
+notifyFieldStorageChanged(const FieldBase<Dimension>& field) {
+  NodeList<Dimension>::notifyFieldStorageChanged(field);
+  if (mEnableFluidViewNotifications and
+      (&field == static_cast<const FieldBase<Dimension>*>(&mMassDensity) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mSpecificThermalEnergy) or
+      (mMassDensityRZptr and
+       &field == static_cast<const FieldBase<Dimension>*>(mMassDensityRZptr.get())))) {
+    ++this->mGeneration;
+  }
 }
 
 //------------------------------------------------------------------------------

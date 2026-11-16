@@ -72,9 +72,14 @@ public:
   DEMNodeList(const DEMNodeList& nodes) = delete;
   DEMNodeList& operator=(const DEMNodeList& rhs) = delete;
 
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void notifyFieldStorageChanged(const FieldBase<Dimension>& field) override;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   Scalar mNeighborSearchBuffer;
+  bool mEnableDEMViewNotifications = false;
   Field<Dimension, Scalar> mParticleRadius;
   Field<Dimension, int> mCompositeParticleIndex;
   Field<Dimension, size_t> mUniqueIndex;

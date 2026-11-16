@@ -84,6 +84,7 @@ NodeList<Dimension>::NodeList(std::string name,
 
   // It's never valid to have zero H's.
   mH = SymTensor::one();
+  mEnableViewNotifications = true;
   refreshView();
 }
 
@@ -116,6 +117,7 @@ NodeList<Dimension>::numInternalNodes(size_t size) {
   this->mNumNodes = size + numGhost;
   for (auto x: mFieldBases)     x.get().resizeFieldInternal(size, oldFirstGhostNode);
   refreshView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -128,6 +130,7 @@ NodeList<Dimension>::numGhostNodes(size_t size) {
   this->mNumNodes = numInternal + size;
   for (auto x: mFieldBases)     x.get().resizeFieldGhost(size);
   refreshView();
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------
@@ -258,7 +261,38 @@ NodeList<Dimension>::refreshView() {
   refreshVelocityView();
   refreshHfieldView();
   refreshWorkView();
-  ++this->mGeneration;
+}
+
+//------------------------------------------------------------------------------
+// A Field referenced by this NodeList's View rebound its storage.  Value-only
+// changes do not require a new snapshot, but a changed allocation invalidates
+// copied FieldViews and therefore advances the snapshot generation.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::
+notifyFieldStorageChanged(const FieldBase<Dimension>& field) {
+  if (not mEnableViewNotifications) return;
+  auto changed = true;
+  if (&field == static_cast<const FieldBase<Dimension>*>(&mMass)) {
+    refreshMassView();
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mPositions)) {
+    refreshPositionsView();
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mVelocity)) {
+    refreshVelocityView();
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mH)) {
+    refreshHfieldView();
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mWork)) {
+    refreshWorkView();
+  } else if (mMassRZptr and
+             &field == static_cast<const FieldBase<Dimension>*>(mMassRZptr.get())) {
+    refreshMassRZView();
+  } else {
+    changed = false;
+  }
+  if (changed) {
+    ++this->mGeneration;
+  }
 }
 
 //------------------------------------------------------------------------------

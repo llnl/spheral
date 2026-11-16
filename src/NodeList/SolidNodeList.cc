@@ -61,6 +61,7 @@ SolidNodeList(string name,
   mFragmentIDs(SolidFieldNames::fragmentIDs, *this),
   mParticleTypes(SolidFieldNames::particleTypes, *this),
   mStrength(strength) {
+  mEnableSolidViewNotifications = true;
 }
 
 //------------------------------------------------------------------------------
@@ -76,6 +77,25 @@ SolidNodeList<Dimension>::view() {
                   mDamage.view(),
                   mFragmentIDs.view(),
                   mParticleTypes.view());
+}
+
+//------------------------------------------------------------------------------
+// Track storage changes for Fields included in SolidNodeListView snapshots.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+SolidNodeList<Dimension>::
+notifyFieldStorageChanged(const FieldBase<Dimension>& field) {
+  FluidNodeList<Dimension>::notifyFieldStorageChanged(field);
+  if (mEnableSolidViewNotifications and
+      (&field == static_cast<const FieldBase<Dimension>*>(&mDeviatoricStress) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mPlasticStrain) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mPlasticStrainRate) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mDamage) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mFragmentIDs) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mParticleTypes))) {
+    ++this->mGeneration;
+  }
 }
 
 //------------------------------------------------------------------------------

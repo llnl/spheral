@@ -154,6 +154,7 @@ protected:
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
   virtual void refreshView();
+  virtual void notifyFieldStorageChanged(const FieldBase<Dimension>& field);
   void refreshMassView();
   void refreshMassRZView();
   void refreshPositionsView();
@@ -163,10 +164,12 @@ protected:
   void updateViewHash();
 
   friend class FieldBase<Dimension>;
+  template<typename D, typename Value> friend class Field;
 
 private:
   //--------------------------- Private Interface ---------------------------//
   std::string mName;
+  bool mEnableViewNotifications = false;
 
   // State fields.
   Field<Dimension, Scalar> mMass;

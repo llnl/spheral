@@ -198,6 +198,36 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, HashedIdentity) {
 }
 
 //------------------------------------------------------------------------------
+// Acquiring value snapshots is observational: it must not advance either the
+// NodeList or DataBase generation.  Copies of registered Fields that are not
+// referenced by the NodeListView must not invalidate the snapshot either.
+//------------------------------------------------------------------------------
+GPU_TYPED_TEST_P(NodeListViewTypedTest, ViewAcquisitionIsGenerationStable) {
+  NodeList_t nodes("NodeListViewGenerationStable", Ninternal, Nghost);
+  const auto nodeGeneration = nodes.viewGeneration();
+  const auto firstView = nodes.view();
+  const auto secondView = nodes.view();
+  SPHERAL_ASSERT_EQ(nodes.viewGeneration(), nodeGeneration);
+  SPHERAL_ASSERT_EQ(firstView.generation(), nodeGeneration);
+  SPHERAL_ASSERT_EQ(secondView.generation(), nodeGeneration);
+
+  {
+    const auto positionsCopy = nodes.positions();
+    SPHERAL_ASSERT_EQ(positionsCopy.numElements(), Ntotal);
+  }
+  SPHERAL_ASSERT_EQ(nodes.viewGeneration(), nodeGeneration);
+
+  Spheral::DataBase<DIM3> dataBase(2.0);
+  dataBase.appendNodeList(nodes);
+  const auto dataBaseGeneration = dataBase.generation();
+  const auto firstDataBaseView = dataBase.view();
+  const auto secondDataBaseView = dataBase.view();
+  SPHERAL_ASSERT_EQ(dataBase.generation(), dataBaseGeneration);
+  SPHERAL_ASSERT_EQ(firstDataBaseView.generation(), dataBaseGeneration);
+  SPHERAL_ASSERT_EQ(secondDataBaseView.generation(), dataBaseGeneration);
+}
+
+//------------------------------------------------------------------------------
 // Capture NodeListView in each configured execution space.
 //------------------------------------------------------------------------------
 GPU_TYPED_TEST_P(NodeListViewTypedTest, ViewCapture) {
@@ -731,6 +761,7 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             DefaultAndExplicitConstruction,
                             ValueSemantics,
                             HashedIdentity,
+                            ViewAcquisitionIsGenerationStable,
                             ViewCapture,
                             MoveCopiesDeviceWritesToHost,
                             RAJAHostAfterRAJADeviceMutation,

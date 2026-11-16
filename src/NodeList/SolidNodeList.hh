@@ -95,8 +95,13 @@ public:
   SolidNodeList() = delete;
   SolidNodeList(const SolidNodeList& solidNodeList) = delete;
 
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void notifyFieldStorageChanged(const FieldBase<Dimension>& field) override;
+
 private:
   //--------------------------- Private Interface ---------------------------//
+  bool mEnableSolidViewNotifications = false;
   Field<Dimension, SymTensor> mDeviatoricStress;
   Field<Dimension, Scalar> mPlasticStrain;
   Field<Dimension, Scalar> mPlasticStrainRate;

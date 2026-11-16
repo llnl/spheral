@@ -36,6 +36,7 @@ DEMNodeList(string name,
   mParticleRadius(DEMFieldNames::particleRadius, *this),
   mCompositeParticleIndex(DEMFieldNames::compositeParticleIndex, *this),
   mUniqueIndex(DEMFieldNames::uniqueIndices, *this){
+  mEnableDEMViewNotifications = true;
 }
 
 //------------------------------------------------------------------------------
@@ -85,6 +86,22 @@ DEMNodeList<Dimension>::view() {
                   mCompositeParticleIndex.view(),
                   mUniqueIndex.view(),
                   mNeighborSearchBuffer);
+}
+
+//------------------------------------------------------------------------------
+// Track storage changes for Fields included in DEMNodeListView snapshots.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+DEMNodeList<Dimension>::
+notifyFieldStorageChanged(const FieldBase<Dimension>& field) {
+  NodeList<Dimension>::notifyFieldStorageChanged(field);
+  if (mEnableDEMViewNotifications and
+      (&field == static_cast<const FieldBase<Dimension>*>(&mParticleRadius) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mCompositeParticleIndex) or
+      &field == static_cast<const FieldBase<Dimension>*>(&mUniqueIndex))) {
+    ++this->mGeneration;
+  }
 }
 //------------------------------------------------------------------------------
 // Calculate and return the volume per node.

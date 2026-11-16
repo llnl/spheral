@@ -215,7 +215,7 @@ reinitializeNeighbors() const {
   auto havg = 0.0, hmax = 0.0;
   const auto  etaMax = visitNeighbor(mNeighbor, [](const auto& neighbor) { return neighbor.kernelExtent(); });
   for (const auto [k, nptr]: enumerate(mNodeListPtrs)) {
-    const auto positions = nptr->positions();
+    const auto& positions = nptr->positions();
     const auto  n = nptr->numInternalNodes();
     ntot += n;
     for (auto i = 0u; i < n; ++i) {

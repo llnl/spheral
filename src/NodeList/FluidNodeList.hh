@@ -98,12 +98,17 @@ public:
   FluidNodeList(const FluidNodeList& nodes) = delete;
   FluidNodeList& operator=(const FluidNodeList& rhs) = delete;
 
+protected:
+  //--------------------------- Protected Interface ---------------------------//
+  virtual void notifyFieldStorageChanged(const FieldBase<Dimension>& field) override;
+
 private:
   //--------------------------- Private Interface ---------------------------//
 
   // Fields that define the fluid's current state.
   Scalar mRhoMin;
   Scalar mRhoMax;
+  bool mEnableFluidViewNotifications = false;
   Field<Dimension, Scalar> mMassDensity;
   Field<Dimension, Scalar> mSpecificThermalEnergy;
   std::unique_ptr<Field<Dimension, Scalar>> mMassDensityRZptr;

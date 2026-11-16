@@ -1287,11 +1287,14 @@ void
 Field<Dimension, DataType>::
 assignDataSpan() {
 #ifdef SPHERAL_UNIFIED_MEMORY
+  const auto storageChanged = (mDataSpan.size() != mDataArray.size() or
+                               mDataSpan.data() != mDataArray.data());
   mDataSpan = mDataArray;
   DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
 #else
-  if (mDataSpan.size() != mDataArray.size() or
-      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
+  const auto storageChanged = (mDataSpan.size() != mDataArray.size() or
+                               mDataSpan.data(chai::CPU, false) != mDataArray.data());
+  if (storageChanged) {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     GPUUtils::initMAView(mDataSpan, mDataArray);
   }
@@ -1304,6 +1307,9 @@ assignDataSpan() {
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
   mNodesPerSmoothingScale = this->nodeList().nodesPerSmoothingScale();
+  if (storageChanged and this->nodeListPtr()) {
+    const_cast<NodeList<Dimension>*>(this->nodeListPtr())->notifyFieldStorageChanged(*this);
+  }
 }
 
 } // namespace Spheral
