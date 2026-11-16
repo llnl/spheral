@@ -93,11 +93,7 @@ CubicHermiteInterpolator::~CubicHermiteInterpolator() {
 
 void
 CubicHermiteInterpolator::releaseView() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mVals = ContainerType{};
-#else
-  GPUUtils::freeMAView(mVals);
-#endif
+  CubicHermiteInterpolatorView::reset();
 }
 
 void

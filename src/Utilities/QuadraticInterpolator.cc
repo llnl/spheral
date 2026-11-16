@@ -105,11 +105,7 @@ QuadraticInterpolator::initialize(double xmin,
 //------------------------------------------------------------------------------
 void
 QuadraticInterpolator::releaseView() {
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mcoeffs = ContainerType{};
-#else
-  GPUUtils::freeMAView(mcoeffs);
-#endif
+  QuadraticInterpolatorView::reset();
 }
 
 void

@@ -35,6 +35,10 @@ GPU_TYPED_TEST_P(TableKernelTypedTest, CopyAssign) {
   ExpInv2D ei_kernel;
   TableKernel2D ref_kernel(ei_kernel);
   TableKernel2D copy_kernel(ref_kernel);
+  TableKernel2D assigned_kernel(ei_kernel);
+  assigned_kernel = ref_kernel;
+  EXPECT_NE(copy_kernel.Winterpolator().data(), ref_kernel.Winterpolator().data());
+  EXPECT_NE(assigned_kernel.Winterpolator().data(), ref_kernel.Winterpolator().data());
   const double dx = (ref_kernel.kernelExtent() - 0.) / (double)(N - 1);
   const double x_sample = 0.5*dx*(double)N;
   const double ref_val = ref_kernel.kernelValue(x_sample, Hdet);
@@ -42,15 +46,18 @@ GPU_TYPED_TEST_P(TableKernelTypedTest, CopyAssign) {
   TKV2D tkv2 = ref_kernel;
   TKV2D tkv3(tkv2);
   TKV2D tkv4 = copy_kernel.view();
+  TKV2D tkv5 = assigned_kernel.view();
   EXEC_IN_SPACE_BEGIN(TypeParam)
     const double val1 = tkv1.kernelValue(x_sample, Hdet);
     const double val2 = tkv2.kernelValue(x_sample, Hdet);
     const double val3 = tkv3.kernelValue(x_sample, Hdet);
     const double val4 = tkv4.kernelValue(x_sample, Hdet);
+    const double val5 = tkv5.kernelValue(x_sample, Hdet);
     SPHERAL_ASSERT_FLOAT_EQ(val1, ref_val);
     SPHERAL_ASSERT_FLOAT_EQ(val2, ref_val);
     SPHERAL_ASSERT_FLOAT_EQ(val3, ref_val);
     SPHERAL_ASSERT_FLOAT_EQ(val4, ref_val);
+    SPHERAL_ASSERT_FLOAT_EQ(val5, ref_val);
   EXEC_IN_SPACE_END()
 }
 

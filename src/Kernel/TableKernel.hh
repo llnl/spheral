@@ -36,6 +36,7 @@ public:
               const Scalar minNperh = 0.25,
               const Scalar maxNperh = 64.0);
   TableKernel(const TableKernel<Dimension>& rhs);
+  ~TableKernel() override;
 
   // Assignment.
   TableKernel& operator=(const TableKernel& rhs);
@@ -63,6 +64,10 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  void copyViewMetadata(const TableKernel& rhs);
+  void releaseViews();
+  void refreshViews();
+
   // Data for the kernel tabulation.
   InterpolatorType mInterpVal, mGradInterpVal, mGrad2InterpVal; // W, grad W, grad^2 W
   NperhInterpolatorType mNperhLookupVal, mWsumLookupVal;        // SPH nperh lookups
@@ -74,4 +79,3 @@ private:
 #include "TableKernelInline.hh"
 
 #endif
-

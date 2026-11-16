@@ -55,6 +55,13 @@ public:
 
   SPHERAL_HOST void move(chai::ExecutionSpace space)   { GPUUtils::move(mVals, space); }
   SPHERAL_HOST void touch(chai::ExecutionSpace space)  { GPUUtils::touch(mVals, space); }
+  SPHERAL_HOST void reset() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+    mVals = ContainerType{};
+#else
+    GPUUtils::freeMAView(mVals);
+#endif
+  }
 
 protected:
   //--------------------------- Protected Interface --------------------------//
