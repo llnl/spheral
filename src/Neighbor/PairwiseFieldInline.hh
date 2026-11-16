@@ -59,7 +59,7 @@ inline
 PairwiseField<Dimension, Value, numElements>::
 ~PairwiseField() {
   DEBUG_LOG << " --> PairwiseField::~PairwiseField() " << this;
-  GPUUtils::freeMAView(mSpan);
+  releaseDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -70,6 +70,9 @@ inline
 PairwiseField<Dimension, Value, numElements>&
 PairwiseField<Dimension, Value, numElements>::operator=(const PairwiseField& rhs) {
   if (this != &rhs) {
+    // mSpan aliases mArray, so release it before vector assignment can
+    // invalidate the backing allocation.
+    releaseDataSpan();
     mPairsPtr = rhs.mPairsPtr;
     mArray = rhs.mArray;
     assignDataSpan();
@@ -118,12 +121,27 @@ PairwiseField<Dimension, Value, numElements>::pairs() const {
 }
 
 //------------------------------------------------------------------------------
+// Release the view of the owned vector storage.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename Value, size_t numElements>
+inline
+void
+PairwiseField<Dimension, Value, numElements>::releaseDataSpan() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mSpan = {};
+#else
+  GPUUtils::freeMAView(mSpan);
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Assign the view span
 //------------------------------------------------------------------------------
 template<typename Dimension, typename Value, size_t numElements>
 inline
 void
 PairwiseField<Dimension, Value, numElements>::assignDataSpan() {
+  releaseDataSpan();
   GPUUtils::initMAView(mSpan, mArray);
   GPUUtils::touch(mSpan, chai::CPU);
   ENSURE(mSpan.size() == mArray.size() and (mArray.empty() or mSpan.data() == &mArray[0]));

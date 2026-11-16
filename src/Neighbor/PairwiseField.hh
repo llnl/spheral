@@ -75,6 +75,7 @@ private:
   std::weak_ptr<NodePairList> mPairsPtr;
   ContainerType mArray;
 
+  void releaseDataSpan();
   void assignDataSpan();
 };
 
@@ -83,4 +84,3 @@ private:
 #include "Neighbor/PairwiseFieldInline.hh"
 
 #endif
-
