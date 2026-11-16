@@ -33,6 +33,7 @@ QuadraticInterpolator::QuadraticInterpolator(const QuadraticInterpolator& rhs)
 QuadraticInterpolator&
 QuadraticInterpolator::operator=(const QuadraticInterpolator& rhs) {
   if (this != &rhs) {
+    releaseView();
     mN1 = rhs.mN1;
     mXmin = rhs.mXmin;
     mXmax = rhs.mXmax;
@@ -67,6 +68,7 @@ QuadraticInterpolator::initialize(double xmin,
   size_t N1 = (n - 1u)/2u - 1u;  // Maximum index into arrays
   double xstep = (xmax - xmin)/(N1 + 1u);
   size_t N = 3*(N1 + 1u);
+  releaseView();
   mVec.resize(N);
 
   typedef Eigen::Matrix<double, 3, 3, Eigen::RowMajor> EMatrix;
@@ -98,6 +100,18 @@ QuadraticInterpolator::initialize(double xmin,
   initView();
 }
 
+//------------------------------------------------------------------------------
+// Release the non-owning alias before mutating its vector-backed storage.
+//------------------------------------------------------------------------------
+void
+QuadraticInterpolator::releaseView() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mcoeffs = ContainerType{};
+#else
+  GPUUtils::freeMAView(mcoeffs);
+#endif
+}
+
 void
 QuadraticInterpolator::initView() {
   GPUUtils::initMAView(mcoeffs, mVec);
@@ -107,7 +121,7 @@ QuadraticInterpolator::initView() {
 // Destructor
 //------------------------------------------------------------------------------
 QuadraticInterpolator::~QuadraticInterpolator() {
-  GPUUtils::freeMAView(mcoeffs);
+  releaseView();
 }
 
 }

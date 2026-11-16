@@ -35,6 +35,7 @@ CubicHermiteInterpolator::CubicHermiteInterpolator(const CubicHermiteInterpolato
 CubicHermiteInterpolator&
 CubicHermiteInterpolator::operator=(const CubicHermiteInterpolator& rhs) {
   if (this != &rhs) {
+    releaseView();
     mN = rhs.mN;
     mXmin = rhs.mXmin;
     mXmax = rhs.mXmax;
@@ -68,6 +69,7 @@ CubicHermiteInterpolator::initialize(const double xmin,
   mXmin = xmin;
   mXmax = xmax;
   mXstep = (xmax - xmin)/(mN - 1u);
+  releaseView();
   mVec.resize(2u*mN);
 
   for (size_t i = 0; i < mN; ++i) mVec[i] = yvals[i];
@@ -86,7 +88,16 @@ CubicHermiteInterpolator::initialize(const double xmin,
 // Destructor
 //------------------------------------------------------------------------------
 CubicHermiteInterpolator::~CubicHermiteInterpolator() {
+  releaseView();
+}
+
+void
+CubicHermiteInterpolator::releaseView() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mVals = ContainerType{};
+#else
   GPUUtils::freeMAView(mVals);
+#endif
 }
 
 void

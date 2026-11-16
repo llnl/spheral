@@ -81,6 +81,7 @@ private:
   // interpolation values
   std::vector<double> mVec;
   void initializeGradientKnots();
+  void releaseView();
   void initView();
 };
 }
