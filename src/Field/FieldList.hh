@@ -287,6 +287,9 @@ private:
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
   auto getCallback();
 
+  // Release the outer alias and nested FieldViews while their Fields live.
+  void releaseFieldViews();
+
   // Set the internal dependent arrays based on the Field pointers.
   virtual void buildDependentArrays() override;
 

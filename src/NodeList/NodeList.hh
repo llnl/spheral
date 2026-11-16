@@ -154,6 +154,7 @@ protected:
   void registerField(FieldBase<Dimension>& field) const;
   void unregisterField(FieldBase<Dimension>& field) const;
   virtual void refreshView();
+  virtual void notifyFieldStorageWillChange(const FieldBase<Dimension>& field);
   virtual void notifyFieldStorageChanged(const FieldBase<Dimension>& field);
   void refreshMassView();
   void refreshMassRZView();

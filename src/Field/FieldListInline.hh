@@ -117,7 +117,7 @@ inline
 FieldList<Dimension, DataType>::
 ~FieldList() {
   DEBUG_LOG << "FieldList::~FieldList : " << this;
-  GPUUtils::freeMAView(mFieldViews);
+  this->releaseFieldViews();
 }  
 
 //------------------------------------------------------------------------------
@@ -132,6 +132,7 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
 #pragma omp critical (FieldList_assign)
   {
     if (this != &rhs) {
+      this->releaseFieldViews();
       mFieldPtrs.clear();
       mFieldCache.clear();
       mStorageType = rhs.mStorageType;
@@ -186,6 +187,7 @@ void
 FieldList<Dimension, DataType>::
 copyFields() {
   if (mStorageType != FieldStorageType::CopyFields) {
+    this->releaseFieldViews();
     mStorageType = FieldStorageType::CopyFields;      
     mFieldCache.clear();
     for (auto* fptr: mFieldPtrs) mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(*fptr));
@@ -203,6 +205,7 @@ inline
 void
 FieldList<Dimension, DataType>::
 copyFields(const FieldList<Dimension, DataType>& fieldList) {
+  this->releaseFieldViews();
   mFieldPtrs.clear();
   mFieldCache.clear();
   mStorageType = FieldStorageType::CopyFields;
@@ -250,6 +253,7 @@ FieldList<Dimension, DataType>::
 assignFields(const FieldList<Dimension, DataType>& fieldList) {
 #pragma omp critical (FieldList_assignFields)
   {
+    this->releaseFieldViews();
     const auto n = this->size();
     ENSURE(n == fieldList.size());
     ENSURE(mNodeListPtrs == fieldList.mNodeListPtrs);
@@ -268,6 +272,7 @@ inline
 void
 FieldList<Dimension, DataType>::
 referenceFields(const FieldList<Dimension, DataType>& fieldList) {
+  this->releaseFieldViews();
   mFieldPtrs = fieldList.mFieldPtrs;
   mFieldCache.clear();
   mStorageType = FieldStorageType::ReferenceFields;
@@ -327,6 +332,7 @@ deleteField(const Field<Dimension, DataType>& field) {
 
   const auto fieldPtrItr = std::find(this->begin(), this->end(), &field);
   CHECK(fieldPtrItr != this->end());
+  this->releaseFieldViews();
   auto fieldItr = mFieldCache.begin();
   switch(storageType()) {
   case FieldStorageType::CopyFields:
@@ -1171,6 +1177,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view() {
+  buildDependentArrays();
   return FieldListView<Dimension, DataType>(*this);
 }
 
@@ -1180,6 +1187,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback) {
+  buildDependentArrays();
   setCallback(fieldlist_callback);
   auto result = FieldListView<Dimension, DataType>(*this);
   return result;
@@ -1191,6 +1199,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback, FCB&& field_callback) {
+  buildDependentArrays();
   setCallback(fieldlist_callback);
   for (auto fptr: mFieldPtrs) fptr->setCallback(field_callback);
   auto result = FieldListView<Dimension, DataType>(*this);
@@ -1214,9 +1223,9 @@ buildDependentArrays() {
 
   const auto nfields = mFieldPtrs.size();
 
-  // mFieldViews is a non-owning alias in CHAI builds, so release it before
-  // resizing the vector that owns and constructs the FieldView objects.
-  GPUUtils::freeMAView(mFieldViews);
+  // Release aliases before resizing the vector that owns and constructs the
+  // FieldView objects.
+  this->releaseFieldViews();
   mFieldViewStorage.resize(nfields);
 
   for (auto [i, fptr]: enumerate(mFieldPtrs)) {
@@ -1239,6 +1248,22 @@ buildDependentArrays() {
   ENSURE(mFieldViews.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
+}
+
+//------------------------------------------------------------------------------
+// Release the outer FieldListView alias first, then destroy the nested
+// FieldViews before any copied Fields that they reference can be destroyed.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::
+releaseFieldViews() {
+  GPUUtils::freeMAView(mFieldViews);
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mFieldViews = {};
+#endif
+  mFieldViewStorage.clear();
 }
 
 //------------------------------------------------------------------------------

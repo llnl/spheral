@@ -264,6 +264,32 @@ NodeList<Dimension>::refreshView() {
 }
 
 //------------------------------------------------------------------------------
+// Drop the live FieldView before the Field changes its vector-backed storage.
+// The post-change notification installs the replacement and advances the
+// snapshot generation.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeList<Dimension>::
+notifyFieldStorageWillChange(const FieldBase<Dimension>& field) {
+  if (not mEnableViewNotifications) return;
+  if (&field == static_cast<const FieldBase<Dimension>*>(&mMass)) {
+    this->mMassView = decltype(this->mMassView){};
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mPositions)) {
+    this->mPositionsView = decltype(this->mPositionsView){};
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mVelocity)) {
+    this->mVelocityView = decltype(this->mVelocityView){};
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mH)) {
+    this->mHfieldView = decltype(this->mHfieldView){};
+  } else if (&field == static_cast<const FieldBase<Dimension>*>(&mWork)) {
+    this->mWorkView = decltype(this->mWorkView){};
+  } else if (mMassRZptr and
+             &field == static_cast<const FieldBase<Dimension>*>(mMassRZptr.get())) {
+    this->mMassRZView = decltype(this->mMassRZView){};
+  }
+}
+
+//------------------------------------------------------------------------------
 // A Field referenced by this NodeList's View rebound its storage.  Value-only
 // changes do not require a new snapshot, but a changed allocation invalidates
 // copied FieldViews and therefore advances the snapshot generation.

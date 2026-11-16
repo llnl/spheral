@@ -214,8 +214,11 @@ private:
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
   auto getCallback();
 
-  // Helper method to keep mDataSpan and mDataArray consistent
-  void assignDataSpan();
+  // Helpers to keep mDataSpan and mDataArray consistent.  The span is a
+  // non-owning alias and must be released before vector storage is mutated.
+  void prepareDataMutation();
+  void releaseDataSpan();
+  void assignDataSpan(const bool forceStorageChanged = false);
 };
 
 } // namespace Spheral
