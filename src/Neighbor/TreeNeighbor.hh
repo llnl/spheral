@@ -55,7 +55,7 @@ public:
                const double kernelExtent,
                const Vector& xmin,
                const Vector& xmax);
-  virtual ~TreeNeighbor() = default;
+  virtual ~TreeNeighbor();
 
   // Disabled methods
   TreeNeighbor() = delete;
@@ -150,6 +150,9 @@ private:
 
   // Flatten a fully constructed Tree to FlatTree
   void flattenTreeAndUpdateView();
+
+  // Release the non-owning View aliases before changing their vector storage.
+  void releaseFlatTreeViews();
 
   // Seralize/deserialize cells.
   void serialize(const Cell& cell, std::vector<char>& buffer) const;

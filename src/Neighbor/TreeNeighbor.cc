@@ -50,6 +50,18 @@ TreeNeighbor(DataBase<Dimension>& dataBase,
 }
 
 //------------------------------------------------------------------------------
+// Destructor
+//
+// Release the non-owning TreeNeighborView aliases while the vectors they
+// reference are still alive.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+TreeNeighbor<Dimension>::
+~TreeNeighbor() {
+  releaseFlatTreeViews();
+}
+
+//------------------------------------------------------------------------------
 // Force the nodeExtent FieldList to be sized correctly
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -71,10 +83,6 @@ void
 TreeNeighbor<Dimension>::
 clear() {
   mTree.clear();
-  mFlatTree.clear();
-  mFlatTreeDaughters.clear();
-  mFlatTreeMembers.clear();
-  mFlatTreeLevelOffsets.clear();
   resizeNodeExtents();
   flattenTreeAndUpdateView();
 }
@@ -512,12 +520,38 @@ addNodeToTree(const Vector& xi,
 }
 
 //------------------------------------------------------------------------------
+// Release the View aliases to the flattened vector storage.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TreeNeighbor<Dimension>::
+releaseFlatTreeViews() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  ViewType::mFlatTreeView = {};
+  ViewType::mFlatTreeDaughtersIndicesView = {};
+  ViewType::mFlatTreeMembersView = {};
+  ViewType::mFlatTreeLevelOffsetsView = {};
+  ViewType::mFirstGhostNodeView = {};
+#else
+  GPUUtils::freeMAView(ViewType::mFlatTreeView);
+  GPUUtils::freeMAView(ViewType::mFlatTreeDaughtersIndicesView);
+  GPUUtils::freeMAView(ViewType::mFlatTreeMembersView);
+  GPUUtils::freeMAView(ViewType::mFlatTreeLevelOffsetsView);
+  GPUUtils::freeMAView(ViewType::mFirstGhostNodeView);
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Flatten the Tree to a FlatTree for use in the View class
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 TreeNeighbor<Dimension>::
 flattenTreeAndUpdateView() {
+
+  // Release the old aliases before any operation which can invalidate the
+  // vector storage they reference.
+  releaseFlatTreeViews();
 
   // Clear the old data
   mFlatTree.clear();
