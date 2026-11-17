@@ -37,7 +37,7 @@ Notable changes include:
   * Build changes / improvements:
     * Updated the LC ROCm toolchain from 6.4.3 to 7.2.1 and Cray MPICH from 9.0.1 to 9.1.0.
     * Updated to use CHAI 2026.07.1, RAJA 2026.07.1, Umpire 2026.07.2, and CAMP 2026.07.2.
-    * LC ROCm builds now use CMake 3.31 to correctly detect LLVM Flang runtime libraries.
+    * LC ROCm builds now use the external CMake 3.29.2 installation.
     * Axom builds now use C++20 when consuming CAMP 2026.07 or newer.
     * Major overhaul to CMake system:
       * CXX library is now a monolithic static, shared, or interface (for dev builds) library.
