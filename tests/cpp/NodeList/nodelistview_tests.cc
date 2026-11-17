@@ -757,6 +757,28 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, SpecializedSnapshotAndDataBaseAppend) {
   SPHERAL_ASSERT_EQ(dataBaseView.fluidNodeListViews()[0].massDensity().numElements(), Ntotal);
 }
 
+// Repeated TreeNeighbor flattening must release all migrated aliases before
+// clearing and rebuilding the vector/unordered_map representation.
+GPU_TYPED_TEST_P(NodeListViewTypedTest, TreeNeighborReinitializeAfterViewMigration) {
+  NodeList_t nodes("TreeNeighborReinitialize", Ninternal, Nghost);
+  gpu_this->initialize(nodes);
+  Spheral::DataBase<DIM3> dataBase(2.0);
+  dataBase.appendNodeList(nodes);
+
+  for (auto pass = 0u; pass < 3u; ++pass) {
+    dataBase.reinitializeNeighbors();
+    const auto neighborVariant = dataBase.neighborView();
+    const auto treeView = std::get<Spheral::TreeNeighborView<DIM3>>(neighborVariant);
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_TRUE(treeView.numGridLevels() > 0u);
+    EXEC_IN_SPACE_END()
+
+    // Change the subsequent tree without changing its topology or retaining
+    // the stale snapshot across the owner mutation.
+    nodes.positions()[0].x(nodes.positions()[0].x() + 0.125);
+  }
+}
+
 REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             DefaultAndExplicitConstruction,
                             ValueSemantics,
@@ -773,6 +795,7 @@ REGISTER_TYPED_TEST_SUITE_P(NodeListViewTypedTest,
                             ReorderNodesRefreshesInheritedView,
                             HostStateAndInheritedView,
                             DataBaseGenerationRefresh,
+                            TreeNeighborReinitializeAfterViewMigration,
                             SpecializedSnapshotAndDataBaseAppend);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(NodeList,

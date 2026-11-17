@@ -430,9 +430,97 @@ GPU_TYPED_TEST_P(FieldListViewTypedTest, MultiFieldList) {
   COMP_COUNTERS(gpu_this->f_count,  f_ref_count);
 }
 
+// Exercise the FieldList operations that replace either the nested Fields or
+// the array of nested FieldViews after the old snapshots have migrated.
+GPU_TYPED_TEST_P(FieldListViewTypedTest, MutateAfterNestedViewMigration) {
+  NodeList_t nl1 = gpu_this->createNodeList("FieldListMutation1");
+  NodeList_t nl2 = gpu_this->createNodeList("FieldListMutation2");
+  NodeList_t nl3 = gpu_this->createNodeList("FieldListMutation3");
+  FieldDouble field1("Field1", nl1, 1.0);
+  FieldDouble field2("Field2", nl2, 2.0);
+  FieldDouble field3("Field3", nl3, 3.0);
+
+  FieldListDouble source(Spheral::FieldStorageType::CopyFields);
+  source.appendField(field1);
+  source.appendField(field2);
+  FieldListDouble target(Spheral::FieldStorageType::CopyFields);
+  target.appendField(field3);
+
+  {
+    const auto oldTargetView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(oldTargetView.size(), 1u);
+      SPHERAL_ASSERT_EQ(oldTargetView(0, 0), 3.0);
+    EXEC_IN_SPACE_END()
+  }
+
+  // Copy-storage assignment must destroy the target's old owned Fields only
+  // after releasing all nested aliases.
+  target = source;
+  {
+    const auto sourceView = source.view();
+    const auto targetView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(targetView.size(), 2u);
+      SPHERAL_ASSERT_NE(targetView[0].data(), sourceView[0].data());
+      SPHERAL_ASSERT_NE(targetView[1].data(), sourceView[1].data());
+      SPHERAL_ASSERT_EQ(targetView(0, 0), 1.0);
+      SPHERAL_ASSERT_EQ(targetView(1, 0), 2.0);
+    EXEC_IN_SPACE_END()
+  }
+
+  source(0, 0) = 4.0;
+  source(1, 0) = 5.0;
+  {
+    const auto migratedTargetView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(migratedTargetView(0, 0), 1.0);
+      SPHERAL_ASSERT_EQ(migratedTargetView(1, 0), 2.0);
+    EXEC_IN_SPACE_END()
+  }
+  target.assignFields(source);
+  {
+    const auto assignedView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(assignedView(0, 0), 4.0);
+      SPHERAL_ASSERT_EQ(assignedView(1, 0), 5.0);
+    EXEC_IN_SPACE_END()
+  }
+
+  FieldListDouble references;
+  references.appendField(field2);
+  references.appendField(field3);
+  target.referenceFields(references);
+  {
+    const auto referencedView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(referencedView.size(), 2u);
+      SPHERAL_ASSERT_EQ(referencedView(0, 0), 2.0);
+      SPHERAL_ASSERT_EQ(referencedView(1, 0), 3.0);
+    EXEC_IN_SPACE_END()
+  }
+
+  target.deleteField(field2);
+  {
+    const auto deletedView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(deletedView.size(), 1u);
+      SPHERAL_ASSERT_EQ(deletedView(0, 0), 3.0);
+    EXEC_IN_SPACE_END()
+  }
+
+  // Resizing a referenced Field invalidates its previous FieldView.  A fresh
+  // FieldList snapshot must rebuild the nested view with the new extent.
+  nl3.numGhostNodes(3u);
+  const auto resizedView = target.view();
+  EXEC_IN_SPACE_BEGIN(TypeParam)
+    SPHERAL_ASSERT_EQ(resizedView[0].numElements(), N + 3u);
+  EXEC_IN_SPACE_END()
+}
+
 REGISTER_TYPED_TEST_SUITE_P(FieldListViewTypedTest, BasicCapture, MultiScopeAndTouch,
                             MultiScopeNoTouch, MoveTest, HostRajaTest, HostResize,
-                            MultiFieldList);
+                            MultiFieldList, MutateAfterNestedViewMigration);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FieldListView, FieldListViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

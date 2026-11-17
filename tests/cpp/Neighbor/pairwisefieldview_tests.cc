@@ -221,9 +221,40 @@ GPU_TYPED_TEST_P(PairwiseFieldViewTypedTest, MultiViewSemantics) {
   } // field and any GPU allocation should be released here.
 }
 
+// Assignment must detach the target's migrated span before replacing its
+// vector storage, while retaining the shared pair topology.
+GPU_TYPED_TEST_P(PairwiseFieldViewTypedTest, AssignmentAfterMigration) {
+  auto pairs = gpu_this->createNPL(128u);
+  PairwiseFieldDouble source(pairs), target(pairs);
+  for (auto i = 0u; i < source.size(); ++i) {
+    source[i] = 3.0*i + 1.0;
+    target[i] = -1.0;
+  }
+
+  {
+    const auto oldTargetView = target.view();
+    RAJA::forall<TypeParam>(TRS_UINT(0, target.size()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(oldTargetView[i], -1.0);
+      });
+  }
+
+  target = source;
+  const auto sourceView = source.view();
+  const auto targetView = target.view();
+  EXEC_IN_SPACE_BEGIN(TypeParam)
+    SPHERAL_ASSERT_NE(targetView.data(), sourceView.data());
+  EXEC_IN_SPACE_END()
+  RAJA::forall<TypeParam>(TRS_UINT(0, target.size()),
+    [=] SPHERAL_HOST_DEVICE (size_t i) {
+      SPHERAL_ASSERT_EQ(targetView[i], sourceView[i]);
+    });
+}
+
 
 REGISTER_TYPED_TEST_SUITE_P(PairwiseFieldViewTypedTest,
-                            ExecutionSpaceCapture, MultiSpaceCapture, MultiViewSemantics);
+                            ExecutionSpaceCapture, MultiSpaceCapture, MultiViewSemantics,
+                            AssignmentAfterMigration);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(Field, PairwiseFieldViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );

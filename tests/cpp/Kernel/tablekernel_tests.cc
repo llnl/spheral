@@ -35,7 +35,15 @@ GPU_TYPED_TEST_P(TableKernelTypedTest, CopyAssign) {
   ExpInv2D ei_kernel;
   TableKernel2D ref_kernel(ei_kernel);
   TableKernel2D copy_kernel(ref_kernel);
-  TableKernel2D assigned_kernel(ei_kernel);
+  TableKernel2D assigned_kernel(ei_kernel, 37u);
+  {
+    // Force the target's old interpolator Views into the requested execution
+    // space before assignment replaces their backing storage.
+    const auto old_view = assigned_kernel.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_TRUE(old_view.kernelValue(0.25, Hdet) > 0.0);
+    EXEC_IN_SPACE_END()
+  }
   assigned_kernel = ref_kernel;
   EXPECT_NE(copy_kernel.Winterpolator().data(), ref_kernel.Winterpolator().data());
   EXPECT_NE(assigned_kernel.Winterpolator().data(), ref_kernel.Winterpolator().data());
