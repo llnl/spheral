@@ -764,9 +764,17 @@ GPU_TYPED_TEST_P(NodeListViewTypedTest, TreeNeighborReinitializeAfterViewMigrati
   gpu_this->initialize(nodes);
   Spheral::DataBase<DIM3> dataBase(2.0);
   dataBase.appendNodeList(nodes);
+  auto& treeNeighbor = dataBase.emplaceNeighbor<Spheral::TreeNeighbor<DIM3>>(
+    Spheral::NeighborSearchType::GatherScatter,
+    2.0,
+    -20.0*Vector::one(),
+     20.0*Vector::one());
 
   for (auto pass = 0u; pass < 3u; ++pass) {
-    dataBase.reinitializeNeighbors();
+    // Exercise the same TreeNeighbor clear/flatten/rebuild operations without
+    // DataBase::reinitializeNeighbors, which performs MPI global reductions.
+    treeNeighbor.reinitialize();
+    treeNeighbor.updateNodes();
     const auto neighborVariant = dataBase.neighborView();
     const auto treeView = std::get<Spheral::TreeNeighborView<DIM3>>(neighborVariant);
     EXEC_IN_SPACE_BEGIN(TypeParam)
