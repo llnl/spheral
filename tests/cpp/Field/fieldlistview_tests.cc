@@ -62,6 +62,12 @@ public:
   }
 };
 
+TEST(FieldListViewValueTest, EmptyIterators) {
+  Spheral::FieldListView<DIM3, double> view;
+  EXPECT_TRUE(view.empty());
+  EXPECT_EQ(view.begin(), view.end());
+}
+
 // Setting up G Test for FieldList
 TYPED_TEST_SUITE_P(FieldListViewTypedTest);
 template <typename T> class FieldListViewTypedTest : public FieldListViewTest {};

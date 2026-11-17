@@ -59,8 +59,8 @@ public:
   SPHERAL_HOST_DEVICE iterator end()                                                           { return mFieldViews.end(); }
   SPHERAL_HOST_DEVICE bool empty()                                                             { return mFieldViews.empty(); }
 #else
-  SPHERAL_HOST_DEVICE iterator begin()                                                         { return &mFieldViews[0]; }
-  SPHERAL_HOST_DEVICE iterator end()                                                           { return &mFieldViews[0] + mFieldViews.size(); }
+  SPHERAL_HOST_DEVICE iterator begin()                                                         { return mFieldViews.data(); }
+  SPHERAL_HOST_DEVICE iterator end()                                                           { auto* p = mFieldViews.data(); return mFieldViews.size() == 0u ? p : p + mFieldViews.size(); }
   SPHERAL_HOST_DEVICE bool empty()                                                             { return mFieldViews.size() == 0u; }
 #endif
 
