@@ -268,16 +268,23 @@ copyViewMetadata(const TableKernel<Dimension>& rhs) {
 
 //------------------------------------------------------------------------------
 // Detach cached views before changing or destroying their owned interpolators.
+//
+// These are copies of the interpolators' ManagedArrays, not independently
+// registered allocations.  Calling View::reset() here would call
+// ManagedArray::free() and deregister the shared allocation; the owning
+// interpolator would then attempt to deregister it a second time.  Replacing
+// the cached handles with empty Views leaves the allocation registered until
+// its owning interpolator releases it.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 TableKernel<Dimension>::
 releaseViews() {
-  this->mInterp.reset();
-  this->mGradInterp.reset();
-  this->mGrad2Interp.reset();
-  this->mNperhLookup.reset();
-  this->mWsumLookup.reset();
+  this->mInterp = QuadraticInterpolatorView{};
+  this->mGradInterp = QuadraticInterpolatorView{};
+  this->mGrad2Interp = QuadraticInterpolatorView{};
+  this->mNperhLookup = CubicHermiteInterpolatorView{};
+  this->mWsumLookup = CubicHermiteInterpolatorView{};
 }
 
 //------------------------------------------------------------------------------
