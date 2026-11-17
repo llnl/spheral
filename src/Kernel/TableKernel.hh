@@ -36,7 +36,7 @@ public:
               const Scalar minNperh = 0.25,
               const Scalar maxNperh = 64.0);
   TableKernel(const TableKernel<Dimension>& rhs);
-  ~TableKernel() override;
+  ~TableKernel();
 
   // Assignment.
   TableKernel& operator=(const TableKernel& rhs);
