@@ -6,6 +6,7 @@
 // original workload.
 //------------------------------------------------------------------------------
 
+#include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
 
 #include "DataBase/DataBase.hh"
@@ -369,6 +370,51 @@ public:
   }
 
   //---------------------------------------------------------------------------
+  // Exercise TreeNeighborView list construction in each configured execution
+  // space.  Fixed-size ManagedArrays provide device-accessible output storage;
+  // the View methods report the number of populated entries separately.
+  //---------------------------------------------------------------------------
+  template<typename ExecPolicy>
+  void
+  testTreeNeighborView() {
+    const auto neighborVariant = dataBase->neighborView();
+    const auto treeView = std::get<Spheral::TreeNeighborView<Dimension>>(neighborVariant);
+    const auto& nodes = nodes1->nodes;
+    ASSERT_GT(nodes.numInternalNodes(), 0u);
+
+    const auto position = nodes.positions()[0u];
+    const auto H = nodes.Hfield()[0u];
+    size_t capacity = 0u;
+    for (const auto* nodeList: dataBase->nodeListPtrs()) capacity += nodeList->numNodes();
+    ASSERT_GT(capacity, 0u);
+
+    chai::ManagedArray<NodeID> master(capacity);
+    chai::ManagedArray<NodeID> coarse(capacity);
+    chai::ManagedArray<NodeID> refine(capacity);
+    RAJA::forall<ExecPolicy>(TRS_UINT(0u, 1u),
+      [=] SPHERAL_HOST_DEVICE(size_t) mutable {
+        const auto [ok, numMaster, numCoarse] =
+          treeView.setMasterList(position, H, master, coarse);
+        SPHERAL_ASSERT_TRUE(ok);
+        SPHERAL_ASSERT_TRUE(numMaster <= capacity);
+        SPHERAL_ASSERT_TRUE(numCoarse <= capacity);
+        const auto numRefine =
+          treeView.setRefineNeighborList(position, H, numCoarse, coarse, refine);
+        SPHERAL_ASSERT_TRUE(numRefine <= capacity);
+
+        auto foundExpectedNode = false;
+        for (size_t k = 0u; k < numRefine; ++k) {
+          if (refine[k].first == 0u and refine[k].second == 0u) foundExpectedNode = true;
+        }
+        SPHERAL_ASSERT_TRUE(foundExpectedNode);
+      });
+
+    master.free();
+    coarse.free();
+    refine.free();
+  }
+
+  //---------------------------------------------------------------------------
   // Test raw Neighbor object calls.
   //---------------------------------------------------------------------------
   void
@@ -667,6 +713,23 @@ public:
     genericSetUp(n1, n2, n3, volrange1, volrange2, volrange3);
   }
 };
+
+// Run TreeNeighborView itself in every enabled execution space, including the
+// device policy in CUDA/HIP builds.
+TYPED_TEST_SUITE_P(TreeNeighborViewTypedTest);
+template<typename T>
+class TreeNeighborViewTypedTest: public NeighborRandom3d {};
+
+GPU_TYPED_TEST_P(TreeNeighborViewTypedTest, DeviceNeighborQuery) {
+  gpu_this->template testTreeNeighborView<TypeParam>();
+}
+
+REGISTER_TYPED_TEST_SUITE_P(TreeNeighborViewTypedTest,
+                            DeviceNeighborQuery);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(TreeNeighborView,
+                               TreeNeighborViewTypedTest,
+                               typename Spheral::Test<EXEC_TYPES>::Types, );
 
 TEST_F(NeighborRandom3d, testNeighborCalls) {
   this->testNeighborCalls();

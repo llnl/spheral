@@ -1,6 +1,5 @@
 set(Neighbor_inst
   Neighbor
-  TreeNeighborView
   TreeNeighbor
   ConnectivityMap
 )
