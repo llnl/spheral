@@ -91,16 +91,15 @@ class NeighborTestBase:
                      BSplineKernel,
                      Vector,
                      SymTensor,
-                     NeighborType,
                      DataBase,
                      Seeder):
         
         # Construct the NodeLists to be distributed
         self.eos = EOS(2.0, 2.0)
         self.WT = TableKernel(BSplineKernel(), 100)
-        self.nodes1 = makeFluidNodeList("nodes 1", self.eos, NeighborType=NeighborType)
-        self.nodes2 = makeFluidNodeList("nodes 2", self.eos, NeighborType=NeighborType)
-        self.nodes3 = makeFluidNodeList("nodes 3", self.eos, NeighborType=NeighborType)
+        self.nodes1 = makeFluidNodeList("nodes 1", self.eos)
+        self.nodes2 = makeFluidNodeList("nodes 2", self.eos)
+        self.nodes3 = makeFluidNodeList("nodes 3", self.eos)
         for nodes, nGlobal, volrange in ((self.nodes1, n1, volrange1),
                                       (self.nodes2, n2, volrange2),
                                       (self.nodes3, n3, volrange3)):
@@ -116,23 +115,67 @@ class NeighborTestBase:
                 nodes.Hfield()[i] = H[i]
 
         # Put the distributed NodeLists into a DataBase.
-        self.dataBase = DataBase()
+        self.dataBase = DataBase(self.kernelExtent)
         self.dataBase.appendNodeList(self.nodes1)
         self.dataBase.appendNodeList(self.nodes2)
         self.dataBase.appendNodeList(self.nodes3)
 
-        # Update all the Neighbor info.
-        #NeighborType.setBoundingBox()
-        for n in (self.nodes1, self.nodes2, self.nodes3):
-            n.neighbor().updateNodes()
+        # Update the DataBase-owned Neighbor info.
+        self.dataBase.updateNeighbors()
 
         return
+
+    #---------------------------------------------------------------------------
+    # C++ equivalents of the SpheralTestUtilities neighbor helpers.  These use
+    # a brute-force search so the expected answer is independent of Neighbor.
+    #---------------------------------------------------------------------------
+    def findNeighborNodes(self, position, H, nodes):
+        positions = nodes.positions()
+        Hfield = nodes.Hfield()
+        return [i for i in range(nodes.numNodes)
+                if min((H*(positions[i] - position)).magnitude(),
+                       (Hfield[i]*(positions[i] - position)).magnitude()) <= self.kernelExtent]
+
+    def findGatherNeighborNodes(self, position, H, nodes):
+        positions = nodes.positions()
+        return [i for i in range(nodes.numNodes)
+                if (H*(position - positions[i])).magnitude() <= self.kernelExtent]
+
+    def findScatterNeighborNodes(self, position, nodes):
+        positions = nodes.positions()
+        Hfield = nodes.Hfield()
+        return [i for i in range(nodes.numNodes)
+                if (Hfield[i]*(position - positions[i])).magnitude() <= self.kernelExtent]
+
+    def findOverlapNeighbors(self, position, H):
+        nodeLists = self.dataBase.nodeLists
+        result = [set(self.findNeighborNodes(position, H, nodes)) for nodes in nodeLists]
+        for inodes in nodeLists:
+            for i in self.findGatherNeighborNodes(position, H, inodes):
+                for jNL, jnodes in enumerate(nodeLists):
+                    result[jNL].update(self.findScatterNeighborNodes(inodes.positions()[i], jnodes))
+        return [list(x) for x in result]
+
+    @staticmethod
+    def checkNeighbors(neighborList, answer):
+        return all(x in neighborList for x in answer)
+
+    def findCandidateNodes(self, position, H):
+        neighbor = self.dataBase.neighbor()
+        master = vector_of_pair_ULL_ULL()
+        coarse = vector_of_pair_ULL_ULL()
+        refine = vector_of_pair_ULL_ULL()
+        ok, numMaster, numCoarse = neighbor.setMasterList(position, H, master, coarse)
+        assert ok
+        numRefine = neighbor.setRefineNeighborList(position, H, numCoarse, coarse, refine)
+        assert len(master) >= numMaster
+        assert len(coarse) >= numCoarse
+        return list(refine)[:numRefine]
 
     #---------------------------------------------------------------------------
     # Test raw Neighbor object calls.
     #---------------------------------------------------------------------------
     def testNeighborCalls(self):
-        from SpheralTestUtilities import findNeighborNodes, checkNeighbors
         import time
 
         # Iterate over the NodeLists.
@@ -147,28 +190,26 @@ class NeighborTestBase:
 
                 # Have the neighbor objects select neighbors for this node.
                 t0 = time.time()
-                masterLists = vector_of_vector_of_int()
-                coarseNeighbors = vector_of_vector_of_int()
-                refineNeighbors = vector_of_vector_of_int()
-                self.dataBase.setMasterNodeLists(ri, Hi, masterLists, coarseNeighbors, False)
-                self.dataBase.setRefineNodeLists(ri, Hi, coarseNeighbors, refineNeighbors)
+                refineNeighbors = self.findCandidateNodes(ri, Hi)
                 neighborIDs = []
+                offsets = []
                 offset = 0
-                for inds, nds in enumerate(self.dataBase.nodeLists):
-                    neighborIDs.extend([i + offset for i in refineNeighbors[inds]])
+                for nds in self.dataBase.nodeLists:
+                    offsets.append(offset)
                     offset += nds.numInternalNodes
+                neighborIDs.extend(offsets[nodeListID] + nodeID
+                                   for nodeListID, nodeID in refineNeighbors)
                 t1 = time.time()
 
                 # Now build the checks.
                 answerIDs = []
-                offset = 0
-                for nds in self.dataBase.nodeLists:
-                    answerIDs.extend([i + offset for i in findNeighborNodes(ri, Hi, self.kernelExtent, nds)])
-                    offset += nds.numInternalNodes
+                for nodeListID, nds in enumerate(self.dataBase.nodeLists):
+                    answerIDs.extend(i + offsets[nodeListID]
+                                     for i in self.findNeighborNodes(ri, Hi, nds))
                 t2 = time.time()
 
                 # Check the answer.
-                test = checkNeighbors(neighborIDs, answerIDs)
+                test = self.checkNeighbors(neighborIDs, answerIDs)
                 t3 = time.time()
                 if not test:
                     neighborIDs.sort()
@@ -187,9 +228,6 @@ class NeighborTestBase:
     # Test ConnectivityMap neighbors
     #---------------------------------------------------------------------------
     def testConnectivityMapNeighbors(self):
-        from SpheralTestUtilities import findNeighborNodes, checkNeighbors
-        import time
-
         self.dataBase.updateConnectivityMap(False, False, False)
         cm = self.dataBase.connectivityMap(False, False, False)
 
@@ -207,7 +245,7 @@ class NeighborTestBase:
                 # Check ConnectivityMap vs. N^2 neighbor search.
                 for jNL, jnodes in enumerate(self.dataBase.nodeLists):
                     cmcheck = sorted(cmneighbors[jNL])
-                    answer = sorted(findNeighborNodes(ri, Hi, self.kernelExtent, jnodes))
+                    answer = sorted(self.findNeighborNodes(ri, Hi, jnodes))
                     if iNL == jNL:
                         answer.remove(i)
                     if not cmcheck == answer:
@@ -225,9 +263,6 @@ class NeighborTestBase:
     # Test ConnectivityMap NodePairList
     #---------------------------------------------------------------------------
     def testConnectivityMapNodePairs(self):
-        from SpheralTestUtilities import findNeighborNodes, checkNeighbors
-        import time
-
         self.dataBase.updateConnectivityMap(False, False, False)
         cm = self.dataBase.connectivityMap(False, False, False)
         numNodeLists = self.dataBase.numNodeLists
@@ -263,8 +298,7 @@ class NeighborTestBase:
     # Test ConnectivityMap overlap neighbors
     #---------------------------------------------------------------------------
     def testConnectivityMapOverlapNeighbors(self):
-        from SpheralTestUtilities import findNeighborNodes, findOverlapNeighbors, findOverlapRegion, checkNeighbors
-        import time
+        from SpheralTestUtilities import findOverlapRegion
 
         self.dataBase.updateConnectivityMap(False, True, False)
         cm = self.dataBase.connectivityMap(False, True, False)
@@ -301,7 +335,7 @@ class NeighborTestBase:
                 ri = pos(iNL, i)
                 Hi = H(iNL, i)
                 cmneighbors = cm.overlapConnectivityForNode(inodes, i)
-                fullanswer = findOverlapNeighbors(ri, Hi, self.kernelExtent, self.dataBase)
+                fullanswer = self.findOverlapNeighbors(ri, Hi)
 
                 # Check ConnectivityMap vs. N^2 neighbor search.
                 for jNL, jnodes in enumerate(self.dataBase.nodeLists):
@@ -344,9 +378,6 @@ class NeighborTestBase:
     # Test ConnectivityMap intersection methods
     #---------------------------------------------------------------------------
     def testConnectivityComputeIntersection(self):
-        from SpheralTestUtilities import findNeighborNodes, findOverlapNeighbors, findOverlapRegion, checkNeighbors
-        import time
-
         self.dataBase.updateConnectivityMap(False, True, True)
         numNodeLists = self.dataBase.numNodeLists
         cm = self.dataBase.connectivityMap(False, True, True)
@@ -364,7 +395,7 @@ class NeighborTestBase:
             result[pair.j_list].add(pair.j_node)
             return result
 
-        # Make our vector<vector<int>> into a list of sets for comparison with the answer
+        # Make the nested neighbor lists into a list of sets for comparison.
         def convertToSets(neighbors):
             assert len(neighbors) == numNodeLists
             return [set(x) for x in neighbors]
@@ -424,7 +455,6 @@ class NeighborRandom1d(unittest.TestCase, NeighborTestBase):
                           BSplineKernel1d,
                           Vector1d,
                           SymTensor1d,
-                          NeighborRandom1d._NeighborType,
                           DataBase1d,
                           self.randomDistribute)
 
@@ -473,7 +503,6 @@ class NeighborRandom2d(unittest.TestCase, NeighborTestBase):
                           BSplineKernel2d,
                           Vector2d,
                           SymTensor2d,
-                          NeighborRandom2d._NeighborType,
                           DataBase2d,
                           self.randomDistribute)
 
@@ -526,7 +555,6 @@ class NeighborRandom3d(unittest.TestCase, NeighborTestBase):
                           BSplineKernel3d,
                           Vector3d,
                           SymTensor3d,
-                          NeighborRandom3d._NeighborType,
                           DataBase3d,
                           self.randomDistribute)
 
@@ -560,7 +588,7 @@ class NeighborCylindrical2d(unittest.TestCase, NeighborTestBase):
         from DistributeNodes import distributeNodes2d
         self.eos = GammaLawGasMKS2d(2.0, 2.0)
         self.WT = TableKernel2d(BSplineKernel2d(), 100)
-        self.nodes1 = makeFluidNodeList2d("cylindrical nodes 1", self.eos, NeighborType=NeighborCylindrical2d._NeighborType)
+        self.nodes1 = makeFluidNodeList2d("cylindrical nodes 1", self.eos)
         self.kernelExtent = 2.0
         generator = GenerateNodeDistribution2d(nRadial = 100,
                                                nTheta = 100,
@@ -571,8 +599,9 @@ class NeighborCylindrical2d(unittest.TestCase, NeighborTestBase):
                                                theta = 0.5*pi,
                                                nNodePerh = 2.01)
         distributeNodes2d((self.nodes1, generator))
-        self.dataBase = DataBase2d()
+        self.dataBase = DataBase2d(self.kernelExtent)
         self.dataBase.appendNodeList(self.nodes1)
+        self.dataBase.updateNeighbors()
 
         return
 
