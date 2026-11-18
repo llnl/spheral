@@ -440,8 +440,8 @@ setTreeRefineNeighborList(const Vector& /*position*/,
   // const Vector maxExtent = position + extent;
 
   // Use precull to set the refined neighbor list.
-  REQUIRE(numCoarse <= coarseNeighbors.size());
-  REQUIRE(numCoarse <= refineNeighbors.size());
+  REQUIRE2(numCoarse <= coarseNeighbors.size(), numCoarse << " " << coarseNeighbors.size() << " " << refineNeighbors.size());
+  REQUIRE2(numCoarse <= refineNeighbors.size(), numCoarse << " " << coarseNeighbors.size() << " " << refineNeighbors.size());
   std::copy_n(coarseNeighbors.begin(), numCoarse, refineNeighbors.begin()); // this->precullList(position, position, minExtent, maxExtent, coarseNeighbors);
   return numCoarse;
 }

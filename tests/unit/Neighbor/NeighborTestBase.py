@@ -167,9 +167,10 @@ class NeighborTestBase:
         refine = vector_of_pair_ULL_ULL()
         ok, numMaster, numCoarse = neighbor.setMasterList(position, H, master, coarse)
         assert ok
-        numRefine = neighbor.setRefineNeighborList(position, H, numCoarse, coarse, refine)
         assert len(master) >= numMaster
         assert len(coarse) >= numCoarse
+        numRefine = neighbor.setRefineNeighborList(position, H, numCoarse, coarse, refine)
+        assert len(refine) >= numRefine
         return list(refine)[:numRefine]
 
     #---------------------------------------------------------------------------
