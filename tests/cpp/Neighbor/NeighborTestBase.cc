@@ -17,6 +17,7 @@
 #include "Neighbor/NodePairList.hh"
 #include "Neighbor/TreeNeighbor.hh"
 #include "NodeList/FluidNodeList.hh"
+#include "Threading/GPUUtils.hh"
 
 #include <algorithm>
 #include <array>
@@ -371,8 +372,8 @@ public:
 
   //---------------------------------------------------------------------------
   // Exercise TreeNeighborView list construction in each configured execution
-  // space.  Fixed-size ManagedArrays provide device-accessible output storage;
-  // the View methods report the number of populated entries separately.
+  // space.  The ManagedArray Views alias std::vector storage, matching the
+  // grow-and-retry pattern required for device-side neighbor queries.
   //---------------------------------------------------------------------------
   template<typename ExecPolicy>
   void
@@ -384,34 +385,70 @@ public:
 
     const auto position = nodes.positions()[0u];
     const auto H = nodes.Hfield()[0u];
-    size_t capacity = 0u;
-    for (const auto* nodeList: dataBase->nodeListPtrs()) capacity += nodeList->numNodes();
-    ASSERT_GT(capacity, 0u);
 
-    chai::ManagedArray<NodeID> master(capacity);
-    chai::ManagedArray<NodeID> coarse(capacity);
-    chai::ManagedArray<NodeID> refine(capacity);
-    RAJA::forall<ExecPolicy>(TRS_UINT(0u, 1u),
-      [=] SPHERAL_HOST_DEVICE(size_t) mutable {
-        const auto [ok, numMaster, numCoarse] =
-          treeView.setMasterList(position, H, master, coarse);
-        SPHERAL_ASSERT_TRUE(ok);
-        SPHERAL_ASSERT_TRUE(numMaster <= capacity);
-        SPHERAL_ASSERT_TRUE(numCoarse <= capacity);
-        const auto numRefine =
-          treeView.setRefineNeighborList(position, H, numCoarse, coarse, refine);
-        SPHERAL_ASSERT_TRUE(numRefine <= capacity);
+    using TreeView = Spheral::TreeNeighborView<Dimension>;
+    using NodeIDView = typename TreeView::template ContainerView<NodeID>;
+    using SizeView = typename TreeView::template ContainerView<size_t>;
+    std::vector<NodeID> master, coarse, refine;
+    std::vector<size_t> result(4u, 0u); // ok, numMaster, numCoarse, numRefine
+    NodeIDView masterView, coarseView, refineView;
+    SizeView resultView;
+    Spheral::GPUUtils::initMAView(resultView, result);
 
-        auto foundExpectedNode = false;
-        for (size_t k = 0u; k < numRefine; ++k) {
-          if (refine[k].first == 0u and refine[k].second == 0u) foundExpectedNode = true;
-        }
-        SPHERAL_ASSERT_TRUE(foundExpectedNode);
-      });
+    auto ok = false;
+    auto pass = 0u;
+    while (not ok) {
+      Spheral::GPUUtils::initMAView(masterView, master);
+      Spheral::GPUUtils::initMAView(coarseView, coarse);
+      Spheral::GPUUtils::initMAView(refineView, refine);
+      RAJA::forall<ExecPolicy>(TRS_UINT(0u, 1u),
+        [=] SPHERAL_HOST_DEVICE(size_t) mutable {
+          const auto [queryOK, numMaster, numCoarse] =
+            treeView.setMasterList(position, H, masterView, coarseView);
+          resultView[0u] = queryOK ? 1u : 0u;
+          resultView[1u] = numMaster;
+          resultView[2u] = numCoarse;
+          resultView[3u] = 0u;
+          if (queryOK) {
+            const auto numRefine =
+              treeView.setRefineNeighborList(position, H, numCoarse, coarseView, refineView);
+            resultView[3u] = numRefine;
+            SPHERAL_ASSERT_TRUE(numRefine <= refineView.size());
 
-    master.free();
-    coarse.free();
-    refine.free();
+            auto foundExpectedNode = false;
+            for (size_t k = 0u; k < numRefine; ++k) {
+              if (refineView[k].first == 0u and refineView[k].second == 0u) {
+                foundExpectedNode = true;
+              }
+            }
+            SPHERAL_ASSERT_TRUE(foundExpectedNode);
+          }
+        });
+
+      // Bring the returned sizes back before releasing aliases and resizing
+      // their backing vectors.  Successful result buffers are also preserved
+      // on the host before their ManagedArray aliases are released.
+      Spheral::GPUUtils::move(resultView, chai::CPU);
+      ok = result[0u] != 0u;
+      if (ok) {
+        Spheral::GPUUtils::move(masterView, chai::CPU);
+        Spheral::GPUUtils::move(coarseView, chai::CPU);
+        Spheral::GPUUtils::move(refineView, chai::CPU);
+      }
+      Spheral::GPUUtils::freeMAView(masterView);
+      Spheral::GPUUtils::freeMAView(coarseView);
+      Spheral::GPUUtils::freeMAView(refineView);
+
+      if (pass == 0u) EXPECT_FALSE(ok);
+      master.resize(result[1u]);
+      coarse.resize(result[2u]);
+      refine.resize(ok ? result[3u] : result[2u]);
+      ++pass;
+    }
+
+    EXPECT_EQ(pass, 2u);
+    EXPECT_NE(std::find(refine.begin(), refine.end(), NodeID(0u, 0u)), refine.end());
+    Spheral::GPUUtils::freeMAView(resultView);
   }
 
   //---------------------------------------------------------------------------
