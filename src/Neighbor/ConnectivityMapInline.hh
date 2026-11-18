@@ -20,9 +20,8 @@ connectivityForNode(const NodeList<Dimension>* nodeListPtr,
                            mBuildOverlapConnectivity or
                            NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent());
   CONTRACT_VAR(ghostValid);
-  REQUIRE(nodeID >= 0 and 
-          ((nodeID < nodeListPtr->numInternalNodes()) or
-          (ghostValid and nodeID < nodeListPtr->numNodes())));
+  REQUIRE((nodeID < nodeListPtr->numInternalNodes()) or
+          (ghostValid and nodeID < nodeListPtr->numNodes()));
   const auto nodeListID = mDataBase.nodeListIndex(nodeListPtr);
   REQUIRE(nodeListID < mDataBase.numNodeLists() and nodeListID < mOffsets.size());
   REQUIRE(mOffsets[nodeListID] + nodeID < mConnectivity.size());
@@ -193,7 +192,7 @@ inline
 size_t
 ConnectivityMap<Dimension>::
 numNodes(const size_t nodeList) const {
-  REQUIRE(nodeList >= 0 and nodeList < mDataBase.numNodeLists());
+  REQUIRE(nodeList < mDataBase.numNodeLists());
   return mNodeTraversalIndices[nodeList].size();
 }
 

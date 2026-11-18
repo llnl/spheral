@@ -160,7 +160,7 @@ protected:
       memberOffset(memberOff),
       numMembers(nMembers) {}
     SPHERAL_HOST_DEVICE FlatCell(const FlatCell&) = default;
-    SPHERAL_HOST_DEVICE FlatCell(const FlatCell&&) = default;
+    SPHERAL_HOST_DEVICE FlatCell(FlatCell&&) = default;
     SPHERAL_HOST_DEVICE FlatCell& operator=(const FlatCell&) = default;
 
     // Throw in comparison operators for help sorting.

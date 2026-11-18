@@ -587,7 +587,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
       CHECK(rhoi > 0.0);
       if (correctVelocityGradient and
           std::abs(Mi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         Mi = Mi.Inverse();
         DvDxi = DvDxi*Mi;
       } else {
@@ -595,7 +595,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
       }
       if (correctVelocityGradient and
           std::abs(localMi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         localMi = localMi.Inverse();
         localDvDxi = localDvDxi*localMi;
       } else {

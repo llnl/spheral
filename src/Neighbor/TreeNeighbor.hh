@@ -120,7 +120,7 @@ private:
     Cell(): key(0), daughters(), members() {}
     Cell(const CellKey& keyi): key(keyi), daughters(), members() {}
     Cell(const Cell&) = default;
-    Cell(const Cell&&) = default;
+    Cell(Cell&&) = default;
     Cell& operator=(const Cell&) = default;
 
     // Throw in comparison operators for help sorting.

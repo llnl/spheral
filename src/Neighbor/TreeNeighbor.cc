@@ -192,7 +192,7 @@ valid() const {
   auto nodeCount = mDataBase.newGlobalFieldList(size_t(0), "node count");
   for (const auto& level: mTree) {
     for (const auto& [key, cell]: level) {
-      for (const auto nid: cell.members) {
+      for (const auto& nid: cell.members) {
         nodeCount(nid.first, nid.second)++;
       }
     }
