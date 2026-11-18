@@ -61,7 +61,6 @@ GeomSymmetricTensor<3>::elementIndex(const GeomSymmetricTensor<3>::size_type row
 // Construct from a single scalar
 //------------------------------------------------------------------------------
 template<int nDim>
-template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomSymmetricTensor<nDim>::
@@ -2399,6 +2398,7 @@ rotationalTransform(const GeomTensor<3>& R) {
 }
 
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 void
@@ -2616,7 +2616,6 @@ clampEigenValues(const double& minvalue,
 // diagonal (strictly 3D)
 //------------------------------------------------------------------------------
 template<int nDim>
-template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
@@ -2791,6 +2790,7 @@ GeomSymmetricTensor<3>::eigenVectors3D() const {
 // Multiply a tensor with a vector (strictly 3D)
 //------------------------------------------------------------------------------
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>

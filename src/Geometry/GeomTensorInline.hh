@@ -53,7 +53,6 @@ GeomTensor<3>::elementIndex(const GeomTensor<3>::size_type row,
 // Construct from a single scalar
 //------------------------------------------------------------------------------
 template<int nDim>
-template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>::
@@ -2245,6 +2244,7 @@ selfDoubledot3D() const {
 // Multiply a tensor with a vector (strictly 3D)
 //------------------------------------------------------------------------------
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
