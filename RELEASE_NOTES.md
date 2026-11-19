@@ -35,9 +35,11 @@ Notable changes include:
     * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
 
   * Build changes / improvements:
-    * Updated the LC ROCm toolchain from 6.4.3 to 7.2.1 and Cray MPICH from 9.0.1 to 9.1.0.
-    * Updated to use CHAI 2026.07.1, RAJA 2026.07.1, Umpire 2026.07.2, CAMP 2026.07.2, and Axom 0.15.0.
-    * LC ROCm builds now use the external CMake 3.29.2 installation.
+    * Updated the ROCM toolchain from 6.4.3 to 7.2.1 and MPICH from 9.0.1 to 9.1.0.
+    * Updated to use CHAI 2026.07.0, RAJA 2026.07.0, Umpire 2026.07.1, CAMP 2026.07.1, and Axom 0.15.0.
+    * Use the spack-packages v2026.10.1 catalog directly, removing local CHAI, RAJA, Umpire, CAMP, and Axom recipe overrides.
+    * RAJA experimental vectorization remains disabled.
+    * ROCM builds now use the external CMake 3.29.2 installation.
     * Axom 0.15.0 builds require C++20.
     * Spheral now links to `umpire::umpire`, removing the deprecated Umpire target warnings from Spheral and Axom dependency linking.
     * Major overhaul to CMake system:
