@@ -79,6 +79,11 @@ packages:
     - spec: autoconf@2.69
       prefix: /usr
     buildable: false
+  automake:
+    externals:
+    - spec: automake@1.16.1
+      prefix: /usr
+    buildable: false
   libtool:
     externals:
     - spec: libtool@2.4.2
