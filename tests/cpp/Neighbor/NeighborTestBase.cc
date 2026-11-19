@@ -439,7 +439,9 @@ public:
       Spheral::GPUUtils::freeMAView(coarseView);
       Spheral::GPUUtils::freeMAView(refineView);
 
-      if (pass == 0u) EXPECT_FALSE(ok);
+      if (pass == 0u) {
+        EXPECT_FALSE(ok);
+      }
       master.resize(result[1u]);
       coarse.resize(result[2u]);
       refine.resize(ok ? result[3u] : result[2u]);
@@ -474,7 +476,7 @@ public:
         for (auto nodeListID = 1u; nodeListID < nodeLists.size(); ++nodeListID) {
           offsets[nodeListID] = offsets[nodeListID - 1u] + nodeLists[nodeListID - 1u]->numInternalNodes();
         }
-        for (const auto [nodeListID, i]: refineNeighbors) {
+        for (const auto& [nodeListID, i]: refineNeighbors) {
           neighborIDs.push_back(offsets[nodeListID] + i);
         }
 
