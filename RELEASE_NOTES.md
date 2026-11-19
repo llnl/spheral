@@ -36,9 +36,10 @@ Notable changes include:
 
   * Build changes / improvements:
     * Updated the LC ROCm toolchain from 6.4.3 to 7.2.1 and Cray MPICH from 9.0.1 to 9.1.0.
-    * Updated to use CHAI 2026.07.1, RAJA 2026.07.1, Umpire 2026.07.2, and CAMP 2026.07.2.
+    * Updated to use CHAI 2026.07.1, RAJA 2026.07.1, Umpire 2026.07.2, CAMP 2026.07.2, and Axom 0.15.0.
     * LC ROCm builds now use the external CMake 3.29.2 installation.
-    * Axom builds now use C++20 when consuming CAMP 2026.07 or newer.
+    * Axom 0.15.0 builds require C++20.
+    * Spheral now links to `umpire::umpire`, removing the deprecated Umpire target warnings from Spheral and Axom dependency linking.
     * Major overhaul to CMake system:
       * CXX library is now a monolithic static, shared, or interface (for dev builds) library.
       * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before. Results in significantly fewer global CMake variables.
@@ -60,7 +61,7 @@ Notable changes include:
     * Update to Spack 1.2.2 as well as some TPLS:
       * Boost updated from 1.87 to 1.90.
       * Caliper updated from 2.11 to 2.14.
-      * Axom updated from 0.12.0 to 0.14.0.
+      * Axom updated from 0.12.0 to 0.15.0.
       * Sundials updated from 7.0.0 to 7.7.0.
       * Installs are moved from $spack/opts to $spack/../installs.
 

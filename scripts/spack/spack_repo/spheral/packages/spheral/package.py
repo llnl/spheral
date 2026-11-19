@@ -131,9 +131,13 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
 
         depends_on('chai+raja', type='build')
-        depends_on('chai@2026.07.1', type='build', when='@develop')
         depends_on('chai@2025.12.0', type='build', when='@2026.06.0')
         depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
+
+    # Preserve existing constraints through the latest published release.
+    # Develop and all later releases require the updated dependencies.
+    requires("@:2026.06.0", "^axom@0.15.0", policy="any_of")
+    requires("@:2026.06.0", "^chai@2026.07.1", policy="any_of")
 
     # Forward MPI Variants
     mpi_tpl_list = ["caliper", "hdf5", "conduit", "axom", "adiak", "chai", "umpire", "singularity-eos"]
