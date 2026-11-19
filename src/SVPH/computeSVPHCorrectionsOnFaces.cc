@@ -45,6 +45,7 @@ computeSVPHCorrectionsOnFaces(const Mesh<Dimension>& mesh,
 
   // Pre-conditions.
   const size_t numNodeLists = dataBase.numFluidNodeLists();
+  CONTRACT_VAR(numNodeLists);
   REQUIRE(dataBase.numNodeLists() == numNodeLists);
   REQUIRE(volume.size() == numNodeLists);
   REQUIRE(position.size() == numNodeLists);

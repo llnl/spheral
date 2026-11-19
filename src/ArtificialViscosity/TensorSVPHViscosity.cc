@@ -61,6 +61,7 @@ initialize(const Scalar t,
   const auto& W = this->kernel();
   const auto& neighborVariant = dataBase.neighbor();
   const unsigned numNodeLists = dataBase.numFluidNodeLists();
+  CONTRACT_VAR(numNodeLists);
   CHECK(dataBase.numNodeLists() == numNodeLists);
 
   // Grab the state we need.

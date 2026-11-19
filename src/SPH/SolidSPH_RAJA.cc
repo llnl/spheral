@@ -222,13 +222,11 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   auto position = stateMgr.fields(HydroFieldNames::position, Vector::zero());
   auto velocity = stateMgr.fields(HydroFieldNames::velocity, Vector::zero());
   auto massDensity = stateMgr.fields(HydroFieldNames::massDensity, 0.0);
-  auto specificThermalEnergy = stateMgr.fields(HydroFieldNames::specificThermalEnergy, 0.0);
   auto H = stateMgr.fields(HydroFieldNames::H, SymTensor::zero());
   auto pressure = stateMgr.fields(HydroFieldNames::pressure, 0.0);
   auto soundSpeed = stateMgr.fields(HydroFieldNames::soundSpeed, 0.0);
   auto S = stateMgr.fields(SolidFieldNames::deviatoricStress, SymTensor::zero());
   auto mu = stateMgr.fields(SolidFieldNames::shearModulus, 0.0);
-  auto damage = stateMgr.fields(SolidFieldNames::tensorDamage, SymTensor::zero());
   auto pTypes = stateMgr.fields(SolidFieldNames::particleTypes, int(0));
   auto fragID = stateMgr.fields(SolidFieldNames::fragmentIDs, int(0));
   auto omega = stateMgr.fields(HydroFieldNames::omegaGradh, 0.0);
@@ -239,14 +237,12 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
   CHECK(position.size() == numNodeLists);
   CHECK(velocity.size() == numNodeLists);
   CHECK(massDensity.size() == numNodeLists);
-  CHECK(specificThermalEnergy.size() == numNodeLists);
   CHECK(H.size() == numNodeLists);
   CHECK(pressure.size() == numNodeLists);
   CHECK(soundSpeed.size() == numNodeLists);
   CHECK(omega.size() == numNodeLists);
   CHECK(S.size() == numNodeLists);
   CHECK(mu.size() == numNodeLists);
-  CHECK(damage.size() == numNodeLists);
   CHECK(pTypes.size() == numNodeLists);
   CHECK(fragID.size() == numNodeLists);
   CHECK(fClQ.size() == 0 or fClQ.size() == numNodeLists);
