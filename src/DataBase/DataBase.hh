@@ -183,21 +183,19 @@ public:
   NT& emplaceNeighbor(Args&&... args);
 
   // Update the internal connectivity map.
-  void updateConnectivityMap(const bool computeGhostConnectivity,
-                             const bool computeOverlapConnectivity,
-                             const bool computeIntersectionConnectivity) const;
+  void updateConnectivityMap(const bool computeGhostConnectivity = false,
+                             const bool computeOverlapConnectivity = false,
+                             const bool computeIntersectionConnectivity = false) const;
   void patchConnectivityMap(const FieldList<Dimension, size_t>& flags,
                             const FieldList<Dimension, size_t>& old2new) const;
 
   // Get the connectivity map.
-  const ConnectivityMapType& connectivityMap() const;
-  ConnectivityMapPtr connectivityMapPtr() const;
-  const ConnectivityMapType& connectivityMap(const bool computeGhostConnectivity,
-                                             const bool computeOverlapConnectivity,
-                                             const bool computeIntersectionConnectivity) const;
-  ConnectivityMapPtr connectivityMapPtr(const bool computeGhostConnectivity,
-                                        const bool computeOverlapConnectivity,
-                                        const bool computeIntersectionConnectivity) const;
+  const ConnectivityMapType& connectivityMap(const bool computeGhostConnectivity = false,
+                                             const bool computeOverlapConnectivity = false,
+                                             const bool computeIntersectionConnectivity = false) const;
+  ConnectivityMapPtr connectivityMapPtr(const bool computeGhostConnectivity = false,
+                                        const bool computeOverlapConnectivity = false,
+                                        const bool computeIntersectionConnectivity = false) const;
 
   // Methods to add, remove, and verify NodeLists.
   void appendNodeList(DEMNodeList<Dimension>& nodeList);
