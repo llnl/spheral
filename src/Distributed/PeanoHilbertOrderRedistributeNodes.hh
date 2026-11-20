@@ -24,34 +24,28 @@ class PeanoHilbertOrderRedistributeNodes: public SpaceFillingCurveRedistributeNo
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename KeyTraits::Key Key;
+  using Key = typename KeyTraits::Key;
 
   // Constructors
-  PeanoHilbertOrderRedistributeNodes(const double dummy,
-                                     const double minNodesPerDomainFraction = 0.5,
+  PeanoHilbertOrderRedistributeNodes(const double minNodesPerDomainFraction = 0.5,
                                      const double maxNodesPerDomainFraction = 1.5,
                                      const bool workBalance = true,
                                      const bool localReorderOnly = false);
-
-  // Destructor
-  virtual ~PeanoHilbertOrderRedistributeNodes();
+  virtual ~PeanoHilbertOrderRedistributeNodes() = default;
 
   // Hash the positions.
   virtual
   FieldList<Dimension, Key> 
   computeHashedIndices(const DataBase<Dimension>& dataBase) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
   // No copy or assignment operations.
-  PeanoHilbertOrderRedistributeNodes(const PeanoHilbertOrderRedistributeNodes& nodes);
-  PeanoHilbertOrderRedistributeNodes& operator=(const PeanoHilbertOrderRedistributeNodes& rhs);
-
+  PeanoHilbertOrderRedistributeNodes(const PeanoHilbertOrderRedistributeNodes& nodes) = delete;
+  PeanoHilbertOrderRedistributeNodes& operator=(const PeanoHilbertOrderRedistributeNodes& rhs) = delete;
 };
 
 }

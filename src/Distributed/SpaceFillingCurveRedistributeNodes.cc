@@ -55,8 +55,7 @@ struct SortNodesByHashedIndex {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 SpaceFillingCurveRedistributeNodes<Dimension>::
-SpaceFillingCurveRedistributeNodes(double,
-                                   const double minNodesPerDomainFraction,
+SpaceFillingCurveRedistributeNodes(const double minNodesPerDomainFraction,
                                    const double maxNodesPerDomainFraction,
                                    const bool workBalance,
                                    const bool localReorderOnly):
@@ -65,14 +64,6 @@ SpaceFillingCurveRedistributeNodes(double,
   mMaxNodesPerDomainFraction(maxNodesPerDomainFraction),
   mWorkBalance(workBalance),
   mLocalReorderOnly(localReorderOnly) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SpaceFillingCurveRedistributeNodes<Dimension>::
-~SpaceFillingCurveRedistributeNodes() {
 }
 
 //------------------------------------------------------------------------------

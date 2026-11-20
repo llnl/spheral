@@ -28,22 +28,19 @@ class SpaceFillingCurveRedistributeNodes: public RedistributeNodes<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef KeyTraits::Key Key;
+  using Key = KeyTraits::Key;
 
   // Constructors
-  SpaceFillingCurveRedistributeNodes(const double dummy,
-                                     const double minNodesPerDomainFraction,
+  SpaceFillingCurveRedistributeNodes(const double minNodesPerDomainFraction,
                                      const double maxNodesPerDomainFraction,
                                      const bool workBalance = true,
                                      const bool localReorderOnly = false);
-
-  // Destructor
-  virtual ~SpaceFillingCurveRedistributeNodes();
+  virtual ~SpaceFillingCurveRedistributeNodes() = default;
 
   // This is the required method for all descendant classes.
   virtual

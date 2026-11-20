@@ -24,7 +24,6 @@ order that that algorithm wants the points distributed."""
     #...........................................................................
     # Constructors
     def pyinit(self,
-               dummy = "const double",
                minNodesPerDomainFraction = "const double",
                maxNodesPerDomainFraction = "const double",
                workBalance = ("const bool", "true"),

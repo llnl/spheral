@@ -25,7 +25,6 @@ Springel V. (2005), MNRAS"""
     #...........................................................................
     # Constructors
     def pyinit(self,
-               dummy = "const double",
                minNodesPerDomainFraction = ("const double", "0.5"),
                maxNodesPerDomainFraction = ("const double", "1.5"),
                workBalance = ("const bool", "true"),

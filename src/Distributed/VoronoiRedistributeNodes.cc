@@ -308,8 +308,7 @@ computeClosestNodePosition(const typename Dimension::Vector& targetPosition,
 //------------------------------------------------------------------------------
 template<typename Dimension>
 VoronoiRedistributeNodes<Dimension>::
-VoronoiRedistributeNodes(double ,
-                         const bool workBalance,
+VoronoiRedistributeNodes(const bool workBalance,
                          const bool balanceGenerators,
                          const double tolerance,
                          const unsigned maxIterations):
@@ -318,14 +317,6 @@ VoronoiRedistributeNodes(double ,
   mBalanceGenerators(balanceGenerators),
   mTolerance(tolerance),
   mMaxIterations(maxIterations) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-VoronoiRedistributeNodes<Dimension>::
-~VoronoiRedistributeNodes() {
 }
 
 //------------------------------------------------------------------------------
