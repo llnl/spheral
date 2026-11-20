@@ -385,10 +385,10 @@ output("WT")
 # Make the NodeList.
 #-------------------------------------------------------------------------------
 if solid:
-    nodes1 = SolidNodeList("nodes1", eos, 
-                           hmin = hmin,
-                           hmax = hmax,
-                           nPerh = nPerh)
+    nodes1 = makeSolidNodeList("nodes1", eos, 
+                               hmin = hmin,
+                               hmax = hmax,
+                               nPerh = nPerh)
 else:
     nodes1 = FluidNodeList("nodes1", eos, 
                            hmin = hmin,
