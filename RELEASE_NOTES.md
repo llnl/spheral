@@ -35,13 +35,6 @@ Notable changes include:
     * FacetedVolumes (Box1d, Polygon, and Polyhedron) now can optionally check if a line segment intersects just the boundary (instead of counting segments on the interior as intersecting). Default is old behavior such that interior segments are counted as intersecting.
 
   * Build changes / improvements:
-    * Updated the ROCM toolchain from 6.4.3 to 7.2.1 and MPICH from 9.0.1 to 9.1.0.
-    * Updated to use CHAI 2026.07.0, RAJA 2026.07.0, Umpire 2026.07.1, CAMP 2026.07.1, and Axom 0.15.0.
-    * Use the spack-packages v2026.10.1 catalog directly, removing local CHAI, RAJA, Umpire, CAMP, and Axom recipe overrides.
-    * RAJA experimental vectorization remains disabled.
-    * ROCM builds now use the external CMake 3.29.2 installation.
-    * Axom 0.15.0 builds require C++20.
-    * Spheral now links to `umpire::umpire`, removing the deprecated Umpire target warnings from Spheral and Axom dependency linking.
     * Major overhaul to CMake system:
       * CXX library is now a monolithic static, shared, or interface (for dev builds) library.
       * Instead of modifying global lists in functions, targets are created at prior to start of the building the source libraries and modified directly. This did require some care regarding HIP and CUDA language options that were handled directly by BLT before. Results in significantly fewer global CMake variables.
@@ -63,10 +56,17 @@ Notable changes include:
     * Update to Spack 1.2.2 as well as some TPLS:
       * Boost updated from 1.87 to 1.90.
       * Caliper updated from 2.11 to 2.14.
-      * Axom updated from 0.12.0 to 0.15.0.
+      * Axom updated to 0.15.0 for develop builds.
       * Sundials updated from 7.0.0 to 7.7.0.
       * Installs are moved from $spack/opts to $spack/../installs.
-
+    * Update Spack spack-packages to v2026.10.1.
+      * ROCM toolchain updated from 6.4.3 to 7.2.1.
+        * Spack now rejects LLVM AMDGPU 7.2.1 or newer for Spheral releases through 2026.06.
+      * LC Cray builds now use external CMake 3.29.2 instead of 3.24.2 for LLVM Flang runtime library detection.
+      * Cray MPICH updated from 9.0.1 to 9.1.0.
+      * CHAI updated from 2025.12.0 to 2026.07.0.
+      * Spheral now links to `umpire::umpire`, removing deprecated Umpire target warnings from Spheral builds.
+      * Corrected the external Automake version from 1.13.4 to 1.16.1 in the TOSS system configuration.
   * Bug Fixes / improvements:
     * Added C++ parity coverage for Neighbor tests and corrected ConnectivityMap intersection validation to compare against computed results.
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.

@@ -12,7 +12,7 @@
 #     --network none          : Simulate a build and run on a system with installed dependencies but no network.
 #     --build-args SPEC=...   : Specify the SPEC (must be the same as the spec for spheral-build-env) Default = gcc
 #                  JCXX=N     : Specify number of threads to build C++ portion of Spheral build. Default = 8
-#                  JPY=N      : Specify number of threads to build python portion of Spheral build. Default = 2
+#                  JPY=N      : Specify number of threads to build python portion of Spheral build. Default = 4
 
 # To use an interactive terminal with built spheral-build-env or spheral img :
 #   sudo docker run -it (spheral-build-env/spheral)
@@ -105,7 +105,7 @@ FROM spheral-build-env AS spheral
 ARG SPEC=gcc
 ARG HOST_CONFIG=docker-$SPEC
 ARG JCXX=8
-ARG JPY=2
+ARG JPY=4
 
 WORKDIR /home/spheral/workspace/
 

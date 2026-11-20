@@ -128,8 +128,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('umpire', type='build')
 
         depends_on('raja', type='build')
-        # Let CHAI determine RAJA and Umpire versions unless explicitly pinned.
-        depends_on('raja@2026.07.0 ~vectorization', type='build', when='@develop')
+        # Let CHAI determine RAJA and Umpire versions after v2025.06.1.
         depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
 
         depends_on('chai+raja', type='build')
