@@ -187,7 +187,7 @@ if(chai_FOUND)
   message("Found chai External Package.")
 endif()
 
-list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire)
+list(APPEND SPHERAL_BLT_DEPENDS chai camp RAJA umpire::umpire)
 list(APPEND SPHERAL_FP_TPLS chai RAJA umpire)
 list(APPEND SPHERAL_FP_DIRS ${chai_DIR} ${raja_DIR} ${umpire_DIR})
 
