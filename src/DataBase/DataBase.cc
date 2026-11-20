@@ -1048,14 +1048,7 @@ DataBase<Dimension>::setDEMUniqueIndices() {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::globalNodeExtent() const {
-  VERIFY(false);
-  // REQUIRE(valid());
-  // FieldList<Dimension, Vector> result;
-  // for (ConstNodeListIterator nodeListItr = nodeListBegin();
-  //      nodeListItr < nodeListEnd(); ++nodeListItr) {
-  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  // }
-  // return result;
+  return visitNeighbor(mNeighbor, [](const auto& x) { return x.nodeExtent(); });
 }
 
 //------------------------------------------------------------------------------
@@ -1064,14 +1057,12 @@ DataBase<Dimension>::globalNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::fluidNodeExtent() const {
-  VERIFY(false);
-  // REQUIRE(valid());
-  // FieldList<Dimension, Vector> result;
-  // for (ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
-  //      nodeListItr < fluidNodeListEnd(); ++nodeListItr) {
-  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  // }
-  // return result;
+  auto extents = visitNeighbor(mNeighbor, [](const auto& x) { return x.nodeExtent(); });
+  FieldList<Dimension, Vector> result;
+  for (const auto* nptr: mFluidNodeListPtrs) {
+    result.appendField(**extents.fieldForNodeList(*nptr));
+  }
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1080,14 +1071,12 @@ DataBase<Dimension>::fluidNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::solidNodeExtent() const {
-  VERIFY(false);
-  // REQUIRE(valid());
-  // FieldList<Dimension, Vector> result;
-  // for (ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
-  //      nodeListItr < solidNodeListEnd(); ++nodeListItr) {
-  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  // }
-  // return result;
+  auto extents = visitNeighbor(mNeighbor, [](const auto& x) { return x.nodeExtent(); });
+  FieldList<Dimension, Vector> result;
+  for (const auto* nptr: mSolidNodeListPtrs) {
+    result.appendField(**extents.fieldForNodeList(*nptr));
+  }
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1096,14 +1085,12 @@ DataBase<Dimension>::solidNodeExtent() const {
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Vector>
 DataBase<Dimension>::DEMNodeExtent() const {
-  VERIFY(false);
-  // REQUIRE(valid());
-  // FieldList<Dimension, Vector> result;
-  // for (ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
-  //      nodeListItr < DEMNodeListEnd(); ++nodeListItr) {
-  //   result.appendField((*nodeListItr)->neighbor().nodeExtentField());
-  // }
-  // return result;
+  auto extents = visitNeighbor(mNeighbor, [](const auto& x) { return x.nodeExtent(); });
+  FieldList<Dimension, Vector> result;
+  for (const auto* nptr: mDEMNodeListPtrs) {
+    result.appendField(**extents.fieldForNodeList(*nptr));
+  }
+  return result;
 }
 
 //------------------------------------------------------------------------------
