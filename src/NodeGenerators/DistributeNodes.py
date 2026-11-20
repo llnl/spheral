@@ -40,7 +40,7 @@ from PeanoHilbertDistributeNodes import *
 # Input:  a list of tuples with (nodeList, (global) numNodes, (global) xRange)
 #-------------------------------------------------------------------------------
 def distributeNodesInRange1d(listOfNodeTuples,
-                             nPerh,
+                             nPerh = 2.01,
                              reverse = False):
 
     # Count how many nodes total we need to distribute
