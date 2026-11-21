@@ -43,6 +43,7 @@ class dSurface(object):
     def renormMat(self):
         f = open(self.file, 'w')
         f.write("i\tSi\txi\n")
+        self.db.updateNeighbors()
         self.db.updateConnectivityMap(True)
         cm = self.db.connectivityMap()
         for i in range(self.nodes.numInternalNodes):

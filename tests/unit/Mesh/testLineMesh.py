@@ -43,10 +43,11 @@ random.seed(589290234)
 x0, x1 = 0.0, 1.0
 xmin = Vector(x0)
 xmax = Vector(x1)
-xbc0 = ReflectingBoundary(Plane(Vector(x0), Vector(1.0)))
-bclist = [xbc0]
-if numDomains > 1:
-    bclist.append(BoundingVolumeDistributedBoundary.instance())
+def makeBoundaryList(db):
+    result = [ReflectingBoundary(db, Plane(Vector(x0), Vector(1.0)))]
+    if numDomains > 1:
+        result.append(BoundingVolumeDistributedBoundary.instance())
+    return result
 
 nx = 100
 assert nx % numDomains == 0
@@ -298,17 +299,16 @@ class UniformLineMeshTests(unittest.TestCase, LineMeshGenericTests):
         for i in range(nxperdomain):
             pos[i] = Vector(xnodes[i])
             H[i] = SymTensor(1.0/(2.0*self.dxmax))
-        self.nodes.neighbor().updateNodes()
-
         # Iterate the H tensors to somthing reasonable.
         db = DataBase()
         db.appendNodeList(self.nodes)
+        db.updateNeighbors()
+        bclist = makeBoundaryList(db)
         for bc in bclist:
             bc.setAllGhostNodes(db)
         for bc in bclist:
             bc.finalizeGhostBoundary()
-        db = DataBase()
-        db.appendNodeList(self.nodes)
+        db.updateNeighbors()
         WT = TableKernel(BSplineKernel(), 1000)
         smooth = SPHSmoothingScale(IdealH, WT)
         iterateIdealH(db,
@@ -380,17 +380,16 @@ class UniformGapLineMeshTests(unittest.TestCase, LineMeshGenericTests):
         for i in range(nxperdomain):
             pos[i] = Vector(xnodes[i])
             H[i] = SymTensor(1.0/(2.0*dxavg))
-        self.nodes.neighbor().updateNodes()
-
         # Iterate the H tensors to somthing reasonable.
         db = DataBase()
         db.appendNodeList(self.nodes)
+        db.updateNeighbors()
+        bclist = makeBoundaryList(db)
         for bc in bclist:
             bc.setAllGhostNodes(db)
         for bc in bclist:
             bc.finalizeGhostBoundary()
-        db = DataBase()
-        db.appendNodeList(self.nodes)
+        db.updateNeighbors()
         WT = TableKernel(BSplineKernel(), 1000)
         smooth = SPHSmoothingScale(IdealH, WT)
         iterateIdealH(db,
@@ -458,17 +457,16 @@ class RandomLineMeshTests(unittest.TestCase, LineMeshGenericTests):
         for i in range(nxperdomain):
             pos[i] = Vector(xnodes[i])
             H[i] = SymTensor(1.0/(2.0*self.dxmax))
-        self.nodes.neighbor().updateNodes()
-
         # Iterate the H tensors to somthing reasonable.
         db = DataBase()
         db.appendNodeList(self.nodes)
+        db.updateNeighbors()
+        bclist = makeBoundaryList(db)
         for bc in bclist:
             bc.setAllGhostNodes(db)
         for bc in bclist:
             bc.finalizeGhostBoundary()
-        db = DataBase()
-        db.appendNodeList(self.nodes)
+        db.updateNeighbors()
         WT = TableKernel(BSplineKernel(), 1000)
         smooth = SPHSmoothingScale(IdealH, WT)
         iterateIdealH(db,

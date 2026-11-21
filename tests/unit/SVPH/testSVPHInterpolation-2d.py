@@ -178,10 +178,10 @@ output("db.numFluidNodeLists")
 # Construct some boundary conditions.
 #-------------------------------------------------------------------------------
 bounds = vector_of_Boundary()
-xbc0 = ReflectingBoundary(Plane(Vector(x0, y0), Vector( 1.0,  0.0)))
-xbc1 = ReflectingBoundary(Plane(Vector(x1, y1), Vector(-1.0,  0.0)))
-ybc0 = ReflectingBoundary(Plane(Vector(x0, y0), Vector( 0.0,  1.0)))
-ybc1 = ReflectingBoundary(Plane(Vector(x1, y1), Vector( 0.0, -1.0)))
+xbc0 = ReflectingBoundary(db, Plane(Vector(x0, y0), Vector( 1.0,  0.0)))
+xbc1 = ReflectingBoundary(db, Plane(Vector(x1, y1), Vector(-1.0,  0.0)))
+ybc0 = ReflectingBoundary(db, Plane(Vector(x0, y0), Vector( 0.0,  1.0)))
+ybc1 = ReflectingBoundary(db, Plane(Vector(x1, y1), Vector( 0.0, -1.0)))
 bounds.append(xbc0)
 bounds.append(xbc1)
 bounds.append(ybc0)
@@ -221,6 +221,7 @@ mesh, void = generatePolygonalMesh([nodes1],
 #-------------------------------------------------------------------------------
 fl = ScalarFieldList()
 fl.appendField(f)
+db.updateNeighbors()
 db.updateConnectivityMap(True)
 mass = nodes1.mass()
 rho = nodes1.massDensity()

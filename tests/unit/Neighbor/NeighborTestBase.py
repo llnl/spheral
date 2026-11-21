@@ -428,7 +428,7 @@ class NeighborRandom1d(unittest.TestCase, NeighborTestBase):
     def setUp(self):
 
         print("--------------------------------------------------------------------------------")
-        print("1-D %s random test." % NeighborRandom1d._NeighborType.__name__)
+        print("1-D TreeNeighbor random test.")
         print("--------------------------------------------------------------------------------")
 
         self.ncheck = 10
@@ -479,7 +479,7 @@ class NeighborRandom2d(unittest.TestCase, NeighborTestBase):
     def setUp(self):
 
         print("--------------------------------------------------------------------------------")
-        print("2-D %s random test." % NeighborRandom2d._NeighborType.__name__)
+        print("2-D TreeNeighbor random test.")
         print("--------------------------------------------------------------------------------")
 
         self.ncheck = 10
@@ -527,7 +527,7 @@ class NeighborRandom3d(unittest.TestCase, NeighborTestBase):
     def setUp(self):
 
         print("--------------------------------------------------------------------------------")
-        print("3-D %s random test." % NeighborRandom3d._NeighborType.__name__)
+        print("3-D TreeNeighbor random test.")
         print("--------------------------------------------------------------------------------")
 
         self.ncheck = 10
@@ -579,7 +579,7 @@ class NeighborCylindrical2d(unittest.TestCase, NeighborTestBase):
     def setUp(self):
 
         print("--------------------------------------------------------------------------------")
-        print("2-D %s regular cylindrical test." % self._NeighborType)
+        print("2-D TreeNeighbor regular cylindrical test.")
         print("--------------------------------------------------------------------------------")
 
         self.ncheck = 50

@@ -61,7 +61,7 @@ class TestSampleMultipleFields2Lattice1d(TestSampleMultipleFields2Lattice,
         # Create the boundary conditions.
         p0 = Plane(Vector(0.0), Vector(1.0))
         p1 = Plane(Vector(1.0), Vector(-1.0))
-        xbc = PeriodicBoundary(p0, p1)
+        xbc = PeriodicBoundary(self.db, p0, p1)
         self.bcs = [xbc]
         try:
             self.bcs.append(TreeDistributedBoundary1d.instance())
@@ -72,12 +72,12 @@ class TestSampleMultipleFields2Lattice1d(TestSampleMultipleFields2Lattice,
                 pass
 
         # Enforce boundaries.
-        db = DataBase()
-        db.appendNodeList(self.nodes)
+        db = self.db
+        db.updateNeighbors()
         for bc in self.bcs:
             bc.setAllGhostNodes(db)
             bc.finalizeGhostBoundary()
-            self.nodes.neighbor().updateNodes()
+            db.updateNeighbor(self.nodes)
         for bc in self.bcs:
             bc.applyGhostBoundary(self.nodes.mass())
             bc.applyGhostBoundary(self.nodes.massDensity())

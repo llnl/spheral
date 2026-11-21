@@ -75,9 +75,9 @@ class TestSampleMultipleFields2Lattice3d(TestSampleMultipleFields2Lattice,
         py1 = Plane(Vector(0, 1, 0), Vector( 0, -1,  0))
         pz0 = Plane(Vector(0, 0, 0), Vector( 0,  0,  1))
         pz1 = Plane(Vector(0, 0, 1), Vector( 0,  0, -1))
-        xbc = PeriodicBoundary(px0, px1)
-        ybc = PeriodicBoundary(py0, py1)
-        zbc = PeriodicBoundary(pz0, pz1)
+        xbc = PeriodicBoundary(self.db, px0, px1)
+        ybc = PeriodicBoundary(self.db, py0, py1)
+        zbc = PeriodicBoundary(self.db, pz0, pz1)
         self.bcs = [xbc, ybc, zbc]
         try:
             self.bcs.append(TreeDistributedBoundary3d.instance())
@@ -88,12 +88,12 @@ class TestSampleMultipleFields2Lattice3d(TestSampleMultipleFields2Lattice,
                 pass
 
         # Enforce boundaries.
-        db = DataBase()
-        db.appendNodeList(self.nodes)
+        db = self.db
+        db.updateNeighbors()
         for bc in self.bcs:
             bc.setAllGhostNodes(db)
             bc.finalizeGhostBoundary()
-            self.nodes.neighbor().updateNodes()
+            db.updateNeighbor(self.nodes)
         for bc in self.bcs:
             bc.applyGhostBoundary(self.nodes.mass())
             bc.applyGhostBoundary(self.nodes.massDensity())

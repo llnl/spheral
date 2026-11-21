@@ -58,9 +58,9 @@ class TestDistributedBoundary1d:
 
         # Construct the NodeLists to be distributed
         self.eos = GammaLawGasMKS1d(2.0, 2.0)
-        self.nodes1 = makeFluidNodeList1d("nodes1", self.eos, NeighborType = TreeNeighbor1d)
-        self.nodes2 = makeFluidNodeList1d("nodes2", self.eos, NeighborType = TreeNeighbor1d)
-        self.nodes3 = makeFluidNodeList1d("nodes3", self.eos, NeighborType = TreeNeighbor1d)
+        self.nodes1 = makeFluidNodeList1d("nodes1", self.eos)
+        self.nodes2 = makeFluidNodeList1d("nodes2", self.eos)
+        self.nodes3 = makeFluidNodeList1d("nodes3", self.eos)
 
         # Distribute the nodes.
         distributeNodesInRange1d([(self.nodes1, nx1, 1.0, xRange1),
@@ -75,10 +75,11 @@ class TestDistributedBoundary1d:
                                                                                           numGlobalNodes1d)
 
         # Put the distributed NodeLists into a DataBase.
-        self.dataBase = DataBase1d()
+        self.dataBase = DataBase1d(self.kernelExtent)
         self.dataBase.appendNodeList(self.nodes1)
         self.dataBase.appendNodeList(self.nodes2)
         self.dataBase.appendNodeList(self.nodes3)
+        self.dataBase.updateNeighbors()
         print("Finished genericSetup")
 
         return
@@ -95,8 +96,7 @@ class TestDistributedBoundary1d:
         # Set the ghost nodes for each domain distributed NodeList.
         self.domainbc.setAllGhostNodes(self.dataBase)
         self.domainbc.finalizeGhostBoundary()
-        for nodes in self.dataBase.nodeLists:
-            nodes.neighbor().updateNodes()
+        self.dataBase.updateNeighbors()
 
         # Exchange the global node ID fields.
         self.domainbc.applyGhostBoundary(self.globalIDField1)
@@ -134,17 +134,25 @@ class TestDistributedBoundary1d:
 
                     # Have the testing processor build it's own version.
                     if mpi.rank == testProc:
-                        masterLists = vector_of_vector_of_int()
-                        coarseNeighbors = vector_of_vector_of_int()
-                        refineNeighbors = vector_of_vector_of_int()
-                        self.dataBase.setMasterNodeLists(ri, Hi, masterLists, coarseNeighbors, False)
-                        self.dataBase.setRefineNodeLists(ri, Hi, coarseNeighbors, refineNeighbors)
-                        assert len(refineNeighbors) == 3
+                        masterNodes = vector_of_pair_ULL_ULL()
+                        coarseNeighbors = vector_of_pair_ULL_ULL()
+                        refineNeighbors = vector_of_pair_ULL_ULL()
+                        neighbor = self.dataBase.neighbor()
+                        ok, numMaster, numCoarse = neighbor.setMasterList(ri, Hi,
+                                                                         masterNodes,
+                                                                         coarseNeighbors,
+                                                                         False)
+                        assert ok
+                        numRefine = neighbor.setRefineNeighborList(ri, Hi,
+                                                                  numCoarse,
+                                                                  coarseNeighbors,
+                                                                  refineNeighbors)
                         refine = []
-                        for k, globalIDs in enumerate([self.globalIDField1,
-                                                       self.globalIDField2,
-                                                       self.globalIDField3]):
-                            refine.extend([globalIDs[j] for j in refineNeighbors[k]])
+                        globalIDFields = [self.globalIDField1,
+                                          self.globalIDField2,
+                                          self.globalIDField3]
+                        refine.extend(globalIDFields[nodeListID][nodeID]
+                                      for nodeListID, nodeID in list(refineNeighbors)[:numRefine])
 
                         # Check the answer.
                         test = checkNeighbors(refine, answer)

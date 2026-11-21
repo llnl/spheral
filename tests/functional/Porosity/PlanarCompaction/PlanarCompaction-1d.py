@@ -310,11 +310,11 @@ output("db.numSolidNodeLists")
 #-------------------------------------------------------------------------------
 if boundary == "WALL":
     xbc0 = InflowOutflowBoundary(db, Plane(Vector(xmin), Vector(1.0)))
-    xbc1 = ReflectingBoundary(Plane(Vector(xmax), Vector(-1.0)))
+    xbc1 = ReflectingBoundary(db, Plane(Vector(xmax), Vector(-1.0)))
     bcs = [xbc1]
 else:
     indices = [i for i in range(nodes.numInternalNodes) if pos[i].x > 1.0]
-    xbc0 = ReflectingBoundary(Plane(Vector(xmin), Vector(1.0)))
+    xbc0 = ReflectingBoundary(db, Plane(Vector(xmin), Vector(1.0)))
     xbc1 = ConstantVelocityBoundary(nodes, indices)
     bcs = [xbc0, xbc1]
 

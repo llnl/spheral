@@ -120,9 +120,9 @@ if reflecting or periodic:
             normal[d] = 1.0 if n == 0 else -1.0
             planes.append(Plane(point, normal))
             if reflecting:
-                bounds.append(ReflectingBoundary(planes[n]))
+                bounds.append(ReflectingBoundary(dataBase, planes[n]))
         if periodic:
-            bounds.append(PeriodicBoundary(planes[0], planes[1]))
+            bounds.append(PeriodicBoundary(dataBase, planes[0], planes[1]))
 if mpi.procs > 1:
     bounds.append(TreeDistributedBoundary.instance())
 output("bounds")
@@ -141,11 +141,11 @@ iterateIdealH(dataBase,
 # Finish setting up connectivity
 #-------------------------------------------------------------------------------
 nodes.numGhostNodes = 0
-nodes.neighbor().updateNodes()
+dataBase.updateNeighbor(nodes)
 for bc in bounds:
     bc.setAllGhostNodes(dataBase)
     bc.finalizeGhostBoundary()
-    nodes.neighbor().updateNodes()
+    dataBase.updateNeighbor(nodes)
 dataBase.updateConnectivityMap()
 conn = dataBase.connectivityMap()
 output("conn")

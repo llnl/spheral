@@ -430,6 +430,7 @@ for ix in range(nodes1.numNodes):
 db = DataBase(kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 

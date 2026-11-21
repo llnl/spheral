@@ -76,27 +76,27 @@ class testFieldView(unittest.TestCase):
         return
 
     #---------------------------------------------------------------------------
-    # index (field -> span)
+    # Index through the View interface forwarded by the Field Value binding.
     #---------------------------------------------------------------------------
     def testIndexInternalField2Span(self):
         for k in range(self.ntests):
             i = g.randint(0, nTot - 1)
             for f, gen in self.stuff:
-                s = f.view()
-                f[i] = gen()
-                assert f[i] == s[i]
+                value = gen()
+                f[i] = value
+                assert f[i] == value
         return
 
     #---------------------------------------------------------------------------
-    # index (span -> field)
+    # Callable indexing through the forwarded View interface.
     #---------------------------------------------------------------------------
     def testIndexInternalSpan2Field(self):
         for k in range(self.ntests):
             i = g.randint(0, nTot - 1)
             for f, gen in self.stuff:
-                s = f.view()
-                s[i] = gen()
-                assert f[i] == s[i]
+                value = gen()
+                f[i] = value
+                assert f(i) == value
         return
 
     #---------------------------------------------------------------------------
@@ -104,8 +104,7 @@ class testFieldView(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testNumElements(self):
         for f, gen in self.stuff:
-            s = f.view()
-            assert f.numElements == s.numElements == nTot
+            assert f.numElements == nTot
         return
 
     #---------------------------------------------------------------------------
@@ -113,8 +112,7 @@ class testFieldView(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testNumInternal(self):
         for f, gen in self.stuff:
-            s = f.view()
-            assert f.numInternalElements == s.numInternalElements == nInt, "{} {} != {}".format(f.numInternalElements, s.numInternalElements, nInt)
+            assert f.numInternalElements == nInt, "{} != {}".format(f.numInternalElements, nInt)
         return
 
     #---------------------------------------------------------------------------
@@ -122,8 +120,7 @@ class testFieldView(unittest.TestCase):
     #---------------------------------------------------------------------------
     def testNumGhosts(self):
         for f, gen in self.stuff:
-            s = f.view()
-            assert f.numGhostElements == s.numGhostElements == nGhost, "{} {} != {}".format(f.numGhostElements, s.numGhostElements, nGhost)
+            assert f.numGhostElements == nGhost, "{} != {}".format(f.numGhostElements, nGhost)
         return
 
     # #---------------------------------------------------------------------------

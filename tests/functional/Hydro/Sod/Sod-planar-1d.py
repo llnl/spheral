@@ -327,10 +327,11 @@ for nodes in nodeSet:
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 for nodes in nodeSet:
     output("db.appendNodeList(nodes)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
@@ -496,8 +497,8 @@ if fhourglass > 0.0:
 #-------------------------------------------------------------------------------
 xPlane0 = Plane(Vector(x0), Vector( 1.0))
 xPlane1 = Plane(Vector(x2), Vector(-1.0))
-xbc0 = ReflectingBoundary(xPlane0)
-xbc1 = ReflectingBoundary(xPlane1)
+xbc0 = ReflectingBoundary(db, xPlane0)
+xbc1 = ReflectingBoundary(db, xPlane1)
 
 for p in packages:
     p.appendBoundary(xbc0)

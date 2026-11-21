@@ -96,13 +96,12 @@ class TestDistributeByPosition2d(unittest.TestCase):
                 nodes.positions()[i] = xyNodes[i]
                 nodes.Hfield()[i] = Hi
 
-            nodes.neighbor().updateNodes()
-
         # Put the distributed NodeLists into a DataBase.
         self.dataBase = DataBase2d()
         self.dataBase.appendNodeList(self.nodes1)
         self.dataBase.appendNodeList(self.nodes2)
         self.dataBase.appendNodeList(self.nodes3)
+        self.dataBase.updateNeighbors()
 
         assert mpi.allreduce(self.nodes1.numInternalNodes, mpi.SUM) == n1
         assert mpi.allreduce(self.nodes2.numInternalNodes, mpi.SUM) == n2
