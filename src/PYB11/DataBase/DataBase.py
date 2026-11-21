@@ -119,46 +119,42 @@ class DataBase:
         "Get the connectivity map as a std::shared_ptr, optionally including ghost, overlap, or intersection connectivity"
         return "ConnectivityMapPtr"
 
-    def appendNodeList(self, nodeList="SolidNodeList<%(Dimension)s>&"):
+    @PYB11pycppname("appendNodeList")
+    def appendDEMNodeList(self, nodeList="DEMNodeList<%(Dimension)s>&"):
+        "Add a DEMNodeList"
+        return "void"
+
+    @PYB11pycppname("appendNodeList")
+    def appendSolidNodeList(self, nodeList="SolidNodeList<%(Dimension)s>&"):
         "Add a SolidNodeList"
         return "void"
 
     @PYB11pycppname("appendNodeList")
-    def appendNodeList1(self, nodeList="FluidNodeList<%(Dimension)s>&"):
+    def appendFluidNodeList(self, nodeList="FluidNodeList<%(Dimension)s>&"):
         "Add a FluidNodeList"
         return "void"
 
-    @PYB11pycppname("appendNodeList")
-    def appendNodeList2(self, nodeList="NodeList<%(Dimension)s>&"):
+    def appendNodeList(self, nodeList="NodeList<%(Dimension)s>&"):
         "Add a NodeList"
         return "void"
 
-    # Bug: if you change this to a unique name, then when adding a DEM NodeList,
-    # it will call the base NodeList function instead of this one. Voodoo?
-    # It is probably overwriting the above function for standard NodeList.
-    @PYB11pycppname("appendNodeList")
-    def appendNodeList3(self, nodeList="DEMNodeList<%(Dimension)s>&"):
-        "Add a DEMNodeList"
+    @PYB11pycppname("deleteNodeList")
+    def deleteDEMNodeList(self, nodeList="DEMNodeList<%(Dimension)s>&"):
+        "Remove a DEMNodeList"
         return "void"
 
-    def deleteNodeList(self, nodeList="SolidNodeList<%(Dimension)s>&"):
+    @PYB11pycppname("deleteNodeList")
+    def deleteSolidNodeList(self, nodeList="SolidNodeList<%(Dimension)s>&"):
         "Remove a SolidNodeList"
         return "void"
 
     @PYB11pycppname("deleteNodeList")
-    def deleteNodeList1(self, nodeList="FluidNodeList<%(Dimension)s>&"):
+    def deleteFluidNodeList(self, nodeList="FluidNodeList<%(Dimension)s>&"):
         "Remove a FluidNodeList"
         return "void"
 
-    @PYB11pycppname("deleteNodeList")
-    def deleteNodeList2(self, nodeList="NodeList<%(Dimension)s>&"):
+    def deleteNodeList(self, nodeList="NodeList<%(Dimension)s>&"):
         "Remove a NodeList"
-        return "void"
-
-    # See the comment above for appendNodeList2
-    @PYB11pycppname("deleteNodeList")
-    def deleteNodeList3(self, nodeList="DEMNodeList<%(Dimension)s>&"):
-        "Remove a DEMNodeList"
         return "void"
 
     @PYB11const
