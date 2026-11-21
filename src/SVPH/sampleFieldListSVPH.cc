@@ -137,10 +137,9 @@ sampleFieldListSVPH(const FieldList<Dimension, DataType>& fieldList,
   for (auto nodeListi = 0u; nodeListi != numNodeLists; ++nodeListi) {
 
     // Iterate over the nodes in this node list.
-    for (typename ConnectivityMap<Dimension>::const_iterator iItr = connectivityMap.begin(nodeListi);
-         iItr != connectivityMap.end(nodeListi);
-         ++iItr) {
-      const int i = *iItr;
+    const auto numNodes = connectivityMap.numNodes(nodeListi);
+    for (auto nodeIndex = 0u; nodeIndex < numNodes; ++nodeIndex) {
+      const auto i = connectivityMap.ithNode(nodeListi, nodeIndex);
 
       // Get the state for node i.
       const Vector& ri = position(nodeListi, i);
@@ -152,13 +151,10 @@ sampleFieldListSVPH(const FieldList<Dimension, DataType>& fieldList,
       result(nodeListi, i) = Vi*W0*Hdeti * fieldList(nodeListi, i);
 
       // Walk the neighbors for this node.
-      const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
       for (auto nodeListj = 0u; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
-        for (vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) {
-          const int j = *jItr;
+        const auto& connectivity = fullConnectivity[nodeListj];
+        for (const auto j: connectivity) {
 
           // Get the state for node j.
           const DataType& Fj = fieldList(nodeListj, j);

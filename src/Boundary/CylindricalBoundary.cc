@@ -11,7 +11,7 @@
 #include "Utilities/DBC.hh"
 #include "RK/ReproducingKernelMethods.hh"
 
-#include "CylindricalBoundary.hh"
+#include "Boundary/CylindricalBoundary.hh"
 
 using std::vector;
 using std::string;
@@ -24,16 +24,11 @@ namespace Spheral {
 CylindricalBoundary::
 CylindricalBoundary(const DataBase<Dim<3> >& dataBase):
   Boundary<Dim<3> >(),
+  mDataBase(dataBase),
   mDeltaPhi(dataBase.newGlobalFieldList(0.0, "Delta angle for generating ghosts")),
   mGhostPositions(dataBase.newGlobalFieldList(Dim<3>::Vector(), "Ghost node positions")),
   mRestart(registerWithRestart(*this)) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-CylindricalBoundary::
-~CylindricalBoundary() {
+  VERIFY(distinctlyGreaterThan(mDataBase.kernelExtent(), 0.0));
 }
 
 //------------------------------------------------------------------------------
@@ -65,9 +60,8 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
 
   // Get the number of nodes per h, and the kernel extent.
   const double nPerh = nodeList.nodesPerSmoothingScale();
-  const double kernelExtent = nodeList.neighbor().kernelExtent();
+  const double kernelExtent = mDataBase.kernelExtent();
   CHECK(distinctlyGreaterThan(nPerh, 0.0));
-  CHECK(distinctlyGreaterThan(kernelExtent, 0.0));
 
   // The vector of ghost positions we'll build up, to assign all at once at the
   // end.
@@ -153,9 +147,6 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
   // We can use the normal ghost boundary enforcement to update the
   // H's of the ghost nodes.
   applyGhostBoundary(H);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (ghostNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -221,9 +212,6 @@ updateGhostNodes(NodeList<Dim<3> >& nodeList) {
   // H's of the ghost nodes.
   Field<Dimension, SymTensor>& H = nodeList.Hfield();
   applyGhostBoundary(H);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (ghostNodes);
 }
 
 //------------------------------------------------------------------------------
@@ -542,9 +530,6 @@ updateViolationNodes(NodeList<Dim<3> >& nodeList) {
     
   // The normal Field enforcement policies work H.
   this->enforceBoundary(Hfield);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (vNodes);
 }    
 
 //------------------------------------------------------------------------------

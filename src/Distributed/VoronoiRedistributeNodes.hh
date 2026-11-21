@@ -30,22 +30,19 @@ class VoronoiRedistributeNodes: public RedistributeNodes<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef KeyTraits::Key Key;
+  using Key = KeyTraits::Key;
 
   // Constructors
-  VoronoiRedistributeNodes(const double dummy,
-                           const bool workBalance,
+  VoronoiRedistributeNodes(const bool workBalance,
                            const bool balanceGenerators,
                            const double tolerance,
                            const unsigned maxIterations);
-
-  // Destructor
-  virtual ~VoronoiRedistributeNodes();
+  virtual ~VoronoiRedistributeNodes() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
   // This is the method required of all descendent classes.
@@ -99,15 +96,15 @@ public:
   unsigned maxIterations() const;
   void maxIterations(unsigned val);
 
+  // No copy or assignment operations.
+  VoronoiRedistributeNodes(const VoronoiRedistributeNodes& nodes) = delete;
+  VoronoiRedistributeNodes& operator=(const VoronoiRedistributeNodes& rhs) = delete;
+
 private:
   //--------------------------- Private Interface ---------------------------//
   bool mWorkBalance, mBalanceGenerators;
   double mTolerance;
   unsigned mMaxIterations;
-
-  // No copy or assignment operations.
-  VoronoiRedistributeNodes(const VoronoiRedistributeNodes& nodes);
-  VoronoiRedistributeNodes& operator=(const VoronoiRedistributeNodes& rhs);
 };
 
 }

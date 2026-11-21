@@ -435,20 +435,6 @@ if not reflect:
     nodes2.velocity(VectorField("tmp", nodes2, -v0))
 
 #-------------------------------------------------------------------------------
-# Create boundary conditions.
-#-------------------------------------------------------------------------------
-bcs = []
-if reflect:
-    if geometry == "3d":
-        zplane = Plane(Vector(0.0, 0.0, 0.0), Vector(0.0, 0.0, 1.0))
-        bc = ReflectingBoundary(zplane)
-        bcs = [bc]
-    else:
-        xplane = Plane(Vector(0.0, 0.0), Vector(1.0, 0.0))
-        bc = ReflectingBoundary(xplane)
-        bcs = [bc]
-
-#-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
 db = DataBase()
@@ -457,6 +443,20 @@ for n in nodeSet:
 output('db')
 output('db.numNodeLists')
 output('db.numFluidNodeLists')
+
+#-------------------------------------------------------------------------------
+# Create boundary conditions.
+#-------------------------------------------------------------------------------
+bcs = []
+if reflect:
+    if geometry == "3d":
+        zplane = Plane(Vector(0.0, 0.0, 0.0), Vector(0.0, 0.0, 1.0))
+        bc = ReflectingBoundary(db, zplane)
+        bcs = [bc]
+    else:
+        xplane = Plane(Vector(0.0, 0.0), Vector(1.0, 0.0))
+        bc = ReflectingBoundary(db, xplane)
+        bcs = [bc]
 
 #-------------------------------------------------------------------------------
 # Construct the hydro physics object.

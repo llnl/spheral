@@ -11,12 +11,11 @@
 // Created by JMO, Wed Nov 16 10:40:07 PST 2005
 //----------------------------------------------------------------------------//
 #include "sampleMultipleFields2Lattice.hh"
+#include "Neighbor/HExtent.hh"
 #include "Field/FieldList.hh"
 #include "Field/FieldListSet.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
 #include "Geometry/MathTraits.hh"
 
@@ -408,25 +407,24 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
   LocalStorage localResult;
 
   // Loop over the positions.
-  for (AllNodeIterator<Dimension> nodeItr = position.nodeBegin();
-       nodeItr != position.nodeEnd();
-       ++nodeItr) {
+  for (auto fieldi = 0u; fieldi < position.numFields(); ++fieldi) {
+    const auto* nodeListPtr = position[fieldi]->nodeListPtr();
+    for (auto nodei = 0u; nodei < nodeListPtr->numNodes(); ++nodei) {
 
 #ifdef SPHERAL_ENABLE_MPI
     const bool useNode = (numProcs == 1 ? true :
-                          count(distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).begin(),
-                                distributedBoundary.ghostNodes(*(nodeItr.nodeListPtr())).end(),
-                                nodeItr.nodeID()) == 0);
+                          count(distributedBoundary.ghostNodes(*nodeListPtr).begin(),
+                                distributedBoundary.ghostNodes(*nodeListPtr).end(), nodei) == 0);
 #else
     const bool useNode = true;
 #endif
-    if (useNode and mask(nodeItr) == 1) {
+    if (useNode and mask(fieldi, nodei) == 1) {
 
       // Sample node (i) state.
-      const Vector& ri = position(nodeItr);
-      const SymTensor& Hi = Hfield(nodeItr);
-      const Scalar& weighti = weight(nodeItr);
-      const Vector extent = nodeItr.nodeListPtr()->neighbor().HExtent(Hi, kernelExtent);
+      const Vector& ri = position(fieldi, nodei);
+      const SymTensor& Hi = Hfield(fieldi, nodei);
+      const Scalar& weighti = weight(fieldi, nodei);
+      const Vector extent = HExtent<Dimension>(Hi, kernelExtent);
       const Scalar Hdeti = Hi.Determinant();
 
       // Compute the set of lattice positions this node contributes to.
@@ -465,8 +463,8 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
           for (auto k = 0u; k != numScalarFieldLists; ++k) {
             CHECK(k < samples.size());
             const FieldList<Dimension, Scalar>& fieldList = fieldListSet.ScalarFieldLists[k];
-            if (fieldList.haveNodeList(*nodeItr.nodeListPtr()))
-              samples[k] += thpt*fieldList(nodeItr);
+            if (fieldList.haveNodeList(*nodeListPtr))
+              samples[k] += thpt*(**fieldList.fieldForNodeList(*nodeListPtr))(nodei);
           }
         }
           
@@ -476,8 +474,8 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
           for (auto k = 0u; k != numVectorFieldLists; ++k) {
             CHECK(k < samples.size());
             const FieldList<Dimension, Vector>& fieldList = fieldListSet.VectorFieldLists[k];
-            if (fieldList.haveNodeList(*nodeItr.nodeListPtr()))
-              samples[k] += thpt*fieldList(nodeItr);
+            if (fieldList.haveNodeList(*nodeListPtr))
+              samples[k] += thpt*(**fieldList.fieldForNodeList(*nodeListPtr))(nodei);
           }
         }
           
@@ -487,8 +485,8 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
           for (auto k = 0u; k != numTensorFieldLists; ++k) {
             CHECK(k < samples.size());
             const FieldList<Dimension, Tensor>& fieldList = fieldListSet.TensorFieldLists[k];
-            if (fieldList.haveNodeList(*nodeItr.nodeListPtr()))
-              samples[k] += thpt*fieldList(nodeItr);
+            if (fieldList.haveNodeList(*nodeListPtr))
+              samples[k] += thpt*(**fieldList.fieldForNodeList(*nodeListPtr))(nodei);
           }
         }
           
@@ -498,8 +496,8 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
           for (auto k = 0u; k != numSymTensorFieldLists; ++k) {
             CHECK(k < samples.size());
             const FieldList<Dimension, SymTensor>& fieldList = fieldListSet.SymTensorFieldLists[k];
-            if (fieldList.haveNodeList(*nodeItr.nodeListPtr()))
-              samples[k] += thpt*fieldList(nodeItr);
+            if (fieldList.haveNodeList(*nodeListPtr))
+              samples[k] += thpt*(**fieldList.fieldForNodeList(*nodeListPtr))(nodei);
           }
         }
           
@@ -507,6 +505,7 @@ sampleMultipleFields2LatticeMash(const FieldListSet<Dimension>& fieldListSet,
         std::get<4>(localResult[j]) += thpt;
 
       }
+    }
     }
   }
 

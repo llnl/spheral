@@ -5,12 +5,11 @@
 // Created by JMO, Tue Jun  4 17:07:31 PDT 2002
 //----------------------------------------------------------------------------//
 #include "FieldListFunctionsMash.hh"
+#include "FieldOperations/FieldListConnectivity.hh"
 #include "Field/FieldList.hh"
 #include "Field/FieldListSet.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
 #include "Geometry/MathTraits.hh"
 
@@ -152,51 +151,20 @@ sampleMultipleFieldsMash(const FieldListSet<Dimension>& fieldListSet,
          ++resultItr) 
       resultItr->appendField(Field<Dimension, SymTensor>("sample" + (*fieldItr)->name(), (*fieldItr)->nodeList()));
   }
-  vector< vector<bool> > flagNodeDone(samplePositions.numFields());
-  for (typename FieldList<Dimension, Vector>::const_iterator fieldItr = samplePositions.begin();
-       fieldItr < samplePositions.end(); 
-       ++fieldItr) {
-    flagNodeDone[fieldItr - samplePositions.begin()].resize((*fieldItr)->nodeListPtr()->numInternalNodes(), false);
-  }
-
-  // Loop over all the positions in the fieldList we're sampling to.
-  for (InternalNodeIterator<Dimension> nodeItr = samplePositions.internalNodeBegin();
-       nodeItr < samplePositions.internalNodeEnd();
-       ++nodeItr) {
-
-    // Check if this node has been done yet.
-    if (!flagNodeDone[nodeItr.fieldID()][nodeItr.nodeID()]) {
-
-      // Set the neighbor info over the positions we're sampling to.
-      vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors,
-                          masterListsSample, coarseNeighborsSample, refineNeighborsSample;
-      position.setMasterNodeLists(samplePositions(nodeItr), sampleHfield(nodeItr), masterLists, coarseNeighbors);
-      samplePositions.setMasterNodeLists(samplePositions(nodeItr), sampleHfield(nodeItr), masterListsSample, coarseNeighborsSample);
-
-      // Loop over the set of master nodes in the FieldList we're sampling to.
-      for (MasterNodeIterator<Dimension> masterItr = samplePositions.masterNodeBegin(masterListsSample);
-           masterItr < samplePositions.masterNodeEnd();
-           ++masterItr) {
-        CHECK(flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] == false);
-      
-        // Sample node (i) state.
-        const Vector& ri = samplePositions(masterItr);
-        const SymTensor& Hi = sampleHfield(masterItr);
-        const Scalar& weighti = sampleWeight(masterItr);
-
-        // Refine the set of nodes we're sampling from for this position.
-        position.setRefineNodeLists(ri, Hi, coarseNeighbors, refineNeighbors);
-
-        // Loop over the refined neighbors, and calculate the local values.
+  FieldListPairConnectivity<Dimension, Vector, Vector>
+    connectivity(position, samplePositions, kernel.kernelExtent());
+  const auto searchType = connectivity.searchType();
+  for (auto samplei = 0u; samplei < samplePositions.numFields(); ++samplei) {
+    const auto numInternal = samplePositions[samplei]->nodeListPtr()->numInternalNodes();
+    for (auto i = 0u; i < numInternal; ++i) {
+        const Vector& ri = samplePositions(samplei, i);
+        const SymTensor& Hi = sampleHfield(samplei, i);
+        const Scalar& weighti = sampleWeight(samplei, i);
         Scalar normalization = 1.0e-30;
-        for (RefineNodeIterator<Dimension> neighborItr = position.refineNodeBegin(refineNeighbors);
-             neighborItr < position.refineNodeEnd();
-             ++neighborItr) {
-
-          // Node j's state.
-          const Vector& rj = position(neighborItr);
-          const SymTensor& Hj = Hfield(neighborItr);
-          const Scalar& weightj = weight(neighborItr);
+        connectivity.forEachFirstNeighbor(samplei, i, [&](const size_t fieldj, const size_t j) {
+          const Vector& rj = position(fieldj, j);
+          const SymTensor& Hj = Hfield(fieldj, j);
+          const Scalar& weightj = weight(fieldj, j);
 
           const Vector rij = ri - rj;
           const Scalar etai = (Hi*rij).magnitude();
@@ -208,7 +176,7 @@ sampleMultipleFieldsMash(const FieldListSet<Dimension>& fieldListSet,
 
           // Get the symmetrized kernel weighting for this node pair.
           Scalar Wij, weightij;
-          switch(masterItr.nodeListPtr()->neighbor().neighborSearchType()) {
+          switch(searchType) {
           case NeighborSearchType::GatherScatter:
             Wij = 0.5*(Wi + Wj);
             weightij = 0.5*(weighti + weightj);
@@ -234,51 +202,35 @@ sampleMultipleFieldsMash(const FieldListSet<Dimension>& fieldListSet,
 
           // Loop over all the result FieldLists, and increment their values 
           // for this pair interaction.
-          for (auto i = 0u; i < resultSet.ScalarFieldLists.size(); ++i) {
-            FieldList<Dimension, Scalar>& result = resultSet.ScalarFieldLists[i];
-            const FieldList<Dimension, Scalar>& fieldList = fieldListSet.ScalarFieldLists[i];
-            result(masterItr) += fieldList(neighborItr)*localWeight;
+          for (auto k = 0u; k < resultSet.ScalarFieldLists.size(); ++k) {
+            FieldList<Dimension, Scalar>& result = resultSet.ScalarFieldLists[k];
+            const FieldList<Dimension, Scalar>& fieldList = fieldListSet.ScalarFieldLists[k];
+            result(samplei, i) += fieldList(fieldj, j)*localWeight;
           }
-          for (auto i = 0u; i < resultSet.VectorFieldLists.size(); ++i) {
-            FieldList<Dimension, Vector>& result = resultSet.VectorFieldLists[i];
-            const FieldList<Dimension, Vector>& fieldList = fieldListSet.VectorFieldLists[i];
-            result(masterItr) += fieldList(neighborItr)*localWeight;
+          for (auto k = 0u; k < resultSet.VectorFieldLists.size(); ++k) {
+            FieldList<Dimension, Vector>& result = resultSet.VectorFieldLists[k];
+            const FieldList<Dimension, Vector>& fieldList = fieldListSet.VectorFieldLists[k];
+            result(samplei, i) += fieldList(fieldj, j)*localWeight;
           }
-          for (auto i = 0u; i < resultSet.TensorFieldLists.size(); ++i) {
-            FieldList<Dimension, Tensor>& result = resultSet.TensorFieldLists[i];
-            const FieldList<Dimension, Tensor>& fieldList = fieldListSet.TensorFieldLists[i];
-            result(masterItr) += fieldList(neighborItr)*localWeight;
+          for (auto k = 0u; k < resultSet.TensorFieldLists.size(); ++k) {
+            FieldList<Dimension, Tensor>& result = resultSet.TensorFieldLists[k];
+            const FieldList<Dimension, Tensor>& fieldList = fieldListSet.TensorFieldLists[k];
+            result(samplei, i) += fieldList(fieldj, j)*localWeight;
           }
-          for (auto i = 0u; i < resultSet.SymTensorFieldLists.size(); ++i) {
-            FieldList<Dimension, SymTensor>& result = resultSet.SymTensorFieldLists[i];
-            const FieldList<Dimension, SymTensor>& fieldList = fieldListSet.SymTensorFieldLists[i];
-            result(masterItr) += fieldList(neighborItr)*localWeight;
+          for (auto k = 0u; k < resultSet.SymTensorFieldLists.size(); ++k) {
+            FieldList<Dimension, SymTensor>& result = resultSet.SymTensorFieldLists[k];
+            const FieldList<Dimension, SymTensor>& fieldList = fieldListSet.SymTensorFieldLists[k];
+            result(samplei, i) += fieldList(fieldj, j)*localWeight;
           }
-        }
+        });
 
         // Normalize the local estimates.
         CHECK(normalization > 0.0);
-        for (auto i = 0u; i < resultSet.ScalarFieldLists.size(); ++i) {
-          FieldList<Dimension, Scalar>& result = resultSet.ScalarFieldLists[i];
-          result(masterItr) /= normalization;
+        for (auto k = 0u; k < resultSet.ScalarFieldLists.size(); ++k) {
+          FieldList<Dimension, Scalar>& result = resultSet.ScalarFieldLists[k];
+          result(samplei, i) /= normalization;
         }
-
-        // Flag this master node as done.
-        flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] = true;
-      }
     }
-  }
-
-  // After we're done, all nodes in all NodeLists should be flagged as done.
-  for (typename vector< vector<bool> >::const_iterator flagNodeItr = flagNodeDone.begin();
-       flagNodeItr < flagNodeDone.end();
-       ++flagNodeItr) {
-    int checkcount = count(flagNodeItr->begin(), flagNodeItr->end(), false);
-    if (checkcount > 0) {
-      cerr << "Error in FieldList::sampleFieldsMash: Not all values determined on exit "
-           << checkcount << endl;
-    }
-    CHECK(checkcount == 0);
   }
 
   return resultSet;

@@ -214,7 +214,7 @@ variableTimeStep(const DataBase<Dimension>& dataBase,
   const auto& solidBoundaries = this->solidBoundaryConditions();
 
   // buffer distance used to set the max allowable timestep
-  const auto bufferDistance = dataBase.maxNeighborSearchBuffer();
+  const auto bufferDistance = dataBase.maxDEMNeighborSearchBuffer();
 
   // Compute the spring timestep constraint (except for the mass)
   const auto nsteps = this->stepsPerCollision();

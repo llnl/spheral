@@ -12,7 +12,6 @@ set(ExternalForce_headers
     ConstantAcceleration.hh
     ConstantAccelerationInline.hh
     LinearAcceleration.hh
-    LinearAccelerationInline.hh
     NFWPotential.hh
     NFWPotentialInline.hh
     PointPotential.hh

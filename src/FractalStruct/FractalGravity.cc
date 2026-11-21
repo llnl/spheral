@@ -21,7 +21,6 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
 #include "Material/PhysicalConstants.hh"
 #include "Distributed/Communicator.hh"

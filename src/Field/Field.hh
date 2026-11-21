@@ -30,9 +30,6 @@
 
 namespace Spheral {
 
-template<typename Dimension> class NodeIteratorBase;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class NodeList;
 template<typename Dimension> class TableKernel;
 
@@ -109,10 +106,6 @@ public:
   bool operator< (const DataType& rhs) const { return ViewType::operator< (rhs); }
   bool operator>=(const DataType& rhs) const { return ViewType::operator>=(rhs); }
   bool operator<=(const DataType& rhs) const { return ViewType::operator<=(rhs); }
-
-  // Element access by NodeIterator
-  DataType& operator()(const NodeIteratorBase<Dimension>& itr);
-  const DataType& operator()(const NodeIteratorBase<Dimension>& itr) const;
 
   // The number of elements in the field.
   virtual size_t size() const override                                      { return mDataArray.size(); }
@@ -221,8 +214,11 @@ private:
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
   auto getCallback();
 
-  // Helper method to keep mDataSpan and mDataArray consistent
-  void assignDataSpan();
+  // Helpers to keep mDataSpan and mDataArray consistent.  The span is a
+  // non-owning alias and must be released before vector storage is mutated.
+  void prepareDataMutation();
+  void releaseDataSpan();
+  void assignDataSpan(const bool forceStorageChanged = false);
 };
 
 } // namespace Spheral

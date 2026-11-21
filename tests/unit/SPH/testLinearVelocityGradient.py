@@ -98,7 +98,6 @@ if testDim == "spherical":
 else:
     WT = TableKernel(BSplineKernel(), 1000)
 output("WT")
-kernelExtent = WT.kernelExtent
 
 #-------------------------------------------------------------------------------
 # Make the NodeList.
@@ -218,7 +217,7 @@ for i in range(nodes1.numInternalNodes):
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
 output("db.numNodeLists")

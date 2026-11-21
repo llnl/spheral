@@ -5,10 +5,10 @@ from PYB11Generator import *
 #-------------------------------------------------------------------------------
 class NodePairIdxType:
     def pyinit(self,
-               i_n = "int",
-               i_l = "int",
-               j_n = "int",
-               j_l = "int",
+               i_n = "size_t",
+               i_l = "size_t",
+               j_n = "size_t",
+               j_l = "size_t",
                f = ("double", "1.0")):
       "Constructor"
       return

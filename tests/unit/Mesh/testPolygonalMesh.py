@@ -46,11 +46,6 @@ dycell = (y1 - y0)/nycell
 xmin = Vector(x0, y0)
 xmax = Vector(x1, y1)
 
-xbc0 = ReflectingBoundary(Plane(Vector(x0, y0), Vector(1.0, 0.0)))
-ybc0 = ReflectingBoundary(Plane(Vector(x0, y0), Vector(0.0, 1.0)))
-bclist = [xbc0, ybc0]
-if numDomains > 1:
-    bclist.append(BoundingVolumeDistributedBoundary.instance())
 bclist = []
 
 #===============================================================================
@@ -59,12 +54,13 @@ bclist = []
 def iterateThoseHs(nodes):
     db = DataBase()
     db.appendNodeList(nodes)
+    db.updateNeighbors()
     for bc in bclist:
         bc.setAllGhostNodes(db)
-        nodes.neighbor().updateNodes()
+        db.updateNeighbor(nodes)
     for bc in bclist:
         bc.finalizeGhostBoundary()
-    nodes.neighbor().updateNodes()
+    db.updateNeighbor(nodes)
     vecbound = vector_of_Boundary()
     for bc in bclist:
         vecbound.append(bc)
@@ -386,8 +382,6 @@ class UniformPolygonalMeshTests(unittest.TestCase, PolygonalMeshGenericTests):
             self.pos[i] = xynodes[i]
             self.H[i] = SymTensor(1.0/(2.0*dxavg), 0.0,
                                   0.0, 1.0/(2.0*dyavg))
-        self.nodes.neighbor().updateNodes()
-
         # Fix up the H's.
         #iterateThoseHs(self.nodes)
         return
@@ -453,8 +447,6 @@ class RandomPolygonalMeshTests(unittest.TestCase, PolygonalMeshGenericTests):
             self.pos[i] = xynodes[i]
             self.H[i] = SymTensor(1.0/(2.0*dxavg), 0.0,
                                   0.0, 1.0/(2.0*dyavg))
-        self.nodes.neighbor().updateNodes()
-
         # Fix up the H's.
         iterateThoseHs(self.nodes)
         return

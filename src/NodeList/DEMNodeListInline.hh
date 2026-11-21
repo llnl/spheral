@@ -20,6 +20,7 @@ void
 DEMNodeList<Dimension>::
 neighborSearchBuffer(typename Dimension::Scalar x) {
   mNeighborSearchBuffer = x;
+  ++this->mGeneration;
 }
 
 //------------------------------------------------------------------------------

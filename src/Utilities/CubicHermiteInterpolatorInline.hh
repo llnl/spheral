@@ -65,6 +65,7 @@ CubicHermiteInterpolator::initialize(const double xmin,
   mXmin = xmin;
   mXmax = xmax;
   mXstep = (xmax - xmin)/(n - 1u);
+  releaseView();
   mVec.resize(2u*n);
 
   // Compute the function and gradient values

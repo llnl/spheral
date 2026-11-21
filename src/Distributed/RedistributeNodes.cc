@@ -10,7 +10,6 @@
 #include "NodeList/NodeList.hh"
 #include "Field/Field.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/globalNodeIDs.hh"
 #include "Utilities/packElement.hh"
 #include "Utilities/range.hh"
@@ -461,7 +460,6 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
           CHECK(nodeListBufItr != procBufItr->end());
           const list< vector<char> >& bufs = *nodeListBufItr;
           (*nodeListItr)->appendInternalNodes(numNewNodes, bufs);
-          (*nodeListItr)->neighbor().updateNodes();
           ++nodeListBufItr;
         }
       }
@@ -469,6 +467,7 @@ enforceDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistributio
       ++procBufItr;
     }
   }
+  dataBase.reinitializeNeighbors();
   CHECK(procBufItr == fieldBuffers.end());
 
   // Wait until all our sends are completed.
@@ -675,8 +674,7 @@ validDomainDecomposition(const vector<DomainNode<Dimension> >& nodeDistribution,
 template<typename Dimension>
 FieldList<Dimension, typename Dimension::Scalar>
 RedistributeNodes<Dimension>::
-workPerNode(const DataBase<Dimension>& dataBase,
-            const double /*Hextent*/) const {
+workPerNode(const DataBase<Dimension>& dataBase) const {
 
   // Prepare the result.
   FieldList<Dimension, Scalar> result = dataBase.newGlobalFieldList(Scalar(), "work per node");
@@ -799,13 +797,6 @@ gatherDomainDistributionStatistics(const FieldList<Dimension, typename Dimension
   for (auto* fieldPtr: work) localNumNodes += fieldPtr->numInternalElements();
   const auto localWork = work.localSumElements();
 
-  // for (InternalNodeIterator<Dimension> nodeItr = work.internalNodeBegin();
-  //      nodeItr != work.internalNodeEnd();
-  //      ++nodeItr) {
-  //   ++localNumNodes;
-  //   localWork += work(nodeItr);
-  // }
-
   // Now gather up some statistics about the distribution.
   const auto numProcs = this->numDomains();
   CHECK(numProcs > 0);
@@ -832,4 +823,3 @@ gatherDomainDistributionStatistics(const FieldList<Dimension, typename Dimension
 }
 
 }
-

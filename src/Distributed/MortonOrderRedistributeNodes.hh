@@ -25,33 +25,28 @@ class MortonOrderRedistributeNodes: public SpaceFillingCurveRedistributeNodes<Di
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef KeyTraits::Key Key;
+  using Key = KeyTraits::Key;
 
   // Constructors
-  MortonOrderRedistributeNodes(const double dummy,
-                               const double minNodesPerDomainFraction = 0.5,
+  MortonOrderRedistributeNodes(const double minNodesPerDomainFraction = 0.5,
                                const double maxNodesPerDomainFraction = 1.5,
                                const bool workBalance = true,
                                const bool localReorderOnly = false);
-
-  // Destructor
-  virtual ~MortonOrderRedistributeNodes();
+  virtual ~MortonOrderRedistributeNodes() = default;
 
   // Hash the positions.
   virtual
   FieldList<Dimension, Key> 
   computeHashedIndices(const DataBase<Dimension>& dataBase) const override;
 
-private:
-  //--------------------------- Private Interface ---------------------------//
   // No copy or assignment operations.
-  MortonOrderRedistributeNodes(const MortonOrderRedistributeNodes& nodes);
-  MortonOrderRedistributeNodes& operator=(const MortonOrderRedistributeNodes& rhs);
+  MortonOrderRedistributeNodes(const MortonOrderRedistributeNodes& nodes) = delete;
+  MortonOrderRedistributeNodes& operator=(const MortonOrderRedistributeNodes& rhs) = delete;
 
 };
 

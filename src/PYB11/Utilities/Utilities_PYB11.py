@@ -535,7 +535,8 @@ def overlayRemapFields(boundaries = "const std::vector<Boundary<%(Dimension)s>*>
                        scalarAcceptorFields = "std::vector<Field<%(Dimension)s, typename %(Dimension)s::Scalar>*>&",
                        vectorAcceptorFields = "std::vector<Field<%(Dimension)s, typename %(Dimension)s::Vector>*>&",
                        tensorAcceptorFields = "std::vector<Field<%(Dimension)s, typename %(Dimension)s::Tensor>*>&",
-                       symTensorAcceptorFields = "std::vector<Field<%(Dimension)s, typename %(Dimension)s::SymTensor>*>&"):
+                       symTensorAcceptorFields = "std::vector<Field<%(Dimension)s, typename %(Dimension)s::SymTensor>*>&",
+                       etaMax = ("double", "1.0")):
     """Use geometric clipping to remap a set of conserved fields.
 Currently only works single NodeList -> single NodeList, no boundaries."""
     return "void"

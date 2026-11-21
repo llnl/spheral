@@ -18,15 +18,10 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 // Constructor.
 //------------------------------------------------------------------------------
-SphericalOriginBoundary::SphericalOriginBoundary():
-  ReflectingBoundary<Dimension>(GeomPlane<Dim<1>>(Vector(0.0, 0.0),
+SphericalOriginBoundary::SphericalOriginBoundary(const DataBase<Dimension>& dataBase):
+  ReflectingBoundary<Dimension>(dataBase,
+                                GeomPlane<Dim<1>>(Vector(0.0, 0.0),
                                                   Vector(0.0, 1.0))) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-SphericalOriginBoundary::~SphericalOriginBoundary() {
 }
 
 //------------------------------------------------------------------------------

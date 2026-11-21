@@ -43,8 +43,7 @@ def distributeNodesInRange1d(listOfNodeTuples,
                              nPerh = 2.01,
                              reverse = False):
 
-
-    # Count how many nodes total we need to distribute.
+    # Count how many nodes total we need to distribute
     numNodesPerNodeList = []
     for nodeTuple in listOfNodeTuples:
         assert len(nodeTuple) == 2 or len(nodeTuple) == 4
@@ -126,13 +125,6 @@ def distributeNodesInRange1d(listOfNodeTuples,
                     H[indexOffset + i] = Hi
             nCumulative += n
 
-    # Set neighbor information.
-    #Neighbor1d.setBoundingBox()
-    for nodeTuple in listOfNodeTuples:
-        nodes = nodeTuple[0]
-        nodes.neighbor().updateNodes()
-        assert nodes.neighbor().valid()
-
     return
 
 #-------------------------------------------------------------------------------
@@ -188,13 +180,6 @@ def distributeNodesInSphericalRange3d(listOfNodeTuples,
             nodeList.mass()[localNodeID] = mi
             nodeList.massDensity()[localNodeID] = rho
             nodeList.Hfield()[localNodeID] = Hi
-
-    # Make sure the neighbor info is up to date!
-    #Neighbor3d.setBoundingBox()
-    for (nodeList, n, rho, (r0, r1)) in listOfNodeTuples:
-        nodeList.neighbor().updateNodes()
-        assert nodeList.neighbor().valid()
-        #nodeList.updateWeight()
 
     return
 

@@ -5,7 +5,7 @@
 // Created by JMO, Wed Apr 19 15:00:50 PDT 2000
 //----------------------------------------------------------------------------//
 
-// #include "PeriodicBoundary.hh"
+#include "Boundary/PeriodicPlanarBoundary.hh"
 #include "Utilities/DBC.hh"
 
 namespace {
@@ -47,33 +47,17 @@ struct MapFacetedVolume<BC, Dim<1>> {
 }
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PeriodicBoundary<Dimension>::PeriodicPlanarBoundary::
-PeriodicPlanarBoundary():
-  PlanarBoundary<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given planes.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 PeriodicBoundary<Dimension>::PeriodicPlanarBoundary::
-PeriodicPlanarBoundary(const GeomPlane<Dimension>& plane1,
+PeriodicPlanarBoundary(const DataBase<Dimension>& dataBase,
+                       const GeomPlane<Dimension>& plane1,
                        const GeomPlane<Dimension>& plane2):
-  PlanarBoundary<Dimension>(plane1, plane2) {
+  PlanarBoundary<Dimension>(dataBase, plane1, plane2) {
 
   // Once we're done the boundary condition should be in a valid state.
   ENSURE(valid());
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PeriodicBoundary<Dimension>::PeriodicPlanarBoundary::
-~PeriodicPlanarBoundary() {
 }
 
 //------------------------------------------------------------------------------

@@ -15,7 +15,6 @@ def distributeNodesGeneric(listOfNodeTuples,
     db = DataBaseType()
 
     # Assign nodes to domains by globalNodeID as a first cut.
-    kernelExtent = 0.0
     numNodesPerProcess = [0]
     totalNumGlobalNodes = 0
     extrafields = {}
@@ -53,8 +52,6 @@ def distributeNodesGeneric(listOfNodeTuples,
             for i in range(nlocal):
                 extrafields[nodes.name][iextra][i] = vals[i]
 
-        # Find the maximum kernel extent for all NodeLists.
-        kernelExtent = max(kernelExtent, nodes.neighbor().kernelExtent)
         hminInv = 1.0/nodes.hmin
         hmaxInv = 1.0/nodes.hmax
 
@@ -149,14 +146,9 @@ def distributeNodesGeneric(listOfNodeTuples,
     # automatically redistributes the globalNodeListID fields as well.
     print("distributeNodesGeneric: calling for redistribution.")
     if RedistributeNodesType:
-        repartition = RedistributeNodesType(kernelExtent)
+        repartition = RedistributeNodesType()
         repartition.redistributeNodes(db)
     print("distributeNodesGeneric: redistribution done.")
-
-    # Update the neighboring info.
-    #exec("Spheral.Neighbor%id.setBoundingBox()" % db.nDim)
-    for nodes in db.nodeLists:
-        nodes.neighbor().updateNodes()
 
     # Make sure we finished with the correct numbers of nodes!
     totalCheck = mpi.allreduce(sum([nodes.numInternalNodes for nodes in db.nodeLists]), mpi.SUM)

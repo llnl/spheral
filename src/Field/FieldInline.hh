@@ -1,4 +1,3 @@
-#include "Field/NodeIterators.hh"
 #include "Field/FieldView.hh"
 
 #include "Geometry/Dimension.hh"
@@ -148,10 +147,8 @@ template<typename Dimension, typename DataType>
 inline
 Field<Dimension, DataType>::
 ~Field() {
-#ifndef SPHERAL_UNIFIED_MEMORY
   DEBUG_LOG << " --> FIELD::~Field() " << this->name();
-  mDataSpan.free();
-#endif
+  this->releaseDataSpan();
 }
 
 //------------------------------------------------------------------------------
@@ -176,10 +173,11 @@ Field<Dimension, DataType>::operator=(const FieldBase<Dimension>& rhs) {
     try {
       const auto* rhsPtr = dynamic_cast<const Field<Dimension, DataType>*>(&rhs);
       CHECK2(rhsPtr != 0, "Passed incorrect Field to operator=!");
+      this->prepareDataMutation();
       FieldBase<Dimension>::operator=(rhs);
       mDataArray = rhsPtr->mDataArray;
       mChaiCallback = rhsPtr->mChaiCallback;
-      this->assignDataSpan();
+      this->assignDataSpan(true);
     } catch (const std::bad_cast &) {
       VERIFY2(false, "Attempt to assign a field to an incompatible field type.");
     }
@@ -195,10 +193,11 @@ inline
 Field<Dimension, DataType>&
 Field<Dimension, DataType>::operator=(const Field<Dimension, DataType>& rhs) {
   if (this != &rhs) {
+    this->prepareDataMutation();
     FieldBase<Dimension>::operator=(rhs);
     mDataArray = rhs.mDataArray;
     mChaiCallback = rhs.mChaiCallback;
-    this->assignDataSpan();
+    this->assignDataSpan(true);
   }
   DEBUG_LOG << "Field::assign : " << rhs.name() << " -> " << this->name() << " : " << rhs.mDataArray.data() << " -> " << mDataArray.data() << " : " << rhs.mDataSpan.data() << " -> " <<  mDataSpan.data();
   return *this;
@@ -212,8 +211,9 @@ inline
 Field<Dimension, DataType>&
 Field<Dimension, DataType>::operator=(const std::vector<DataType,DataAllocator<DataType>>& rhs) {
   REQUIRE(this->nodeList().numNodes() == rhs.size());
+  this->prepareDataMutation();
   mDataArray = rhs;
-  this->assignDataSpan();
+  this->assignDataSpan(true);
   return *this;
 }
 
@@ -246,91 +246,6 @@ Field<Dimension, DataType>::operator==(const FieldBase<Dimension>& rhs) const {
     return false;
   }
 }
-
-//------------------------------------------------------------------------------
-// Element access by Node ID iterator.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType&
-Field<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) {
-  CHECK(itr.nodeListPtr() == this->nodeListPtr());
-  CHECK(itr.nodeID() >= 0 && itr.nodeID() < size());
-  return mDataArray[itr.nodeID()];
-}
-
-template<typename Dimension, typename DataType>
-inline
-const DataType&
-Field<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) const {
-  CHECK(itr.nodeListPtr() == this->nodeListPtr());
-  CHECK(itr.nodeID() >= 0 && itr.nodeID() < size());
-  return mDataArray[itr.nodeID()];
-}
-
-// //------------------------------------------------------------------------------
-// // Element access by CoarseNodeIterator.
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// DataType&
-// Field<Dimension, DataType>::
-// operator()(const CoarseNodeIterator<Dimension>& itr) {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewCoarseNodes) {
-//     cacheCoarseValues();
-//     mNewCoarseNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mCoarseCache.size());
-//   return mCoarseCache[itr.cacheID()];
-// }
-
-// template<typename Dimension, typename DataType>
-// inline
-// const DataType&
-// Field<Dimension, DataType>::
-// operator()(const CoarseNodeIterator<Dimension>& itr) const {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewCoarseNodes) {
-//     cacheCoarseValues();
-//     mNewCoarseNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mCoarseCache.size());
-//   return mCoarseCache[itr.cacheID()];
-// }
-
-// //------------------------------------------------------------------------------
-// // Element access by RefineNodeIterator.
-// //------------------------------------------------------------------------------
-// template<typename Dimension, typename DataType>
-// inline
-// DataType&
-// Field<Dimension, DataType>::
-// operator()(const RefineNodeIterator<Dimension>& itr) {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewRefineNodes) {
-//     cacheRefineValues();
-//     mNewRefineNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mRefineCache.size());
-//   return mRefineCache[itr.cacheID()];
-// }
-
-// template<typename Dimension, typename DataType>
-// inline
-// const DataType&
-// Field<Dimension, DataType>::
-// operator()(const RefineNodeIterator<Dimension>& itr) const {
-//   CHECK(itr.nodeListPtr() == nodeListPtr());
-//   if (mNewRefineNodes) {
-//     cacheRefineValues();
-//     mNewRefineNodes = false;
-//   }
-//   CHECK(itr.cacheID() >= 0 && itr.cacheID() < mRefineCache.size());
-//   return mRefineCache[itr.cacheID()];
-// }
 
 //------------------------------------------------------------------------------
 // Zero out the field elements.
@@ -494,12 +409,13 @@ inline
 void
 Field<Dimension, DataType>::setNodeList(const NodeList<Dimension>& nodeList) {
   auto oldSize = this->size();
+  this->prepareDataMutation();
   this->setFieldBaseNodeList(nodeList);
   mDataArray.resize(nodeList.numNodes());
   if (this->size() > oldSize) {
     std::fill(mDataArray.begin() + oldSize, mDataArray.end(), DataTypeTraits<DataType>::zero());
   }
-  this->assignDataSpan();
+  this->assignDataSpan(true);
 }
 
 //------------------------------------------------------------------------------
@@ -676,13 +592,14 @@ void
 Field<Dimension, DataType>::resizeField(size_t size) {
   REQUIRE(size == this->nodeList().numNodes());
   auto oldSize = this->size();
+  this->prepareDataMutation();
   mDataArray.resize(size);
   if (oldSize < size) {
     std::fill(mDataArray.begin() + oldSize,
               mDataArray.end(),
               DataTypeTraits<DataType>::zero());
   }
-  this->assignDataSpan();
+  this->assignDataSpan(true);
 }
 
 //------------------------------------------------------------------------------
@@ -708,6 +625,7 @@ Field<Dimension, DataType>::resizeFieldInternal(const size_t newInternalSize,
   }
 
   // Resize the field data.
+  this->prepareDataMutation();
   mDataArray.resize(newSize);
 
   // Fill in any new internal values.
@@ -723,7 +641,7 @@ Field<Dimension, DataType>::resizeFieldInternal(const size_t newInternalSize,
     std::copy(oldGhostValues.begin(), oldGhostValues.end(), mDataArray.begin() + newInternalSize);
   }
 
-  this->assignDataSpan();
+  this->assignDataSpan(true);
 }
 
 //------------------------------------------------------------------------------
@@ -741,6 +659,7 @@ Field<Dimension, DataType>::resizeFieldGhost(const size_t size) {
   REQUIRE(newSize == this->nodeList().numNodes());
 
   // Resize the field data.
+  this->prepareDataMutation();
   mDataArray.resize(newSize);
   CHECK(this->size() == newSize);
 
@@ -750,7 +669,7 @@ Field<Dimension, DataType>::resizeFieldGhost(const size_t size) {
               mDataArray.end(),
               DataTypeTraits<DataType>::zero());
   }
-  this->assignDataSpan();
+  this->assignDataSpan(true);
 }
 
 //------------------------------------------------------------------------------
@@ -763,8 +682,9 @@ Field<Dimension, DataType>::deleteElement(size_t nodeID) {
   const auto oldSize = this->size();
   CONTRACT_VAR(oldSize);
   REQUIRE(nodeID < oldSize);
+  this->prepareDataMutation();
   mDataArray.erase(mDataArray.begin() + nodeID);
-  this->assignDataSpan();
+  this->assignDataSpan(true);
   ENSURE(mDataArray.size() == oldSize - 1u);
 }
 
@@ -776,8 +696,9 @@ inline
 void
 Field<Dimension, DataType>::deleteElements(const std::vector<size_t>& nodeIDs) {
   // The standalone method does the actual work.
+  this->prepareDataMutation();
   removeElements(mDataArray, nodeIDs);
-  this->assignDataSpan();
+  this->assignDataSpan(true);
 }
 
 //****************************** Global Functions ******************************
@@ -1365,19 +1286,55 @@ getCallback() {
 }
 
 //------------------------------------------------------------------------------
+// Invalidate the NodeList's live view before changing vector-backed storage.
+// The destructor intentionally calls releaseDataSpan directly since the owning
+// NodeList can already be partway through destruction at that point.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+Field<Dimension, DataType>::
+prepareDataMutation() {
+  if (this->nodeListPtr()) {
+    const_cast<NodeList<Dimension>*>(this->nodeListPtr())->notifyFieldStorageWillChange(*this);
+  }
+  this->releaseDataSpan();
+}
+
+//------------------------------------------------------------------------------
+// Release the non-owning view before changing its vector-backed storage.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+Field<Dimension, DataType>::
+releaseDataSpan() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mDataSpan = {};
+#else
+  GPUUtils::freeMAView(mDataSpan);
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Keep mDataSpan and mDataArray consistent
 //------------------------------------------------------------------------------
 template<typename Dimension, typename DataType>
 inline
 void
 Field<Dimension, DataType>::
-assignDataSpan() {
+assignDataSpan(const bool forceStorageChanged) {
 #ifdef SPHERAL_UNIFIED_MEMORY
+  const auto storageChanged = (forceStorageChanged or
+                               mDataSpan.size() != mDataArray.size() or
+                               mDataSpan.data() != mDataArray.data());
   mDataSpan = mDataArray;
   DEBUG_LOG << "Field::assignDataSpan : " << this->name() << " " << mDataArray.data() << " : " << mDataSpan.data() << " : " << static_cast<ViewType*>(this);
 #else
-  if (mDataSpan.size() != mDataArray.size() or
-      mDataSpan.data(chai::CPU, false) != mDataArray.data()) {
+  const auto storageChanged = (forceStorageChanged or
+                               mDataSpan.size() != mDataArray.size() or
+                               mDataSpan.data(chai::CPU, false) != mDataArray.data());
+  if (storageChanged) {
     DEBUG_LOG << "FIELD::assignDataSpan " << this->name();
     GPUUtils::initMAView(mDataSpan, mDataArray);
   }
@@ -1390,6 +1347,9 @@ assignDataSpan() {
   mNumGhostElements = this->nodeList().numGhostNodes();
   ENSURE2(mDataSpan.size() == mDataArray.size(), "Bad sizes: " << this->name() << " : " << mDataSpan.size() << " != " << mDataArray.size());
   mNodesPerSmoothingScale = this->nodeList().nodesPerSmoothingScale();
+  if (storageChanged and this->nodeListPtr()) {
+    const_cast<NodeList<Dimension>*>(this->nodeListPtr())->notifyFieldStorageChanged(*this);
+  }
 }
 
 } // namespace Spheral

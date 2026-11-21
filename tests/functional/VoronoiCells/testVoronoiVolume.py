@@ -194,6 +194,7 @@ deltaMedian = db.newFluidVectorFieldList(Vector.zero, "centroidal delta")
 etaVoidPoints = db.newFluidvector_of_VectorFieldList(vector_of_Vector(), "eta void points")
 cells = db.newFluidFacetedVolumeFieldList(FacetedVolume(), "cells")
 cellFaceFlags = db.newFluidvector_of_CellFaceFlagFieldList(vector_of_int(), "face flags")
+db.updateNeighbors()
 db.updateConnectivityMap(True)
 cm = db.connectivityMap()
 computeVoronoiVolume(db.fluidPosition, 

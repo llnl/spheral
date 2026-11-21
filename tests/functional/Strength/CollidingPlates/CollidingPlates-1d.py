@@ -280,7 +280,7 @@ output("hydro.Q.balsaraShearCorrection")
 #-------------------------------------------------------------------------------
 if reflect:
     plane0 = Plane(Vector(0.0), Vector(1.0))
-    xbc0 = ReflectingBoundary(plane0)
+    xbc0 = ReflectingBoundary(db, plane0)
     hydro.appendBoundary(xbc0)
 
 #-------------------------------------------------------------------------------

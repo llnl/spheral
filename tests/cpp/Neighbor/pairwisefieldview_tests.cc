@@ -67,6 +67,30 @@ public:
   }
 };
 
+//------------------------------------------------------------------------------
+// Host-side Value semantics.
+//------------------------------------------------------------------------------
+TEST_F(PairwiseFieldViewTest, EmptyIterators) {
+  auto pairs = createNPL(0u);
+  PairwiseFieldDouble field(pairs);
+  const auto& constField = field;
+  EXPECT_EQ(field.begin(), field.end());
+  EXPECT_EQ(constField.begin(), constField.end());
+}
+
+TEST_F(PairwiseFieldViewTest, ComparisonIncludesPairTopology) {
+  auto pairs = createNPL(4u);
+  auto otherPairs = std::make_shared<NPL>(*pairs);
+  PairwiseFieldDouble lhs(pairs);
+  PairwiseFieldDouble rhs(pairs);
+  PairwiseFieldDouble otherTopology(otherPairs);
+
+  EXPECT_EQ(lhs, rhs);
+  EXPECT_NE(lhs, otherTopology);
+  rhs[0] = 1.0;
+  EXPECT_NE(lhs, rhs);
+}
+
 // Setting up Templated Test for PairwiseFieldView
 TYPED_TEST_SUITE_P(PairwiseFieldViewTypedTest);
 template <typename T> class PairwiseFieldViewTypedTest : public PairwiseFieldViewTest {};
@@ -197,10 +221,40 @@ GPU_TYPED_TEST_P(PairwiseFieldViewTypedTest, MultiViewSemantics) {
   } // field and any GPU allocation should be released here.
 }
 
+// Assignment must detach the target's migrated span before replacing its
+// vector storage, while retaining the shared pair topology.
+GPU_TYPED_TEST_P(PairwiseFieldViewTypedTest, AssignmentAfterMigration) {
+  auto pairs = gpu_this->createNPL(128u);
+  PairwiseFieldDouble source(pairs), target(pairs);
+  for (auto i = 0u; i < source.size(); ++i) {
+    source[i] = 3.0*i + 1.0;
+    target[i] = -1.0;
+  }
+
+  {
+    const auto oldTargetView = target.view();
+    RAJA::forall<TypeParam>(TRS_UINT(0, target.size()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(oldTargetView[i], -1.0);
+      });
+  }
+
+  target = source;
+  const auto sourceView = source.view();
+  const auto targetView = target.view();
+  EXEC_IN_SPACE_BEGIN(TypeParam)
+    SPHERAL_ASSERT_NE(targetView.data(), sourceView.data());
+  EXEC_IN_SPACE_END()
+  RAJA::forall<TypeParam>(TRS_UINT(0, target.size()),
+    [=] SPHERAL_HOST_DEVICE (size_t i) {
+      SPHERAL_ASSERT_EQ(targetView[i], sourceView[i]);
+    });
+}
+
 
 REGISTER_TYPED_TEST_SUITE_P(PairwiseFieldViewTypedTest,
-                            ExecutionSpaceCapture, MultiSpaceCapture, MultiViewSemantics);
+                            ExecutionSpaceCapture, MultiSpaceCapture, MultiViewSemantics,
+                            AssignmentAfterMigration);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(Field, PairwiseFieldViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
-

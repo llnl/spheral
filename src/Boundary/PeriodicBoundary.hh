@@ -5,10 +5,10 @@
 // Created by JMO, Wed Apr 19 14:00:50 PDT 2000
 //----------------------------------------------------------------------------//
 
-#ifndef PeriodicBoundary_HH
-#define PeriodicBoundary_HH
+#ifndef __Spheral_PeriodicBoundary__
+#define __Spheral_PeriodicBoundary__
 
-#include "PlanarBoundary.hh"
+#include "Boundary/PlanarBoundary.hh"
 
 namespace Spheral {
 
@@ -17,20 +17,20 @@ class PeriodicBoundary: public PlanarBoundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   // Constructors and destructors.
-  PeriodicBoundary();
-  PeriodicBoundary(const GeomPlane<Dimension>& plane1,
+  PeriodicBoundary(const DataBase<Dimension>& dataBase,
+                   const GeomPlane<Dimension>& plane1,
                    const GeomPlane<Dimension>& plane2);
-  virtual ~PeriodicBoundary();
+  virtual ~PeriodicBoundary() = default;
 
   // Override the default methods for setting ghost nodes.
   virtual void setGhostNodes(NodeList<Dimension>& nodeList) override;

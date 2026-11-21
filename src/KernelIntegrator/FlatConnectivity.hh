@@ -26,11 +26,11 @@ public:
   static constexpr int NoConnectivity = -1;
   
   // Typedefs
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
-  typedef typename std::unordered_map<int, int> IndexMap;
-  typedef typename std::array<int, Dimension::nDim> ArrayDim;
-  typedef typename std::unordered_map<ArrayDim, int, NormalHash<ArrayDim>> NormalMap;
+  using Vector = typename Dimension::Vector;
+  using FacetedVolume = typename Dimension::FacetedVolume;
+  using IndexMap = typename std::unordered_map<int, int>;
+  using ArrayDim = typename std::array<int, Dimension::nDim>;
+  using NormalMap = typename std::unordered_map<ArrayDim, int, NormalHash<ArrayDim>>;
 
   // Constructor
   FlatConnectivity();

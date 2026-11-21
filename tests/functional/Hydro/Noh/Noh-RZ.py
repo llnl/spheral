@@ -357,9 +357,10 @@ else:
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
@@ -454,18 +455,18 @@ if bArtificialConduction:
 #-------------------------------------------------------------------------------
 bcs = []
 if problem == "planar":
-    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
-            ReflectingBoundary(Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
+    bcs += [ReflectingBoundary(db, Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(db, Plane(Vector(z1, r0), Vector(-1.0,  0.0))),
+            ReflectingBoundary(db, Plane(Vector(z0, r1), Vector( 0.0, -1.0)))]
     if r0 != 0.0:
-        bcs.append(ReflectingBoundary(Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
+        bcs.append(ReflectingBoundary(db, Plane(Vector(z0, r0), Vector( 0.0, 1.0))))
 elif problem == "cylindrical":
-    bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
-            ReflectingBoundary(Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
+    bcs += [ReflectingBoundary(db, Plane(Vector(z0, r0), Vector( 1.0,  0.0))),
+            ReflectingBoundary(db, Plane(Vector(z1, r0), Vector(-1.0,  0.0)))]
 else:
     assert problem == "spherical"
     if theta == pi/2.0:
-        bcs += [ReflectingBoundary(Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
+        bcs += [ReflectingBoundary(db, Plane(Vector(z0, r0), Vector( 1.0,  0.0)))]
 
 for bc in bcs:
     for p in packages:

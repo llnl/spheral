@@ -28,7 +28,6 @@
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Utilities/timingUtilities.hh"
@@ -131,7 +130,9 @@ initializeProblemStartupDependencies(DataBase<Dimension>& dataBase,
 
   // Construct the mesh and volumes.
   NodeList<Dimension> voidNodes("internal void", 0, 0);
-  vector<const NodeList<Dimension>*> nodeLists(dataBase.nodeListBegin(), dataBase.nodeListEnd());
+  vector<const NodeList<Dimension>*> nodeLists;
+  nodeLists.reserve(dataBase.numNodeLists() + 1u);
+  for (const auto* nodeListPtr: dataBase.nodeListPtrs()) nodeLists.push_back(nodeListPtr);
   nodeLists.push_back(&voidNodes);
   // std::sort(nodeLists.begin(), nodeLists.end(), typename NodeListRegistrar<Dimension>::NodeListComparator());
   generateMesh<Dimension,
@@ -184,7 +185,7 @@ registerState(DataBase<Dimension>& dataBase,
   dataBase.fluidSoundSpeed(mSoundSpeed);
 
   // Now register away.
-  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
 
     // Mass.
     state.enroll(fluidNodeListPtr->mass());
@@ -192,7 +193,7 @@ registerState(DataBase<Dimension>& dataBase,
     // Mass density.
     if (densityUpdate() == IntegrateDensity) {
       state.enroll(fluidNodeListPtr->massDensity(), make_policy<IncrementBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
-                                                                                                          fluidNodeListPtr->rhoMax()));P
+                                                                                                          fluidNodeListPtr->rhoMax()));
     } else {
       state.enroll(fluidNodeListPtr->massDensity(), make_policy<ReplaceBoundedState<Dimension, Scalar>>(fluidNodeListPtr->rhoMin(),
                                                                                                         fluidNodeListPtr->rhoMax()));
@@ -265,7 +266,7 @@ registerDerivatives(DataBase<Dimension>& dataBase,
   dataBase.resizeFluidFieldList(mInternalDvDx, Tensor::zero(), HydroFieldNames::internalVelocityGradient, false);
   dataBase.resizeFluidFieldList(mPairAccelerations, vector<Vector>(), HydroFieldNames::pairAccelerations, false);
 
-  for (auto [i, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
+  for (auto [i, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
     derivs.enroll(*mHideal[i]);
     derivs.enroll(*mMassDensitySum[i]);
     derivs.enroll(*mWeightedNeighborSum[i]);
@@ -388,29 +389,25 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
 
   // Size up the pair-wise accelerations before we start.
   if (mCompatibleEnergyEvolution) {
-    size_t nodeListi = 0;
-    for (typename DataBase<Dimension>::ConstFluidNodeListIterator itr = dataBase.fluidNodeListBegin();
-         itr != dataBase.fluidNodeListEnd();
-         ++itr, ++nodeListi) {
-      for (int i = 0; i != (*itr)->numInternalNodes(); ++i) {
-        pairAccelerations(nodeListi, i).reserve(connectivityMap.numNeighborsForNode(*itr, i));
+    for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
+      for (auto i = 0u; i < fluidNodeListPtr->numInternalNodes(); ++i) {
+        pairAccelerations(nodeListi, i).reserve(connectivityMap.numNeighborsForNode(nodeListi, i));
       }
     }
   }
 
   // Start our big loop over all FluidNodeLists.
-  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListBegin(), dataBase.fluidNodeListEnd())) {
-    const int firstGhostNodei = fluidNodeListPtr->firstGhostNode();
+  for (auto [nodeListi, fluidNodeListPtr]: enumerate(dataBase.fluidNodeListPtrs())) {
+    const auto firstGhostNodei = fluidNodeListPtr->firstGhostNode();
     CONTRACT_VAR(firstGhostNodei);
 
     // Get the work field for this NodeList.
     Field<Dimension, Scalar>& workFieldi = fluidNodeListPtr->work();
 
     // Iterate over the internal nodes in this NodeList.
-    for (typename ConnectivityMap<Dimension>::const_iterator iItr = connectivityMap.begin(nodeListi);
-         iItr != connectivityMap.end(nodeListi);
-         ++iItr) {
-      const int i = *iItr;
+    const auto numNodesi = connectivityMap.numNodes(nodeListi);
+    for (auto nodeIndexi = 0u; nodeIndexi < numNodesi; ++nodeIndexi) {
+      const auto i = connectivityMap.ithNode(nodeListi, nodeIndexi);
 
       // Prepare to accumulate the time.
       const Time start = Timing::currentTime();
@@ -446,25 +443,22 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       Scalar& worki = workFieldi(i);
 
       // Get the connectivity info for this node.
-      const vector< vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(&nodeList, i);
+      const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
 
       // Iterate over the NodeLists.
       for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
 
         // Connectivity of this node with this NodeList.  We only need to proceed if
         // there are some nodes in this list.
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+        const auto& connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
-          const int firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
+          const auto firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
 
           // Loop over the neighbors.
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          for (const auto j: connectivity) {
 
             // Only proceed if this node pair has not been calculated yet.
             if (connectivityMap.calculatePairInteraction(nodeListi, i, 
@@ -615,7 +609,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
           }
         }
       }
-      const size_t numNeighborsi = connectivityMap.numNeighborsForNode(&nodeList, i);
+      const auto numNeighborsi = connectivityMap.numNeighborsForNode(nodeListi, i);
       CHECK2(not mCompatibleEnergyEvolution or 
              (i >= firstGhostNodei and pairAccelerationsi.size() == 0) or
              (pairAccelerationsi.size() == numNeighborsi),
@@ -653,18 +647,15 @@ evaluateDerivativesImpl(const typename Dimension::Scalar time,
       worki += Timing::difference(start, Timing::currentTime());
 
       // Now add the pairwise time for each neighbor we computed here.
-      for (int nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+      for (auto nodeListj = 0u; nodeListj != numNodeLists; ++nodeListj) {
+        const auto& connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
-          const int firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
+          const auto firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
           Field<Dimension, Scalar>& workFieldj = nodeLists[nodeListj]->work();
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          for (const auto j: connectivity) {
             if (connectivityMap.calculatePairInteraction(nodeListi, i, 
                                                          nodeListj, j,
                                                          firstGhostNodej)) {

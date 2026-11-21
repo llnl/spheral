@@ -153,7 +153,7 @@ finalizeDerivatives(const Scalar /*time*/,
 
   // The connectivity.
   const ConnectivityMap<Dimension>& connectivityMap = dataBase.connectivityMap();
-  const vector<const NodeList<Dimension>*>& nodeLists = connectivityMap.nodeLists();
+  const auto& nodeLists = connectivityMap.nodeLists();
   const size_t numNodeLists = nodeLists.size();
     
   //State Fluid Lists
@@ -213,26 +213,23 @@ finalizeDerivatives(const Scalar /*time*/,
       Scalar& vsigi = vsig(nodeListi, i);
 
       // Neighbors!
-      const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
       CHECK(fullConnectivity.size() == numNodeLists);
 
       // Walk the neighbor nodeLists.
-      for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
+      for (size_t nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
       
         // Connectivity of this node with this NodeList.  We only need to proceed if
         // there are some nodes in this list.
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
+        const auto& connectivity = fullConnectivity[nodeListj];
         if (connectivity.size() > 0) {
-          const int firstGhostNodej = DvDx[nodeListj]->nodeList().firstGhostNode();
+          const auto firstGhostNodej = DvDx[nodeListj]->nodeList().firstGhostNode();
 
           // Loop over the neighbors.
 #if defined __INTEL_COMPILER
 #pragma vector always
 #endif
-          for (vector<int>::const_iterator jItr = connectivity.begin();
-               jItr != connectivity.end();
-               ++jItr) {
-            const int j = *jItr;
+          for (const auto j: connectivity) {
             
             // Only proceed if this node pair has not been calculated yet.
             if (connectivityMap.calculatePairInteraction(nodeListi, i, 

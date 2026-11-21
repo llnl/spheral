@@ -19,7 +19,6 @@ PYB11includes += ['"NodeGenerators/generateCylDistributionFromRZ.hh"',
                   '"NodeGenerators/relaxNodeDistribution.hh"',
                   '"NodeGenerators/readSiloPolyMesh.hh"',
                   '"NodeGenerators/centroidalRelaxNodesImpl.hh"',
-                  '"NodeGenerators/compactFacetedVolumes.hh"',
                   '"NodeGenerators/chooseRandomNonoverlappingCenter.hh"']
 
 #-------------------------------------------------------------------------------
@@ -132,19 +131,6 @@ Optionally the user can specify a weighting function for the nodes."""
     return "void"
 
 @PYB11template("Dimension")
-def compactFacetedVolumes(shapes = "std::vector<typename %(Dimension)s::FacetedVolume>&",
-                          centers = "std::vector<typename %(Dimension)s::Vector>&",
-                          flags = "std::vector<int>&",
-                          surface = "const typename %(Dimension)s::FacetedVolume&",
-                          depthmax = "const double",
-                          surfaceIterations = "const unsigned",
-                          maxIterations = "const unsigned",
-                          dispfrac = "const double",
-                          maxoverlapfrac = "const double"):
-    "Push FacetedVolume shapes together inside a surface, but excluding mutual overlap."
-    return "unsigned"
-
-@PYB11template("Dimension")
 def chooseRandomNonoverlappingCenter(result = "typename %(Dimension)s::Vector&",
                                      trialShape = "const typename %(Dimension)s::FacetedVolume&",
                                      boundary = "const typename %(Dimension)s::FacetedVolume&",
@@ -157,7 +143,6 @@ for ndim in subdims:
     exec('''
 WeightingFunctor%(ndim)id = PYB11TemplateClass(WeightingFunctor, template_parameters="%(Dimension)s")
 relaxNodeDistribution%(ndim)id = PYB11TemplateFunction(relaxNodeDistribution, template_parameters="%(Dimension)s", pyname="relaxNodeDistribution")
-compactFacetedVolumes%(ndim)id = PYB11TemplateFunction(compactFacetedVolumes, template_parameters="%(Dimension)s", pyname="compactFacetedVolumes")
 chooseRandomNonoverlappingCenter%(ndim)id = PYB11TemplateFunction(chooseRandomNonoverlappingCenter, template_parameters="%(Dimension)s", pyname="chooseRandomNonoverlappingCenter")
 ''' % {"ndim"      : ndim,
        "Dimension" : "Dim<" + str(ndim) + ">"})

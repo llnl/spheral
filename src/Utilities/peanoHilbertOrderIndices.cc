@@ -434,10 +434,11 @@ peanoHilbertOrderIndices(const FieldList<Dimension, typename Dimension::Vector>&
   globalBoundingBox(positions, xmin, xmax, true);
 
   // Go over all nodes and hash each position.
-  for (AllNodeIterator<Dimension> nodeItr = positions.nodeBegin();
-       nodeItr != positions.nodeEnd();
-       ++nodeItr) {
-    result(nodeItr) = hashPosition(positions(nodeItr), xmin, xmax);
+  for (auto nodeListi = 0u; nodeListi < positions.numFields(); ++nodeListi) {
+    const auto numNodes = positions[nodeListi]->numElements();
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
+      result(nodeListi, nodei) = hashPosition(positions(nodeListi, nodei), xmin, xmax);
+    }
   }
 
   return result;
@@ -453,4 +454,3 @@ peanoHilbertOrderIndices(const DataBase<Dimension>& dataBase) {
 }
 
 }
-

@@ -188,9 +188,7 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
   // Pre-conditions.
   VERIFY2(this->mNumPoints > 0, "TableKernel ERROR: require numPoints > 0 : " << this->mNumPoints);
   VERIFY2(this->mMinNperh > 0.0 and this->mMaxNperh > this->mMinNperh, "TableKernel ERROR: Bad (minNperh, maxNperh) range: (" << this->mMinNperh << ", " << this->mMaxNperh << ")");
-  this->mInterp = mInterpVal.view();
-  this->mGradInterp = mGradInterpVal.view();
-  this->mGrad2Interp = mGrad2InterpVal.view();
+  refreshViews();
   // Set the volume normalization and kernel extent.
   this->setVolumeNormalization(1.0); // (kernel.volumeNormalization() / Dimension::pownu(hmult));  // We now build this into the tabular kernel values.
   this->setKernelExtent(kernel.kernelExtent());
@@ -204,8 +202,7 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
   // Make nperh lookups monotonic
   mWsumLookupVal.makeMonotonic();
   mNperhLookupVal.makeMonotonic();
-  this->mNperhLookup = mNperhLookupVal.view();
-  this->mWsumLookup = mWsumLookupVal.view();
+  refreshViews();
 }
 
 //------------------------------------------------------------------------------
@@ -214,12 +211,24 @@ TableKernel<Dimension>::TableKernel(const KernelType& kernel,
 template<typename Dimension>
 TableKernel<Dimension>::
 TableKernel(const TableKernel<Dimension>& rhs):
-  TableKernelView<Dimension>(rhs),
+  TableKernelView<Dimension>(),
   mInterpVal(rhs.mInterpVal),
   mGradInterpVal(rhs.mGradInterpVal),
   mGrad2InterpVal(rhs.mGrad2InterpVal),
   mNperhLookupVal(rhs.mNperhLookupVal),
   mWsumLookupVal(rhs.mWsumLookupVal) {
+  copyViewMetadata(rhs);
+  refreshViews();
+}
+
+//------------------------------------------------------------------------------
+// Destructor.  Detach cached views before the owned interpolators are
+// destroyed.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+TableKernel<Dimension>::
+~TableKernel() {
+  releaseViews();
 }
 
 //------------------------------------------------------------------------------
@@ -230,14 +239,66 @@ TableKernel<Dimension>&
 TableKernel<Dimension>::
 operator=(const TableKernel<Dimension>& rhs) {
   if (this != &rhs) {
-    TableKernelView<Dimension>::operator=(rhs);
+    releaseViews();
     mInterpVal = rhs.mInterpVal;
     mGradInterpVal = rhs.mGradInterpVal;
     mGrad2InterpVal = rhs.mGrad2InterpVal;
     mNperhLookupVal = rhs.mNperhLookupVal;
     mWsumLookupVal = rhs.mWsumLookupVal;
+    copyViewMetadata(rhs);
+    refreshViews();
   }
   return *this;
+}
+
+//------------------------------------------------------------------------------
+// Copy the non-view state without copying aliases into rhs storage.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TableKernel<Dimension>::
+copyViewMetadata(const TableKernel<Dimension>& rhs) {
+  this->mNumPoints = rhs.mNumPoints;
+  this->mMinNperh = rhs.mMinNperh;
+  this->mMaxNperh = rhs.mMaxNperh;
+  this->setVolumeNormalization(rhs.volumeNormalization());
+  this->setKernelExtent(rhs.kernelExtent());
+  this->setInflectionPoint(rhs.inflectionPoint());
+}
+
+//------------------------------------------------------------------------------
+// Detach cached views before changing or destroying their owned interpolators.
+//
+// These are copies of the interpolators' ManagedArrays, not independently
+// registered allocations.  Calling View::reset() here would call
+// ManagedArray::free() and deregister the shared allocation; the owning
+// interpolator would then attempt to deregister it a second time.  Replacing
+// the cached handles with empty Views leaves the allocation registered until
+// its owning interpolator releases it.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TableKernel<Dimension>::
+releaseViews() {
+  this->mInterp = QuadraticInterpolatorView{};
+  this->mGradInterp = QuadraticInterpolatorView{};
+  this->mGrad2Interp = QuadraticInterpolatorView{};
+  this->mNperhLookup = CubicHermiteInterpolatorView{};
+  this->mWsumLookup = CubicHermiteInterpolatorView{};
+}
+
+//------------------------------------------------------------------------------
+// Rebuild cached views exclusively from this object's owned interpolators.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+TableKernel<Dimension>::
+refreshViews() {
+  this->mInterp = mInterpVal.view();
+  this->mGradInterp = mGradInterpVal.view();
+  this->mGrad2Interp = mGrad2InterpVal.view();
+  this->mNperhLookup = mNperhLookupVal.view();
+  this->mWsumLookup = mWsumLookupVal.view();
 }
 
 }

@@ -11,7 +11,6 @@
 #include "DataBase/DataBase.hh"
 #include "DataBase/IncrementState.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Neighbor/ConnectivityMap.hh"

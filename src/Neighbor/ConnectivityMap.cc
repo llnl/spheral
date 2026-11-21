@@ -8,7 +8,6 @@
 #include "config.hh"
 #include "ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Boundary/Boundary.hh"
@@ -18,17 +17,14 @@
 #include "Utilities/PairComparisons.hh"
 #include "Utilities/pointDistances.hh"
 #include "Utilities/Timer.hh"
+#include "Utilities/SpheralMessage.hh"
 
-#include <algorithm>
 #include <ctime>
-using std::vector;
-using std::map;
-using std::string;
-using std::pair;
 
 namespace Spheral {
 
 namespace {
+
 //------------------------------------------------------------------------------
 // Append v2 to the end of v1
 //------------------------------------------------------------------------------
@@ -63,17 +59,17 @@ template<typename KeyContainer>
 inline
 bool
 insertUnique(const std::vector<size_t>& offsets,
-             std::vector<std::vector<std::vector<int>>>& indices,
+             std::vector<std::vector<std::vector<size_t>>>& indices,
              const KeyContainer& keys,
              const bool useKeys,
-             const int jN1, const int j1,
-             const int jN2, const int j2) {
+             const size_t jN1, const size_t j1,
+             const size_t jN2, const size_t j2) {
   if (jN1 != jN2 or j1 != j2) {
     auto& overlap = indices[offsets[jN1] + j1][jN2];
-    std::vector<int>::iterator itr;
+    std::vector<size_t>::iterator itr;
     if (useKeys) {
       itr = std::lower_bound(overlap.begin(), overlap.end(), j2,
-                             [&](const int a, const int& b) { return keys(jN2, a) < keys(jN2, b); });
+                             [&](const auto a, const auto b) { return keys(jN2, a) < keys(jN2, b); });
     } else {
       itr = std::lower_bound(overlap.begin(), overlap.end(), j2);
     }
@@ -115,21 +111,46 @@ sortPairs(NodePairList& pairs,
 
 //------------------------------------------------------------------------------
 // Constructor.
+// The input iterators must dereference to const NodeList*, and must be 
+// const FluidNodeLists underneath.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-inline
 ConnectivityMap<Dimension>::
-ConnectivityMap():
-  mNodeLists(),
-  mBuildGhostConnectivity(false),
-  mBuildOverlapConnectivity(false),
-  mBuildIntersectionConnectivity(false),
+ConnectivityMap(const DataBase<Dimension>& dataBase,
+                const bool buildGhostConnectivity,
+                const bool buildOverlapConnectivity,
+                const bool buildIntersectionConnectivity):
+  mDataBase(dataBase),
+  mBuildGhostConnectivity(buildGhostConnectivity or buildIntersectionConnectivity),
+  mBuildOverlapConnectivity(buildOverlapConnectivity),
+  mBuildIntersectionConnectivity(buildIntersectionConnectivity),
+  mOffsets(),
   mConnectivity(),
   mNodeTraversalIndices(),
   mKeys(FieldStorageType::CopyFields),
-  mNumNeighbors(FieldStorageType::CopyFields),
-  mCouplingPtr(std::make_shared<NodeCoupling>()),
-  mIntersectionConnectivity() {
+  mCouplingPtr(std::make_shared<NodeCoupling>()) {
+
+  // The private method does the grunt work of filling in the connectivity once we have
+  // established the set of NodeLists.
+  rebuild(mBuildGhostConnectivity, mBuildOverlapConnectivity, mBuildIntersectionConnectivity);
+}
+
+//------------------------------------------------------------------------------
+// Rebuild for a given set of NodeLists.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+ConnectivityMap<Dimension>::
+rebuild(const bool buildGhostConnectivity,
+        const bool buildOverlapConnectivity,
+        const bool buildIntersectionConnectivity) {
+  mBuildGhostConnectivity = buildGhostConnectivity or buildIntersectionConnectivity;
+  mBuildOverlapConnectivity = buildOverlapConnectivity;
+  mBuildIntersectionConnectivity = buildIntersectionConnectivity;
+  mOffsets.clear();
+
+  computeConnectivity();
+  ENSURE(valid());
 }
 
 //------------------------------------------------------------------------------
@@ -146,27 +167,28 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
 
   // We have to recompute the keys to sort nodes by excluding the 
   // nodes that are being removed.
-  const auto numNodeLists = mNodeLists.size();
+  const auto numNodeLists = mDataBase.numNodeLists();
+  const auto& nodeLists = mDataBase.nodeListPtrs();
   if (domainDecompIndependent) {
     for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
-      for (auto i = 0u; i < mNodeLists[iNodeList]->numNodes(); ++i) {
+      for (auto i = 0u; i < nodeLists[iNodeList]->numNodes(); ++i) {
         if (flags(iNodeList, i) == 0) mKeys(iNodeList, i) = KeyTraits::maxKey;
       }
     }
   }
 
   // Iterate over the traversal ordering and fix it
-  for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
+  for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
     const auto numNodes = ((domainDecompIndependent or mBuildGhostConnectivity or mBuildOverlapConnectivity) ? 
-                           mNodeLists[iNodeList]->numNodes() :
-                           mNodeLists[iNodeList]->numInternalNodes());
+                           nodeLists[iNodeList]->numNodes() :
+                           nodeLists[iNodeList]->numInternalNodes());
 
-    vector<size_t> iNodesToKill;
-    vector<pair<int, Key>> keys;
+    std::vector<size_t> iNodesToKill;
+    std::vector<std::pair<int, Key>> keys;
 #pragma omp parallel
     {
-      vector<size_t> iNodesToKill_thread;
-      vector<pair<int, Key>> keys_thread;
+      std::vector<size_t> iNodesToKill_thread;
+      std::vector<std::pair<int, Key>> keys_thread;
 
       // Patch the traversal ordering for this NodeList.
 #pragma omp for schedule(dynamic)
@@ -260,7 +282,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
       if (flags(pair.i_list, pair.i_node) != 0 and flags(pair.j_list, pair.j_node) != 0) {
         pair.i_node = old2new(pair.i_list, pair.i_node);
         pair.j_node = old2new(pair.j_list, pair.j_node);
-        vector<vector<int>> newintersect(numNodeLists);
+        vector<vector<size_t>> newintersect(numNodeLists);
         for (auto klist = 0u; klist < numNodeLists; ++klist) {
           for (const auto k: oldintersect[klist]) {
             if (flags(klist, k) != 0) newintersect[klist].push_back(old2new(klist, k));
@@ -269,6 +291,7 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
         intersection[pair] = newintersect;
       }
     }
+    mIntersectionConnectivity = std::move(intersection);
   }
 
   // You can't check valid yet 'cause the NodeLists have not been resized
@@ -283,37 +306,38 @@ patchConnectivity(const FieldList<Dimension, size_t>& flags,
 // returns by value since this information is not stored by ConnectivityMap.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-vector<vector<int> >
+std::vector<std::vector<size_t>>
 ConnectivityMap<Dimension>::
-connectivityIntersectionForNodes(const int nodeListi, const int i,
-                                 const int nodeListj, const int j,
-                                 const FieldList<Dimension, typename Dimension::Vector>& position) const {
+connectivityIntersectionForNodes(const size_t nodeListi, const size_t i,
+                                 const size_t nodeListj, const size_t j,
+                                 const FieldList<Dimension, Vector>& position) const {
 
   // Pre-conditions.
   TIME_BEGIN("ConnectivityMap_computeIntersectionConnectivity");
-  const auto numNodeLists = mNodeLists.size();
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  const auto numNodeLists = nodeLists.size();
   const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
   const auto ghostConnectivity = (mBuildGhostConnectivity or
                                   mBuildOverlapConnectivity or
                                   domainDecompIndependent);
-  const auto firstGhostNodei = mNodeLists[nodeListi]->firstGhostNode();
-  const auto firstGhostNodej = mNodeLists[nodeListj]->firstGhostNode();
+  const auto firstGhostNodei = nodeLists[nodeListi]->firstGhostNode();
+  const auto firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
   const bool usePosition = (position.numFields() == numNodeLists);
-  REQUIRE(nodeListi < (int)numNodeLists and
-          nodeListj < (int)numNodeLists);
-  REQUIRE(ghostConnectivity or i < (int)firstGhostNodei or j < (int)firstGhostNodej);
+  REQUIRE(nodeListi < numNodeLists and
+          nodeListj < numNodeLists);
+  REQUIRE(ghostConnectivity or i < firstGhostNodei or j < firstGhostNodej);
   REQUIRE(position.numFields() == numNodeLists or position.numFields() == 0);
 
   // Prepare the result.
-  vector<vector<int>> result(numNodeLists);
+  std::vector<std::vector<size_t>> result(numNodeLists);
 
   // If both nodes are internal, we simply intersect their neighbor lists.
-  if (ghostConnectivity or (i < (int)firstGhostNodei and j < (int)firstGhostNodej)) {
+  if (ghostConnectivity or (i < firstGhostNodei and j < firstGhostNodej)) {
     const auto& neighborsi = this->connectivityForNode(nodeListi, i);
     const auto& neighborsj = this->connectivityForNode(nodeListj, j);
     CHECK(neighborsi.size() == numNodeLists);
     CHECK(neighborsj.size() == numNodeLists);
-    vector<int> neighborsijk;
+    std::vector<size_t> neighborsijk;
     Vector posi, posj, b;
     if (usePosition) {
       posi = position(nodeListi, i);
@@ -325,7 +349,7 @@ connectivityIntersectionForNodes(const int nodeListi, const int i,
         std::set_intersection(neighborsi[klist].begin(), neighborsi[klist].end(),
                               neighborsj[klist].begin(), neighborsj[klist].end(),
                               std::back_inserter(neighborsijk),
-                              [&](const int a, const int b) { return mKeys(klist, a) < mKeys(klist, b); });
+                              [&](const auto a, const auto b) { return mKeys(klist, a) < mKeys(klist, b); });
       } else {
         std::set_intersection(neighborsi[klist].begin(), neighborsi[klist].end(),
                               neighborsj[klist].begin(), neighborsj[klist].end(),
@@ -333,12 +357,12 @@ connectivityIntersectionForNodes(const int nodeListi, const int i,
       }
       if (usePosition) {
         std::copy_if(neighborsijk.begin(), neighborsijk.end(), std::back_inserter(result[klist]),
-                     [&](int k) { return (closestPointOnSegment(position(klist, k), posi, posj, b)); });
+                     [&](auto k) { return (closestPointOnSegment(position(klist, k), posi, posj, b)); });
       } else {
         result[klist] = neighborsijk;
       }
     }
-  } else if (i < (int)firstGhostNodei) {
+  } else if (i < firstGhostNodei) {
     result = this->connectivityForNode(nodeListi, i);
   } else {
     result = this->connectivityForNode(nodeListj, j);
@@ -356,38 +380,39 @@ connectivityIntersectionForNodes(const int nodeListi, const int i,
 // returns by value since this information is not stored by ConnectivityMap.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-vector<vector<int> >
+std::vector<std::vector<size_t>>
 ConnectivityMap<Dimension>::
-connectivityUnionForNodes(const int nodeListi, const int i,
-                          const int nodeListj, const int j) const {
+connectivityUnionForNodes(const size_t nodeListi, const size_t i,
+                          const size_t nodeListj, const size_t j) const {
 
   // Pre-conditions.
-  const unsigned numNodeLists = mNodeLists.size();
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  const auto numNodeLists = nodeLists.size();
   const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
   const auto ghostConnectivity = (mBuildGhostConnectivity or
                                   mBuildOverlapConnectivity or
                                   domainDecompIndependent);
-  const unsigned firstGhostNodei = mNodeLists[nodeListi]->firstGhostNode();
-  const unsigned firstGhostNodej = mNodeLists[nodeListj]->firstGhostNode();
+  const auto firstGhostNodei = nodeLists[nodeListi]->firstGhostNode();
+  const auto firstGhostNodej = nodeLists[nodeListj]->firstGhostNode();
   CONTRACT_VAR(ghostConnectivity);
   CONTRACT_VAR(firstGhostNodei);
   CONTRACT_VAR(firstGhostNodej);
-  REQUIRE(nodeListi < (int)numNodeLists and
-          nodeListj < (int)numNodeLists);
-  REQUIRE(ghostConnectivity or i < (int)firstGhostNodei or j < (int)firstGhostNodej);
+  REQUIRE(nodeListi < numNodeLists and
+          nodeListj < numNodeLists);
+  REQUIRE(ghostConnectivity or i < firstGhostNodei or j < firstGhostNodej);
 
   // Do the deed.
-  vector<vector<int> > result(numNodeLists);
-  vector<vector<int> > neighborsi = this->connectivityForNode(nodeListi, i);
-  vector<vector<int> > neighborsj = this->connectivityForNode(nodeListj, j);
+  std::vector<std::vector<size_t>> result(numNodeLists);
+  std::vector<std::vector<size_t>> neighborsi = this->connectivityForNode(nodeListi, i);
+  std::vector<std::vector<size_t>> neighborsj = this->connectivityForNode(nodeListj, j);
   CHECK(neighborsi.size() == numNodeLists);
   CHECK(neighborsj.size() == numNodeLists);
-  for (unsigned k = 0; k != numNodeLists; ++k) {
-    sort(neighborsi[k].begin(), neighborsi[k].end());
-    sort(neighborsj[k].begin(), neighborsj[k].end());
-    set_union(neighborsi[k].begin(), neighborsi[k].end(),
-              neighborsj[k].begin(), neighborsj[k].end(),
-              back_inserter(result[k]));
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    std::sort(neighborsi[k].begin(), neighborsi[k].end());
+    std::sort(neighborsj[k].begin(), neighborsj[k].end());
+    std::set_union(neighborsi[k].begin(), neighborsi[k].end(),
+                   neighborsj[k].begin(), neighborsj[k].end(),
+                   back_inserter(result[k]));
   }
 
   // That's it.
@@ -398,41 +423,31 @@ connectivityUnionForNodes(const int nodeListi, const int i,
 // Return the connectivity in terms of global node IDs.
 //------------------------------------------------------------------------------
 template<typename Dimension>
-map<int, vector<int> > 
+map<size_t, vector<size_t>> 
 ConnectivityMap<Dimension>::
-globalConnectivity(vector<Boundary<Dimension>*>& boundaries) const {
+globalConnectivity(std::vector<Boundary<Dimension>*>& boundaries) const {
 
   // Get the set of global node IDs.
-  auto globalIDs = globalNodeIDs<Dimension, typename vector<const NodeList<Dimension>*>::const_iterator>
-    (mNodeLists.begin(), mNodeLists.end());
+  auto globalIDs = globalNodeIDs(mDataBase);
 
   // Make sure all ghost nodes have the appropriate global IDs.
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->applyFieldListGhostBoundary(globalIDs);
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->finalizeGhostBoundary();
+  for (auto* bc: boundaries) bc->applyFieldListGhostBoundary(globalIDs);
+  for (auto* bc: boundaries) bc->finalizeGhostBoundary();
 
   // Now convert our connectivity to global IDs.
-  map<int, vector<int> > result;
-  const size_t numNodeLists = mNodeLists.size();
-  for (size_t nodeListi = 0; nodeListi != numNodeLists; ++nodeListi) {
-
-    const NodeList<Dimension>* nodeListPtr = mNodeLists[nodeListi];
-    for (auto i = 0u; i != nodeListPtr->numInternalNodes(); ++i) {
-      const int gid = globalIDs(nodeListi, i);
-      result[gid] = vector<int>();
-
-      const vector< vector<int> >& fullConnectivity = connectivityForNode(nodeListPtr, i);
+  std::map<size_t, std::vector<size_t>> result;
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  const auto  numNodeLists = nodeLists.size();
+  CONTRACT_VAR(numNodeLists);
+  for (auto [nodeListi, nodeListPtr]: enumerate(nodeLists)) {
+    for (auto i = 0u; i < nodeListPtr->numInternalNodes(); ++i) {
+      const auto gid = globalIDs(nodeListi, i);
+      result[gid].clear();
+      const auto& fullConnectivity = connectivityForNode(nodeListPtr, i);
       CHECK(fullConnectivity.size() == numNodeLists);
-      for (size_t nodeListj = 0; nodeListj != numNodeLists; ++nodeListj) {
-        const vector<int>& connectivity = fullConnectivity[nodeListj];
-
-        for (typename vector<int>::const_iterator jItr = connectivity.begin();
-             jItr != connectivity.end();
-             ++jItr) result[gid].push_back(globalIDs(nodeListj, *jItr));
-
+      for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
+        const auto& connectivity = fullConnectivity[nodeListj];
+        for (const auto j: connectivity) result[gid].push_back(globalIDs(nodeListj, j));
       }
       ENSURE(result[gid].size() == numNeighborsForNode(nodeListPtr, i));
     }
@@ -440,17 +455,6 @@ globalConnectivity(vector<Boundary<Dimension>*>& boundaries) const {
 
   // That's it.
   return result;
-}
-
-//------------------------------------------------------------------------------
-// Compute the index for the given NodeList in our known set.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-unsigned
-ConnectivityMap<Dimension>::
-nodeListIndex(const NodeList<Dimension>* nodeListPtr) const {
-  return distance(mNodeLists.begin(), 
-                  find(mNodeLists.begin(), mNodeLists.end(), nodeListPtr));
 }
 
 //------------------------------------------------------------------------------
@@ -466,11 +470,12 @@ valid() const {
   const auto ghostConnectivity = (mBuildGhostConnectivity or
                                   mBuildOverlapConnectivity or
                                   domainDecompIndependent);
-  const auto numNodeLists = mNodeLists.size();
+  const auto& nodeLists = mDataBase.nodeListPtrs();
+  const auto numNodeLists = nodeLists.size();
 
   // We have to have the pairs
   if (not mNodePairListPtr) {
-    cerr << "ConnectivityMap::valid: failed pairs existence check" << endl;
+    SpheralWarning << "ConnectivityMap::valid: failed pairs existence check\n";
     return false;
   }
 
@@ -479,15 +484,9 @@ valid() const {
   {
     const auto& registrar = NodeListRegistrar<Dimension>::instance();
     const auto  names = registrar.registeredNames();
-    int lastPosition = -1;
-    for (auto* nptr: mNodeLists) {
-      const int newPosition = distance(names.begin(),
-                                       find(names.begin(), names.end(), nptr->name()));
-      if (newPosition <= lastPosition) {
-        cerr << "ConnectivityMap::valid: Failed ordering of NodeLists at " << nptr->name() << endl;
-        return false;
-      }
-      lastPosition = newPosition;
+    if (not std::ranges::is_sorted(names)) {
+      SpheralWarning << "ConnectivityMap::valid: Failed ordering of NodeLists\n";
+      return false;
     }
   }
 
@@ -496,21 +495,21 @@ valid() const {
 
     // Check the offsets.
     if (mOffsets.size() != numNodeLists) {
-      cerr << "ConnectivityMap::valid: Failed mOffsets.size() == numNodeLists" << endl;
+      SpheralWarning << "ConnectivityMap::valid: Failed mOffsets.size() == numNodeLists\n";
       return false;
     }
     {
       const auto numNodes = (ghostConnectivity ? 
-                             mNodeLists.back()->numNodes() : 
-                             mNodeLists.back()->numInternalNodes());
+                             nodeLists.back()->numNodes() : 
+                             nodeLists.back()->numInternalNodes());
       if (mConnectivity.size() != mOffsets.back() + numNodes) {
-        cerr << "ConnectivityMap::valid: Failed offset bounding: " << mConnectivity.size() << " != " << mOffsets.back() << " + " << numNodes << endl;
+        SpheralWarning << "ConnectivityMap::valid: Failed offset bounding: " << mConnectivity.size() << " != " << mOffsets.back() << " + " << numNodes << "\n";
         return false;
       }
     }
 
     // Iterate over each NodeList entered.
-    for (auto [nodeListIDi, nodeListPtri]: enumerate(mNodeLists)) {
+    for (auto [nodeListIDi, nodeListPtri]: enumerate(nodeLists)) {
 
       // Are all internal nodes represented?
       const auto numNodes = (ghostConnectivity ?
@@ -519,44 +518,40 @@ valid() const {
       //const int firstGhostNodei = nodeListPtri->firstGhostNode();
       if (((nodeListIDi < numNodeLists - 1u) and ((mOffsets[nodeListIDi + 1] - mOffsets[nodeListIDi]) != numNodes)) or
           ((nodeListIDi == numNodeLists - 1u) and ((mConnectivity.size() - (size_t)mOffsets[nodeListIDi]) != numNodes))) {
-        cerr << "ConnectivityMap::valid: Failed test that all nodes set for NodeList "
-             << mNodeLists[nodeListIDi]->name()
-             << endl;
+        SpheralWarning << "ConnectivityMap::valid: Failed test that all nodes set for NodeList " << nodeListPtri->name() << "\n";
         return false;
       }
 
       // Iterate over the nodes for this NodeList.
-      const int ioff = mOffsets[nodeListIDi];
+      const auto ioff = mOffsets[nodeListIDi];
       for (auto i = 0u; i < numNodes; ++i) {
 
         // The set of neighbors for this node.  This has to be sized as the number of
         // NodeLists.
-        const vector< vector<int> >& allNeighborsForNode = mConnectivity[ioff + i];
+        const auto& allNeighborsForNode = mConnectivity[ioff + i];
         if (allNeighborsForNode.size() != numNodeLists) {
-          cerr << "ConnectivityMap::valid: Failed allNeighborsForNode.size() == numNodeLists" << endl;
+          SpheralWarning << "ConnectivityMap::valid: Failed allNeighborsForNode.size() == numNodeLists\n";
           return false;
         }
 
         // Iterate over the sets of NodeList neighbors for this node.
-        for (auto nodeListIDj = 0u; nodeListIDj < numNodeLists; ++nodeListIDj) {
-          const NodeList<Dimension>* nodeListPtrj = mNodeLists[nodeListIDj];
+        for (auto [nodeListIDj, nodeListPtrj]: enumerate(nodeLists)) {
           //const int firstGhostNodej = nodeListPtrj->firstGhostNode();
-          const vector<int>& neighbors = allNeighborsForNode[nodeListIDj];
+          const auto& neighbors = allNeighborsForNode[nodeListIDj];
 
           // We require that the node IDs be sorted, unique, and of course in a valid range.
           if (neighbors.size() > 0) {
-            const auto minNeighbor = *min_element(neighbors.begin(), neighbors.end());
-            const auto maxNeighbor = *max_element(neighbors.begin(), neighbors.end());
+            const auto maxNeighbor = *std::max_element(neighbors.begin(), neighbors.end());
 
-            if (minNeighbor < 0 or (size_t)maxNeighbor >= nodeListPtrj->numNodes()) {
-              cerr << "ConnectivityMap::valid: Failed test that neighbors must be valid IDs: " << minNeighbor << " " << maxNeighbor << " " << nodeListPtrj->numNodes() << endl;
+            if (maxNeighbor >= nodeListPtrj->numNodes()) {
+              SpheralWarning << "ConnectivityMap::valid: Failed test that neighbors must be valid IDs: " << maxNeighbor << " " << nodeListPtrj->numNodes() << "\n";
               return false;
             }
 
             // // When enforcing domain independence the ith node may be a ghost, but all of it's neighbors should
             // // be internal.
             // if (domainDecompIndependent and (i >= firstGhostNodei) and (maxNeighbor > firstGhostNodej)) {
-            //   cerr << "ConnectivityMap::valid: Failed test that all neighbors of a ghost node should be internal." << endl;
+            //   SpheralWarning << "ConnectivityMap::valid: Failed test that all neighbors of a ghost node should be internal." << "\n";
             //   return false;
             // }
 
@@ -565,23 +560,18 @@ valid() const {
                 // In the case of domain decomposition reproducibility, neighbors are sorted
                 // by hashed IDs.
                 if (mKeys(nodeListIDj, neighbors[k]) < mKeys(nodeListIDj, neighbors[k - 1])) {
-                  cerr << "ConnectivityMap::valid: Failed test that neighbors must be sorted for node "
-                       << i << endl;
-                  for (vector<int>::const_iterator itr = neighbors.begin();
-                       itr != neighbors.end();
-                       ++itr) cerr << "(" << *itr << " " << mKeys(nodeListIDj, *itr) << ") ";
-                  cerr << endl;
+                  SpheralWarning << "ConnectivityMap::valid: Failed test that neighbors must be sorted for node " << i << "\n";
+                  for (const auto n: neighbors) SpheralWarning << "(" << n << " " << mKeys(nodeListIDj, n) << ") ";
+                  SpheralWarning << "\n";
                   return false;
                 }
 
               } else {
                 // Otherwise they should be sorted by local ID.
                 if (neighbors[k] <= neighbors[k - 1]) {
-                  cerr << "ConnectivityMap::valid: Failed test that neighbors must be sorted" << endl;
-                  for (vector<int>::const_iterator itr = neighbors.begin();
-                       itr != neighbors.end();
-                       ++itr) cerr << " " << *itr;
-                  cerr << endl;
+                  SpheralWarning << "ConnectivityMap::valid: Failed test that neighbors must be sorted" << "\n";
+                  for (const auto n: neighbors) SpheralWarning << " " << n;
+                  SpheralWarning << "\n";
                   return false;
                 }
               }
@@ -590,22 +580,22 @@ valid() const {
 
           // Check that the connectivity is symmetric.
           for (auto j: neighbors) {
-            if (ghostConnectivity or ((size_t)j < nodeListPtrj->numInternalNodes())) {
-              const vector< vector<int> >& otherNeighbors = connectivityForNode(nodeListPtrj, j);
-              if (find(otherNeighbors[nodeListIDi].begin(),
-                       otherNeighbors[nodeListIDi].end(),
-                       i) == otherNeighbors[nodeListIDi].end()) {
-                cerr << "ConnectivityMap::valid: Failed test that neighbors must be symmetric: " 
-                     << i << " <> " << j 
-                     << "  numneigbors(i)=" << neighbors.size() 
-                     << "  numneigbors(j)=" << otherNeighbors[nodeListIDi].size() 
-                     << endl;
-                cerr << "   " << i << " : ";
-                std::copy(neighbors.begin(), neighbors.end(), std::ostream_iterator<int>(std::cerr, " "));
-                cerr << endl
-                     << "   " << j << " : ";
-                std::copy(otherNeighbors[nodeListIDi].begin(), otherNeighbors[nodeListIDi].end(), std::ostream_iterator<int>(std::cerr, " "));
-                cerr << endl;
+            if (ghostConnectivity or (j < nodeListPtrj->numInternalNodes())) {
+              const auto& otherNeighbors = connectivityForNode(nodeListPtrj, j);
+              if (std::find(otherNeighbors[nodeListIDi].begin(),
+                            otherNeighbors[nodeListIDi].end(),
+                            i) == otherNeighbors[nodeListIDi].end()) {
+                SpheralWarning << "ConnectivityMap::valid: Failed test that neighbors must be symmetric: " 
+                               << i << " <> " << j 
+                               << "  numneigbors(i)=" << neighbors.size() 
+                               << "  numneigbors(j)=" << otherNeighbors[nodeListIDi].size() 
+                               << "\n";
+                SpheralWarning << "   " << i << " : ";
+                for (const auto n: neighbors) SpheralWarning << " " << n;
+                SpheralWarning << "\n"
+                               << "   " << j << " : ";
+                for (const auto n: otherNeighbors[nodeListIDi]) SpheralWarning << " " << n;
+                SpheralWarning << "\n";
                 return false;
               }
             }
@@ -619,29 +609,29 @@ valid() const {
   // Check that if we are using domain decompostion independence then the keys 
   // have been calculated.
   if (domainDecompIndependent) {
-    for (auto* nptr: mNodeLists) {
+    for (auto* nptr: nodeLists) {
       if (not mKeys.haveNodeList(*nptr)) {
-        cerr << "ConnectivityMap::valid: missing information from Keys for " <<  nptr->name() << endl;
+        SpheralWarning << "ConnectivityMap::valid: missing information from Keys for " <<  nptr->name() << "\n";
         return false;
       }
     }
   }
 
   // Make sure all nodes are listed in the node index traversal stuff.
-  if (mNodeTraversalIndices.size() != mNodeLists.size()) {
-    cerr << "ConnectivityMap::valid: mNodeTraversalIndices wrong size!" << endl;
+  if (mNodeTraversalIndices.size() != numNodeLists) {
+    SpheralWarning << "ConnectivityMap::valid: mNodeTraversalIndices wrong size!" << "\n";
     return false;
   }
   for (auto nodeList = 0u; nodeList < numNodeLists; ++nodeList) {
-    const auto numExpected = domainDecompIndependent ? mNodeLists[nodeList]->numNodes() : mNodeLists[nodeList]->numInternalNodes();
+    const auto numExpected = domainDecompIndependent ? nodeLists[nodeList]->numNodes() : nodeLists[nodeList]->numInternalNodes();
     bool ok = mNodeTraversalIndices[nodeList].size() == numExpected;
     for (auto i = 0u; i < numExpected; ++i) {
-      ok = ok and (count(mNodeTraversalIndices[nodeList].begin(),
-                         mNodeTraversalIndices[nodeList].end(),
-                         i) == 1);
+      ok = ok and (std::count(mNodeTraversalIndices[nodeList].begin(),
+                              mNodeTraversalIndices[nodeList].end(),
+                              i) == 1);
     }
     if (not ok) {
-      cerr << "ConnectivityMap::valid: mNodeTraversalIndices elements messed up!" << endl;
+      SpheralWarning << "ConnectivityMap::valid: mNodeTraversalIndices elements messed up!" << "\n";
       return false;
     }
   }
@@ -670,88 +660,98 @@ valid() const {
 }
 
 //------------------------------------------------------------------------------
-// Internal method to build the connectivity for the requested set of NodeLists.
+// computeConnectivity dispatch method necessary since Neighbor is a std::variant
 //------------------------------------------------------------------------------
 template<typename Dimension>
 void
 ConnectivityMap<Dimension>::
 computeConnectivity() {
+  if (mDataBase.numNodeLists() == 0u) {
+    mOffsets.clear();
+    mConnectivity.clear();
+    mOverlapConnectivity.clear();
+    mNodeTraversalIndices.clear();
+    mIntersectionConnectivity.clear();
+    mNumNeighbors = mDataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
+    mNodePairListPtr = std::make_shared<NodePairList>();
+    return;
+  }
+  const auto& neighborVariant = mDataBase.neighbor();
+  visitNeighbor(neighborVariant,
+                [this](const auto& neighbor) {
+                  this->computeConnectivityImpl(neighbor);
+                });
+}
+
+//------------------------------------------------------------------------------
+// Internal method to build the connectivity for the requested set of NodeLists.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+template<typename NeighborType>
+void
+ConnectivityMap<Dimension>::
+computeConnectivityImpl(const NeighborType& neighbor) {
   TIME_BEGIN("ConnectivityMap_computeConnectivity");
 
   using Key = typename KeyTraits::Key;
 
-  // Pre-conditions.
-  BEGIN_CONTRACT_SCOPE
-  {
-    for (auto* nptr: mNodeLists) {
-      CONTRACT_VAR(nptr);
-      REQUIRE(nptr->neighbor().valid());
-    }
-  }
-  END_CONTRACT_SCOPE
-
   // Do we need to build the ghost connectivity as well?
-  const bool domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
-  const bool ghostConnectivity = (mBuildGhostConnectivity or
+  const auto domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
+  const auto ghostConnectivity = (mBuildGhostConnectivity or
                                   mBuildOverlapConnectivity or
                                   domainDecompIndependent);
-
-  // Build ourselves a temporary DataBase with the set of NodeLists.
-  // Simultaneously find the maximum kernel extent.
-  DataBase<Dimension> dataBase;
-  auto kernelExtent = 0.0;
-  for (auto* nptr: mNodeLists) {
-    dataBase.appendNodeList(const_cast<NodeList<Dimension>&>(*nptr));
-    kernelExtent = max(kernelExtent, (*nptr).neighbor().kernelExtent());
-  }
-  const auto kernelExtent2 = kernelExtent*kernelExtent;
+  const auto nodeLists = mDataBase.nodeListPtrs();
+  const auto numNodeLists = nodeLists.size();
+  const auto etaMax = neighbor.kernelExtent();
+  const auto etaMax2 = etaMax*etaMax;
 
   // Erase any prior information.
-  const size_t numNodeLists = dataBase.numNodeLists();
   mOffsets.clear();
   mConnectivity.clear();
-  mNodeTraversalIndices = vector<vector<int>>(numNodeLists);
+  mOverlapConnectivity.clear();
+  mNodeTraversalIndices = std::vector<std::vector<size_t>>(numNodeLists);
   mIntersectionConnectivity.clear();
-  mNumNeighbors = dataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
+  mNumNeighbors = mDataBase.newGlobalFieldList(size_t(0u), "Number of neighbors");
 
   // If we're trying to be domain decomposition independent, we need a key to sort
   // by that will give us a unique ordering regardless of position.  The Morton ordered
   // hash fills the bill.
-  if (domainDecompIndependent) mKeys = mortonOrderIndices(dataBase);
+  if (domainDecompIndependent) mKeys = mortonOrderIndices(mDataBase);
 
   // Fill in the ordering for walking the nodes.
   if (domainDecompIndependent) {
-    for (auto [k, nptr]: enumerate(mNodeLists)) {
+    for (auto [k, nptr]: enumerate(nodeLists)) {
       const auto n = nptr->numNodes();
       mNodeTraversalIndices[k].resize(n);
-      vector<pair<int, Key>> keys;
+      std::vector<std::pair<size_t, Key>> keys;
       keys.reserve(n);
-      for (auto i = 0u; i < n; ++i) keys.push_back(make_pair(i, mKeys(k, i)));
-      sort(keys.begin(), keys.end(), ComparePairsBySecondElement<pair<int, Key> >());
-      for (auto i = 0u; i < n; ++i) mNodeTraversalIndices[k][i] = keys[i].first;
+      for (size_t i = 0u; i < n; ++i) keys.push_back(make_pair(i, mKeys(k, i)));
+      std::sort(keys.begin(), keys.end(), ComparePairsBySecondElement<std::pair<int, Key> >());
+      for (size_t i = 0u; i < n; ++i) mNodeTraversalIndices[k][i] = keys[i].first;
       CHECK(mNodeTraversalIndices[k].size() == n);
     }
   } else {
-    for (auto [k, nptr]: enumerate(mNodeLists)) {
+    for (auto [k, nptr]: enumerate(nodeLists)) {
       const auto n = nptr->numInternalNodes();
       mNodeTraversalIndices[k].resize(n);
-      for (auto i = 0u; i < n; ++i) mNodeTraversalIndices[k][i] = i;
+      for (size_t i = 0u; i < n; ++i) mNodeTraversalIndices[k][i] = i;
     }
   }
 
   // Create a list of flags to keep track of which nodes have been completed thus far.
-  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(0);
+  FieldList<Dimension, int> flagNodeDone = mDataBase.newGlobalFieldList(0);
 
   // Get the position and H fields.
-  const auto position = dataBase.globalPosition();
-  const auto H = dataBase.globalHfield();
+  const auto position = mDataBase.globalPosition();
+  const auto H = mDataBase.globalHfield();
 
+  // Prepare memory for our results
   std::vector<NodePairIdxType> nodePairs;
-  if (mNodePairListPtr) {
-    nodePairs.reserve(mNodePairListPtr->size());
-  }
-  for (auto [iiNodeList, nptr]: enumerate(mNodeLists)) {
-    const auto etaMax = nptr->neighbor().kernelExtent();
+  if (mNodePairListPtr) nodePairs.reserve(mNodePairListPtr->size());
+  std::vector<NodeID> masterList(Dimension::pownu(8u)), coarseNeighbors(Dimension::pownu(20u));
+  
+  // Walk the NodeLists
+  for (auto [iiNodeList, nptr]: enumerate(nodeLists)) {
 
     // Iterate over the nodes in this NodeList, and look for any that are not done yet.
     const auto nii = (ghostConnectivity ?
@@ -761,72 +761,54 @@ computeConnectivity() {
       if (flagNodeDone(iiNodeList, ii) == 0) {
 
         // Set the master nodes.
-        vector<vector<int>> masterLists, coarseNeighbors;
-        Neighbor<Dimension>::setMasterNeighborGroup(position(iiNodeList, ii),
-                                                    H(iiNodeList, ii),
-                                                    mNodeLists.begin(),
-                                                    mNodeLists.end(),
-                                                    etaMax,
-                                                    masterLists,
-                                                    coarseNeighbors,
-                                                    ghostConnectivity);
+        bool ok = false;
+        size_t numMaster, numCoarse;
+        while (not ok) {
+          std::tie(ok, numMaster, numCoarse) = neighbor.setMasterList(position(iiNodeList, ii),
+                                                                      H(iiNodeList, ii),
+                                                                      masterList,
+                                                                      coarseNeighbors,
+                                                                      ghostConnectivity);
+          if (masterList.size() < size_t(1.1*numMaster)) masterList.resize(size_t(1.1*numMaster));
+          if (coarseNeighbors.size() < size_t(1.1*numCoarse)) coarseNeighbors.resize(size_t(1.1*numCoarse));
+        }
+        CHECK(ok);
 
-        // Iterate over the full of NodeLists again to work on the master nodes.
-        for (auto iNodeList = 0u; iNodeList != numNodeLists; ++iNodeList) {
-          const auto nmaster = masterLists[iNodeList].size();
-#pragma omp parallel 
-          {
-            std::vector<NodePairIdxType> nodePairs_private;
-#pragma omp for schedule(dynamic)
-            for (auto k = 0u; k < nmaster; ++k) {
-              const auto i = masterLists[iNodeList][k];
-              CHECK2(flagNodeDone(iNodeList, i) == 0, "(" << iNodeList << " " << i << ")");
+        // Iterate over the master nodes
+        for (auto imaster = 0u; imaster < numMaster; ++imaster) {
+          const auto [iNodeList, i] = masterList[imaster];
+          CHECK2(flagNodeDone(iNodeList, i) == 0, "(" << iNodeList << " " << i << ")");
 
-              // Get the state for this node.
-              const auto& ri = position(iNodeList, i);
-              const auto& Hi = H(iNodeList, i);
-              auto&       worki = mNodeLists[iNodeList]->work();
-              const auto start = Timing::currentTime();
+          // Get the state for this node.
+          const auto& ri = position(iNodeList, i);
+          const auto& Hi = H(iNodeList, i);
+          auto&       worki = nodeLists[iNodeList]->work();
+          const auto start = Timing::currentTime();
 
-              // We keep track of the Morton indices.
-              vector<vector<pair<int, Key>>> keys(numNodeLists);
+          // Check the coarse neighbors
+          for (auto icoarse = 0u; icoarse < numCoarse; ++icoarse) {
+            const auto [jNodeList, j] = coarseNeighbors[icoarse];
+            const auto firstGhostNodej = nodeLists[jNodeList]->firstGhostNode();
+            const auto& rj = position(jNodeList, j);
+            const auto& Hj = H(jNodeList, j);
 
-              // Iterate over the neighbor NodeLists.
-              for (auto jNodeList = 0u; jNodeList != numNodeLists; ++jNodeList) {
-                const auto firstGhostNodej = mNodeLists[jNodeList]->firstGhostNode();
+            // Compute the normalized distance between this pair.
+            const auto rij = ri - rj;
+            const auto eta2i = (Hi*rij).magnitude2();
+            const auto eta2j = (Hj*rij).magnitude2();
 
-                // Iterate over the coarse neighbors in this NodeList.
-                for (const auto j:  coarseNeighbors[jNodeList]) {
-                  const auto& rj = position(jNodeList, j);
-                  const auto& Hj = H(jNodeList, j);
+            // If this pair is significant, add it to the list.
+            if (eta2i <= etaMax2 or eta2j <= etaMax2) {
 
-                  // Compute the normalized distance between this pair.
-                  const auto rij = ri - rj;
-                  const auto eta2i = (Hi*rij).magnitude2();
-                  const auto eta2j = (Hj*rij).magnitude2();
-
-                  // If this pair is significant, add it to the list.
-                  if (eta2i <= kernelExtent2 or eta2j <= kernelExtent2) {
-
-                    // We don't include self-interactions.
-                    if ((iNodeList != jNodeList) or (i != j)) {
-                      if (calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs_private.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
-                      if (domainDecompIndependent) keys[jNodeList].push_back(std::make_pair(j, mKeys(jNodeList, j)));
-                    }
-                  }
-                }
-              }
-              CHECK(keys.size() == numNodeLists);
-        
-              // Flag this master node as done.
-              flagNodeDone(iNodeList, i) = 1;
-              worki(i) += Timing::difference(start, Timing::currentTime());
+              // We don't include self-interactions.
+              if ((iNodeList != jNodeList or i != j) and
+                  calculatePairInteraction(iNodeList, i, jNodeList, j, firstGhostNodej)) nodePairs.push_back(NodePairIdxType(i, iNodeList, j, jNodeList));
             }
-            
-            // Merge the NodePairList
-#pragma omp critical
-            nodePairs.insert(nodePairs.end(), nodePairs_private.begin(), nodePairs_private.end());
-          } // end OMP parallel
+          }
+        
+          // Flag this master node as done.
+          flagNodeDone(iNodeList, i) = 1;
+          worki(i) += Timing::difference(start, Timing::currentTime());
         }
       }
     }
@@ -857,9 +839,9 @@ computeConnectivity() {
     // first just copy the neighbor connectivity.
     mOverlapConnectivity = mConnectivity;
 
-    for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
-      const auto* nodeListPtr = mNodeLists[iNodeList];
-      for (auto i = 0u; i < nodeListPtr->numNodes(); ++i) {
+    for (auto [iNodeList, nodeListPtr]: enumerate(nodeLists)) {
+      const auto n = nodeListPtr->numNodes();
+      for (auto i = 0u; i < n; ++i) {
         const auto& neighborsi = mConnectivity[mOffsets[iNodeList] + i];
         CHECK(neighborsi.size() == numNodeLists);
         const auto& ri = position(iNodeList, i);
@@ -884,10 +866,10 @@ computeConnectivity() {
           for (const auto j1: neighborsi[jN1]) {
             const auto& rj1 = position(jN1, j1);
             const auto& Hj1 = H(jN1, j1);
-            if ((Hi*(rj1 - ri)).magnitude2() <= kernelExtent2) {                           // Is j1 a gather neighbor of i?
+            if ((Hi*(rj1 - ri)).magnitude2() <= etaMax2) {                           // Is j1 a gather neighbor of i?
 
               // Check if i and j1 have overlap directly.
-              if ((Hj1*(rj1 - ri)).magnitude2() <= kernelExtent2) {
+              if ((Hj1*(rj1 - ri)).magnitude2() <= etaMax2) {
                 insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
                              iNodeList, i, jN1, j1);
                 insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
@@ -900,7 +882,7 @@ computeConnectivity() {
                 for (const auto j2: neighborsj1[jN2]) {
                   const auto& rj2 = position(jN2, j2);
                   const auto& Hj2 = H(jN2, j2);
-                  if ((Hj2*(rj2 - rj1)).magnitude2() <= kernelExtent2) {                   // Is j2 a scatter neighbor of j1?
+                  if ((Hj2*(rj2 - rj1)).magnitude2() <= etaMax2) {                   // Is j2 a scatter neighbor of j1?
                     insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
                                  iNodeList, i, jN2, j2);
                     insertUnique(mOffsets, mOverlapConnectivity, mKeys, domainDecompIndependent,
@@ -954,10 +936,10 @@ computeConnectivity() {
   // Post conditions.
   BEGIN_CONTRACT_SCOPE
   // Make sure that the correct number of nodes have been completed.
-  for (auto iNodeList = 0u; iNodeList < numNodeLists; ++iNodeList) {
+  for (auto [iNodeList, nptr]: enumerate(nodeLists)) {
     const auto n = (ghostConnectivity ? 
-                    mNodeLists[iNodeList]->numNodes() :
-                    mNodeLists[iNodeList]->numInternalNodes());
+                    nptr->numNodes() :
+                    nptr->numInternalNodes());
     for (auto i = 0u; i < n; ++i) {
       ENSURE2(flagNodeDone(iNodeList, i) == 1,
               "Missed connnectivity for (" << iNodeList << " " << i << ")");
@@ -992,11 +974,17 @@ buildPerPointConnectivity() {
   // Count how many nodes we need to use per NodeList
   const bool domainDecompIndependent = NodeListRegistrar<Dimension>::instance().domainDecompositionIndependent();
   const bool includeGhosts = domainDecompIndependent or mBuildGhostConnectivity or mBuildOverlapConnectivity;
+  const auto& nodeLists = mDataBase.nodeListPtrs();
   const auto numNodesInNodeList = [&](const size_t k) { return (includeGhosts ?
-                                                                mNodeLists[k]->numNodes() :
-                                                                mNodeLists[k]->numInternalNodes()); };
-  const auto numNodeLists = mNodeLists.size();
-  vector<size_t> numNodes(numNodeLists);
+                                                                nodeLists[k]->numNodes() :
+                                                                nodeLists[k]->numInternalNodes()); };
+  const auto numNodeLists = nodeLists.size();
+  if (numNodeLists == 0u) {
+    mOverlapConnectivity.clear();
+    TIME_END("ConnectivityMap_buildPerPointConnectivity");
+    return;
+  }
+  std::vector<size_t> numNodes(numNodeLists);
   for (auto k = 0u; k < numNodeLists; ++k) numNodes[k] = numNodesInNodeList(k);
 
   // Build the offsets
@@ -1007,7 +995,7 @@ buildPerPointConnectivity() {
   }
 
   // Build the empty per-point connectivity
-  mConnectivity.resize(mOffsets.back() + numNodes.back(), vector<vector<int>>(numNodeLists));
+  mConnectivity.resize(mOffsets.back() + numNodes.back(), std::vector<std::vector<size_t>>(numNodeLists));
 
   // Walk the pairs and build the per-point connectivity
   const auto& pairs = *mNodePairListPtr;
@@ -1024,7 +1012,7 @@ buildPerPointConnectivity() {
     CHECK(neighborsi.size() == numNodeLists);
     neighborsi[kj].push_back(j);
 
-    if (j < mNodeLists[kj]->firstGhostNode() or includeGhosts) {
+    if (j < nodeLists[kj]->firstGhostNode() or includeGhosts) {
       CHECK(mOffsets[kj] + j < mConnectivity.size());
       auto& neighborsj = mConnectivity[mOffsets[kj] + j];
       CHECK(neighborsj.size() == numNodeLists);

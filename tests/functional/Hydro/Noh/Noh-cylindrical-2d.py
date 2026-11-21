@@ -359,9 +359,10 @@ for nodeID in range(nodes1.numNodes):
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
@@ -555,8 +556,8 @@ elif boolCullenViscosity:
 #-------------------------------------------------------------------------------
 xPlane0 = Plane(Vector(0.0, 0.0), Vector(1.0, 0.0))
 yPlane0 = Plane(Vector(0.0, 0.0), Vector(0.0, 1.0))
-xbc0 = ReflectingBoundary(xPlane0)
-ybc0 = ReflectingBoundary(yPlane0)
+xbc0 = ReflectingBoundary(db, xPlane0)
+ybc0 = ReflectingBoundary(db, yPlane0)
 
 for p in packages:
     if thetaFactor in (0.5, ):

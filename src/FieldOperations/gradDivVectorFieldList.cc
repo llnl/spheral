@@ -10,9 +10,7 @@
 #include "FieldListFunctions.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
 #include "Boundary/Boundary.hh"
 

@@ -9,8 +9,9 @@
 #include "DataBase/IncrementState.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
+
+#include <limits>
 
 namespace Spheral {
 
@@ -28,14 +29,6 @@ LinearAcceleration(const Scalar a0,
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-LinearAcceleration<Dimension>::
-~LinearAcceleration() {
-}
-
-//------------------------------------------------------------------------------
 // Apply the acceleration to the derivatives.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -48,17 +41,18 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
                     StateDerivatives<Dimension>& derivs) const {
 
   // Get the state.
-  const FieldList<Dimension, Vector> r = state.fields(HydroFieldNames::position, Vector::zero());
-  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
+  const auto r = state.fields(HydroFieldNames::position, Vector::zero());
+  auto       DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
+  const auto numNodeLists = r.numFields();
+  CHECK(DvDt.numFields() == numNodeLists);
 
   // Increment the acceleration.
-  for (InternalNodeIterator<Dimension> itr = DvDt.internalNodeBegin();
-       itr != DvDt.internalNodeEnd();
-       ++itr) {
-    const Scalar x = r(itr).x();
-    Vector da;
-    da.x(ma0 + maslope*x);
-    DvDt(itr) += da;
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto n = r[k]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto x = r(k, i).x();
+      DvDt(k, i)[0] += ma0 + maslope*x;
+    }
   }
 }
 
@@ -72,8 +66,7 @@ dt(const DataBase<Dimension>& /*dataBase*/,
    const State<Dimension>& /*state*/,
    const StateDerivatives<Dimension>& /*derivs*/,
    const typename Dimension::Scalar /*currentTime*/) const {
-
-  return TimeStepType(FLT_MAX, "No vote.");
+  return TimeStepType(std::numeric_limits<Scalar>::max(), "No vote.");
 }
 
 }

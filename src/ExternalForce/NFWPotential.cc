@@ -24,11 +24,11 @@
 #include "DataBase/IncrementState.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
 
-namespace Spheral {
+#include <limits>
 
+namespace Spheral {
 
 //------------------------------------------------------------------------------
 // Constructor.
@@ -57,14 +57,6 @@ NFWPotential(double deltac, double rs, double h0,
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-NFWPotential<Dimension>::
-~NFWPotential() {
-}
-
-//------------------------------------------------------------------------------
 // Calculate the acceleration due to the potential of the profile.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -77,28 +69,32 @@ evaluateDerivatives(const typename Dimension::Scalar /*time*/,
                     StateDerivatives<Dimension>& derivs) const {
 
   // Get the node positions from the state.
-  const FieldList<Dimension, Scalar> mnode = state.fields(HydroFieldNames::mass, 0.0);
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto mnode = state.fields(HydroFieldNames::mass, 0.0);
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto numNodeLists = mnode.numFields();
+  CHECK(position.numFields() == numNodeLists);
+  CHECK(velocity.numFields() == numNodeLists);
 
   // Get the acceleration and position change vectors we'll be modifying.
-  FieldList<Dimension, Vector> DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
-  FieldList<Dimension, Vector> DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
+  auto DxDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::position, Vector::zero());
+  auto DvDt = derivs.fields(IncrementState<Dimension, Field<Dimension, Vector> >::prefix() + HydroFieldNames::velocity, Vector::zero());
 
   // Loop over the internal nodes.
   mPotentialEnergy = 0.0;
-  for (InternalNodeIterator<Dimension> nodeItr = dataBase.internalNodeBegin();
-       nodeItr != dataBase.internalNodeEnd();
-       ++nodeItr) {
-    const Vector r = position(nodeItr) - mOrigin;
-    const Vector runit = r.unitVector();
-    const Scalar rsoft2 = r.magnitude2() + 1.0e-10;
-    const Scalar rsoft = sqrt(rsoft2);
-    const Scalar Mr = enclosedMass(rsoft);
-    const Scalar thpt = mConstants.G()*Mr;
-    DxDt(nodeItr) += velocity(nodeItr);
-    DvDt(nodeItr) -= thpt/rsoft2*runit;
-    mPotentialEnergy -= thpt*mnode(nodeItr)/rsoft;
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto n = mnode[k]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto& r = position(k, i) - mOrigin;
+      const auto  runit = r.unitVector();
+      const auto  rsoft2 = r.magnitude2() + 1.0e-10;
+      const auto  rsoft = sqrt(rsoft2);
+      const auto  Mr = enclosedMass(rsoft);
+      const auto  thpt = mConstants.G()*Mr;
+      DxDt(k, i) += velocity(k, i);
+      DvDt(k, i) -= thpt/rsoft2*runit;
+      mPotentialEnergy -= thpt*mnode(k, i)/rsoft;
+    }
   }
 }
 
@@ -117,32 +113,34 @@ dt(const DataBase<Dimension>& dataBase,
   // such that no nodes potential should change more than a set fraction.
   // (Delta phi)/phi = -(Delta r)/(r^2 + rc^2)
   // dt = (Delta phi)/phi (r^2 + rc^2) / v
-  Scalar mindt = FLT_MAX;
+  Scalar mindt = std::numeric_limits<Scalar>::max();
   Scalar minr, minv;
-  const FieldList<Dimension, Vector> position = state.fields(HydroFieldNames::position, Vector::zero());
-  const FieldList<Dimension, Vector> velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
-  for (InternalNodeIterator<Dimension> nodeItr = dataBase.internalNodeBegin();
-       nodeItr < dataBase.internalNodeEnd();
-       ++nodeItr) {
-    const Vector r = position(nodeItr) - mOrigin;
-    const Scalar v = velocity(nodeItr).magnitude() + 1.0e-10;
-    const Scalar rsoft2 = r.magnitude2() + 1.0e-10;
-    const Scalar rsoft = sqrt(rsoft2);
-    const Scalar rsoft3 = rsoft*rsoft2;
-    const Scalar r0 = rsoft/mRs;
-    const Scalar r1 = 1.0 + r0;
-    const Scalar phi = (1.0/r1 + 2.0*log(r1) - 1.0)/rsoft2 +
-      1.0/(r1*r1*rsoft) - 2.0/(r1*rsoft);
-    const Scalar dPhidr = -r1/(rsoft2*r1*r1*mRs) - 2.0/(rsoft3*r1) +
-      2.0/(rsoft2*r1*mRs) - 4.0*log(r1)/rsoft3 +
-      2.0/rsoft3 - 2.0/(r1*r1*r1*mRs*rsoft) -
-      1.0/(rsoft2*r1*r1) + 2.0/(rsoft*r1*r1*mRs) +
-      2.0/(rsoft2*r1);
-    const Scalar dt = mDeltaPhiFraction*phi/(dPhidr*v);
-    if (dt < mindt) {
-      mindt = dt;
-      minr = rsoft;
-      minv = v;
+  const auto position = state.fields(HydroFieldNames::position, Vector::zero());
+  const auto velocity = state.fields(HydroFieldNames::velocity, Vector::zero());
+  const auto numNodeLists = position.numFields();
+  CHECK(velocity.numFields() == numNodeLists);
+  for (auto k = 0u; k < numNodeLists; ++k) {
+    const auto n = position[k]->numInternalElements();
+    for (auto i = 0u; i < n; ++i) {
+      const auto r = position(k, i) - mOrigin;
+      const auto v = velocity(k, i).magnitude() + 1.0e-10;
+      const auto rsoft2 = r.magnitude2() + 1.0e-10;
+      const auto rsoft = sqrt(rsoft2);
+      const auto rsoft3 = rsoft*rsoft2;
+      const auto r0 = rsoft/mRs;
+      const auto r1 = 1.0 + r0;
+      const auto phi = (1.0/r1 + 2.0*log(r1) - 1.0)/rsoft2 + 1.0/(r1*r1*rsoft) - 2.0/(r1*rsoft);
+      const auto dPhidr = -r1/(rsoft2*r1*r1*mRs) - 2.0/(rsoft3*r1) +
+        2.0/(rsoft2*r1*mRs) - 4.0*log(r1)/rsoft3 +
+        2.0/rsoft3 - 2.0/(r1*r1*r1*mRs*rsoft) -
+        1.0/(rsoft2*r1*r1) + 2.0/(rsoft*r1*r1*mRs) +
+        2.0/(rsoft2*r1);
+      const auto dt = mDeltaPhiFraction*phi/(dPhidr*v);
+      if (dt < mindt) {
+        mindt = dt;
+        minr = rsoft;
+        minv = v;
+      }
     }
   }
 

@@ -52,6 +52,7 @@ protected:
   }
 private:
   std::vector<double> mVec;
+  void releaseView();
   void initView();
 };
 }

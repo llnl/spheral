@@ -6,6 +6,7 @@
 // original workload.
 //------------------------------------------------------------------------------
 
+#include "test-basic-exec-policies.hh"
 #include "test-utilities.hh"
 
 #include "DataBase/DataBase.hh"
@@ -16,6 +17,7 @@
 #include "Neighbor/NodePairList.hh"
 #include "Neighbor/TreeNeighbor.hh"
 #include "NodeList/FluidNodeList.hh"
+#include "Threading/GPUUtils.hh"
 
 #include <algorithm>
 #include <array>
@@ -81,8 +83,8 @@ public:
   using SymTensor = typename Dimension::SymTensor;
   using NodeList = Spheral::NodeList<Dimension>;
   using FluidNodeList = Spheral::FluidNodeList<Dimension>;
-  using TreeNeighbor = Spheral::TreeNeighbor<Dimension>;
   using DataBase = Spheral::DataBase<Dimension>;
+  using NodeID = typename Spheral::Neighbor<Dimension>::NodeID;
   using TableKernel = Spheral::TableKernel<Dimension>;
   using GammaLawGas = Spheral::GammaLawGas<Dimension>;
   using VolumeRange = std::array<std::array<double, 2>, Dimension::nDim>;
@@ -90,24 +92,19 @@ public:
   static constexpr double kernelExtent = 2.0;
 
   struct RandomDistribution {
-    std::vector<int> globalNodeIDs;
+    std::vector<size_t> globalNodeIDs;
     std::vector<Vector> nodePositions;
     std::vector<SymTensor> H;
   };
 
   struct NodeSet {
     FluidNodeList nodes;
-    TreeNeighbor neighbor;
 
     NodeSet(const std::string& name,
-            GammaLawGas& eos,
-            const Vector& xmin,
-            const Vector& xmax):
+            GammaLawGas& eos):
       nodes(name, eos, 0u, 0u,
             1.0e-20, 1.0e20, 0.1, 2.01, 500u,
-            1.0e-10, 1.0e10),
-      neighbor(nodes, NeighborSearchType::GatherScatter,
-               kernelExtent, xmin, xmax) {
+            1.0e-10, 1.0e10) {
     }
   };
 
@@ -140,7 +137,7 @@ public:
     result.nodePositions.reserve(n);
     result.H.reserve(n);
     for (size_t i = 0; i < n; ++i) {
-      result.globalNodeIDs.push_back(int(i));
+      result.globalNodeIDs.push_back(i);
       Vector position;
       for (auto j = 0; j < nDimensions; ++j) {
         std::uniform_real_distribution<double> coordinate(volrange[j][0],
@@ -182,11 +179,9 @@ public:
                                        MaterialPressureMinType::PressureFloor,
                                        0.0);
     WT = std::make_unique<TableKernel>(BSplineKernel<Dimension>(), 100u);
-    const auto xmin = Vector(-10.0);
-    const auto xmax = Vector(10.0);
-    nodes1 = std::make_unique<NodeSet>("nodes 1", *eos, xmin, xmax);
-    nodes2 = std::make_unique<NodeSet>("nodes 2", *eos, xmin, xmax);
-    nodes3 = std::make_unique<NodeSet>("nodes 3", *eos, xmin, xmax);
+    nodes1 = std::make_unique<NodeSet>("nodes 1", *eos);
+    nodes2 = std::make_unique<NodeSet>("nodes 2", *eos);
+    nodes3 = std::make_unique<NodeSet>("nodes 3", *eos);
 
     const std::array<NodeSet*, 3> nodeSets = {nodes1.get(), nodes2.get(), nodes3.get()};
     const std::array<size_t, 3> globalCounts = {n1, n2, n3};
@@ -207,72 +202,79 @@ public:
     }
 
     // Put the distributed NodeLists into a DataBase.
-    dataBase = std::make_unique<DataBase>();
+    dataBase = std::make_unique<DataBase>(kernelExtent);
     dataBase->appendNodeList(nodes1->nodes);
     dataBase->appendNodeList(nodes2->nodes);
     dataBase->appendNodeList(nodes3->nodes);
 
-    // Update all the Neighbor info.
-    for (auto* nodeSet: nodeSets) nodeSet->nodes.neighbor().updateNodes();
+    // Update the DataBase-owned Neighbor info.
+    dataBase->updateNeighbors();
   }
 
   //---------------------------------------------------------------------------
   // C++ equivalents of the SpheralTestUtilities neighbor helpers.
   //---------------------------------------------------------------------------
-  std::vector<int>
+  std::vector<NodeID>
+  findCandidateNodes(const Vector& position,
+                     const SymTensor& H) const {
+    std::vector<NodeID> master, coarse, result;
+    const auto neighborVariant = dataBase->neighborView();
+    visitNeighborView(neighborVariant, [&](const auto& neighbor) {
+      const auto [ok, numMaster, numCoarse] = neighbor.setMasterList(position, H, master, coarse);
+      VERIFY2(ok, "Insufficient storage while constructing the master/coarse neighbor lists.");
+      master.resize(numMaster);
+      coarse.resize(numCoarse);
+      result.resize(numCoarse);
+      result.resize(neighbor.setRefineNeighborList(position, H, numCoarse, coarse, result));
+    });
+    return result;
+  }
+
+  std::vector<size_t>
   findNeighborNodes(const Vector& position,
                     const SymTensor& H,
                     const NodeList& nodes) const {
-    std::vector<int> master, coarse, potentials;
-    nodes.neighbor().setMasterList(position, H, master, coarse);
-    nodes.neighbor().setRefineNeighborList(position, H, coarse, potentials);
-    std::vector<int> result;
-    for (const auto i: potentials) {
+    std::vector<size_t> result;
+    for (auto i = 0u; i < nodes.numNodes(); ++i) {
       const auto displacement = nodes.positions()[i] - position;
       if (std::min((H*displacement).magnitude(),
                    (nodes.Hfield()[i]*displacement).magnitude()) <= kernelExtent) {
-        result.push_back(int(i));
+        result.push_back(i);
       }
     }
     return result;
   }
 
-  std::vector<int>
+  std::vector<size_t>
   findGatherNeighborNodes(const Vector& position,
                           const SymTensor& H,
                           const NodeList& nodes) const {
-    std::vector<int> master, coarse, potentials;
-    nodes.neighbor().setMasterList(position, H, master, coarse);
-    nodes.neighbor().setRefineNeighborList(position, H, coarse, potentials);
-    std::vector<int> result;
-    for (const auto i: potentials) {
+    std::vector<size_t> result;
+    for (auto i = 0u; i < nodes.numNodes(); ++i) {
       if ((H*(position - nodes.positions()[i])).magnitude() <= kernelExtent) {
-        result.push_back(int(i));
+        result.push_back(i);
       }
     }
     return result;
   }
 
-  std::vector<int>
+  std::vector<size_t>
   findScatterNeighborNodes(const Vector& position,
                            const NodeList& nodes) const {
-    std::vector<int> master, coarse, potentials;
-    nodes.neighbor().setMasterList(position, master, coarse);
-    nodes.neighbor().setRefineNeighborList(position, coarse, potentials);
-    std::vector<int> result;
-    for (const auto i: potentials) {
+    std::vector<size_t> result;
+    for (auto i = 0u; i < nodes.numNodes(); ++i) {
       if ((nodes.Hfield()[i]*(position - nodes.positions()[i])).magnitude() <= kernelExtent) {
-        result.push_back(int(i));
+        result.push_back(i);
       }
     }
     return result;
   }
 
-  std::vector<std::vector<int>>
+  std::vector<std::vector<size_t>>
   findOverlapNeighbors(const Vector& position,
                        const SymTensor& H) const {
     const auto& nodeLists = dataBase->nodeListPtrs();
-    std::vector<std::set<int>> uniqueResult(nodeLists.size());
+    std::vector<std::set<size_t>> uniqueResult(nodeLists.size());
     for (size_t nodeListID = 0; nodeListID < nodeLists.size(); ++nodeListID) {
       const auto neighbors = findNeighborNodes(position, H, *nodeLists[nodeListID]);
       uniqueResult[nodeListID].insert(neighbors.begin(), neighbors.end());
@@ -287,7 +289,7 @@ public:
         }
       }
     }
-    std::vector<std::vector<int>> result(nodeLists.size());
+    std::vector<std::vector<size_t>> result(nodeLists.size());
     for (size_t nodeListID = 0; nodeListID < nodeLists.size(); ++nodeListID) {
       result[nodeListID].assign(uniqueResult[nodeListID].begin(),
                                 uniqueResult[nodeListID].end());
@@ -296,8 +298,8 @@ public:
   }
 
   static bool
-  checkNeighbors(const std::vector<int>& neighborList,
-                 const std::vector<int>& answer) {
+  checkNeighbors(const std::vector<size_t>& neighborList,
+                 const std::vector<size_t>& answer) {
     return std::all_of(answer.begin(), answer.end(), [&](const auto value) {
       return std::find(neighborList.begin(), neighborList.end(), value) != neighborList.end();
     });
@@ -362,10 +364,93 @@ public:
     return result;
   }
 
-  static std::vector<int>
-  sorted(std::vector<int> values) {
+  static std::vector<size_t>
+  sorted(std::vector<size_t> values) {
     std::sort(values.begin(), values.end());
     return values;
+  }
+
+  //---------------------------------------------------------------------------
+  // Exercise TreeNeighborView list construction in each configured execution
+  // space.  The ManagedArray Views alias std::vector storage, matching the
+  // grow-and-retry pattern required for device-side neighbor queries.
+  //---------------------------------------------------------------------------
+  template<typename ExecPolicy>
+  void
+  testTreeNeighborView() {
+    const auto neighborVariant = dataBase->neighborView();
+    const auto treeView = std::get<Spheral::TreeNeighborView<Dimension>>(neighborVariant);
+    const auto& nodes = nodes1->nodes;
+    ASSERT_GT(nodes.numInternalNodes(), 0u);
+
+    const auto position = nodes.positions()[0u];
+    const auto H = nodes.Hfield()[0u];
+
+    using TreeView = Spheral::TreeNeighborView<Dimension>;
+    using NodeIDView = typename TreeView::template ContainerView<NodeID>;
+    using SizeView = typename TreeView::template ContainerView<size_t>;
+    std::vector<NodeID> master, coarse, refine;
+    std::vector<size_t> result(4u, 0u); // ok, numMaster, numCoarse, numRefine
+    NodeIDView masterView, coarseView, refineView;
+    SizeView resultView;
+    Spheral::GPUUtils::initMAView(resultView, result);
+
+    auto ok = false;
+    auto pass = 0u;
+    while (not ok) {
+      Spheral::GPUUtils::initMAView(masterView, master);
+      Spheral::GPUUtils::initMAView(coarseView, coarse);
+      Spheral::GPUUtils::initMAView(refineView, refine);
+      RAJA::forall<ExecPolicy>(TRS_UINT(0u, 1u),
+        [=] SPHERAL_HOST_DEVICE(size_t) mutable {
+          const auto [queryOK, numMaster, numCoarse] =
+            treeView.setMasterList(position, H, masterView, coarseView);
+          resultView[0u] = queryOK ? 1u : 0u;
+          resultView[1u] = numMaster;
+          resultView[2u] = numCoarse;
+          resultView[3u] = 0u;
+          if (queryOK) {
+            const auto numRefine =
+              treeView.setRefineNeighborList(position, H, numCoarse, coarseView, refineView);
+            resultView[3u] = numRefine;
+            SPHERAL_ASSERT_TRUE(numRefine <= refineView.size());
+
+            auto foundExpectedNode = false;
+            for (size_t k = 0u; k < numRefine; ++k) {
+              if (refineView[k].first == 0u and refineView[k].second == 0u) {
+                foundExpectedNode = true;
+              }
+            }
+            SPHERAL_ASSERT_TRUE(foundExpectedNode);
+          }
+        });
+
+      // Bring the returned sizes back before releasing aliases and resizing
+      // their backing vectors.  Successful result buffers are also preserved
+      // on the host before their ManagedArray aliases are released.
+      Spheral::GPUUtils::move(resultView, chai::CPU);
+      ok = result[0u] != 0u;
+      if (ok) {
+        Spheral::GPUUtils::move(masterView, chai::CPU);
+        Spheral::GPUUtils::move(coarseView, chai::CPU);
+        Spheral::GPUUtils::move(refineView, chai::CPU);
+      }
+      Spheral::GPUUtils::freeMAView(masterView);
+      Spheral::GPUUtils::freeMAView(coarseView);
+      Spheral::GPUUtils::freeMAView(refineView);
+
+      if (pass == 0u) {
+        EXPECT_FALSE(ok);
+      }
+      master.resize(result[1u]);
+      coarse.resize(result[2u]);
+      refine.resize(ok ? result[3u] : result[2u]);
+      ++pass;
+    }
+
+    EXPECT_EQ(pass, 2u);
+    EXPECT_NE(std::find(refine.begin(), refine.end(), NodeID(0u, 0u)), refine.end());
+    Spheral::GPUUtils::freeMAView(resultView);
   }
 
   //---------------------------------------------------------------------------
@@ -383,28 +468,26 @@ public:
         const auto ri = position[nodeID];
         const auto Hi = H[nodeID];
 
-        // Have the neighbor objects select neighbors for this node.
-        std::vector<std::vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-        dataBase->setMasterNodeLists(ri, Hi, masterLists, coarseNeighbors, false);
-        dataBase->setRefineNodeLists(ri, Hi, coarseNeighbors, refineNeighbors);
-        std::vector<int> neighborIDs;
-        auto offset = 0u;
+        // Have the DataBase-owned Neighbor select neighbors for this node.
+        const auto refineNeighbors = findCandidateNodes(ri, Hi);
+        std::vector<size_t> neighborIDs;
         const auto& nodeLists = dataBase->nodeListPtrs();
-        for (size_t nodeListID = 0; nodeListID < nodeLists.size(); ++nodeListID) {
-          for (const auto i: refineNeighbors[nodeListID]) {
-            neighborIDs.push_back(i + int(offset));
-          }
-          offset += nodeLists[nodeListID]->numInternalNodes();
+        std::vector<size_t> offsets(nodeLists.size(), 0u);
+        for (auto nodeListID = 1u; nodeListID < nodeLists.size(); ++nodeListID) {
+          offsets[nodeListID] = offsets[nodeListID - 1u] + nodeLists[nodeListID - 1u]->numInternalNodes();
+        }
+        for (const auto& [nodeListID, i]: refineNeighbors) {
+          neighborIDs.push_back(offsets[nodeListID] + i);
         }
 
         // Now build the checks.
-        std::vector<int> answerIDs;
-        offset = 0u;
+        std::vector<size_t> answerIDs;
+        auto nodeListID = 0u;
         for (const auto* answerNodes: nodeLists) {
           for (const auto i: findNeighborNodes(ri, Hi, *answerNodes)) {
-            answerIDs.push_back(i + int(offset));
+            answerIDs.push_back(i + offsets[nodeListID]);
           }
-          offset += answerNodes->numInternalNodes();
+          ++nodeListID;
         }
 
         // Check the answer.
@@ -432,14 +515,14 @@ public:
       for (const auto i: sampleNodes(*inodes, ncheck)) {
         const auto ri = position[i];
         const auto Hi = H[i];
-        const auto& cmneighbors = cm.connectivityForNode(inodes, int(i));
+        const auto& cmneighbors = cm.connectivityForNode(inodes, i);
 
         // Check ConnectivityMap vs. N^2 neighbor search.
         for (size_t jNL = 0; jNL < nodeLists.size(); ++jNL) {
           const auto cmcheck = sorted(cmneighbors[jNL]);
           auto answer = sorted(findNeighborNodes(ri, Hi, *nodeLists[jNL]));
           if (iNL == jNL) {
-            const auto self = std::find(answer.begin(), answer.end(), int(i));
+            const auto self = std::find(answer.begin(), answer.end(), i);
             ASSERT_NE(self, answer.end());
             answer.erase(self);
           }
@@ -464,11 +547,11 @@ public:
     for (size_t iNL = 0; iNL < numNodeLists; ++iNL) {
       const auto* inodes = nodeLists[iNL];
       for (size_t i = 0; i < inodes->numInternalNodes(); ++i) {
-        const auto& cmneighbors = cm.connectivityForNode(inodes, int(i));
+        const auto& cmneighbors = cm.connectivityForNode(inodes, i);
         ASSERT_EQ(cmneighbors.size(), numNodeLists);
         for (size_t jNL = iNL; jNL < numNodeLists; ++jNL) {
           for (const auto j: cmneighbors[jNL]) {
-            if (jNL > iNL or j > int(i)) answer.emplace_back(i, iNL, j, jNL);
+            if (jNL > iNL or j > i) answer.emplace_back(i, iNL, j, jNL);
           }
         }
       }
@@ -499,7 +582,7 @@ public:
       for (const auto i: sampleNodes(*inodes, noverlapcheck)) {
         const auto ri = inodes->positions()[i];
         const auto Hi = inodes->Hfield()[i];
-        const auto& cmneighbors = cm.overlapConnectivityForNode(inodes, int(i));
+        const auto& cmneighbors = cm.overlapConnectivityForNode(inodes, i);
         const auto fullanswer = findOverlapNeighbors(ri, Hi);
 
         // Check ConnectivityMap vs. N^2 neighbor search.
@@ -507,7 +590,7 @@ public:
           const auto cmcheck = sorted(cmneighbors[jNL]);
           auto answer = sorted(fullanswer[jNL]);
           if (iNL == jNL) {
-            const auto self = std::find(answer.begin(), answer.end(), int(i));
+            const auto self = std::find(answer.begin(), answer.end(), i);
             ASSERT_NE(self, answer.end());
             answer.erase(self);
           }
@@ -532,23 +615,23 @@ public:
     const auto intersectionAnswer = [&](const NodePairIdxType& pair) {
       const auto& neighborsi = cm.connectivityForNode(pair.i_list, pair.i_node);
       const auto& neighborsj = cm.connectivityForNode(pair.j_list, pair.j_node);
-      std::vector<std::set<int>> result(numNodeLists);
+      std::vector<std::set<size_t>> result(numNodeLists);
       for (size_t kNL = 0; kNL < numNodeLists; ++kNL) {
-        const std::set<int> seti(neighborsi[kNL].begin(), neighborsi[kNL].end());
-        const std::set<int> setj(neighborsj[kNL].begin(), neighborsj[kNL].end());
+        const std::set<size_t> seti(neighborsi[kNL].begin(), neighborsi[kNL].end());
+        const std::set<size_t> setj(neighborsj[kNL].begin(), neighborsj[kNL].end());
         std::set_intersection(seti.begin(), seti.end(),
                               setj.begin(), setj.end(),
                               std::inserter(result[kNL], result[kNL].begin()));
       }
-      result[pair.i_list].insert(int(pair.i_node));
-      result[pair.j_list].insert(int(pair.j_node));
+      result[pair.i_list].insert(pair.i_node);
+      result[pair.j_list].insert(pair.j_node);
       return result;
     };
 
-    // Make vector<vector<int>> into a vector of sets for comparison.
+    // Make vector<vector<size_t>> into a vector of sets for comparison.
     const auto convertToSets = [&](const auto& neighbors) {
       EXPECT_EQ(neighbors.size(), numNodeLists);
-      std::vector<std::set<int>> result;
+      std::vector<std::set<size_t>> result;
       result.reserve(neighbors.size());
       for (const auto& values: neighbors) result.emplace_back(values.begin(), values.end());
       return result;
@@ -670,6 +753,23 @@ public:
   }
 };
 
+// Run TreeNeighborView itself in every enabled execution space, including the
+// device policy in CUDA/HIP builds.
+TYPED_TEST_SUITE_P(TreeNeighborViewTypedTest);
+template<typename T>
+class TreeNeighborViewTypedTest: public NeighborRandom3d {};
+
+GPU_TYPED_TEST_P(TreeNeighborViewTypedTest, DeviceNeighborQuery) {
+  gpu_this->template testTreeNeighborView<TypeParam>();
+}
+
+REGISTER_TYPED_TEST_SUITE_P(TreeNeighborViewTypedTest,
+                            DeviceNeighborQuery);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(TreeNeighborView,
+                               TreeNeighborViewTypedTest,
+                               typename Spheral::Test<EXEC_TYPES>::Types, );
+
 TEST_F(NeighborRandom3d, testNeighborCalls) {
   this->testNeighborCalls();
 }
@@ -705,8 +805,7 @@ public:
                                        MaterialPressureMinType::PressureFloor,
                                        0.0);
     WT = std::make_unique<TableKernel>(BSplineKernel<Dim<2>>(), 100u);
-    nodes1 = std::make_unique<NodeSet>("cylindrical nodes 1", *eos,
-                                      Vector(-10.0), Vector(10.0));
+    nodes1 = std::make_unique<NodeSet>("cylindrical nodes 1", *eos);
 
     const auto nRadial = fullTest ? 100u : 12u;
     constexpr auto rmin = 0.0;
@@ -745,9 +844,9 @@ public:
       nodes.Hfield()[i] = Hi;
     }
 
-    dataBase = std::make_unique<DataBase>();
+    dataBase = std::make_unique<DataBase>(kernelExtent);
     dataBase->appendNodeList(nodes);
-    nodes.neighbor().updateNodes();
+    dataBase->updateNeighbors();
   }
 };
 

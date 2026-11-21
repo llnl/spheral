@@ -268,9 +268,10 @@ for ix in range(nodes1.numNodes):
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 

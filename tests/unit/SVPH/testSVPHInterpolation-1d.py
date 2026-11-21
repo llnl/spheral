@@ -141,8 +141,8 @@ output("db.numFluidNodeLists")
 #-------------------------------------------------------------------------------
 # Construct some boundary conditions.
 #-------------------------------------------------------------------------------
-xbc0 = ReflectingBoundary(Plane(Vector(x0), Vector( 1.0)))
-xbc1 = ReflectingBoundary(Plane(Vector(x1), Vector(-1.0)))
+xbc0 = ReflectingBoundary(db, Plane(Vector(x0), Vector( 1.0)))
+xbc1 = ReflectingBoundary(db, Plane(Vector(x1), Vector(-1.0)))
 bounds = vector_of_Boundary([xbc0, xbc1])
 
 #-------------------------------------------------------------------------------
@@ -183,6 +183,7 @@ mesh, void = generateLineMesh([nodes1],
 #-------------------------------------------------------------------------------
 fl = ScalarFieldList()
 fl.appendField(f)
+db.updateNeighbors()
 db.updateConnectivityMap(True)
 fSVPHfl = sampleFieldListSVPH(fl,
                               db.globalPosition,

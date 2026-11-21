@@ -62,6 +62,51 @@ GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, CopyAssign) {
   }
 }
 
+// Assignment and reinitialization must release a previously migrated View
+// before replacing the vector-backed value and gradient storage.
+GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, AssignAndReinitializeAfterMigration) {
+  const size_t NV = gpu_this->NV;
+  CHI source(gpu_this->xmin, gpu_this->xmax, NV, gpu_this->func);
+  CHI target(0.0, 1.0, 7u, gpu_this->func);
+
+  {
+    const auto oldView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(oldView.size(), 7u);
+    EXEC_IN_SPACE_END()
+  }
+
+  target = source;
+  const auto assignedSize = source.size();
+  {
+    const auto sourceView = source.view();
+    const auto targetView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_NE(targetView.data(), sourceView.data());
+    EXEC_IN_SPACE_END()
+    RAJA::forall<TypeParam>(TRS_UINT(0, target.size()),
+      [=] SPHERAL_HOST_DEVICE (size_t i) {
+        SPHERAL_ASSERT_EQ(targetView[i], sourceView[i]);
+      });
+  }
+
+  {
+    const auto migratedView = target.view();
+    EXEC_IN_SPACE_BEGIN(TypeParam)
+      SPHERAL_ASSERT_EQ(migratedView.size(), assignedSize);
+    EXEC_IN_SPACE_END()
+  }
+  const size_t NV2 = NV + 5u;
+  target.initialize(-2.0, 2.0, NV2, gpu_this->func);
+  const auto targetView = target.view();
+  const double dx = 4.0/(NV2 - 1u);
+  RAJA::forall<TypeParam>(TRS_UINT(0, NV2),
+    [=] SPHERAL_HOST_DEVICE (size_t i) {
+      const double x = -2.0 + dx*i;
+      SPHERAL_ASSERT_FLOAT_EQ(targetView(x), gpu_this->func(x));
+    });
+}
+
 // Test initialize using a func
 GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, FuncCtorTest) {
   const size_t NV = gpu_this->NV;
@@ -107,7 +152,8 @@ GPU_TYPED_TEST_P(CubicHermiteInterpolatorTypedTest, VecCtorTest) {
     });
 }
 
-REGISTER_TYPED_TEST_SUITE_P(CubicHermiteInterpolatorTypedTest, CopyAssign, FuncCtorTest,
+REGISTER_TYPED_TEST_SUITE_P(CubicHermiteInterpolatorTypedTest, CopyAssign,
+                            AssignAndReinitializeAfterMigration, FuncCtorTest,
                             VecCtorTest);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(CubicHermiteInterpolator, CubicHermiteInterpolatorTypedTest,

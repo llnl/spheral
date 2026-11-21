@@ -4,7 +4,7 @@
 //
 // Created by JMO, Wed Apr 19 14:19:07 PDT 2000
 //----------------------------------------------------------------------------//
-#include "PeriodicBoundary.hh"
+#include "Boundary/PeriodicBoundary.hh"
 #include "Geometry/GeomPlane.hh"
 #include "Field/Field.hh"
 
@@ -41,32 +41,16 @@ copyAllBoundaryNodes(const BNMap& fromAll,
 }
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PeriodicBoundary<Dimension>::PeriodicBoundary():
-  PlanarBoundary<Dimension>(),
-  mPlane1Boundary(),
-  mPlane2Boundary() {
-}
-
-//------------------------------------------------------------------------------
 // Construct with the given planes.
 //------------------------------------------------------------------------------
 template<typename Dimension>
 PeriodicBoundary<Dimension>::
-PeriodicBoundary(const GeomPlane<Dimension>& plane1,
+PeriodicBoundary(const DataBase<Dimension>& dataBase,
+                 const GeomPlane<Dimension>& plane1,
                  const GeomPlane<Dimension>& plane2):
-  PlanarBoundary<Dimension>(plane1, plane2),
-  mPlane1Boundary(plane1, plane2),
-  mPlane2Boundary(plane2, plane1) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-PeriodicBoundary<Dimension>::~PeriodicBoundary() {
+  PlanarBoundary<Dimension>(dataBase, plane1, plane2),
+  mPlane1Boundary(dataBase, plane1, plane2),
+  mPlane2Boundary(dataBase, plane2, plane1) {
 }
 
 //------------------------------------------------------------------------------

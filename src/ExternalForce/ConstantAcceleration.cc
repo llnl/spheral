@@ -9,7 +9,6 @@
 #include "DataBase/IncrementState.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
 
 using std::vector;

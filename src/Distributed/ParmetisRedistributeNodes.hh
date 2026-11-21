@@ -35,16 +35,16 @@ class ParmetisRedistributeNodes: public RedistributeNodes<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
   // Constructors
   ParmetisRedistributeNodes(double extent);
 
   // Destructor
-  virtual ~ParmetisRedistributeNodes();
+  virtual ~ParmetisRedistributeNodes() = default;
 
   // Given a Spheral++ data base of NodeLists, repartition it among the processors.
   // This is the method required of all descendent classes.
@@ -64,7 +64,7 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
-  typedef std::map<int, std::vector<std::pair<int, double> > > ConnectivityType;
+  using ConnectivityType = std::map<int, std::vector<std::pair<int, double>>>;
 
   // The cutoff radius in normalized space for nodes to interact.
   double mNormalizedNodeExtent;

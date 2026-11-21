@@ -34,7 +34,6 @@ if (ENABLE_MPI)
 
   list(APPEND Distributed_inst
        DistributedBoundary
-       NestedGridDistributedBoundary
        TreeDistributedBoundary
        BoundingVolumeDistributedBoundary
        RedistributeNodes
@@ -53,10 +52,6 @@ if (ENABLE_MPI)
       DistributedBoundary.hh
       DistributedBoundaryInline.hh
       MortonOrderRedistributeNodes.hh
-      NestedGridDistributedBoundary.hh
-      NestedGridRedistributeNodes.hh
-      NestedGridRedistributeNodesInline.hh
-      NestedGridUtilities.hh
       ParmetisRedistributeNodes.hh
       ParmetisRedistributeNodesInline.hh
       PeanoHilbertOrderRedistributeNodes.hh
@@ -66,7 +61,6 @@ if (ENABLE_MPI)
       SortAndDivideRedistributeNodes1d.hh
       SortAndDivideRedistributeNodes2d.hh
       SortAndDivideRedistributeNodes3d.hh
-      SortAndDivideRedistributeNodesInline.hh
       SpaceFillingCurveRedistributeNodes.hh
       TreeDistributedBoundary.hh
       VoronoiRedistributeNodes.hh

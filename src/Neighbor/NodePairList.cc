@@ -30,10 +30,9 @@ NodePairList::computeLookup() const {
 //------------------------------------------------------------------------------
 // Data operations
 //------------------------------------------------------------------------------
-
 void
 NodePairList::clear() {
-  GPUUtils::freeMAView(mData);
+  releaseView();
   mNodePairList.clear();
   mPair2Index.clear();
 }
@@ -41,9 +40,7 @@ NodePairList::clear() {
 //------------------------------------------------------------------------------
 // Data copy constructor
 //------------------------------------------------------------------------------
-
-NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
-  :
+NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals):
   mNodePairList(vals) {
   initView();
 }
@@ -51,9 +48,7 @@ NodePairList::NodePairList(const std::vector<NodePairIdxType>& vals)
 //------------------------------------------------------------------------------
 // Data move constructor
 //------------------------------------------------------------------------------
-
-NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
-  :
+NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept :
   mNodePairList(std::move(vals)) {
   initView();
 }
@@ -61,16 +56,16 @@ NodePairList::NodePairList(std::vector<NodePairIdxType>&& vals) noexcept
 //------------------------------------------------------------------------------
 // Fill function
 //------------------------------------------------------------------------------
-
 void NodePairList::fill(const std::vector<NodePairIdxType>& vals) {
+  releaseView();
   mNodePairList = vals;
+  mPair2Index.clear();
   initView();
 }
 
 //------------------------------------------------------------------------------
 // Copy constructor
 //------------------------------------------------------------------------------
-
 NodePairList::NodePairList(const NodePairList& rhs) :
   NodePairListView() {
   mNodePairList = rhs.mNodePairList;
@@ -80,13 +75,25 @@ NodePairList::NodePairList(const NodePairList& rhs) :
 //------------------------------------------------------------------------------
 // Assignment constructor
 //------------------------------------------------------------------------------
-
 NodePairList& NodePairList::operator=(const NodePairList& rhs) {
   if (this != &rhs) {
+    releaseView();
     mNodePairList = rhs.mNodePairList;
+    mPair2Index.clear();
     initView();
   }
   return *this;
+}
+
+//------------------------------------------------------------------------------
+// Release view memory
+//------------------------------------------------------------------------------
+void NodePairList::releaseView() {
+#ifdef SPHERAL_UNIFIED_MEMORY
+    mData = {};
+#else
+    GPUUtils::freeMAView(mData);
+#endif
 }
 
 }

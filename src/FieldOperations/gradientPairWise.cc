@@ -5,11 +5,10 @@
 // Created by JMO, Sat Apr 12 15:58:53 PDT 2003
 //----------------------------------------------------------------------------//
 #include "PairWiseFieldListFunctions.hh"
+#include "FieldOperations/FieldListConnectivity.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
 #include "Geometry/MathTraits.hh"
 #include "incrementPairWiseDelta.hh"
@@ -40,57 +39,27 @@ gradientPairWise
 
   // Return FieldList.
   FieldList<Dimension, GradientType> result;
-  vector< vector<bool> > flagNodeDone(fieldList.numFields());
   result.copyFields();
   for (typename FieldList<Dimension, DataType>::const_iterator
          fieldItr = fieldList.begin();
        fieldItr < fieldList.end(); 
        ++fieldItr) {
     result.appendField(Field<Dimension, GradientType>("grad pair wise", (*fieldItr)->nodeList()));
-    flagNodeDone[fieldItr - fieldList.begin()].resize((*fieldItr)->nodeListPtr()->numInternalNodes(), false);
   }
-
-  // Loop over all the elements in the input FieldList.
-  for (InternalNodeIterator<Dimension> nodeItr = fieldList.internalNodeBegin();
-       nodeItr < fieldList.internalNodeEnd();
-       ++nodeItr) {
-
-    // Check if this node has been done yet.
-    if (!flagNodeDone[nodeItr.fieldID()][nodeItr.nodeID()]) {
-
-      // We will do the batch of master nodes associated with this node together.
-      // Set the neighbor information.
-      vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-      fieldList.setMasterNodeLists(position(nodeItr), Hfield(nodeItr), masterLists, coarseNeighbors);
-
-      // Now loop over all the master nodes.
-      for (MasterNodeIterator<Dimension> masterItr = fieldList.masterNodeBegin(masterLists);
-           masterItr < fieldList.masterNodeEnd();
-           ++masterItr) {
-        CHECK(flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] == false);
-
-        // Set the refined neighbor information for this master node.
-        fieldList.setRefineNodeLists(position(masterItr), Hfield(masterItr), coarseNeighbors, refineNeighbors);
-
-        // State for node i.
-        const Vector& ri = position(masterItr);
-        const SymTensor& Hi = Hfield(masterItr);
-        //const Scalar& rhoi = rho(masterItr);
-        //const Scalar& weighti = weight(masterItr);
-        const DataType& fieldi = fieldList(masterItr);
-
-        // Loop over the refined neighbors.
-        GradientType normalization(0.0);
-        for (RefineNodeIterator<Dimension> neighborItr = fieldList.refineNodeBegin(refineNeighbors);
-             neighborItr < fieldList.refineNodeEnd();
-             ++neighborItr) {
-          if (neighborItr != masterItr) {
-
-            const Vector& rj = position(neighborItr);
-            const SymTensor& Hj = Hfield(neighborItr);
-            //const Scalar& mj = mass(neighborItr);
-            const Scalar& weightj = weight(neighborItr);
-            const DataType& fieldj = fieldList(neighborItr);
+  FieldListConnectivity<Dimension, DataType> connectivity(fieldList, kernel.kernelExtent());
+  const auto searchType = connectivity.searchType();
+  for (auto fieldi = 0u; fieldi < fieldList.numFields(); ++fieldi) {
+    const auto numInternal = fieldList[fieldi]->nodeListPtr()->numInternalNodes();
+    for (auto i = 0u; i < numInternal; ++i) {
+      const Vector& ri = position(fieldi, i);
+      const SymTensor& Hi = Hfield(fieldi, i);
+      const DataType& fi = fieldList(fieldi, i);
+      GradientType normalization(0.0);
+      connectivity.forEachNeighbor(fieldi, i, [&](const size_t fieldj, const size_t j) {
+            const Vector& rj = position(fieldj, j);
+            const SymTensor& Hj = Hfield(fieldj, j);
+            const Scalar& weightj = weight(fieldj, j);
+            const DataType& fj = fieldList(fieldj, j);
 
             const Vector rij = ri - rj;
             const Vector etai = Hi*rij;
@@ -100,7 +69,7 @@ gradientPairWise
 
             // Get the symmetrized kernel weighting for this node pair.
             Scalar Wij;
-            switch((*fieldList.begin())->nodeListPtr()->neighbor().neighborSearchType()) {
+            switch(searchType) {
             case NeighborSearchType::GatherScatter:
               Wij = 0.5*(kernel(etaiMag, Hi.Determinant()) + 
                          kernel(etajMag, Hj.Determinant()));
@@ -120,35 +89,17 @@ gradientPairWise
 
             // Add this nodes contribution to the master value.
 	    const Scalar wij = weightj*Wij;
-            const DataType fij = fieldi - fieldj;
-            incrementPairWiseDelta<Dimension>(result(masterItr),
+            const DataType fij = fi - fj;
+            incrementPairWiseDelta<Dimension>(result(fieldi, i),
                                               normalization,
                                               wij,
                                               fij,
                                               rij,
                                               Hi);
-          }
-        }
-        renormalizeGradient<Dimension>(result(masterItr),
+      });
+        renormalizeGradient<Dimension>(result(fieldi, i),
                                        normalization);
-
-        // This master node is finished.
-        flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] = true;
-      }
     }
-  }
-
-  // After we're done, all nodes in all NodeLists should be flagged as done.
-  for (typename vector< vector<bool> >::const_iterator
-         flagNodeItr = flagNodeDone.begin();
-       flagNodeItr < flagNodeDone.end();
-       ++flagNodeItr) {
-    int checkcount = count(flagNodeItr->begin(), flagNodeItr->end(), false);
-    if (checkcount > 0) {
-      cerr << "Error in FieldList::gradient: Not all values determined on exit "
-           << checkcount << endl;
-    }
-    CHECK(checkcount == 0);
   }
 
   return result;

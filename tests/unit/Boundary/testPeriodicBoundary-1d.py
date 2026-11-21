@@ -102,7 +102,7 @@ hydro = SPH(dataBase = db,
 #-------------------------------------------------------------------------------
 xPlane0 = Plane(Vector(x0), Vector( 1.0))
 xPlane1 = Plane(Vector(x1), Vector(-1.0))
-xbc = PeriodicBoundary(xPlane0, xPlane1)
+xbc = PeriodicBoundary(db, xPlane0, xPlane1)
 hydro.appendBoundary(xbc)
 
 #-------------------------------------------------------------------------------

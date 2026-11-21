@@ -8,6 +8,7 @@
 #ifndef __Spheral_pointDistances_hh__
 #define __Spheral_pointDistances_hh__
 
+#include "config.hh"
 #include "Geometry/Dimension.hh"
 #include "safeInv.hh"
 
@@ -17,6 +18,7 @@ namespace Spheral {
 // Find the point on a line segment (a0,a1) closest to point (p).
 //------------------------------------------------------------------------------
 template<typename Vector>
+SPHERAL_HOST_DEVICE 
 inline
 Vector
 closestPointOnSegment(const Vector& p,
@@ -33,6 +35,7 @@ closestPointOnSegment(const Vector& p,
 // This version returns true if the closest point forms a right angle between
 // the line segment and (point, closest) pairs.
 template<typename Vector>
+SPHERAL_HOST_DEVICE 
 inline
 bool
 closestPointOnSegment(const Vector& p,
@@ -52,6 +55,7 @@ closestPointOnSegment(const Vector& p,
 // Compute the distance between a point and a plane.
 //------------------------------------------------------------------------------
 template<typename Vector>
+SPHERAL_HOST_DEVICE 
 inline
 double
 pointPlaneDistance(const Vector& point,
@@ -64,6 +68,7 @@ pointPlaneDistance(const Vector& point,
 //------------------------------------------------------------------------------
 // Find the point on a plane closest to the given point.
 //------------------------------------------------------------------------------
+SPHERAL_HOST_DEVICE 
 inline
 Dim<3>::Vector
 closestPointOnPlane(const Dim<3>::Vector& p,

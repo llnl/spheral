@@ -18,24 +18,14 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 template<typename Dimension>
 MortonOrderRedistributeNodes<Dimension>::
-MortonOrderRedistributeNodes(double dummy,
-                             const double minNodesPerDomainFraction,
+MortonOrderRedistributeNodes(const double minNodesPerDomainFraction,
                              const double maxNodesPerDomainFraction,
                              const bool workBalance,
                              const bool localReorderOnly):
-  SpaceFillingCurveRedistributeNodes<Dimension>(dummy, 
-                                                minNodesPerDomainFraction,
+  SpaceFillingCurveRedistributeNodes<Dimension>(minNodesPerDomainFraction,
                                                 maxNodesPerDomainFraction,
                                                 workBalance,
                                                 localReorderOnly) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-MortonOrderRedistributeNodes<Dimension>::
-~MortonOrderRedistributeNodes() {
 }
 
 //------------------------------------------------------------------------------

@@ -12,7 +12,6 @@
 #include "DataBase/State.hh"
 #include "DataBase/StateDerivatives.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Physics/Physics.hh"
 #include "Utilities/DBC.hh"
 #include "Utilities/Timer.hh"

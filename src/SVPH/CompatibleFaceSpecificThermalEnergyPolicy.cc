@@ -4,7 +4,6 @@
 // Created by JMO, Fri Aug 16 14:47:57 PDT 2013
 //----------------------------------------------------------------------------//
 #include "CompatibleFaceSpecificThermalEnergyPolicy.hh"
-#include "computeSVPHCorrectionsOnFaces.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "ArtificialViscosity/ArtificialViscosityView.hh"
 #include "NodeList/NodeList.hh"

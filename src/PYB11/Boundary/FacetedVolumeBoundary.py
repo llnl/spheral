@@ -26,6 +26,7 @@ class FacetedVolumeBoundary(Boundary):
     # Constructors
     def pyinit(self,
                poly = "const FacetedVolume&",
+               kernelExtent = "const Scalar",
                interiorBoundary = "const bool",
                useGhosts = ("const bool", "false")):
         "Constructor"
@@ -200,9 +201,10 @@ class FacetedVolumeBoundary(Boundary):
 
     #...........................................................................
     # Properties
-    polyVolume = PYB11property(doc="The faceted volume defining this boundary")
-    interiorBoundary = PYB11property(doc="Flag if this Boundary is interior or exterior to the problem")
-    useGhosts = PYB11property(doc="Flag whether we should build ghost points or not")
+    polyVolume = PYB11property("const FacetedVolume&", returnpolicy="reference_internal", doc="The faceted volume defining this boundary")
+    kernelExtent = PYB11property("Scalar", doc="The kernel extent used to construct ghost nodes")
+    interiorBoundary = PYB11property("bool", doc="Flag if this Boundary is interior or exterior to the problem")
+    useGhosts = PYB11property("bool", doc="Flag whether we should build ghost points or not")
 
 #-------------------------------------------------------------------------------
 # Inject methods

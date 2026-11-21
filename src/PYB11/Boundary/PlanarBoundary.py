@@ -24,10 +24,8 @@ class PlanarBoundary(Boundary):
 
     #...........................................................................
     # Constructors
-    def pyinit(self):
-        "Default constructor"
-
-    def pyinit1(self,
+    def pyinit(self,
+                dataBase = "const DataBase<%(Dimension)s>&",
                 enterPlane = "const Plane&",
                 exitPlane = "const Plane&"):
         "Construct with enter/exit mapping planes"
