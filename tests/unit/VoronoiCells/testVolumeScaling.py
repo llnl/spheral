@@ -151,17 +151,17 @@ output("expectedCoordVol")
 boundaries = []
 if dimension == 1:
     if spherical:
-        boundaries.append(SphericalOriginBoundary())
+        boundaries.append(SphericalOriginBoundary(dataBase))
         p1 = Plane(Vector(x1), Vector(-1.0))
-        boundaries.append(ReflectingBoundary(p1))
+        boundaries.append(ReflectingBoundary(dataBase, p1))
     else:
         p0 = Plane(Vector(x0), Vector( 1.0))
         p1 = Plane(Vector(x1), Vector(-1.0))
-        boundaries.append(ReflectingBoundary(p0))
-        boundaries.append(ReflectingBoundary(p1))
+        boundaries.append(ReflectingBoundary(dataBase, p0))
+        boundaries.append(ReflectingBoundary(dataBase, p1))
 elif dimension == 2:
     if cylindrical:
-        boundaries.append(AxisBoundaryRZ(0.1))
+        boundaries.append(AxisBoundaryRZ(dataBase, 0.1))
         for d in range(dimension):
             for n, lim in enumerate([x0, x1]):
                 if d == 1 and n == 0:
@@ -170,7 +170,7 @@ elif dimension == 2:
                 point[d] = lim
                 normal = Vector.zero
                 normal[d] = 1.0 if n == 0 else -1.0
-                boundaries.append(ReflectingBoundary(Plane(point, normal)))
+                boundaries.append(ReflectingBoundary(dataBase, Plane(point, normal)))
     else:
         for d in range(dimension):
             for n, lim in enumerate([x0, x1]):
@@ -178,7 +178,7 @@ elif dimension == 2:
                 point[d] = lim
                 normal = Vector.zero
                 normal[d] = 1.0 if n == 0 else -1.0
-                boundaries.append(ReflectingBoundary(Plane(point, normal)))
+                boundaries.append(ReflectingBoundary(dataBase, Plane(point, normal)))
 else:
     for d in range(dimension):
         for n, lim in enumerate([x0, x1]):
@@ -186,7 +186,7 @@ else:
             point[d] = lim
             normal = Vector.zero
             normal[d] = 1.0 if n == 0 else -1.0
-            boundaries.append(ReflectingBoundary(Plane(point, normal)))
+            boundaries.append(ReflectingBoundary(dataBase, Plane(point, normal)))
 
 # If we're parallel we need a distributed boundary
 if mpi.procs > 1:
@@ -214,6 +214,7 @@ iterateIdealH(dataBase,
               boundaries,
               100,
               1.e-4)
+dataBase.updateNeighbors()
 dataBase.updateConnectivityMap(True, False)
 
 #-------------------------------------------------------------------------------

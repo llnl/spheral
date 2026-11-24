@@ -17,7 +17,6 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Boundary/PeriodicBoundary.hh"
 #include "Distributed/DistributedBoundary.hh"
@@ -923,4 +922,3 @@ valid() const
 
 //------------------------------------------------------------------------------
 } // end namespace Spheral
-

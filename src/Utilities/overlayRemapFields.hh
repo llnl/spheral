@@ -21,7 +21,8 @@ overlayRemapFields(const std::vector<Boundary<Dimension>*>& boundaries,
                    std::vector<Field<Dimension, typename Dimension::Scalar>*>& scalarAcceptorFields,
                    std::vector<Field<Dimension, typename Dimension::Vector>*>& vectorAcceptorFields,
                    std::vector<Field<Dimension, typename Dimension::Tensor>*>& tensorAcceptorFields,
-                   std::vector<Field<Dimension, typename Dimension::SymTensor>*>& symTensorAcceptorFields);
+                   std::vector<Field<Dimension, typename Dimension::SymTensor>*>& symTensorAcceptorFields,
+                   const typename Dimension::Scalar etaMax = 1.0);
 
 }
 

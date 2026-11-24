@@ -58,7 +58,7 @@ weibullFlawDistributionOwen(const unsigned seed,
                                           nodeList);
 
   // Find the unique ordering to the nodes.
-  DataBase<Dimension> db;
+  DataBase<Dimension> db(1.0);
   db.appendNodeList(const_cast<FluidNodeList<Dimension>&>(nodeList));
   FieldList<Dimension, Key> keyList = mortonOrderIndices(db);
   const auto nglobal = db.globalNumInternalNodes();

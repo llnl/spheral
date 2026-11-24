@@ -13,9 +13,10 @@
 #include "Boundary/Boundary.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
+#include "Neighbor/ConnectivityMap.hh"
 #include "NodeList/NodeList.hh"
 #include "Utilities/globalNodeIDs.hh"
+#include "Utilities/range.hh"
 #include "Utilities/SpheralMessage.hh"
 #include "Communicator.hh"
 
@@ -59,14 +60,6 @@ ParmetisRedistributeNodes(double extent):
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-ParmetisRedistributeNodes<Dimension>::
-~ParmetisRedistributeNodes() {
-}
-
-//------------------------------------------------------------------------------
 // The main method of this class.  Call on the Parmetis library to describe an
 // optimal partioning of the nodes, and then apply that partitioning.
 //------------------------------------------------------------------------------
@@ -79,12 +72,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
+  dataBase.reinitializeNeighbors();
 
   // If the user did not specify any boundaries, then create a Distributed
   // boundary for local use.
@@ -93,26 +82,18 @@ redistributeNodes(DataBase<Dimension>& dataBase,
   if (boundaries.size() == 0) boundaries.push_back(&bound);
 
   // Use the specified boundaries to create the ghost nodes.
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) {
-    (*boundItr)->setAllGhostNodes(dataBase);
-    (*boundItr)->finalizeGhostBoundary();
-    for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
+  for (auto* boundaryPtr: boundaries) {
+    boundaryPtr->setAllGhostNodes(dataBase);
+    boundaryPtr->finalizeGhostBoundary();
+    dataBase.updateNeighbors();
   }
 
   // Assign global IDs to all nodes.
   FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
 
   // Use the boundary conditions to communicate global IDs.
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->applyFieldListGhostBoundary(globalIDs);
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->finalizeGhostBoundary();
+  for (auto* boundaryPtr: boundaries) boundaryPtr->applyFieldListGhostBoundary(globalIDs);
+  for (auto* boundaryPtr: boundaries) boundaryPtr->finalizeGhostBoundary();
 
   // Get the local description of the domain distribution.
   vector<DomainNode<Dimension> > nodeDistribution = currentDomainDecomposition(dataBase, globalIDs);
@@ -156,12 +137,8 @@ redistributeNodes(DataBase<Dimension>& dataBase,
 
   // We're done with the ghost nodes now, so eliminate them before we try 
   // rearranging nodes.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
+  dataBase.reinitializeNeighbors();
 
   // Build the Parmetis tpwgts array, which is the distribution of vertex weights
   // between domains.  Since we want equal weight per domain, this is just 
@@ -224,12 +201,8 @@ refineAndRedistributeNodes(DataBase<Dimension>& dataBase,
   const int numProcs = this->numDomains();
 
   // Go over each NodeList, and clear out any ghost nodes.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
+  dataBase.reinitializeNeighbors();
 
   // If the user did not specify any boundaries, then create a Distributed
   // boundary for local use.
@@ -238,26 +211,18 @@ refineAndRedistributeNodes(DataBase<Dimension>& dataBase,
   if (boundaries.size() == 0) boundaries.push_back(&bound);
 
   // Use the specified boundaries to create the ghost nodes.
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) {
-    (*boundItr)->setAllGhostNodes(dataBase);
-    (*boundItr)->finalizeGhostBoundary();
-    for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-         nodeListItr != dataBase.nodeListEnd();
-         ++nodeListItr) (*nodeListItr)->neighbor().updateNodes();
+  for (auto* boundaryPtr: boundaries) {
+    boundaryPtr->setAllGhostNodes(dataBase);
+    boundaryPtr->finalizeGhostBoundary();
+    dataBase.updateNeighbors();
   }
 
   // Assign global IDs to all nodes.
   FieldList<Dimension, int> globalIDs = globalNodeIDs(dataBase);
 
   // Use the boundary conditions to communicate global IDs.
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->applyFieldListGhostBoundary(globalIDs);
-  for (typename vector<Boundary<Dimension>*>::iterator boundItr = boundaries.begin();
-       boundItr != boundaries.end();
-       ++boundItr) (*boundItr)->finalizeGhostBoundary();
+  for (auto* boundaryPtr: boundaries) boundaryPtr->applyFieldListGhostBoundary(globalIDs);
+  for (auto* boundaryPtr: boundaries) boundaryPtr->finalizeGhostBoundary();
 
   // Get the local description of the domain distribution.
   vector<DomainNode<Dimension> > nodeDistribution = currentDomainDecomposition(dataBase, globalIDs);
@@ -301,12 +266,8 @@ refineAndRedistributeNodes(DataBase<Dimension>& dataBase,
 
   // We're done with the ghost nodes now, so eliminate them before we try 
   // rearranging nodes.
-  for (typename DataBase<Dimension>::NodeListIterator nodeListItr = dataBase.nodeListBegin();
-       nodeListItr != dataBase.nodeListEnd();
-       ++nodeListItr) {
-    (*nodeListItr)->numGhostNodes(0);
-    (*nodeListItr)->neighbor().updateNodes();
-  }
+  for (auto* nodeListPtr: dataBase.nodeListPtrs()) nodeListPtr->numGhostNodes(0);
+  dataBase.reinitializeNeighbors();
 
   // Build the Parmetis tpwgts array, which is the distribution of vertex weights
   // between domains.  Since we want equal weight per domain, this is just 
@@ -372,17 +333,17 @@ buildCSRGraph(const DataBase<Dimension>& dataBase,
 
 
   // Grab that parallel info.
-  const int procID = this->domainID();
   const int numProcs = this->numDomains();
-
-  // Create a list of flags which we will use to keep track of which nodes have
-  // been calculated.
-  FieldList<Dimension, int> flagNodeDone = dataBase.newGlobalFieldList(int());
-  flagNodeDone = 0;
 
   // Get the state fields from the DataBase.
   const FieldList<Dimension, Vector> positions = dataBase.globalPosition();
   const FieldList<Dimension, SymTensor> Hfield = dataBase.globalHfield();
+  const auto& nodeListPtrs = dataBase.nodeListPtrs();
+
+  // Build candidate connectivity for each internal node.  Ghost nodes are
+  // included as neighbors, providing the cross-domain graph edges.
+  dataBase.updateConnectivityMap(false, false, false);
+  const auto& connectivityMap = dataBase.connectivityMap();
 
   // The square of the cutoff distance, which we'll use to determine which
   // nodes are neighbors to whom.
@@ -394,77 +355,34 @@ buildCSRGraph(const DataBase<Dimension>& dataBase,
 
   // Loop over the internal nodes in the DataBase.
   int totalNumNeighbors = 0;
-  int minGlobalID = INT_MAX;
-  int maxGlobalID = -INT_MAX;
-  for (InternalNodeIterator<Dimension> nodeItr = dataBase.internalNodeBegin();
-       nodeItr != dataBase.internalNodeEnd();
-       ++nodeItr) {
+  for (auto [nodeListi, nodeListPtr]: enumerate(nodeListPtrs)) {
+    const auto n = nodeListPtr->numInternalNodes();
+    for (auto i = 0u; i < n; ++i) {
+      const auto& ri = positions(nodeListi, i);
+      const auto& Hi = Hfield(nodeListi, i);
+      const auto globalNodeI = globalNodeIDs(nodeListi, i);
 
-    // Check if this node has been done yet.
-    if (flagNodeDone(nodeItr) == 0) {
-
-      // We will do the batch of master nodes associated with this node together.
-      // Set the neighbor information.
-      dataBase.setMasterNodeLists(positions(nodeItr), Hfield(nodeItr));
-
-      // Now loop over all the master nodes.
-      for (MasterNodeIterator<Dimension> masterItr = dataBase.masterNodeBegin();
-           masterItr != dataBase.masterNodeEnd();
-           ++masterItr) {
-        CHECK(flagNodeDone(masterItr) == 0);
-
-        // State for node I.
-        const Vector& ri = positions(masterItr);
-        const SymTensor& Hi = Hfield(masterItr);
-        const int globalNodeI = globalNodeIDs(masterItr);
-        minGlobalID = std::min(minGlobalID, globalNodeI);
-        maxGlobalID = std::max(maxGlobalID, globalNodeI);
-
-        // Insert an entry into the connectivity map for this node.
-        CHECK(neighbors.find(globalNodeI) == neighbors.end());
-        neighbors[globalNodeI] = vector<pair<int, double> >();
-
-        // Set the refined neighbor information for this master node.
-        dataBase.setRefineNodeLists(positions(masterItr), Hfield(masterItr));
-
-        // Loop over the refined neighbors, and determine what nodes
-        // are attached to this one.
-        for (RefineNodeIterator<Dimension> refineItr = dataBase.refineNodeBegin();
-             refineItr != dataBase.refineNodeEnd();
-             ++refineItr) {
-
-          // State for node J.
-          const Vector& rj = positions(refineItr);
-          const SymTensor& Hj = Hfield(refineItr);
-          const int globalNodeJ = globalNodeIDs(refineItr);
-
-          // Compute the normalized distance between these nodes.
-          const Vector rij = ri - rj;
-          const Scalar etai2 = (Hi*rij).magnitude2();
-          const Scalar etaj2 = (Hj*rij).magnitude2();
-
-          // If this node counts, add it to our connectivity list.
-          // We force the symmetric Gather/Scatter formalism here, since ParMETIS
-          // requires a symmetric graph.
-          if (masterItr != refineItr &&
-              (etai2 < cutoff2 || etaj2 < cutoff2)) {
-            neighbors[globalNodeI].push_back(pair<int, double>(globalNodeJ, rij.magnitude2()));
+      CHECK(neighbors.find(globalNodeI) == neighbors.end());
+      auto& neighborsi = neighbors[globalNodeI];
+      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, i);
+      CHECK(connectivity.size() == nodeListPtrs.size());
+      for (auto [nodeListj, neighborsj]: enumerate(connectivity)) {
+        for (const auto j: neighborsj) {
+          const auto& rj = positions(nodeListj, j);
+          const auto& Hj = Hfield(nodeListj, j);
+          const auto globalNodeJ = globalNodeIDs(nodeListj, j);
+          const auto rij = ri - rj;
+          const auto etai2 = (Hi*rij).magnitude2();
+          const auto etaj2 = (Hj*rij).magnitude2();
+          if ((nodeListi != nodeListj or i != j) and
+              (etai2 < cutoff2 or etaj2 < cutoff2)) {
+            neighborsi.emplace_back(globalNodeJ, rij.magnitude2());
             ++totalNumNeighbors;
           }
         }
-
-        // Flag this master node as done.
-        flagNodeDone(masterItr) = 1;
       }
     }
   }
-  
-  BEGIN_CONTRACT_SCOPE
-  // After we're done, all nodes in all NodeLists should be flagged as done.
-  for (InternalNodeIterator<Dimension> itr = flagNodeDone.internalNodeBegin();
-       itr != flagNodeDone.internalNodeEnd();
-       ++itr) ENSURE(flagNodeDone(itr) == 1);
-  END_CONTRACT_SCOPE
 
   // We need to ensure all nodes have at least one neighor, so if there are any
   // isolated ones assign them a neighbor.
@@ -1077,4 +995,3 @@ symmetricConnectivity(const map<int, vector<pair<int, double> > >& neighbors) co
 }
 
 }
-

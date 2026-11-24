@@ -5,27 +5,27 @@
 // Created by JMO, Wed Apr 19 15:00:50 PDT 2000
 //----------------------------------------------------------------------------//
 
-#ifndef PeriodicPlanarBoundary_HH
-#define PeriodicPlanarBoundary_HH
+#ifndef __Spheral_PeriodicPlanarBoundary__
+#define __Spheral_PeriodicPlanarBoundary__
 
 class PeriodicPlanarBoundary: public PlanarBoundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
-  typedef typename Dimension::FourthRankTensor FourthRankTensor;
-  typedef typename Dimension::FifthRankTensor FifthRankTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using ThirdRankTensor = typename Dimension::ThirdRankTensor;
+  using FourthRankTensor = typename Dimension::FourthRankTensor;
+  using FifthRankTensor = typename Dimension::FifthRankTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
 
   // Constructors and destructors.
-  PeriodicPlanarBoundary();
-  PeriodicPlanarBoundary(const GeomPlane<Dimension>& plane1,
+  PeriodicPlanarBoundary(const DataBase<Dimension>& dataBase,
+                         const GeomPlane<Dimension>& plane1,
                          const GeomPlane<Dimension>& plane2);
-  virtual ~PeriodicPlanarBoundary();
+  virtual ~PeriodicPlanarBoundary() = default;
 
   // Apply the boundary condition to the ghost nodes in the given Field.
   virtual void applyGhostBoundary(FieldBase<Dimension>& fieldBase) const override;

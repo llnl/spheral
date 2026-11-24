@@ -6,11 +6,10 @@
 //----------------------------------------------------------------------------//
 
 #include "FieldListFunctionsMash.hh"
+#include "FieldOperations/FieldListConnectivity.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "NodeList/NodeList.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Kernel/TableKernel.hh"
 #include "Geometry/MathTraits.hh"
 
@@ -37,52 +36,26 @@ divergenceMash(const FieldList<Dimension, DataType>& fieldList,
 
   // Return FieldList.
   FieldList<Dimension, DivergenceType> result;
-  vector< vector<bool> > flagNodeDone(fieldList.numFields());
   result.copyFields();
   for (typename FieldList<Dimension, DataType>::const_iterator fieldItr = fieldList.begin();
        fieldItr < fieldList.end(); 
        ++fieldItr) {
     result.appendField(Field<Dimension, DivergenceType>("div mash", (*fieldItr)->nodeList()));
-    flagNodeDone[fieldItr - fieldList.begin()].resize((*fieldItr)->nodeListPtr()->numInternalNodes(), false);
   }
-
-  // Loop over all the elements in the input FieldList.
-  for (InternalNodeIterator<Dimension> nodeItr = fieldList.internalNodeBegin();
-       nodeItr < fieldList.internalNodeEnd();
-       ++nodeItr) {
-
-    // Check if this node has been done yet.
-    if (!flagNodeDone[nodeItr.fieldID()][nodeItr.nodeID()]) {
-
-      // We will do the batch of master nodes associated with this node together.
-      // Set the neighbor information.
-      vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-      fieldList.setMasterNodeLists(position(nodeItr), Hfield(nodeItr), masterLists, coarseNeighbors);
-
-      // Now loop over all the master nodes.
-      for (MasterNodeIterator<Dimension> masterItr = fieldList.masterNodeBegin(masterLists);
-           masterItr < fieldList.masterNodeEnd();
-           ++masterItr) {
-        CHECK(flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] == false);
-
-        // Set the refined neighbor information for this master node.
-        fieldList.setRefineNodeLists(position(masterItr), Hfield(masterItr), coarseNeighbors, refineNeighbors);
-
-        // Loop over the refined neighbors.
-        const Vector& ri = position(masterItr);
-        const SymTensor& Hi = Hfield(masterItr);
-        //const Scalar& weighti = weight(masterItr);
-        const DataType& fieldi = fieldList(masterItr);
-
-        Scalar normalization = 0.0;
-        for (RefineNodeIterator<Dimension> neighborItr = fieldList.refineNodeBegin(refineNeighbors);
-             neighborItr < fieldList.refineNodeEnd();
-             ++neighborItr) {
-
-          const Vector& rj = position(neighborItr);
-          const SymTensor& Hj = Hfield(neighborItr);
-          const Scalar& weightj = weight(neighborItr);
-          const DataType& fieldj = fieldList(neighborItr);
+  FieldListConnectivity<Dimension, DataType> connectivity(fieldList, kernel.kernelExtent());
+  const auto searchType = connectivity.searchType();
+  for (auto fieldi = 0u; fieldi < fieldList.numFields(); ++fieldi) {
+    const auto numInternal = fieldList[fieldi]->nodeListPtr()->numInternalNodes();
+    for (auto i = 0u; i < numInternal; ++i) {
+      const Vector& ri = position(fieldi, i);
+      const SymTensor& Hi = Hfield(fieldi, i);
+      const DataType& fi = fieldList(fieldi, i);
+      Scalar normalization = weight(fieldi, i)*kernel(0.0, 1.0);
+      connectivity.forEachNeighbor(fieldi, i, [&](const size_t fieldj, const size_t j) {
+          const Vector& rj = position(fieldj, j);
+          const SymTensor& Hj = Hfield(fieldj, j);
+          const Scalar& weightj = weight(fieldj, j);
+          const DataType& fj = fieldList(fieldj, j);
 
           const Vector rij = ri - rj;
           const Vector etai = Hi*rij;
@@ -95,7 +68,7 @@ divergenceMash(const FieldList<Dimension, DataType>& fieldList,
           // Get the symmetrized kernel gradient for this node pair.
           Scalar Wij;
           Vector gradWij;
-          switch((*fieldList.begin())->nodeListPtr()->neighbor().neighborSearchType()) {
+          switch(searchType) {
           case NeighborSearchType::GatherScatter:
             Wij = 0.5*(kernel(etaiMag, 1.0) + kernel(etajMag, 1.0));
             gradWij = 0.5*(Hi*etaiNorm*kernel.grad(etaiMag, 1.0) + 
@@ -118,35 +91,14 @@ divergenceMash(const FieldList<Dimension, DataType>& fieldList,
 
           // Add this nodes contribution to the master value.
           normalization += weightj*Wij;
-          result(masterItr) += weightj*(fieldj - fieldi).dot(gradWij);
+          result(fieldi, i) += weightj*(fj - fi).dot(gradWij);
 
-          //           Scalar Wi = kernel(etai, Hi);
-          //           Scalar Wj = kernel(etaj, Hj);
-          //           Scalar Wij = 0.5*(Wi + Wj);
-          //           result(masterItr) += 2.0*
-          //             Wj*((weighti*fieldi - weightj*fieldj)/(rij.magnitude2() + FLT_MIN)).dot(rij);
-        }
+      });
 
         // Normalize the divergence value.
         CHECK(normalization > 0.0);
-        result(masterItr) /= normalization;
-
-        // This master node is finished.
-        flagNodeDone[masterItr.fieldID()][masterItr.nodeID()] = true;
-      }
+      result(fieldi, i) /= normalization;
     }
-  }
-
-  // After we're done, all nodes in all NodeLists should be flagged as done.
-  for (typename vector< vector<bool> >::const_iterator flagNodeItr = flagNodeDone.begin();
-       flagNodeItr < flagNodeDone.end();
-       ++flagNodeItr) {
-    int checkcount = count(flagNodeItr->begin(), flagNodeItr->end(), false);
-    if (checkcount > 0) {
-      cerr << "Error in FieldList::smoothFieldsMash: Not all values determined on exit "
-           << checkcount << endl;
-    }
-    CHECK(checkcount == 0);
   }
 
   return result;

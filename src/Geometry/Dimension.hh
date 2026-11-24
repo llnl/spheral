@@ -49,10 +49,10 @@ public:
   typedef GeomFacet1d Facet;
   static const int nDim = 1;
 
-  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return x; }
-  static double pownu(const double& x) { return x; }
-  static double pownu1(const double& /*x*/) { return 1.0; }
-  static double pownu12(const double& /*x*/) { return 1.0; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T rootnu (const T& x) { return x; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu  (const T& x) { return x; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu1 (const T& x) { return 1; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu12(const T& x) { return 1; }
 };
 
 template<>
@@ -70,10 +70,10 @@ public:
   typedef GeomFacet2d Facet;
   static const int nDim = 2;
 
-  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return std::sqrt(x); }
-  static double pownu(const double& x) { return x*x; }
-  static double pownu1(const double& x) { return x; }
-  static double pownu12(const double& x) { return std::sqrt(x); }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T rootnu (const T& x) { return std::sqrt(x); }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu  (const T& x) { return x*x; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu1 (const T& x) { return x; }
+  template<typename T> static SPHERAL_HOST_DEVICE constexpr T pownu12(const T& x) { return std::sqrt(x); }
 };
 
 template<>
@@ -91,10 +91,10 @@ public:
   typedef GeomFacet3d Facet;
   static const int nDim = 3;
 
-  static SPHERAL_HOST_DEVICE double rootnu(const double& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
-  static double pownu(const double& x) { return x*x*x; }
-  static double pownu1(const double& x) { return x*x; }
-  static double pownu12(const double& x) { return x; }
+  template<typename T> static SPHERAL_HOST_DEVICE T constexpr rootnu (const T& x) { return FastMath::CubeRootHalley2(x); } // { return pow(x, 1.0/3.0); }
+  template<typename T> static SPHERAL_HOST_DEVICE T constexpr pownu  (const T& x) { return x*x*x; }
+  template<typename T> static SPHERAL_HOST_DEVICE T constexpr pownu1 (const T& x) { return x*x; }
+  template<typename T> static SPHERAL_HOST_DEVICE T constexpr pownu12(const T& x) { return x; }
 };
 
 //--------------------------------------------------------------------------------

@@ -920,11 +920,11 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
         auto& DPDxi = DPDx(nodeListi, i);
 
         const auto Mdeti = Mi.Determinant();
-        const auto goodM = ( Mdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2));
+        const auto goodM = ( Mdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2u));
         Mi =  (goodM and this->linearCorrectGradients() ? Mi.Inverse() : Tensor::one());
         
         const auto localMdeti = localMi.Determinant();
-        const auto goodLocalM = ( localMdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2));
+        const auto goodLocalM = ( localMdeti > 1.0e-2 and numNeighborsi > Dimension::pownu(2u));
         localMi =  (goodLocalM and this->linearCorrectGradients() ? localMi.Inverse() : Tensor::one());
 
         DPDxi = Mi.Transpose()*DPDxi;

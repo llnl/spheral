@@ -32,26 +32,28 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
                    vector<Field<Dimension, typename Dimension::Scalar>*>& scalarAcceptorFields,
                    vector<Field<Dimension, typename Dimension::Vector>*>& vectorAcceptorFields,
                    vector<Field<Dimension, typename Dimension::Tensor>*>& tensorAcceptorFields,
-                   vector<Field<Dimension, typename Dimension::SymTensor>*>& symTensorAcceptorFields) {
+                   vector<Field<Dimension, typename Dimension::SymTensor>*>& symTensorAcceptorFields,
+                   const typename Dimension::Scalar etaMax) {
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Dimension::FacetedVolume FacetedVolume;
-  typedef typename FacetedVolume::Facet Facet;
-  typedef GeomPlane<Dimension> Plane;
-
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
+  using FacetedVolume = typename Dimension::FacetedVolume;
+  using Facet = typename FacetedVolume::Facet;
+  using Plane = GeomPlane<Dimension>;
+  using NodeID = std::pair<size_t, size_t>;
 
   // Preconditions.
+  VERIFY2(etaMax > 0.0, "Invalid etaMax: " << etaMax);
   VERIFY2(scalarDonorFields.size() == scalarAcceptorFields.size(), "overlayRemapFields ERROR: number of acceptor scalar fields does not match number of donors.");
   VERIFY2(vectorDonorFields.size() == vectorAcceptorFields.size(), "overlayRemapFields ERROR: number of acceptor vector fields does not match number of donors.");
   VERIFY2(tensorDonorFields.size() == tensorAcceptorFields.size(), "overlayRemapFields ERROR: number of acceptor tensor fields does not match number of donors.");
   VERIFY2(symTensorDonorFields.size() == symTensorAcceptorFields.size(), "overlayRemapFields ERROR: number of acceptor symTensor fields does not match number of donors.");
-  const unsigned nScalarFields = scalarDonorFields.size();
-  const unsigned nVectorFields = vectorDonorFields.size();
-  const unsigned nTensorFields = tensorDonorFields.size();
-  const unsigned nSymTensorFields = symTensorDonorFields.size();
+  const auto nScalarFields = scalarDonorFields.size();
+  const auto nVectorFields = vectorDonorFields.size();
+  const auto nTensorFields = tensorDonorFields.size();
+  const auto nSymTensorFields = symTensorDonorFields.size();
 
   // Find the donor and acceptor NodeLists.
   const NodeList<Dimension> *donorNodeListPtr = NULL, *acceptorNodeListPtr = NULL;
@@ -91,65 +93,74 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     acceptorNodeListPtr = field->nodeListPtr();
     *field = SymTensor::zero();
   }
-  const unsigned nD = donorNodeListPtr->numInternalNodes();
-  Neighbor<Dimension>& neighborD = donorNodeListPtr->neighbor();
-  Neighbor<Dimension>& neighborA = acceptorNodeListPtr->neighbor();
+  VERIFY2(donorNodeListPtr != nullptr, "overlayRemapFields ERROR: at least one donor field is required.");
+  VERIFY2(acceptorNodeListPtr != nullptr, "overlayRemapFields ERROR: at least one acceptor field is required.");
+  const auto nD = donorNodeListPtr->numInternalNodes();
+
+  // computeVoronoiVolume operates on the fluid FieldLists, so make sure the
+  // temporary DataBases register these NodeLists through the fluid hierarchy.
+  const auto* donorFluidNodeListPtr = dynamic_cast<const FluidNodeList<Dimension>*>(donorNodeListPtr);
+  const auto* acceptorFluidNodeListPtr = dynamic_cast<const FluidNodeList<Dimension>*>(acceptorNodeListPtr);
+  VERIFY2(donorFluidNodeListPtr != nullptr, "overlayRemapFields ERROR: donor NodeList must be a FluidNodeList.");
+  VERIFY2(acceptorFluidNodeListPtr != nullptr, "overlayRemapFields ERROR: acceptor NodeList must be a FluidNodeList.");
+
+  // Build DataBases of the donor and acceptor and get the Neighbor objects
+  DataBase<Dimension> dbD(etaMax), dbA(etaMax);
+  dbD.appendNodeList(*const_cast<FluidNodeList<Dimension>*>(donorFluidNodeListPtr));
+  dbA.appendNodeList(*const_cast<FluidNodeList<Dimension>*>(acceptorFluidNodeListPtr));
+  const auto& neighborA = dbA.neighbor();
 
   // Build the donor volumes.
   Field<Dimension, FacetedVolume> localDonorCells("donor cells", *donorNodeListPtr);
   {
-    DataBase<Dimension> db;
-    db.appendNodeList(*dynamic_cast<FluidNodeList<Dimension>*>(const_cast<NodeList<Dimension>*>(donorNodeListPtr)));
-    neighborD.updateNodes();
-    for (Boundary<Dimension>* boundPtr: boundaries) boundPtr->setAllGhostNodes(db);
-    for (Boundary<Dimension>* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
-    neighborD.updateNodes();
-    db.updateConnectivityMap(false, false, false);
-    const auto& cm = db.connectivityMap();
-    const auto position = db.fluidPosition();
-    const auto H = db.fluidHfield();
-    const auto damage = db.solidDamage();
-    const auto weight = db.newFluidFieldList(1.0, "weight");
-    auto etaVoidPoints = db.newFluidFieldList(vector<Vector>(), "eta void points");
-    auto surfacePoint = db.newFluidFieldList(0, "surface point");
-    auto vol = db.newFluidFieldList(0.0, "volume");
-    auto deltaMedian = db.newFluidFieldList(Vector::zero(), "displacement");
+    dbD.reinitializeNeighbors();
+    for (auto* boundPtr: boundaries) boundPtr->setAllGhostNodes(dbD);
+    for (auto* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
+    dbD.updateNeighbors();
+    dbD.updateConnectivityMap(false, false, false);
+    const auto& cm = dbD.connectivityMap();
+    const auto position = dbD.fluidPosition();
+    const auto H = dbD.fluidHfield();
+    const auto damage = dbD.solidDamage();
+    const auto weight = dbD.newFluidFieldList(1.0, "weight");
+    auto etaVoidPoints = dbD.newFluidFieldList(vector<Vector>(), "eta void points");
+    auto surfacePoint = dbD.newFluidFieldList(0, "surface point");
+    auto vol = dbD.newFluidFieldList(0.0, "volume");
+    auto deltaMedian = dbD.newFluidFieldList(Vector::zero(), "displacement");
     FieldList<Dimension, FacetedVolume> cells_fl(FieldStorageType::ReferenceFields);
     cells_fl.appendField(localDonorCells);
-    auto cellFaceFlags_fl = db.newFluidFieldList(vector<CellFaceFlag>(), "face flags");
+    auto cellFaceFlags_fl = dbD.newFluidFieldList(vector<CellFaceFlag>(), "face flags");
     computeVoronoiVolume(position, H, cm, damage, vector<FacetedVolume>(), vector<vector<FacetedVolume>>(), boundaries, weight, 
                          surfacePoint, vol, deltaMedian, etaVoidPoints, cells_fl, cellFaceFlags_fl);
     const_cast<NodeList<Dimension>*>(donorNodeListPtr)->numGhostNodes(0);
-    neighborD.updateNodes();
+    dbD.updateNeighbors();
     // cerr << "Donor volume range: " << vol.min() << " " << vol.max() << endl;
   }
     
   // Build the acceptor volumes.
   Field<Dimension, FacetedVolume> localAcceptorCells("acceptor cells", *acceptorNodeListPtr);
   {
-    neighborA.updateNodes();
-    DataBase<Dimension> db;
-    db.appendNodeList(*dynamic_cast<FluidNodeList<Dimension>*>(const_cast<NodeList<Dimension>*>(acceptorNodeListPtr)));
-    for (Boundary<Dimension>* boundPtr: boundaries) boundPtr->setAllGhostNodes(db);
-    for (Boundary<Dimension>* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
-    neighborA.updateNodes();
-    db.updateConnectivityMap(false, false, false);
-    const auto& cm = db.connectivityMap();
-    const auto position = db.fluidPosition();
-    const auto H = db.fluidHfield();
-    const auto damage = db.solidDamage();
-    const auto weight = db.newFluidFieldList(1.0, "weight");
-    auto etaVoidPoints = db.newFluidFieldList(vector<Vector>(), "eta void points");
-    auto surfacePoint = db.newFluidFieldList(0, "surface point");
-    auto vol = db.newFluidFieldList(0.0, "volume");
-    auto deltaMedian = db.newFluidFieldList(Vector::zero(), "displacement");
+    dbA.reinitializeNeighbors();
+    for (auto* boundPtr: boundaries) boundPtr->setAllGhostNodes(dbA);
+    for (auto* boundPtr: boundaries) boundPtr->finalizeGhostBoundary();
+    dbA.updateNeighbors();
+    dbA.updateConnectivityMap(false, false, false);
+    const auto& cm = dbA.connectivityMap();
+    const auto position = dbA.fluidPosition();
+    const auto H = dbA.fluidHfield();
+    const auto damage = dbA.solidDamage();
+    const auto weight = dbA.newFluidFieldList(1.0, "weight");
+    auto etaVoidPoints = dbA.newFluidFieldList(vector<Vector>(), "eta void points");
+    auto surfacePoint = dbA.newFluidFieldList(0, "surface point");
+    auto vol = dbA.newFluidFieldList(0.0, "volume");
+    auto deltaMedian = dbA.newFluidFieldList(Vector::zero(), "displacement");
     FieldList<Dimension, FacetedVolume> cells_fl(FieldStorageType::ReferenceFields);
     cells_fl.appendField(localAcceptorCells);
-    auto cellFaceFlags_fl = db.newFluidFieldList(vector<CellFaceFlag>(), "face flags");
+    auto cellFaceFlags_fl = dbA.newFluidFieldList(vector<CellFaceFlag>(), "face flags");
     computeVoronoiVolume(position, H, cm, damage, vector<FacetedVolume>(), vector<vector<FacetedVolume>>(), boundaries, weight, 
                          surfacePoint, vol, deltaMedian, etaVoidPoints, cells_fl, cellFaceFlags_fl);
     const_cast<NodeList<Dimension>*>(acceptorNodeListPtr)->numGhostNodes(0);
-    neighborA.updateNodes();
+    dbA.updateNeighbors();
     // cerr << "Acceptor volume range: " << vol.min() << " " << vol.max() << endl;
   }
 
@@ -169,7 +180,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   for (auto i = 0u; i != nD; ++i) packElement(localDonorCells(i), localPackedDonorCells);
   for (auto i = 0u; i != nD; ++i) packElement(posD(i), localPackedDonorCells);
   for (auto i = 0u; i != nD; ++i) packElement(HD(i), localPackedDonorCells);
-  unsigned nlocalpack = localPackedDonorCells.size();
+  auto nlocalpack = localPackedDonorCells.size();
 
   // Prepare buffers for asynchronous sends.
   vector<unsigned> sendBufsizes;
@@ -182,7 +193,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   vector<vector<vector<unsigned>>> intersectAcceptorIndices(nprocs);      // index of acceptor node [domain][donorID][acceptorID]
   vector<vector<vector<double>>>  intersectVols(nprocs);                  // volume of intersection [domain][donorID][acceptorID]
   list<vector<char>> sendBuffers;
-  for (int iproc = 0; iproc != nprocs; ++iproc) {
+  for (auto iproc = 0; iproc < nprocs; ++iproc) {
     if (myproc == 0) cerr << "Intersecting domain " << iproc << " of " << nprocs << "..." << endl;
 
     // Get the other processes donor info.
@@ -202,12 +213,18 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
     for (auto i = 0u; i != donorN; ++i) unpackElement(donorH[i], bufItr, buffer.end());
     CHECK(bufItr == buffer.end());
 
-    for (unsigned i = 0; i != donorN; ++i) {
-      vector<int> Amasters, Acoarse, Arefine;
-      neighborA.setMasterList(donorPos[i], donorH[i], Amasters, Acoarse);
-      neighborA.setRefineNeighborList(donorPos[i], donorH[i], Acoarse, Arefine);
-      for (auto jitr = Arefine.begin(); jitr < Arefine.end(); ++jitr) {
-        const int j = *jitr;
+    for (auto i = 0u; i < donorN; ++i) {
+      vector<NodeID> Amasters, Acoarse, Arefine;
+      auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) {
+                                                  auto [ok, numMaster, numCoarse] = neighbor.setMasterList(donorPos[i], donorH[i], Amasters, Acoarse);
+                                                  CHECK(ok);
+                                                  CONTRACT_VAR(numMaster);
+                                                  Arefine.resize(numCoarse);
+                                                  return neighbor.setRefineNeighborList(donorPos[i], donorH[i], numCoarse, Acoarse, Arefine);
+                                                });
+      for (auto k = 0u; k < numRefine; ++k) {
+        CHECK(Arefine[k].first == 0);
+        const auto j = Arefine[k].second;
         if (donorCells[i].intersect(localAcceptorCells(j))) {
           const vector<Facet>& facets = localAcceptorCells(j).facets();
           vector<Plane> planes;
@@ -251,7 +268,7 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   // We accumulate the total intersected volume for each donor node to the voltot field.
   vector<vector<unsigned>> donorNodeIDs(nprocs);
   Field<Dimension, Scalar> voltot("intersected volume totals", *donorNodeListPtr);
-  for (int iproc = 0; iproc != nprocs; ++iproc) {
+  for (auto iproc = 0; iproc < nprocs; ++iproc) {
     unsigned bufsize;
     MPI_Status recvStatus;
     MPI_Recv(&bufsize, 1, MPI_UNSIGNED, iproc, 20, Communicator::communicator(), &recvStatus);
@@ -350,11 +367,17 @@ overlayRemapFields(const vector<Boundary<Dimension>*>& boundaries,
   Field<Dimension, vector<unsigned>> intersectIndices("intersection indices", *donorNodeListPtr);
   Field<Dimension, vector<Scalar>> intersectVols("intesection volumes", *donorNodeListPtr);
   for (unsigned i = 0; i != nD; ++i) {
-    vector<int> Amasters, Acoarse, Arefine;
-    neighborA.setMasterList(posD(i), HD(i), Amasters, Acoarse);
-    neighborA.setRefineNeighborList(posD(i), HD(i), Acoarse, Arefine);
-    for (auto jitr = Arefine.begin(); jitr < Arefine.end(); ++jitr) {
-      const int j = *jitr;
+    vector<NodeID> Amasters, Acoarse, Arefine;
+    auto numRefine = visitNeighbor(neighborA, [&](auto& neighbor) {
+                                                auto [ok, numMaster, numCoarse] = neighbor.setMasterList(posD[i], HD[i], Amasters, Acoarse);
+                                                CHECK(ok);
+                                                CONTRACT_VAR(numMaster);
+                                                Arefine.resize(numCoarse);
+                                                return neighbor.setRefineNeighborList(posD[i], HD[i], numCoarse, Acoarse, Arefine);
+                                              });
+    for (auto k = 0u; k < numRefine; ++k) {
+      CHECK(Arefine[k].first == 0);
+      const auto j = Arefine[k].second;
       if (localDonorCells(i).intersect(localAcceptorCells(j))) {
         const vector<Facet>& facets = localAcceptorCells(j).facets();
         vector<Plane> planes;

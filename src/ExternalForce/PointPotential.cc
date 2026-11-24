@@ -8,7 +8,6 @@
 #include "DataBase/IncrementState.hh"
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "FileIO/FileIO.hh"
 #include "Utilities/DBC.hh"
 

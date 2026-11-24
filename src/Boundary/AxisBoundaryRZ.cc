@@ -19,17 +19,13 @@ namespace Spheral {
 //------------------------------------------------------------------------------
 // Constructor.
 //------------------------------------------------------------------------------
-AxisBoundaryRZ::AxisBoundaryRZ(const double etamin):
-  ReflectingBoundary<Dim<2>>(GeomPlane<Dim<2> >(Dim<2>::Vector(0.0, 0.0),
+AxisBoundaryRZ::AxisBoundaryRZ(const DataBase<Dimension>& dataBase,
+                               const Scalar etamin):
+  ReflectingBoundary<Dim<2>>(dataBase,
+                             GeomPlane<Dim<2> >(Dim<2>::Vector(0.0, 0.0),
                                                 Dim<2>::Vector(0.0, 1.0))),
   mEtaMin(etamin) {
   VERIFY2(etamin >= 0.0, "Error: AxisBoundaryRZ requires a minimum eta >= 0.0");
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-AxisBoundaryRZ::~AxisBoundaryRZ() {
 }
 
 //------------------------------------------------------------------------------
@@ -41,7 +37,7 @@ void
 AxisBoundaryRZ::setViolationNodes(NodeList<Dim<2>>& nodeList) {
 
   // Get the BoundaryNodes.violationNodes for this NodeList.
-  typedef Boundary<Dimension>::BoundaryNodes BoundaryNodes;
+  using BoundaryNodes = Boundary<Dimension>::BoundaryNodes;
   this->addNodeList(nodeList);
   BoundaryNodes& boundaryNodes = this->accessBoundaryNodes(nodeList);
   auto& vNodes = boundaryNodes.violationNodes;
@@ -92,9 +88,6 @@ AxisBoundaryRZ::updateViolationNodes(NodeList<Dim<2> >& nodeList) {
   // Set the Hfield.
   Field<Dimension, SymTensor>& Hfield = nodeList.Hfield();
   this->enforceBoundary(Hfield);
-
-//   // Update the neighbor information.
-//   nodeList.neighbor().updateNodes(); // (vNodes);
 }    
 
 //------------------------------------------------------------------------------

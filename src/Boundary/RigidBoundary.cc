@@ -17,27 +17,13 @@ using std::vector;
 namespace Spheral {
 
 //------------------------------------------------------------------------------
-// Empty constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-RigidBoundary<Dimension>::RigidBoundary():
-  ReflectingBoundary<Dimension>() {
-}
-
-//------------------------------------------------------------------------------
-// Construct with the given plane.
+// Constructof
 //------------------------------------------------------------------------------
 template<typename Dimension>
 RigidBoundary<Dimension>::
-RigidBoundary(const GeomPlane<Dimension>& plane):
-  ReflectingBoundary<Dimension>(plane) {
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-RigidBoundary<Dimension>::~RigidBoundary() {
+RigidBoundary(const DataBase<Dimension>& dataBase,
+              const GeomPlane<Dimension>& plane):
+  ReflectingBoundary<Dimension>(dataBase, plane) {
 }
 
 //------------------------------------------------------------------------------

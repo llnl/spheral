@@ -178,6 +178,7 @@ iterateIdealH(dataBase,
               bounds,
               100, # max h iterations
               1.e-8) # h tolerance
+dataBase.updateNeighbors()
 dataBase.updateConnectivityMap(testGhosts, testOverlap)
 
 #-------------------------------------------------------------------------------
@@ -185,14 +186,13 @@ dataBase.updateConnectivityMap(testGhosts, testOverlap)
 #-------------------------------------------------------------------------------
 for NN in dataBase.nodeLists:
     NN.numGhostNodes = 0
-    NN.neighbor().updateNodes()
+dataBase.updateNeighbors()
 domainbc.setAllGhostNodes(dataBase)
 domainbc.finalizeGhostBoundary()
 for fl in fieldLists:
     domainbc.applyFieldListGhostBoundary(fl)
 domainbc.finalizeGhostBoundary()
-for NN in dataBase.nodeLists:
-    NN.neighbor().updateNodes()
+dataBase.updateNeighbors()
 dataBase.updateConnectivityMap(testGhosts, testOverlap)
 connectivity = dataBase.connectivityMap(testGhosts, testOverlap)
 output("connectivity")

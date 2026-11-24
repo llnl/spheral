@@ -11,7 +11,9 @@ namespace Spheral {
 
 //------------------------------------------------------------------------------
 class NodePairList : public NodePairListView {
+
 public:
+  //--------------------------- Public Interface ---------------------------//
   using ContainerType = std::vector<NodePairIdxType>;
   using value_type = typename ContainerType::value_type;
   using reference = typename ContainerType::reference;
@@ -32,7 +34,7 @@ public:
   NodePairList(const NodePairList& rhs);
   NodePairList& operator=(const NodePairList& rhs);
 
-  ~NodePairList()                                            { GPUUtils::freeMAView(mData); }
+  ~NodePairList()                                            { releaseView(); }
 
   void fill(const ContainerType& vals);
   void clear();
@@ -65,6 +67,7 @@ public:
   // Inserting (not performant, avoid if possible)
   template<typename InputIterator>
   iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
+    releaseView();
     iterator n = mNodePairList.insert(pos, first, last);
     initView();
     return n;
@@ -85,6 +88,7 @@ public:
   }
 
   void initView() {
+    releaseView();
     GPUUtils::initMAView(mData, mNodePairList);
   }
 
@@ -96,6 +100,7 @@ public:
   }
 
 protected:
+  //--------------------------- Protected Interface ---------------------------//
   template<typename F>
   auto getNPLCallback(F callback) {
     return [callback](
@@ -105,7 +110,10 @@ protected:
              callback(record, action, space);
            };
   }
+
 private:
+  //--------------------------- Private Interface ---------------------------//
+  void releaseView();
   ContainerType mNodePairList;
   mutable std::unordered_map<NodePairIdxType, size_t> mPair2Index;  // mutable for lazy evaluation in index
 };

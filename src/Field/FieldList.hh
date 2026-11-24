@@ -28,13 +28,6 @@
 namespace Spheral {
 
 // Forward declarations.
-template<typename Dimension> class NodeIteratorBase;
-template<typename Dimension> class AllNodeIterator;
-template<typename Dimension> class InternalNodeIterator;
-template<typename Dimension> class GhostNodeIterator;
-template<typename Dimension> class MasterNodeIterator;
-template<typename Dimension> class CoarseNodeIterator;
-template<typename Dimension> class RefineNodeIterator;
 template<typename Dimension> class NodeList;
 template<typename Dimension> class TableKernel;
 template<typename Dimension, typename DataType> class Field;
@@ -166,48 +159,9 @@ public:
   iterator fieldForNodeList(const NodeList<Dimension>& nodeList);
   const_iterator fieldForNodeList(const NodeList<Dimension>& nodeList) const;
 
-  // Provide access to the Field elements via NodeIterators.
-  DataType& operator()(const NodeIteratorBase<Dimension>& itr);
-  const DataType& operator()(const NodeIteratorBase<Dimension>& itr) const;
-
-  // Return the interpolated value of the FieldList at a position.
-  DataType operator()(const Vector& position,
-                      const TableKernel<Dimension>& W) const;
-
-  // Provide NodeIterators on the elements of the FieldList.
-  AllNodeIterator<Dimension> nodeBegin() const;
-  AllNodeIterator<Dimension> nodeEnd() const;
-  
-  InternalNodeIterator<Dimension> internalNodeBegin() const;
-  InternalNodeIterator<Dimension> internalNodeEnd() const;
-  
-  GhostNodeIterator<Dimension> ghostNodeBegin() const;
-  GhostNodeIterator<Dimension> ghostNodeEnd() const;
-  
-  MasterNodeIterator<Dimension> masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const;
-  MasterNodeIterator<Dimension> masterNodeEnd() const;
-  
-  CoarseNodeIterator<Dimension> coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const;
-  CoarseNodeIterator<Dimension> coarseNodeEnd() const;
-  
-  RefineNodeIterator<Dimension> refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const;
-  RefineNodeIterator<Dimension> refineNodeEnd() const;
-
-  // Provide a convenience function for setting the neighbor node information
-  // for all the NodeList in this FieldList.
-  void setMasterNodeLists(const Vector& r, const SymTensor& H,
-                          std::vector<std::vector<int>>& masterLists,
-                          std::vector<std::vector<int>>& coarseNeighbors) const;
-  void setMasterNodeLists(const Vector& r,
-                          std::vector<std::vector<int>>& masterLists,
-                          std::vector<std::vector<int>>& coarseNeighbors) const;
-
-  void setRefineNodeLists(const Vector& r, const SymTensor& H,
-                          const std::vector<std::vector<int>>& coarseNeighbors,
-                          std::vector<std::vector<int>>& refineNeighbors) const;
-  void setRefineNodeLists(const Vector& r,
-                          const std::vector<std::vector<int>>& coarseNeighbors,
-                          std::vector<std::vector<int>>& refineNeighbors) const;
+  // // Return the interpolated value of the FieldList at a position.
+  // DataType operator()(const Vector& position,
+  //                     const TableKernel<Dimension>& W) const;
 
   // Zero a FieldList
   void Zero();
@@ -319,21 +273,22 @@ private:
   FieldCacheType mFieldCache;
   FieldStorageType mStorageType;
 
-  // Maintain a vector of the NodeLists this FieldList is defined in order to
-  // construct NodeIterators.
+  // Maintain a vector of the NodeLists this FieldList is defined on.
   std::vector<NodeList<Dimension>*> mNodeListPtrs;
   HashMapType mNodeListIndexMap;
 
-  // FieldViews for use in FieldListView
-#ifdef SPHERAL_UNIFIED_MEMORY  
-  std::vector<FieldView<Dimension, DataType>> mFieldViews;
-#else
+  // Constructed host storage and the span exposed to FieldListView.  In the
+  // CHAI build mFieldViews is a non-owning ManagedArray alias: ManagedArray
+  // allocation alone does not start the lifetime of non-trivial FieldViews.
+  std::vector<FieldView<Dimension, DataType>> mFieldViewStorage;
   FieldViewSpan mFieldViews;
-#endif
 
   // CHAI callback functions for debugging
   std::function<void(const chai::PointerRecord*, chai::Action, chai::ExecutionSpace)> mChaiCallback;
   auto getCallback();
+
+  // Release the outer alias and nested FieldViews while their Fields live.
+  void releaseFieldViews();
 
   // Set the internal dependent arrays based on the Field pointers.
   virtual void buildDependentArrays() override;

@@ -14,7 +14,6 @@
 #include "Hydro/HydroFieldNames.hh"
 #include "Field/FieldList.hh"
 #include "Field/Field.hh"
-#include "Field/NodeIterators.hh"
 #include "Utilities/DBC.hh"
 #include "Distributed/Communicator.hh"
 #include "Material/PhysicalConstants.hh"
@@ -522,4 +521,3 @@ deserialize(const std::vector<char>& buffer,
 }
 
 } // end namespace Spheral
-

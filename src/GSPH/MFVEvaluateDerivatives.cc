@@ -621,7 +621,7 @@ firstDerivativesLoop(const typename Dimension::Scalar /*time*/,
       normi += voli*Hdeti*W0;
       //HStretchTensori /= Dimension::rootnu(max(HStretchTensori.Determinant(),tiny));
 
-      const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2);
+      const auto enoughNeighbors =  numNeighborsi > Dimension::pownu(2u);
       const auto goodM =  (Mdeti > 1e-2 and enoughNeighbors);                   
 
       Mi = ( goodM ? Mi.Inverse() : Tensor::one());

@@ -21,19 +21,19 @@ template<typename Dimension>
 class LinearAcceleration: public GenericBodyForce<Dimension> {
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename Physics<Dimension>::TimeStepType TimeStepType;
+  using TimeStepType = typename Physics<Dimension>::TimeStepType;
 
   // Constructors.
   LinearAcceleration(const Scalar a0,
                      const Scalar aslope);
 
   // Destructor.
-  virtual ~LinearAcceleration();
+  virtual ~LinearAcceleration() = default;
 
   // This is the derivative method that all BodyPotential classes must provide.
   virtual 
@@ -41,34 +41,32 @@ public:
                            const Scalar dt,
                            const DataBase<Dimension>& dataBase,
                            const State<Dimension>& state,
-                           StateDerivatives<Dimension>& derivs) const;
+                           StateDerivatives<Dimension>& derivs) const override;
 
   // Provide the timestep appropriate for this package.
   virtual TimeStepType dt(const DataBase<Dimension>& dataBase, 
                           const State<Dimension>& state,
                           const StateDerivatives<Dimension>& derivs,
-                          const Scalar currentTime) const;
+                          const Scalar currentTime) const override;
 
   //! Required label for Physics interface.
-  virtual std::string label() const { return "LinearAcceleration"; }
+  virtual std::string label() const override { return "LinearAcceleration"; }
 
   // Access the acceleration parameters.
-  Scalar a0() const;
-  Scalar aslope() const;
+  Scalar a0()     const { return ma0; }
+  Scalar aslope() const { return maslope; }
+
+  // No default constructor, copying, or assignment.
+  LinearAcceleration() = delete;
+  LinearAcceleration(const LinearAcceleration& rhs) = delete;
+  LinearAcceleration& operator=(const LinearAcceleration& rhs) = delete;
 
 private:
   //--------------------------- Public Interface ---------------------------//
   Scalar ma0;
   Scalar maslope;
-
-  // No default constructor, copying, or assignment.
-  LinearAcceleration();
-  LinearAcceleration(const LinearAcceleration& rhs);
-  LinearAcceleration& operator=(const LinearAcceleration& rhs);
 };
 
 }
-
-#include "LinearAccelerationInline.hh"
 
 #endif

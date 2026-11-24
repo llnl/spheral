@@ -1,4 +1,5 @@
 from SpheralCompiledPackages import *
+import warnings
 
 from spheralDimensions import spheralDimensions
 dims = spheralDimensions()
@@ -9,9 +10,6 @@ dims = spheralDimensions()
 def DEMNodeListFactory(ndim):
     suffix = "{}d".format(ndim)
     DEMNodeList = eval("DEMNodeList" + suffix)
-    TreeNeighbor = eval("TreeNeighbor" + suffix)
-    NestedGridNeighbor = eval("NestedGridNeighbor" + suffix)
-    Vector = eval("Vector" + suffix)
     def factory(name,
                 numInternal = 0,
                 numGhost = 0,
@@ -21,28 +19,13 @@ def DEMNodeListFactory(ndim):
                 nPerh = 1.01,
                 maxNumNeighbors = 500,
                 neighborSearchBuffer=0.1,
-
-                # Neighboring stuff
-                NeighborType = TreeNeighbor,
-                searchType = GatherScatter,
-                kernelExtent = 1.0,
-
-                # Parameters for TreeNeighbor
-                xmin = Vector.one * -10.0,
-                xmax = Vector.one *  10.0):
+                **unused):
+        if unused:
+            warnings.warn("makeDEMNodeList{}d ignoring unsupported arguments: {}".format(
+                ndim, ", ".join(sorted(unused))), stacklevel=2)
         result = DEMNodeList(name, numInternal, numGhost, 
                              hmin, hmax, hminratio, 
                              nPerh, neighborSearchBuffer, maxNumNeighbors)
-
-        if NeighborType == TreeNeighbor:
-            result._neighbor = TreeNeighbor(result, searchType, kernelExtent, xmin, xmax)
-        elif NeighborType == NestedGridNeighbor:
-            print("DEMNodeList Deprecation Warning: NestedGridNeighbor is deprecated: suggest using TreeNeighbor.")
-            result._neighbor = NestedGridNeighbor(result, searchType, 
-                                                  kernelExtent = kernelExtent)
-        else:
-            raise ValueError("Unknown NeighborType")
-        result.registerNeighbor(result._neighbor)
         return result
     return factory
 

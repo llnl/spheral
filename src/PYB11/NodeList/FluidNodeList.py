@@ -55,6 +55,24 @@ class FluidNodeList(NodeList):
         "The specific thermal energy field"
         return "const ScalarField&"
 
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.massDensity()[nodeID]; }")
+    @PYB11pycppname("massDensity")
+    @PYB11returnpolicy("reference_internal")
+    def massDensity1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.massDensityRZ()[nodeID]; }")
+    @PYB11pycppname("massDensityRZ")
+    @PYB11returnpolicy("reference_internal")
+    def massDensityRZ1(self, nodeID="const size_t"):
+        return "Scalar&"
+
+    @PYB11implementation("[](FluidNodeList<%(Dimension)s>& self, const size_t nodeID) -> Scalar& { return self.specificThermalEnergy()[nodeID]; }")
+    @PYB11pycppname("specificThermalEnergy")
+    @PYB11returnpolicy("reference_internal")
+    def specificThermalEnergy1(self, nodeID="const size_t"):
+        return "Scalar&"
+
     @PYB11pycppname("massDensity")
     def setmassDensity(self, val="const ScalarField&"):
         "Set the mass density field"
@@ -119,11 +137,15 @@ class FluidNodeList(NodeList):
 
     #...........................................................................
     # Comparison
-    def __eq__(self):
+    @PYB11implementation("[](const FluidNodeList<%(Dimension)s>& self, const FluidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) == static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
+    def __eq__(self, rhs="const FluidNodeList<%(Dimension)s>&"):
         "Equivalence test with another FluidNodeList"
+        return "bool"
 
-    def __ne__(self):
+    @PYB11implementation("[](const FluidNodeList<%(Dimension)s>& self, const FluidNodeList<%(Dimension)s>& rhs) { return static_cast<const NodeList<%(Dimension)s>&>(self) != static_cast<const NodeList<%(Dimension)s>&>(rhs); }")
+    def __ne__(self, rhs="const FluidNodeList<%(Dimension)s>&"):
         "Inequivalence test with another FluidNodeList"
+        return "bool"
 
     @PYB11implementation("[](const FluidNodeList<%(Dimension)s>& self) -> std::uintptr_t { return reinterpret_cast<std::uintptr_t>(&self); }")
     def __hash__(self):

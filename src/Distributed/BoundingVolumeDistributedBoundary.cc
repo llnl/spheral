@@ -11,8 +11,6 @@
 #include "DistributedBoundary.hh"
 #include "BoundingVolumeDistributedBoundary.hh"
 #include "Boundary/Boundary.hh"
-#include "Neighbor/NestedGridNeighbor.hh"
-#include "Neighbor/GridCellIndex.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
 #include "Utilities/removeElements.hh"

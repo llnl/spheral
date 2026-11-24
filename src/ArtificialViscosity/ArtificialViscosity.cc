@@ -294,7 +294,7 @@ updateVelocityGradient(const DataBase<Dimension>& dataBase,
       // Finish the gradient of the velocity.
       CHECK(rhoi > 0.0);
       if (std::abs(Mi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         Mi = Mi.Inverse();
         DvDxi = DvDxi*Mi;
       } else {

@@ -45,18 +45,18 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
    // Now set up the ghost nodes for this boundary condition.
    // We create a bevy of nodes around each internal node.
    int numberOfGhostNodesToAdd = 0;
-   for (InternalNodeIterator<Dim<3> > iter = nodeList.internalNodeBegin();
-        iter != nodeList.internalNodeEnd(); ++iter)
+   const auto numInternalNodes = nodeList.numInternalNodes();
+   for (auto nodei = 0u; nodei < numInternalNodes; ++nodei)
    {
       // Add this internal node as a control node.
-      controlNodes.push_back(iter.nodeID());
+      controlNodes.push_back(static_cast<int>(nodei));
 
       // Find the position of the internal node.
-      Dim<3>::Vector xInternal = nodeList.positions()(iter);
+      Dim<3>::Vector xInternal = nodeList.positions()(nodei);
 
       // Now L is the total z-extent of the kernel, hz.  
       // Let M = H*H.  Then hz = sqrt(cofactor(M, 3, 3))/ det H.
-      Dim<3>::SymTensor H = nodeList.Hfield()(iter);
+      Dim<3>::SymTensor H = nodeList.Hfield()(nodei);
       double detH = H.Determinant();
       double M11 = H(0,0)*H(0,0) + H(0,1)*H(0,1) + H(0,2)*H(0,2);
       double M21 = H(0,0)*H(0,1) + H(0,1)*H(1,1) + H(0,2)*H(1,2);
@@ -81,7 +81,7 @@ setGhostNodes(NodeList<Dim<3> >& nodeList) {
          double z = i*mdz - (mL / 2.0);
 
          // Add the number of nodes in our computational XY plane.
-         numberOfGhostNodesToAdd += nodeList.numInternalNodes();
+         numberOfGhostNodesToAdd += numInternalNodes;
       } // end for
    } // end for
 
@@ -108,20 +108,16 @@ updateGhostNodes(NodeList<Dim<3> >& nodeList) {
 
    // We must do this update only on the ghost nodes that pertain to this
    // particular boundary condition.
-   GhostNodeIterator<Dim<3> > ghostIter = nodeList.ghostNodeBegin();
-   for (size_t i = 0; i < mFirstGhostIndex; ++i)
-   {
-      ++ghostIter;
-   } // end for
+   const auto numInternalNodes = nodeList.numInternalNodes();
+   auto ghostNodei = numInternalNodes + mFirstGhostIndex;
 
    // Now iterate over the ghost nodes of this boundary condition (there's one 
    // ghost node for every internal node) and move them along with the 
    // internal nodes.
-   for (InternalNodeIterator<Dim<3> > iter = nodeList.internalNodeBegin();
-         iter != nodeList.internalNodeEnd(); ++iter)
+   for (auto nodei = 0u; nodei < numInternalNodes; ++nodei)
    {
       // Find the position of the internal node.
-      Dim<3>::Vector xInternal = nodeList.positions()(iter);
+      Dim<3>::Vector xInternal = nodeList.positions()(nodei);
 
       int Nz = static_cast<int>(mL / mdz) + 1;
 
@@ -132,13 +128,13 @@ updateGhostNodes(NodeList<Dim<3> >& nodeList) {
          double z = i*mdz - (mL / 2.0);
 
          // Duplicate the positions of the XY plane.
-         for (int j = 0; j < nodeList.numInternalNodes(); ++j)
+         for (auto j = 0u; j < numInternalNodes; ++j)
          {
             // The x and y components of the ghost node are the same as that 
             // for the internal node.  The z component is given above.
             Dim<3>::Vector xGhost(xInternal(0), xInternal(1), z);
-            nodeList.positions()(ghostIter) = xGhost;
-            ++ghostIter;
+            nodeList.positions()(ghostNodei) = xGhost;
+            ++ghostNodei;
          } // end for
       } // end for
    } // end for
@@ -155,10 +151,10 @@ setViolationNodes(NodeList<Dim<3> >& nodeList) {
    // violation nodes.
    Boundary<Dim<3> >::BoundaryNodes& boundaryNodes = accessBoundaryNodes(nodeList);
    vector<int>& violationNodes = boundaryNodes.violationNodes;
-   for (InternalNodeIterator<Dim<3> > iter = nodeList.internalNodeBegin();
-         iter != nodeList.internalNodeEnd(); ++iter)
+   const auto numInternalNodes = nodeList.numInternalNodes();
+   for (auto nodei = 0u; nodei < numInternalNodes; ++nodei)
    {
-      violationNodes.push_back(iter.nodeID());
+      violationNodes.push_back(static_cast<int>(nodei));
    } // end for
 }
 //------------------------------------------------------------------------------

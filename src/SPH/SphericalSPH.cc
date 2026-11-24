@@ -24,7 +24,6 @@
 #include "Hydro/NonSymmetricSpecificThermalEnergyPolicy.hh"
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
@@ -588,7 +587,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
       CHECK(rhoi > 0.0);
       if (correctVelocityGradient and
           std::abs(Mi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         Mi = Mi.Inverse();
         DvDxi = DvDxi*Mi;
       } else {
@@ -596,7 +595,7 @@ evaluateDerivativesImpl(const Dim<1>::Scalar time,
       }
       if (correctVelocityGradient and
           std::abs(localMi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         localMi = localMi.Inverse();
         localDvDxi = localDvDxi*localMi;
       } else {

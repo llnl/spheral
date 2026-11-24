@@ -204,7 +204,7 @@ addDaughter(Tree<Dimension>::Cell& cell,
             const Tree<Dimension>::CellKey daughterKey) const {
   if (std::find(cell.daughters.begin(), cell.daughters.end(), daughterKey) == cell.daughters.end())
     cell.daughters.push_back(daughterKey);
-  ENSURE(cell.daughters.size() <= Dimension::pownu(2));
+  ENSURE(cell.daughters.size() <= Dimension::pownu(2u));
 }
 
 //------------------------------------------------------------------------------

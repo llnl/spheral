@@ -24,7 +24,6 @@
 #include "ArtificialViscosity/ArtificialViscosity.hh"
 #include "DataBase/DataBase.hh"
 #include "Field/FieldList.hh"
-#include "Field/NodeIterators.hh"
 #include "Boundary/Boundary.hh"
 #include "Neighbor/ConnectivityMap.hh"
 #include "Neighbor/PairwiseField.hh"
@@ -725,7 +724,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       CHECK(rhoi > 0.0);
       if (this->mCorrectVelocityGradient and
           std::abs(Mi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         Mi = Mi.Inverse();
         DvDxi = DvDxi*Mi;
       } else {
@@ -733,7 +732,7 @@ evaluateDerivativesImpl(const typename Dimension::Scalar /*time*/,
       }
       if (this->mCorrectVelocityGradient and
           std::abs(localMi.Determinant()) > 1.0e-10 and
-          numNeighborsi > Dimension::pownu(2)) {
+          numNeighborsi > Dimension::pownu(2u)) {
         localMi = localMi.Inverse();
         localDvDxi = localDvDxi*localMi;
       } else {

@@ -22,19 +22,20 @@ class TreeDistributedBoundary: public DistributedBoundary<Dimension> {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::Tensor Tensor;
-  typedef typename Dimension::SymTensor SymTensor;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using Tensor = typename Dimension::Tensor;
+  using SymTensor = typename Dimension::SymTensor;
 
-  typedef typename TreeNeighbor<Dimension>::CellKey CellKey;
-  typedef typename DistributedBoundary<Dimension>::DomainBoundaryNodes DomainBoundaryNodes;
+  using CellKey = typename TreeNeighbor<Dimension>::CellKey;
+  using NodeID = typename TreeNeighbor<Dimension>::NodeID;
+  using DomainBoundaryNodes = typename DistributedBoundary<Dimension>::DomainBoundaryNodes;
 
   // This method returns the singleton instance of the object.
   static TreeDistributedBoundary& instance();
 
   // Destructor.
-  virtual ~TreeDistributedBoundary();
+  virtual ~TreeDistributedBoundary() = default;
 
   //**********************************************************************
   // Set the ghost nodes based on the NodeLists in the given DataBase.
@@ -43,17 +44,16 @@ public:
 
 private:
   //--------------------------- Private Interface ---------------------------//
+  // Private methods.
+  const TreeNeighbor<Dimension>* getTreeNeighborPtr(const DataBase<Dimension>& dataBase) const;
+  void broadcastTree(const std::vector<std::vector<CellKey>>& localTree);
+  void buildSendNodes(const DataBase<Dimension>& dataBase,
+                      const std::vector<std::vector<CellKey>>& localTree);
+
   // Disabled methods.
   TreeDistributedBoundary();
   TreeDistributedBoundary(const TreeDistributedBoundary&);
   TreeDistributedBoundary& operator=(const TreeDistributedBoundary&);
-
-  // Private methods.
-  const TreeNeighbor<Dimension>* getTreeNeighborPtr(const NodeList<Dimension>* nodeListPtr) const;
-  std::vector<std::vector<CellKey>> flattenTrees(const DataBase<Dimension>& dataBase) const;
-  void broadcastTree(const std::vector<std::vector<CellKey>>& localTree);
-  void buildSendNodes(const DataBase<Dimension>& dataBase,
-                      const std::vector<std::vector<CellKey>>& localTree);
 };
 
 }

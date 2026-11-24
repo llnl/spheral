@@ -87,9 +87,9 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
   typedef typename Dimension::ThirdRankTensor ThirdRankTensor;
 
   // Pre-conditions.
-  const size_t numNodeLists = volume.size();
-  const NodeList<Dimension>& nodeList = A.nodeList();
-  const int firstGhostNodei = nodeList.firstGhostNode();
+  const auto  numNodeLists = volume.size();
+  const auto& nodeList = A.nodeList();
+  const auto  firstGhostNodei = nodeList.firstGhostNode();
   CONTRACT_VAR(numNodeLists);
   REQUIRE(position.size() == numNodeLists);
   REQUIRE(H.size() == numNodeLists);
@@ -113,10 +113,9 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
   Field<Dimension, ThirdRankTensor> gradm2("gradient of the second moment", nodeList);
 
   // Iterate over the nodes in this node list.
-  for (typename ConnectivityMap<Dimension>::const_iterator iItr = connectivityMap.begin(nodeListi);
-       iItr != connectivityMap.end(nodeListi);
-       ++iItr) {
-    const int i = *iItr;
+  const auto numNodes = connectivityMap.numNodes(nodeListi);
+  for (auto nodeIndex = 0u; nodeIndex < numNodes; ++nodeIndex) {
+    const auto i = connectivityMap.ithNode(nodeListi, nodeIndex);
 
     // Get the state for node i.
     const Scalar Vi = volume(nodeListi, i);
@@ -129,15 +128,12 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
     gradm1(i) += Vi*W(0.0, Hdeti) * Tensor::one();
 
     // Neighbors!
-    const vector<vector<int> >& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
+    const auto& fullConnectivity = connectivityMap.connectivityForNode(nodeListi, i);
     CHECK(fullConnectivity.size() == numNodeLists);
-    const vector<int>& connectivity = fullConnectivity[nodeListi];
+    const auto& connectivity = fullConnectivity[nodeListi];
 
     // Iterate over the neighbors for in this NodeList.
-    for (vector<int>::const_iterator jItr = connectivity.begin();
-         jItr != connectivity.end();
-         ++jItr) {
-      const int j = *jItr;
+    for (const auto j: connectivity) {
 
         // // Check if this node pair has already been calculated.
         // if (connectivityMap.calculatePairInteraction(nodeListi, i, 
@@ -439,4 +435,3 @@ computeSVPHCorrections(const ConnectivityMap<Dimension>& connectivityMap,
 // }
 
 }
-

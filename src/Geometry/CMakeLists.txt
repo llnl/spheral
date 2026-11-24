@@ -8,7 +8,6 @@ set(Geometry_sources
   EigenStruct.cc
   GeomFacet2d.cc
   GeomFacet3d.cc
-  GeomPlane.cc
   GeomPolygon.cc
   GeomPolyhedron.cc
   Jacobi.cc

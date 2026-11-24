@@ -15,7 +15,7 @@ LaplacianMatrixFactory<Dimension>::
 SPHGradSquared(const DataBase<Dimension>& db)
 {
   // Count up some particles.
-  size_t numberOfParticles = FIXME;
+  const auto numberOfParticles = db.numInternalNodes();
   
   // First, we need to allocate storage for the grad and gradSquared matrices.
   // They should be N x N, where N is the number of particles.
@@ -24,6 +24,7 @@ SPHGradSquared(const DataBase<Dimension>& db)
   for (size_t i = 0; i < numberOfParticles)
   {
     grad[i] = new double[numberOfParticles];
+    std::fill(grad[i], grad[i] + numberOfParticles, 0.0);
     gradSquared[i] = new double[numberOfParticles];
     std::fill(gradSquared[i], gradSquared[i] + numberOfParticles, 0.0);
   } // end for
@@ -31,51 +32,50 @@ SPHGradSquared(const DataBase<Dimension>& db)
   // Now we've got to build the damn grad operator.
 
   // Some important field lists.
-  FieldList<Dimension, Vector>& position = db.globalPosition();
+  const auto position = db.globalPosition();
+  const auto Hfield = db.globalHfield();
+  const auto& connectivityMap = db.connectivityMap();
+  const auto numNodeLists = position.numFields();
+
+  // Map each (NodeList, node) pair to the corresponding matrix index.
+  std::vector<size_t> nodeListOffsets(numNodeLists + 1u, 0u);
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    nodeListOffsets[nodeListi + 1u] = (nodeListOffsets[nodeListi] +
+                                      position[nodeListi]->numInternalElements());
+  }
+  CHECK(nodeListOffsets.back() == numberOfParticles);
   
   // Loop over each particle...
-  for (typename DataBase<Dimension>::IDIterator
-       ithNodeIter = db.internalNodeBegin();
-       ithNodeIter = db.internalNodeEnd();
-       ++ithNodeIter)
-  {
-    int i = ithNodeIter.nodeID();
-    const Vector& ri = position(ithNodeIter);
-    const SymTensor& Hi = Hfield(ithNodeIter);
+  for (auto nodeListi = 0u; nodeListi < numNodeLists; ++nodeListi) {
+    const auto ni = position[nodeListi]->numInternalElements();
+    for (auto nodei = 0u; nodei < ni; ++nodei) {
+      const auto i = nodeListOffsets[nodeListi] + nodei;
+      const auto& ri = position(nodeListi, nodei);
+      const auto& Hi = Hfield(nodeListi, nodei);
+      const auto& connectivity = connectivityMap.connectivityForNode(nodeListi, nodei);
 
-    // Set the refined neighbor information for this master node.
-    dataBase.setRefineNodeLists(position(masterItr), Hfield(masterItr));
-    for (typename DataBase<Dimension>::ConstFluidNodeListIterator nodeListItr = 
-        dataBase.fluidNodeListBegin();
-        nodeListItr < dataBase.fluidNodeListEnd();
-        ++nodeListItr) {
-      updateCoarseNeighborStats((*nodeListItr)->neighborPtr()->numCoarse());
-      updateRefineNeighborStats((*nodeListItr)->neighborPtr()->numRefine());
-    } // end for
+      // Loop over the internal neighbors of this particle.
+      for (auto nodeListj = 0u; nodeListj < numNodeLists; ++nodeListj) {
+        for (const auto nodej: connectivity[nodeListj]) {
+          if (nodej >= position[nodeListj]->numInternalElements()) continue;
+          const auto j = nodeListOffsets[nodeListj] + nodej;
+          const auto& rj = position(nodeListj, nodej);
+          const auto& Hj = Hfield(nodeListj, nodej);
 
-    // Loop over the neighbors of this particle.
-    for (IDIterator jthNodeIter = db.refineNodeBegin();
-         jthNodeIter < db.refineNodeEnd();
-         ++jthNodeIter)
-    {
-      // This neighbor will be particle j.
-      j = jthNodeIter.nodeID();
-      rj = position(jthNodeIter);
-      Hj = Hfield(jthNodeIter);
+          // Calculate rij, the displacement between particles i and j.
+          const auto rij = ri - rj;
 
-      // Calculate rij, the displacement between particles i and j.
-      Vector rij = ri - rj;
+          // Calculate the normalized displacements.
+          const auto etai = Hi * rij;
+          const auto etaiNorm = etai.unitVector();
+          const auto etaj = Hj * rij;
+          const auto etajNorm = etaj.unitVector();
 
-      // Calculate the normalized displacements.
-      Vector etai = Hi * rij;
-      Vector etaiNorm = etai.unitVector();
-      Vector etaj = Hj * rij;
-      Vector etajNorm = etaj.unitVector();
-
-      grad[i][j] = kernel.grad(r, h);
-    } // end for
-
-  } // end for
+          grad[i][j] = kernel.grad(r, h);
+        }
+      }
+    }
+  }
 
   // Now we square the grad matrix to obtain gradSquared.
   for (size_t i = 0; i < numberOfParticles; ++i)
@@ -102,4 +102,3 @@ SPHGradSquared(const DataBase<Dimension>& db)
 //----------------------------------------------------------------------------
 
 } // end Spheral
-

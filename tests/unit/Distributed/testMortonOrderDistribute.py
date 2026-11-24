@@ -39,7 +39,7 @@ class TestMortonOrderRedistribute2d(TestDistributeByPosition2d):
 ##                                     persist = True)
 
         # Go ahead and redistribute those nodes!
-        repartition = MortonOrderRedistributeNodes2d(2.0)
+        repartition = MortonOrderRedistributeNodes2d()
         repartition.redistributeNodes(self.dataBase)
 
 ##         # Plot the final conditions.
@@ -163,13 +163,12 @@ class TestMortonOrderRedistribute3d(unittest.TestCase):
                 nodes.positions()[i] = xyzNodes[i]
                 nodes.Hfield()[i] = Hi
 
-            nodes.neighbor().updateNodes()
-
         # Put the distributed NodeLists into a DataBase.
         self.dataBase = DataBase3d()
         self.dataBase.appendNodeList(self.nodes1)
         self.dataBase.appendNodeList(self.nodes2)
         self.dataBase.appendNodeList(self.nodes3)
+        self.dataBase.updateNeighbors()
 
         assert mpi.allreduce(self.nodes1.numInternalNodes, mpi.SUM) == n1
         assert mpi.allreduce(self.nodes2.numInternalNodes, mpi.SUM) == n2
@@ -196,7 +195,7 @@ class TestMortonOrderRedistribute3d(unittest.TestCase):
                                               mpi.SUM))
 
         # Go ahead and redistribute those nodes!
-        repartition = MortonOrderRedistributeNodes3d(2.0)
+        repartition = MortonOrderRedistributeNodes3d()
         repartition.redistributeNodes(self.dataBase)
 
         # Make sure that the numbers of nodes are correct.

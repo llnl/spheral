@@ -2244,31 +2244,34 @@ selfDoubledot3D() const {
 // Multiply a tensor with a vector (strictly 3D)
 //------------------------------------------------------------------------------
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (nDim < 3) {
+GeomTensor<nDim>::dot(const GeomVector<3>& rhs) const requires (M == nDim && M < 3) {
   return GeomVector<3>(xx()*rhs.x() + xy()*rhs.y() + xz()*rhs.z(),
                        yx()*rhs.x() + yy()*rhs.y() + yz()*rhs.z(),
                        zx()*rhs.x() + zy()*rhs.y() + zz()*rhs.z());
 }
 
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomVector<3>
-GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (nDim < 3) {
-  return dot(rhs);
+GeomTensor<nDim>::operator*(const GeomVector<3>& rhs) const requires (M == nDim && M < 3) {
+  return this->template dot<M>(rhs);
 }
 
 //------------------------------------------------------------------------------
 // Addition with a 3D tensor
 //------------------------------------------------------------------------------
 template<int nDim>
+template<int M>
 SPHERAL_HOST_DEVICE
 inline
 GeomTensor<nDim>&
-GeomTensor<nDim>::operator+=(const GeomTensor<3>& rhs) requires (nDim < 3) {
+GeomTensor<nDim>::operator+=(const GeomTensor<3>& rhs) requires (M == nDim && M < 3) {
   REQUIRE(rhs.xz() == 0.0 and
           rhs.yz() == 0.0 and
           rhs.zx() == 0.0 and

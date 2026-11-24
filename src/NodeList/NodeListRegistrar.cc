@@ -11,6 +11,8 @@
 #include "NodeListRegistrar.hh"
 #include "Geometry/Dimension.hh"
 
+#include <sstream>
+
 namespace Spheral {
 
 //------------------------------------------------------------------------------
@@ -101,6 +103,35 @@ NodeListRegistrar<Dimension>::
 }
 
 //------------------------------------------------------------------------------
+// Ensure that both the name and its hashed identity are unique.  NodeListView
+// comparisons use the hash, so admitting a collision would make two distinct
+// NodeLists compare equal.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+void
+NodeListRegistrar<Dimension>::
+verifyUniqueNameAndHash(const NodeList<Dimension>& nodeList) const {
+  const auto newName = nodeList.name();
+  const auto newHash = nodeList.hash();
+  for (const auto* registeredNodeList: mNodeLists) {
+    const auto registeredName = registeredNodeList->name();
+    if (registeredName == newName) {
+      std::stringstream msg;
+      msg << "NodeListRegistrar ERROR: the name " << newName << '\n'
+          << "is already registered.";
+      VERIFY2(false, msg.str());
+    }
+    if (registeredNodeList->hash() == newHash) {
+      std::stringstream msg;
+      msg << "NodeListRegistrar ERROR: hash collision between the NodeList names "
+          << newName << " and " << registeredName
+          << " (hash " << newHash << ").";
+      VERIFY2(false, msg.str());
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 // Register a NodeList (private).
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -112,20 +143,7 @@ registerNodeList(NodeList<Dimension>& nodeList) {
   VERIFY2(std::find(mNodeLists.begin(), mNodeLists.end(), &nodeList) == mNodeLists.end(),
           "NodeListRegistrar ERROR: Attempt to register a NodeList we already have!");
 
-  // Ensure that the NodeLists name is unique.
-  const std::string newName = nodeList.name();
-  const std::vector<std::string> currentNames = registeredNames();
-  if (std::find(currentNames.begin(), currentNames.end(), newName) != currentNames.end()) {
-    std::stringstream msg;
-    msg << "NodeListRegistrar ERROR: the name " << newName << std::endl
-        << " is already in the current set of registered NodeList names:" << std::endl
-        << "   ";
-    for (std::vector<std::string>::const_iterator itr = currentNames.begin();
-         itr != currentNames.end();
-         ++itr) msg << "  " << *itr;
-    msg << std::endl << std::endl;
-    VERIFY2(false, msg.str());
-  }
+  verifyUniqueNameAndHash(nodeList);
 
   // Find where we should insert the new NodeList in the ordering, and 
   // insert it.
@@ -149,20 +167,7 @@ registerNodeList(FluidNodeList<Dimension>& nodeList) {
   VERIFY2(std::find(mFluidNodeLists.begin(), mFluidNodeLists.end(), &nodeList) == mFluidNodeLists.end(),
           "NodeListRegistrar ERROR: Attempt to register a FluidNodeList we already have!");
 
-  // Ensure that the NodeLists name is unique.
-  const std::string newName = nodeList.name();
-  const std::vector<std::string> currentNames = registeredNames();
-  if (std::find(currentNames.begin(), currentNames.end(), newName) != currentNames.end()) {
-    std::stringstream msg;
-    msg << "NodeListRegistrar ERROR: the name " << newName << std::endl
-        << " is already in the current set of registered NodeList names:" << std::endl
-        << "   ";
-    for (std::vector<std::string>::const_iterator itr = currentNames.begin();
-         itr != currentNames.end();
-         ++itr) msg << "  " << *itr;
-    msg << std::endl << std::endl;
-    VERIFY2(false, msg.str());
-  }
+  verifyUniqueNameAndHash(nodeList);
 
   // Find where we should insert the new NodeList in the ordering, and 
   // insert it.
@@ -253,4 +258,3 @@ domainDecompositionIndependent(const bool x) {
 }
 
 }
-

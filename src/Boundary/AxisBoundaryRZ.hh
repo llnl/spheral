@@ -6,8 +6,8 @@
 //
 // Created by JMO, Sun Aug 14 10:20:53 PDT 2016
 //----------------------------------------------------------------------------//
-#ifndef AxisBoundary_HH
-#define AxisBoundary_HH
+#ifndef __Spheral_AxisBoundary__
+#define __Spheral_AxisBoundary__
 
 #include "Geometry/Dimension.hh"
 #include "ReflectingBoundary.hh"
@@ -18,24 +18,25 @@ class AxisBoundaryRZ: public ReflectingBoundary<Dim<2> > {
 
 public:
   //--------------------------- Public Interface ---------------------------//
-  typedef Dim<2> Dimension;
-  typedef Dimension::Scalar Scalar;
-  typedef Dimension::Vector Vector;
-  typedef Dimension::Tensor Tensor;
-  typedef Dimension::SymTensor SymTensor;
-  typedef Dimension::ThirdRankTensor ThirdRankTensor;
+  using Dimension = Dim<2>;
+  using Scalar = Dimension::Scalar;
+  using Vector = Dimension::Vector;
+  using Tensor = Dimension::Tensor;
+  using SymTensor = Dimension::SymTensor;
+  using ThirdRankTensor = Dimension::ThirdRankTensor;
 
   // Constructors and destructors.
-  AxisBoundaryRZ(const double etamin);
-  virtual ~AxisBoundaryRZ();
+  AxisBoundaryRZ(const DataBase<Dimension>& dataBase,
+                 const Scalar etamin);
+  virtual ~AxisBoundaryRZ() = default;
 
   // Find the set of nodes in violation of this boundary in the given NodeList.
   virtual void setViolationNodes(NodeList<Dimension>& nodeList) override;
   virtual void updateViolationNodes(NodeList<Dimension>& nodeList) override;
 
   // Access the fuzz from the axis we're using to enforce the BC.
-  double etamin() const;
-  void etamin(const double x);
+  Scalar etamin() const;
+  void etamin(const Scalar x);
 
   //****************************************************************************
   // Methods required for restarting.

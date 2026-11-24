@@ -544,7 +544,7 @@ output("hydro.nTensile")
 # Create boundary conditions, and give them to the physis packages.
 #-------------------------------------------------------------------------------
 xPlane0 = Plane(Vector(xmin), Vector(1.0))
-xbc0 = ReflectingBoundary(xPlane0)
+xbc0 = ReflectingBoundary(db, xPlane0)
 ##xPlane1 = Plane(Vector(xmax), Vector(-1.0))
 ##xbc1 = ReflectingBoundary(xPlane1)
 

@@ -122,11 +122,11 @@ public:
   SPHERAL_HOST        const value_type& back()  const                                     { return mDataSpan.back(); }
   SPHERAL_HOST        bool empty() const                                                  { return mDataSpan.empty(); }
 #else
-  SPHERAL_HOST        iterator begin() const                                              { return &mDataSpan[0]; }
-  SPHERAL_HOST        iterator end() const                                                { return &mDataSpan[0] + mDataSpan.size(); }
+  SPHERAL_HOST        iterator begin() const                                              { return mDataSpan.data(); }
+  SPHERAL_HOST        iterator end() const                                                { auto* p = mDataSpan.data(); return mDataSpan.size() == 0u ? p : p + mDataSpan.size(); }
   SPHERAL_HOST        iterator internalBegin() const                                      { return this->begin(); }
-  SPHERAL_HOST        iterator internalEnd() const                                        { return this->begin() + mNumInternalElements; }
-  SPHERAL_HOST        iterator ghostBegin() const                                         { return this->begin() + mNumInternalElements; }
+  SPHERAL_HOST        iterator internalEnd() const                                        { auto* p = this->begin(); return mNumInternalElements == 0u ? p : p + mNumInternalElements; }
+  SPHERAL_HOST        iterator ghostBegin() const                                         { auto* p = this->begin(); return mNumInternalElements == 0u ? p : p + mNumInternalElements; }
   SPHERAL_HOST        iterator ghostEnd() const                                           { return this->end(); }
   SPHERAL_HOST        value_type& front()                                                 { return mDataSpan[0]; }
   SPHERAL_HOST        value_type& back()                                                  { return this->empty() ? mDataSpan[0] : mDataSpan[mDataSpan.size() - 1u]; }
@@ -148,7 +148,8 @@ public:
 protected:
   //--------------------------- Protected Interface ---------------------------//
   ContainerType mDataSpan;
-  size_t mNumInternalElements, mNumGhostElements;
+  size_t mNumInternalElements = 0u;
+  size_t mNumGhostElements = 0u;
   Scalar mNodesPerSmoothingScale = 0.0;
 };
 

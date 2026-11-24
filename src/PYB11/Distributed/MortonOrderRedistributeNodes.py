@@ -25,7 +25,6 @@ Warren & Salmon (1995), Computer Physics Communications, 87, 266-290."""
     #...........................................................................
     # Constructors
     def pyinit(self,
-               dummy = "const double",
                minNodesPerDomainFraction = ("const double", "0.5"),
                maxNodesPerDomainFraction = ("const double", "1.5"),
                workBalance = ("const bool", "true"),

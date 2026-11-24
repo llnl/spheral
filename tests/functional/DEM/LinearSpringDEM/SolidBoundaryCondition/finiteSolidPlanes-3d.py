@@ -165,10 +165,11 @@ distributeNodes3d((nodes1, generator1))
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 for nodes in nodeSet:
     db.appendNodeList(nodes)
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numDEMNodeLists")
 output("db.numFluidNodeLists")

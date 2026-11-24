@@ -83,8 +83,8 @@ def FSISPH(dataBase,
 
     # Artificial viscosity.
     if not Q:
-        Cl = 2.0*(dataBase.maxKernelExtent/2.0)
-        Cq = 8.0*(dataBase.maxKernelExtent/2.0)**2
+        Cl = 2.0*(dataBase.kernelExtent/2.0)
+        Cq = 8.0*(dataBase.kernelExtent/2.0)**2
         Q = eval("LimitedMonaghanGingoldViscosity%id(Clinear=%g, Cquadratic=%g, kernel=W)" % (ndim, Cl, Cq))
 
     # slide surfaces.

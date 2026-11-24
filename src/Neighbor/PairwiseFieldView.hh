@@ -23,6 +23,8 @@ struct NodePairIdxType;
 
 template<typename Value, size_t numElements=1>
 class PairwiseFieldView {
+  static_assert(numElements > 0u, "PairwiseFieldView requires at least one value per node pair");
+
 public:
   //--------------------------- Public Interface ---------------------------//
 #ifdef SPHERAL_UNIFIED_MEMORY
@@ -82,4 +84,3 @@ protected:
 }
 
 #endif
-

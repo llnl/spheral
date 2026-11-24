@@ -218,9 +218,12 @@ public:
   SPHERAL_HOST_DEVICE double selfDoubledot3D() const;
   SPHERAL_HOST_DEVICE double maxAbsElement3D() const;
   SPHERAL_HOST_DEVICE GeomVector<3> eigenValues3D() const;
-  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& vec) const        requires (nDim < 3);  // Screen out as redundant with normal vector dot above in 3d
-  SPHERAL_HOST_DEVICE GeomVector<3> operator*(const GeomVector<3>& rhs) const  requires (nDim < 3);
-  SPHERAL_HOST_DEVICE GeomTensor& operator+=(const GeomTensor<3>& rhs)         requires (nDim < 3);
+  template<int M = nDim>
+  SPHERAL_HOST_DEVICE GeomVector<3> dot(const GeomVector<3>& vec) const requires (M == nDim && M < 3);  // Screen out as redundant with normal vector dot above in 3d
+  template<int M = nDim>
+  SPHERAL_HOST_DEVICE GeomVector<3> operator*(const GeomVector<3>& rhs) const requires (M == nDim && M < 3);
+  template<int M = nDim>
+  SPHERAL_HOST_DEVICE GeomTensor& operator+=(const GeomTensor<3>& rhs) requires (M == nDim && M < 3);
 
   // Support for atomic operations on device
   template<typename Op> SPHERAL_HOST_DEVICE void atomicOp(const TensorType& rhs);

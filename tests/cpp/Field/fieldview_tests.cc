@@ -45,6 +45,14 @@ public:
   }
 };
 
+TEST(FieldViewValueTest, EmptyIterators) {
+  FieldViewDouble view;
+  EXPECT_TRUE(view.empty());
+  EXPECT_EQ(view.begin(), view.end());
+  EXPECT_EQ(view.internalBegin(), view.internalEnd());
+  EXPECT_EQ(view.ghostBegin(), view.ghostEnd());
+}
+
 // Setting up Templated Test for FieldView
 TYPED_TEST_SUITE_P(FieldViewTypedTest);
 template <typename T> class FieldViewTypedTest : public FieldViewTest {};
@@ -236,4 +244,3 @@ REGISTER_TYPED_TEST_SUITE_P(FieldViewTypedTest, ExecutionSpaceCapture, MultiSpac
 
 INSTANTIATE_TYPED_TEST_SUITE_P(Field, FieldViewTypedTest,
                                typename Spheral::Test<EXEC_TYPES>::Types, );
-

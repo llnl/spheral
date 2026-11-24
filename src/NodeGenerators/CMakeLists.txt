@@ -1,7 +1,6 @@
 set(NodeGenerators_inst
     relaxNodeDistribution
     centroidalRelaxNodesImpl
-    compactFacetedVolumes
     chooseRandomNonoverlappingCenter
    )
 
@@ -16,7 +15,6 @@ instantiate(NodeGenerators_inst NodeGenerators_sources)
 set(NodeGenerators_headers
     centroidalRelaxNodesImpl.hh
     chooseRandomNonoverlappingCenter.hh
-    compactFacetedVolumes.hh
     fillFacetedVolume.hh
     generateCylDistributionFromRZ.hh
     readSiloPolyMesh.hh

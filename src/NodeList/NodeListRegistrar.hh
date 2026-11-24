@@ -149,6 +149,10 @@ private:
   NodeListRegistrar();
   ~NodeListRegistrar();
 
+  // Verify that a new NodeList has both a unique name and a unique hashed
+  // identity before adding it to the registry.
+  void verifyUniqueNameAndHash(const NodeList<Dimension>& nodeList) const;
+
   // Grant friendship to NodeLists to register and unregister themselves.
   friend class NodeList<Dimension>;
   friend class FluidNodeList<Dimension>;

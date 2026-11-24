@@ -49,8 +49,8 @@ db.appendNodeList(nodes)
 hydro = SPH(dataBase = db,
             W = WT)
 # Keep references to the boundaries: the physics package only holds pointers.
-bcs = [ReflectingBoundary(Plane(Vector(0.0), Vector( 1.0))),
-       ReflectingBoundary(Plane(Vector(1.0), Vector(-1.0)))]
+bcs = [ReflectingBoundary(db, Plane(Vector(0.0), Vector( 1.0))),
+       ReflectingBoundary(db, Plane(Vector(1.0), Vector(-1.0)))]
 for bc in bcs:
     hydro.appendBoundary(bc)
 

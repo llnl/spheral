@@ -154,10 +154,11 @@ if restoreCycle is None:
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(WT.kernelExtent)
 output("db")
 for nodes in nodeSet:
     db.appendNodeList(nodes)
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numDEMNodeLists")
 output("db.numFluidNodeLists")
@@ -200,7 +201,7 @@ if useSolidBoundary:
 
 # implement boundary condition using Spheral's ghost particle reflection
 else:
-    bcs = [ReflectingBoundary(Plane(Vector(0.0, 0.0, 0.0), Vector( 0.0, 0.0, 1.0)))]
+    bcs = [ReflectingBoundary(db, Plane(Vector(0.0, 0.0, 0.0), Vector( 0.0, 0.0, 1.0)))]
     for package in packages:
         for bc in bcs:
             package.appendBoundary(bc)

@@ -388,14 +388,12 @@ if solid:
     nodes1 = makeSolidNodeList("nodes1", eos, 
                                hmin = hmin,
                                hmax = hmax,
-                               nPerh = nPerh,
-                               kernelExtent = kernelExtent)
+                               nPerh = nPerh)
 else:
-    nodes1 = makeFluidNodeList("nodes1", eos, 
-                               hmin = hmin,
-                               hmax = hmax,
-                               nPerh = nPerh,
-                               kernelExtent = kernelExtent)
+    nodes1 = FluidNodeList("nodes1", eos, 
+                           hmin = hmin,
+                           hmax = hmax,
+                           nPerh = nPerh)
     
 output("nodes1")
 output("nodes1.hmin")
@@ -429,9 +427,10 @@ for ix in range(nodes1.numNodes):
 #-------------------------------------------------------------------------------
 # Construct a DataBase to hold our node list
 #-------------------------------------------------------------------------------
-db = DataBase()
+db = DataBase(kernelExtent)
 output("db")
 output("db.appendNodeList(nodes1)")
+db.updateNeighbors()
 output("db.numNodeLists")
 output("db.numFluidNodeLists")
 
@@ -654,7 +653,7 @@ if fhourglass > 0.0:
 bcs = []
 if x0 == xwall:
     xPlane0 = Plane(Vector(0.0), Vector(1.0))
-    xbc0 = ReflectingBoundary(xPlane0)
+    xbc0 = ReflectingBoundary(db, xPlane0)
     bcs = [xbc0]
 
 if inflow:
@@ -673,10 +672,7 @@ for p in packages:
 #-------------------------------------------------------------------------------
 # Construct an integrator.
 #-------------------------------------------------------------------------------
-integrator = IntegratorConstructor(db)
-for p in packages:
-    integrator.appendPhysicsPackage(p)
-del p
+integrator = IntegratorConstructor(db, packages)
 integrator.lastDt = dt
 integrator.dtMin = dtMin
 integrator.dtMax = dtMax

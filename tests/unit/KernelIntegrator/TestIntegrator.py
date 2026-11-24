@@ -247,6 +247,7 @@ iterateIdealH(dataBase,
               [],
               100, # max h iterations
               1.e-4) # h tolerance
+dataBase.updateNeighbors()
 dataBase.updateConnectivityMap(True, False) # need ghost and overlap connectivity
 
 #-------------------------------------------------------------------------------

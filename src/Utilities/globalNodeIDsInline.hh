@@ -84,7 +84,7 @@ globalNodeIDs(const NodeList<Dimension>& nodeList) {
   const size_t numProcs = Process::getTotalNumberOfProcesses();
 
   // Build keys to sort the nodes by.
-  DataBase<Dimension> db;
+  DataBase<Dimension> db(1.0);
   db.appendNodeList(const_cast<NodeList<Dimension>&>(nodeList));
   FieldList<Dimension, Key> keys = peanoHilbertOrderIndices(db);
 

@@ -1063,13 +1063,14 @@ class SpheralController:
     # Create an axis boundary if needed
     #--------------------------------------------------------------------------
     def insertAxisBoundary(self, physicsPackages):
+        db = self.integrator.dataBase
         if GeometryRegistrar.coords() == CoordinateType.Spherical:
-            self.axisBC = SphericalOriginBoundary()
+            self.axisBC = SphericalOriginBoundary(db)
         elif GeometryRegistrar.coords() == CoordinateType.RZ:
             etaMinAxis = 0.1
             for package in physicsPackages:
                 etaMinAxis = getattr(package, "etaMinAxis", etaMinAxis)
-            self.axisBC = AxisBoundaryRZ(etaMinAxis)
+            self.axisBC = AxisBoundaryRZ(db, etaMinAxis)
         else:
             self.axisBC = None
         if self.axisBC is not None:
@@ -1130,8 +1131,8 @@ class SpheralController:
             try:
                 #self.redistribute = eval("ParmetisRedistributeNodes%s(W.kernelExtent)" % self.dim)
                 #self.redistribute = eval("SortAndDivideRedistributeNodes%s(W.kernelExtent)" % self.dim)
-                self.redistribute = eval("PeanoHilbertOrderRedistributeNodes%s(W.kernelExtent)" % self.dim)
-                #self.redistribute = eval("VoronoiRedistributeNodes%s(W.kernelExtent)" % self.dim)
+                self.redistribute = eval("PeanoHilbertOrderRedistributeNodes%s()" % self.dim)
+                #self.redistribute = eval("VoronoiRedistributeNodes%s()" % self.dim)
             except:
                 print("Warning: this appears to be a parallel run, but Controller cannot construct")
                 print("         dynamic redistributer.")

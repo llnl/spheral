@@ -260,6 +260,7 @@ iterateIdealH(dataBase,
               vector_of_Boundary(),
               100, # max h iterations
               1.e-4) # h tolerance
+dataBase.updateNeighbors()
 dataBase.updateConnectivityMap(True)
 
 #-------------------------------------------------------------------------------

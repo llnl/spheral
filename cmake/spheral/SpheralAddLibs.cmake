@@ -67,16 +67,37 @@ function(spheral_add_package package_name)
   set(_tpl_depends ${SPHERAL_BLT_DEPENDS})
   set(_export_target ${SPHERAL_EXPORT_TARGET_NAME})
   if(ENABLE_DEV_BUILD)
+    # BLT 0.7.1 applies DEFINES with PUBLIC scope even when it creates a
+    # header-only INTERFACE target. Defer definitions in that case so they can
+    # be applied below with the correct scope.
+    set(_package_define_args)
+    if(${package_name}_sources)
+      set(_package_define_args DEFINES ${SPHERAL_COMPILE_DEFS})
+    endif()
     blt_add_library(NAME Spheral_${package_name}
       HEADERS     ${${package_name}_headers}
       SOURCES     ${${package_name}_sources}
-      DEFINES     ${SPHERAL_COMPILE_DEFS}
+      ${_package_define_args}
       DEPENDS_ON  ${SPHERAL_CXX_DEPENDS} ${_tpl_depends}
       SHARED      TRUE)
-    target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
+    get_target_property(_package_target_type Spheral_${package_name} TYPE)
+    if(_package_target_type STREQUAL "INTERFACE_LIBRARY")
+      target_compile_definitions(Spheral_${package_name} INTERFACE
+        ${SPHERAL_COMPILE_DEFS})
+      target_link_options(Spheral_${package_name} INTERFACE ${SPHERAL_LINK_FLAGS})
+      target_compile_options(Spheral_${package_name} INTERFACE ${SPHERAL_CXX_FLAGS})
+      target_include_directories(Spheral_${package_name} INTERFACE
+        "$<BUILD_INTERFACE:${SPHERAL_INCL_DIRS}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<INSTALL_INTERFACE:include>")
+    else()
+      target_link_options(Spheral_${package_name} PUBLIC ${SPHERAL_LINK_FLAGS})
+      target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
+      target_include_directories(Spheral_${package_name} PRIVATE
+        ${SPHERAL_INCL_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
     target_link_libraries(${_main_target} INTERFACE Spheral_${package_name})
-    target_compile_options(Spheral_${package_name} PRIVATE ${SPHERAL_CXX_FLAGS})
-    target_include_directories(Spheral_${package_name} PRIVATE ${SPHERAL_INCL_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
     install(TARGETS Spheral_${package_name}
       EXPORT ${_export_target}
       DESTINATION lib)
@@ -87,21 +108,23 @@ function(spheral_add_package package_name)
       get_filename_component(source_path "${source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
       list(APPEND package_sources "${source_path}")
     endforeach()
-    target_sources(${_main_target} PRIVATE ${package_sources})
-    # Grab the CXX files
-    blt_split_source_list_by_language(
-      SOURCES  ${package_sources}
-      CXX_LIST package_cxx_sources)
-    # Set the necessary languages for the sources
-    if(ENABLE_HIP)
-      set_property(SOURCE ${package_cxx_sources}
-        TARGET_DIRECTORY ${_main_target}
-        PROPERTY LANGUAGE HIP)
-    endif()
-    if(ENABLE_CUDA)
-      set_property(SOURCE ${package_cxx_sources}
-        TARGET_DIRECTORY ${_main_target}
-        PROPERTY LANGUAGE CUDA)
+    if(package_sources)
+      target_sources(${_main_target} PRIVATE ${package_sources})
+      # Grab the CXX files
+      blt_split_source_list_by_language(
+        SOURCES  ${package_sources}
+        CXX_LIST package_cxx_sources)
+      # Set the necessary languages for the sources
+      if(ENABLE_HIP)
+        set_property(SOURCE ${package_cxx_sources}
+          TARGET_DIRECTORY ${_main_target}
+          PROPERTY LANGUAGE HIP)
+      endif()
+      if(ENABLE_CUDA)
+        set_property(SOURCE ${package_cxx_sources}
+          TARGET_DIRECTORY ${_main_target}
+          PROPERTY LANGUAGE CUDA)
+      endif()
     endif()
   endif()
   # Install the headers

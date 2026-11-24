@@ -200,7 +200,7 @@ class MedialGeneratorBase(NodeGeneratorBase):
                     db = sph.DataBase()
                     db.appendNodeList(nodes)
                     maxNodes = max(maxNodesPerDomain, 2*n/mpi.procs)
-                    redistributor = sph.PeanoHilbertOrderRedistributeNodes(2.0)
+                    redistributor = sph.PeanoHilbertOrderRedistributeNodes()
                     redistributor.redistributeNodes(db)
         
             # If we're in parallel we need the parallel boundary.

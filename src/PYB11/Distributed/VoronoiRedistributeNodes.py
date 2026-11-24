@@ -25,7 +25,6 @@ computational domain."""
     #...........................................................................
     # Constructors
     def pyinit(self,
-               dummy = "const double",
                workBalance = ("const bool", "false"),
                balanceGenerators = ("const bool", "true"),
                tolerance = ("const double", "1.0e-4"),

@@ -9,13 +9,13 @@
 #include "NodeList/NodeList.hh"
 #include "NodeList/FluidNodeList.hh"
 #include "Hydro/HydroFieldNames.hh"
+#include "Utilities/range.hh"
 #include "Utilities/safeInv.hh"
 #include "Mesh/Mesh.hh"
 
+#include <algorithm>
+
 using std::vector;
-using std::string;
-using std::pair;
-using std::make_pair;
 
 namespace Spheral {
 
@@ -26,93 +26,91 @@ computeSumVoronoiCellMassDensityFromFaces(const Mesh<Dimension>& mesh,
                                           const DataBase<Dimension>& dataBase,
                                           FieldList<Dimension, typename Dimension::Scalar>& massDensity) {
 
-  typedef typename Dimension::Scalar Scalar;
-  typedef typename Dimension::Vector Vector;
-  typedef typename Dimension::SymTensor SymTensor;
-  typedef typename Mesh<Dimension>::Zone Zone;
-  typedef typename Mesh<Dimension>::Face Face;
+  using Scalar = typename Dimension::Scalar;
+  using Vector = typename Dimension::Vector;
+  using SymTensor = typename Dimension::SymTensor;
+  using Zone = typename Mesh<Dimension>::Zone;
+  using Face = typename Mesh<Dimension>::Face;
+  using NodeID = std::pair<size_t, size_t>;
 
   // State fields.
   const FieldList<Dimension, typename Dimension::Vector> position = dataBase.fluidPosition();
   const FieldList<Dimension, typename Dimension::Scalar> mass = dataBase.fluidMass();
   const FieldList<Dimension, typename Dimension::SymTensor> H = dataBase.fluidHfield();
 
-  const unsigned numFaces = mesh.numFaces();
-  const SymTensor H0 = 1.0e100*SymTensor::one();
-  unsigned nodeListi = 0;
-  for (typename DataBase<Dimension>::ConstFluidNodeListIterator itr = dataBase.fluidNodeListBegin();
-       itr != dataBase.fluidNodeListEnd();
-       ++itr, ++nodeListi) {
-    const FluidNodeList<Dimension>& nodeList = **itr;
-    Neighbor<Dimension>& neighbor = const_cast<Neighbor<Dimension>&>(nodeList.neighbor());
-    const Scalar rhoMin = nodeList.rhoMin();
-    const Scalar rhoMax = nodeList.rhoMax();
-    const unsigned n = nodeList.numInternalNodes();
+  const auto  numFaces = mesh.numFaces();
+  const auto  H0 = 1.0e100*SymTensor::one();
+  const auto& neighbor = dataBase.neighbor();
+  const auto  numNodeLists = dataBase.numFluidNodeLists();
+  REQUIRE(dataBase.numNodeLists() == numNodeLists);
 
-    // Prepare the face fields for summing.
-    vector<Scalar> massFace(numFaces, 0.0), volFace(numFaces, 0.0);
-    vector<Vector> posFace(numFaces, Vector::zero());
+  // Prepare the face fields for summing.
+  vector<vector<Scalar>> massFace(numNodeLists, vector<Scalar>(numFaces, 0.0)), volFace(numNodeLists, vector<Scalar>(numFaces, 0.0));
+  vector<Vector> posFace(numFaces, Vector::zero());
 
-    // Walk the faces and sum the mass and volume properties to faces for this material.
-    for (unsigned iface = 0; iface != numFaces; ++iface) {
-      const Face& face = mesh.face(iface);
-      posFace[iface] = face.position();
+  // Walk the faces and sum the mass and volume properties to faces
+  for (auto iface = 0u; iface < numFaces; ++iface) {
+    const Face& face = mesh.face(iface);
+    posFace[iface] = face.position();
 
-      // Set the neighbors for this face.
-      vector<vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-      Neighbor<Dimension>::setMasterNeighborGroup(posFace[iface], H0,
-                                                  dataBase.fluidNodeListBegin(),
-                                                  dataBase.fluidNodeListEnd(),
-                                                  W.kernelExtent(),
-                                                  masterLists,
-                                                  coarseNeighbors);
-      neighbor.setRefineNeighborList(posFace[iface], H0, coarseNeighbors[nodeListi], refineNeighbors[nodeListi]);
+    // Set the neighbors for this face.
+    vector<NodeID> masterLists, coarseNeighbors, refineNeighbors;
+    auto [ok, numMaster, numCoarse] = visitNeighbor(neighbor, [&](const auto& x) { return x.setMasterList(posFace[iface], H0,
+                                                                                                          masterLists,
+                                                                                                          coarseNeighbors); });
+    CHECK(ok);
+    CONTRACT_VAR(numMaster);
+    refineNeighbors.resize(numCoarse);
+    const auto numRefine = visitNeighbor(neighbor, [&](const auto& x) { return x.setRefineNeighborList(posFace[iface], H0, numCoarse, coarseNeighbors, refineNeighbors); });
 
-      // Walk the neighbors in this NodeList.
-      for (auto neighborItr = refineNeighbors[nodeListi].begin(); neighborItr != refineNeighbors[nodeListi].end(); ++neighborItr) {
-        unsigned j = *neighborItr;
+    // Walk the neighbors
+    for (auto k = 0u; k < numRefine; ++k) {
+      const auto [nodeListj, j] = refineNeighbors[k];
       
-        // Get the state for node j
-        const Vector& rj = position(nodeListi, j);
-        const Scalar& mj = mass(nodeListi, j);
-        const SymTensor& Hj = H(nodeListi, j);
-        const Scalar Vj = mesh.zone(nodeListi, j).volume();
-        const Scalar Hdetj = Hj.Determinant();
-        CHECK(Vj > 0.0);
-        CHECK(Hdetj > 0.0);
+      // Get the state for node j
+      const Vector& rj = position(nodeListj, j);
+      const Scalar& mj = mass(nodeListj, j);
+      const SymTensor& Hj = H(nodeListj, j);
+      const Scalar Vj = mesh.zone(nodeListj, j).volume();
+      const Scalar Hdetj = Hj.Determinant();
+      CHECK(Vj > 0.0);
+      CHECK(Hdetj > 0.0);
 
-        // Pair-wise kernel type stuff.
-        const Vector rij = posFace[iface] - rj;
-        const Vector etaj = Hj*rij;
-        const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
+      // Pair-wise kernel type stuff.
+      const Vector rij = posFace[iface] - rj;
+      const Vector etaj = Hj*rij;
+      const Scalar Wj = W.kernelValue(etaj.magnitude(), Hdetj);
 
-        // Contribution to this face.
-        massFace[iface] += mj*Wj;
-        volFace[iface] += Vj*Wj;
-      }
+      // Contribution to this face.
+      massFace[nodeListj][iface] += mj*Wj;
+      volFace[nodeListj][iface] += Vj*Wj;
     }
+  }
 
-    // Interpolate from faces to SVPH nodes.
-    for (unsigned i = 0; i != n; ++i) {
+  // Interpolate from faces to SVPH nodes.
+  for (auto [nodeListi, nptr]: enumerate(dataBase.fluidNodeListPtrs())) {
+    const auto n = nptr->numInternalNodes();
+    const auto rhoMin = nptr->rhoMin();
+    const auto rhoMax = nptr->rhoMax();
+    for (auto i = 0u; i < n; ++i) {
       const Zone& zone = mesh.zone(nodeListi, i);
       const vector<int>& faceIDs = zone.faceIDs();
       const Vector rc = position(nodeListi, i); // zone.position();
       Scalar Meff = 0.0, Veff = 0.0;
-      for (unsigned k = 0; k != faceIDs.size(); ++k) {
+      for (auto k = 0u; k < faceIDs.size(); ++k) {
         const unsigned iface = Mesh<Dimension>::positiveID(faceIDs[k]);
         const Face& face = mesh.face(iface);
         const Vector rf = face.position();
         const Scalar Af = face.area();
         const Scalar wf = Af*(rf - rc).magnitude();
-        Meff += massFace[iface] * wf;
-        Veff += volFace[iface] * wf;
+        Meff += massFace[nodeListi][iface] * wf;
+        Veff += volFace[nodeListi][iface] * wf;
       }
       CHECK(Meff > 0.0);
       CHECK(Veff > 0.0);
-      massDensity(nodeListi, i) = max(rhoMin, min(rhoMax, Meff/Veff));
+      massDensity(nodeListi, i) = std::clamp(Meff/Veff, rhoMin, rhoMax);
     }
   }
 }
 
 }
-

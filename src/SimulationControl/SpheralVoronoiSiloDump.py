@@ -440,6 +440,7 @@ def dumpPhysicsState(stateThingy,
         mass = state.scalarFields(HydroFieldNames.mass)
         for nodes in mass.nodeListPtrs():
             dataBase.appendNodeList(nodes)
+        dataBase.updateNeighbors()
         dataBase.updateConnectivityMap(False, False, False)
 
     assert state is not None and dataBase is not None
@@ -450,12 +451,11 @@ def dumpPhysicsState(stateThingy,
     # Make sure the ghost nodes are set for the Voronoi tessellation work
     for nodes in dataBase.nodeLists:
         nodes.numGhostNodes = 0
-        nodes.neighbor().updateNodes()
+    dataBase.updateNeighbors()
     for bc in boundaries:
         bc.setAllGhostNodes(dataBase)
         bc.finalizeGhostBoundary()
-        for nodes in dataBase.nodeLists:
-            nodes.neighbor().updateNodes()
+        dataBase.updateNeighbors()
     dataBase.updateConnectivityMap(False, False, False)
 
     # Did the user specify any data to be dumped?

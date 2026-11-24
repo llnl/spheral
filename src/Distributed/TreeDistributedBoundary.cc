@@ -47,13 +47,6 @@ TreeDistributedBoundary<Dimension>::TreeDistributedBoundary():
 }
 
 //------------------------------------------------------------------------------
-// Destructor
-//------------------------------------------------------------------------------
-template<typename Dimension>
-TreeDistributedBoundary<Dimension>::~TreeDistributedBoundary() {
-}
-
-//------------------------------------------------------------------------------
 // Set the ghost nodes for the given DataBase.
 //------------------------------------------------------------------------------
 template<typename Dimension>
@@ -71,8 +64,9 @@ setAllGhostNodes(DataBase<Dimension>& dataBase) {
   // Clear out the existing communication map for the given database.
   this->reset(dataBase);
 
-  // Get the set of occupied tree cells across all NodeLists.
-  auto localTree = this->flattenTrees(dataBase);
+  // Get the set of occupied tree cells (by key)
+  const auto* neighborPtr = this->getTreeNeighborPtr(dataBase);
+  auto localTree = neighborPtr->occupiedCells();
 
   // Use per domain trees to build the local send nodes needed for each domain.
   this->buildSendNodes(dataBase, localTree);
@@ -98,44 +92,9 @@ template<typename Dimension>
 inline
 const TreeNeighbor<Dimension>*
 TreeDistributedBoundary<Dimension>::
-getTreeNeighborPtr(const NodeList<Dimension>* nodeListPtr) const {
-  const TreeNeighbor<Dimension>* result = dynamic_cast<TreeNeighbor<Dimension>*>(&(nodeListPtr->neighbor()));
-  VERIFY2(result != NULL, "TreeDistributedBoundary ERROR : unable to extract TreeNeighbor from NodeList " << nodeListPtr->name());
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Create a list of the occupied grid cells flattened across all NodeLists
-// in the given DataBase.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-vector<vector<typename TreeDistributedBoundary<Dimension>::CellKey>>
-TreeDistributedBoundary<Dimension>::
-flattenTrees(const DataBase<Dimension>& dataBase) const {
-
-  // Prepare the result.
-  vector<vector<CellKey>> result;
-
-  // Walk each NodeList, and add its occupied tree cells to the total set.
-  for (auto nodeListItr = dataBase.nodeListBegin(); nodeListItr < dataBase.nodeListEnd(); ++nodeListItr) {
-    const auto* neighborPtr = this->getTreeNeighborPtr(*nodeListItr);
-    const auto  localOccupation = neighborPtr->occupiedCells();
-    const auto  nlocallevels = localOccupation.size();
-    const auto  nlevels = std::max(result.size(), nlocallevels);
-    result.resize(nlevels);
-    for (auto k = 0u; k < nlocallevels; ++k) {
-      result[k].insert(result[k].end(), localOccupation[k].begin(), localOccupation[k].end());
-    }
-  }
-
-  // Reduce to the unique set.
-  const auto nlevels = result.size();
-  for (auto k = 0u; k < nlevels; ++k) {
-    std::sort(result[k].begin(), result[k].end());
-    result[k].erase(std::unique(result[k].begin(), result[k].end()), result[k].end());
-  }
-
-  // That's it.
+getTreeNeighborPtr(const DataBase<Dimension>& dataBase) const {
+  const auto* result = std::get_if<TreeNeighbor<Dimension>>(&dataBase.neighbor());
+  VERIFY2(result != nullptr, "TreeDistributedBoundary ERROR : unable to extract TreeNeighbor from DataBase");
   return result;
 }
 
@@ -154,6 +113,16 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
   int procID = this->domainID();
   int numProcs = this->numDomains();
   CHECK(procID < numProcs);
+
+  // Get the state from the DataBase
+  const auto* neighborPtr = this->getTreeNeighborPtr(dataBase);
+  const auto& nodeListPtrs = dataBase.nodeListPtrs();
+  const auto& positions = dataBase.globalPosition();
+  const auto& extents = neighborPtr->nodeExtentView();
+
+  // Compute the local H inverse for our box culling of send nodes.
+  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
+  dataBase.globalHinverse(Hinverse);
 
   // Serialize our local tree for broadcast.
   vector<char> localBuffer;
@@ -191,10 +160,6 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
   }
   CHECK((int)sendRequests.size() == 2*(numProcs -1 ));
 
-  // Compute the local H inverse for our box culling of send nodes.
-  FieldList<Dimension, SymTensor> Hinverse = dataBase.newGlobalFieldList(SymTensor::zero(), "H inverse");
-  dataBase.globalHinverse(Hinverse);
-
   // Next walk the other domains, get their info, and figure out what nodes we need to send them.
   for (auto recvProc = 0; recvProc < numProcs; ++recvProc) {
     if (recvProc != procID) {
@@ -221,50 +186,46 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
       unpackElement(xmaxSampleOther, bufItr, buffer.end());
       CHECK(bufItr == buffer.end());
 
-      // Walk the local NodeLists, and find the local nodes that interact with the remote tree.
-      auto nodeListi = 0;
-      for (auto nodeListItr = dataBase.nodeListBegin(); nodeListItr < dataBase.nodeListEnd(); ++nodeListItr, ++nodeListi) {
-        const auto* neighborPtr = this->getTreeNeighborPtr(*nodeListItr);
-        for (auto klevel = 0u; klevel < otherTree.size(); ++klevel) {
-          for (auto kcell = 0u; kcell < otherTree[klevel].size(); ++kcell) {
+      // Walk the local tree and see if we interact with the remote tree
+      for (auto klevel = 0u; klevel < otherTree.size(); ++klevel) {
+        for (auto kcell = 0u; kcell < otherTree[klevel].size(); ++kcell) {
 
-            // Find the master/coarse neighbor info for this tree level/cell.
-            vector<int> masterList, coarseNeighbors;
-            neighborPtr->setTreeMasterList(klevel, otherTree[klevel][kcell], masterList, coarseNeighbors, false);
+          // Find the master/coarse neighbor info for this tree level/cell.
+          std::vector<NodeID> masterList, coarseNeighbors;
+          neighborPtr->setTreeMasterList(klevel, otherTree[klevel][kcell], masterList, coarseNeighbors, false);
 
-            // Copy the coarse neighbor set as our send nodes.
-            if (coarseNeighbors.size() > 0) {
-              auto& domainNodes = this->openDomainBoundaryNodes(&(**nodeListItr), recvProc);
-              domainNodes.sendNodes.insert(domainNodes.sendNodes.end(), coarseNeighbors.begin(), coarseNeighbors.end());
-            }
+          // Copy the coarse neighbor set as our send nodes.
+          for (const auto& nodeID: coarseNeighbors) {
+            CHECK(nodeID.first < nodeListPtrs.size());
+            auto& domainNodes = this->openDomainBoundaryNodes(nodeListPtrs[nodeID.first], recvProc);
+            domainNodes.sendNodes.push_back(nodeID.second);
           }
         }
+      }
 
+      // Check our sendNodes for this process
+      for (auto [k, nodeListPtr]: enumerate(nodeListPtrs)) {
         // Did we identify any send nodes for this NodeList?
-        if (this->nodeListSharedWithDomain(**nodeListItr, recvProc)) {
+        if (this->nodeListSharedWithDomain(*nodeListPtr, recvProc)) {
 
           // Remove any duplicate nodes that were created.
-          auto& sendNodes = this->accessDomainBoundaryNodes(**nodeListItr, recvProc).sendNodes;
+          auto& sendNodes = this->accessDomainBoundaryNodes(*nodeListPtr, recvProc).sendNodes;
 	  CHECK(sendNodes.size() > 0);
           sort(sendNodes.begin(), sendNodes.end());
-          sendNodes.erase(unique(sendNodes.begin(), sendNodes.end()), sendNodes.end());
+          sendNodes.erase(std::unique(sendNodes.begin(), sendNodes.end()), sendNodes.end());
 	  CHECK(sendNodes.size() > 0);
 
           // Reject nodes based on the "box culling" domain of influence logic.
-          const auto& positions = (**nodeListItr).positions();
-          const auto& extents = neighborPtr->nodeExtentField();
-          const auto& Hinv = *Hinverse[nodeListi];
-          vector<int> indicesToKill;
-          for (auto kk = 0u; kk != sendNodes.size(); ++kk) {
-            const auto  i = sendNodes[kk];
-            const auto& xi = positions(i);
-            const auto& extenti = extents(i);
+          std::vector<int> indicesToKill;
+          for (auto [kk, i]: enumerate(sendNodes)) {
+            const auto& xi = positions(k,i);
+            const auto& extenti = extents(k,i);
             const auto  dr = xi - centroidOther;
             const auto  drMag = dr.magnitude();
             const auto  drUnit = dr.unitVector();
             const auto  xmini = xi - extenti;
             const auto  xmaxi = xi + extenti;
-            const auto  hi = (Hinv(i)*drUnit).magnitude();
+            const auto  hi = (Hinverse(k,i)*drUnit).magnitude();
             const bool  interacting = (drMag - 2.0*hi < radiusNodesOther or  // I see you
                                        drMag < radiusSampleOther or          // You see me
                                        testBoxIntersection(xmini, xmaxi, xminNodesOther, xmaxNodesOther) or // I see you
@@ -274,7 +235,7 @@ buildSendNodes(const DataBase<Dimension>& dataBase,
 
           // Are we killing all of the send nodes?
           if (indicesToKill.size() == sendNodes.size()) {
-            this->removeDomainBoundaryNodes(*nodeListItr, recvProc);
+            this->removeDomainBoundaryNodes(nodeListPtr, recvProc);
           } else {
             removeElements(sendNodes, indicesToKill);
           }

@@ -1,6 +1,44 @@
 #include "Utilities/DBC.hh"
 
+#include <type_traits>
+
 namespace Spheral {
+
+//------------------------------------------------------------------------------
+// Replace the current Neighbor by constructing a supported value in place.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+template<typename NT, typename... Args>
+inline
+NT&
+DataBase<Dimension>::
+emplaceNeighbor(Args&&... args) {
+  auto& result = [&]() -> NT& {
+    if constexpr (std::is_constructible_v<NT, DataBase&, Args...>) {
+      return mNeighbor.template emplace<NT>(*this,
+                                            std::forward<Args>(args)...);
+    } else {
+      return mNeighbor.template emplace<NT>(std::forward<Args>(args)...);
+    }
+  }();
+  mConnectivityMapPtr.reset();
+  this->setKernelExtent(result.kernelExtent());
+  ++mGeneration;
+  return result;
+}
+
+//------------------------------------------------------------------------------
+// Return a device-safe snapshot of the current Neighbor view.
+//------------------------------------------------------------------------------
+template<typename Dimension>
+inline
+NeighborViewVariant<Dimension>
+DataBase<Dimension>::neighborView() const {
+  return visitNeighbor(mNeighbor,
+                       [](const auto& neighbor) -> NeighborViewVariant<Dimension> {
+                         return neighbor.view();
+                       });
+}
 
 //------------------------------------------------------------------------------
 // Get the current connectivity map.
@@ -9,29 +47,10 @@ template<typename Dimension>
 inline
 const ConnectivityMap<Dimension>&
 DataBase<Dimension>::
-connectivityMap() const {
-  VERIFY2(mConnectivityMapPtr != 0,
-          "DataBase::connectivityMap ERROR -- need to ensure ConnectivityMap is constructed before calling this method.");
-  return *mConnectivityMapPtr;
-}
-
-template<typename Dimension>
-inline
-typename DataBase<Dimension>::ConnectivityMapPtr
-DataBase<Dimension>::
-connectivityMapPtr() const {
-  return mConnectivityMapPtr;
-}
-
-template<typename Dimension>
-inline
-const ConnectivityMap<Dimension>&
-DataBase<Dimension>::
 connectivityMap(const bool computeGhostConnectivity,
                 const bool computeOverlapConnectivity,
                 const bool computeIntersectionConnectivity) const {
-  if (not mConnectivityMapPtr) this->updateConnectivityMap(computeGhostConnectivity, computeOverlapConnectivity, computeIntersectionConnectivity);
-  return *mConnectivityMapPtr;
+  return *(this->connectivityMapPtr());
 }
 
 template<typename Dimension>
@@ -58,7 +77,7 @@ newGlobalFieldList(const DataType value,
                    const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
   for (auto* nptr: mNodeListPtrs) result.appendNewField(name, *nptr, value);
-  ENSURE(result.numFields() == numNodeLists());
+  ENSURE(result.numFields() == this->numNodeLists());
   return result;
 }
 
@@ -75,7 +94,7 @@ newFluidFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
   for (auto* nptr: mFluidNodeListPtrs) result.appendNewField(name, *nptr, value);
-  ENSURE(result.numFields() == numFluidNodeLists());
+  ENSURE(result.numFields() == this->numFluidNodeLists());
   return result;
 }
 
@@ -92,7 +111,7 @@ newSolidFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
   for (auto* nptr: mSolidNodeListPtrs) result.appendNewField(name, *nptr, value);
-  ENSURE(result.numFields() == numSolidNodeLists());
+  ENSURE(result.numFields() == this->numSolidNodeLists());
   return result;
 }
 
@@ -109,7 +128,7 @@ newDEMFieldList(const DataType value,
                   const typename Field<Dimension, DataType>::FieldName name) const {
   FieldList<Dimension, DataType> result(FieldStorageType::CopyFields);
   for (auto* nptr: mDEMNodeListPtrs) result.appendNewField(name, *nptr, value);
-  ENSURE(result.numFields() == numDEMNodeLists());
+  ENSURE(result.numFields() == this->numDEMNodeLists());
   return result;
 }
 
@@ -130,7 +149,7 @@ resizeGlobalFieldList(FieldList<Dimension, DataType>& fieldList,
   VERIFY((fieldList.storageType() == FieldStorageType::CopyFields));
 
   // First check if it's necessary to resize the FieldList.
-  bool reinitialize = fieldList.numFields() != numNodeLists();
+  bool reinitialize = fieldList.numFields() != this->numNodeLists();
   ConstNodeListIterator nodeListItr = nodeListBegin();
   typename FieldList<Dimension, DataType>::const_iterator itr = fieldList.begin();
   while (!reinitialize && 
@@ -150,7 +169,7 @@ resizeGlobalFieldList(FieldList<Dimension, DataType>& fieldList,
     fieldList = value;
   }
 
-  ENSURE(fieldList.numFields() == numNodeLists());
+  ENSURE(fieldList.numFields() == this->numNodeLists());
 }
 
 //------------------------------------------------------------------------------
@@ -169,7 +188,7 @@ resizeFluidFieldList(FieldList<Dimension, DataType>& fieldList,
   VERIFY((fieldList.storageType() == FieldStorageType::CopyFields));
 
   // First check if it's necessary to resize the FieldList.
-  bool reinitialize = fieldList.numFields() != numFluidNodeLists();
+  bool reinitialize = fieldList.numFields() != this->numFluidNodeLists();
   ConstFluidNodeListIterator nodeListItr = fluidNodeListBegin();
   typename FieldList<Dimension, DataType>::const_iterator itr = fieldList.begin();
   while (!reinitialize && 
@@ -189,7 +208,7 @@ resizeFluidFieldList(FieldList<Dimension, DataType>& fieldList,
     fieldList = value;
   }
 
-  ENSURE(fieldList.numFields() == numFluidNodeLists());
+  ENSURE(fieldList.numFields() == this->numFluidNodeLists());
 }
 
 
@@ -209,7 +228,7 @@ resizeDEMFieldList(FieldList<Dimension, DataType>& fieldList,
   VERIFY((fieldList.storageType() == FieldStorageType::CopyFields));
 
   // First check if it's necessary to resize the FieldList.
-  bool reinitialize = fieldList.numFields() != numDEMNodeLists();
+  bool reinitialize = fieldList.numFields() != this->numDEMNodeLists();
   ConstDEMNodeListIterator nodeListItr = DEMNodeListBegin();
   typename FieldList<Dimension, DataType>::const_iterator itr = fieldList.begin();
   while (!reinitialize && 
@@ -229,7 +248,7 @@ resizeDEMFieldList(FieldList<Dimension, DataType>& fieldList,
     fieldList = value;
   }
 
-  ENSURE(fieldList.numFields() == numDEMNodeLists());
+  ENSURE(fieldList.numFields() == this->numDEMNodeLists());
 }
 
 
@@ -249,7 +268,7 @@ resizeSolidFieldList(FieldList<Dimension, DataType>& fieldList,
   VERIFY((fieldList.storageType() == FieldStorageType::CopyFields));
 
   // First check if it's necessary to resize the FieldList.
-  bool reinitialize = fieldList.numFields() != numSolidNodeLists();
+  bool reinitialize = fieldList.numFields() != this->numSolidNodeLists();
   ConstSolidNodeListIterator nodeListItr = solidNodeListBegin();
   typename FieldList<Dimension, DataType>::const_iterator itr = fieldList.begin();
   while (!reinitialize && 
@@ -269,7 +288,7 @@ resizeSolidFieldList(FieldList<Dimension, DataType>& fieldList,
     fieldList = value;
   }
 
-  ENSURE(fieldList.numFields() == numSolidNodeLists());
+  ENSURE(fieldList.numFields() == this->numSolidNodeLists());
 }
 
 //------------------------------------------------------------------------------
@@ -288,7 +307,7 @@ newGlobalArray(const DataType value) const {
     result.push_back(std::vector<DataType>((*nodeListItr)->numNodes(), value));
   }
 
-  ENSURE(result.size() == numNodeLists());
+  ENSURE(result.size() == this->numNodeLists());
   return result;
 }
 
@@ -308,7 +327,7 @@ newFluidArray(const DataType value) const {
     result.push_back(std::vector<DataType>((*nodeListItr)->numNodes(), value));
   }
 
-  ENSURE(result.size() == numNodeLists());
+  ENSURE(result.size() == this->numNodeLists());
   return result;
 }
 
@@ -328,7 +347,7 @@ newSolidArray(const DataType value) const {
     result.push_back(std::vector<DataType>((*nodeListItr)->numNodes(), value));
   }
 
-  ENSURE(result.size() == numNodeLists());
+  ENSURE(result.size() == this->numNodeLists());
   return result;
 }
 
@@ -348,7 +367,7 @@ newDEMArray(const DataType value) const {
     result.push_back(std::vector<DataType>((*nodeListItr)->numNodes(), value));
   }
 
-  ENSURE(result.size() == numNodeLists());
+  ENSURE(result.size() == this->numNodeLists());
   return result;
 }
 
@@ -375,7 +394,7 @@ resizeGlobalArray(std::vector<std::vector<DataType>>& array,
     }
   }
 
-  ENSURE(array.size() == numNodeLists());
+  ENSURE(array.size() == this->numNodeLists());
 }
 
 //------------------------------------------------------------------------------
@@ -401,7 +420,7 @@ resizeFluidArray(std::vector<std::vector<DataType>>& array,
     }
   }
 
-  ENSURE(array.size() == numNodeLists());
+  ENSURE(array.size() == this->numNodeLists());
 }
 
 //------------------------------------------------------------------------------
@@ -427,7 +446,7 @@ resizeSolidArray(std::vector<std::vector<DataType>>& array,
     }
   }
 
-  ENSURE(array.size() == numNodeLists());
+  ENSURE(array.size() == this->numNodeLists());
 }
 
 //------------------------------------------------------------------------------
@@ -439,8 +458,8 @@ inline
 void
 DataBase<Dimension>::
 resizeDEMArray(std::vector<std::vector<DataType>>& array,
-                 const DataType value,
-                 const bool resetValues) const {
+               const DataType value,
+               const bool resetValues) const {
   array.resize(this->numDEMNodeLists());
   auto k = 0;
   for (auto nodeListItr = DEMNodeListBegin();
@@ -453,7 +472,7 @@ resizeDEMArray(std::vector<std::vector<DataType>>& array,
     }
   }
 
-  ENSURE(array.size() == numNodeLists());
+  ENSURE(array.size() == this->numNodeLists());
 }
 
 

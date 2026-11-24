@@ -64,24 +64,6 @@ sortEigenValues(EigenStruct<3>& result) {
 }
 
 //------------------------------------------------------------------------------
-// Constructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SortAndDivideRedistributeNodes<Dimension>::
-SortAndDivideRedistributeNodes(const double Hextent):
-  mHextent(Hextent) {
-    ENSURE(distinctlyGreaterThan(mHextent, 0.0));
-}
-
-//------------------------------------------------------------------------------
-// Destructor.
-//------------------------------------------------------------------------------
-template<typename Dimension>
-SortAndDivideRedistributeNodes<Dimension>::
-~SortAndDivideRedistributeNodes() {
-}
-
-//------------------------------------------------------------------------------
 // Sort the set of domain nodes by positions, returning the result as a list.
 //------------------------------------------------------------------------------
 template<typename Dimension>

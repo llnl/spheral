@@ -14,7 +14,6 @@ class FieldList(FieldListBase):
     using NodeListType = NodeList<%(Dimension)s>;
     using Vector = %(Dimension)s::Vector;
     using SymTensor = %(Dimension)s::SymTensor;
-    using ViewType = typename FieldListType::ViewType;
 """
 
     def pyinit(self):
@@ -28,10 +27,6 @@ class FieldList(FieldListBase):
 
     #...........................................................................
     # Methods
-    def storageType(self):
-        "The method whereby Fields are stored/referenced by this FieldList"
-        return
-
     def copyFields(self):
         """Force the the FieldList to make copies of all the Fields it currently\\npoints to and point to the internally cached copies instead.\\nAlso sets storageType to CopyFields."""
         return "void"
@@ -80,40 +75,6 @@ class FieldList(FieldListBase):
         "Return the Field associated with the given NodeList"
         return "FieldType*"
 
-    @PYB11const
-    def setMasterNodeLists(self,
-                           r = "const Vector&",
-                           H = "const SymTensor&",
-                           masterLists = "std::vector<std::vector<int>>&",
-                           coarseNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the master neighbor information based on (r,H)"
-        return "void"
-
-    @PYB11const
-    def setMasterNodeLists(self,
-                           r = "const Vector&",
-                           masterLists = "std::vector<std::vector<int>>&",
-                           coarseNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the master neighbor information based on position r (assume zero associated length scale)"
-        return "void"
-
-    @PYB11const
-    def setRefineNodeLists(self,
-                           r = "const Vector&",
-                           H = "const SymTensor&",
-                           coarseNeighbors = "const std::vector<std::vector<int>>&",
-                           refineNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the refine neighbor information based on (r,H)"
-        return "void"
-
-    @PYB11const
-    def setRefineNodeLists(self,
-                           r = "const Vector&",
-                           coarseNeighbors = "const std::vector<std::vector<int>>&",
-                           refineNeighbors = "std::vector<std::vector<int>>&"):
-        "Set the refine neighbor information based on r (assume zero associated length scale)"
-        return "void"
-
     def Zero(self):
         "Set all element values equal to zero"
         return "void"
@@ -150,9 +111,6 @@ class FieldList(FieldListBase):
     @PYB11const
     def empty(self):
         return "bool"
-
-    def view(self):
-        return "ViewType"
 
     #...........................................................................
     # Comparators

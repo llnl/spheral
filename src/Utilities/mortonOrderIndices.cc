@@ -123,15 +123,16 @@ mortonOrderIndices(const FieldList<Dimension, typename Dimension::Vector>& posit
   const Vector stepSize = (xmax - xmin)/KeyTraits::maxKey1d;
 
   // Go over all nodes.
-  for (AllNodeIterator<Dimension> nodeItr = positions.nodeBegin();
-       nodeItr != positions.nodeEnd();
-       ++nodeItr) {
+  for (auto nodeListi = 0u; nodeListi < positions.numFields(); ++nodeListi) {
+    const auto numNodes = positions[nodeListi]->numElements();
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
 
-    // Find the offset from the minimum coordinates.
-    const Vector xoff = positions(nodeItr) - xmin;
+      // Find the offset from the minimum coordinates.
+      const Vector xoff = positions(nodeListi, nodei) - xmin;
 
-    // Hash that sucker.
-    result(nodeItr) = hashPosition(xoff, stepSize);
+      // Hash that sucker.
+      result(nodeListi, nodei) = hashPosition(xoff, stepSize);
+    }
   }
 
   return result;
@@ -168,16 +169,17 @@ mortonOrderIndices(const DataBase<Dimension>& dataBase,
 
   // Go over all nodes.
   const FieldList<Dimension, Vector> positions = dataBase.globalPosition();
-  for (AllNodeIterator<Dimension> nodeItr = dataBase.nodeBegin();
-       nodeItr != dataBase.nodeEnd();
-       ++nodeItr) {
-    if (mask(nodeItr) != 0) {
+  for (auto nodeListi = 0u; nodeListi < positions.numFields(); ++nodeListi) {
+    const auto numNodes = positions[nodeListi]->numElements();
+    for (auto nodei = 0u; nodei < numNodes; ++nodei) {
+      if (mask(nodeListi, nodei) != 0) {
 
-      // Find the offset from the minimum coordinates.
-      const Vector xoff = positions(nodeItr) - xmin;
+        // Find the offset from the minimum coordinates.
+        const Vector xoff = positions(nodeListi, nodei) - xmin;
 
-      // Hash that sucker.
-      result(nodeItr) = hashPosition(xoff, stepSize);
+        // Hash that sucker.
+        result(nodeListi, nodei) = hashPosition(xoff, stepSize);
+      }
     }
   }
 
@@ -185,4 +187,3 @@ mortonOrderIndices(const DataBase<Dimension>& dataBase,
 }
 
 }
-

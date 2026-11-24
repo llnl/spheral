@@ -1,10 +1,8 @@
 // Includes.
 #include "Geometry/MathTraits.hh"
-#include "NodeIterators.hh"
 
 #include "NodeList/FluidNodeList.hh"
 #include "NodeList/NodeListRegistrar.hh"
-#include "Neighbor/Neighbor.hh"
 #include "Field/Field.hh"
 #include "Field/FieldView.hh"
 #include "Field/FieldListView.hh"
@@ -12,6 +10,7 @@
 #include "Distributed/allReduce.hh"
 #include "Utilities/range.hh"
 #include "Utilities/Logger.hh"
+#include "Threading/GPUUtils.hh"
 
 #ifdef SPHERAL_ENABLE_MPI
 #include <mpi.h>
@@ -39,6 +38,7 @@ FieldList<Dimension, DataType>::FieldList():
   mStorageType(FieldStorageType::ReferenceFields),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
@@ -62,6 +62,7 @@ FieldList<Dimension, DataType>::FieldList(FieldStorageType aStorageType):
   mStorageType(aStorageType),
   mNodeListPtrs(),
   mNodeListIndexMap(),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(ThreadReduction::SUM),
@@ -87,6 +88,7 @@ FieldList(const FieldList<Dimension, DataType>& rhs):
   mStorageType(rhs.storageType()),
   mNodeListPtrs(rhs.mNodeListPtrs),
   mNodeListIndexMap(rhs.mNodeListIndexMap),
+  mFieldViewStorage(),
   mFieldViews(),
   mChaiCallback([](const chai::PointerRecord*, chai::Action, chai::ExecutionSpace) {}),
   reductionType(rhs.reductionType),
@@ -115,9 +117,7 @@ inline
 FieldList<Dimension, DataType>::
 ~FieldList() {
   DEBUG_LOG << "FieldList::~FieldList : " << this;
-#ifndef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.free();
-#endif
+  this->releaseFieldViews();
 }  
 
 //------------------------------------------------------------------------------
@@ -132,6 +132,7 @@ operator=(const FieldList<Dimension, DataType>& rhs) {
 #pragma omp critical (FieldList_assign)
   {
     if (this != &rhs) {
+      this->releaseFieldViews();
       mFieldPtrs.clear();
       mFieldCache.clear();
       mStorageType = rhs.mStorageType;
@@ -186,6 +187,7 @@ void
 FieldList<Dimension, DataType>::
 copyFields() {
   if (mStorageType != FieldStorageType::CopyFields) {
+    this->releaseFieldViews();
     mStorageType = FieldStorageType::CopyFields;      
     mFieldCache.clear();
     for (auto* fptr: mFieldPtrs) mFieldCache.push_back(std::make_shared<Field<Dimension, DataType>>(*fptr));
@@ -203,6 +205,7 @@ inline
 void
 FieldList<Dimension, DataType>::
 copyFields(const FieldList<Dimension, DataType>& fieldList) {
+  this->releaseFieldViews();
   mFieldPtrs.clear();
   mFieldCache.clear();
   mStorageType = FieldStorageType::CopyFields;
@@ -250,6 +253,7 @@ FieldList<Dimension, DataType>::
 assignFields(const FieldList<Dimension, DataType>& fieldList) {
 #pragma omp critical (FieldList_assignFields)
   {
+    this->releaseFieldViews();
     const auto n = this->size();
     ENSURE(n == fieldList.size());
     ENSURE(mNodeListPtrs == fieldList.mNodeListPtrs);
@@ -268,6 +272,7 @@ inline
 void
 FieldList<Dimension, DataType>::
 referenceFields(const FieldList<Dimension, DataType>& fieldList) {
+  this->releaseFieldViews();
   mFieldPtrs = fieldList.mFieldPtrs;
   mFieldCache.clear();
   mStorageType = FieldStorageType::ReferenceFields;
@@ -327,6 +332,7 @@ deleteField(const Field<Dimension, DataType>& field) {
 
   const auto fieldPtrItr = std::find(this->begin(), this->end(), &field);
   CHECK(fieldPtrItr != this->end());
+  this->releaseFieldViews();
   auto fieldItr = mFieldCache.begin();
   switch(storageType()) {
   case FieldStorageType::CopyFields:
@@ -436,339 +442,6 @@ fieldForNodeList(const NodeList<Dimension>& nodeList) const {
   } else {
     return end();
   }
-}
-
-//------------------------------------------------------------------------------
-// Element access by NodeIteratorBase.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType&
-FieldList<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) {
-  return this->operator()(itr.fieldID(), itr.nodeID());
-}
-
-template<typename Dimension, typename DataType>
-inline
-const DataType&
-FieldList<Dimension, DataType>::
-operator()(const NodeIteratorBase<Dimension>& itr) const {
-  return this->operator()(itr.fieldID(), itr.nodeID());
-}
-
-//------------------------------------------------------------------------------
-// Return the interpolated value of the FieldList for the given position.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-DataType
-FieldList<Dimension, DataType>::
-operator()(const typename Dimension::Vector& position,
-           const TableKernel<Dimension>& W) const {
-
-  DataType result(0.0);
-
-  // Set the neighbor information for all NodeLists.
-  std::vector<std::vector<int>> masterLists, coarseNeighbors, refineNeighbors;
-  setMasterNodeLists(position, masterLists, coarseNeighbors);
-  setRefineNodeLists(position, coarseNeighbors, refineNeighbors);
-
-  // Loop over the neighbors.
-  for (auto neighborItr = refineNodeBegin(refineNeighbors);
-       neighborItr < refineNodeEnd();
-       ++neighborItr) {
-
-    // Ignore any ghost nodes.
-    if (neighborItr.internalNode()) {
-
-      // This is horrible, but I need the node weights to do this job.  This routine
-      // needs to be rewritten!
-      const Scalar& wj = (neighborItr.fluidNodeListPtr()->weight())(neighborItr);
-
-      // Add this nodes contribution.
-      const Vector rij = position - neighborItr.fluidNodeListPtr()->positions()(neighborItr);
-      const SymTensor& Hj = neighborItr.fluidNodeListPtr()->Hfield()(neighborItr);
-      double Wj = W(Hj*rij, Hj);
-      result += (*this)(neighborItr)*wj*Wj;
-    }
-  }
-
-#ifdef SPHERAL_ENABLE_MPI
-  // In parallel, we need to sum up the result across all processors.
-  {
-    int procID, numProcs;
-    MPI_Comm_rank(Communicator::communicator(), &procID);
-    MPI_Comm_size(Communicator::communicator(), &numProcs);
-    VERIFY(DataTypeTraits<DataType>::fixedSize());
-    const size_t sizeOfElement = DataTypeTraits<DataType>::numElements()*sizeof(typename DataTypeTraits<DataType>::ElementType);
-    std::vector<char> sendBuffer;
-    std::vector<char> recvBuffer(sizeOfElement);
-    packElement(result, sendBuffer);
-    CHECK(sendBuffer.size() == sizeOfElement);
-    for (int sendProc = 0; sendProc != numProcs; ++sendProc) {
-      recvBuffer = sendBuffer;
-      MPI_Bcast(&(*recvBuffer.begin()), sizeOfElement, MPI_CHAR, sendProc, Communicator::communicator());
-      if (procID != sendProc) {
-        DataType otherValue;
-        auto itr = recvBuffer.begin();
-        unpackElement(otherValue, itr, recvBuffer.end());
-        CHECK(itr == recvBuffer.end());
-        result += otherValue;
-      }
-    }
-  }
-#endif
-
-  return result;
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for all node IDs.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-AllNodeIterator<Dimension>
-FieldList<Dimension, DataType>::nodeBegin() const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  while (nodeListItr < mNodeListPtrs.end() and
-         (*nodeListItr)->numNodes() == 0u) {
-    ++nodeListItr;
-  }
-  return AllNodeIterator<Dimension>(nodeListItr,
-                                    mNodeListPtrs.begin(),
-                                    mNodeListPtrs.end());
-}
-
-template<typename Dimension, typename DataType>
-inline
-AllNodeIterator<Dimension>
-FieldList<Dimension, DataType>::nodeEnd() const {
-  return AllNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                    mNodeListPtrs.begin(),
-                                    mNodeListPtrs.end());
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for internal nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-InternalNodeIterator<Dimension>
-FieldList<Dimension, DataType>::internalNodeBegin() const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  while (nodeListItr < mNodeListPtrs.end() and
-         (*nodeListItr)->numInternalNodes() == 0u) {
-    ++nodeListItr;
-  }
-  return InternalNodeIterator<Dimension>(nodeListItr,
-                                         mNodeListPtrs.begin(),
-                                         mNodeListPtrs.end());
-}
-
-template<typename Dimension, typename DataType>
-inline
-InternalNodeIterator<Dimension>
-FieldList<Dimension, DataType>::internalNodeEnd() const {
-  return InternalNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                         mNodeListPtrs.begin(),
-                                         mNodeListPtrs.end());
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for ghost nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-GhostNodeIterator<Dimension>
-FieldList<Dimension, DataType>::ghostNodeBegin() const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  while (nodeListItr < mNodeListPtrs.end() and
-         (*nodeListItr)->numGhostNodes() == 0u) {
-    ++nodeListItr;
-  }
-  if (nodeListItr < mNodeListPtrs.end()) {
-    CHECK((*nodeListItr)->firstGhostNode() < (*nodeListItr)->numNodes());
-    return GhostNodeIterator<Dimension>(nodeListItr,
-                                        mNodeListPtrs.begin(),
-                                        mNodeListPtrs.end(),
-                                        (*nodeListItr)->firstGhostNode());
-  } else {
-    return ghostNodeEnd();
-  }
-}
-
-template<typename Dimension, typename DataType>
-inline
-GhostNodeIterator<Dimension>
-FieldList<Dimension, DataType>::ghostNodeEnd() const {
-  return GhostNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                      mNodeListPtrs.begin(),
-                                      mNodeListPtrs.end());
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for master neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-MasterNodeIterator<Dimension>
-FieldList<Dimension, DataType>::masterNodeBegin(const std::vector<std::vector<int>>& masterLists) const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  size_t iNodeList = 0u;
-  while (nodeListItr < mNodeListPtrs.end() && masterLists[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < mNodeListPtrs.end()) {
-    return MasterNodeIterator<Dimension>(nodeListItr,
-                                         mNodeListPtrs.begin(),
-                                         mNodeListPtrs.end(),
-                                         masterLists[iNodeList].begin(),
-                                         masterLists);
-  } else {
-    return this->masterNodeEnd();
-  }
-}
-
-template<typename Dimension, typename DataType>
-inline
-MasterNodeIterator<Dimension>
-FieldList<Dimension, DataType>::masterNodeEnd() const {
-  return MasterNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                       mNodeListPtrs.begin(),
-                                       mNodeListPtrs.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for coarse neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-CoarseNodeIterator<Dimension>
-FieldList<Dimension, DataType>::coarseNodeBegin(const std::vector<std::vector<int>>& coarseNeighbors) const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  size_t iNodeList = 0u;
-  while (nodeListItr < mNodeListPtrs.end() && coarseNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < mNodeListPtrs.end()) {
-    return CoarseNodeIterator<Dimension>(nodeListItr,
-                                         mNodeListPtrs.begin(),
-                                         mNodeListPtrs.end(),
-                                         coarseNeighbors[iNodeList].begin(),
-                                         coarseNeighbors);
-  } else {
-    return this->coarseNodeEnd();
-  }
-}
-
-template<typename Dimension, typename DataType>
-inline
-CoarseNodeIterator<Dimension>
-FieldList<Dimension, DataType>::coarseNodeEnd() const {
-  return CoarseNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                       mNodeListPtrs.begin(),
-                                       mNodeListPtrs.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Node ID iterators for refine neighbor nodes.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-RefineNodeIterator<Dimension>
-FieldList<Dimension, DataType>::refineNodeBegin(const std::vector<std::vector<int>>& refineNeighbors) const {
-  auto nodeListItr = mNodeListPtrs.begin();
-  size_t iNodeList = 0u;
-  while (nodeListItr < mNodeListPtrs.end() && refineNeighbors[iNodeList].empty()) {
-    ++nodeListItr;
-    ++iNodeList;
-  }
-  if (nodeListItr < mNodeListPtrs.end()) {
-    return RefineNodeIterator<Dimension>(nodeListItr,
-                                         mNodeListPtrs.begin(),
-                                         mNodeListPtrs.end(),
-                                         refineNeighbors[iNodeList].begin(),
-                                         refineNeighbors);
-  } else {
-    return this->refineNodeEnd();
-  }
-}
-
-template<typename Dimension, typename DataType>
-inline
-RefineNodeIterator<Dimension>
-FieldList<Dimension, DataType>::refineNodeEnd() const {
-  return RefineNodeIterator<Dimension>(mNodeListPtrs.end(),
-                                       mNodeListPtrs.begin(),
-                                       mNodeListPtrs.end(),
-                                       std::vector<std::vector<int>>());
-}
-
-//------------------------------------------------------------------------------
-// Set the master node lists of all the NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-void
-FieldList<Dimension, DataType>::
-setMasterNodeLists(const typename Dimension::Vector& r,
-                   const typename Dimension::SymTensor& H,
-                   std::vector<std::vector<int>>& masterLists,
-                   std::vector<std::vector<int>>& coarseNeighbors) const {
-  auto etaMax = 0.0;
-  for (auto* nodeListPtr: mNodeListPtrs) etaMax = std::max(etaMax, nodeListPtr->neighbor().kernelExtent());
-  Neighbor<Dimension>::setMasterNeighborGroup(r, H,
-                                              mNodeListPtrs.begin(),
-                                              mNodeListPtrs.end(),
-                                              etaMax,
-                                              masterLists,
-                                              coarseNeighbors);
-}
-
-template<typename Dimension, typename DataType>
-inline
-void
-FieldList<Dimension, DataType>::
-setMasterNodeLists(const typename Dimension::Vector& r,
-                   std::vector<std::vector<int>>& masterLists,
-                   std::vector<std::vector<int>>& coarseNeighbors) const {
-  this->setMasterNodeLists(r, 1e-30*SymTensor::one(), masterLists, coarseNeighbors);
-}
-
-//------------------------------------------------------------------------------
-// Set the refine node lists of all the NodeLists.
-//------------------------------------------------------------------------------
-template<typename Dimension, typename DataType>
-inline
-void
-FieldList<Dimension, DataType>::
-setRefineNodeLists(const typename Dimension::Vector& r,
-                   const typename Dimension::SymTensor& H,
-                   const std::vector<std::vector<int>>& coarseNeighbors,
-                   std::vector<std::vector<int>>& refineNeighbors) const {
-  const auto numNodeLists = mNodeListPtrs.size();
-  REQUIRE(coarseNeighbors.size() == numNodeLists);
-  refineNeighbors = std::vector<std::vector<int>>(numNodeLists);
-  for (auto [iNodeList, nodeListPtr]: enumerate(mNodeListPtrs)) {
-    nodeListPtr->neighbor().setRefineNeighborList(r, H, 
-                                                  coarseNeighbors[iNodeList],
-                                                  refineNeighbors[iNodeList]);
-  }
-}
-
-template<typename Dimension, typename DataType>
-inline
-void
-FieldList<Dimension, DataType>::
-setRefineNodeLists(const typename Dimension::Vector& r,
-                   const std::vector<std::vector<int>>& coarseNeighbors,
-                   std::vector<std::vector<int>>& refineNeighbors) const {
-  this->setRefineNodeLists(r, 1e-30*SymTensor::one(), coarseNeighbors, refineNeighbors);
 }
 
 //------------------------------------------------------------------------------
@@ -1504,6 +1177,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view() {
+  buildDependentArrays();
   return FieldListView<Dimension, DataType>(*this);
 }
 
@@ -1513,6 +1187,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback) {
+  buildDependentArrays();
   setCallback(fieldlist_callback);
   auto result = FieldListView<Dimension, DataType>(*this);
   return result;
@@ -1524,6 +1199,7 @@ inline
 FieldListView<Dimension, DataType>
 FieldList<Dimension, DataType>::
 view(FLCB&& fieldlist_callback, FCB&& field_callback) {
+  buildDependentArrays();
   setCallback(fieldlist_callback);
   for (auto fptr: mFieldPtrs) fptr->setCallback(field_callback);
   auto result = FieldListView<Dimension, DataType>(*this);
@@ -1546,28 +1222,25 @@ buildDependentArrays() {
   mNodeListIndexMap.clear();
 
   const auto nfields = mFieldPtrs.size();
-#ifdef SPHERAL_UNIFIED_MEMORY
-  mFieldViews.resize(nfields);
-#else
-#ifndef CHAI_DISABLE_RM
-  mFieldViews.setUserCallback(getCallback());
-#endif
-  if (mFieldViews.size() == 0u && !mFieldViews.data(chai::CPU, false)) {
-    mFieldViews.allocate(nfields, chai::CPU);
-  } else {
-    mFieldViews.reallocate(nfields);
-  }
-#endif
+
+  // Release aliases before resizing the vector that owns and constructs the
+  // FieldView objects.
+  this->releaseFieldViews();
+  mFieldViewStorage.resize(nfields);
 
   for (auto [i, fptr]: enumerate(mFieldPtrs)) {
     mFieldBasePtrs.push_back(fptr);
-    mFieldViews[i] = fptr->view();
+    mFieldViewStorage[i] = fptr->view();
     auto* nptr = const_cast<NodeList<Dimension>*>(fptr->nodeListPtr());
     mNodeListPtrs.push_back(nptr);
     mNodeListIndexMap[nptr] = i;
   }
 
+  GPUUtils::initMAView(mFieldViews, mFieldViewStorage);
 #ifndef SPHERAL_UNIFIED_MEMORY
+#ifndef CHAI_DISABLE_RM
+  mFieldViews.setUserCallback(getCallback());
+#endif
   mFieldViews.registerTouch(chai::CPU);
 #endif
 
@@ -1575,6 +1248,22 @@ buildDependentArrays() {
   ENSURE(mFieldViews.size() == mFieldPtrs.size());
   ENSURE(mNodeListPtrs.size() == mFieldPtrs.size());
   ENSURE(mNodeListIndexMap.size() == mFieldPtrs.size());
+}
+
+//------------------------------------------------------------------------------
+// Release the outer FieldListView alias first, then destroy the nested
+// FieldViews before any copied Fields that they reference can be destroyed.
+//------------------------------------------------------------------------------
+template<typename Dimension, typename DataType>
+inline
+void
+FieldList<Dimension, DataType>::
+releaseFieldViews() {
+  GPUUtils::freeMAView(mFieldViews);
+#ifdef SPHERAL_UNIFIED_MEMORY
+  mFieldViews = {};
+#endif
+  mFieldViewStorage.clear();
 }
 
 //------------------------------------------------------------------------------
