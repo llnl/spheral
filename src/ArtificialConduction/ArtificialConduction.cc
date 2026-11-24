@@ -312,7 +312,7 @@ dt(const DataBase<Dimension>& dataBase,
   Scalar lastMinDt = minDt;
   int lastNodeID = -1;
   string lastNodeListName, reason;
-  Scalar lastEps, lastVsig, lastRho;
+  Scalar lastEps = 0.0, lastVsig = 0.0, lastRho = 0.0;
 
   // Loop over every fluid node.
   size_t nodeListi = 0;

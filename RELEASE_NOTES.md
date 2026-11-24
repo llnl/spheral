@@ -67,7 +67,9 @@ Notable changes include:
       * CHAI updated from 2025.12.0 to 2026.07.0.
       * Spheral now links to `umpire::umpire`, removing deprecated Umpire target warnings from Spheral builds.
       * Corrected the external Automake version from 1.13.4 to 1.16.1 in the TOSS system configuration.
+    * Add support for Ubuntu 26.04 with MPICH in Docker CI builds.
   * Bug Fixes / improvements:
+    * Use shared pybind11 container `type_caster` definitions to address ODR violations while accepting Python sequence inputs for bound vectors.
     * Added C++ parity coverage for Neighbor tests and corrected ConnectivityMap intersection validation to compare against computed results.
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.

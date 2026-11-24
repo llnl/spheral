@@ -8,5 +8,6 @@ Welcome to Spheral's design documentation. This documentation is a work in progr
    :maxdepth: 1
 
    design/python_module_install.rst
+   design/python_binding_lto.rst
 
 

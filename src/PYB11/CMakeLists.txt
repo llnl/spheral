@@ -1,3 +1,6 @@
+# PyFileIO.hh and external binding consumers need the same installed policy.
+install(FILES SpheralTypeCasters.hh DESTINATION include/PYB11)
+
 # When Python targets are created, they add the module name to SPHERAL_MODULE_LIST
 set (_python_packages
   CXXTypes
