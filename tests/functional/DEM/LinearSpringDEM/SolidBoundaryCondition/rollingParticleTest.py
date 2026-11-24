@@ -290,7 +290,7 @@ control = SpheralController(integrator,
                             periodicWork=periodicWork)
 output("control")
 
-#control.redistribute = PeanoHilbertOrderRedistributeNodes(db.kernelExtent,workBalance=False)
+#control.redistribute = PeanoHilbertOrderRedistributeNodes(workBalance=False)
 #-------------------------------------------------------------------------------
 # Advance to the end time.
 #-------------------------------------------------------------------------------

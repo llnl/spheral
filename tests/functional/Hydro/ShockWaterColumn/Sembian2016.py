@@ -852,7 +852,7 @@ control = SpheralController(integrator, WT,
                             vizTime = vizTime,
                             periodicWork = [(extrapolationBoundary.periodicWorkFunction,1)])
 
-control.redistribute = PeanoHilbertOrderRedistributeNodes(db.kernelExtent,workBalance=False)
+control.redistribute = PeanoHilbertOrderRedistributeNodes(workBalance=False)
 
 if False: #fsisph:
     control.appendPeriodicTimeWork(interfaceWriter.write, outputTime)

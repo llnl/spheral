@@ -1131,8 +1131,8 @@ class SpheralController:
             try:
                 #self.redistribute = eval("ParmetisRedistributeNodes%s(W.kernelExtent)" % self.dim)
                 #self.redistribute = eval("SortAndDivideRedistributeNodes%s(W.kernelExtent)" % self.dim)
-                self.redistribute = eval("PeanoHilbertOrderRedistributeNodes%s(W.kernelExtent)" % self.dim)
-                #self.redistribute = eval("VoronoiRedistributeNodes%s(W.kernelExtent)" % self.dim)
+                self.redistribute = eval("PeanoHilbertOrderRedistributeNodes%s()" % self.dim)
+                #self.redistribute = eval("VoronoiRedistributeNodes%s()" % self.dim)
             except:
                 print("Warning: this appears to be a parallel run, but Controller cannot construct")
                 print("         dynamic redistributer.")

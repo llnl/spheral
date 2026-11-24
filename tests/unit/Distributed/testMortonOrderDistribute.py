@@ -39,7 +39,7 @@ class TestMortonOrderRedistribute2d(TestDistributeByPosition2d):
 ##                                     persist = True)
 
         # Go ahead and redistribute those nodes!
-        repartition = MortonOrderRedistributeNodes2d(2.0)
+        repartition = MortonOrderRedistributeNodes2d()
         repartition.redistributeNodes(self.dataBase)
 
 ##         # Plot the final conditions.
@@ -195,7 +195,7 @@ class TestMortonOrderRedistribute3d(unittest.TestCase):
                                               mpi.SUM))
 
         # Go ahead and redistribute those nodes!
-        repartition = MortonOrderRedistributeNodes3d(2.0)
+        repartition = MortonOrderRedistributeNodes3d()
         repartition.redistributeNodes(self.dataBase)
 
         # Make sure that the numbers of nodes are correct.

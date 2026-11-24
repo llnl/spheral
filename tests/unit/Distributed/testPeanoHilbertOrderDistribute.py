@@ -39,7 +39,7 @@ class TestPeanoHilbertOrderRedistribute2d(TestDistributeByPosition2d):
 ##                                     persist = True)
 
         # Go ahead and redistribute those nodes!
-        repartition = PeanoHilbertOrderRedistributeNodes2d(2.0)
+        repartition = PeanoHilbertOrderRedistributeNodes2d()
         repartition.redistributeNodes(self.dataBase)
 
 ##         # Plot the final conditions.
@@ -195,7 +195,7 @@ class TestPeanoHilbertOrderRedistribute3d(unittest.TestCase):
                                               mpi.SUM))
 
         # Go ahead and redistribute those nodes!
-        repartition = PeanoHilbertOrderRedistributeNodes3d(2.0)
+        repartition = PeanoHilbertOrderRedistributeNodes3d()
         repartition.redistributeNodes(self.dataBase)
 
         # Make sure that the numbers of nodes are correct.
