@@ -38,7 +38,10 @@ hashPosition(const Dim<1>::Vector& position,
              const Dim<1>::Vector& boxmax) {
   const double boxsize = (1.0 + 1.0e-10)*(boxmax.x() - boxmin.x());
   CHECK(boxsize > 0.0);
-  return KeyTraits::Key(int((position.x() - boxmin.x())/(boxsize/KeyTraits::numbits1d)));
+  const auto ncells = KeyTraits::one << KeyTraits::numbits1d;
+  const auto result = KeyTraits::Key((position.x() - boxmin.x())/(boxsize/ncells));
+  ENSURE(result <= KeyTraits::maxKey1d);
+  return result;
 }
 
 //------------------------------------------------------------------------------
