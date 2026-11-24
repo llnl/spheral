@@ -20,7 +20,7 @@ public:
   using Tensor = typename Dimension::Tensor;
   using SymTensor = typename Dimension::SymTensor;
 
-  SPHERAL_HOST_DEVICE virtual ~Kernel() = default;
+  SPHERAL_HOST_DEVICE ~Kernel() = default;
 
   // Cast as the descendent type.
   SPHERAL_HOST_DEVICE Descendant& asDescendant() const;

@@ -81,7 +81,7 @@ packages:
     buildable: false
   automake:
     externals:
-    - spec: automake@1.13.4
+    - spec: automake@1.16.1
       prefix: /usr
     buildable: false
   libtool:

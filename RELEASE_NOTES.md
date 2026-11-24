@@ -25,6 +25,7 @@ Notable changes include:
         * Returns tuple {explicit, implicit, hessian}.
     * Adding the ability to create Python ArtificialViscosty implementations (this was inadvertently lost during the conversion of the ArtificialViscosities for use on GPUs).
       * Note: Python overrides only work on CPU runs
+    * Added rolling restarts to SpheralController (rollingRestartStep, rollingRestartWallTime, rollingRestartMax): restart files written on a cycle and/or wall clock cadence, keeping only the most recent few.
     * Singularity can now be brought in as a TPL.
     * ArtificialViscosity value/view design is completely refactored. Initial tests show ~10% speedups for CPU tests and 5-15% speedup for GPU tests.
       * Removes the use of CHAI managed pointers.
@@ -55,13 +56,21 @@ Notable changes include:
     * Update to Spack 1.2.2 as well as some TPLS:
       * Boost updated from 1.87 to 1.90.
       * Caliper updated from 2.11 to 2.14.
-      * Axom updated from 0.12.0 to 0.14.0.
+      * Axom updated to 0.15.0 for develop builds.
       * Sundials updated from 7.0.0 to 7.7.0.
       * Installs are moved from $spack/opts to $spack/../installs.
+    * Update Spack spack-packages to v2026.10.1.
+      * ROCM toolchain updated from 6.4.3 to 7.2.1.
+        * Spack now rejects LLVM AMDGPU 7.2.1 or newer for Spheral releases through 2026.06.
+      * LC Cray builds now use external CMake 3.29.2 instead of 3.24.2 for LLVM Flang runtime library detection.
+      * Cray MPICH updated from 9.0.1 to 9.1.0.
+      * CHAI updated from 2025.12.0 to 2026.07.0.
+      * Spheral now links to `umpire::umpire`, removing deprecated Umpire target warnings from Spheral builds.
+      * Corrected the external Automake version from 1.13.4 to 1.16.1 in the TOSS system configuration.
     * Add support for Ubuntu 26.04 with MPICH in Docker CI builds.
-
   * Bug Fixes / improvements:
     * Use shared pybind11 container `type_caster` definitions to address ODR violations while accepting Python sequence inputs for bound vectors.
+    * Added C++ parity coverage for Neighbor tests and corrected ConnectivityMap intersection validation to compare against computed results.
     * Added a dummy test that runs first in the performance test suite. This avoids an issue on certain machines where the first job run in an allocation is significantly slower.
     * Consistency fix for differentMatij material coupling in FSISPH.
     * GenerateRatioSphere accessing the wrong element when SPH = True.

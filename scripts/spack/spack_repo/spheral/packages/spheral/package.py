@@ -97,6 +97,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     depends_on('conduit@0.8.2', type='build', when='@:2024.06.1')
 
     depends_on('axom +hdf5 ~lua ~examples ~python ~fortran', type='build')
+    depends_on('axom@0.15.0', type='build', when='@develop')
     depends_on('axom@0.12.0:', type='build', when='@2025.12.0:')
     depends_on('axom@0.9.0', type='build', when='@2025.01.1:2025.06.1')
     depends_on('axom@0.7.0', type='build', when='@:2024.06.1')
@@ -127,11 +128,12 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
         depends_on('umpire', type='build')
 
         depends_on('raja', type='build')
-        # Let chai determine versions of RAJA and Umpire after v2025.06.1
+        # Let CHAI determine RAJA and Umpire versions after v2025.06.1.
         depends_on('raja@2024.02.0', type='build', when='@2025.01.0:2025.06.1')
 
         depends_on('chai+raja', type='build')
-        depends_on('chai@2025.12.0', type='build', when='@2026.06.0:')
+        depends_on('chai@2026.07.0', type='build', when='@develop')
+        depends_on('chai@2025.12.0', type='build', when='@2026.06.0')
         depends_on('chai@2025.09.0', type='build', when='@2025.12.0')
 
     # Forward MPI Variants
@@ -181,6 +183,7 @@ class Spheral(CachedCMakePackage, CudaPackage, ROCmPackage):
     # This conflict comes from Axom and can be removed if removed from Axom.
     conflicts("+openmp", when="+rocm")
     conflicts("%pgi")
+    conflicts('%llvm-amdgpu@7.2.1:', when='@:2026.06')
 
     def _get_sys_type(self, spec):
         sys_type = spec.architecture
