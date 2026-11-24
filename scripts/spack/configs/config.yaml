@@ -16,5 +16,7 @@ concretizer:
   compiler_mixing: false
 repos:
   builtin:
-    destination: $spack/../packages-1.2.2
+    destination: $spack/../packages-2026.10.1
     git: "https://github.com/spack/spack-packages.git"
+    branch: releases/v2026.10
+    tag: v2026.10.1
